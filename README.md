@@ -1,5 +1,9 @@
 # Hora
 
+
+## Licensing
+This project is released under the [MIT License](./LICENSE).
+
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of
