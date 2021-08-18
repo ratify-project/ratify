@@ -27,7 +27,7 @@ go build -o ~/bin ./cmd/hora
 ```
 go build -o ~/.hora/plugins ./plugins/referrerstore/ociregistry
 go build -o ~/.hora/plugins ./plugins/verifier/nv2verifier
-go build -o ~/.hora/plugins ./plugins/sbom
+go build -o ~/.hora/plugins ./plugins/verifier/sbom
 ```
 
 - Update the ```./config/config.json``` to the certs folder and copy it to home dir
