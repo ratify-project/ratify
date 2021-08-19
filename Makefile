@@ -1,5 +1,5 @@
 BINARY_NAME=hora
-INSTALL_DIR=~/.hora 
+INSTALL_DIR=~/.hora
 all: build test
 
 build: build-cli build-plugins
@@ -14,8 +14,8 @@ build-plugins:
 	go build -o ./bin/plugins/ ./plugins/verifier/sbom
 
 install: 
-	mkdir -p ${INSTALL_DIR} 
-	cp -r ./bin ${INSTALL_DIR} 
+	mkdir -p ${INSTALL_DIR}
+	cp -r ./bin/* ${INSTALL_DIR}
 
 test:
 	go test -v ./cmd/hora
