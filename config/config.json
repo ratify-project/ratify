@@ -1,0 +1,30 @@
+{
+    "stores": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "ociregistry",
+                "useHttp": true
+            }
+        ]
+    },
+    "verifiers": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name":"nv2verifier",
+                "artifactTypes" : "application/vnd.cncf.notary.v2",
+                "verificationCerts": [
+                    "<cert folder>"
+                  ]
+            },
+            {
+                "name":"sbom",
+                "artifactTypes":"application/x.example.sbom.v0",
+                "nestedReferences": "application/vnd.cncf.notary.v2"
+            }
+            
+        ]
+        
+    }
+}
