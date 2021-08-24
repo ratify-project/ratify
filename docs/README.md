@@ -76,3 +76,44 @@ The executor policy determines the chained outcome of execution of the multiple 
 ## Data Flow
 
 ![workflow](./data-flow.svg)
+
+## Composing Verifiers
+
+The framework enables composition of multiple verifiers and referer stores so that artifacts of different types can be chained together. 
+
+THe verification follows a delegation model where each verifier is responsible for verification of a type of artifact. 
+
+**Nested verification** MAY be required by an artifact verifier for hierachical verification. For e.g. when verifying an SBOM, we first need to ensure that the SBOM signature is validated first or other nested artifacts.  
+
+```yaml
+IMAGE
+└── SBOM
+    └── SIGNATURE
+```
+
+> This currenlty needs to be defined in detail since there are considerations that need to be made the exit criteria for the tree-walk.
+
+Consider the following composition registering a Signature and SBOM verifier. 
+
+```yml
+stores:
+  version: 1.0.0
+  plugins:
+  - name: ociregistry
+    useHttp: true
+verifiers:
+  version: 1.0.0
+  plugins:
+  - name: nv2verifier
+    artifactTypes: application/vnd.cncf.notary.v2
+    verificationCerts:
+    - "/home/user/.notary/keys/wabbit-networks.crt"
+  - name: sbom
+    artifactTypes: application/x.example.sbom.v0
+    nestedReferences: application/vnd.cncf.notary.v2
+```
+
+The `nv2verifier` binds to `cncf.notary.v2` and `sbom` verifier similarly binds to `x.example.sbom`. 
+
+When `hora` encounters a signature of type `cncf.notary.v2` then the nv2 verifier configuration settings can be used to determine things like what keys are expected to be used. Scoping rules through `matchinglabels` can be used to determine the exact matching criteria of the policy that needs to be applied. 
+> Matching Labels is currently being defined and how do we enforce how the SBOM verifier can indicate that the nested verifier needs to be executed first.
