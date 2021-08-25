@@ -10,6 +10,7 @@ import (
 )
 
 type VerifierResult struct {
+	Subject   string
 	IsSuccess bool
 	Name      string
 	Results   []string

@@ -65,6 +65,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference) (*ve
 	_, err = vservice.Verify(context.Background(), desc, input.Blob)
 	if err != nil {
 		return &verifier.VerifierResult{
+			Subject:   subjectReference.String(),
 			Name:      input.Config.Name,
 			IsSuccess: false,
 			Results:   []string{fmt.Sprintf("%v", err)},
