@@ -163,7 +163,7 @@ func listReferrers(opts referrerCmdOptions) error {
 	}
 
 	// TODO replace with code
-	rootImage := treeprint.NewWithRoot(subRef.Digest)
+	rootImage := treeprint.NewWithRoot(subRef.String())
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
 
