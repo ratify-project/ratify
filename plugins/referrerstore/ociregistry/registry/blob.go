@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/notaryproject/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/common"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )

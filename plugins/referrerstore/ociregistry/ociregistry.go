@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	"github.com/notaryproject/hora/pkg/referrerstore/plugin/skel"
-	"github.com/notaryproject/hora/plugins/referrerstore/ociregistry/registry"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/referrerstore/plugin/skel"
+	"github.com/deislabs/hora/plugins/referrerstore/ociregistry/registry"
 	"github.com/opencontainers/go-digest"
 )
 

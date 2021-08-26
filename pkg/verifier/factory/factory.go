@@ -3,10 +3,10 @@ package factory
 import (
 	"errors"
 
-	"github.com/notaryproject/hora/pkg/verifier"
-	"github.com/notaryproject/hora/pkg/verifier/config"
-	"github.com/notaryproject/hora/pkg/verifier/plugin"
-	"github.com/notaryproject/hora/pkg/verifier/types"
+	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier/config"
+	"github.com/deislabs/hora/pkg/verifier/plugin"
+	"github.com/deislabs/hora/pkg/verifier/types"
 )
 
 // TODO pointer to avoid copy

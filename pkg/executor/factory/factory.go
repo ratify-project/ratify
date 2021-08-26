@@ -1,9 +1,9 @@
 package factory
 
 import (
-	"github.com/notaryproject/hora/pkg/executor"
-	"github.com/notaryproject/hora/pkg/executor/core"
-	sc "github.com/notaryproject/hora/pkg/referrerstore/config"
+	"github.com/deislabs/hora/pkg/executor"
+	"github.com/deislabs/hora/pkg/executor/core"
+	sc "github.com/deislabs/hora/pkg/referrerstore/config"
 )
 
 func CreateExecutorFromConfig(storesConfig sc.StoresConfig) (executor.Executor, error) {

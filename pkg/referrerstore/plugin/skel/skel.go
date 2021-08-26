@@ -8,13 +8,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/common/plugin"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	sp "github.com/notaryproject/hora/pkg/referrerstore/plugin"
-	"github.com/notaryproject/hora/pkg/referrerstore/types"
-	"github.com/notaryproject/hora/pkg/utils"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/common/plugin"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	sp "github.com/deislabs/hora/pkg/referrerstore/plugin"
+	"github.com/deislabs/hora/pkg/referrerstore/types"
+	"github.com/deislabs/hora/pkg/utils"
 	"github.com/opencontainers/go-digest"
 )
 

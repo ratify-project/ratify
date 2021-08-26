@@ -7,12 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/notaryproject/hora/pkg/common"
-	pluginCommon "github.com/notaryproject/hora/pkg/common/plugin"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	"github.com/notaryproject/hora/pkg/referrerstore/config"
-	"github.com/notaryproject/hora/pkg/referrerstore/types"
+	"github.com/deislabs/hora/pkg/common"
+	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/referrerstore/config"
+	"github.com/deislabs/hora/pkg/referrerstore/types"
 	"github.com/opencontainers/go-digest"
 )
 

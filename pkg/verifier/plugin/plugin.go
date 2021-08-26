@@ -8,14 +8,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/notaryproject/hora/pkg/common"
-	pluginCommon "github.com/notaryproject/hora/pkg/common/plugin"
-	e "github.com/notaryproject/hora/pkg/executor"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	"github.com/notaryproject/hora/pkg/verifier"
-	"github.com/notaryproject/hora/pkg/verifier/config"
-	"github.com/notaryproject/hora/pkg/verifier/types"
+	"github.com/deislabs/hora/pkg/common"
+	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
+	e "github.com/deislabs/hora/pkg/executor"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier/config"
+	"github.com/deislabs/hora/pkg/verifier/types"
 )
 
 type VerifierPlugin struct {

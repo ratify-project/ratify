@@ -3,10 +3,10 @@ package factory
 import (
 	"errors"
 
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	"github.com/notaryproject/hora/pkg/referrerstore/config"
-	"github.com/notaryproject/hora/pkg/referrerstore/plugin"
-	"github.com/notaryproject/hora/pkg/referrerstore/types"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/referrerstore/config"
+	"github.com/deislabs/hora/pkg/referrerstore/plugin"
+	"github.com/deislabs/hora/pkg/referrerstore/types"
 )
 
 func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath string) ([]referrerstore.ReferrerStore, error) {
