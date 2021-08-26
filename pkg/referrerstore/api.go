@@ -3,8 +3,8 @@ package referrerstore
 import (
 	"context"
 
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/ocispecs"
 	"github.com/opencontainers/go-digest"
 )
 

@@ -1,4 +1,4 @@
-module github.com/notaryproject/hora
+module github.com/deislabs/hora
 
 go 1.16
 

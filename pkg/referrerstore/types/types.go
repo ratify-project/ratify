@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
 )
 
 const (

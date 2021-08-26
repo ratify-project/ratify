@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier/plugin/skel"
+	l "github.com/deislabs/hora/plugins/verifier/nv2verifier/local"
 	"github.com/docker/libtrust"
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/verifier"
-	"github.com/notaryproject/hora/pkg/verifier/plugin/skel"
-	l "github.com/notaryproject/hora/plugins/verifier/nv2verifier/local"
 	"github.com/notaryproject/notary/v2"
 
 	x509nv2 "github.com/notaryproject/notary/v2/signature/x509"

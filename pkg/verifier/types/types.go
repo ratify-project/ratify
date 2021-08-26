@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/notaryproject/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier"
 )
 
 const (
