@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/notaryproject/hora/pkg/common"
-	e "github.com/notaryproject/hora/pkg/executor"
-	"github.com/notaryproject/hora/pkg/executor/types"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/policyprovider"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	"github.com/notaryproject/hora/pkg/utils"
-	vr "github.com/notaryproject/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/common"
+	e "github.com/deislabs/hora/pkg/executor"
+	"github.com/deislabs/hora/pkg/executor/types"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/policyprovider"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/utils"
+	vr "github.com/deislabs/hora/pkg/verifier"
 )
 
 type Executor struct {
@@ -88,6 +88,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	for _, verifier := range ex.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
+			verifyResult.Subject = subjectRef.String()
 			if err != nil {
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,

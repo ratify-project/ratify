@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	et "github.com/notaryproject/hora/pkg/executor/types"
+	et "github.com/deislabs/hora/pkg/executor/types"
 )
 
 type MemoryCache struct {

@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/notaryproject/hora/config"
-	e "github.com/notaryproject/hora/pkg/executor"
-	ef "github.com/notaryproject/hora/pkg/executor/core"
-	pf "github.com/notaryproject/hora/pkg/policyprovider/configpolicy"
-	sf "github.com/notaryproject/hora/pkg/referrerstore/factory"
-	vf "github.com/notaryproject/hora/pkg/verifier/factory"
+	"github.com/deislabs/hora/config"
+	e "github.com/deislabs/hora/pkg/executor"
+	ef "github.com/deislabs/hora/pkg/executor/core"
+	pf "github.com/deislabs/hora/pkg/policyprovider/configpolicy"
+	sf "github.com/deislabs/hora/pkg/referrerstore/factory"
+	vf "github.com/deislabs/hora/pkg/verifier/factory"
 	"github.com/spf13/cobra"
 )
 
