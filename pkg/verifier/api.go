@@ -3,13 +3,14 @@ package verifier
 import (
 	"context"
 
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/executor"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/executor"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
 )
 
 type VerifierResult struct {
+	Subject   string
 	IsSuccess bool
 	Name      string
 	Results   []string

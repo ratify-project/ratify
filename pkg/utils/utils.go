@@ -6,7 +6,7 @@ import (
 
 	_ "crypto/sha256"
 
-	"github.com/notaryproject/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/common"
 	"github.com/opencontainers/go-digest"
 )
 

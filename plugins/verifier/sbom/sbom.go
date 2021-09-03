@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/verifier"
-	"github.com/notaryproject/hora/pkg/verifier/plugin/skel"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier/plugin/skel"
 )
 
 type PluginConfig struct {

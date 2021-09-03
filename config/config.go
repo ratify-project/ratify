@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/notaryproject/hora/pkg/homedir"
-	rsConfig "github.com/notaryproject/hora/pkg/referrerstore/config"
-	vfConfig "github.com/notaryproject/hora/pkg/verifier/config"
+	"github.com/deislabs/hora/pkg/homedir"
+	rsConfig "github.com/deislabs/hora/pkg/referrerstore/config"
+	vfConfig "github.com/deislabs/hora/pkg/verifier/config"
 )
 
 const (

@@ -8,12 +8,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/common/plugin"
-	"github.com/notaryproject/hora/pkg/utils"
-	"github.com/notaryproject/hora/pkg/verifier"
-	vp "github.com/notaryproject/hora/pkg/verifier/plugin"
-	"github.com/notaryproject/hora/pkg/verifier/types"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/common/plugin"
+	"github.com/deislabs/hora/pkg/utils"
+	"github.com/deislabs/hora/pkg/verifier"
+	vp "github.com/deislabs/hora/pkg/verifier/plugin"
+	"github.com/deislabs/hora/pkg/verifier/types"
 )
 
 type VerifyReference func(args *CmdArgs, subjectReference common.Reference) (*verifier.VerifierResult, error)

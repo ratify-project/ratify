@@ -7,12 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/notaryproject/hora/config"
-	"github.com/notaryproject/hora/pkg/common"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	sf "github.com/notaryproject/hora/pkg/referrerstore/factory"
-	"github.com/notaryproject/hora/pkg/utils"
+	"github.com/deislabs/hora/config"
+	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	sf "github.com/deislabs/hora/pkg/referrerstore/factory"
+	"github.com/deislabs/hora/pkg/utils"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 	"github.com/xlab/treeprint"
@@ -163,7 +163,7 @@ func listReferrers(opts referrerCmdOptions) error {
 	}
 
 	// TODO replace with code
-	rootImage := treeprint.NewWithRoot(subRef.Digest)
+	rootImage := treeprint.NewWithRoot(subRef.String())
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
 

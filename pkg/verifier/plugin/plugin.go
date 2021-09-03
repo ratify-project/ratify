@@ -8,14 +8,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/notaryproject/hora/pkg/common"
-	pluginCommon "github.com/notaryproject/hora/pkg/common/plugin"
-	e "github.com/notaryproject/hora/pkg/executor"
-	"github.com/notaryproject/hora/pkg/ocispecs"
-	"github.com/notaryproject/hora/pkg/referrerstore"
-	"github.com/notaryproject/hora/pkg/verifier"
-	"github.com/notaryproject/hora/pkg/verifier/config"
-	"github.com/notaryproject/hora/pkg/verifier/types"
+	"github.com/deislabs/hora/pkg/common"
+	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
+	e "github.com/deislabs/hora/pkg/executor"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier/config"
+	"github.com/deislabs/hora/pkg/verifier/types"
 )
 
 type VerifierPlugin struct {
@@ -28,6 +28,7 @@ type VerifierPlugin struct {
 	rawConfig        config.VerifierConfig
 	exec             pluginCommon.Exec
 	OutWriter        io.Writer
+	ErrWriter        io.Writer
 }
 
 func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPaths []string) (verifier.ReferenceVerifier, error) {
@@ -61,6 +62,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 		nestedReferences: nestedReferences,
 		exec:             &pluginCommon.DefaultExec{Stderr: os.Stderr},
 		OutWriter:        os.Stdout,
+		ErrWriter:        os.Stderr,
 	}, nil
 }
 
@@ -99,7 +101,12 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 			return verifier.VerifierResult{}, err
 		}
 		if !nestedVerifyResult.IsSuccess {
-			return verifier.VerifierResult{IsSuccess: false, Name: vp.name, Results: []string{string(encodedResults)}}, nil
+			return verifier.VerifierResult{
+				Subject:   subjectReference.Original,
+				IsSuccess: false,
+				Name:      vp.name,
+				Results:   []string{string(encodedResults)},
+			}, nil
 		}
 	}
 
@@ -128,7 +135,11 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 		}
 	}
 
-	fmt.Fprintf(vp.OutWriter, "Verification of [%s]%s completed with status: %v\n", referenceDescriptor.ArtifactType, referenceDescriptor.Digest, result.IsSuccess)
+	// fmt.Fprintf(vp.ErrWriter,
+	// 	"Verification of [%s]%s completed with status: %v\n",
+	// 	referenceDescriptor.ArtifactType,
+	// 	referenceDescriptor.Digest,
+	// 	result.IsSuccess)
 
 	return result, nil
 }

@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/notaryproject/hora/cmd/hora/cmd"
+	"github.com/deislabs/hora/cmd/hora/cmd"
 )
 
 func main() {

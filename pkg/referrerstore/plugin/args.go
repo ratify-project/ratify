@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	pluginCommon "github.com/notaryproject/hora/pkg/common/plugin"
+	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
 )
 
 type ReferrerStorePluginArgs struct {
