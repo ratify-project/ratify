@@ -87,7 +87,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 
 	for _, verifier := range ex.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
-			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
+			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore.GetConfig(), ex)
 			verifyResult.Subject = subjectRef.String()
 			if err != nil {
 				verifyResult = vr.VerifierResult{

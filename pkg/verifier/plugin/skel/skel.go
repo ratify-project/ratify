@@ -10,13 +10,17 @@ import (
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/common/plugin"
+	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
+	rp "github.com/deislabs/hora/pkg/referrerstore/plugin"
 	"github.com/deislabs/hora/pkg/utils"
 	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/hora/pkg/verifier/config"
 	vp "github.com/deislabs/hora/pkg/verifier/plugin"
 	"github.com/deislabs/hora/pkg/verifier/types"
 )
 
-type VerifyReference func(args *CmdArgs, subjectReference common.Reference) (*verifier.VerifierResult, error)
+type VerifyReference func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error)
 
 type CmdArgs struct {
 	Version    string
@@ -45,13 +49,19 @@ func pluginMainCore(name, version string, verifyReference VerifyReference, suppo
 		return err
 	}
 
-	if err = validateConfig(cmdArgs.StdinData); err != nil {
+	input, err := validateAndGetConfig(cmdArgs.StdinData)
+	if err != nil {
 		return err
+	}
+
+	store, serr := rp.NewStore(input.StoreConfig.Version, input.StoreConfig.Store, input.StoreConfig.PluginBinDirs)
+	if serr != nil {
+		return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("create store from the input config failed with error %v", serr), "")
 	}
 
 	switch cmd {
 	case vp.VerifyCommand:
-		result, err := verifyReference(cmdArgs, cmdArgs.subjectRef)
+		result, err := verifyReference(cmdArgs, cmdArgs.subjectRef, input.ReferencDesc, store)
 
 		if err != nil {
 			return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", vp.VerifyCommand), err.Error())
@@ -126,20 +136,14 @@ func validateVersion(version string, supportedVersions []string) *plugin.Error {
 	return plugin.NewError(types.ErrVersionNotSupported, fmt.Sprintf("plugin doesn't support version %s", version), "")
 }
 
-type Conf struct {
-	Name string `json:"name"`
-}
-
-func validateConfig(jsonBytes []byte) *plugin.Error {
-	var input struct {
-		Config Conf `json:"config"`
-	}
+func validateAndGetConfig(jsonBytes []byte) (*config.PluginInputConfig, *plugin.Error) {
+	var input config.PluginInputConfig
 
 	if err := json.Unmarshal(jsonBytes, &input); err != nil {
-		return plugin.NewError(types.ErrConfigParsingFailure, fmt.Sprintf("error unmarshall verifier config: %v", err), "")
+		return nil, plugin.NewError(types.ErrConfigParsingFailure, fmt.Sprintf("error unmarshall verifier config: %v", err), "")
 	}
-	if input.Config.Name == "" {
-		return plugin.NewError(types.ErrInvalidVerifierConfig, "missing verifier name", "")
+	if input.Config[types.Name] == "" {
+		return nil, plugin.NewError(types.ErrInvalidVerifierConfig, "missing verifier name", "")
 	}
-	return nil
+	return &input, nil
 }

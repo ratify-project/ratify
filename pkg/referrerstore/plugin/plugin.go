@@ -20,11 +20,11 @@ type StorePlugin struct {
 	name      string
 	version   string
 	path      []string
-	rawConfig config.StoreConfig
+	rawConfig config.StorePluginConfig
 	exec      pluginCommon.Exec
 }
 
-func NewStore(version string, storeConfig config.StoreConfig, pluginPaths []string) (referrerstore.ReferrerStore, error) {
+func NewStore(version string, storeConfig config.StorePluginConfig, pluginPaths []string) (referrerstore.ReferrerStore, error) {
 	storeName, ok := storeConfig[types.Name]
 	if !ok {
 		return nil, fmt.Errorf("failed to find store name in the stores config with key %s", "name")
@@ -144,4 +144,12 @@ func (sp *StorePlugin) GetReferenceManifest(ctx context.Context, subjectReferenc
 	}
 
 	return manifest, nil
+}
+
+func (sp *StorePlugin) GetConfig() *config.StoreConfig {
+	return &config.StoreConfig{
+		Version:       sp.version,
+		PluginBinDirs: sp.path,
+		Store:         sp.rawConfig,
+	}
 }
