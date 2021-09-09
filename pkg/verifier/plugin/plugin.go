@@ -12,7 +12,7 @@ import (
 	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
 	e "github.com/deislabs/hora/pkg/executor"
 	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
+	rc "github.com/deislabs/hora/pkg/referrerstore/config"
 	"github.com/deislabs/hora/pkg/verifier"
 	"github.com/deislabs/hora/pkg/verifier/config"
 	"github.com/deislabs/hora/pkg/verifier/types"
@@ -82,7 +82,7 @@ func (vp *VerifierPlugin) Name() string {
 func (vp *VerifierPlugin) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStore referrerstore.ReferrerStore,
+	referrerStoreConfig *rc.StoreConfig,
 	executor e.Executor) (verifier.VerifierResult, error) {
 
 	if len(vp.nestedReferences) > 0 {
@@ -110,41 +110,25 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 		}
 	}
 
-	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
-
+	vr, err := vp.verifyReference(ctx, subjectReference, referenceDescriptor, referrerStoreConfig)
 	if err != nil {
 		return verifier.VerifierResult{}, err
 	}
 
-	result := verifier.VerifierResult{Name: vp.name, IsSuccess: true}
-	for _, blobDesc := range referenceManifest.Blobs {
-		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
-		if err != nil {
-			return verifier.VerifierResult{}, err
-		}
-
-		vr, err := vp.verifyReferenceBlob(ctx, subjectReference, refBlob)
-		if err != nil {
-			return verifier.VerifierResult{}, err
-		}
-
-		result.Results = append(result.Results, vr.Results...)
-		if !vr.IsSuccess {
-			result.IsSuccess = false
-			break
-		}
-	}
+	return *vr, nil
 
 	// fmt.Fprintf(vp.ErrWriter,
 	// 	"Verification of [%s]%s completed with status: %v\n",
 	// 	referenceDescriptor.ArtifactType,
 	// 	referenceDescriptor.Digest,
 	// 	result.IsSuccess)
-
-	return result, nil
 }
 
-func (vp *VerifierPlugin) verifyReferenceBlob(ctx context.Context, subjectReference common.Reference, refBlob []byte) (*verifier.VerifierResult, error) {
+func (vp *VerifierPlugin) verifyReference(
+	ctx context.Context,
+	subjectReference common.Reference,
+	referenceDescriptor ocispecs.ReferenceDescriptor,
+	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
 	pluginPath, err := vp.exec.FindInPath(vp.name, vp.path)
 	if err != nil {
 		return nil, err
@@ -158,8 +142,9 @@ func (vp *VerifierPlugin) verifyReferenceBlob(ctx context.Context, subjectRefere
 	}
 
 	inputConfig := config.PluginInputConfig{
-		Config: vp.rawConfig,
-		Blob:   refBlob,
+		Config:       vp.rawConfig,
+		StoreConfig:  *referrerStoreConfig,
+		ReferencDesc: referenceDescriptor,
 	}
 
 	verifierConfigBytes, err := json.Marshal(inputConfig)

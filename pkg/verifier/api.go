@@ -6,7 +6,7 @@ import (
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/executor"
 	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
+	rc "github.com/deislabs/hora/pkg/referrerstore/config"
 )
 
 type VerifierResult struct {
@@ -22,6 +22,6 @@ type ReferenceVerifier interface {
 	Verify(ctx context.Context,
 		subjectReference common.Reference,
 		referenceDescriptor ocispecs.ReferenceDescriptor,
-		referrerStore referrerstore.ReferrerStore,
+		referrerStoreConfig *rc.StoreConfig,
 		executor executor.Executor) (VerifierResult, error)
 }
