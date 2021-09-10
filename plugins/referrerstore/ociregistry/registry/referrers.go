@@ -2,6 +2,7 @@ package registry
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -13,6 +14,10 @@ import (
 )
 
 const unknownSize int64 = -1
+
+var (
+	ReferrersNotSupported = errors.New("Referrers API not supported")
+)
 
 func (c *Client) GetReferrers(ref common.Reference, artifactTypes []string, nextToken string) ([]ocispecs.ReferenceDescriptor, error) {
 	resp, err := c.getReferrers(ref, artifactTypes, nextToken)
@@ -50,6 +55,9 @@ func (c *Client) getReferrers(ref common.Reference, _ []string, _ string) (*ocis
 	}
 
 	refParts := strings.Split(ref.Path, "/")
+	if len(refParts) < 2 {
+		return nil, fmt.Errorf("invalid reference: %v", ref.Original)
+	}
 
 	url := fmt.Sprintf("%s://%s/v2/_ext/oci-artifacts/v1/%s/manifests/%s/references",
 		scheme,
@@ -70,7 +78,9 @@ func (c *Client) getReferrers(ref common.Reference, _ []string, _ string) (*ocis
 	switch resp.StatusCode {
 	case http.StatusOK:
 		// no op
-	case http.StatusUnauthorized, http.StatusNotFound:
+	case http.StatusNotFound:
+		return nil, ReferrersNotSupported
+	case http.StatusUnauthorized:
 		return nil, fmt.Errorf("%v: %s", ref.Original, resp.Status)
 	default:
 		return nil, fmt.Errorf("%v: %s", ref.Original, resp.Status)

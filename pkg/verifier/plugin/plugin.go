@@ -85,6 +85,7 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	referrerStoreConfig *rc.StoreConfig,
 	executor e.Executor) (verifier.VerifierResult, error) {
 
+	var nestedResults []verifier.VerifierResult
 	if len(vp.nestedReferences) > 0 {
 		verifyParameters := e.VerifyParameters{
 			Subject:        fmt.Sprintf("%s@%s", subjectReference.Path, referenceDescriptor.Digest),
@@ -96,16 +97,23 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 			return verifier.VerifierResult{}, err
 		}
 
-		encodedResults, err := json.Marshal(nestedVerifyResult.VerifierReports)
+		for _, vr := range nestedVerifyResult.VerifierReports {
+			if result, ok := vr.(verifier.VerifierResult); ok {
+				nestedResults = append(nestedResults, result)
+			}
+		}
+
+		/*encodedResults, err := json.Marshal(nestedVerifyResult.VerifierReports)
 		if err != nil {
 			return verifier.VerifierResult{}, err
-		}
+		}*/
 		if !nestedVerifyResult.IsSuccess {
 			return verifier.VerifierResult{
-				Subject:   subjectReference.Original,
-				IsSuccess: false,
-				Name:      vp.name,
-				Results:   []string{string(encodedResults)},
+				Subject:       subjectReference.Original,
+				IsSuccess:     false,
+				Name:          vp.name,
+				Results:       []string{"nested verification failed"},
+				NestedResults: nestedResults,
 			}, nil
 		}
 	}
@@ -114,6 +122,8 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	if err != nil {
 		return verifier.VerifierResult{}, err
 	}
+
+	vr.NestedResults = nestedResults
 
 	return *vr, nil
 
