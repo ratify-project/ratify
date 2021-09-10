@@ -7,6 +7,7 @@ import (
 type Reference struct {
 	Path     string
 	Digest   digest.Digest
+	Tag      string
 	Original string
 }
 
