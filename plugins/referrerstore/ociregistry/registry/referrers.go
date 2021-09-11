@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
@@ -54,15 +53,12 @@ func (c *Client) getReferrers(ref common.Reference, _ []string, _ string) (*ocis
 		scheme = "http"
 	}
 
-	refParts := strings.Split(ref.Path, "/")
-	if len(refParts) < 2 {
-		return nil, fmt.Errorf("invalid reference: %v", ref.Original)
-	}
+	reg, repo := GetRegistryRepoString(ref.Path)
 
 	url := fmt.Sprintf("%s://%s/v2/_ext/oci-artifacts/v1/%s/manifests/%s/references",
 		scheme,
-		refParts[0],
-		refParts[1],
+		reg,
+		repo,
 		ref.Digest.String(),
 	)
 	req, err := http.NewRequest(http.MethodGet, url, nil)

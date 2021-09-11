@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
@@ -17,7 +16,8 @@ import (
 )
 
 const (
-	MediaTypeManifest = "application/vnd.docker.distribution.manifest.v2+json"
+	MediaTypeManifest     = "application/vnd.docker.distribution.manifest.v2+json"
+	MediaTypeManifestList = "application/vnd.docker.distribution.manifest.list.v2+json"
 )
 
 var (
@@ -45,7 +45,7 @@ func (c *Client) GetReferenceManifest(ref common.Reference) (ocispecs.ReferenceM
 }
 
 func (c *Client) GetManifestMetadata(ref common.Reference) (oci.Descriptor, error) {
-	return c.getManifestMetadata(ref, oci.MediaTypeImageManifest, MediaTypeManifest)
+	return c.getManifestMetadata(ref, oci.MediaTypeImageManifest, MediaTypeManifest, MediaTypeManifestList, oci.MediaTypeImageIndex)
 }
 
 func (c *Client) getManifest(ref common.Reference, mediaTypes ...string) ([]byte, *oci.Descriptor, error) {
@@ -54,12 +54,12 @@ func (c *Client) getManifest(ref common.Reference, mediaTypes ...string) ([]byte
 		scheme = "http"
 	}
 
-	refParts := strings.Split(ref.Path, "/")
+	reg, repo := GetRegistryRepoString(ref.Path)
 
 	url := fmt.Sprintf("%s://%s/v2/%s/manifests/%s",
 		scheme,
-		refParts[0],
-		refParts[1],
+		reg,
+		repo,
 		ref.Digest.String(),
 	)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -127,7 +127,7 @@ func (c *Client) getManifestMetadata(ref common.Reference, mediaTypes ...string)
 		scheme = "http"
 	}
 
-	refParts := strings.Split(ref.Path, "/")
+	reg, repo := GetRegistryRepoString(ref.Path)
 
 	reference := ref.Tag
 	if reference == "" {
@@ -135,8 +135,8 @@ func (c *Client) getManifestMetadata(ref common.Reference, mediaTypes ...string)
 	}
 	url := fmt.Sprintf("%s://%s/v2/%s/manifests/%s",
 		scheme,
-		refParts[0],
-		refParts[1],
+		reg,
+		repo,
 		reference,
 	)
 
