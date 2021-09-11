@@ -11,17 +11,7 @@ import (
 	"github.com/deislabs/hora/pkg/referrerstore"
 	"github.com/deislabs/hora/pkg/referrerstore/plugin/skel"
 	"github.com/deislabs/hora/plugins/referrerstore/ociregistry/registry"
-	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
-	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sigstore/cosign/pkg/cosign"
-)
-
-const (
-	CosignArtifactType = "org.sigstore.cosign.v1"
-	regRepoDelimiter   = "/"
-	dDefaultRegistry   = "index.docker.io"
 )
 
 // Detect the loopback IP (127.0.0.1)
@@ -110,7 +100,7 @@ func createRegistryClient(args *skel.CmdArgs, path string) (*registry.Client, *P
 		return nil, nil, fmt.Errorf("auth provider %s is not supported", conf.AuthProvider)
 	}
 
-	registryStr := getRegistryString(path)
+	registryStr, _ := registry.GetRegistryRepoString(path)
 	authConfig, err := registry.DefaultAuthProvider.Provide(registryStr)
 	if err != nil {
 		return nil, nil, err
@@ -124,58 +114,6 @@ func createRegistryClient(args *skel.CmdArgs, path string) (*registry.Client, *P
 		),
 		isInsecureRegistry(registryStr, conf),
 	), conf, nil
-}
-
-func getCosignReferences(client *registry.Client, subjectReference common.Reference) (*[]ocispecs.ReferenceDescriptor, error) {
-	var references []ocispecs.ReferenceDescriptor
-	ref, err := name.ParseReference(subjectReference.Original)
-	if err != nil {
-		return nil, err
-	}
-	hash := v1.Hash{
-		Algorithm: subjectReference.Digest.Algorithm().String(),
-		Hex:       subjectReference.Digest.Hex(),
-	}
-	signatureTag := cosign.AttachedImageTag(ref.Context(), hash, cosign.SignatureTagSuffix)
-	tagRef := common.Reference{
-		Path: subjectReference.Path,
-		Tag:  signatureTag.TagStr(),
-	}
-	desc, err := client.GetManifestMetadata(tagRef)
-
-	if err != nil && err != registry.ManifestNotFound {
-		return nil, err
-	}
-
-	if err == nil {
-		references = append(references, ocispecs.ReferenceDescriptor{
-			ArtifactType: CosignArtifactType,
-			Descriptor: oci.Descriptor{
-				MediaType: desc.MediaType,
-				Digest:    desc.Digest,
-				Size:      desc.Size,
-			},
-		})
-	}
-
-	return &references, nil
-}
-
-func getRegistryString(path string) string {
-	var registry string
-	parts := strings.SplitN(path, regRepoDelimiter, 2)
-	if len(parts) == 2 && (strings.ContainsRune(parts[0], '.') || strings.ContainsRune(parts[0], ':')) {
-		// The first part of the repository is treated as the registry domain
-		// iff it contains a '.' or ':' character, otherwise it is all repository
-		// and the domain defaults to Docker Hub.
-		registry = parts[0]
-	}
-
-	if registry == "" {
-		return dDefaultRegistry
-	}
-
-	return registry
 }
 
 func isInsecureRegistry(registry string, config *PluginConf) bool {
