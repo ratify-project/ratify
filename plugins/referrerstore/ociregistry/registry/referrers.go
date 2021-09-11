@@ -2,9 +2,9 @@ package registry
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
@@ -13,6 +13,10 @@ import (
 )
 
 const unknownSize int64 = -1
+
+var (
+	ReferrersNotSupported = errors.New("Referrers API not supported")
+)
 
 func (c *Client) GetReferrers(ref common.Reference, artifactTypes []string, nextToken string) ([]ocispecs.ReferenceDescriptor, error) {
 	resp, err := c.getReferrers(ref, artifactTypes, nextToken)
@@ -49,12 +53,12 @@ func (c *Client) getReferrers(ref common.Reference, _ []string, _ string) (*ocis
 		scheme = "http"
 	}
 
-	refParts := strings.Split(ref.Path, "/")
+	reg, repo := GetRegistryRepoString(ref.Path)
 
 	url := fmt.Sprintf("%s://%s/v2/_ext/oci-artifacts/v1/%s/manifests/%s/references",
 		scheme,
-		refParts[0],
-		refParts[1],
+		reg,
+		repo,
 		ref.Digest.String(),
 	)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
@@ -70,7 +74,9 @@ func (c *Client) getReferrers(ref common.Reference, _ []string, _ string) (*ocis
 	switch resp.StatusCode {
 	case http.StatusOK:
 		// no op
-	case http.StatusUnauthorized, http.StatusNotFound:
+	case http.StatusNotFound:
+		return nil, ReferrersNotSupported
+	case http.StatusUnauthorized:
 		return nil, fmt.Errorf("%v: %s", ref.Original, resp.Status)
 	default:
 		return nil, fmt.Errorf("%v: %s", ref.Original, resp.Status)

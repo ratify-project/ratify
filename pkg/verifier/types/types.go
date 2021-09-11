@@ -32,6 +32,7 @@ const (
 type VerifierResult struct {
 	IsSuccess bool     `json:"isSuccess"`
 	Results   []string `json:"results"`
+	Name      string   `json:"name"`
 }
 
 func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
@@ -42,6 +43,7 @@ func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 	return &verifier.VerifierResult{
 		IsSuccess: vResult.IsSuccess,
 		Results:   vResult.Results,
+		Name:      vResult.Name,
 	}, nil
 }
 

@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/opencontainers/go-digest"
@@ -29,12 +28,12 @@ func (c *Client) getReferenceBlob(ref common.Reference, blobDigest digest.Digest
 		scheme = "http"
 	}
 
-	refParts := strings.Split(ref.Path, "/")
+	reg, repo := GetRegistryRepoString(ref.Path)
 
 	url := fmt.Sprintf("%s://%s/v2/%s/blobs/%s",
 		scheme,
-		refParts[0],
-		refParts[1],
+		reg,
+		repo,
 		blobDigest.String(),
 	)
 	req, err := http.NewRequest(http.MethodGet, url, nil)
