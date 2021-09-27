@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: wabbit-networks-crt
+data:
+  wabbit-networks.crt: <base64 encode of crt file contents>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hora
+  labels:
+    app: hora
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: hora
+  template:
+    metadata:
+      labels:
+        app: hora
+    spec:
+      containers:
+        - name: hora
+          image: deislabs/hora:v1
+          imagePullPolicy: Never #to access the local registry for the image
+          ports:
+            - containerPort: 6001
+          volumeMounts:
+          - mountPath: "/usr/local/wa-certs"
+            name: wabbit-networks-crt
+            readOnly: true
+      volumes:
+        - name: wabbit-networks-crt
+          secret:
+            secretName: wabbit-networks-crt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hora-svc
+  labels:
+    app: hora
+spec:
+  type: ClusterIP
+  selector:
+    app: hora
+  ports:
+      # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
+    - port: 6001
+      targetPort: 6001
