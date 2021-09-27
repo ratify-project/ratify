@@ -22,6 +22,9 @@ func New(use, short string) *cobra.Command {
 
 	root.AddCommand(NewCmdReferrer(use, referrerUse))
 	root.AddCommand(NewCmdVerify(use, verifyUse))
+	root.AddCommand(NewCmdServe(use, serveUse))
+	root.AddCommand(NewCmdDiscover(use, discoverUse))
+
 	// TODO debug logging
 	return root
 }

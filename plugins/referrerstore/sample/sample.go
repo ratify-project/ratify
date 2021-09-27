@@ -6,7 +6,6 @@ import (
 	"github.com/deislabs/hora/pkg/referrerstore"
 	"github.com/deislabs/hora/pkg/referrerstore/plugin/skel"
 	"github.com/opencontainers/go-digest"
-	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func main() {
@@ -31,5 +30,5 @@ func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, diges
 }
 
 func GetReferenceManifest(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error) {
-	return ocispecs.ReferenceManifest{SubjectDecriptor: oci.Descriptor{MediaType: "testMediaType"}}, nil
+	return ocispecs.ReferenceManifest{MediaType: "testMediaType", ArtifactType: "testArtifactType"}, nil
 }
