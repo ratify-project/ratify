@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
@@ -13,15 +14,22 @@ import (
 )
 
 type PluginConfig struct {
-	Name string `json:"name"`
+	Name             string `json:"name"`
+	AlpineMinVersion string `json:"alpineMinVersion"`
 }
 
 type PluginInputConfig struct {
 	Config PluginConfig `json:"config"`
 }
 
+type PackageInfo struct {
+	Name    string `json:"name,omitempty"`
+	Version string `json:"versionInfo,omitempty"`
+}
+
 type SbomContents struct {
-	Contents string `json:"contents"`
+	Contents string        `json:"contents"`
+	Packages []PackageInfo `json:"packages,omitempty"`
 }
 
 func main() {
@@ -57,23 +65,26 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			return nil, err
 		}
 
-		var content SbomContents
-		if err := json.Unmarshal(refBlob, &content); err != nil {
+		var sbomBlob SbomContents
+		if err := json.Unmarshal(refBlob, &sbomBlob); err != nil {
 			return nil, fmt.Errorf("failed to parse sbom: %v", err)
 		}
 
-		if content.Contents == "good" {
-			return &verifier.VerifierResult{
-				Name:      input.Name,
-				IsSuccess: true,
-				Results:   []string{fmt.Sprintf("SBOM verification completed. contents %s", content.Contents)},
-			}, nil
+		for _, p := range sbomBlob.Packages {
+			if strings.HasPrefix(p.Name, "alpine-base") && p.Version < input.AlpineMinVersion {
+				return &verifier.VerifierResult{
+					Name:      input.Name,
+					IsSuccess: false,
+					Results:   []string{fmt.Sprintf("SBOM verification failed. The artifact has base image 'alpine' with version below '%s' and not compliant.", input.AlpineMinVersion)},
+				}, nil
+			}
 		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
-		IsSuccess: false,
-		Results:   []string{fmt.Sprintf("SBOM verification completed. verification failed.")},
+		IsSuccess: true,
+		Results:   []string{"SBOM verification success."},
 	}, nil
+
 }

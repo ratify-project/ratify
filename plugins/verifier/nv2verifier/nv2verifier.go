@@ -83,7 +83,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 				Subject:   subjectReference.String(),
 				Name:      input.Name,
 				IsSuccess: false,
-				Results:   []string{fmt.Sprintf("%v", err)},
+				Results:   []string{fmt.Sprintf("signature verification failed: %v", err)},
 			}, nil
 		}
 	}
@@ -91,7 +91,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: true,
-		Results:   []string{"Notary verification success"},
+		Results:   []string{"signature verification success"},
 	}, nil
 }
 

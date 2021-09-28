@@ -2,33 +2,13 @@ package utils
 
 import (
 	"fmt"
-	"strings"
 
 	_ "crypto/sha256"
 
 	"github.com/deislabs/hora/pkg/common"
+	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
-
-func ParseSubjectReference(subRef string) (common.Reference, error) {
-	referenceParts := strings.Split(subRef, "@")
-
-	if len(referenceParts) != 2 {
-		return common.Reference{}, fmt.Errorf("Subject reference %s should be a reference with Digest", subRef)
-	}
-
-	digest, err := digest.Parse(referenceParts[1])
-	if err != nil {
-		return common.Reference{}, fmt.Errorf("The digest of the subject is invalid %s %v", referenceParts[1], err)
-	}
-
-	// TODO switch to using distribution Reference object with Named and Path
-	return common.Reference{
-		Path:     referenceParts[0],
-		Digest:   digest,
-		Original: subRef,
-	}, nil
-}
 
 func ParseDigest(digestStr string) (digest.Digest, error) {
 
@@ -40,7 +20,7 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 	return digest, nil
 }
 
-/*func ParseSubjectReference(subRef string) (common.Reference, error) {
+func ParseSubjectReference(subRef string) (common.Reference, error) {
 	parseResult, err := reference.Parse(subRef)
 	if err != nil {
 		return common.Reference{}, fmt.Errorf("failed to parse subject reference %v", err)
@@ -49,7 +29,7 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 	var subjectRef common.Reference
 
 	if named, ok := parseResult.(reference.Named); ok {
-		subjectRef.Path = named
+		subjectRef.Path = named.Name()
 	} else {
 		return common.Reference{}, fmt.Errorf("failed to parse subject reference Path")
 	}
@@ -60,5 +40,11 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 		return common.Reference{}, fmt.Errorf("failed to parse subject reference digest")
 	}
 
+	if tag, ok := parseResult.(reference.Tagged); ok {
+		subjectRef.Tag = tag.Tag()
+	}
+
+	subjectRef.Original = subRef
+
 	return subjectRef, nil
-}*/
+}
