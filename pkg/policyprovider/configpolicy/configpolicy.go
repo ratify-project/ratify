@@ -23,8 +23,9 @@ func (enforcer PolicyEnforcer) ContinueVerifyOnFailure(ctx context.Context, subj
 
 func (enforcer PolicyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult {
 	errorReport := verifier.VerifierResult{
+		Subject:   subjectRefString,
 		IsSuccess: false,
-		Results:   []string{fmt.Sprintf("error in the verification process %v", verifyError)},
+		Results:   []string{fmt.Sprintf("verification failed: %v", verifyError)},
 	}
 
 	// TODO  Look for better writing this code segment.

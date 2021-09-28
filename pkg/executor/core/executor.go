@@ -40,6 +40,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 
 	var verifierReports []interface{}
+	allVerifySuccess := true
 
 	for _, referrerStore := range executor.ReferrerStores {
 		var continuationToken string
@@ -59,6 +60,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 					verifierReports = append(verifierReports, verifyResult.VerifierReports...)
 
 					if !verifyResult.IsSuccess {
+						allVerifySuccess = false
 						result := types.VerifyResult{IsSuccess: false, VerifierReports: verifierReports}
 						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) {
 							return result, nil
@@ -78,7 +80,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		return types.VerifyResult{}, ReferrersNotFound
 	}
 
-	return types.VerifyResult{IsSuccess: true, VerifierReports: verifierReports}, nil
+	return types.VerifyResult{IsSuccess: allVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
 func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {

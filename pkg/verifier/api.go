@@ -10,11 +10,11 @@ import (
 )
 
 type VerifierResult struct {
-	Subject       string
-	IsSuccess     bool
-	Name          string
-	Results       []string
-	NestedResults []VerifierResult
+	Subject       string           `json:"subject,omitempty"`
+	IsSuccess     bool             `json:"isSuccess,omitempty"`
+	Name          string           `json:"name,omitempty"`
+	Results       []string         `json:"results,omitempty"`
+	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
 }
 
 type ReferenceVerifier interface {
