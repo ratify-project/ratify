@@ -2,12 +2,31 @@ package factory
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/deislabs/hora/pkg/referrerstore"
 	"github.com/deislabs/hora/pkg/referrerstore/config"
 	"github.com/deislabs/hora/pkg/referrerstore/plugin"
 	"github.com/deislabs/hora/pkg/referrerstore/types"
 )
+
+var builtInStores = make(map[string]StoreFactory)
+
+type StoreFactory interface {
+	Create(version string, storesConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error)
+}
+
+func Register(name string, factory StoreFactory) {
+	if factory == nil {
+		panic("Store factor cannot be nil")
+	}
+	_, registered := builtInStores[name]
+	if registered {
+		panic(fmt.Sprintf("store factory named %s already registered", name))
+	}
+
+	builtInStores[name] = factory
+}
 
 func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath string) ([]referrerstore.ReferrerStore, error) {
 	if storesConfig.Version == "" {
@@ -29,13 +48,29 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 		storesConfig.PluginBinDirs = []string{defaultPluginPath}
 	}
 	for _, storeConfig := range storesConfig.Stores {
-		store, err := plugin.NewStore(storesConfig.Version, storeConfig, append(storesConfig.PluginBinDirs, defaultPluginPath))
-
-		if err != nil {
-			return nil, err
+		storeName, ok := storeConfig[types.Name]
+		if !ok {
+			return nil, fmt.Errorf("failed to find store name in the stores config with key %s", "name")
 		}
 
-		stores = append(stores, store)
+		storeFactory, ok := builtInStores[fmt.Sprintf("%s", storeName)]
+		if ok {
+			store, err := storeFactory.Create(storesConfig.Version, storeConfig)
+
+			if err != nil {
+				return nil, err
+			}
+
+			stores = append(stores, store)
+		} else {
+			store, err := plugin.NewStore(storesConfig.Version, storeConfig, append(storesConfig.PluginBinDirs, defaultPluginPath))
+
+			if err != nil {
+				return nil, err
+			}
+
+			stores = append(stores, store)
+		}
 	}
 
 	return stores, nil
