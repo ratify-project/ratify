@@ -3,7 +3,7 @@ package oras
 import (
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/plugins/referrerstore/ociregistry/registry"
+	"github.com/deislabs/hora/pkg/referrerstore/oras/registry"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
