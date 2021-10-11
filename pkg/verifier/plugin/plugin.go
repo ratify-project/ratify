@@ -12,6 +12,7 @@ import (
 	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
 	e "github.com/deislabs/hora/pkg/executor"
 	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/hora/pkg/referrerstore"
 	rc "github.com/deislabs/hora/pkg/referrerstore/config"
 	"github.com/deislabs/hora/pkg/verifier"
 	"github.com/deislabs/hora/pkg/verifier/config"
@@ -82,7 +83,7 @@ func (vp *VerifierPlugin) Name() string {
 func (vp *VerifierPlugin) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStoreConfig *rc.StoreConfig,
+	store referrerstore.ReferrerStore,
 	executor e.Executor) (verifier.VerifierResult, error) {
 
 	var nestedResults []verifier.VerifierResult
@@ -118,6 +119,7 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 		}
 	}
 
+	referrerStoreConfig := store.GetConfig()
 	vr, err := vp.verifyReference(ctx, subjectReference, referenceDescriptor, referrerStoreConfig)
 	if err != nil {
 		return verifier.VerifierResult{}, err
