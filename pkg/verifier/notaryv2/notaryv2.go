@@ -15,7 +15,7 @@ import (
 	"github.com/deislabs/hora/pkg/verifier"
 	"github.com/deislabs/hora/pkg/verifier/config"
 	"github.com/deislabs/hora/pkg/verifier/factory"
-	l "github.com/deislabs/hora/plugins/verifier/nv2verifier/local"
+	l "github.com/deislabs/hora/pkg/verifier/notaryv2/local"
 	"github.com/docker/libtrust"
 	"github.com/notaryproject/notary/v2"
 

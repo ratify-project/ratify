@@ -33,8 +33,6 @@ go build -o ~/bin ./cmd/hora
 - Build the ```hora``` plugins and install them in the home directory
 
 ```
-go build -o ~/.hora/plugins ./plugins/referrerstore/ociregistry
-go build -o ~/.hora/plugins ./plugins/verifier/nv2verifier
 go build -o ~/.hora/plugins ./plugins/verifier/sbom
 ```
 
