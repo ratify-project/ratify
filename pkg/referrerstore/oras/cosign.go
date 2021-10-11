@@ -1,4 +1,4 @@
-package main
+package oras
 
 import (
 	"github.com/deislabs/hora/pkg/common"

@@ -3,7 +3,7 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "ociregistry",
+                "name": "oras",
                 "useHttp": true
             }
         ]
@@ -12,7 +12,7 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name":"nv2verifier",
+                "name":"notaryv2",
                 "artifactTypes" : "org.cncf.notary.v2",
                 "verificationCerts": [
                     "<cert folder>"
