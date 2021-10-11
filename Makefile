@@ -9,8 +9,6 @@ build-cli:
 
 
 build-plugins: 
-	go build -o ./bin/plugins/ ./plugins/referrerstore/ociregistry
-	go build -o ./bin/plugins/ ./plugins/verifier/nv2verifier
 	go build -o ./bin/plugins/ ./plugins/verifier/sbom
 
 install: 

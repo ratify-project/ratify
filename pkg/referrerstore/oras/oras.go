@@ -12,7 +12,7 @@ import (
 	"github.com/deislabs/hora/pkg/referrerstore"
 	"github.com/deislabs/hora/pkg/referrerstore/config"
 	"github.com/deislabs/hora/pkg/referrerstore/factory"
-	"github.com/deislabs/hora/plugins/referrerstore/ociregistry/registry"
+	"github.com/deislabs/hora/pkg/referrerstore/oras/registry"
 	"github.com/opencontainers/go-digest"
 )
 
