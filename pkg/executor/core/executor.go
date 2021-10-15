@@ -40,7 +40,10 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 
 	var verifierReports []interface{}
-	allVerifySuccess := true
+	anyVerifySuccess := map[string]bool{}
+	for _, referenceType := range verifyParameters.ReferenceTypes {
+		anyVerifySuccess[referenceType] = false
+	}
 
 	for _, referrerStore := range executor.ReferrerStores {
 		var continuationToken string
@@ -60,11 +63,12 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 					verifierReports = append(verifierReports, verifyResult.VerifierReports...)
 
 					if !verifyResult.IsSuccess {
-						allVerifySuccess = false
 						result := types.VerifyResult{IsSuccess: false, VerifierReports: verifierReports}
 						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) {
 							return result, nil
 						}
+					} else {
+						anyVerifySuccess[reference.ArtifactType] = true
 					}
 				}
 			}
@@ -80,7 +84,14 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		return types.VerifyResult{}, ReferrersNotFound
 	}
 
-	return types.VerifyResult{IsSuccess: allVerifySuccess, VerifierReports: verifierReports}, nil
+	overallVerifySuccess := true
+	for _, referenceType := range verifyParameters.ReferenceTypes {
+		if anyVerifySuccess[referenceType] == false {
+			overallVerifySuccess = false
+		}
+	}
+
+	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
 func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
