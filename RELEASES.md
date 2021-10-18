@@ -30,11 +30,11 @@ When a patch release is required, the patch commits should be merged with the `m
 
 ### Minor releases
 
-When a minor release is required, the patch commits should be merged with the `main` branch when ready.  Then a new branch should be created with the minor version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.1`, the branch could be named `v0.2.0` or `v0.2.0-rc1`.  Pre-releases will be more common will be more common with minor releases.
+When a minor release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the minor version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.1`, the branch could be named `v0.2.0` or `v0.2.0-rc1`.  Pre-releases will be more common will be more common with minor releases.
 
 ### Major releases
 
-When a patch release is required, the patch commits should be merged with the `main` branch when ready.  Then a new branch should be created with the major version incremented and optional pre-release specifiers.  For example if the previous release was `v1.1.1`, the branch could be named `v2.0.0` or `v2.0.0-alpha`.  Major versions will usually include multiple pre-release versions.
+When a major release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the major version incremented and optional pre-release specifiers.  For example if the previous release was `v1.1.1`, the branch could be named `v2.0.0` or `v2.0.0-alpha`.  Major versions will usually require multiple pre-release versions.
 
 ### Tag and Release
 
