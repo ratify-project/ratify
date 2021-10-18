@@ -88,6 +88,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	for _, referenceType := range verifyParameters.ReferenceTypes {
 		if anyVerifySuccess[referenceType] == false {
 			overallVerifySuccess = false
+			break
 		}
 	}
 
