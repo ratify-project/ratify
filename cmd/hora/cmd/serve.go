@@ -65,10 +65,18 @@ func serve(opts serveCmdOptions) error {
 
 	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
 
+	policyEnforcer, err := pf.CreatePolicyEnforcerFromConfig(cf.PoliciesConfig)
+
+	if err != nil {
+		return err
+	}
+
+	logrus.Infof("policies successfully created.")
+
 	executor := ef.Executor{
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
-		PolicyEnforcer: pf.PolicyEnforcer{},
+		PolicyEnforcer: policyEnforcer,
 	}
 
 	if opts.httpServerAddress != "" {
