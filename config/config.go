@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/deislabs/hora/pkg/homedir"
+	pcConfig "github.com/deislabs/hora/pkg/policyprovider/config"
 	rsConfig "github.com/deislabs/hora/pkg/referrerstore/config"
 	vfConfig "github.com/deislabs/hora/pkg/verifier/config"
 )
@@ -22,6 +23,7 @@ const (
 
 type Config struct {
 	StoresConfig    rsConfig.StoresConfig    `json:"stores,omitempty"`
+	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policies,omitempty"`
 	VerifiersConfig vfConfig.VerifiersConfig `json:"verifiers,omitempty"`
 }
 

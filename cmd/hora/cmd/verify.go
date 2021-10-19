@@ -75,10 +75,16 @@ func verify(opts verifyCmdOptions) error {
 		return err
 	}
 
+	policyEnforcer, err := pf.CreatePolicyEnforcerFromConfig(cf.PoliciesConfig)
+
+	if err != nil {
+		return err
+	}
+
 	executor := ef.Executor{
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
-		PolicyEnforcer: pf.PolicyEnforcer{},
+		PolicyEnforcer: policyEnforcer,
 	}
 
 	verifyParameters := e.VerifyParameters{
