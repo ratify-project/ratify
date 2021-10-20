@@ -24,6 +24,9 @@ builds:
       - linux
       - windows
       - darwin
+release:
+  prerelease: auto
+  draft: true
 archives:
   - replacements:
       darwin: Darwin
