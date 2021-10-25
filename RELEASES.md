@@ -14,11 +14,11 @@ The specification release process was created using content and verbiage from th
 ## Versioning
 
 The Hora project follows [semantic versioning](https://semver.org/) beginning with version `v0.1.0`.  Pre-release versions may be specified with a dash after the patch version and the following specifiers (in the order of release readiness):
-* `alpha`
-* `beta`
+* `alpha1`, `alpha2`, etc.
+* `beta1`, `beta2`, etc.
 * `rc1`, `rc2`, `rc3`, etc.
 
-Example pre-release versions include `v0.1.0-alpha`, `v0.1.0-beta`, `v0.1.0-rc1`.  Pre-release versions are not required and stages can be bypassed (i.e. an `alpha` release does not require a `beta` release).  `rc` releases must be in order and gaps are not allowed (i.e. the only releases that can follow `rc1` are the full release or `rc2`).
+Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc3`.  Pre-release versions are not required and stages can be bypassed (i.e. an `alpha` release does not require a `beta` release).  Pre-releases must be in order and gaps are not allowed (i.e. the only releases that can follow `rc1` are the full release or `rc2`).
 
 ## Git Release Flow
 
@@ -26,21 +26,21 @@ This section deals with the practical considerations of versioning in Git, this 
 
 ### Patch releases
 
-When a patch release is required, the patch commits should be merged with the `main` branch when ready.  Then a new branch should be created with the patch version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.0`, the branch could be named `v0.1.1` or `v0.1.1-rc1`.  The limited nature of fixes in a patch release should mean pre-releases can often be omitted.
+When a patch release is required, the patch commits should be merged with the `main` branch when ready.  Then a new branch should be created with the patch version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.0`, the branch should be named `v0.1.1` and can optionally be suffixed with a pre-release (e.g. `v0.1.1-rc1`).  The limited nature of fixes in a patch release should mean pre-releases can often be omitted.
 
 ### Minor releases
 
-When a minor release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the minor version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.1`, the branch could be named `v0.2.0` or `v0.2.0-rc1`.  Pre-releases will be more common will be more common with minor releases.
+When a minor release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the minor version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.1`, the branch should be named `v0.2.0` and can optionally be suffixed with a pre-release (e.g. `v0.2.0-beta1`).  Pre-releases will be more common will be more common with minor releases.
 
 ### Major releases
 
-When a major release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the major version incremented and optional pre-release specifiers.  For example if the previous release was `v1.1.1`, the branch could be named `v2.0.0` or `v2.0.0-alpha`.  Major versions will usually require multiple pre-release versions.
+When a major release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the major version incremented and optional pre-release specifiers.  For example if the previous release was `v1.1.1`, the branch should be named `v2.0.0` and can optionally be suffixed with a pre-release (e.g. `v2.0.0-alpha1`).  Major versions will usually require multiple pre-release versions.
 
 ### Tag and Release
 
-When the release branch is ready, at tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha` and `git push origin v0.1.0-alpha`.  This allows the creation of a release in GitHub (these steps are currently manual but are expected to be automated.)  See [GitHub Release](https://help.github.com/articles/creating-releases/).
-* All releases before `v1.0.0` are pre-release.  After `v1.0.0` only versions with pre-release versions are pre-release.
-* Find the correct commit ids and use the following to generate release notes:  `git log --no-merges --pretty=format:'- %s %H (%aN)' previous_release_commit..release_commit`
-* Add release notes as the description field.  This field supports Markdown.
-* Add pre-built binaries as tarball built from commit hash at the head of the release branch.
-    * The file should be named `hora-<major>-<minor>-<patch>-<ARCH>.tar.gz`
+When the release branch is ready, a tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
+* The release will be marked as a draft to allow an final editing before publishing.
+* The release notes and other fields can edited after the action completes.  The description can be in Markdown.
+* The pre-release flag will be set for any release with a pre-release specifier.
+* The pre-built binaries are built from commit at the head of the release branch.
+    * The files are named `hora_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.
