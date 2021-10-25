@@ -379,7 +379,7 @@ policy:
 
 This query can help with customizing the flow of the workflow for a given reference or artifact based on multiple conditions.
 
-#### Example
+#### Example 1
 
 Teams can choose to continue verification even if certain verifiers fails with certain types(or all) of errors especially  during testing or break glass scenarios.
 
@@ -421,7 +421,45 @@ policy:
         }
     
 ```
+#### Example 2
+Teams usually configure verifiers for different reference types. To invoke a verifier, the executor queries for the artifacts of type(s) that are configured for that verifier. If no artifacts of that type exist in the store, the executor can throw a well defined error **REFERRERS_NOT_FOUND** for example.  By default, when a verifier is configured with the framework, the executor ensures that the corresponding artifact type should be present in the store else it fails the verification. However, teams can choose to ignore the absence of certain artifact types for a subject through a policy.
 
+*Configuration*
+```yaml=
+policy:
+    type: config
+    continueOnErrors:
+        - name : "sbom"
+          errorCodes: ["REFERRERS_NOT_FOUND"]
+          matchingArtifacts: [*.azurecr.io]
+```
+
+*OPA*
+```yaml=
+policy:
+    type: config
+    rego: |
+        package hora.rules
+        
+        continue_workflow {
+            not any_failed
+        }        
+        continue_workflow {
+           is_SBOMs_not_found_ACR
+        }
+        any_failed {
+        	input.results[_].isSuccess == "false"
+        }
+        
+        is_SBOMs_not_found_ACR {
+            regex.match(".+.azurecr.io$", input.subject)
+            result := input.results[_]
+            input.verifier.name == "sbom"
+            input.verifier.artifactTypes[_] == result.artifactType
+            result.error.code == "REFERRERS_NOT_FOUND"
+        }
+    
+```
 ### Query 5: Determining the final outcome of the verification using the results from multiple verifiers
 
 This query will help with consolidating the outcomes from all verifiers to an aggregated result that will be used in admission controllers
