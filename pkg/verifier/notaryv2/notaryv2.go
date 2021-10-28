@@ -15,11 +15,10 @@ import (
 	"github.com/deislabs/hora/pkg/verifier"
 	"github.com/deislabs/hora/pkg/verifier/config"
 	"github.com/deislabs/hora/pkg/verifier/factory"
-	l "github.com/deislabs/hora/pkg/verifier/notaryv2/local"
-	"github.com/docker/libtrust"
-	"github.com/notaryproject/notary/v2"
 
-	x509nv2 "github.com/notaryproject/notary/v2/signature/x509"
+	"github.com/notaryproject/notation-go-lib"
+	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
+	"github.com/notaryproject/notation-go-lib/signature/jws"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -34,8 +33,8 @@ type NotaryV2VerifierConfig struct {
 }
 
 type notaryV2Verifier struct {
-	signingService notary.SigningService
-	artifactTypes  []string
+	artifactTypes    []string
+	notationVerifier *jws.Verifier
 }
 
 type notaryv2VerifierFactory struct{}
@@ -63,12 +62,12 @@ func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.V
 
 	artifactTypes := strings.Split(fmt.Sprintf("%s", conf.ArtifactTypes), ",")
 
-	vservice, err := getSigningService("", conf.VerificationCerts...)
+	verfiyService, err := getVerifierService(conf.VerificationCerts...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &notaryV2Verifier{signingService: vservice, artifactTypes: artifactTypes}, nil
+	return &notaryV2Verifier{artifactTypes: artifactTypes, notationVerifier: verfiyService}, nil
 }
 
 func (v *notaryV2Verifier) Name() string {
@@ -107,14 +106,19 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 			return verifier.VerifierResult{}, err
 		}
 
-		_, err = v.signingService.Verify(context.Background(), desc, refBlob)
+		var opts notation.VerifyOptions
+		vdesc, err := v.notationVerifier.Verify(context.Background(), refBlob, opts)
 		if err != nil {
+			return verifier.VerifierResult{}, err
+		}
+
+		// TODO get the subject descriptor and verify all the properties other than digest.
+		if desc.Digest != desc.Digest {
 			return verifier.VerifierResult{
 				Subject:   subjectReference.String(),
 				Name:      verifierName,
 				IsSuccess: false,
-				Results:   []string{fmt.Sprintf("signature verification failed: %v", err)},
-			}, nil
+				Results:   []string{fmt.Sprintf("verification failure: digest mismatch: %v: %v", desc.Digest, vdesc.Digest)}}, nil
 		}
 	}
 
@@ -125,31 +129,18 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	}, nil
 }
 
-func getSigningService(keyPath string, certPaths ...string) (notary.SigningService, error) {
-	var (
-		key         libtrust.PrivateKey
-		commonCerts []*x509.Certificate
-		rootCerts   *x509.CertPool
-		err         error
-	)
-	if keyPath != "" {
-		key, err = x509nv2.ReadPrivateKeyFile(keyPath)
+func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
+	roots := x509.NewCertPool()
+	for _, path := range certPaths {
+		bundledCerts, err := cryptoutil.ReadCertificateFile(path)
 		if err != nil {
 			return nil, err
 		}
-	}
-	if len(certPaths) != 0 {
-		rootCerts = x509.NewCertPool()
-		for _, certPath := range certPaths {
-			certs, err := x509nv2.ReadCertificateFile(certPath)
-			if err != nil {
-				return nil, err
-			}
-			commonCerts = append(commonCerts, certs...)
-			for _, cert := range certs {
-				rootCerts.AddCert(cert)
-			}
+		for _, cert := range bundledCerts {
+			roots.AddCert(cert)
 		}
 	}
-	return l.NewSigningService(key, commonCerts, commonCerts, rootCerts)
+	verifier := jws.NewVerifier()
+	verifier.VerifyOptions.Roots = roots
+	return verifier, nil
 }
