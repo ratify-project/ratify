@@ -16,6 +16,10 @@ specification for the Reference Artifact Verification toolset.
 
 This project is released under the [MIT License](./LICENSE).
 
+### Trademark
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines][microsoft-trademark]. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
+
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of
@@ -169,3 +173,6 @@ hora verify -s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.[0
 In the above sample, the verification is still success because the
 [policy- ContinueVerifyOnFailure](./pkg/policyprovider/configpolicy/configpolicy.go)
 is set to ```true```. If it is set to false, the verification will be stopped at the first failure.
+
+
+[microsoft-trademark]: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks
