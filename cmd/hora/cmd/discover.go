@@ -43,8 +43,8 @@ func NewCmdDiscover(argv ...string) *cobra.Command {
 		Short:   "Discover referrers for a subject",
 		Example: eg,
 		Args:    cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			discover(opts)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return discover(opts)
 		},
 	}
 
