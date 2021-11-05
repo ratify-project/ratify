@@ -9,6 +9,8 @@ import (
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
 	"github.com/deislabs/hora/pkg/referrerstore"
+	// This import is required to utilize the oras built-in referrer store
+	_ "github.com/deislabs/hora/pkg/referrerstore/oras"
 	"github.com/deislabs/hora/pkg/verifier"
 	"github.com/deislabs/hora/pkg/verifier/plugin/skel"
 )

@@ -12,7 +12,8 @@ import (
 	"github.com/deislabs/hora/pkg/common/plugin"
 	"github.com/deislabs/hora/pkg/ocispecs"
 	"github.com/deislabs/hora/pkg/referrerstore"
-	rp "github.com/deislabs/hora/pkg/referrerstore/plugin"
+	storeConfig "github.com/deislabs/hora/pkg/referrerstore/config"
+	"github.com/deislabs/hora/pkg/referrerstore/factory"
 	"github.com/deislabs/hora/pkg/utils"
 	"github.com/deislabs/hora/pkg/verifier"
 	"github.com/deislabs/hora/pkg/verifier/config"
@@ -54,10 +55,23 @@ func pluginMainCore(name, version string, verifyReference VerifyReference, suppo
 		return err
 	}
 
-	store, serr := rp.NewStore(input.StoreConfig.Version, input.StoreConfig.Store, input.StoreConfig.PluginBinDirs)
-	if serr != nil {
-		return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("create store from the input config failed with error %v", serr), "")
+	// The below is a workaround to be able to use built-in referrer store plugins from within verifier plugins
+	storeConfigs := storeConfig.StoresConfig{
+		Version:       version,
+		PluginBinDirs: nil,
+		Stores:        []storeConfig.StorePluginConfig{input.StoreConfig.Store},
 	}
+	stores, storeErr := factory.CreateStoresFromConfig(storeConfigs, "")
+	if storeErr != nil || stores == nil || len(stores) == 0 {
+		return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("create store from input config failed with error #{storeErr}"), "")
+	}
+	store := stores[0]
+
+	// This is the original implementation for initialization of a referrer store which does not support built-ins
+	//store, serr := rp.NewStore(input.StoreConfig.Version, input.StoreConfig.Store, input.StoreConfig.PluginBinDirs)
+	//if serr != nil {
+	//	return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("create store from the input config failed with error %v", serr), "")
+	//}
 
 	switch cmd {
 	case vp.VerifyCommand:
