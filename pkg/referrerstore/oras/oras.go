@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
 	"oras.land/oras-go/pkg/oras"
@@ -80,7 +82,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
 	// TODO: handle nextToken
-	remote, err := store.createRegistryClient(subjectReference)
+	registryClient, err := store.createRegistryClient(subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
@@ -90,7 +92,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		artifactTypes = []string{""}
 	}
 	for _, artifactType := range artifactTypes {
-		_, res, err := oras.Discover(ctx, remote.Resolver, subjectReference.Original, artifactType)
+		_, res, err := oras.Discover(ctx, registryClient.Resolver, subjectReference.Original, artifactType)
 		if err != nil {
 			return referrerstore.ListReferrersResult{}, err
 		}
@@ -114,13 +116,13 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 }
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	remote, err := store.createRegistryClient(subjectReference)
+	registryClient, err := store.createRegistryClient(subjectReference)
 	if err != nil {
 		return nil, err
 	}
 
 	ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
-	desc, err := oras.Copy(ctx, remote, ref, store.localCache, "")
+	desc, err := oras.Copy(ctx, registryClient, ref, store.localCache, "")
 	if err != nil {
 		return nil, err
 	}
@@ -129,24 +131,16 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	remote, err := store.createRegistryClient(subjectReference)
+	ref, err := name.ParseReference(fmt.Sprintf("%s@%s", subjectReference.Path, referenceDesc.Digest))
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
-
-	ref := fmt.Sprintf("%s@%s", subjectReference.Path, referenceDesc.Digest)
-	desc, err := oras.Copy(ctx, remote, ref, store.localCache, "")
+	dig, err := remote.Get(ref)
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
-
-	buf, err := store.getRawContentFromCache(ctx, desc)
-	if err != nil {
-		return ocispecs.ReferenceManifest{}, err
-	}
-
 	var manifest = artifactspec.Manifest{}
-	if err := json.Unmarshal(buf, &manifest); err != nil {
+	if err := json.Unmarshal(dig.Manifest, &manifest); err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
 
