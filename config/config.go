@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -13,18 +12,19 @@ import (
 	pcConfig "github.com/deislabs/hora/pkg/policyprovider/config"
 	rsConfig "github.com/deislabs/hora/pkg/referrerstore/config"
 	vfConfig "github.com/deislabs/hora/pkg/verifier/config"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	ConfigFileName = "config.json"
+	ConfigFileName = "config.yaml"
 	configFileDir  = ".hora"
 	PluginsFolder  = "plugins"
 )
 
 type Config struct {
-	StoresConfig    rsConfig.StoresConfig    `json:"stores,omitempty"`
-	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policies,omitempty"`
-	VerifiersConfig vfConfig.VerifiersConfig `json:"verifiers,omitempty"`
+	StoresConfig    rsConfig.StoresConfig    `yaml:"stores,omitempty"`
+	PoliciesConfig  pcConfig.PoliciesConfig  `yaml:"policies,omitempty"`
+	VerifiersConfig vfConfig.VerifiersConfig `yaml:"verifiers,omitempty"`
 }
 
 var (
@@ -81,12 +81,11 @@ func Load(configFilePath string) (Config, error) {
 	}
 	defer file.Close()
 
-	if err := json.NewDecoder(file).Decode(&config); err != nil && !errors.Is(err, io.EOF) {
+	if err := yaml.NewDecoder(file).Decode(&config); err != nil && !errors.Is(err, io.EOF) {
 		return config, err
 	}
 
 	return config, nil
-
 }
 
 func GetDefaultPluginPath() string {

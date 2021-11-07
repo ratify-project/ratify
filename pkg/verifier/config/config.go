@@ -8,13 +8,13 @@ import (
 type VerifierConfig map[string]interface{}
 
 type PluginInputConfig struct {
-	Config       VerifierConfig               `json:"config"`
-	StoreConfig  rc.StoreConfig               `json:"storeConfig"`
-	ReferencDesc ocispecs.ReferenceDescriptor `json:"referenceDesc"`
+	Config       VerifierConfig               `yaml:"config"`
+	StoreConfig  rc.StoreConfig               `yaml:"storeConfig"`
+	ReferencDesc ocispecs.ReferenceDescriptor `yaml:"referenceDesc"`
 }
 
 type VerifiersConfig struct {
-	Version       string           `json:"version,omitempty"`
-	PluginBinDirs []string         `json:"pluginBinDirs,omitempty"`
-	Verifiers     []VerifierConfig `json:"plugins,omitempty"`
+	Version       string           `yaml:"version,omitempty"`
+	PluginBinDirs []string         `yaml:"pluginBinDirs,omitempty"`
+	Verifiers     []VerifierConfig `yaml:"plugins,omitempty"`
 }
