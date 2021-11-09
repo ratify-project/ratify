@@ -4,7 +4,8 @@
         "plugins": [
             {
                 "name": "oras",
-                "useHttp": true
+                "useHttp": true,
+                "localCachePath": "./local_oras_cache"
             }
         ]
     },
@@ -20,7 +21,7 @@
         "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "org.cncf.notary.v2",
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
                     "<cert folder>"
                   ]
@@ -28,7 +29,7 @@
             {
                 "name":"sbom",
                 "artifactTypes":"org.example.sbom.v0",
-                "nestedReferences": "org.cncf.notary.v2"
+                "nestedReferences": "application/vnd.cncf.notary.v2.signature"
             }
             
         ]

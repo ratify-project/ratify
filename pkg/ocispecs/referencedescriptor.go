@@ -4,7 +4,7 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const MediaTypeArtifactManifest = "application/vnd.oci.artifact.manifest.v1+json"
+const MediaTypeArtifactManifest = "application/vnd.cncf.oras.artifact.manifest.v1+json"
 
 type ReferenceDescriptor struct {
 	oci.Descriptor
