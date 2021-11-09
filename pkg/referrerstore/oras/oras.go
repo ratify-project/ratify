@@ -4,41 +4,41 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"regexp"
-	"strings"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/pkg/content"
+	"oras.land/oras-go/pkg/oras"
 
 	"github.com/deislabs/hora/pkg/common"
 	"github.com/deislabs/hora/pkg/ocispecs"
 	"github.com/deislabs/hora/pkg/referrerstore"
 	"github.com/deislabs/hora/pkg/referrerstore/config"
 	"github.com/deislabs/hora/pkg/referrerstore/factory"
-	"github.com/deislabs/hora/pkg/referrerstore/oras/registry"
 	"github.com/opencontainers/go-digest"
+	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 )
 
 const (
-	storeName = "oras"
+	storeName             = "oras"
+	defaultLocalCachePath = "~/.hora/local_oras_cache"
 )
 
 type OrasStoreConf struct {
-	Name          string `json:"name"`
-	UseHttp       bool   `json:"useHttp,omitempty"`
-	CosignEnabled bool   `json:"cosign-enabled,omitempty"`
-	AuthProvider  string `json:"auth-provider,omitempty"`
+	Name           string `json:"name"`
+	UseHttp        bool   `json:"useHttp,omitempty"`
+	CosignEnabled  bool   `json:"cosign-enabled,omitempty"`
+	AuthProvider   string `json:"auth-provider,omitempty"`
+	LocalCachePath string `json:"localCachePath,omitempty"`
 }
 
 type orasStoreFactory struct{}
 
 type orasStore struct {
-	config    *OrasStoreConf
-	rawConfig config.StoreConfig
+	config     *OrasStoreConf
+	rawConfig  config.StoreConfig
+	localCache *content.OCI
 }
-
-// Detect the loopback IP (127.0.0.1)
-var reLoopback = regexp.MustCompile(regexp.QuoteMeta("127.0.0.1"))
-
-// Detect the loopback IPV6 (::1)
-var reipv6Loopback = regexp.MustCompile(regexp.QuoteMeta("::1"))
 
 func init() {
 	factory.Register(storeName, &orasStoreFactory{})
@@ -60,7 +60,16 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("auth provider %s is not supported", conf.AuthProvider)
 	}
 
-	return &orasStore{config: &conf, rawConfig: config.StoreConfig{Version: version, Store: storeConfig}}, nil
+	// Set up the local cache where content will land when we pull
+	if conf.LocalCachePath == "" {
+		conf.LocalCachePath = defaultLocalCachePath
+	}
+	localRegistry, err := content.NewOCI(conf.LocalCachePath)
+	if err != nil {
+		return nil, fmt.Errorf("could not create local oras cache at path #{conf.LocalCachePath}: #{err}")
+	}
+
+	return &orasStore{config: &conf, rawConfig: config.StoreConfig{Version: version, Store: storeConfig}, localCache: localRegistry}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -72,19 +81,31 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 }
 
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-	client, err := store.createRegistryClient(subjectReference.Path)
+	// TODO: handle nextToken
+	registryClient, err := store.createRegistryClient(subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
 
-	referrers, err := client.GetReferrers(subjectReference, artifactTypes, nextToken)
+	var referrerDescriptors []artifactspec.Descriptor
+	if artifactTypes == nil {
+		artifactTypes = []string{""}
+	}
+	for _, artifactType := range artifactTypes {
+		_, res, err := oras.Discover(ctx, registryClient.Resolver, subjectReference.Original, artifactType)
+		if err != nil {
+			return referrerstore.ListReferrersResult{}, err
+		}
+		referrerDescriptors = append(referrerDescriptors, res...)
+	}
 
-	if err != nil && err != registry.ReferrersNotSupported {
-		return referrerstore.ListReferrersResult{}, err
+	var referrers []ocispecs.ReferenceDescriptor
+	for _, referrer := range referrerDescriptors {
+		referrers = append(referrers, ArtifactDescriptorToReferenceDescriptor(referrer))
 	}
 
 	if store.config.CosignEnabled {
-		cosignReferences, err := getCosignReferences(client, subjectReference)
+		cosignReferences, err := getCosignReferences(subjectReference)
 		if err != nil {
 			return referrerstore.ListReferrersResult{}, err
 		}
@@ -95,62 +116,58 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 }
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	client, err := store.createRegistryClient(subjectReference.Path)
+	registryClient, err := store.createRegistryClient(subjectReference)
 	if err != nil {
 		return nil, err
 	}
 
-	blob, _, err := client.GetReferenceBlob(subjectReference, digest)
-
+	ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
+	desc, err := oras.Copy(ctx, registryClient, ref, store.localCache, "")
 	if err != nil {
 		return nil, err
 	}
 
-	return blob, nil
-
+	return store.getRawContentFromCache(ctx, desc)
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	client, err := store.createRegistryClient(subjectReference.Path)
+	ref, err := name.ParseReference(fmt.Sprintf("%s@%s", subjectReference.Path, referenceDesc.Digest))
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
+	dig, err := remote.Get(ref)
+	if err != nil {
+		return ocispecs.ReferenceManifest{}, err
+	}
+	var manifest = artifactspec.Manifest{}
+	if err := json.Unmarshal(dig.Manifest, &manifest); err != nil {
+		return ocispecs.ReferenceManifest{}, err
+	}
 
-	subjectReference.Digest = referenceDesc.Digest
-	return client.GetReferenceManifest(subjectReference)
+	return ArtifactManifestToReferenceManifest(manifest), nil
 }
 
-func (store *orasStore) createRegistryClient(path string) (*registry.Client, error) {
-	registryStr, _ := registry.GetRegistryRepoString(path)
-	authConfig, err := registry.DefaultAuthProvider.Provide(registryStr)
+func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
+	// TODO: support authentication
+	registryOpts := content.RegistryOptions{
+		Configs:   nil,
+		Username:  "",
+		Password:  "",
+		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
+		PlainHTTP: store.config.UseHttp,
+	}
+	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
+}
+
+func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor oci.Descriptor) ([]byte, error) {
+	reader, err := store.localCache.Fetch(ctx, descriptor)
 	if err != nil {
 		return nil, err
 	}
-
-	return registry.NewClient(
-		registry.NewAuthtransport(
-			nil,
-			authConfig.Username,
-			authConfig.Password,
-		),
-		isInsecureRegistry(registryStr, store.config),
-	), nil
-}
-
-func isInsecureRegistry(registry string, config *OrasStoreConf) bool {
-	if config.UseHttp {
-		return true
+	buf := make([]byte, descriptor.Size)
+	_, err = reader.Read(buf)
+	if err != nil {
+		return nil, err
 	}
-	if strings.HasPrefix(registry, "localhost:") {
-		return true
-	}
-
-	if reLoopback.MatchString(registry) {
-		return true
-	}
-	if reipv6Loopback.MatchString(registry) {
-		return true
-	}
-
-	return false
+	return buf, nil
 }
