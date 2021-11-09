@@ -3,9 +3,9 @@ package policyprovider
 import (
 	"context"
 
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/executor/types"
-	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/ocispecs"
 )
 
 type PolicyProvider interface {

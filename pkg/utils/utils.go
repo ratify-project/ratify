@@ -5,7 +5,7 @@ import (
 
 	_ "crypto/sha256"
 
-	"github.com/deislabs/hora/pkg/common"
+	"github.com/deislabs/ratify/pkg/common"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )

@@ -1,4 +1,4 @@
-module github.com/deislabs/hora
+module github.com/deislabs/ratify
 
 go 1.16
 

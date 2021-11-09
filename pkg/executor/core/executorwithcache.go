@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/deislabs/hora/pkg/executor"
-	"github.com/deislabs/hora/pkg/executor/types"
-	"github.com/deislabs/hora/pkg/verifiercache"
+	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/verifiercache"
 )
 
 type ExecutorWithCache struct {

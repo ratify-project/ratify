@@ -1,8 +1,8 @@
 package config
 
 import (
-	"github.com/deislabs/hora/pkg/ocispecs"
-	rc "github.com/deislabs/hora/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
 )
 
 type VerifierConfig map[string]interface{}

@@ -6,7 +6,7 @@ This README outlines how this validation framework can be used to verify signatu
 A configuration flag called ```cosign-enabled``` is introduced to the plugin configuration. If this flag is enabled, the ```ListReferrers``` API will attempt to query for the cosign signatures for a subject in addition to the references queried using ```referrers API```. All the cosign signatures are returned as the reference artifacts with the artifact type ```org.sigstore.cosign.v1``` This option will enable to verify cosign signatures against any registry including the onces that don't support the [notaryproject](https://github.com/notaryproject)'s ```referrers API```. 
 
 ### Configuration
-The only configuration that is needed for cosign verifier is the path to the public key that is used to verify the signature. This is specified using ```key``` property in the plugin config. Here is the sample ```hora``` config with cosign verifier
+The only configuration that is needed for cosign verifier is the path to the public key that is used to verify the signature. This is specified using ```key``` property in the plugin config. Here is the sample ```ratify``` config with cosign verifier
 
 ```json
 {
@@ -47,30 +47,30 @@ Public key written to cosign.pub
 ### Sign a container and store the signature in the registry
 
 ```bash
-$ cosign sign -key cosign.key mnltejaswini/horademo
+$ cosign sign -key cosign.key mnltejaswini/ratifydemo
 Enter password for private key:
-Pushing signature to: index.docker.io/mnltejaswini/horademo:sha256-1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792.sig
+Pushing signature to: index.docker.io/mnltejaswini/ratifydemo:sha256-1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792.sig
 ```
 
-### Query for the references for the artifact (```hora``` works with digest of the artifact)
+### Query for the references for the artifact (```ratify``` works with digest of the artifact)
 
 ```bash
-$ hora referrer list -s mnltejaswini/horademo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792
+$ ratify referrer list -s mnltejaswini/ratifydemo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792
 
-mnltejaswini/horademo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792
+mnltejaswini/ratifydemo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792
 └── ociregistry
     └── [org.sigstore.cosign.v1]sha256:56ebc9944872035c0fea391190348a597c646b63269d434ffd1421271aeee30a
 ```
 
-### Verify the cosign references using ```hora```
+### Verify the cosign references using ```ratify```
 
 ```bash
-$hora verify -s mnltejaswini/horademo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792
+$ratify verify -s mnltejaswini/ratifydemo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792
 {
   "isSuccess": true,
   "verifierReports": [
     {
-      "Subject": "mnltejaswini/horademo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792",
+      "Subject": "mnltejaswini/ratifydemo@sha256:1b26826f602946860c279fce658f31050cff2c596583af237d971f4629b57792",
       "IsSuccess": true,
       "Name": "cosign",
       "Results": [

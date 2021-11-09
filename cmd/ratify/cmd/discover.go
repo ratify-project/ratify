@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/hora/config"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	sf "github.com/deislabs/hora/pkg/referrerstore/factory"
-	"github.com/deislabs/hora/pkg/utils"
+	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/xlab/treeprint"
 )

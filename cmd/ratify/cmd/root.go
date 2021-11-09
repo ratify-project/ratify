@@ -3,8 +3,8 @@ package cmd
 import "github.com/spf13/cobra"
 
 const (
-	use       = "hora"
-	shortDesc = "Hora is a reference artifact tool for managing and verifying reference artifacts"
+	use       = "ratify"
+	shortDesc = "Ratify is a reference artifact tool for managing and verifying reference artifacts"
 )
 
 var Root = New(use, shortDesc)

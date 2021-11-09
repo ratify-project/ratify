@@ -7,12 +7,12 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/hora/pkg/common"
-	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
-	"github.com/deislabs/hora/pkg/referrerstore/config"
-	"github.com/deislabs/hora/pkg/referrerstore/types"
+	"github.com/deislabs/ratify/pkg/common"
+	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/opencontainers/go-digest"
 )
 

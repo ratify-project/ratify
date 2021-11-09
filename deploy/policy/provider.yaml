@@ -1,9 +1,9 @@
 apiVersion: externaldata.gatekeeper.sh/v1alpha1
 kind: Provider
 metadata:
-  name: hora-provider
+  name: ratify-provider
 spec:
-  proxyURL: http://hora-svc.default:6001/hora/v1/verify
+  proxyURL: http://ratify-svc.default:6001/ratify/v1/verify
   timeout: 3
   failurePolicy: Fail
   maxRetry: 1

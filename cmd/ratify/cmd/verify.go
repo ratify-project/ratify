@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 
-	"github.com/deislabs/hora/config"
-	e "github.com/deislabs/hora/pkg/executor"
-	ef "github.com/deislabs/hora/pkg/executor/core"
-	pf "github.com/deislabs/hora/pkg/policyprovider/configpolicy"
-	sf "github.com/deislabs/hora/pkg/referrerstore/factory"
-	vf "github.com/deislabs/hora/pkg/verifier/factory"
+	"github.com/deislabs/ratify/config"
+	e "github.com/deislabs/ratify/pkg/executor"
+	ef "github.com/deislabs/ratify/pkg/executor/core"
+	pf "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/spf13/cobra"
 )
 

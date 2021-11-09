@@ -4,14 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deislabs/hora/pkg/common"
-	e "github.com/deislabs/hora/pkg/executor"
-	"github.com/deislabs/hora/pkg/executor/types"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/policyprovider"
-	"github.com/deislabs/hora/pkg/referrerstore"
-	"github.com/deislabs/hora/pkg/utils"
-	vr "github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/common"
+	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/policyprovider"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/utils"
+	vr "github.com/deislabs/ratify/pkg/verifier"
 )
 
 type Executor struct {

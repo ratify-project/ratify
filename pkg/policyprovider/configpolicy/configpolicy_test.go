@@ -2,11 +2,11 @@ package config
 
 import (
 	"context"
-	"github.com/deislabs/hora/pkg/common"
-	vt "github.com/deislabs/hora/pkg/executor/types"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	pc "github.com/deislabs/hora/pkg/policyprovider/config"
-	"github.com/deislabs/hora/pkg/policyprovider/types"
+	"github.com/deislabs/ratify/pkg/common"
+	vt "github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	pc "github.com/deislabs/ratify/pkg/policyprovider/config"
+	"github.com/deislabs/ratify/pkg/policyprovider/types"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"testing"
 )

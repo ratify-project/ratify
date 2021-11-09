@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/deislabs/hora/pkg/verifier"
-	"github.com/deislabs/hora/pkg/verifier/config"
-	"github.com/deislabs/hora/pkg/verifier/plugin"
-	"github.com/deislabs/hora/pkg/verifier/types"
+	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/verifier/config"
+	"github.com/deislabs/ratify/pkg/verifier/plugin"
+	"github.com/deislabs/ratify/pkg/verifier/types"
 )
 
 var builtInVerifiers = make(map[string]VerifierFactory)

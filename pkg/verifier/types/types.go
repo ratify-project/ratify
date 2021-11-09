@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/verifier"
 )
 
 const (

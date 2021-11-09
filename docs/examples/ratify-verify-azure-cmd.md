@@ -1,4 +1,4 @@
-# Notary v2 Signature Verification With ACR Using Hora
+# Notary v2 Signature Verification With ACR Using Ratify
 
 ## Binaries
 
@@ -17,12 +17,12 @@ curl -Lo oras.tar.gz https://github.com/shizhMSFT/oras/releases/download/v0.11.1
 tar xvzf oras.tar.gz -C ~/bin oras
 ```
 
-### Hora
+### Ratify
 
 ```bash
-# TODO update according to release and copy the plugin to ~/.hora/plugins path
-curl -Lo hora.tar.gz https://github.com/deislabs/hora/releases/download/v0.0.1/hora_0.0.1_linux_amd64.tar.gz
-tar xvzf hora.tar.gz -C ~/bin hora
+# TODO update according to release and copy the plugin to ~/.ratify/plugins path
+curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v0.0.1/ratify_0.0.1_linux_amd64.tar.gz
+tar xvzf ratify.tar.gz -C ~/bin ratify
 ```
 
 ## Presets
@@ -51,7 +51,7 @@ export NOTATION_PASSWORD=$(az acr token create -n $NOTATION_USERNAME \
 docker login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 oras login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 ```
-## Demo 1 :  Discover & Verify Signatures using Hora
+## Demo 1 :  Discover & Verify Signatures using Ratify
 
 ### Sign the image using ```notation```
 
@@ -84,12 +84,12 @@ notation list $IMAGE
 ```
 > You can repeat step 3-4 to create multiple signatures to the image.
 
-### Discover & Verify using Hora
+### Discover & Verify using Ratify
 
-- Create a Hora config with ACR as the signature store and notary v2 as the signature verifier.
+- Create a Ratify config with ACR as the signature store and notary v2 as the signature verifier.
 
 ```bash
-cat << EOF > ~/.hora/config.json \
+cat << EOF > ~/.ratify/config.json \
 { 
     "stores": { 
         "version": "1.0.0", 
@@ -125,16 +125,16 @@ cat << EOF > ~/.hora/config.json \
 
 ```bash
 # Query for the signatures
-hora discover -s $IMAGE
+ratify discover -s $IMAGE
 ``` 
 - Verify all signatures for the image
 
 ```bash
 # Verify signatures
-hora verify -s $IMAGE
+ratify verify -s $IMAGE
 ```
 
-## Demo 2 : Discover & Verify SBoMs, scan results using Hora
+## Demo 2 : Discover & Verify SBoMs, scan results using Ratify
 
 ### Generate, Sign, Push SBoMs, Scan results
 
@@ -190,12 +190,12 @@ SCAN_DIGEST=$(oras discover -o json \
 notation sign $REPO@$SCAN_DIGEST
 ```
 
-### Discover & Verify using Hora
+### Discover & Verify using Ratify
 
-- Create a Hora config with ACR as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBoM and scan results in the config.
+- Create a Ratify config with ACR as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBoM and scan results in the config.
 
 ```bash
-cat << EOF > ~/.hora/config.json \
+cat << EOF > ~/.ratify/config.json \
 { 
     "stores": { 
         "version": "1.0.0", 
@@ -242,11 +242,11 @@ cat << EOF > ~/.hora/config.json \
 
 ```bash
 # Discover full graph of supply chain content
-hora discover -s $IMAGE
+ratify discover -s $IMAGE
 ``` 
 - Verify the full graph of supply chain content
 
 ```bash
 # Verify full graph
-hora verify -s $IMAGE
+ratify verify -s $IMAGE
 ```

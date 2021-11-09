@@ -1,6 +1,6 @@
-# Hora Release Process
+# Ratify Release Process
 
-This document describes the versioning scheme and release processes for Hora.
+This document describes the versioning scheme and release processes for Ratify.
 
 ## Attribution
 
@@ -13,7 +13,7 @@ The specification release process was created using content and verbiage from th
 
 ## Versioning
 
-The Hora project follows [semantic versioning](https://semver.org/) beginning with version `v0.1.0`.  Pre-release versions may be specified with a dash after the patch version and the following specifiers (in the order of release readiness):
+The Ratify project follows [semantic versioning](https://semver.org/) beginning with version `v0.1.0`.  Pre-release versions may be specified with a dash after the patch version and the following specifiers (in the order of release readiness):
 * `alpha1`, `alpha2`, etc.
 * `beta1`, `beta2`, etc.
 * `rc1`, `rc2`, `rc3`, etc.
@@ -43,4 +43,4 @@ When the release branch is ready, a tag should be pushed with a name matching th
 * The release notes and other fields can edited after the action completes.  The description can be in Markdown.
 * The pre-release flag will be set for any release with a pre-release specifier.
 * The pre-built binaries are built from commit at the head of the release branch.
-    * The files are named `hora_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.
+    * The files are named `ratify_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.

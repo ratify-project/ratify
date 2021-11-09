@@ -3,7 +3,7 @@ package executor
 import (
 	"context"
 
-	"github.com/deislabs/hora/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/executor/types"
 )
 
 type VerifyParameters struct {

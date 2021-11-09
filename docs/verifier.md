@@ -127,9 +127,9 @@ There are two types of inputs that are passed to the plugin. They are parameters
 
 Execution parameters are passed to the plugins via OS environment variables. The parameters that are passed to a verifier are defined below
 
-- **HORA_VERIFIER_COMMAND** indicates the operation to be executed. Currently the only operation that is desired is ```VERIFY```
-- **HORA_VERIFIER_SUBJECT** is the artifact under verification usually identified by a reference as per the OCI `{DNS/IP}/{Repository}:[name|digest]`
-- **HORA_VERIFIER_VERSION** is the version of the specification used between the framework and plugin. This value is taken from the ```version``` field of the verifier configuration.
+- **RATIFY_VERIFIER_COMMAND** indicates the operation to be executed. Currently the only operation that is desired is ```VERIFY```
+- **RATIFY_VERIFIER_SUBJECT** is the artifact under verification usually identified by a reference as per the OCI `{DNS/IP}/{Repository}:[name|digest]`
+- **RATIFY_VERIFIER_VERSION** is the version of the specification used between the framework and plugin. This value is taken from the ```version``` field of the verifier configuration.
 
 #### Execution Configuration
 
@@ -167,7 +167,7 @@ Plugins should output a JSON object with the following properties if they encoun
 
 ### Section 5: Plugin Implementation
 
-The framework MAY provide libraries that can provide skeletons for writing plugins. These libraries can scaffold the parameter and configuration parsing and transformation and can define methods that the plugin writers can override for the implementation. These libraries also should catch any exceptions retruned from the plugins and return a proper error result to the framework. A simple CLI for example ```hora plugin verifier add myverifier``` to create a stub for a plugin using these libraries MAY be provided by the framework.
+The framework MAY provide libraries that can provide skeletons for writing plugins. These libraries can scaffold the parameter and configuration parsing and transformation and can define methods that the plugin writers can override for the implementation. These libraries also should catch any exceptions retruned from the plugins and return a proper error result to the framework. A simple CLI for example ```ratify plugin verifier add myverifier``` to create a stub for a plugin using these libraries MAY be provided by the framework.
 
 ### Appendix : Examples
 
@@ -196,7 +196,7 @@ executor:
 policy:
   type: opa
   policy: |
-    package hora.rules
+    package ratify.rules
         
         verify_artifact{
             regex.match(".+.azurecr.io$", input.subject)
@@ -217,9 +217,9 @@ policy:
 3. The framework uses the ```artifactTypes``` property to match the verifier plugin for the above reference type. In this case, the verifier with the name ```nv2verifier``` supports its verification.
 4. The framework calls the plugin ```nv2verifier``` with the following environment variables
 
-- **HORA_VERIFIER_COMMAND** : ```VERIFY```
-- **HORA_VERIFIER_SUBJECT**: ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb```
-- **HORA_VERIFIER_VERSION**: ```1.0.0```
+- **RATIFY_VERIFIER_COMMAND** : ```VERIFY```
+- **RATIFY_VERIFIER_SUBJECT**: ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb```
+- **RATIFY_VERIFIER_VERSION**: ```1.0.0```
 
 5. It calls the plugin with the following JSON execution configuration
 

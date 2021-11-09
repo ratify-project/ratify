@@ -1,43 +1,43 @@
-# Contributing to Hora
+# Contributing to Ratify
 
-Welcome! We are very happy to accept community contributions to Hora, whether those are [Pull Requests](#pull-requests), [Plugins](#plugins), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)! Please note that by participating in this project, you agree to abide by the [Code of Conduct](./CODE_OF_CONDUCT.md), as well as the terms of the [CLA](#cla).
+Welcome! We are very happy to accept community contributions to Ratify, whether those are [Pull Requests](#pull-requests), [Plugins](#plugins), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)! Please note that by participating in this project, you agree to abide by the [Code of Conduct](./CODE_OF_CONDUCT.md), as well as the terms of the [CLA](#cla).
 
 ## Getting Started
 
 * If you don't already have it, you will need [go](https://golang.org/dl/) v1.16+ installed locally to build the project.
-* You can work on Hora using any platform using any editor, but you may find it quickest to get started using [VSCode](https://code.visualstudio.com/Download) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.Go). 
+* You can work on Ratify using any platform using any editor, but you may find it quickest to get started using [VSCode](https://code.visualstudio.com/Download) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.Go). 
 * Fork this repo (see [this forking guide](https://guides.github.com/activities/forking/) for more information).
-* Checkout the repo locally with `git clone git@github.com:{your_username}/hora.git`.
-* Build the Hora CLI with `go build -o ./bin/hora ./cmd/hora` or if on Mac/Linux/WSL `make build-cli`.
+* Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
+* Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
 ## Developing
 
 ### Components
 
-The Hora project is composed of the following main components:
+The Ratify project is composed of the following main components:
 
-* **Hora CLI** (`cmd/hora`): the `hora` CLI executable.
-* **Config** (`config`): an example configuration file for `hora`.
-* **Deploy** (`deploy`): the deployment files for using hora in a Kubernetes cluster.
-* **Hora Internals** (`pkg`): the internal modules containing the majority of the Hora code.
-* **Plugins** (`plugins`): the referrer store and verifier plugins for the Hora Framework.
+* **Ratify CLI** (`cmd/ratify`): the `ratify` CLI executable.
+* **Config** (`config`): an example configuration file for `ratify`.
+* **Deploy** (`deploy`): the deployment files for using ratify in a Kubernetes cluster.
+* **Ratify Internals** (`pkg`): the internal modules containing the majority of the Ratify code.
+* **Plugins** (`plugins`): the referrer store and verifier plugins for the Ratify Framework.
 
 ### Running the tests
 
-* You can use the following command to run the full Hora test suite:
-    * `go test -v ./cmd/hora` on Windows
+* You can use the following command to run the full Ratify test suite:
+    * `go test -v ./cmd/ratify` on Windows
     * `make test` on Mac/Linux/WSL
 
-### Running the Hora CLI
+### Running the Ratify CLI
 
-* Once built run Hora from the bin directory `./bin/hora` for a list of the available commands.
+* Once built run Ratify from the bin directory `./bin/ratify` for a list of the available commands.
 * For any command the `--help` argument can be passed for more information and a list of possible arguments.
 
 ## Pull Requests
 
-If you'd like to start contributing to Hora, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/hora/labels/good%20first%20issue).
+If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
 
-### Hora Code
+### Ratify Code
 
 * Ensure that an issue has been created to track the feature enhancement or bug that is being fixed.
 * In the PR description, make sure you've included "Fixes #{issue_number}" e.g. "Fixes #242" so that GitHub knows to link it to an issue.
@@ -62,14 +62,14 @@ If you'd like to contribute to the collection of plugins:
 
 ## Feature Suggestions
 
-* Please first search [Open Hora Issues](https://github.com/deislabs/hora/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
+* Please first search [Open Ratify Issues](https://github.com/deislabs/ratify/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
 * Ensure you have included a "What?" - what your feature entails, being as specific as possible, and giving mocked-up syntax examples where possible.
 * Ensure you have included a "Why?" - what the benefit of including this feature will be.
 
 ## Bug Reports
 
-* Please first search [Open Hora Issues](https://github.com/deislabs/hora/issues) before opening an issue, to see if it has already been reported.
-* Try to be as specific as possible, including the version of the Hora CLI used to reproduce the issue, and any example arguments needed to reproduce it.
+* Please first search [Open Ratify Issues](https://github.com/deislabs/ratify/issues) before opening an issue, to see if it has already been reported.
+* Try to be as specific as possible, including the version of the Ratify CLI used to reproduce the issue, and any example arguments needed to reproduce it.
 
 ## CLA
 
