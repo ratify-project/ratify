@@ -3,10 +3,10 @@ package verifier
 import (
 	"context"
 
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/executor"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
 )
 
 type VerifierResult struct {

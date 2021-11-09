@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/executor/types"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/policyprovider"
-	"github.com/deislabs/hora/pkg/policyprovider/config"
-	vt "github.com/deislabs/hora/pkg/policyprovider/types"
-	"github.com/deislabs/hora/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/policyprovider"
+	"github.com/deislabs/ratify/pkg/policyprovider/config"
+	vt "github.com/deislabs/ratify/pkg/policyprovider/types"
+	"github.com/deislabs/ratify/pkg/verifier"
 )
 
 type PolicyEnforcer struct {

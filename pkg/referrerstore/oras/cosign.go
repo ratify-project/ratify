@@ -1,8 +1,8 @@
 package oras
 
 import (
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/remote"

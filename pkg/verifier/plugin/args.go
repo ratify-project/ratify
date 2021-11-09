@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
+	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 )
 
 type VerifierPluginArgs struct {
@@ -24,9 +24,9 @@ func (args *VerifierPluginArgs) AsEnv() []string {
 	// custom values in the end to avoid being overridden by the process environments.
 	// TODO replace the args
 	env = append(env,
-		"HORA_VERIFIER_COMMAND="+args.Command,
-		"HORA_VERIFIER_SUBJECT="+args.SubjectReference,
-		"HORA_VERIFIER_ARGS="+pluginArgsStr,
+		"RATIFY_VERIFIER_COMMAND="+args.Command,
+		"RATIFY_VERIFIER_SUBJECT="+args.SubjectReference,
+		"RATIFY_VERIFIER_ARGS="+pluginArgsStr,
 		fmt.Sprintf("%s=%s", VersionEnvKey, args.Version),
 	)
 	return pluginCommon.DedupEnv(env)

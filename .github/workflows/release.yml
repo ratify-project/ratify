@@ -1,4 +1,4 @@
-name: Release Hora
+name: Release Ratify
 
 on:
   push:

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
+	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 )
 
 type ReferrerStorePluginArgs struct {
@@ -28,9 +28,9 @@ func (args *ReferrerStorePluginArgs) AsEnv() []string {
 	// custom values in the end to avoid being overridden by the process environments.
 	// TODO replace the args
 	env = append(env,
-		"HORA_STORE_COMMAND="+args.Command,
-		"HORA_STORE_SUBJECT="+args.SubjectReference,
-		"HORA_STORE_ARGS="+pluginArgsStr,
+		"RATIFY_STORE_COMMAND="+args.Command,
+		"RATIFY_STORE_SUBJECT="+args.SubjectReference,
+		"RATIFY_STORE_ARGS="+pluginArgsStr,
 		fmt.Sprintf("%s=%s", VersionEnvKey, args.Version),
 	)
 	return pluginCommon.DedupEnv(env)

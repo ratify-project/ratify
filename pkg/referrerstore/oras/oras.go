@@ -10,18 +10,18 @@ import (
 	"oras.land/oras-go/pkg/content"
 	"oras.land/oras-go/pkg/oras"
 
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
-	"github.com/deislabs/hora/pkg/referrerstore/config"
-	"github.com/deislabs/hora/pkg/referrerstore/factory"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 )
 
 const (
 	storeName             = "oras"
-	defaultLocalCachePath = "~/.hora/local_oras_cache"
+	defaultLocalCachePath = "~/.ratify/local_oras_cache"
 )
 
 type OrasStoreConf struct {

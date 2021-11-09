@@ -1,4 +1,4 @@
-# Hora
+# Ratify
 
 The project provides a framework to integrate scenarios that require
 verification of references and aim to provide a set of interfaces that can
@@ -32,32 +32,32 @@ questions or comments.
 
 ## Setup & Usage
 
-- Build the ```hora``` binary
+- Build the ```ratify``` binary
 
 ```bash
-git clone https://github.com/deislabs/hora.git
+git clone https://github.com/deislabs/ratify.git
 git checkout dev
-go build -o ~/bin ./cmd/hora
+go build -o ~/bin ./cmd/ratify
 ```
 
-- Build the ```hora``` plugins and install them in the home directory
+- Build the ```ratify``` plugins and install them in the home directory
 
 ```bash
-go build -o ~/.hora/plugins ./plugins/verifier/sbom
+go build -o ~/.ratify/plugins ./plugins/verifier/sbom
 ```
 
 - Update the ```./config/config.json``` to the certs folder and copy it to home dir
 
 ```bash
-cp ./config/config.json ~/.hora
+cp ./config/config.json ~/.ratify
 ```
 
-- ```hora``` is ready to use
+- ```ratify``` is ready to use
 
 ```bash
 Usage:
-  hora [flags]
-  hora [command]
+  ratify [flags]
+  ratify [command]
 
 Available Commands:
   completion  generate the autocompletion script for the specified shell
@@ -66,9 +66,9 @@ Available Commands:
   verify      Verify a subject
 
 Flags:
-  -h, --help   help for hora
+  -h, --help   help for ratify
 
-Use "hora [command] --help" for more information about a command.
+Use "ratify [command] --help" for more information about a command.
 ```
 
 ## Try it Out
@@ -121,11 +121,11 @@ oras push localhost:5000/net-monitor \
 ./sbom.json:application/json
 ```
 
-- Verify both artifacts above exist using hora (WHEN THIS WORKS, CURRENTLY WIP):
+- Verify both artifacts above exist using ratify (WHEN THIS WORKS, CURRENTLY WIP):
 
 ```shell
-hora referrer list \
--c ./hora/config/config.json \
+ratify referrer list \
+-c ./ratify/config/config.json \
 -s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.[0].RepoDigests[0]')
 
 example output
@@ -142,12 +142,12 @@ sha256:bdad7c3a3209b464c0fdfcaac4a254f87448bc6877c8fd2a651891efb596b05a
 oras discover --plain-http localhost:5000/net-monitor:v1
 ```
 
-- ```hora``` can be used to verify all the references to the target image.
+- ```ratify``` can be used to verify all the references to the target image.
 Please make sure that the image is referenced with ```digest``` rather
 than with the tag.
 
 ```json
-hora verify -s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.[0].RepoDigests[0]')
+ratify verify -s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.[0].RepoDigests[0]')
 
 {
   "isSuccess": true,

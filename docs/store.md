@@ -120,25 +120,25 @@ There are two types of inputs that are passed to the plugin. They are parameters
 
 Execution parameters are passed to the plugins via OS environment variables. The parameters that are passed to a store are defined below
 
-- **HORA_STORE_COMMAND** indicates the operation to be executed. Currently they include ```LISTREFERRERS```, ```GETBLOB```, ```GETREFMANIFEST```
-- **HORA_STORE_SUBJECT** is the artifact under verification usually identified by a reference as per the OCI `{DNS/IP}/{Repository}:[name|digest]`
-- **HORA_STORE_VERSION** is the version of the specification used between the framework and plugin. This value is taken from the ```version``` field of the store configuration.
-- **HORA_STORE_ARGS**: Extra arguments passed in by the framework at invocation time. They are key-value pairs separated by semicolons; for example, "digest=sha256:sdfdsdss;nextToken=123;artifactTypes:type1,type2"
+- **RATIFY_STORE_COMMAND** indicates the operation to be executed. Currently they include ```LISTREFERRERS```, ```GETBLOB```, ```GETREFMANIFEST```
+- **RATIFY_STORE_SUBJECT** is the artifact under verification usually identified by a reference as per the OCI `{DNS/IP}/{Repository}:[name|digest]`
+- **RATIFY_STORE_VERSION** is the version of the specification used between the framework and plugin. This value is taken from the ```version``` field of the store configuration.
+- **RATIFY_STORE_ARGS**: Extra arguments passed in by the framework at invocation time. They are key-value pairs separated by semicolons; for example, "digest=sha256:sdfdsdss;nextToken=123;artifactTypes:type1,type2"
 
 ##### Operations & Parameters
 
-The store specification defines 3 operations ```LISTREFERRERS```, ```GETBLOB```, ```GETREFMANIFEST``` The operation type is passed to the plugin via the **HORA_STORE_COMMAND** environemnt variable.
+The store specification defines 3 operations ```LISTREFERRERS```, ```GETBLOB```, ```GETREFMANIFEST``` The operation type is passed to the plugin via the **RATIFY_STORE_COMMAND** environemnt variable.
 
-**```LISTREFERRERS```**: Get the list of referrers to the given subject. The arguments that are passed to this operation as part of *HORA_STORE_ARGS* are
+**```LISTREFERRERS```**: Get the list of referrers to the given subject. The arguments that are passed to this operation as part of *RATIFY_STORE_ARGS* are
 
 - ```nextToken``` : (string) The continuation token obtained from the previous ```LISTREFERRERS``` oepration
 - ```artifactTypes```: (string) Comma separated list of artifact types that are used for filtering the referrers.
 
-**```GETBLOB```**: The arguments that are passed to this oepration as part of *HORA_STORE_ARGS* are
+**```GETBLOB```**: The arguments that are passed to this oepration as part of *RATIFY_STORE_ARGS* are
 
 - ```digest``` : (string) The digest of the blob that has to be retrieved.
 
-**```GETREFMANIFEST```**: The arguments that are passed to this oepration as part of *HORA_STORE_ARGS* are
+**```GETREFMANIFEST```**: The arguments that are passed to this oepration as part of *RATIFY_STORE_ARGS* are
 
 - ```digest``` : (string) The digest of the artifact manifest that has to be retrieved.
 
@@ -181,7 +181,7 @@ Plugins should output a JSON object with the following properties if they encoun
 
 ### Section 5: Plugin Implementation
 
-The framework MAY provide libraries that can provide skeletons for writing plugins. These libraries can scaffold the parameter and configuration parsing and transformation and can define methods that the plugin writers can override for the implementation. These libraries also should catch any exceptions retruned from the plugins and return a proper error result to the framework. A simple CLI for example ```hora plugin store add mystore``` to create a stub for a plugin using these libraries MAY be provided by the framework.
+The framework MAY provide libraries that can provide skeletons for writing plugins. These libraries can scaffold the parameter and configuration parsing and transformation and can define methods that the plugin writers can override for the implementation. These libraries also should catch any exceptions retruned from the plugins and return a proper error result to the framework. A simple CLI for example ```ratify plugin store add mystore``` to create a stub for a plugin using these libraries MAY be provided by the framework.
 
 ### Appendix : Examples
 
@@ -210,7 +210,7 @@ executor:
 policy:
   type: opa
   policy: |
-    package hora.rules
+    package ratify.rules
         
         verify_artifact{
             regex.match(".+.azurecr.io$", input.subject)
@@ -220,10 +220,10 @@ policy:
 2. An example subject ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb``` will be used to query for its referrers of type ```application/vnd.cncf.notary.v2```.
 3. The framework calls the plugin ```ociregistry``` with the following environment variables
 
-- **HORA_STORE_COMMAND** : ```LISTREFERRERS```
-- **HORA_STORE_SUBJECT**: ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb```
-- **HORA_STORE_VERSION**: ```1.0.0```
-- **HORA_STORE_ARGS** : ```artifactTypes:application/vnd.cncf.notary.v2```
+- **RATIFY_STORE_COMMAND** : ```LISTREFERRERS```
+- **RATIFY_STORE_SUBJECT**: ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb```
+- **RATIFY_STORE_VERSION**: ```1.0.0```
+- **RATIFY_STORE_ARGS** : ```artifactTypes:application/vnd.cncf.notary.v2```
 
 5. It calls the plugin with the following JSON execution configuration
 

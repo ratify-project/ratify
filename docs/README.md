@@ -1,6 +1,6 @@
 # Framework Overview
 
-This specification outlines a workflow of artifact verification which can be utilized by artifact consumers and provides a framework for the Notary project to be consumed by clients that consume these artifacts. The HORA framework enables composition of various verifiers and referrer stores to build verification framework into projects like GateKeeper. This framework serves as an orchestrator of various verifiers that are coordinated to get a consolidated verification result using a policy. This verification result can be used to make decisions in admission controllers at different stages like build, deployment or runtime like Kubernetes using OPA Gatekeeper.
+This specification outlines a workflow of artifact verification which can be utilized by artifact consumers and provides a framework for the Notary project to be consumed by clients that consume these artifacts. The RATIFY framework enables composition of various verifiers and referrer stores to build verification framework into projects like GateKeeper. This framework serves as an orchestrator of various verifiers that are coordinated to get a consolidated verification result using a policy. This verification result can be used to make decisions in admission controllers at different stages like build, deployment or runtime like Kubernetes using OPA Gatekeeper.
 
 > This is a DRAFT specification and is a guidance for the prototype.
 
@@ -36,10 +36,10 @@ This framework will use a plugin architecture to integrate custom stores & verif
 - The plugin SHOULD be an executable/binary that will be executed by the framework with appropriate environment variables and other data through ```stdin```. This data exchange contract MUST be defined in the plugin specification provided by the framework.
 - The initial version of the framework allows plugins to be binaries. Future versions of the framework MAY support plugins that are services invoked through gRPC or HTTP.
 - The plugins MUST be registered in the framework's configuration file. When registered, they can have custom settings that are specific to that plugin. A set of reserved keys like ``name`` will be used by the framework.  The framework MUST pass through other fields, unchanged to the plugin at the time of execution.
-- The location of these plugin binaries MAY be defined as part of registration. However, if not provided, the default path ${HOME}/.hora/plugins will be used as the path to search for the plugins.
+- The location of these plugin binaries MAY be defined as part of registration. However, if not provided, the default path ${HOME}/.ratify/plugins will be used as the path to search for the plugins.
 - The framework MUST validate the existence of plugin binaries in the appropiate paths at the start up and fail with error if any of the registered plugins are not found in the configured paths.
 - [TODO] Permissions and threat model for executing these plugins SHOULD be specified.
-- In addition to the specification, the framework SHOULD provide libraries for writing plugins. A simple CLI for example ```hora plugin verifier add myverifier``` to create a stub for a plugin using these libraries MAY be provided by the framework.
+- In addition to the specification, the framework SHOULD provide libraries for writing plugins. A simple CLI for example ```ratify plugin verifier add myverifier``` to create a stub for a plugin using these libraries MAY be provided by the framework.
 
 ### Open Questions
 
@@ -292,7 +292,7 @@ policy:
 policy:
     type: config
     rego: |
-        package hora.rules
+        package ratify.rules
         
         verify_artifact{
             regex.match(".+.azurecr.io$", input.subject)
@@ -322,7 +322,7 @@ policy:
 policy:
     type: config
     rego: |
-        package hora.rules
+        package ratify.rules
         
         verify_reference{
             not input.reference.artifactType == "org.cncf.notary.v2"
@@ -364,7 +364,7 @@ policy:
 policy:
     type: config
     rego: |
-        package hora.rules
+        package ratify.rules
         
         default skip_verifier = false
         
@@ -400,7 +400,7 @@ policy:
 policy:
     type: config
     rego: |
-        package hora.rules
+        package ratify.rules
         
         continue_workflow {
             not any_failed
@@ -439,7 +439,7 @@ policy:
 policy:
     type: config
     rego: |
-        package hora.rules
+        package ratify.rules
         
         continue_workflow {
             not any_failed
@@ -482,7 +482,7 @@ policy:
 policy:
     type: config
     rego: |
-        package hora.rules
+        package ratify.rules
         
         final_verification_success{
             not any_failed                        
@@ -587,7 +587,7 @@ executor:
 policy:
   type: opa
   policy: |
-    package hora.rules
+    package ratify.rules
         
         verify_artifact{
             regex.match(".+.azurecr.io$", input.subject)

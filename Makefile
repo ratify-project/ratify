@@ -1,11 +1,11 @@
-BINARY_NAME=hora
-INSTALL_DIR=~/.hora
+BINARY_NAME=ratify
+INSTALL_DIR=~/.ratify
 all: build test
 
 build: build-cli build-plugins
 
 build-cli:
-	go build -o ./bin/${BINARY_NAME} ./cmd/hora
+	go build -o ./bin/${BINARY_NAME} ./cmd/ratify
 
 
 build-plugins: 
@@ -16,7 +16,7 @@ install:
 	cp -r ./bin/* ${INSTALL_DIR}
 
 test:
-	go test -v ./cmd/hora
+	go test -v ./cmd/ratify
  
 clean:
 	go clean

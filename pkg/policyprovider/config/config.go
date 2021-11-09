@@ -1,6 +1,6 @@
 package config
 
-import "github.com/deislabs/hora/pkg/policyprovider/types"
+import "github.com/deislabs/ratify/pkg/policyprovider/types"
 
 type PoliciesConfig struct {
 	Version                      string                                    `json:"version,omitempty"`

@@ -3,12 +3,12 @@ package cmd
 import (
 	"context"
 
-	"github.com/deislabs/hora/config"
-	"github.com/deislabs/hora/httpserver"
-	ef "github.com/deislabs/hora/pkg/executor/core"
-	pf "github.com/deislabs/hora/pkg/policyprovider/configpolicy"
-	sf "github.com/deislabs/hora/pkg/referrerstore/factory"
-	vf "github.com/deislabs/hora/pkg/verifier/factory"
+	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/httpserver"
+	ef "github.com/deislabs/ratify/pkg/executor/core"
+	pf "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -28,8 +28,8 @@ func NewCmdServe(argv ...string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     serveUse,
-		Short:   "Run hora as a server",
-		Example: "hora server",
+		Short:   "Run ratify as a server",
+		Example: "ratify server",
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return serve(opts)

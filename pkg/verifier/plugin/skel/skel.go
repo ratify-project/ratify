@@ -8,17 +8,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/common/plugin"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
-	storeConfig "github.com/deislabs/hora/pkg/referrerstore/config"
-	"github.com/deislabs/hora/pkg/referrerstore/factory"
-	"github.com/deislabs/hora/pkg/utils"
-	"github.com/deislabs/hora/pkg/verifier"
-	"github.com/deislabs/hora/pkg/verifier/config"
-	vp "github.com/deislabs/hora/pkg/verifier/plugin"
-	"github.com/deislabs/hora/pkg/verifier/types"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/common/plugin"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	storeConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/referrerstore/factory"
+	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/verifier/config"
+	vp "github.com/deislabs/ratify/pkg/verifier/plugin"
+	"github.com/deislabs/ratify/pkg/verifier/types"
 )
 
 type VerifyReference func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error)

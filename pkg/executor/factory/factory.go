@@ -1,9 +1,9 @@
 package factory
 
 import (
-	"github.com/deislabs/hora/pkg/executor"
-	"github.com/deislabs/hora/pkg/executor/core"
-	sc "github.com/deislabs/hora/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/core"
+	sc "github.com/deislabs/ratify/pkg/referrerstore/config"
 )
 
 func CreateExecutorFromConfig(storesConfig sc.StoresConfig) (executor.Executor, error) {

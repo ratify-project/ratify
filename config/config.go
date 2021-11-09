@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/deislabs/hora/pkg/homedir"
-	pcConfig "github.com/deislabs/hora/pkg/policyprovider/config"
-	rsConfig "github.com/deislabs/hora/pkg/referrerstore/config"
-	vfConfig "github.com/deislabs/hora/pkg/verifier/config"
+	"github.com/deislabs/ratify/pkg/homedir"
+	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
+	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
+	vfConfig "github.com/deislabs/ratify/pkg/verifier/config"
 )
 
 const (
 	ConfigFileName = "config.json"
-	configFileDir  = ".hora"
+	configFileDir  = ".ratify"
 	PluginsFolder  = "plugins"
 )
 
@@ -38,7 +38,7 @@ func setConfigDir() {
 	if configDir != "" {
 		return
 	}
-	configDir = os.Getenv("HORA_CONFIG")
+	configDir = os.Getenv("RATIFY_CONFIG")
 	if configDir == "" {
 		configDir = filepath.Join(getHomeDir(), configFileDir)
 
