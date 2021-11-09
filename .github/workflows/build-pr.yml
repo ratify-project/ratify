@@ -18,4 +18,4 @@ jobs:
       - name: Build CLI
         run: make
       - name: Check build
-        run: bin/hora --help
+        run: bin/ratify --help

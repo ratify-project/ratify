@@ -6,12 +6,12 @@ import (
 	"net"
 	"net/http"
 
-	ef "github.com/deislabs/hora/pkg/executor/core"
+	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/gorilla/mux"
 )
 
 const (
-	ServerRootURL = "/hora/v1"
+	ServerRootURL = "/ratify/v1"
 )
 
 type (

@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/deislabs/hora/pkg/referrerstore"
-	"github.com/deislabs/hora/pkg/referrerstore/config"
-	"github.com/deislabs/hora/pkg/referrerstore/plugin"
-	"github.com/deislabs/hora/pkg/referrerstore/types"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
+	"github.com/deislabs/ratify/pkg/referrerstore/types"
 )
 
 var builtInStores = make(map[string]StoreFactory)

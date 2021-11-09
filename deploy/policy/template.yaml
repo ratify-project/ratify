@@ -13,7 +13,7 @@ spec:
         package k8ssignedimages
         violation[{"msg": msg}] {
           container := input_containers[_]
-          response := externaldata("hora-provider", container.image)
+          response := externaldata("ratify-provider", container.image)
           contains(response, "false")
           msg := sprintf("Image %v verification failed %v", [container.image, response])
         }

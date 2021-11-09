@@ -8,15 +8,15 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/hora/pkg/common"
-	pluginCommon "github.com/deislabs/hora/pkg/common/plugin"
-	e "github.com/deislabs/hora/pkg/executor"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
-	rc "github.com/deislabs/hora/pkg/referrerstore/config"
-	"github.com/deislabs/hora/pkg/verifier"
-	"github.com/deislabs/hora/pkg/verifier/config"
-	"github.com/deislabs/hora/pkg/verifier/types"
+	"github.com/deislabs/ratify/pkg/common"
+	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/verifier/config"
+	"github.com/deislabs/ratify/pkg/verifier/types"
 )
 
 type VerifierPlugin struct {

@@ -8,22 +8,22 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: hora
+  name: ratify
   labels:
-    app: hora
+    app: ratify
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: hora
+      app: ratify
   template:
     metadata:
       labels:
-        app: hora
+        app: ratify
     spec:
       containers:
-        - name: hora
-          image: deislabs/hora:v1
+        - name: ratify
+          image: deislabs/ratify:v1
           imagePullPolicy: Never #to access the local registry for the image
           ports:
             - containerPort: 6001
@@ -39,13 +39,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: hora-svc
+  name: ratify-svc
   labels:
-    app: hora
+    app: ratify
 spec:
   type: ClusterIP
   selector:
-    app: hora
+    app: ratify
   ports:
       # By default and for convenience, the `targetPort` is set to the same value as the `port` field.
     - port: 6001

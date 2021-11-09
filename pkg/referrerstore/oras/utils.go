@@ -1,7 +1,7 @@
 package oras
 
 import (
-	"github.com/deislabs/hora/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"regexp"

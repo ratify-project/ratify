@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	e "github.com/deislabs/hora/pkg/executor"
+	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/sirupsen/logrus"
 )
 

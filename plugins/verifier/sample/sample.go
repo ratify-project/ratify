@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/deislabs/hora/pkg/common"
-	"github.com/deislabs/hora/pkg/ocispecs"
-	"github.com/deislabs/hora/pkg/referrerstore"
-	"github.com/deislabs/hora/pkg/verifier"
-	"github.com/deislabs/hora/pkg/verifier/plugin/skel"
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 )
 
 type PluginConfig struct {
