@@ -36,7 +36,6 @@ questions or comments.
 
 ```bash
 git clone https://github.com/deislabs/ratify.git
-git checkout dev
 go build -o ~/bin ./cmd/ratify
 ```
 
@@ -72,6 +71,7 @@ Use "ratify [command] --help" for more information about a command.
 ```
 
 ## Try it Out
+
 - Download the [notation CLI](https://github.com/notaryproject/notation/releases/tag/v0.7.0-alpha.1)
 - Pull and build the [oras CLI](https://github.com/oras-project/oras/tree/artifacts) (ensure you build from the artifacts branch)
 - Run a local registry with oras support:
@@ -173,6 +173,5 @@ ratify verify -s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.
 In the above sample, the verification is still success because the
 [policy- ContinueVerifyOnFailure](./pkg/policyprovider/configpolicy/configpolicy.go)
 is set to ```true```. If it is set to false, the verification will be stopped at the first failure.
-
 
 [microsoft-trademark]: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks
