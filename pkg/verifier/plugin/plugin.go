@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"strings"
 
@@ -27,9 +26,7 @@ type VerifierPlugin struct {
 	version          string
 	path             []string
 	rawConfig        config.VerifierConfig
-	exec             pluginCommon.Exec
-	OutWriter        io.Writer
-	ErrWriter        io.Writer
+	executor         pluginCommon.Executor
 }
 
 func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPaths []string) (verifier.ReferenceVerifier, error) {
@@ -61,9 +58,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 		rawConfig:        verifierConfig,
 		artifactTypes:    artifactTypes,
 		nestedReferences: nestedReferences,
-		exec:             &pluginCommon.DefaultExec{Stderr: os.Stderr},
-		OutWriter:        os.Stdout,
-		ErrWriter:        os.Stderr,
+		executor:         &pluginCommon.DefaultExecutor{Stderr: os.Stderr},
 	}, nil
 }
 
@@ -104,10 +99,6 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 			}
 		}
 
-		/*encodedResults, err := json.Marshal(nestedVerifyResult.VerifierReports)
-		if err != nil {
-			return verifier.VerifierResult{}, err
-		}*/
 		if !nestedVerifyResult.IsSuccess {
 			return verifier.VerifierResult{
 				Subject:       subjectReference.Original,
@@ -128,12 +119,6 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	vr.NestedResults = nestedResults
 
 	return *vr, nil
-
-	// fmt.Fprintf(vp.ErrWriter,
-	// 	"Verification of [%s]%s completed with status: %v\n",
-	// 	referenceDescriptor.ArtifactType,
-	// 	referenceDescriptor.Digest,
-	// 	result.IsSuccess)
 }
 
 func (vp *VerifierPlugin) verifyReference(
@@ -141,7 +126,7 @@ func (vp *VerifierPlugin) verifyReference(
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
-	pluginPath, err := vp.exec.FindInPath(vp.name, vp.path)
+	pluginPath, err := vp.executor.FindInPaths(vp.name, vp.path)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +135,6 @@ func (vp *VerifierPlugin) verifyReference(
 		Command:          VerifyCommand,
 		Version:          vp.version,
 		SubjectReference: subjectReference.String(),
-		PluginArgs:       nil,
 	}
 
 	inputConfig := config.PluginInputConfig{
@@ -165,7 +149,7 @@ func (vp *VerifierPlugin) verifyReference(
 	}
 
 	// TODO std writer
-	stdoutBytes, err := vp.exec.ExecPlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnv())
+	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
 		return nil, err
 	}

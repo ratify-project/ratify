@@ -3,6 +3,7 @@ package skel
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,6 +22,13 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/types"
 )
 
+type pcontext struct {
+	GetEnviron func(string) string
+	Stdin      io.Reader
+	Stdout     io.Writer
+	Stderr     io.Writer
+}
+
 type VerifyReference func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error)
 
 type CmdArgs struct {
@@ -31,16 +39,21 @@ type CmdArgs struct {
 }
 
 func PluginMain(name, version string, verifyReference VerifyReference, supportedVersions []string) {
-	if e := pluginMainCore(name, version, verifyReference, supportedVersions); e != nil {
+	if e := (&pcontext{
+		GetEnviron: os.Getenv,
+		Stdin:      os.Stdin,
+		Stdout:     os.Stdout,
+		Stderr:     os.Stderr,
+	}).pluginMainCore(name, version, verifyReference, supportedVersions); e != nil {
 		if err := e.Print(); err != nil {
-			log.Print("Error writing error JSON to stdout: ", err)
+			log.Print("Error writing error response to stdout: ", err)
 		}
 		os.Exit(1)
 	}
 }
 
-func pluginMainCore(name, version string, verifyReference VerifyReference, supportedVersions []string) *plugin.Error {
-	cmd, cmdArgs, err := getCmdArgsFromEnv()
+func (pc *pcontext) pluginMainCore(name, version string, verifyReference VerifyReference, supportedVersions []string) *plugin.Error {
+	cmd, cmdArgs, err := pc.getCmdArgsFromEnv()
 	if err != nil {
 		// TODO about string
 		return err
@@ -63,7 +76,7 @@ func pluginMainCore(name, version string, verifyReference VerifyReference, suppo
 	}
 	stores, storeErr := factory.CreateStoresFromConfig(storeConfigs, "")
 	if storeErr != nil || stores == nil || len(stores) == 0 {
-		return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("create store from input config failed with error #{storeErr}"), "")
+		return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("create store from input config failed with error %v", storeErr), "")
 	}
 	store := stores[0]
 
@@ -81,7 +94,7 @@ func pluginMainCore(name, version string, verifyReference VerifyReference, suppo
 			return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", vp.VerifyCommand), err.Error())
 		}
 
-		err = types.WriteVerifyResultResult(result, os.Stdout)
+		err = types.WriteVerifyResultResult(result, pc.Stdout)
 		if err != nil {
 			return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 		}
@@ -92,23 +105,23 @@ func pluginMainCore(name, version string, verifyReference VerifyReference, suppo
 	}
 }
 
-func getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
+func (pc *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 	argsMissing := make([]string, 0)
 
 	// #1 Command
-	var cmd = os.Getenv(vp.CommandEnvKey)
+	var cmd = pc.GetEnviron(vp.CommandEnvKey)
 	if cmd == "" {
 		argsMissing = append(argsMissing, vp.CommandEnvKey)
 	}
 
 	// #2 Version
-	var version = os.Getenv(vp.VersionEnvKey)
+	var version = pc.GetEnviron(vp.VersionEnvKey)
 	if version == "" {
 		argsMissing = append(argsMissing, vp.VersionEnvKey)
 	}
 
 	// #3 Subject
-	var subject = os.Getenv(vp.SubjectEnvKey)
+	var subject = pc.GetEnviron(vp.SubjectEnvKey)
 	if subject == "" {
 		argsMissing = append(argsMissing, vp.SubjectEnvKey)
 	}
@@ -119,7 +132,7 @@ func getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 	}
 
 	// TODO Limit the read length
-	stdinData, err := ioutil.ReadAll(os.Stdin)
+	stdinData, err := ioutil.ReadAll(pc.Stdin)
 	if err != nil {
 		return "", nil, plugin.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
 	}
@@ -156,7 +169,8 @@ func validateAndGetConfig(jsonBytes []byte) (*config.PluginInputConfig, *plugin.
 	if err := json.Unmarshal(jsonBytes, &input); err != nil {
 		return nil, plugin.NewError(types.ErrConfigParsingFailure, fmt.Sprintf("error unmarshall verifier config: %v", err), "")
 	}
-	if input.Config[types.Name] == "" {
+
+	if input.Config[types.Name] == "" || input.Config[types.Name] == nil {
 		return nil, plugin.NewError(types.ErrInvalidVerifierConfig, "missing verifier name", "")
 	}
 	return &input, nil

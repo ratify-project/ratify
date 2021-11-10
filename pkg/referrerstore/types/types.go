@@ -24,8 +24,7 @@ const (
 	ErrVersionNotSupported                     // 6
 	ErrArgsParsingFailure                      // 7
 	ErrPluginCmdFailure                        // 8
-	ErrTryAgainLater               uint = 11
-	ErrInternal                    uint = 999
+	ErrInternalFailure             uint = 999
 )
 
 // TODO Versioned Referrers result (base don the verion serialize/deserialize the result)
