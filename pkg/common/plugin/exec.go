@@ -11,16 +11,21 @@ import (
 	"time"
 )
 
-type Exec interface {
-	ExecPlugin(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error)
-	FindInPath(plugin string, paths []string) (string, error)
+const (
+	maxRetryCount = 5
+	waitDuration  = time.Second
+)
+
+type Executor interface {
+	ExecutePlugin(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error)
+	FindInPaths(plugin string, paths []string) (string, error)
 }
 
-type DefaultExec struct {
+type DefaultExecutor struct {
 	Stderr io.Writer
 }
 
-func (e *DefaultExec) ExecPlugin(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	c := exec.CommandContext(ctx, pluginPath, cmdArgs...)
@@ -30,7 +35,7 @@ func (e *DefaultExec) ExecPlugin(ctx context.Context, pluginPath string, cmdArgs
 	c.Stderr = stderr
 
 	// Retry the command on "text file busy" errors
-	for i := 0; i <= 5; i++ {
+	for i := 0; i <= maxRetryCount; i++ {
 		err := c.Run()
 
 		// Command succeeded
@@ -38,14 +43,14 @@ func (e *DefaultExec) ExecPlugin(ctx context.Context, pluginPath string, cmdArgs
 			break
 		}
 
-		// If the plugin is currently about to be written, then we wait a
+		// If the plugin is about to be completed, then we wait a
 		// second and try it again
 		if strings.Contains(err.Error(), "text file busy") {
-			time.Sleep(time.Second)
+			time.Sleep(waitDuration)
 			continue
 		}
 
-		// All other errors except than the busy text file
+		// For all other errors return failed.
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
@@ -59,20 +64,20 @@ func (e *DefaultExec) ExecPlugin(ctx context.Context, pluginPath string, cmdArgs
 	return stdout.Bytes(), nil
 }
 
-func (e *DefaultExec) pluginErr(err error, stdout, stderr []byte) error {
-	emsg := Error{}
+func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
+	errMsg := Error{}
 	if len(stdout) == 0 {
 		if len(stderr) == 0 {
-			emsg.Msg = fmt.Sprintf("plugin failed with no error message: %v", err)
+			errMsg.Msg = fmt.Sprintf("plugin failed with no proper error message: %v", err)
 		} else {
-			emsg.Msg = fmt.Sprintf("plugin failed: %q", string(stderr))
+			errMsg.Msg = fmt.Sprintf("plugin failed with error: %q", string(stderr))
 		}
-	} else if perr := json.Unmarshal(stdout, &emsg); perr != nil {
-		emsg.Msg = fmt.Sprintf("plugin failed but error parsing its diagnostic message %q: %v", string(stdout), perr)
+	} else if perr := json.Unmarshal(stdout, &errMsg); perr != nil {
+		errMsg.Msg = fmt.Sprintf("plugin failed and parsing its error message also failed with error %q: %v", string(stdout), perr)
 	}
-	return &emsg
+	return &errMsg
 }
 
-func (e *DefaultExec) FindInPath(plugin string, paths []string) (string, error) {
-	return FindInPath(plugin, paths)
+func (e *DefaultExecutor) FindInPaths(plugin string, paths []string) (string, error) {
+	return FindInPaths(plugin, paths)
 }

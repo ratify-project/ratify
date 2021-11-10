@@ -21,7 +21,7 @@ type StorePlugin struct {
 	version   string
 	path      []string
 	rawConfig config.StorePluginConfig
-	exec      pluginCommon.Exec
+	executor  pluginCommon.Executor
 }
 
 func NewStore(version string, storeConfig config.StorePluginConfig, pluginPaths []string) (referrerstore.ReferrerStore, error) {
@@ -35,12 +35,12 @@ func NewStore(version string, storeConfig config.StorePluginConfig, pluginPaths 
 		version:   version,
 		path:      pluginPaths,
 		rawConfig: storeConfig,
-		exec:      &pluginCommon.DefaultExec{Stderr: os.Stderr},
+		executor:  &pluginCommon.DefaultExecutor{Stderr: os.Stderr},
 	}, nil
 }
 
 func (sp *StorePlugin) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-	pluginPath, err := sp.exec.FindInPath(sp.name, sp.path)
+	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
@@ -63,7 +63,7 @@ func (sp *StorePlugin) ListReferrers(ctx context.Context, subjectReference commo
 	}
 
 	// TODO std writer
-	stdoutBytes, err := sp.exec.ExecPlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnv())
+	stdoutBytes, err := sp.executor.ExecutePlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
@@ -81,7 +81,7 @@ func (sp *StorePlugin) Name() string {
 }
 
 func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	pluginPath, err := sp.exec.FindInPath(sp.name, sp.path)
+	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference comm
 		return nil, err
 	}
 
-	stdoutBytes, err := sp.exec.ExecPlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnv())
+	stdoutBytes, err := sp.executor.ExecutePlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +111,7 @@ func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference comm
 }
 
 func (sp *StorePlugin) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	pluginPath, err := sp.exec.FindInPath(sp.name, sp.path)
+	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
@@ -133,7 +133,7 @@ func (sp *StorePlugin) GetReferenceManifest(ctx context.Context, subjectReferenc
 	}
 
 	// TODO std writer
-	stdoutBytes, err := sp.exec.ExecPlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnv())
+	stdoutBytes, err := sp.executor.ExecutePlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}

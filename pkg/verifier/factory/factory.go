@@ -3,6 +3,8 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
@@ -54,7 +56,12 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 			return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
 		}
 
-		verifierFactory, ok := builtInVerifiers[fmt.Sprintf("%s", verifierName)]
+		verifierNameStr := fmt.Sprintf("%s", verifierName)
+		if strings.ContainsRune(verifierNameStr, os.PathSeparator) {
+			return nil, fmt.Errorf("invalid plugin name for a verifier: %s", verifierNameStr)
+		}
+
+		verifierFactory, ok := builtInVerifiers[verifierNameStr]
 		if ok {
 			verifier, err := verifierFactory.Create(verifiersConfig.Version, verifierConfig)
 

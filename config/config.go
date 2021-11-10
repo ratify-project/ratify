@@ -28,13 +28,14 @@ type Config struct {
 }
 
 var (
-	initConfigDir = new(sync.Once)
-	homeDir       string
-	configDir     string
-	pluginPath    string
+	initConfigDir         = new(sync.Once)
+	homeDir               string
+	configDir             string
+	defaultConfigFilePath string
+	defaultPluginsPath    string
 )
 
-func setConfigDir() {
+func InitDefaultPaths() {
 	if configDir != "" {
 		return
 	}
@@ -43,12 +44,8 @@ func setConfigDir() {
 		configDir = filepath.Join(getHomeDir(), configFileDir)
 
 	}
-	pluginPath = filepath.Join(configDir, PluginsFolder)
-}
-
-func Dir() string {
-	initConfigDir.Do(setConfigDir)
-	return configDir
+	defaultPluginsPath = filepath.Join(configDir, PluginsFolder)
+	defaultConfigFilePath = filepath.Join(configDir, ConfigFileName)
 }
 
 func getHomeDir() string {
@@ -64,12 +61,10 @@ func Load(configFilePath string) (Config, error) {
 	if configFilePath == "" {
 
 		if configDir == "" {
-			configDir = Dir()
+			initConfigDir.Do(InitDefaultPaths)
 		}
 
-		configFilePath = filepath.Join(configDir, ConfigFileName)
-		// FIX the race here
-		pluginPath = filepath.Join(configDir, PluginsFolder)
+		configFilePath = defaultConfigFilePath
 	}
 
 	file, err := os.OpenFile(configFilePath, os.O_RDONLY, 0644)
@@ -86,9 +81,11 @@ func Load(configFilePath string) (Config, error) {
 	}
 
 	return config, nil
-
 }
 
 func GetDefaultPluginPath() string {
-	return pluginPath
+	if defaultPluginsPath == "" {
+		initConfigDir.Do(InitDefaultPaths)
+	}
+	return defaultPluginsPath
 }

@@ -1,4 +1,4 @@
 package plugin
 
 // Valid file extensions for plugin executables.
-var ExecutableFileExtensions = []string{".exe", ""}
+var executableFileExtensions = []string{".exe", ""}
