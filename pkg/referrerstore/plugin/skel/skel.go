@@ -3,6 +3,7 @@ package skel
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -17,6 +18,13 @@ import (
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/opencontainers/go-digest"
 )
+
+type pcontext struct {
+	GetEnviron func(string) string
+	Stdin      io.Reader
+	Stdout     io.Writer
+	Stderr     io.Writer
+}
 
 // TODO use pointers to avoid copy
 type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error)
@@ -33,7 +41,12 @@ type CmdArgs struct {
 
 // PluginMain is the core "main" for a plugin which includes automatic error handling.
 func PluginMain(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, supportedVersions []string) {
-	if e := pluginMainCore(name, version, listReferrers, getBlobContent, getRefManifest, supportedVersions); e != nil {
+	if e := (&pcontext{
+		GetEnviron: os.Getenv,
+		Stdin:      os.Stdin,
+		Stdout:     os.Stdout,
+		Stderr:     os.Stderr,
+	}).pluginMainCore(name, version, listReferrers, getBlobContent, getRefManifest, supportedVersions); e != nil {
 		if err := e.Print(); err != nil {
 			log.Print("Error writing error result to stdout: ", err)
 		}
@@ -41,8 +54,8 @@ func PluginMain(name, version string, listReferrers ListReferrers, getBlobConten
 	}
 }
 
-func pluginMainCore(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, supportedVersions []string) *plugin.Error {
-	cmd, cmdArgs, err := getCmdArgsFromEnv()
+func (c *pcontext) pluginMainCore(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, supportedVersions []string) *plugin.Error {
+	cmd, cmdArgs, err := c.getCmdArgsFromEnv()
 	if err != nil {
 		// TODO about string
 		return err
@@ -58,17 +71,17 @@ func pluginMainCore(name, version string, listReferrers ListReferrers, getBlobCo
 
 	switch cmd {
 	case sp.ListReferrersCommand:
-		return cmdListReferrers(cmdArgs, listReferrers)
+		return c.cmdListReferrers(cmdArgs, listReferrers)
 	case sp.GetBlobContentCommand:
-		return cmdGetBlob(cmdArgs, getBlobContent)
+		return c.cmdGetBlob(cmdArgs, getBlobContent)
 	case sp.GetRefManifestCommand:
-		return cmdGetRefManifest(cmdArgs, getRefManifest)
+		return c.cmdGetRefManifest(cmdArgs, getRefManifest)
 	default:
 		return plugin.NewError(types.ErrUnknownCommand, fmt.Sprintf("unknown %s: %v", sp.CommandEnvKey, cmd), "")
 	}
 }
 
-func cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) *plugin.Error {
+func (c *pcontext) cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) *plugin.Error {
 	pluginArgs, err := plugin.ParseInputArgs(cmdArgs.Args)
 
 	if err != nil {
@@ -93,7 +106,7 @@ func cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) *plugin.Error 
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
 	}
 
-	err = types.WriteListReferrersResult(&result, os.Stdout)
+	err = types.WriteListReferrersResult(&result, c.Stdout)
 	if err != nil {
 		return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 	}
@@ -101,7 +114,7 @@ func cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) *plugin.Error 
 	return nil
 }
 
-func cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plugin.Error {
+func (c *pcontext) cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plugin.Error {
 	pluginArgs, err := plugin.ParseInputArgs(cmdArgs.Args)
 
 	if err != nil {
@@ -129,7 +142,7 @@ func cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plugin.Error {
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
 	}
 
-	_, err = os.Stdout.Write(result)
+	_, err = c.Stdout.Write(result)
 	if err != nil {
 		return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 	}
@@ -138,7 +151,7 @@ func cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plugin.Error {
 
 }
 
-func cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugin.Error {
+func (c *pcontext) cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugin.Error {
 	pluginArgs, err := plugin.ParseInputArgs(cmdArgs.Args)
 
 	if err != nil {
@@ -166,7 +179,7 @@ func cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugi
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
 	}
 
-	err = types.WriteReferenceManifestResult(&result, os.Stdout)
+	err = types.WriteReferenceManifestResult(&result, c.Stdout)
 	if err != nil {
 		return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 	}
@@ -174,29 +187,29 @@ func cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugi
 	return nil
 }
 
-func getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
+func (c *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 	argsMissing := make([]string, 0)
 
 	// #1 Command
-	var cmd = os.Getenv(sp.CommandEnvKey)
+	var cmd = c.GetEnviron(sp.CommandEnvKey)
 	if cmd == "" {
 		argsMissing = append(argsMissing, sp.CommandEnvKey)
 	}
 
 	// #2 Version
-	var version = os.Getenv(sp.VersionEnvKey)
+	var version = c.GetEnviron(sp.VersionEnvKey)
 	if version == "" {
 		argsMissing = append(argsMissing, sp.VersionEnvKey)
 	}
 
 	// #3 Subject
-	var subject = os.Getenv(sp.SubjectEnvKey)
+	var subject = c.GetEnviron(sp.SubjectEnvKey)
 	if subject == "" {
 		argsMissing = append(argsMissing, sp.SubjectEnvKey)
 	}
 
 	// #4 Args
-	var args = os.Getenv(sp.ArgsEnvKey)
+	var args = c.GetEnviron(sp.ArgsEnvKey)
 	if args == "" {
 		argsMissing = append(argsMissing, sp.ArgsEnvKey)
 	}
@@ -207,7 +220,7 @@ func getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 	}
 
 	// TODO Limit the read length
-	stdinData, err := ioutil.ReadAll(os.Stdin)
+	stdinData, err := ioutil.ReadAll(c.Stdin)
 	if err != nil {
 		return "", nil, plugin.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
 	}

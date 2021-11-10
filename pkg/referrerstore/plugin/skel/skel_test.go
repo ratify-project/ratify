@@ -1,0 +1,265 @@
+package skel
+
+import (
+	"bytes"
+	"fmt"
+	"strings"
+	"testing"
+
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
+	"github.com/deislabs/ratify/pkg/referrerstore/types"
+	"github.com/opencontainers/go-digest"
+)
+
+func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
+	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+		return []byte(digest.String()), nil
+	}
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.GetBlobContentCommand,
+		plugin.VersionEnvKey: "1.0.0",
+		plugin.ArgsEnvKey:    "digest=sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err != nil {
+		t.Fatalf("plugin execution failed %v", err)
+	}
+
+	out := fmt.Sprintf("%s", stdout)
+	if !strings.Contains(out, "sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb") {
+		t.Fatalf("plugin execution failed. expected %v actual %v", "sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb", out)
+	}
+}
+
+func TestPluginMain_GetReferenceManifest_ReturnsExpected(t *testing.T) {
+	getReferenceManifest := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error) {
+		return ocispecs.ReferenceManifest{
+			ArtifactType: "test-type",
+		}, nil
+	}
+
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.GetRefManifestCommand,
+		plugin.VersionEnvKey: "1.0.0",
+		plugin.ArgsEnvKey:    "digest=sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, nil, getReferenceManifest, []string{"1.0.0"})
+	if err != nil {
+		t.Fatalf("plugin execution failed %v", err)
+	}
+
+	out := fmt.Sprintf("%s", stdout)
+	if !strings.Contains(out, "test-type") {
+		t.Fatalf("plugin execution failed. expected %v actual %v", "test-type", out)
+	}
+}
+
+func TestPluginMain_ListReferrers_ReturnsExpected(t *testing.T) {
+	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
+		return referrerstore.ListReferrersResult{
+			NextToken: "next-token",
+			Referrers: []ocispecs.ReferenceDescriptor{
+				{
+					ArtifactType: "test-type",
+				},
+			},
+		}, nil
+	}
+
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.ListReferrersCommand,
+		plugin.VersionEnvKey: "1.0.0",
+		plugin.ArgsEnvKey:    "nextToken=;artifactTypes=",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", listReferrers, nil, nil, []string{"1.0.0"})
+	if err != nil {
+		t.Fatalf("plugin execution failed %v", err)
+	}
+
+	out := fmt.Sprintf("%s", stdout)
+	if !strings.Contains(out, "test-type") || !strings.Contains(out, "next-token") {
+		t.Fatalf("plugin execution failed. expected %v actual %v", "test-type, next-token", out)
+	}
+}
+
+func TestPluginMain_ErrorCases(t *testing.T) {
+	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+		return nil, fmt.Errorf("simulated error")
+	}
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.GetBlobContentCommand,
+		plugin.ArgsEnvKey:    "digest=sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrMissingEnvironmentVariables {
+		t.Fatalf("plugin execution expected to fail with error code %d", types.ErrMissingEnvironmentVariables)
+	}
+
+	environment[plugin.VersionEnvKey] = "1.0.0"
+	environment[plugin.SubjectEnvKey] = "localhost&300"
+
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrArgsParsingFailure {
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid subject", types.ErrArgsParsingFailure)
+	}
+
+	environment[plugin.SubjectEnvKey] = "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb"
+	environment[plugin.VersionEnvKey] = "2.0.0"
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrVersionNotSupported {
+		t.Fatalf("plugin execution expected to fail with error code %d for unsupported version", types.ErrVersionNotSupported)
+	}
+
+	environment[plugin.VersionEnvKey] = "1.0.0"
+
+	stdinData = ` "name":"skel-test-case", "some": "config" }`
+	pluginContext.Stdin = strings.NewReader(stdinData)
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrConfigParsingFailure {
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid config", types.ErrConfigParsingFailure)
+	}
+
+	stdinData = ` {"some": "config" }`
+	pluginContext.Stdin = strings.NewReader(stdinData)
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrInvalidStoreConfig {
+		t.Fatalf("plugin execution expected to fail with error code %d for missing store name", types.ErrInvalidStoreConfig)
+	}
+
+	environment[plugin.CommandEnvKey] = "unknown"
+	stdinData = ` {"name":"skel-test-case", "some": "config" }`
+	pluginContext.Stdin = strings.NewReader(stdinData)
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrUnknownCommand {
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid command", types.ErrUnknownCommand)
+	}
+
+	environment[plugin.CommandEnvKey] = plugin.GetBlobContentCommand
+	stdinData = ` {"name":"skel-test-case", "some": "config" }`
+	pluginContext.Stdin = strings.NewReader(stdinData)
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrPluginCmdFailure {
+		t.Fatalf("plugin execution expected to fail with error code %d for cmd failure", types.ErrPluginCmdFailure)
+	}
+}
+
+func TestPluginMain_GetBlobContent_ErrorCases(t *testing.T) {
+	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+		return []byte(digest.String()), nil
+	}
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.GetBlobContentCommand,
+		plugin.VersionEnvKey: "1.0.0",
+		plugin.ArgsEnvKey:    "digest1=sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrArgsParsingFailure {
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid arg", types.ErrArgsParsingFailure)
+	}
+
+	stdinData = ` {"name":"skel-test-case", "some": "config" }`
+	pluginContext.Stdin = strings.NewReader(stdinData)
+	environment[plugin.ArgsEnvKey] = "digest=sha256a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb"
+	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrArgsParsingFailure {
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid digest", types.ErrArgsParsingFailure)
+	}
+}
+
+func TestPluginMain_ListReferrers_ErrorCases(t *testing.T) {
+	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
+		return referrerstore.ListReferrersResult{
+			NextToken: "next-token",
+			Referrers: []ocispecs.ReferenceDescriptor{
+				{
+					ArtifactType: "test-type",
+				},
+			},
+		}, nil
+	}
+
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.ListReferrersCommand,
+		plugin.VersionEnvKey: "1.0.0",
+		plugin.ArgsEnvKey:    "nextToken1=;artifactTypes=",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", listReferrers, nil, nil, []string{"1.0.0"})
+	if err == nil || err.Code != types.ErrArgsParsingFailure {
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid arg", types.ErrArgsParsingFailure)
+	}
+}
