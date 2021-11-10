@@ -6,24 +6,10 @@ import (
 )
 
 type PluginArgs interface {
-	// For use with os/exec; i.e., return nil to inherit the
-	// environment from this process
-	AsEnv() []string
+	AsEnviron() []string
 }
 
-type inherited struct{}
-
-var inheritArgsFromEnv inherited
-
-func (*inherited) AsEnv() []string {
-	return nil
-}
-
-func ArgsFromEnv() PluginArgs {
-	return &inheritArgsFromEnv
-}
-
-func Stringify(pluginArgs [][2]string) string {
+func Concat(pluginArgs [][2]string) string {
 	entries := make([]string, len(pluginArgs))
 
 	for i, kv := range pluginArgs {
@@ -33,14 +19,14 @@ func Stringify(pluginArgs [][2]string) string {
 	return strings.Join(entries, ";")
 }
 
-// dedupEnv returns a copy of env with any duplicates removed, in favor of later values.
-// Items not of the normal environment "key=value" form are preserved unchanged.
-func DedupEnv(env []string) []string {
+// MergeDuplicateEnviron returns a copy of environment variables with any duplicates removed, and keeping the latest values.
+// Only variables of format "key=value" are considered for merging.
+func MergeDuplicateEnviron(env []string) []string {
 	out := make([]string, 0, len(env))
 	envMap := map[string]string{}
 
 	for _, kv := range env {
-		// find the first "=" in environment, if not, just keep it
+		// find the first "=" in environment variable, if not, skip it
 		eq := strings.Index(kv, "=")
 		if eq < 0 {
 			out = append(out, kv)
@@ -56,7 +42,7 @@ func DedupEnv(env []string) []string {
 	return out
 }
 
-func ParseArgs(args string) ([][2]string, error) {
+func ParseInputArgs(args string) ([][2]string, error) {
 
 	if args == "" {
 		return nil, nil
@@ -68,7 +54,7 @@ func ParseArgs(args string) ([][2]string, error) {
 	for _, pair := range pairs {
 		kv := strings.Split(pair, "=")
 		if len(kv) != 2 {
-			return nil, fmt.Errorf("ARGS: invalid kv pair %q", pair)
+			return nil, fmt.Errorf("PLUGIN ARGS: invalid kv pair %q", pair)
 		}
 		pluginArgs = append(pluginArgs, [2]string{kv[0], kv[1]})
 	}

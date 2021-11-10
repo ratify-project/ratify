@@ -3,6 +3,8 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -18,7 +20,7 @@ type StoreFactory interface {
 
 func Register(name string, factory StoreFactory) {
 	if factory == nil {
-		panic("Store factor cannot be nil")
+		panic("store factory cannot be nil")
 	}
 	_, registered := builtInStores[name]
 	if registered {
@@ -53,7 +55,12 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 			return nil, fmt.Errorf("failed to find store name in the stores config with key %s", "name")
 		}
 
-		storeFactory, ok := builtInStores[fmt.Sprintf("%s", storeName)]
+		storeNameStr := fmt.Sprintf("%s", storeName)
+		if strings.ContainsRune(storeNameStr, os.PathSeparator) {
+			return nil, fmt.Errorf("invalid plugin name for a store: %s", storeName)
+		}
+
+		storeFactory, ok := builtInStores[storeNameStr]
 		if ok {
 			store, err := storeFactory.Create(storesConfig.Version, storeConfig)
 

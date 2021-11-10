@@ -35,7 +35,7 @@ type CmdArgs struct {
 func PluginMain(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, supportedVersions []string) {
 	if e := pluginMainCore(name, version, listReferrers, getBlobContent, getRefManifest, supportedVersions); e != nil {
 		if err := e.Print(); err != nil {
-			log.Print("Error writing error JSON to stdout: ", err)
+			log.Print("Error writing error result to stdout: ", err)
 		}
 		os.Exit(1)
 	}
@@ -69,7 +69,7 @@ func pluginMainCore(name, version string, listReferrers ListReferrers, getBlobCo
 }
 
 func cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) *plugin.Error {
-	pluginArgs, err := plugin.ParseArgs(cmdArgs.Args)
+	pluginArgs, err := plugin.ParseInputArgs(cmdArgs.Args)
 
 	if err != nil {
 		return plugin.NewError(types.ErrArgsParsingFailure, "error parsing args", err.Error())
@@ -102,7 +102,7 @@ func cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) *plugin.Error 
 }
 
 func cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plugin.Error {
-	pluginArgs, err := plugin.ParseArgs(cmdArgs.Args)
+	pluginArgs, err := plugin.ParseInputArgs(cmdArgs.Args)
 
 	if err != nil {
 		return plugin.NewError(types.ErrArgsParsingFailure, "error parsing args", err.Error())
@@ -139,7 +139,7 @@ func cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plugin.Error {
 }
 
 func cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugin.Error {
-	pluginArgs, err := plugin.ParseArgs(cmdArgs.Args)
+	pluginArgs, err := plugin.ParseInputArgs(cmdArgs.Args)
 
 	if err != nil {
 		return plugin.NewError(types.ErrArgsParsingFailure, "error parsing args", err.Error())

@@ -33,7 +33,7 @@ type CmdArgs struct {
 func PluginMain(name, version string, verifyReference VerifyReference, supportedVersions []string) {
 	if e := pluginMainCore(name, version, verifyReference, supportedVersions); e != nil {
 		if err := e.Print(); err != nil {
-			log.Print("Error writing error JSON to stdout: ", err)
+			log.Print("Error writing error response to stdout: ", err)
 		}
 		os.Exit(1)
 	}
