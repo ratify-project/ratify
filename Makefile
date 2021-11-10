@@ -16,8 +16,8 @@ install:
 	cp -r ./bin/* ${INSTALL_DIR}
 
 test:
-	go test -v ./cmd/ratify
- 
+	go test -v ./...
+
 clean:
 	go clean
 	rm ./bin/${BINARY_NAME}
