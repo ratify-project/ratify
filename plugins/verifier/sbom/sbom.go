@@ -24,12 +24,14 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+
 	// This import is required to utilize the oras built-in referrer store
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 )
 
+// PluginConfig describes the configuration of the sbom verifier
 type PluginConfig struct {
 	Name             string `json:"name"`
 	AlpineMinVersion string `json:"alpineMinVersion"`

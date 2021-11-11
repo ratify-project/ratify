@@ -46,6 +46,7 @@ type pcontext struct {
 
 type VerifyReference func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error)
 
+// CmdArgs describes arguments that are passed when the plugin is invoked
 type CmdArgs struct {
 	Version    string
 	Subject    string
@@ -53,6 +54,7 @@ type CmdArgs struct {
 	StdinData  []byte
 }
 
+// PluginMain is the core "main" for a plugin which includes error handling.
 func PluginMain(name, version string, verifyReference VerifyReference, supportedVersions []string) {
 	if e := (&pcontext{
 		GetEnviron: os.Getenv,
@@ -70,7 +72,6 @@ func PluginMain(name, version string, verifyReference VerifyReference, supported
 func (pc *pcontext) pluginMainCore(name, version string, verifyReference VerifyReference, supportedVersions []string) *plugin.Error {
 	cmd, cmdArgs, err := pc.getCmdArgsFromEnv()
 	if err != nil {
-		// TODO about string
 		return err
 	}
 
@@ -146,7 +147,6 @@ func (pc *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 		return "", nil, plugin.NewError(types.ErrMissingEnvironmentVariables, fmt.Sprintf("missing env variables [%s]", joined), "")
 	}
 
-	// TODO Limit the read length
 	stdinData, err := ioutil.ReadAll(pc.Stdin)
 	if err != nil {
 		return "", nil, plugin.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")

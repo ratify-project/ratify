@@ -22,6 +22,7 @@ import (
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 )
 
+// ReferrerStorePluginArgs describes all arguments that are passed when a store plugin is invoked
 type ReferrerStorePluginArgs struct {
 	Command          string
 	Version          string
@@ -37,11 +38,10 @@ func (args *ReferrerStorePluginArgs) AsEnviron() []string {
 
 	// Duplicated values which come first will be overridden, so we must put the
 	// custom values in the end to avoid being overridden by the process environments.
-	// TODO replace the args
 	env = append(env,
-		"RATIFY_STORE_COMMAND="+args.Command,
-		"RATIFY_STORE_SUBJECT="+args.SubjectReference,
-		"RATIFY_STORE_ARGS="+pluginArgsStr,
+		fmt.Sprintf("%s=%s", CommandEnvKey, args.Command),
+		fmt.Sprintf("%s=%s", SubjectEnvKey, args.SubjectReference),
+		fmt.Sprintf("%s=%s", ArgsEnvKey, pluginArgsStr),
 		fmt.Sprintf("%s=%s", VersionEnvKey, args.Version),
 	)
 	return pluginCommon.MergeDuplicateEnviron(env)

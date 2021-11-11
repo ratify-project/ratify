@@ -22,7 +22,11 @@ import (
 	et "github.com/deislabs/ratify/pkg/executor/types"
 )
 
+// VerifierCache is an interface that defines methods to set/get results from a cache
 type VerifierCache interface {
+	// GetVerifyResult gets the result from the cache with the given subject as the key
 	GetVerifyResult(ctx context.Context, subjectRefString string) (et.VerifyResult, bool)
+
+	// SetVerifyResult sets the verify result in the cache with the given TTL
 	SetVerifyResult(ctx context.Context, subjectRefString string, verifyResult et.VerifyResult, ttl time.Duration)
 }

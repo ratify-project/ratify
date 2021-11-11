@@ -31,6 +31,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// StorePlugin describes a store that is implemented by invoking the plugins
 type StorePlugin struct {
 	name      string
 	version   string

@@ -41,11 +41,11 @@ type pcontext struct {
 	Stderr     io.Writer
 }
 
-// TODO use pointers to avoid copy
-type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error)
+type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error)
 type GetBlobContent func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
 type GetReferenceManifest func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error)
 
+// CmdArgs describes different arguments that are passed when store plugin is invoked.
 type CmdArgs struct {
 	Version    string
 	Subject    string
@@ -54,7 +54,7 @@ type CmdArgs struct {
 	StdinData  []byte
 }
 
-// PluginMain is the core "main" for a plugin which includes automatic error handling.
+// PluginMain is the core "main" for a plugin which includes error handling.
 func PluginMain(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, supportedVersions []string) {
 	if e := (&pcontext{
 		GetEnviron: os.Getenv,
@@ -72,7 +72,6 @@ func PluginMain(name, version string, listReferrers ListReferrers, getBlobConten
 func (c *pcontext) pluginMainCore(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, supportedVersions []string) *plugin.Error {
 	cmd, cmdArgs, err := c.getCmdArgsFromEnv()
 	if err != nil {
-		// TODO about string
 		return err
 	}
 
@@ -121,7 +120,7 @@ func (c *pcontext) cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) 
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
 	}
 
-	err = types.WriteListReferrersResult(&result, c.Stdout)
+	err = types.WriteListReferrersResult(result, c.Stdout)
 	if err != nil {
 		return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 	}
@@ -234,7 +233,6 @@ func (c *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 		return "", nil, plugin.NewError(types.ErrMissingEnvironmentVariables, fmt.Sprintf("missing env variables [%s]", joined), "")
 	}
 
-	// TODO Limit the read length
 	stdinData, err := ioutil.ReadAll(c.Stdin)
 	if err != nil {
 		return "", nil, plugin.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")

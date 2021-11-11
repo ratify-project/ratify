@@ -97,8 +97,8 @@ func TestPluginMain_GetReferenceManifest_ReturnsExpected(t *testing.T) {
 }
 
 func TestPluginMain_ListReferrers_ReturnsExpected(t *testing.T) {
-	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-		return referrerstore.ListReferrersResult{
+	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error) {
+		return &referrerstore.ListReferrersResult{
 			NextToken: "next-token",
 			Referrers: []ocispecs.ReferenceDescriptor{
 				{
@@ -245,8 +245,8 @@ func TestPluginMain_GetBlobContent_ErrorCases(t *testing.T) {
 }
 
 func TestPluginMain_ListReferrers_ErrorCases(t *testing.T) {
-	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-		return referrerstore.ListReferrersResult{
+	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error) {
+		return &referrerstore.ListReferrersResult{
 			NextToken: "next-token",
 			Referrers: []ocispecs.ReferenceDescriptor{
 				{

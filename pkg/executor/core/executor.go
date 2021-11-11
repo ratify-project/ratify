@@ -29,6 +29,8 @@ import (
 	vr "github.com/deislabs/ratify/pkg/verifier"
 )
 
+// Executor describes an execution engine that queries the stores for the supply chain content,
+// runs them through the verifiers as governed by the policy enforcer
 type Executor struct {
 	ReferrerStores []referrerstore.ReferrerStore
 	PolicyEnforcer policyprovider.PolicyProvider
@@ -64,13 +66,10 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		var continuationToken string
 		for {
 			referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken)
-
 			if err != nil {
 				return types.VerifyResult{}, err
 			}
-
 			continuationToken = referrersResult.NextToken
-
 			for _, reference := range referrersResult.Referrers {
 
 				if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
@@ -87,12 +86,10 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 					}
 				}
 			}
-
 			if continuationToken == "" {
 				break
 			}
 		}
-
 	}
 
 	if len(verifierReports) == 0 {
@@ -113,7 +110,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
-
 	for _, verifier := range ex.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
@@ -126,11 +122,9 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 			}
 
 			verifyResults = append(verifyResults, verifyResult)
-
 			isSuccess = verifyResult.IsSuccess
 			break
 		}
-
 	}
 
 	return types.VerifyResult{IsSuccess: isSuccess, VerifierReports: verifyResults}

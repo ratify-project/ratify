@@ -27,12 +27,12 @@ func main() {
 	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, []string{"1.0.0"})
 }
 
-func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
+func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error) {
 	artifactType := ""
 	if len(artifactTypes) > 0 {
 		artifactType = artifactTypes[0]
 	}
-	return referrerstore.ListReferrersResult{
+	return &referrerstore.ListReferrersResult{
 		Referrers: []ocispecs.ReferenceDescriptor{{
 			ArtifactType: artifactType,
 		}},

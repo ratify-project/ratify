@@ -24,6 +24,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifiercache"
 )
 
+// ExecutorWithCache wraps the executor with a verifier cache
 type ExecutorWithCache struct {
 	base                   executor.Executor
 	verifierCache          verifiercache.VerifierCache

@@ -44,7 +44,6 @@ func (ch *contextHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := ch.handler(ch.context, w, r); err != nil {
 		logrus.Errorf("request %v %v failed with error %v", r.Method, r.URL, err)
 		if serveErr := errcode.ServeJSON(w, err); serveErr != nil {
-			// TODO log the error
 			logrus.Errorf("request %v %v failed to send with error  %v", r.Method, r.URL, serveErr)
 		}
 	}

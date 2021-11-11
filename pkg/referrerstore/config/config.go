@@ -15,14 +15,17 @@ limitations under the License.
 
 package config
 
+// StorePluginConfig represents the configuration of a store plugin
 type StorePluginConfig map[string]interface{}
 
+// StoresConfig represents configuration of multiple store plugins
 type StoresConfig struct {
 	Version       string              `json:"version,omitempty"`
 	PluginBinDirs []string            `json:"pluginBinDirs,omitempty"`
 	Stores        []StorePluginConfig `json:"plugins,omitempty"`
 }
 
+// StoreConfig represents the configuration of a store plugin that is passed to a verifier
 type StoreConfig struct {
 	Version       string            `json:"version"`
 	PluginBinDirs []string          `json:"pluginBinDirs"`

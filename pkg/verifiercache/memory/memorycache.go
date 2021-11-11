@@ -22,6 +22,7 @@ import (
 	et "github.com/deislabs/ratify/pkg/executor/types"
 )
 
+// MemoryCache describes an in-memory cache with automatic expiration
 type MemoryCache struct {
 	syncMap *SyncMapWithExpiration
 }
