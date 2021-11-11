@@ -41,6 +41,7 @@ const (
 	verifierName = "notaryv2"
 )
 
+// NotaryV2VerifierConfig describes the configuration of notation verifier
 type NotaryV2VerifierConfig struct {
 	Name              string   `json:"name"`
 	ArtifactTypes     string   `json:"artifactTypes"`

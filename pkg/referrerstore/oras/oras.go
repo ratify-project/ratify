@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -39,6 +40,7 @@ const (
 	defaultLocalCachePath = "~/.ratify/local_oras_cache"
 )
 
+// OrasStoreConf describes the configuration of ORAS store
 type OrasStoreConf struct {
 	Name           string `json:"name"`
 	UseHttp        bool   `json:"useHttp,omitempty"`

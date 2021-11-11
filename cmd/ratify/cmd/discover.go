@@ -103,7 +103,6 @@ func discover(opts discoverCmdOptions) error {
 		return err
 	}
 
-	// TODO replace with code
 	rootImage := treeprint.NewWithRoot(subRef.String())
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())

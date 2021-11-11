@@ -23,9 +23,13 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 )
 
+// PolicyProvider is an interface with methods that represents policy decisions.
 type PolicyProvider interface {
+	// VerifyNeeded determines if the given reference needs verification
 	VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool
+	// ContinueVerifyOnFailure determines if the given error can be ignored and verification can be continued.
 	ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool
-	// which errors to treat as failure ?
+	// ErrorToVerifyResult determines the final outcome of verification that is constructed using the results from
+	// individual verifications or other errors that occurred during the workflow
 	ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult
 }

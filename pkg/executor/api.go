@@ -21,11 +21,14 @@ import (
 	"github.com/deislabs/ratify/pkg/executor/types"
 )
 
+// VerifyParameters describes the subject verification parameters
 type VerifyParameters struct {
 	Subject        string   `json:"subjectReference"`
 	ReferenceTypes []string `json:"referenceTypes,omitempty"`
 }
 
+// Executor is an interface that defines methods to verify a subject
 type Executor interface {
+	// VerifySubject returns the result of verifying a subject
 	VerifySubject(ctx context.Context, verifyParameters VerifyParameters) (types.VerifyResult, error)
 }

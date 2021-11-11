@@ -22,6 +22,7 @@ import (
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 )
 
+// VerifierPluginArgs describes arguments that are passed to the verifier plugin
 type VerifierPluginArgs struct {
 	Command          string
 	Version          string
@@ -34,8 +35,8 @@ func (args *VerifierPluginArgs) AsEnviron() []string {
 	env := os.Environ()
 
 	env = append(env,
-		"RATIFY_VERIFIER_COMMAND="+args.Command,
-		"RATIFY_VERIFIER_SUBJECT="+args.SubjectReference,
+		fmt.Sprintf("%s=%s", CommandEnvKey, args.Command),
+		fmt.Sprintf("%s=%s", SubjectEnvKey, args.SubjectReference),
 		fmt.Sprintf("%s=%s", VersionEnvKey, args.Version),
 	)
 	return pluginCommon.MergeDuplicateEnviron(env)

@@ -24,6 +24,7 @@ type PluginArgs interface {
 	AsEnviron() []string
 }
 
+// Concat joins the given array of key=value formatted strings into a single ; delimited string.
 func Concat(pluginArgs [][2]string) string {
 	entries := make([]string, len(pluginArgs))
 
@@ -57,6 +58,7 @@ func MergeDuplicateEnviron(env []string) []string {
 	return out
 }
 
+// ParseInputArgs parses the given string into an array of key=value formatted strings.
 func ParseInputArgs(args string) ([][2]string, error) {
 
 	if args == "" {

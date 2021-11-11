@@ -42,12 +42,14 @@ const (
 	ErrInternalFailure             uint = 999
 )
 
-// TODO Versioned Referrers result (base don the verion serialize/deserialize the result)
+// TODO Versioned Referrers result (based on the version serialize/deserialize the result)
+// ReferrersResult is the result of ListReferrers as returned by the plugins
 type ReferrersResult struct {
 	Referrers []ocispecs.ReferenceDescriptor `json:"referrers"`
 	NextToken string                         `json:"nextToken"`
 }
 
+// GetListReferrersResult unmarshall the given JSON data to list referrers result
 func GetListReferrersResult(result []byte) (referrerstore.ListReferrersResult, error) {
 	listResult := ReferrersResult{}
 	if err := json.Unmarshal(result, &listResult); err != nil {
@@ -59,6 +61,7 @@ func GetListReferrersResult(result []byte) (referrerstore.ListReferrersResult, e
 	}, nil
 }
 
+// GetListReferrersResult unmarshall the given JSON data to reference manifest
 func GetReferenceManifestResult(result []byte) (ocispecs.ReferenceManifest, error) {
 	manifest := ocispecs.ReferenceManifest{}
 	if err := json.Unmarshal(result, &manifest); err != nil {
@@ -67,6 +70,7 @@ func GetReferenceManifestResult(result []byte) (ocispecs.ReferenceManifest, erro
 	return manifest, nil
 }
 
+// WriteListReferrersResult writes the list referrers result as JSON data to the given writer
 func WriteListReferrersResult(result *referrerstore.ListReferrersResult, w io.Writer) error {
 	return json.NewEncoder(w).Encode(ReferrersResult{
 		Referrers: result.Referrers,
@@ -74,6 +78,7 @@ func WriteListReferrersResult(result *referrerstore.ListReferrersResult, w io.Wr
 	})
 }
 
+// WriteReferenceManifestResult writes the reference manifest as JSON data in to the given writer
 func WriteReferenceManifestResult(result *ocispecs.ReferenceManifest, w io.Writer) error {
 	return json.NewEncoder(w).Encode(result)
 }

@@ -15,6 +15,7 @@ limitations under the License.
 
 package types
 
+// ArtifactTypeVerifyPolicy represents an artifact type policy
 type ArtifactTypeVerifyPolicy string
 
 const (

@@ -28,10 +28,12 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 )
 
+// PolicyEnforcer describes different polices that are enforced during verification
 type PolicyEnforcer struct {
 	ArtifactTypePolicies map[string]vt.ArtifactTypeVerifyPolicy
 }
 
+// CreatePolicyEnforcerFromConfig creates a policy enforcer from the given configuration
 func CreatePolicyEnforcerFromConfig(policiesConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
 	policyEnforcer := PolicyEnforcer{}
 	if policiesConfig.ArtifactVerificationPolicies == nil {
@@ -68,11 +70,7 @@ func (enforcer PolicyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectR
 		IsSuccess: false,
 		Results:   []string{fmt.Sprintf("verification failed: %v", verifyError)},
 	}
-
-	// TODO  Look for better writing this code segment.
 	var reports []interface{}
-
 	reports = append(reports, errorReport)
-
 	return types.VerifyResult{IsSuccess: false, VerifierReports: reports}
 }

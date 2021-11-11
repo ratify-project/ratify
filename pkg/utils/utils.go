@@ -25,6 +25,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// ParseDigest parses the given string and returns a validated Digest object.
 func ParseDigest(digestStr string) (digest.Digest, error) {
 
 	digest, err := digest.Parse(digestStr)
@@ -35,6 +36,7 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 	return digest, nil
 }
 
+// ParseSubjectReference parses the given subject and returns a valid reference
 func ParseSubjectReference(subRef string) (common.Reference, error) {
 	parseResult, err := reference.Parse(subRef)
 	if err != nil {

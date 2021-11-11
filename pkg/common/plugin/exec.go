@@ -31,11 +31,15 @@ const (
 	waitDuration  = time.Second
 )
 
+// Executor is an interface that defines methods to lookup a plugin and execute it.
 type Executor interface {
+	// ExecutePlugin executes the plugin with the given parameters
 	ExecutePlugin(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error)
+	// FindInPaths finds the plugin in the given paths
 	FindInPaths(plugin string, paths []string) (string, error)
 }
 
+// DefaultExecutor finds the plugin executable and invokes it as a os command
 type DefaultExecutor struct {
 	Stderr io.Writer
 }

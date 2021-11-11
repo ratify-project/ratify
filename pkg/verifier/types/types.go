@@ -43,12 +43,14 @@ const (
 	ErrInternalFailure             uint = 999
 )
 
+// VerifierResult describes the verification result returned from the verifier plugin
 type VerifierResult struct {
 	IsSuccess bool     `json:"isSuccess"`
 	Results   []string `json:"results"`
 	Name      string   `json:"name"`
 }
 
+// GetVerifierResult encodes the given JSON data into verify result object
 func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 	vResult := VerifierResult{}
 	if err := json.Unmarshal(result, &vResult); err != nil {
@@ -61,6 +63,7 @@ func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 	}, nil
 }
 
+// WriteVerifyResultResult writes the given result as JSON data to the writer w
 func WriteVerifyResultResult(result *verifier.VerifierResult, w io.Writer) error {
 	return json.NewEncoder(w).Encode(result)
 }

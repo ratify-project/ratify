@@ -15,6 +15,7 @@ limitations under the License.
 
 package types
 
+// VerifyResult describes the results of verifying a subject
 type VerifyResult struct {
 	IsSuccess       bool          `json:"isSuccess"`
 	VerifierReports []interface{} `json:"verifierReports,omitempty"`
