@@ -16,13 +16,16 @@ limitations under the License.
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/spf13/cobra"
@@ -72,6 +75,18 @@ func NewCmdDiscover(argv ...string) *cobra.Command {
 	return cmd
 }
 
+type listResult struct {
+	Name       string                         `json:"storeName"`
+	References []ocispecs.ReferenceDescriptor `json:"References,omitempty"`
+}
+
+func Test(subject string) {
+	listReferrers((referrerCmdOptions{
+		subject:       subject,
+		artifactTypes: []string{"myartifact"},
+	}))
+}
+
 func discover(opts discoverCmdOptions) error {
 
 	if opts.subject == "" {
@@ -118,4 +133,90 @@ func discover(opts discoverCmdOptions) error {
 	}
 
 	return PrintJSON(results)
+}
+
+func listReferrers(opts referrerCmdOptions) error {
+
+	if opts.subject == "" {
+		return errors.New("subject parameter is required")
+	}
+
+	subRef, err := utils.ParseSubjectReference(opts.subject)
+	if err != nil {
+		return err
+	}
+
+	cf, err := config.Load(opts.configFilePath)
+	if err != nil {
+		return err
+	}
+
+	// TODO replace with code
+	rootImage := treeprint.NewWithRoot(subRef.String())
+
+	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
+
+	if err != nil {
+		return err
+	}
+
+	type Result struct {
+		Name       string
+		References []ocispecs.ReferenceDescriptor
+	}
+
+	var results []listResult
+
+	for _, referrerStore := range stores {
+		storeNode := rootImage.AddBranch(referrerStore.Name())
+		result, err := listReferrersForStore(subRef, opts.artifactTypes, referrerStore, storeNode)
+		if err != nil {
+			return err
+		}
+		results = append(results, *result)
+	}
+
+	if !opts.flatOutput {
+		fmt.Println(rootImage.String())
+		return nil
+	}
+
+	return PrintJSON(results)
+}
+
+func listReferrersForStore(subRef common.Reference, artifactTypes []string, store referrerstore.ReferrerStore, treeNode treeprint.Tree) (*listResult, error) {
+	var continuationToken string
+	result := listResult{
+		Name: store.Name(),
+	}
+
+	for {
+		lr, err := store.ListReferrers(context.Background(), subRef, artifactTypes, continuationToken)
+		if err != nil {
+			return nil, err
+		}
+
+		continuationToken = lr.NextToken
+		for _, ref := range lr.Referrers {
+			refNode := treeNode.AddBranch(fmt.Sprintf("[%s]%s", ref.ArtifactType, ref.Digest.String()))
+			sr := common.Reference{
+				Path:     subRef.Path,
+				Digest:   ref.Digest,
+				Original: fmt.Sprintf("%s@%s", subRef.Path, ref.Digest),
+			}
+
+			subResult, err := listReferrersForStore(sr, artifactTypes, store, refNode)
+			if err != nil {
+				return nil, err
+			}
+			result.References = append(result.References, subResult.References...)
+
+		}
+		result.References = append(result.References, lr.Referrers...)
+		if continuationToken == "" {
+			break
+		}
+	}
+
+	return &result, nil
 }
