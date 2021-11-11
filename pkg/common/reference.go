@@ -19,6 +19,7 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// Reference describes an image reference identifier that includes properties like digest, tag
 type Reference struct {
 	Path     string
 	Digest   digest.Digest

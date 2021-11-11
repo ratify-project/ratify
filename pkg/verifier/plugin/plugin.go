@@ -33,10 +33,10 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/types"
 )
 
+// VerifierPlugin describes a verifier that is implemented by invoking the plugins
 type VerifierPlugin struct {
-	name          string
-	artifactTypes []string
-	// TODO Nested reference types
+	name             string
+	artifactTypes    []string
 	nestedReferences []string
 	version          string
 	path             []string
@@ -44,13 +44,13 @@ type VerifierPlugin struct {
 	executor         pluginCommon.Executor
 }
 
+// NewVerifier creates a new verifier from the given configuration
 func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPaths []string) (verifier.ReferenceVerifier, error) {
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
 		return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
 	}
 
-	// TODO throw error?
 	var nestedReferences []string
 	if vs, ok := verifierConfig[types.NestedReferences]; ok {
 		nestedReferences = strings.Split(fmt.Sprintf("%s", vs), ",")
@@ -58,7 +58,6 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 
 	var artifactTypes []string
 	if at, ok := verifierConfig[types.ArtifactTypes]; ok {
-		// TODO can we get []string directly
 		artifactTypes = strings.Split(fmt.Sprintf("%s", at), ",")
 	}
 
@@ -163,7 +162,6 @@ func (vp *VerifierPlugin) verifyReference(
 		return nil, err
 	}
 
-	// TODO std writer
 	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
 		return nil, err

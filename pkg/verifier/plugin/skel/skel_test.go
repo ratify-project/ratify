@@ -76,7 +76,6 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 	}
 	environment := map[string]string{
 		plugin.CommandEnvKey: plugin.VerifyCommand,
-		plugin.ArgsEnvKey:    "digest=sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 

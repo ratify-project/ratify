@@ -29,6 +29,7 @@ import (
 
 var builtInStores = make(map[string]StoreFactory)
 
+// StoreFactory is an interface that defines methods to create a store
 type StoreFactory interface {
 	Create(version string, storesConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error)
 }
@@ -45,6 +46,7 @@ func Register(name string, factory StoreFactory) {
 	builtInStores[name] = factory
 }
 
+// CreateStoresFromConfig creates a stores from the provided configuration
 func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath string) ([]referrerstore.ReferrerStore, error) {
 	if storesConfig.Version == "" {
 		storesConfig.Version = types.SpecVersion

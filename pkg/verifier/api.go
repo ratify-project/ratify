@@ -24,6 +24,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 )
 
+// VerifierResult describes the result of verifying a reference manifest for a subject
 type VerifierResult struct {
 	Subject       string           `json:"subject,omitempty"`
 	IsSuccess     bool             `json:"isSuccess,omitempty"`
@@ -32,9 +33,15 @@ type VerifierResult struct {
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
 }
 
+// ReferenceVerifier is an interface that defines methods to verify a reference for a subject
 type ReferenceVerifier interface {
+	// Name returns the name of the verifier
 	Name() string
+
+	// CanVerify returns if the verifier can verify the given reference
 	CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool
+
+	// Verify verifies the given reference of a subject and returns the result of verification
 	Verify(ctx context.Context,
 		subjectReference common.Reference,
 		referenceDescriptor ocispecs.ReferenceDescriptor,

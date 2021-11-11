@@ -30,6 +30,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 )
 
+// PluginConfig describes the configuration of the sbom verifier
 type PluginConfig struct {
 	Name string `json:"name"`
 }

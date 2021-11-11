@@ -8,7 +8,6 @@ be consumed by various systems that can participate in artifact verification.
 by its developers, nor is it "supported" software.
 
 ## Table of Contents
-
 - [Ratify Quick Start](#ratify-quick-start)
 - [Documents](#documents)
 - [Code of Conduct](#code-of-conduct)

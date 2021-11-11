@@ -19,30 +19,17 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+// MediaTypeArtifactManifest represents an artifact manifest media type
 const MediaTypeArtifactManifest = "application/vnd.cncf.oras.artifact.manifest.v1+json"
 
+// ReferenceDescriptor represents a descriptor for an artifact manifest
 type ReferenceDescriptor struct {
 	oci.Descriptor
 
 	ArtifactType string `json:"artifactType,omitempty"`
 }
 
-type ReferrersResponse struct {
-	Digest    string     `json:"digest"`
-	Referrers []Referrer `json:"references"`
-}
-
-type Referrer struct {
-	Digest   string            `json:"digest"`
-	Manifest ReferenceManifest `json:"manifest"`
-}
-
-type ReferenceManifest1 struct {
-	oci.Manifest
-
-	SubjectDecriptor oci.Descriptor `json:"subjectDesc"`
-}
-
+// ReferenceManifest describes an artifact manifest
 type ReferenceManifest struct {
 	MediaType    string           `json:"mediaType"`
 	ArtifactType string           `json:"artifactType"`

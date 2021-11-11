@@ -24,16 +24,28 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+// ListReferrersResult represents the result of ListReferrers API
 type ListReferrersResult struct {
 	Referrers []ocispecs.ReferenceDescriptor
 	NextToken string
 }
 
+// ReferrerStore is an interface that defines methods to query the graph of supply chain content including its related content
 type ReferrerStore interface {
+	// Name is the name of the store
 	Name() string
+
+	// ListReferrers returns the immediate set of supply chain objects for the given subject
+	// represented as artifact manifests
 	ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (ListReferrersResult, error)
-	// Used for small objects.
+
+	// GetBlobContent returns the blob with the given digest
+	// WARNING: This API is intended to use for small objects like signatures, SBoMs
 	GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
+
+	// GetReferenceManifest returns the reference artifact manifest as given by the descriptor
 	GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
+
+	// GetConfig returns the configuration of this store
 	GetConfig() *config.StoreConfig
 }

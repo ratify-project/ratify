@@ -21,12 +21,14 @@ import (
 	"os"
 )
 
+// Error describes an error during plugin execution
 type Error struct {
 	Code    uint   `json:"code"`
 	Msg     string `json:"msg"`
 	Details string `json:"details,omitempty"`
 }
 
+// NewError creates new Error
 func NewError(code uint, msg, details string) *Error {
 	return &Error{
 		Code:    code,
