@@ -9,18 +9,50 @@ builds:
     env:
       - CGO_ENABLED=0
     goos:
+      - darwin
       - linux
       - windows
-      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+    ldflags:
+      - -w -X github.com/deislabs/ratify/internal/version.GitTag={{.Version}} -X github.com/deislabs/ratify/internal/version.GitCommitHash={{.FullCommit}}
+
   - id: sbom
     dir: plugins/verifier/sbom
     binary: sbom
     env:
       - CGO_ENABLED=0
     goos:
+      - darwin
       - linux
       - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
+  - id: cosign
+    dir: plugins/verifier/cosign
+    binary: cosign
+    env:
+      - CGO_ENABLED=0
+    goos:
       - darwin
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: windows
+        goarch: arm64
+
 release:
   prerelease: auto
   draft: true
@@ -29,15 +61,13 @@ archives:
       darwin: Darwin
       linux: Linux
       windows: Windows
-      386: i386
-      amd64: x86_64
     format_overrides:
       - goos: windows
         format: zip
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  name_template: '{{ incpatch .Version }}-next'
 changelog:
   sort: asc
   filters:
