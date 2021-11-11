@@ -13,8 +13,10 @@ tar xvzf notation.tar.gz -C ~/bin notation
 ### ORAS
 
 ```bash
-curl -Lo oras.tar.gz https://github.com/shizhMSFT/oras/releases/download/v0.11.1-shizh.1/oras_0.11.1-shizh.1_linux_amd64.tar.gz
-tar xvzf oras.tar.gz -C ~/bin oras
+curl -LO https://github.com/oras-project/oras/releases/download/v0.2.1-alpha.1/oras_0.2.1-alpha.1_linux_amd64.tar.gz
+mkdir oras
+tar -xvf ./oras_0.2.1-alpha.1_linux_amd64.tar.gz -C ./oras/
+cp ./oras/oras ~/bin/oras
 ```
 
 ### Ratify
@@ -89,7 +91,7 @@ notation list $IMAGE
 - Create a Ratify config with ACR as the signature store and notary v2 as the signature verifier.
 
 ```bash
-cat << EOF > ~/.ratify/config.json \
+cat <<EOF > ~/.ratify/config.json 
 { 
     "stores": { 
         "version": "1.0.0", 
@@ -102,8 +104,7 @@ cat << EOF > ~/.ratify/config.json \
     "policies": {
         "version": "1.0.0",
         "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2": "any",
-            "org.example.sbom.v0": "all"
+            "application/vnd.cncf.notary.v2.signature": "any"
         }
     },
     "verifiers": {
@@ -111,7 +112,7 @@ cat << EOF > ~/.ratify/config.json \
         "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "org.cncf.notary.v2",
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
                     "~/.config/notation/certificate/wabbit-networks.io.crt"
                   ]
@@ -120,18 +121,20 @@ cat << EOF > ~/.ratify/config.json \
         
     }
 }
+EOF
 ```
 - Discover the signatures
 
 ```bash
 # Query for the signatures
-ratify discover -s $IMAGE
+export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
+ratify discover -s $IMAGE_DIGEST_REF
 ``` 
 - Verify all signatures for the image
 
 ```bash
 # Verify signatures
-ratify verify -s $IMAGE
+ratify verify -s $IMAGE_DIGEST_REF
 ```
 
 ## Demo 2 : Discover & Verify SBoMs, scan results using Ratify
@@ -163,39 +166,12 @@ SBOM_DIGEST=$(oras discover -o json \
 notation sign $REPO@$SBOM_DIGEST
 ```
 
-- Scan the image, saving the results
-```bash
-# Generate scan results with snyk
-docker scan --json $IMAGE > scan-results.json
-cat scan-results.json | jq
-```
-- Push the scan results to the registry, referencing the image
-```bash
-# Push the Snyk Scan Results
-oras push $REPO \
-  --artifact-type application/vnd.org.snyk.results.v0 \
-  --subject $IMAGE \
-  -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-  scan-results.json:application/json
-```
-
-- Sign the scan results
-```bash
-# Capture the digest, to sign the scan results
-SCAN_DIGEST=$(oras discover -o json \
-                --artifact-type application/vnd.org.snyk.results.v0 \
-                -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-                $IMAGE | jq -r ".references[0].digest")
-
-notation sign $REPO@$SCAN_DIGEST
-```
-
 ### Discover & Verify using Ratify
 
 - Create a Ratify config with ACR as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBoM and scan results in the config.
 
 ```bash
-cat << EOF > ~/.ratify/config.json \
+cat <<EOF > ~/.ratify/config.json 
 { 
     "stores": { 
         "version": "1.0.0", 
@@ -208,8 +184,8 @@ cat << EOF > ~/.ratify/config.json \
     "policies": {
         "version": "1.0.0",
         "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2": "any",
-            "org.example.sbom.v0": "all"
+            "application/vnd.cncf.notary.v2.signature": "any",
+            "sbom/example": "all"
         }
     },
     "verifiers": {
@@ -217,36 +193,29 @@ cat << EOF > ~/.ratify/config.json \
         "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "org.cncf.notary.v2",
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
                     "~/.config/notation/certificate/wabbit-networks.io.crt"
                   ]
             },
-{
+            {
                 "name":"sbom",
-                "artifactTypes" : "sbom/example"
-            },
-{
-                "name":"scan",
-                "artifactTypes" : "application/vnd.org.snyk.results.v0",
-                "DenyCVEs": [
-                  ]
+                "artifactTypes" : "sbom/example",
+                "nestedReferences": "application/vnd.cncf.notary.v2.signature"
             }
-        ]
-        
-    }
 }
+EOF
 ```
 
 - Discover the signatures
 
 ```bash
 # Discover full graph of supply chain content
-ratify discover -s $IMAGE
+ratify discover -s $IMAGE_DIGEST_REF
 ``` 
 - Verify the full graph of supply chain content
 
 ```bash
 # Verify full graph
-ratify verify -s $IMAGE
+ratify verify -s $IMAGE_DIGEST_REF
 ```

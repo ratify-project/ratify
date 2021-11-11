@@ -19,11 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+
 	// This import is required to utilize the oras built-in referrer store
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	"github.com/deislabs/ratify/pkg/verifier"
@@ -31,8 +31,7 @@ import (
 )
 
 type PluginConfig struct {
-	Name             string `json:"name"`
-	AlpineMinVersion string `json:"alpineMinVersion"`
+	Name string `json:"name"`
 }
 
 type PluginInputConfig struct {
@@ -45,8 +44,7 @@ type PackageInfo struct {
 }
 
 type SbomContents struct {
-	Contents string        `json:"contents"`
-	Packages []PackageInfo `json:"packages,omitempty"`
+	Contents string `json:"contents"`
 }
 
 func main() {
@@ -87,21 +85,19 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			return nil, fmt.Errorf("failed to parse sbom: %v", err)
 		}
 
-		for _, p := range sbomBlob.Packages {
-			if strings.HasPrefix(p.Name, "alpine-base") && p.Version < input.AlpineMinVersion {
-				return &verifier.VerifierResult{
-					Name:      input.Name,
-					IsSuccess: false,
-					Results:   []string{fmt.Sprintf("SBOM verification failed. The artifact has base image 'alpine' with version below '%s' and not compliant.", input.AlpineMinVersion)},
-				}, nil
-			}
+		if sbomBlob.Contents == "bad" {
+			return &verifier.VerifierResult{
+				Name:      input.Name,
+				IsSuccess: false,
+				Results:   []string{fmt.Sprintf("SBOM verification failed. The contents is %s.", sbomBlob.Contents)},
+			}, nil
 		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: true,
-		Results:   []string{"SBOM verification success."},
+		Results:   []string{"SBOM verification success. The contents is good."},
 	}, nil
 
 }

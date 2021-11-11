@@ -7,30 +7,18 @@ be consumed by various systems that can participate in artifact verification.
 **WARNING:** This is experimental code. It is not considered production-grade
 by its developers, nor is it "supported" software.
 
-## The Reference Artifact Verifier Specification
+## Table of Contents
 
-The [docs](docs/README.md) folder contains the beginnings of a formal
-specification for the Reference Artifact Verification toolset.
+- [Ratify Quick Start](#ratify-quick-start)
+- [Documents](#documents)
+- [Code of Conduct](#code-of-conduct)
+- [Release Management](#release-management)
+- [Licensing](#licensing)
+- [Trademark](#trademark)
 
-## Licensing
+## Ratify Quick Start
 
-This project is released under the [MIT License](./LICENSE).
-
-### Trademark
-
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft’s Trademark & Brand Guidelines][microsoft-trademark]. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party’s policies.
-
-## Code of Conduct
-
-This project has adopted the [Microsoft Open Source Code of
-Conduct](https://opensource.microsoft.com/codeofconduct/).
-
-For more information see the [Code of Conduct
-FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact
-[opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional
-questions or comments.
-
-## Setup & Usage
+### Setup 
 
 - Build the ```ratify``` binary
 
@@ -42,13 +30,7 @@ go build -o ~/bin ./cmd/ratify
 - Build the ```ratify``` plugins and install them in the home directory
 
 ```bash
-go build -o ~/.ratify/plugins ./plugins/verifier/sbom
-```
-
-- Update the ```./config/config.json``` to the certs folder and copy it to home dir
-
-```bash
-cp ./config/config.json ~/.ratify
+go build -o ~/.ratify/plugins/ ./plugins/verifier/sbom
 ```
 
 - ```ratify``` is ready to use
@@ -60,8 +42,10 @@ Usage:
 
 Available Commands:
   completion  generate the autocompletion script for the specified shell
+  discover    Discover referrers for a subject
   help        Help about any command
   referrer    Discover referrers for a subject
+  serve       Run ratify as a server
   verify      Verify a subject
 
 Flags:
@@ -70,108 +54,152 @@ Flags:
 Use "ratify [command] --help" for more information about a command.
 ```
 
-## Try it Out
+### Verify a Graph of Supply Chain Content
+To get started with ```Ratify```, the basic steps involve
+- Create a graph of Supply Chain Content
+- Discover the graph using ```ratify```
+- Verify the graph using ```ratify```
 
-- Download the [notation CLI](https://github.com/notaryproject/notation/releases/tag/v0.7.0-alpha.1)
-- Pull and build the [oras CLI](https://github.com/oras-project/oras/tree/artifacts) (ensure you build from the artifacts branch)
-- Run a local registry with oras support:
+This section outlines instructions for each of the above steps. 
 
-```shell
-docker run -d -p 5000:5000 ghcr.io/oras-project/registry:v0.0.3-alpha
+#### **Create a graph of Supply Chain Content**
+A graph of supply chain content can be created with different tools that can manage individual supply chain objects within the graph. For this quick start, the steps outlined in [Notary V2 project] (https://deploy-preview-48--notarydev.netlify.app/blog/2021/announcing-notation-alpha1/) will be used to create a sample graph with [```notation```](https://github.com/notaryproject/notation) and [```oras```](https://github.com/oras-project/oras/releases/tag/v0.2.1-alpha.1) CLI.
+
+- Run a local instance of the [CNCF Distribution Registry](https://github.com/oras-project/distribution), with [ORAS Artifacts](https://github.com/oras-project/artifacts-spec/blob/main/artifact-manifest.md) support.
+
+```bash
+export PORT=5000
+export REGISTRY=localhost:${PORT}
+export REPO=net-monitor
+export IMAGE=${REGISTRY}/${REPO}:v1
+
+docker run -d -p ${PORT}:5000 ghcr.io/oras-project/registry:v0.0.3-alpha
+``` 
+- Build & Push an image
+
+```bash
+docker build -t $IMAGE https://github.com/wabbit-networks/net-monitor.git#main
+
+docker push $IMAGE
 ```
+- Sign the image and push the signature using ```notation```
 
-- Build a docker image to test with:
+registry.
 
-```shell
-docker build -t localhost:5000/net-monitor:v1 https://github.com/wabbit-networks/net-monitor.git#main
-```
-
-- Push the image to the local registry:
-
-```shell
-docker push localhost:5000/net-monitor:v1
-```
-
-- Use notation to generate a test certificate:
-
-```shell
+```bash
 notation cert generate-test --default "wabbit-networks.io"
+notation sign --plain-http $IMAGE
+```
+- Generate a sample SBoM and push to registry
+
+```bash
+# Simulate an SBOM
+echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
+
+# Push to the registry with the oras cli
+oras push ${REGISTRY}/${REPO} \
+  --artifact-type sbom/example \
+  --subject $IMAGE \
+  --plain-http \
+  sbom.json:application/json
 ```
 
-- Sign the image using notation:
+- Sign the SBoM and push the signature using ```notation```
 
-```shell
-notation sign --plain-http localhost:5000/net-monitor:v1
+```bash
+# Capture the digest of the SBOM, to sign it
+SBOM_DIGEST=$(oras discover -o json \
+                --artifact-type sbom/example \
+                $IMAGE | jq -r ".references[0].digest")
+
+notation sign --plain-http $REGISTRY/$REPO@$SBOM_DIGEST
 ```
+This completes the creation of the supply chain graph.
 
-- Create a test SBoM (we set contents: bad to simulate a failure during verification):
+#### **Create config with signature and SBoM verifiers**
 
-```shell
-echo '{"version": "0.0.0.0", "artifact": "net-monitor:v1", "contents": "bad"}' > sbom.json
-```
-
-- Push the SBoM using oras:
-
-```shell
-oras push localhost:5000/net-monitor \
---artifact-type application/x.example.sbom.v0 \
---subject localhost:5000/net-monitor:v1 \
---export-manifest sbom-manifest.json \
---plain-http \
-./sbom.json:application/json
-```
-
-- Verify both artifacts above exist using ratify (WHEN THIS WORKS, CURRENTLY WIP):
-
-```shell
-ratify referrer list \
--c ./ratify/config/config.json \
--s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.[0].RepoDigests[0]')
-
-example output
-sha256:bdad7c3a3209b464c0fdfcaac4a254f87448bc6877c8fd2a651891efb596b05a
-└── oras 
-    ├── [application/x.example.sbom.v0]sha256:110b9d8d880ea0a0ebb3df590faabf239fda1a80d6b64b38dc9ad9cf29aeca5f
-    │   └── [application/vnd.cncf.notary.v2]sha256:f71ad4bf25ec8ed0cfd60b22b895f90264fa8a7e8ea62b8ad72f8616d9102d67
-    └── [application/vnd.cncf.notary.v2]sha256:b95fabe5f87248540a5af1cd194841a322548ef46144e6d085d3cca00cc843a8
-```
-
-- You can also see artifacts using oras:
-
-```shell
-oras discover --plain-http localhost:5000/net-monitor:v1
-```
-
-- ```ratify``` can be used to verify all the references to the target image.
-Please make sure that the image is referenced with ```digest``` rather
-than with the tag.
-
-```json
-ratify verify -s $(docker image inspect localhost:5000/net-monitor:v1 | jq -r '.[0].RepoDigests[0]')
-
-{
-  "isSuccess": true,
-  "verifierReports": [
-    {
-      "IsSuccess": false,
-      "Name": "sbom",
-      "Results": [
-        "SBOM verification completed. contents bad"
-      ]
+```bash
+cat <<EOF > ~/.ratify/config.json 
+{ 
+    "stores": { 
+        "version": "1.0.0", 
+        "plugins": [ 
+            { 
+                "name": "oras"
+            }
+        ]
     },
-    {
-      "IsSuccess": true,
-      "Name": "nv2verifier",
-      "Results": [
-        "Notary verification success"
-      ]
+    "policies": {
+        "version": "1.0.0",
+        "artifactVerificationPolicies": {
+            "application/vnd.cncf.notary.v2.signature": "any",
+            "sbom/example": "all"
+        }
+    },
+    "verifiers": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name":"notaryv2",
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "verificationCerts": [
+                    "~/.config/notation/certificate/wabbit-networks.io.crt"
+                  ]
+            },
+            {
+                "name":"sbom",
+                "artifactTypes" : "sbom/example",
+                "nestedReferences": "application/vnd.cncf.notary.v2.signature"
+            }
+        ]
+        
     }
-  ]
 }
+EOF
+```
+#### Discover the graph 
+
+> Please make sure that the subject is referenced with ```digest``` rather
+than with the tag.
+```bash
+export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
+
+# Discover the graph
+ratify discover -s $IMAGE_DIGEST_REF
+``` 
+
+#### Verify the graph
+
+```bash
+# Verify the graph
+ratify verify -s $IMAGE_DIGEST_REF
 ```
 
-In the above sample, the verification is still success because the
-[policy- ContinueVerifyOnFailure](./pkg/policyprovider/configpolicy/configpolicy.go)
-is set to ```true```. If it is set to false, the verification will be stopped at the first failure.
+## Documents
+
+The [docs](docs/README.md) folder contains the beginnings of a formal
+specification for the Reference Artifact Verification framework and its plugin model.
+
+## Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of
+Conduct](https://opensource.microsoft.com/codeofconduct/).
+
+For more information see the [Code of Conduct
+FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact
+[opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional
+questions or comments.
+
+
+## Release Management
+The Ratify release process is defined in [RELEASES.md](./RELEASES.md).
+
+## Licensing
+
+This project is released under the [MIT License](./LICENSE).
+
+## Trademark
+
+This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines][microsoft-trademark]. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
 
 [microsoft-trademark]: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks
