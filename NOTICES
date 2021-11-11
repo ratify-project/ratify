@@ -1,0 +1,12 @@
+NOTICES
+
+This repository incorporates material as listed below or described in the code.
+
+The initial concepts and development of some of the framework's plugin common modules under pkg/common/plugin are derived from, or
+inspired by the project Container Network Interface - networking for Linux containers (https://github.com/containernetworking/cni).
+It is licensed under the Apache License, Version 2.0.
+
+The loading of framework's configuration from a home directory is derived from or inspired by the project Docker CLI (https://github.com/docker/cli)
+It is licensed under the Apache License, Version 2.0.
+
+We thank everyone who has contributed to the above projects and enabled this project to build on those concepts and models.
