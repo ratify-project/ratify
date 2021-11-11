@@ -14,8 +14,8 @@ jobs:
       - name: setup go environment
         uses: actions/setup-go@v1
         with:
-          go-version: '1.16'
+          go-version: "1.16"
       - name: Build CLI
         run: make
       - name: Check build
-        run: bin/ratify --help
+        run: bin/ratify version
