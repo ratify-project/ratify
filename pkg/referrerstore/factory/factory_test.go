@@ -50,6 +50,10 @@ func (s *TestStore) GetConfig() *config.StoreConfig {
 	return nil
 }
 
+func (s *TestStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+	return digest.FromString("test"), nil
+}
+
 func (f *TestStoreFactory) Create(version string, storesConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error) {
 	return &TestStore{}, nil
 }

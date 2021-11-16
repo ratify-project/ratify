@@ -17,6 +17,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
@@ -29,6 +30,7 @@ import (
 
 type TestStore struct {
 	references []ocispecs.ReferenceDescriptor
+	resolveMap map[string]digest.Digest
 }
 
 func (s *TestStore) Name() string {
@@ -49,6 +51,16 @@ func (s *TestStore) GetReferenceManifest(ctx context.Context, subjectReference c
 
 func (s *TestStore) GetConfig() *config.StoreConfig {
 	return &config.StoreConfig{}
+}
+
+func (s *TestStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+	if s.resolveMap != nil {
+		if result, ok := s.resolveMap[subjectReference.Tag]; ok {
+			return result, nil
+		}
+	}
+
+	return "", fmt.Errorf("cannot resolve digest for the subject reference")
 }
 
 type TestVerifier struct {

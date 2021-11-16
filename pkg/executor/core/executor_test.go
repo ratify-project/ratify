@@ -24,6 +24,7 @@ import (
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/opencontainers/go-digest"
 )
 
 func TestVerifySubject_SubjectParseError(t *testing.T) {
@@ -37,6 +38,30 @@ func TestVerifySubject_SubjectParseError(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("expected subject parsing to fail")
+	}
+}
+
+func TestVerifySubject_ResolveTag_Success(t *testing.T) {
+	testDigest := digest.FromString("test")
+	store := &TestStore{
+		references: []ocispecs.ReferenceDescriptor{},
+		resolveMap: map[string]digest.Digest{
+			"v1": testDigest,
+		},
+	}
+
+	executor := Executor{
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: "localhost:5000/net-monitor:v1",
+	}
+
+	_, err := executor.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != ReferrersNotFound {
+		t.Fatalf("expected ReferrersNotFound actual %v", err)
 	}
 }
 

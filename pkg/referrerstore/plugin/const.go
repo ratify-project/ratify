@@ -19,6 +19,7 @@ const (
 	ListReferrersCommand  = "LISTREFERRERS"
 	GetBlobContentCommand = "GETBLOB"
 	GetRefManifestCommand = "GETREFMANIFEST"
+	ResolveTagCommand     = "RESOLVETAG"
 	CommandEnvKey         = "RATIFY_STORE_COMMAND"
 	SubjectEnvKey         = "RATIFY_STORE_SUBJECT"
 	VersionEnvKey         = "RATIFY_STORE_VERSION"

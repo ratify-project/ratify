@@ -162,6 +162,33 @@ func (sp *StorePlugin) GetReferenceManifest(ctx context.Context, subjectReferenc
 	return manifest, nil
 }
 
+func (sp *StorePlugin) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
+	if err != nil {
+		return "", err
+	}
+
+	pluginArgs := ReferrerStorePluginArgs{
+		Command:          ResolveTagCommand,
+		Version:          sp.version,
+		SubjectReference: subjectReference.String(),
+		PluginArgs:       [][2]string{},
+	}
+
+	storeConfigBytes, err := json.Marshal(sp.rawConfig)
+	if err != nil {
+		return "", err
+	}
+
+	// TODO std writer
+	stdoutBytes, err := sp.executor.ExecutePlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnviron())
+	if err != nil {
+		return "", err
+	}
+
+	return digest.Parse(string(stdoutBytes[:]))
+}
+
 func (sp *StorePlugin) GetConfig() *config.StoreConfig {
 	return &config.StoreConfig{
 		Version:       sp.version,

@@ -47,6 +47,7 @@ Usage:
 Available Commands:
   completion  generate the autocompletion script for the specified shell
   discover    Discover referrers for a subject
+  resolve     Resolve digest if subject is referenced by a tag
   help        Help about any command
   referrer    Discover referrers for a subject
   serve       Run ratify as a server
@@ -171,21 +172,18 @@ EOF
 
 #### Discover the graph
 
-> Please make sure that the subject is referenced with `digest` rather
-than with the tag.
+> If the subject is referenced by tag, it is resolved to digest before verifying it.
 
 ```bash
-export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
-
 # Discover the graph
-ratify discover -s $IMAGE_DIGEST_REF
+ratify discover -s $IMAGE
 ```
 
 #### Verify the graph
 
 ```bash
 # Verify the graph
-ratify verify -s $IMAGE_DIGEST_REF
+ratify verify -s $IMAGE
 ```
 
 ## Documents

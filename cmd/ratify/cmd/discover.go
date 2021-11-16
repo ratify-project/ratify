@@ -116,6 +116,14 @@ func discover(opts discoverCmdOptions) error {
 		References []ocispecs.ReferenceDescriptor
 	}
 
+	if subRef.Digest == "" {
+		dig, err := resolveTag(stores, subRef)
+		if err != nil {
+			return err
+		}
+		subRef.Digest = dig
+	}
+
 	var results []listResult
 
 	for _, referrerStore := range stores {

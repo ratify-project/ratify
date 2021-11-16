@@ -17,12 +17,14 @@ package plugin
 
 import (
 	"context"
+	_ "crypto/sha256"
 	"strings"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/opencontainers/go-digest"
 )
 
 type TestExecutor struct {
@@ -279,5 +281,79 @@ func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 
 	if result.NextToken != "test-token" {
 		t.Fatalf("mismatch of result expected %s actual %v", "test-token", result)
+	}
+}
+
+func TestPluginMain_ResolveTag_InvokeExpected(t *testing.T) {
+	testPlugin := "test-plugin"
+	testDigest := digest.FromString("test")
+	testExecutor := &TestExecutor{
+		find: func(plugin string, paths []string) (string, error) {
+			return "testpath", nil
+		},
+		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+			if pluginPath != "testpath" {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			}
+			if cmdArgs != nil {
+				t.Fatal("cmdArgs is expected to be nil")
+			}
+			stdData := string(stdinData[:])
+			if !strings.Contains(stdData, testPlugin) {
+				t.Fatalf("missing config data in stdin expected to have %s actual %s", "test-plugin", stdData)
+			}
+
+			commandCheck := false
+			versionCheck := false
+			subjectCheck := false
+			for _, env := range environ {
+				if strings.Contains(env, CommandEnvKey) && strings.Contains(env, ResolveTagCommand) {
+					commandCheck = true
+				} else if strings.Contains(env, VersionEnvKey) && strings.Contains(env, "1.0.0") {
+					versionCheck = true
+				} else if strings.Contains(env, SubjectEnvKey) && strings.Contains(env, "localhost") {
+					subjectCheck = true
+				}
+			}
+
+			if !commandCheck {
+				t.Fatalf("missing command env")
+			}
+
+			if !versionCheck {
+				t.Fatalf("missing version env")
+			}
+
+			if !subjectCheck {
+				t.Fatalf("missing subject env")
+			}
+
+			return []byte(testDigest.String()), nil
+		},
+	}
+
+	var rawConfig config.StorePluginConfig
+	rawConfig = map[string]interface{}{
+		testPlugin: StorePlugin{
+			name: testPlugin,
+		},
+	}
+	storePlugin := &StorePlugin{
+		executor:  testExecutor,
+		name:      testPlugin,
+		version:   "1.0.0",
+		rawConfig: rawConfig,
+	}
+
+	subject := common.Reference{
+		Original: "localhost",
+	}
+	result, err := storePlugin.ResolveTag(context.Background(), subject)
+	if err != nil {
+		t.Fatalf("plugin execution failed %v", err)
+	}
+
+	if result != testDigest {
+		t.Fatalf("mismatch of result expected %s actual %v", testDigest, result)
 	}
 }

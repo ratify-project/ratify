@@ -24,7 +24,7 @@ import (
 )
 
 func main() {
-	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, []string{"1.0.0"})
+	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, ResolveTag, []string{"1.0.0"})
 }
 
 func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error) {
@@ -42,6 +42,14 @@ func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifa
 
 func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	return []byte(digest.String()), nil
+}
+
+func ResolveTag(args *skel.CmdArgs, subjectReference common.Reference) (digest.Digest, error) {
+	dig := subjectReference.Digest
+	if dig == "" {
+		dig = digest.FromString(subjectReference.Tag)
+	}
+	return dig, nil
 }
 
 func GetReferenceManifest(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error) {

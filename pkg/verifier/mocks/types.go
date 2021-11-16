@@ -50,6 +50,10 @@ func (s *TestStore) GetConfig() *config.StoreConfig {
 	return &config.StoreConfig{}
 }
 
+func (s *TestStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+	return digest.FromString("test"), nil
+}
+
 type TestExecutor struct {
 	VerifySuccess bool
 }

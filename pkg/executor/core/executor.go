@@ -27,6 +27,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
+	"github.com/opencontainers/go-digest"
 )
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
@@ -54,6 +55,14 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	subjectReference, err := utils.ParseSubjectReference(verifyParameters.Subject)
 	if err != nil {
 		return types.VerifyResult{}, err
+	}
+
+	if subjectReference.Digest == "" {
+		dig, err := executor.resolveTagToDigest(ctx, subjectReference)
+		if err != nil {
+			return types.VerifyResult{}, fmt.Errorf("resolving digest of the subject reference failed with error %v", err)
+		}
+		subjectReference.Digest = dig
 	}
 
 	var verifierReports []interface{}
@@ -128,4 +137,16 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	}
 
 	return types.VerifyResult{IsSuccess: isSuccess, VerifierReports: verifyResults}
+}
+
+func (ex Executor) resolveTagToDigest(ctx context.Context, subjectRef common.Reference) (digest.Digest, error) {
+	for _, referrerStore := range ex.ReferrerStores {
+		dig, err := referrerStore.ResolveTag(ctx, subjectRef)
+		if err == nil {
+			return dig, nil
+		}
+		//TODO Add logging for failed resolve calls
+	}
+
+	return "", fmt.Errorf("failed to resolve digest from any stores")
 }

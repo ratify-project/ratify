@@ -164,6 +164,19 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	return ArtifactManifestToReferenceManifest(manifest), nil
 }
 
+func (store *orasStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+	ref, err := name.ParseReference(subjectReference.Original)
+	if err != nil {
+		return "", err
+	}
+	dig, err := remote.Get(ref)
+	if err != nil {
+		return "", err
+	}
+
+	return digest.Parse(dig.Digest.String())
+}
+
 func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
 	// TODO: support authentication
 	registryOpts := content.RegistryOptions{
