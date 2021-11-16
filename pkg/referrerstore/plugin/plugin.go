@@ -162,14 +162,14 @@ func (sp *StorePlugin) GetReferenceManifest(ctx context.Context, subjectReferenc
 	return manifest, nil
 }
 
-func (sp *StorePlugin) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+func (sp *StorePlugin) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	pluginArgs := ReferrerStorePluginArgs{
-		Command:          ResolveTagCommand,
+		Command:          GetSubjectDescriptor,
 		Version:          sp.version,
 		SubjectReference: subjectReference.String(),
 		PluginArgs:       [][2]string{},
@@ -177,16 +177,21 @@ func (sp *StorePlugin) ResolveTag(ctx context.Context, subjectReference common.R
 
 	storeConfigBytes, err := json.Marshal(sp.rawConfig)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// TODO std writer
 	stdoutBytes, err := sp.executor.ExecutePlugin(ctx, pluginPath, nil, storeConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return digest.Parse(string(stdoutBytes[:]))
+	desc, err := types.GetSubjectDescriptorResult(stdoutBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return desc, nil
 }
 
 func (sp *StorePlugin) GetConfig() *config.StoreConfig {

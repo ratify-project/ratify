@@ -16,46 +16,18 @@ limitations under the License.
 package factory
 
 import (
-	"context"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
-	"github.com/opencontainers/go-digest"
 )
 
-type TestStore struct{}
 type TestStoreFactory struct{}
 
-func (s *TestStore) Name() string {
-	return "test-store"
-}
-
-func (s *TestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-	return referrerstore.ListReferrersResult{}, nil
-}
-
-func (s *TestStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	return nil, nil
-}
-
-func (s *TestStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	return ocispecs.ReferenceManifest{}, nil
-}
-
-func (s *TestStore) GetConfig() *config.StoreConfig {
-	return nil
-}
-
-func (s *TestStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
-	return digest.FromString("test"), nil
-}
-
 func (f *TestStoreFactory) Create(version string, storesConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error) {
-	return &TestStore{}, nil
+	return &mocks.TestStore{}, nil
 }
 
 func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {

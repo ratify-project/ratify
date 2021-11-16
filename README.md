@@ -47,7 +47,7 @@ Usage:
 Available Commands:
   completion  generate the autocompletion script for the specified shell
   discover    Discover referrers for a subject
-  resolve     Resolve digest if subject is referenced by a tag
+  resolve     Resolve digest of a subject that is referenced by a tag
   help        Help about any command
   referrer    Discover referrers for a subject
   serve       Run ratify as a server

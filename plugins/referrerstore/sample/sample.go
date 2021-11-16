@@ -21,10 +21,11 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/plugin/skel"
 	"github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func main() {
-	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, ResolveTag, []string{"1.0.0"})
+	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, GetSubjectDescriptor, []string{"1.0.0"})
 }
 
 func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error) {
@@ -44,12 +45,12 @@ func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, diges
 	return []byte(digest.String()), nil
 }
 
-func ResolveTag(args *skel.CmdArgs, subjectReference common.Reference) (digest.Digest, error) {
+func GetSubjectDescriptor(args *skel.CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	dig := subjectReference.Digest
 	if dig == "" {
 		dig = digest.FromString(subjectReference.Tag)
 	}
-	return dig, nil
+	return &ocispecs.SubjectDescriptor{Descriptor: v1.Descriptor{Digest: dig}}, nil
 }
 
 func GetReferenceManifest(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error) {

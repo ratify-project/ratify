@@ -17,51 +17,13 @@ package core
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/opencontainers/go-digest"
 )
-
-type TestStore struct {
-	references []ocispecs.ReferenceDescriptor
-	resolveMap map[string]digest.Digest
-}
-
-func (s *TestStore) Name() string {
-	return "test-store"
-}
-
-func (s *TestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-	return referrerstore.ListReferrersResult{Referrers: s.references}, nil
-}
-
-func (s *TestStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	return nil, nil
-}
-
-func (s *TestStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	return ocispecs.ReferenceManifest{}, nil
-}
-
-func (s *TestStore) GetConfig() *config.StoreConfig {
-	return &config.StoreConfig{}
-}
-
-func (s *TestStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
-	if s.resolveMap != nil {
-		if result, ok := s.resolveMap[subjectReference.Tag]; ok {
-			return result, nil
-		}
-	}
-
-	return "", fmt.Errorf("cannot resolve digest for the subject reference")
-}
 
 type TestVerifier struct {
 	canVerify    func(artifactType string) bool

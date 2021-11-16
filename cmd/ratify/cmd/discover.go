@@ -27,6 +27,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/xlab/treeprint"
@@ -117,11 +118,11 @@ func discover(opts discoverCmdOptions) error {
 	}
 
 	if subRef.Digest == "" {
-		dig, err := resolveTag(stores, subRef)
+		desc, err := su.ResolveSubjectDescriptor(context.Background(), &stores, subRef)
 		if err != nil {
 			return err
 		}
-		subRef.Digest = dig
+		subRef.Digest = desc.Digest
 	}
 
 	var results []listResult

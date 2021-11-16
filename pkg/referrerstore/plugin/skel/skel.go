@@ -44,7 +44,7 @@ type pcontext struct {
 type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error)
 type GetBlobContent func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
 type GetReferenceManifest func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error)
-type ResolveTag func(args *CmdArgs, subjectReference common.Reference) (digest.Digest, error)
+type GetSubjectDescriptor func(args *CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 
 // CmdArgs describes different arguments that are passed when store plugin is invoked.
 type CmdArgs struct {
@@ -56,13 +56,13 @@ type CmdArgs struct {
 }
 
 // PluginMain is the core "main" for a plugin which includes error handling.
-func PluginMain(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, resolveTag ResolveTag, supportedVersions []string) {
+func PluginMain(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, getSubDesc GetSubjectDescriptor, supportedVersions []string) {
 	if e := (&pcontext{
 		GetEnviron: os.Getenv,
 		Stdin:      os.Stdin,
 		Stdout:     os.Stdout,
 		Stderr:     os.Stderr,
-	}).pluginMainCore(name, version, listReferrers, getBlobContent, getRefManifest, resolveTag, supportedVersions); e != nil {
+	}).pluginMainCore(name, version, listReferrers, getBlobContent, getRefManifest, getSubDesc, supportedVersions); e != nil {
 		if err := e.Print(); err != nil {
 			log.Print("Error writing error result to stdout: ", err)
 		}
@@ -70,7 +70,7 @@ func PluginMain(name, version string, listReferrers ListReferrers, getBlobConten
 	}
 }
 
-func (c *pcontext) pluginMainCore(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, resolveTag ResolveTag, supportedVersions []string) *plugin.Error {
+func (c *pcontext) pluginMainCore(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, getSubDesc GetSubjectDescriptor, supportedVersions []string) *plugin.Error {
 	cmd, cmdArgs, err := c.getCmdArgsFromEnv()
 	if err != nil {
 		return err
@@ -91,8 +91,8 @@ func (c *pcontext) pluginMainCore(name, version string, listReferrers ListReferr
 		return c.cmdGetBlob(cmdArgs, getBlobContent)
 	case sp.GetRefManifestCommand:
 		return c.cmdGetRefManifest(cmdArgs, getRefManifest)
-	case sp.ResolveTagCommand:
-		return c.cmdResolveTag(cmdArgs, resolveTag)
+	case sp.GetSubjectDescriptor:
+		return c.cmdGetSubjectDescriptor(cmdArgs, getSubDesc)
 	default:
 		return plugin.NewError(types.ErrUnknownCommand, fmt.Sprintf("unknown %s: %v", sp.CommandEnvKey, cmd), "")
 	}
@@ -204,14 +204,18 @@ func (c *pcontext) cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceMa
 	return nil
 }
 
-func (c *pcontext) cmdResolveTag(cmdArgs *CmdArgs, pluginFunc ResolveTag) *plugin.Error {
+func (c *pcontext) cmdGetSubjectDescriptor(cmdArgs *CmdArgs, pluginFunc GetSubjectDescriptor) *plugin.Error {
 	result, err := pluginFunc(cmdArgs, cmdArgs.subjectRef)
 
 	if err != nil {
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
 	}
 
-	_, err = c.Stdout.Write([]byte(result.String()))
+	if err != nil {
+		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
+	}
+
+	err = types.WriteSubjectDescriptorResult(result, c.Stdout)
 	if err != nil {
 		return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 	}
@@ -242,7 +246,7 @@ func (c *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 
 	// #4 Args
 	var args = c.GetEnviron(sp.ArgsEnvKey)
-	if args == "" && cmd != sp.ResolveTagCommand {
+	if args == "" && cmd != sp.GetSubjectDescriptor {
 		argsMissing = append(argsMissing, sp.ArgsEnvKey)
 	}
 

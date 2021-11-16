@@ -18,6 +18,7 @@ package plugin
 import (
 	"context"
 	_ "crypto/sha256"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -284,7 +285,7 @@ func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 	}
 }
 
-func TestPluginMain_ResolveTag_InvokeExpected(t *testing.T) {
+func TestPluginMain_GetSubjectDescriptor_InvokeExpected(t *testing.T) {
 	testPlugin := "test-plugin"
 	testDigest := digest.FromString("test")
 	testExecutor := &TestExecutor{
@@ -307,7 +308,7 @@ func TestPluginMain_ResolveTag_InvokeExpected(t *testing.T) {
 			versionCheck := false
 			subjectCheck := false
 			for _, env := range environ {
-				if strings.Contains(env, CommandEnvKey) && strings.Contains(env, ResolveTagCommand) {
+				if strings.Contains(env, CommandEnvKey) && strings.Contains(env, GetSubjectDescriptor) {
 					commandCheck = true
 				} else if strings.Contains(env, VersionEnvKey) && strings.Contains(env, "1.0.0") {
 					versionCheck = true
@@ -328,7 +329,8 @@ func TestPluginMain_ResolveTag_InvokeExpected(t *testing.T) {
 				t.Fatalf("missing subject env")
 			}
 
-			return []byte(testDigest.String()), nil
+			desc := fmt.Sprintf(`{"digest":"%s"}`, testDigest.String())
+			return []byte(desc), nil
 		},
 	}
 
@@ -348,12 +350,12 @@ func TestPluginMain_ResolveTag_InvokeExpected(t *testing.T) {
 	subject := common.Reference{
 		Original: "localhost",
 	}
-	result, err := storePlugin.ResolveTag(context.Background(), subject)
+	result, err := storePlugin.GetSubjectDescriptor(context.Background(), subject)
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	if result != testDigest {
+	if result.Digest != testDigest {
 		t.Fatalf("mismatch of result expected %s actual %v", testDigest, result)
 	}
 }

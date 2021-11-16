@@ -49,6 +49,6 @@ type ReferrerStore interface {
 	// GetConfig returns the configuration of this store
 	GetConfig() *config.StoreConfig
 
-	// ResolveTag returns the digest if the subject reference is by tag. If it is already by digest, it returns the same.
-	ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error)
+	// GetSubjectDescriptor returns the descriptor for the given subject.
+	GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 }

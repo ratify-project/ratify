@@ -164,17 +164,28 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	return ArtifactManifestToReferenceManifest(manifest), nil
 }
 
-func (store *orasStore) ResolveTag(ctx context.Context, subjectReference common.Reference) (digest.Digest, error) {
+func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	ref, err := name.ParseReference(subjectReference.Original)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	dig, err := remote.Get(ref)
+	dig, err := remote.Head(ref)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	return digest.Parse(dig.Digest.String())
+	dg, err := digest.Parse(dig.Digest.String())
+	if err != nil {
+		return nil, err
+	}
+
+	desc := oci.Descriptor{
+		MediaType: string(dig.MediaType),
+		Digest:    dg,
+		Size:      dig.Size,
+		URLs:      dig.URLs,
+	}
+	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
 
 func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {

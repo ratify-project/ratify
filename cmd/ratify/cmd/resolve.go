@@ -23,11 +23,9 @@ import (
 	"strings"
 
 	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/referrerstore"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
-	"github.com/opencontainers/go-digest"
 	"github.com/spf13/cobra"
 )
 
@@ -46,14 +44,14 @@ func NewCmdResolve(argv ...string) *cobra.Command {
 		argv = []string{os.Args[0]}
 	}
 
-	eg := fmt.Sprintf(`  # Resolve digest if subject is referenced by a tag
+	eg := fmt.Sprintf(`  # Resolve digest of a subject that is referenced by a tag
   %s resolve -c ./config.yaml -s myregistry/myrepo:v1`, strings.Join(argv, " "))
 
 	var opts resolveCmdOptions
 
 	cmd := &cobra.Command{
 		Use:     resolveUse,
-		Short:   "Resolve digest if subject is referenced by a tag",
+		Short:   "Resolve digest of a subject that is referenced by a tag",
 		Example: eg,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -90,27 +88,12 @@ func resolve(opts resolveCmdOptions) error {
 		return err
 	}
 
-	result, err := resolveTag(stores, subRef)
+	result, err := su.ResolveSubjectDescriptor(context.Background(), &stores, subRef)
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(result)
+	fmt.Println(result.Digest)
 	return nil
-}
-
-func resolveTag(stores []referrerstore.ReferrerStore, subRef common.Reference) (digest.Digest, error) {
-	if subRef.Digest != "" {
-		return subRef.Digest, nil
-	}
-	for _, referrerStore := range stores {
-		dig, err := referrerStore.ResolveTag(context.Background(), subRef)
-		if err == nil {
-			return dig, nil
-		}
-		fmt.Printf("failed to resolve digest from store %s with error %v\n", referrerStore.Name(), err)
-	}
-
-	return "", fmt.Errorf("failed to resolve digest from any stores")
 }

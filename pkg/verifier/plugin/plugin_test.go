@@ -22,6 +22,7 @@ import (
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
+	sm "github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/mocks"
 )
@@ -129,7 +130,7 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 		ArtifactType: "test-type",
 	}
 
-	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &mocks.TestStore{}, &mocks.TestExecutor{})
+	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{}, &mocks.TestExecutor{})
 
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
@@ -163,7 +164,7 @@ func TestVerify_NestedReferences_Verify_Failed(t *testing.T) {
 		ArtifactType: "test-type",
 	}
 
-	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &mocks.TestStore{}, &mocks.TestExecutor{VerifySuccess: false})
+	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{}, &mocks.TestExecutor{VerifySuccess: false})
 
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
@@ -246,7 +247,7 @@ func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
 		ArtifactType: "test-type",
 	}
 
-	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &mocks.TestStore{}, &mocks.TestExecutor{VerifySuccess: true})
+	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{}, &mocks.TestExecutor{VerifySuccess: true})
 
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)

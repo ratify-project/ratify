@@ -23,11 +23,12 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/opencontainers/go-digest"
 )
 
-func TestVerifySubject_SubjectParseError(t *testing.T) {
+func TestVerifySubject_ResolveSubjectDescriptor_Failed(t *testing.T) {
 	executor := Executor{}
 
 	verifyParameters := e.VerifyParameters{
@@ -41,11 +42,11 @@ func TestVerifySubject_SubjectParseError(t *testing.T) {
 	}
 }
 
-func TestVerifySubject_ResolveTag_Success(t *testing.T) {
+func TestVerifySubject_ResolveSubjectDescriptor_Success(t *testing.T) {
 	testDigest := digest.FromString("test")
-	store := &TestStore{
-		references: []ocispecs.ReferenceDescriptor{},
-		resolveMap: map[string]digest.Digest{
+	store := &mocks.TestStore{
+		References: []ocispecs.ReferenceDescriptor{},
+		ResolveMap: map[string]digest.Digest{
 			"v1": testDigest,
 		},
 	}
@@ -66,11 +67,16 @@ func TestVerifySubject_ResolveTag_Success(t *testing.T) {
 }
 
 func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
+	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{}
 	ex := &Executor{
 		PolicyEnforcer: configPolicy,
-		ReferrerStores: []referrerstore.ReferrerStore{&TestStore{}},
-		Verifiers:      []verifier.ReferenceVerifier{&TestVerifier{}},
+		ReferrerStores: []referrerstore.ReferrerStore{&mocks.TestStore{
+			ResolveMap: map[string]digest.Digest{
+				"v1": testDigest,
+			},
+		}},
+		Verifiers: []verifier.ReferenceVerifier{&TestVerifier{}},
 	}
 
 	verifyParameters := e.VerifyParameters{
@@ -85,15 +91,19 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 }
 
 func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
+	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{}
-	store := &TestStore{references: []ocispecs.ReferenceDescriptor{
+	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
 			ArtifactType: "test-type1",
 		},
 		{
 			ArtifactType: "test-type2",
+		}},
+		ResolveMap: map[string]digest.Digest{
+			"v1": testDigest,
 		},
-	}}
+	}
 	ver := &TestVerifier{
 		canVerify: func(at string) bool {
 			return at == "test-type1"
@@ -129,15 +139,19 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 }
 
 func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
+	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{}
-	store := &TestStore{references: []ocispecs.ReferenceDescriptor{
+	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
 			ArtifactType: "test-type1",
 		},
 		{
 			ArtifactType: "test-type2",
+		}},
+		ResolveMap: map[string]digest.Digest{
+			"v1": testDigest,
 		},
-	}}
+	}
 	ver := &TestVerifier{
 		canVerify: func(at string) bool {
 			return true
@@ -177,15 +191,19 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 }
 
 func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
+	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{}
-	store := &TestStore{references: []ocispecs.ReferenceDescriptor{
+	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
 			ArtifactType: "test-type1",
 		},
 		{
 			ArtifactType: "test-type2",
+		}},
+		ResolveMap: map[string]digest.Digest{
+			"v1": testDigest,
 		},
-	}}
+	}
 	ver := &TestVerifier{
 		canVerify: func(at string) bool {
 			return true

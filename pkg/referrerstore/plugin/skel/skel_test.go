@@ -27,6 +27,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
@@ -136,14 +137,14 @@ func TestPluginMain_ListReferrers_ReturnsExpected(t *testing.T) {
 	}
 }
 
-func TestPluginMain_ResolveTag_ReturnsExpected(t *testing.T) {
+func TestPluginMain_GetSubjectDesc_ReturnsExpected(t *testing.T) {
 	testDigest := digest.FromString("test")
-	resolveTag := func(args *CmdArgs, subjectReference common.Reference) (digest.Digest, error) {
-		return testDigest, nil
+	getSubjectDesc := func(args *CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+		return &ocispecs.SubjectDescriptor{Descriptor: v1.Descriptor{Digest: testDigest}}, nil
 	}
 
 	environment := map[string]string{
-		plugin.CommandEnvKey: plugin.ResolveTagCommand,
+		plugin.CommandEnvKey: plugin.GetSubjectDescriptor,
 		plugin.VersionEnvKey: "1.0.0",
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1",
 	}
@@ -158,13 +159,13 @@ func TestPluginMain_ResolveTag_ReturnsExpected(t *testing.T) {
 		Stderr:     stderr,
 	}
 
-	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, nil, nil, resolveTag, []string{"1.0.0"})
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, nil, nil, getSubjectDesc, []string{"1.0.0"})
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
 	out := fmt.Sprintf("%s", stdout)
-	if out != testDigest.String() {
+	if !strings.Contains(out, testDigest.String()) {
 		t.Fatalf("plugin execution failed. expected %v actual %v", testDigest.String(), out)
 	}
 }
