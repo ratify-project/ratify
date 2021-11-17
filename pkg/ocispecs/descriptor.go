@@ -36,3 +36,7 @@ type ReferenceManifest struct {
 	Blobs        []oci.Descriptor `json:"blobs"`
 	Subjects     []oci.Descriptor `json:"manifests"`
 }
+
+type SubjectDescriptor struct {
+	oci.Descriptor
+}

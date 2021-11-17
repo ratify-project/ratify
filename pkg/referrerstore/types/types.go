@@ -61,13 +61,22 @@ func GetListReferrersResult(result []byte) (referrerstore.ListReferrersResult, e
 	}, nil
 }
 
-// GetListReferrersResult unmarshall the given JSON data to reference manifest
+// GetReferenceManifestResult unmarshall the given JSON data to reference manifest
 func GetReferenceManifestResult(result []byte) (ocispecs.ReferenceManifest, error) {
 	manifest := ocispecs.ReferenceManifest{}
 	if err := json.Unmarshal(result, &manifest); err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
 	return manifest, nil
+}
+
+// GetSubjectDescriptorResult unmarshall the given JSON data to the subject descriptor
+func GetSubjectDescriptorResult(result []byte) (*ocispecs.SubjectDescriptor, error) {
+	desc := ocispecs.SubjectDescriptor{}
+	if err := json.Unmarshal(result, &desc); err != nil {
+		return nil, err
+	}
+	return &desc, nil
 }
 
 // WriteListReferrersResult writes the list referrers result as JSON data to the given writer
@@ -80,5 +89,10 @@ func WriteListReferrersResult(result *referrerstore.ListReferrersResult, w io.Wr
 
 // WriteReferenceManifestResult writes the reference manifest as JSON data in to the given writer
 func WriteReferenceManifestResult(result *ocispecs.ReferenceManifest, w io.Writer) error {
+	return json.NewEncoder(w).Encode(result)
+}
+
+// WriteSubjectDescriptorResult writes the subject descriptor as JSON data in to the given writer
+func WriteSubjectDescriptorResult(result *ocispecs.SubjectDescriptor, w io.Writer) error {
 	return json.NewEncoder(w).Encode(result)
 }

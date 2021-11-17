@@ -40,6 +40,7 @@ func New(use, short string) *cobra.Command {
 	root.AddCommand(NewCmdServe(use, serveUse))
 	root.AddCommand(NewCmdDiscover(use, discoverUse))
 	root.AddCommand(NewCmdVersion(use, versionUse))
+	root.AddCommand(NewCmdResolve(use, resolveUse))
 
 	// TODO debug logging
 	return root

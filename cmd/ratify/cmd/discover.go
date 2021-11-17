@@ -27,6 +27,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/spf13/cobra"
 	"github.com/xlab/treeprint"
@@ -114,6 +115,14 @@ func discover(opts discoverCmdOptions) error {
 	type Result struct {
 		Name       string
 		References []ocispecs.ReferenceDescriptor
+	}
+
+	if subRef.Digest == "" {
+		desc, err := su.ResolveSubjectDescriptor(context.Background(), &stores, subRef)
+		if err != nil {
+			return err
+		}
+		subRef.Digest = desc.Digest
 	}
 
 	var results []listResult
