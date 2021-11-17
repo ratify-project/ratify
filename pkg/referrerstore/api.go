@@ -48,4 +48,7 @@ type ReferrerStore interface {
 
 	// GetConfig returns the configuration of this store
 	GetConfig() *config.StoreConfig
+
+	// GetSubjectDescriptor returns the descriptor for the given subject.
+	GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 }

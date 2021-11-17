@@ -53,8 +53,6 @@ func ParseSubjectReference(subRef string) (common.Reference, error) {
 
 	if digested, ok := parseResult.(reference.Digested); ok {
 		subjectRef.Digest = digested.Digest()
-	} else {
-		return common.Reference{}, fmt.Errorf("failed to parse subject reference digest")
 	}
 
 	if tag, ok := parseResult.(reference.Tagged); ok {

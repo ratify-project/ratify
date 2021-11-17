@@ -25,6 +25,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 )
@@ -56,6 +57,14 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		return types.VerifyResult{}, err
 	}
 
+	desc, err := su.ResolveSubjectDescriptor(ctx, &executor.ReferrerStores, subjectReference)
+
+	if err != nil {
+		return types.VerifyResult{}, fmt.Errorf("resolving descriptor for the subject failed with error %v", err)
+	}
+
+	subjectReference.Digest = desc.Digest
+
 	var verifierReports []interface{}
 	anyVerifySuccess := map[string]bool{}
 	for _, referenceType := range verifyParameters.ReferenceTypes {
@@ -73,7 +82,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 			for _, reference := range referrersResult.Referrers {
 
 				if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
-					verifyResult := executor.verifyReference(ctx, subjectReference, reference, referrerStore)
+					verifyResult := executor.verifyReference(ctx, subjectReference, desc, reference, referrerStore)
 					verifierReports = append(verifierReports, verifyResult.VerifierReports...)
 
 					if !verifyResult.IsSuccess {
@@ -107,7 +116,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
-func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
+func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
 	for _, verifier := range ex.Verifiers {

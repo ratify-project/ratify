@@ -8,6 +8,7 @@ A referrer store in the framework is a component that can store and distribute O
 - Retrieve manifest for a referrer identified by the OCI reference
 - Download the blobs of an artifact
 - Retrieves properties of the subject manifest like descriptor to support verification.
+- Retrieves the descriptor properties for a subject reference
 
 This document proposes a generic plugin-based solution for integrating different stores into the framework.
 
@@ -84,6 +85,7 @@ type ReferrerStore interface {
  // Used for small objects.
  GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
  GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
+ GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 }
 
 ```
@@ -105,6 +107,9 @@ This method is used to fetch the contents of a blob that is contained within the
 
 This method is used to fetch the contents of an [artifact manifest](https://github.com/oras-project/artifacts-spec/blob/main/artifact-manifest.md) that is identified by a reference descriptor. This reference descriptor is a referrer to the given subject.
 
+#### GetSubjectDescriptor
+This method is used to get the descriptor for a subject that includes digest, size and media type properties. 
+
 ### Section 3 : Plugin Based Store
 
 The framework MUST provide a reference implementation of the store interface using the [plugin architecture](https://hackmd.io/9htAyk-OQmauWPnNqMTVIw?both#Plugin-architecture) It will execute the configured plugins to implement the methods of the interface.
@@ -120,10 +125,10 @@ There are two types of inputs that are passed to the plugin. They are parameters
 
 Execution parameters are passed to the plugins via OS environment variables. The parameters that are passed to a store are defined below
 
-- **RATIFY_STORE_COMMAND** indicates the operation to be executed. Currently they include ```LISTREFERRERS```, ```GETBLOB```, ```GETREFMANIFEST```
+- **RATIFY_STORE_COMMAND** indicates the operation to be executed. Currently they include ```LISTREFERRERS```, ```GETBLOB```, ```GETREFMANIFEST```, ```GETSUBJECTDESCRIPTOR```
 - **RATIFY_STORE_SUBJECT** is the artifact under verification usually identified by a reference as per the OCI `{DNS/IP}/{Repository}:[name|digest]`
 - **RATIFY_STORE_VERSION** is the version of the specification used between the framework and plugin. This value is taken from the ```version``` field of the store configuration.
-- **RATIFY_STORE_ARGS**: Extra arguments passed in by the framework at invocation time. They are key-value pairs separated by semicolons; for example, "digest=sha256:sdfdsdss;nextToken=123;artifactTypes:type1,type2"
+- **RATIFY_STORE_ARGS**: Extra arguments passed in by the framework at invocation time. They are key-value pairs separated by semicolons; for example, "digest=sha256:sdfdsdss;nextToken=123;artifactTypes:type1,type2". If the command doesn't need any arguments, this can be empty
 
 ##### Operations & Parameters
 
@@ -169,6 +174,7 @@ The store specification defines 3 operations ```LISTREFERRERS```, ```GETBLOB```,
 
 **```GETREFMANIFEST```**: The content of the reference manifest is returned as byte array via ```stdout``
 
+**```GETSUBJECTDESCRIPTOR```**: The contents of the descriptor for the subject is returned as a byte array via ```stdout```
 #### Error
 
 Plugins should output a JSON object with the following properties if they encounter an error
@@ -179,7 +185,7 @@ Plugins should output a JSON object with the following properties if they encoun
 
 [TODO] Add the error codes after the implementation
 
-### Section 5: Plugin Implementation
+### Section 6: Plugin Implementation
 
 The framework MAY provide libraries that can provide skeletons for writing plugins. These libraries can scaffold the parameter and configuration parsing and transformation and can define methods that the plugin writers can override for the implementation. These libraries also should catch any exceptions retruned from the plugins and return a proper error result to the framework. A simple CLI for example ```ratify plugin store add mystore``` to create a stub for a plugin using these libraries MAY be provided by the framework.
 

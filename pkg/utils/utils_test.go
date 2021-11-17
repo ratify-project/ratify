@@ -68,9 +68,12 @@ func TestParseSubjectReference_ReturnsExpected(t *testing.T) {
 			expectedErrMsg: "failed to parse subject reference",
 		},
 		{
-			input:          "localhost:5000/net-monitor:v1",
-			output:         common.Reference{},
-			expectedErrMsg: "failed to parse subject reference digest",
+			input: "localhost:5000/net-monitor:v1",
+			output: common.Reference{
+				Path:   "localhost:5000/net-monitor",
+				Tag:    "v1",
+				Digest: "",
+			},
 		},
 		{
 			input:          "localhost:5000/net&monitor:v1",
