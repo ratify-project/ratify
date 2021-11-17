@@ -207,7 +207,7 @@ The Ratify release process is defined in [RELEASES.md](./RELEASES.md).
 
 ## Licensing
 
-This project is released under the [MIT License](./LICENSE).
+This project is released under the [Apache-2.0 License](./LICENSE).
 
 ## Trademark
 
