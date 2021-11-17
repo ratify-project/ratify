@@ -18,9 +18,11 @@ package core
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/deislabs/ratify/pkg/common"
 	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider"
@@ -28,7 +30,10 @@ import (
 	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
+	"github.com/sirupsen/logrus"
 )
+
+const defaultRequestTimeoutSeconds = 8
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
@@ -36,6 +41,7 @@ type Executor struct {
 	ReferrerStores []referrerstore.ReferrerStore
 	PolicyEnforcer policyprovider.PolicyProvider
 	Verifiers      []vr.ReferenceVerifier
+	Config         *config.ExecutorConfig
 }
 
 // TODO Logging within executor
@@ -51,6 +57,14 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 	return result, nil
 }
 
+func (executor Executor) GetVerifyRequestTimeout() time.Duration {
+	timeoutSeconds := defaultRequestTimeoutSeconds
+	if executor.Config != nil && executor.Config.RequestTimeout != nil {
+		timeoutSeconds = *executor.Config.RequestTimeout
+	}
+	return time.Duration(timeoutSeconds) * time.Second
+}
+
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	subjectReference, err := utils.ParseSubjectReference(verifyParameters.Subject)
 	if err != nil {
@@ -62,6 +76,8 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	if err != nil {
 		return types.VerifyResult{}, fmt.Errorf("resolving descriptor for the subject failed with error %v", err)
 	}
+
+	logrus.Infof("Resolve of the image completed successfully the digest is %s", desc.Digest)
 
 	subjectReference.Digest = desc.Digest
 

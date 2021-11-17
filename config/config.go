@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/homedir"
 	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
 	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -40,6 +41,7 @@ type Config struct {
 	StoresConfig    rsConfig.StoresConfig    `json:"stores,omitempty"`
 	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policies,omitempty"`
 	VerifiersConfig vfConfig.VerifiersConfig `json:"verifiers,omitempty"`
+	ExecutorConfig  exConfig.ExecutorConfig  `json:"executor,omitempty"`
 }
 
 var (
