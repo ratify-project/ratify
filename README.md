@@ -154,7 +154,7 @@ cat <<EOF > ~/.ratify/config.json
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "~/.config/notation/certificate/wabbit-networks.io.crt"
+                    "/home/<user>/.config/notation/certificate/wabbit-networks-dev.crt"
                   ]
             },
             {
