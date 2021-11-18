@@ -1,0 +1,13 @@
+image:
+  repository: ratify.azurecr.io/ratify
+  tag: v0.1.0-alpha.1
+  pullPolicy: IfNotPresent
+nameOverride: ""
+fullnameOverride: ""
+resources:
+   limits:
+     cpu: 100m
+     memory: 128Mi
+   requests:
+     cpu: 100m
+     memory: 128Mi
