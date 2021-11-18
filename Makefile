@@ -40,3 +40,13 @@ test:
 clean:
 	go clean
 	rm ./bin/${BINARY_NAME}
+
+.PHONY: deploy
+deploy:
+	helm install ratify ./charts/ratify --atomic
+	kubectl apply -f  ./charts/ratify-gatekeeper/templates/constraint.yaml 
+
+.PHONY: delete
+delete:
+	kubectl delete -f  ./charts/ratify-gatekeeper/templates/constraint.yaml 
+	helm delete ratify
