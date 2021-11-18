@@ -169,11 +169,11 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		return ocispecs.ReferenceManifest{}, err
 	}
 
-	if artifactManifestFound {
-		return result, nil
+	if !artifactManifestFound {
+		return ocispecs.ReferenceManifest{}, fmt.Errorf("cannot find artifact manifest with digest %s", referenceDesc.Digest)
 	}
 
-	return ocispecs.ReferenceManifest{}, fmt.Errorf("cannot find artifact manifest with digest %s", referenceDesc.Digest)
+	return result, nil
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
