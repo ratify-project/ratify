@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	ServerRootURL = "/ratify/v1"
+	ServerRootURL = "/ratify/gatekeeper/v1"
 )
 
 type (
@@ -78,7 +78,7 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 }
 
 func (server *Server) registerHandlers() {
-	server.register("GET", ServerRootURL+"/verify", server.verify)
+	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.Executor.GetVerifyRequestTimeout()))
 }
 
 type ServerAddrNotFoundError struct{}
