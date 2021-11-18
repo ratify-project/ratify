@@ -14,14 +14,14 @@ spec:
         violation[{"msg": msg}] {
           images := [img | img = input.review.object.spec.containers[_].image]
           response := external_data({"provider": "ratify-provider", "keys": images})
-         # response_with_error(response)
+          response_with_error(response)
           msg := sprintf("Image verification failed : %v", [response])
         }
-        # response_with_error(response) {
-        #   count(response.errors) > 0
-        #   errs := response.errors[_]
-        #   contains(errs[1], "_invalid")
-        # }
-        # response_with_error(response) {
-        #   count(response.system_error) > 0
-        # }
+        response_with_error(response) {
+          count(response.errors) > 0
+          errs := response.errors[_]
+          contains(errs[1], "_invalid")
+        }
+        response_with_error(response) {
+          count(response.system_error) > 0
+        }
