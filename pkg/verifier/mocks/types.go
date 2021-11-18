@@ -17,6 +17,7 @@ package mocks
 
 import (
 	"context"
+	"time"
 
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/types"
@@ -32,4 +33,8 @@ func (s *TestExecutor) VerifySubject(ctx context.Context, verifyParameters execu
 	return types.VerifyResult{
 		IsSuccess:       s.VerifySuccess,
 		VerifierReports: []interface{}{report}}, nil
+}
+
+func (s *TestExecutor) GetVerifyRequestTimeout() time.Duration {
+	return 3 * time.Second
 }

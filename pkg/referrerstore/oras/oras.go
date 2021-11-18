@@ -25,6 +25,7 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
 	"oras.land/oras-go/pkg/oras"
+	"oras.land/oras-go/pkg/target"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -148,20 +149,31 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	ref, err := name.ParseReference(fmt.Sprintf("%s@%s", subjectReference.Path, referenceDesc.Digest))
+	client, err := store.createRegistryClient(subjectReference)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, err
-	}
-	dig, err := remote.Get(ref)
-	if err != nil {
-		return ocispecs.ReferenceManifest{}, err
-	}
-	var manifest = artifactspec.Manifest{}
-	if err := json.Unmarshal(dig.Manifest, &manifest); err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
 
-	return ArtifactManifestToReferenceManifest(manifest), nil
+	var result ocispecs.ReferenceManifest
+	artifactManifestFound := false
+	_, err = oras.Graph(ctx, subjectReference.Original, referenceDesc.ArtifactType, client.Resolver,
+		func(parent artifactspec.Descriptor, parentManifest artifactspec.Manifest, objects []target.Object) error {
+			if parent.Digest == referenceDesc.Digest {
+				result = ArtifactManifestToReferenceManifest(parentManifest)
+				artifactManifestFound = true
+			}
+			return nil
+		})
+
+	if err != nil {
+		return ocispecs.ReferenceManifest{}, err
+	}
+
+	if !artifactManifestFound {
+		return ocispecs.ReferenceManifest{}, fmt.Errorf("cannot find artifact manifest with digest %s", referenceDesc.Digest)
+	}
+
+	return result, nil
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {

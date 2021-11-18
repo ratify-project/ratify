@@ -17,6 +17,7 @@ package executor
 
 import (
 	"context"
+	"time"
 
 	"github.com/deislabs/ratify/pkg/executor/types"
 )
@@ -31,4 +32,7 @@ type VerifyParameters struct {
 type Executor interface {
 	// VerifySubject returns the result of verifying a subject
 	VerifySubject(ctx context.Context, verifyParameters VerifyParameters) (types.VerifyResult, error)
+
+	// GetVerifyRequestTimeout returns the timeout for the verification request configured with the executor
+	GetVerifyRequestTimeout() time.Duration
 }

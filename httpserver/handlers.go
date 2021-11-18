@@ -21,48 +21,106 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
 )
+
+const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
 
 func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	logrus.Infof("start request %v %v", r.Method, r.URL)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return err
-	}
-	subject := string(body)
-
-	logrus.Infof("subject for request %v %v is %v", r.Method, r.URL, subject)
-
-	verifyParameters := e.VerifyParameters{
-		Subject: subject,
+		return fmt.Errorf("unable to read request body: %v", err)
 	}
 
-	result, err := server.Executor.VerifySubject(ctx, verifyParameters)
-
+	// parse request body
+	var providerRequest externaldata.ProviderRequest
+	err = json.Unmarshal(body, &providerRequest)
 	if err != nil {
-		return err
+		return fmt.Errorf("unable to unmarshal request body: %v", err)
 	}
 
-	logrus.Infof("request %v %v completed successfully", r.Method, r.URL)
-	res, err := json.MarshalIndent(result, "", "  ")
-	if err == nil {
-		fmt.Println(string(res))
-	}
+	results := make([]externaldata.Item, 0)
+	// iterate over all keys
+	for _, subject := range providerRequest.Request.Keys {
+		// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
+		logrus.Infof("subject for request %v %v is %v", r.Method, r.URL, subject)
 
-	if result.IsSuccess {
-		return serveJSON(w, "true")
-	} else {
-		return serveJSON(w, "false")
+		verifyParameters := e.VerifyParameters{
+			Subject: subject,
+		}
+
+		result, err := server.Executor.VerifySubject(ctx, verifyParameters)
+
+		if err != nil {
+			return err
+		}
+
+		res, err := json.MarshalIndent(result, "", "  ")
+		if err == nil {
+			fmt.Println(string(res))
+		}
+
+		if result.IsSuccess {
+			results = append(results, externaldata.Item{
+				Key:   subject,
+				Value: subject + "_valid",
+			})
+		} else {
+			results = append(results, externaldata.Item{
+				Key:   subject,
+				Error: subject + "_invalid",
+			})
+		}
 	}
+	return sendResponse(&results, "", w)
 }
 
-func serveJSON(w http.ResponseWriter, result string) error {
-	if err := json.NewEncoder(w).Encode(result); err != nil {
-		return err
+func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter) error {
+	response := externaldata.ProviderResponse{
+		APIVersion: apiVersion,
+		Kind:       "ProviderResponse",
 	}
-	return nil
+
+	if results != nil {
+		response.Response.Items = *results
+	} else {
+		response.Response.SystemError = systemErr
+	}
+
+	w.WriteHeader(http.StatusOK)
+	return json.NewEncoder(w).Encode(response)
+}
+
+func processTimeout(h ContextHandler, duration time.Duration) ContextHandler {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		ctx, cancel := context.WithTimeout(r.Context(), duration)
+		defer cancel()
+
+		r = r.WithContext(ctx)
+
+		processDone := make(chan bool)
+		var err error
+		go func() {
+			err = h(ctx, w, r)
+			processDone <- true
+		}()
+
+		select {
+		case <-ctx.Done():
+			err = fmt.Errorf("operation timed out after duration %v", duration)
+		case <-processDone:
+		}
+
+		if err != nil {
+			return sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w)
+		}
+
+		return nil
+	}
 }
