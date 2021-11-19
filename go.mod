@@ -16,5 +16,5 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/xlab/treeprint v1.1.0
-	oras.land/oras-go v0.5.1-0.20211103031936-61d91f9abd65
+	oras.land/oras-go v0.5.1-0.20211118233813-9ec21342ac6c
 )
