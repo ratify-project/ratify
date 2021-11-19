@@ -1,0 +1,7 @@
+apiVersion: externaldata.gatekeeper.sh/v1alpha1
+kind: Provider
+metadata:
+  name: ratify-provider
+spec:
+  url: "http://ratify-svc.default:6001/ratify/gatekeeper/v1/verify"
+  timeout: 100

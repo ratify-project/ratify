@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ratify.fullname" . }}
+  labels:
+    {{- include "ratify.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ratify.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ratify.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - "/app/ratify"
+          args:
+            - "serve"
+            - "--http"
+            - ":6001"
+            - "-c"
+            - "/usr/local/ratify/config.json"
+          ports:
+            - containerPort: 6001
+          volumeMounts:
+            - mountPath: "/usr/local/ratify-certs"
+              name: certs
+              readOnly: true
+            - mountPath: "/usr/local/ratify"
+              name: config
+              readOnly: true
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: certs
+          secret:
+            secretName: {{ include "ratify.fullname" . }}-certificate
+        - name: config
+          configMap:
+            name: {{ include "ratify.fullname" . }}-configuration

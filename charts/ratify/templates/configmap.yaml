@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ratify.fullname" . }}-configuration
+data:
+  config.json: |
+    {
+      "stores": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "localCachePath": "./local_oras_cache"
+            }
+        ]
+      },
+      "policies": {
+          "version": "1.0.0",
+          "artifactVerificationPolicies": {
+              "application/vnd.cncf.notary.v2.signature": "any"
+          }
+      },
+      "verifiers": {
+          "version": "1.0.0",
+          "plugins": [
+            {
+                "name":"notaryv2",
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "verificationCerts": [
+                    "/usr/local/ratify-certs/ratify-test.crt"
+                  ]
+            }
+          ]
+      }
+    }
