@@ -9,7 +9,7 @@ require (
 	github.com/notaryproject/notation-go-lib v1.0.0-alpha-1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20211029184625-8b4a99a9a65a
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.0.1
+	github.com/opencontainers/image-spec v1.0.2
 	github.com/oras-project/artifacts-spec v1.0.0-draft.1
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign v1.1.0
@@ -17,5 +17,5 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/xlab/treeprint v1.1.0
-	oras.land/oras-go v0.5.1-0.20211103031936-61d91f9abd65
+	oras.land/oras-go v0.5.1-0.20211118233813-9ec21342ac6c
 )
