@@ -71,7 +71,7 @@ This section outlines instructions for each of the above steps.
 
 #### **Create a graph of Supply Chain Content**
 
-A graph of supply chain content can be created with different tools that can manage individual supply chain objects within the graph. For this quick start, the steps outlined in [Notary V2 project] (https://notaryproject.dev/blog/2021/announcing-notation-alpha1/) will be used to create a sample graph with [`notation`](https://github.com/notaryproject/notation) and [`ORAS`](https://github.com/oras-project/oras/releases/tag/v0.2.1-alpha.1) CLI.
+A graph of supply chain content can be created with different tools that can manage individual supply chain objects within the graph. For this quick start, the steps outlined in [Notary V2 project](https://notaryproject.dev/blog/2021/announcing-notation-alpha1/) will be used to create a sample graph with [`notation`](https://github.com/notaryproject/notation) and [`ORAS`](https://github.com/oras-project/oras/releases/tag/v0.2.1-alpha.1) CLI.
 
 - Run a local instance of the [CNCF Distribution Registry](https://github.com/oras-project/distribution), with [ORAS Artifacts](https://github.com/oras-project/artifacts-spec/blob/main/artifact-manifest.md) support.
 
