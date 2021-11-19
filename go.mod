@@ -10,7 +10,7 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20211029184625-8b4a99a9a65a
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2
-	github.com/oras-project/artifacts-spec v1.0.0-draft.1
+	github.com/oras-project/artifacts-spec v1.0.0-draft.1.1
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign v1.1.0
 	github.com/sigstore/sigstore v0.0.0-20210729211320-56a91f560f44
