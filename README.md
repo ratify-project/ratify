@@ -19,171 +19,62 @@ by its developers, nor is it "supported" software.
 
 ## Quick Start
 
-### Setup
+Try out ratify in Kuberenetes through Gatekeeper as the admission controller.
 
-- Build the `ratify` binary
+- Setup Gatekeeper with [external data](https://github.com/open-policy-agent/gatekeeper/pull/1677)
+
+```bash
+helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+
+helm install gatekeeper/gatekeeper  \
+    --name-template=gatekeeper \
+    --namespace gatekeeper-system --create-namespace \
+    --set enableExternalData=true \
+    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+```
+
+- Deploy ratify and a `demo` constraint on gatekeeper
 
 ```bash
 git clone https://github.com/deislabs/ratify.git
-go build -o ~/bin ./cmd/ratify
+cd ratify
+
+helm install ratify \
+    ./charts/ratify --atomic
+
+kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml 
 ```
 
-- Build the `ratify` plugins and install them in the home directory
+Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution. 
 
-```bash
-go build -o ~/.ratify/plugins/ ./plugins/verifier/sbom
+- Create the namespace `demo`
+
+```bash=
+kubectl create ns demo
 ```
 
-- `ratify` is ready to use
+- This will successfully create the pod `demo` in the namespace `demo`
 
-```bash
-$ ratify --help
-Ratify is a reference artifact tool for managing and verifying reference artifacts
-
-Usage:
-  ratify [flags]
-  ratify [command]
-
-Available Commands:
-  completion  generate the autocompletion script for the specified shell
-  discover    Discover referrers for a subject
-  resolve     Resolve digest of a subject that is referenced by a tag
-  help        Help about any command
-  referrer    Discover referrers for a subject
-  serve       Run ratify as a server
-  verify      Verify a subject
-
-Flags:
-  -h, --help   help for ratify
-
-Use "ratify [command] --help" for more information about a command.
+```bash=
+kubectl run demo --image=ratify.azurecr.io/testimage:signed -n demo
 ```
 
-### Verify a Graph of Supply Chain Content
+- Now deploy an unsigned image
 
-To get started with `ratify`, follow the step below.
-
-- Create a graph of Supply Chain Content
-- Discover the graph using `ratify`
-- Verify the graph using `ratify`
-
-This section outlines instructions for each of the above steps.
-
-#### **Create a graph of Supply Chain Content**
-
-A graph of supply chain content can be created with different tools that can manage individual supply chain objects within the graph. For this quick start, the steps outlined in [Notary V2 project](https://notaryproject.dev/blog/2021/announcing-notation-alpha1/) will be used to create a sample graph with [`notation`](https://github.com/notaryproject/notation) and [`ORAS`](https://github.com/oras-project/oras/releases/tag/v0.2.1-alpha.1) CLI.
-
-- Run a local instance of the [CNCF Distribution Registry](https://github.com/oras-project/distribution), with [ORAS Artifacts](https://github.com/oras-project/artifacts-spec/blob/main/artifact-manifest.md) support.
-
-```bash
-export PORT=5000
-export REGISTRY=localhost:${PORT}
-export REPO=net-monitor
-export IMAGE=${REGISTRY}/${REPO}:v1
-
-docker run -d -p ${PORT}:5000 ghcr.io/oras-project/registry:v0.0.3-alpha
+```bash=
+kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned -n demo
 ```
 
-- Build & Push an image
+You will see a deny message from Gatekeeper as the image doesn't have any signatures.
 
-```bash
-docker build -t $IMAGE https://github.com/wabbit-networks/net-monitor.git#main
+You just validated the container images in your k8s cluster!
 
-docker push $IMAGE
-```
+- Uninstall Ratify
 
-- Sign the image and push the signature using `notation`
-
-registry.
-
-```bash
-notation cert generate-test --default "wabbit-networks.io"
-notation sign --plain-http $IMAGE
-```
-
-- Generate a sample SBoM and push to registry
-
-```bash
-# Simulate an SBOM
-echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
-
-# Push to the registry with the oras cli
-oras push ${REGISTRY}/${REPO} \
-  --artifact-type sbom/example \
-  --subject $IMAGE \
-  --plain-http \
-  sbom.json:application/json
-```
-
-- Sign the SBoM and push the signature using `notation`
-
-```bash
-# Capture the digest of the SBOM, to sign it
-SBOM_DIGEST=$(oras discover -o json \
-                --artifact-type sbom/example \
-                $IMAGE | jq -r ".references[0].digest")
-
-notation sign --plain-http $REGISTRY/$REPO@$SBOM_DIGEST
-```
-
-This completes the creation of the supply chain graph.
-
-#### **Create config with signature and SBoM verifiers**
-
-```bash
-cat <<EOF > ~/.ratify/config.json 
-{ 
-    "stores": { 
-        "version": "1.0.0", 
-        "plugins": [ 
-            { 
-                "name": "oras"
-            }
-        ]
-    },
-    "policies": {
-        "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any",
-            "sbom/example": "all"
-        }
-    },
-    "verifiers": {
-        "version": "1.0.0",
-        "plugins": [
-            {
-                "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
-                "verificationCerts": [
-                    "~/.config/notation/certificate/wabbit-networks.io.crt"
-                  ]
-            },
-            {
-                "name":"sbom",
-                "artifactTypes" : "sbom/example",
-                "nestedReferences": "application/vnd.cncf.notary.v2.signature"
-            }
-        ]
-        
-    }
-}
-EOF
-```
-
-#### Discover the graph
-
-> If the subject is referenced by tag, it is resolved to digest before verifying it.
-
-```bash
-# Discover the graph
-ratify discover -s $IMAGE
-```
-
-#### Verify the graph
-
-```bash
-# Verify the graph
-ratify verify -s $IMAGE
+```bash=
+kubectl delete -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+helm delete ratify
+kubectl delete namespace demo
 ```
 
 ## Documents
