@@ -1,9 +1,0 @@
-apiVersion: externaldata.gatekeeper.sh/v1alpha1
-kind: Provider
-metadata:
-  name: ratify-provider
-spec:
-  proxyURL: http://ratify-svc.default:6001/ratify/v1/verify
-  timeout: 3
-  failurePolicy: Fail
-  maxRetry: 1
