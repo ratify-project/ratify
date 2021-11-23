@@ -41,12 +41,37 @@ clean:
 	go clean
 	rm ./bin/${BINARY_NAME}
 
-.PHONY: deploy
-deploy:
-	helm install ratify ./charts/ratify --atomic
-	kubectl apply -f  ./charts/ratify-gatekeeper/templates/constraint.yaml 
+.PHONY: deploy-demo 
+deploy-demo: deploy-gatekeeper deploy-ratify deploy-demo-constraints
 
-.PHONY: delete
-delete:
-	kubectl delete -f  ./charts/ratify-gatekeeper/templates/constraint.yaml 
+.PHONY: delete-demo
+delete-demo: delete-demo-constraints delete-ratify delete-gatekeeper
+
+.PHONY: deploy-ratify
+deploy-ratify:
+	helm install ratify ./charts/ratify --atomic
+
+.PHONY: delete-ratify
+delete-ratify:
 	helm delete ratify
+
+.PHONY: deploy-demo-constraints
+deploy-demo-constraints:	
+	kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml	 
+
+.PHONY: delete-demo-constraints
+delete-demo-constraints:
+	kubectl delete -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+
+.PHONY: deploy-gatekeeper
+deploy-gatekeeper:
+	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts 
+	helm install gatekeeper/gatekeeper  \
+	    --name-template=gatekeeper \
+	    --namespace gatekeeper-system --create-namespace \
+	    --set enableExternalData=true \
+	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+
+.PHONY: delete-gatekeeper
+delete-gatekeeper:
+	helm delete gatekeeper --namespace gatekeeper-system 
