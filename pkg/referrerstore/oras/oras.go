@@ -20,8 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
 	"oras.land/oras-go/pkg/oras"
@@ -105,12 +103,13 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		return referrerstore.ListReferrersResult{}, err
 	}
 
+	ref := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest)
 	var referrerDescriptors []artifactspec.Descriptor
 	if artifactTypes == nil {
 		artifactTypes = []string{""}
 	}
 	for _, artifactType := range artifactTypes {
-		_, res, err := oras.Discover(ctx, registryClient.Resolver, subjectReference.Original, artifactType)
+		_, res, err := oras.Discover(ctx, registryClient.Resolver, ref, artifactType)
 		if err != nil {
 			return referrerstore.ListReferrersResult{}, err
 		}
@@ -177,25 +176,13 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-	ref, err := name.ParseReference(subjectReference.Original)
+	registryClient, err := store.createRegistryClient(subjectReference)
 	if err != nil {
 		return nil, err
 	}
-	dig, err := remote.Head(ref)
+	_, desc, err := registryClient.Resolve(ctx, subjectReference.Original)
 	if err != nil {
 		return nil, err
-	}
-
-	dg, err := digest.Parse(dig.Digest.String())
-	if err != nil {
-		return nil, err
-	}
-
-	desc := oci.Descriptor{
-		MediaType: string(dig.MediaType),
-		Digest:    dg,
-		Size:      dig.Size,
-		URLs:      dig.URLs,
 	}
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
