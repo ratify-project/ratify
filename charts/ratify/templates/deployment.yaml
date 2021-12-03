@@ -1,3 +1,4 @@
+{{- $dockerAuthMode := or .Values.dockerConfig .Values.registryCredsSecret -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,7 +36,7 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
-          {{- if .Values.dockerConfig }}
+          {{- if $dockerAuthMode }}
             - mountPath: "/usr/local/docker"
               name: dockerconfig
               readOnly: true
@@ -49,10 +50,14 @@ spec:
         - name: certs
           secret:
             secretName: {{ include "ratify.fullname" . }}-certificate
-        {{- if .Values.dockerConfig }}
+        {{- if $dockerAuthMode }}
         - name: dockerconfig
           secret:
+            {{- if .Values.registryCredsSecret }}
+            secretName: {{ .Values.registryCredsSecret }}
+            {{ else }}
             secretName: {{ include "ratify.fullname" . }}-dockerconfig
+            {{ end }}
             items:
               - key: .dockerconfigjson
                 path: config.json
