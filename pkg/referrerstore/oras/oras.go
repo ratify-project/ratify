@@ -19,6 +19,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
@@ -37,6 +39,7 @@ import (
 const (
 	storeName             = "oras"
 	defaultLocalCachePath = "~/.ratify/local_oras_cache"
+	dockerConfigFileName  = "config.json"
 )
 
 // OrasStoreConf describes the configuration of ORAS store
@@ -189,13 +192,24 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 
 func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
 	// TODO: support authentication
+	// Although DOCKER_CONFIG env is read by the default docker CLI config https://github.com/docker/cli/blob/9bc104eff0798097954f5d9bc25ca93f892e63f5/cli/config/config.go#L56
+	// the environment variable value that is fetched is empty. Hence reading the env variable
+	// and adding that config explicitly as a workaround.
+	var configs []string
+	e := os.Getenv("DOCKER_CONFIG")
+
+	if e != "" {
+		configs = append(configs, filepath.Join(e, dockerConfigFileName))
+	}
+
 	registryOpts := content.RegistryOptions{
-		Configs:   nil,
+		Configs:   configs,
 		Username:  "",
 		Password:  "",
 		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
 		PlainHTTP: store.config.UseHttp,
 	}
+
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
 }
 
