@@ -82,9 +82,9 @@ type listResult struct {
 }
 
 func Test(subject string) {
-	listReferrers((referrerCmdOptions{
+	discover((discoverCmdOptions{
 		subject:       subject,
-		artifactTypes: []string{"myartifact"},
+		artifactTypes: []string{""},
 	}))
 }
 

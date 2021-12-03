@@ -35,12 +35,28 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
+          {{- if .Values.dockerConfig }}
+            - mountPath: "/usr/local/docker"
+              name: dockerconfig
+              readOnly: true
+          env:
+            - name: DOCKER_CONFIG
+              value: "/usr/local/docker"
+          {{ end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
         - name: certs
           secret:
             secretName: {{ include "ratify.fullname" . }}-certificate
+        {{- if .Values.dockerConfig }}
+        - name: dockerconfig
+          secret:
+            secretName: {{ include "ratify.fullname" . }}-dockerconfig
+            items:
+              - key: .dockerconfigjson
+                path: config.json
+        {{ end }}
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
