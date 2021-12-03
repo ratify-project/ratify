@@ -21,6 +21,7 @@ kubectl create secret docker-registry ratify-regcred --docker-server=<your-regis
 ```bash
 helm install ratify charts/ratify --set registryCredsSecret=ratify-regcred
 ```
+> This mode can be used to authenticate with a single registry. If authentication to multiple registries is needed, docker config file can be used as described below
 
 ## Authentication using Local Docker Config file
 If Docker config file is used for the registry login process, the same file can be used to create a k8s secret. 
