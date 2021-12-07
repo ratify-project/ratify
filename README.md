@@ -21,7 +21,7 @@ by its developers, nor is it "supported" software.
 
 Try out ratify in Kuberenetes through Gatekeeper as the admission controller.
 
-- Setup Gatekeeper with [external data](https://github.com/open-policy-agent/gatekeeper/pull/1677)
+- Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
 
 ```bash
 helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -42,10 +42,10 @@ cd ratify
 helm install ratify \
     ./charts/ratify --atomic
 
-kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml 
+kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
 ```
 
-Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution. 
+Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
 
 - Create the namespace `demo`
 
