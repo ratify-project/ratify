@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
+        {{- if .Values.akvCertConfig.enabled }}
+        aadpodidbinding: {{ required "aadPodIdentity must be provided when AKV cert config is enabled" .Values.akvCertConfig.aadPodIdentity  }}
+        {{ end }}
     spec:
       containers:
         - name: {{ .Chart.Name }}
@@ -31,7 +34,11 @@ spec:
             - containerPort: 6001
           volumeMounts:
             - mountPath: "/usr/local/ratify-certs"
+              {{- if .Values.akvCertConfig.enabled }}
+              name: cert-from-akv
+              {{ else }}
               name: certs
+              {{ end }}
               readOnly: true
             - mountPath: "/usr/local/ratify"
               name: config
@@ -61,6 +68,14 @@ spec:
             items:
               - key: .dockerconfigjson
                 path: config.json
+        {{ end }}
+        {{- if .Values.akvCertConfig.enabled }}
+        - name: cert-from-akv
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "{{ include "ratify.fullname" . }}-akv-secret-provider"
         {{ end }}
         - name: config
           configMap:
