@@ -4,7 +4,6 @@
         "plugins": [
             {
                 "name": "oras",
-                "useHttp": true,
                 "localCachePath": "./local_oras_cache"
             }
         ]
