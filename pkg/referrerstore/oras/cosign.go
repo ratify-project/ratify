@@ -26,16 +26,12 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"net/http"
-	"strings"
 )
 
 const CosignArtifactType = "org.sigstore.cosign.v1"
 
 func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.ReferenceDescriptor, error) {
 	var references []ocispecs.ReferenceDescriptor
-	if strings.Split(subjectReference.Original, "@")[1] == "" {
-		return &references, nil
-	}
 	ref, err := name.ParseReference(subjectReference.Original)
 	if err != nil {
 		return &references, err
