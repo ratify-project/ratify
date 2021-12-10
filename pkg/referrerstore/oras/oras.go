@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
@@ -34,6 +35,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -114,7 +116,11 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	for _, artifactType := range artifactTypes {
 		_, res, err := oras.Discover(ctx, registryClient.Resolver, ref, artifactType)
 		if err != nil {
-			return referrerstore.ListReferrersResult{}, err
+			if strings.Contains(err.Error(), "404 Not Found") && store.config.CosignEnabled {
+				logrus.Info("Registry doesn't support oras artifacts, but we can check for cosign artifacts")
+			} else {
+				return referrerstore.ListReferrersResult{}, err
+			}
 		}
 		referrerDescriptors = append(referrerDescriptors, res...)
 	}
