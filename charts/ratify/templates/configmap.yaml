@@ -10,6 +10,9 @@ data:
         "plugins": [
             {
                 "name": "oras",
+                {{- if .Values.cosign.enabled }}
+                "cosign-enabled": true,
+                {{- end }}
                 "localCachePath": "./local_oras_cache"
             }
         ]
@@ -29,6 +32,13 @@ data:
                 "verificationCerts": [
                     "/usr/local/ratify-certs/ratify-test.crt"
                   ]
+            {{- if .Values.cosign.enabled }}
+            },
+            {
+                "name": "cosign",
+                "artifactTypes": "org.sigstore.cosign.v1",
+                "key": "/usr/local/ratify-certs/cosign.pub"
+            {{- end }}
             }
           ]
       }
