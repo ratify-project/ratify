@@ -33,7 +33,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const defaultRequestTimeoutSeconds = 8
+const defaultRequestTimeoutSeconds = 3
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
