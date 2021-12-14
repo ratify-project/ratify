@@ -24,6 +24,9 @@ ratifyTestCert: |
   +QsmXjQo4s6vYCeUXeg/fRlNbPrcHFscDPe62gfSD/h2ziKnvGASh8JFY9jaITCn
   c92MWya0Lw==
   -----END CERTIFICATE-----
+cosign:
+  enabled: false
+  key: ""
 resources:
    limits:
      cpu: 100m
