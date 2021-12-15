@@ -82,6 +82,8 @@ kubectl delete namespace demo
 The [docs](docs/README.md) folder contains the beginnings of a formal
 specification for the Reference Artifact Verification framework and its plugin model.
 
+Meeting notes for weekly project syncs can be found [here](https://hackmd.io/ABueHjizRz2iFQpWnQrnNA?both)
+
 ## Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of
