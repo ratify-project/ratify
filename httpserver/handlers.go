@@ -78,10 +78,10 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			})
 		}
 	}
-	return sendResponse(&results, "", w)
+	return sendResponse(&results, "", w, http.StatusOK)
 }
 
-func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter) error {
+func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter, respCode int) error {
 	response := externaldata.ProviderResponse{
 		APIVersion: apiVersion,
 		Kind:       "ProviderResponse",
@@ -93,7 +93,7 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 		response.Response.SystemError = systemErr
 	}
 
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(respCode)
 	return json.NewEncoder(w).Encode(response)
 }
 
@@ -118,7 +118,7 @@ func processTimeout(h ContextHandler, duration time.Duration) ContextHandler {
 		}
 
 		if err != nil {
-			return sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w)
+			return sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w, http.StatusInternalServerError)
 		}
 
 		return nil
