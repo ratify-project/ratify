@@ -1,29 +1,43 @@
-FROM golang:alpine3.14 as builder
+ARG BUILDPLATFORM="linux/amd64"
+ARG BUILDERIMAGE="golang:1.17"
+ARG BASEIMAGE="gcr.io/distroless/static:nonroot"
+
+FROM --platform=$BUILDPLATFORM $BUILDERIMAGE as builder
+
+ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
+ARG TARGETVARIANT=""
+ARG LDFLAGS
+
+ENV CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOARM=${TARGETVARIANT}
 
 WORKDIR /app
 
-COPY go.mod .
-
-COPY go.sum .
-
-RUN go mod download
-
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/out/ /app/cmd/ratify 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/out/plugins/ /app/plugins/verifier/sbom
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /app/out/plugins/ /app/plugins/verifier/cosign
+RUN go build -o /app/out/ /app/cmd/ratify 
+RUN go build -o /app/out/plugins/ /app/plugins/verifier/sbom
+RUN go build -o /app/out/plugins/ /app/plugins/verifier/cosign
 
-FROM alpine:3.14
+FROM $BASEIMAGE
 LABEL org.opencontainers.image.source https://github.com/deislabs/ratify
 
-RUN set -ex \
-    && apk add --no-cache ca-certificates apache2-utils
-
 ARG RATIFY_FOLDER=$HOME/.ratify/
+
+WORKDIR /
+
 COPY --from=builder /app/out/ratify /app/
 COPY --from=builder /app/out/plugins ${RATIFY_FOLDER}/plugins
 COPY --from=builder /app/config/config.json ${RATIFY_FOLDER}
+
 ENV RATIFY_CONFIG=${RATIFY_FOLDER}
+
 EXPOSE 6001
-CMD ["./app/ratify", "serve", "--http", ":6001"]
+
+USER 65532:65532
+
+ENTRYPOINT ["/app/ratify", "serve", "--http", ":6001"]
