@@ -26,8 +26,8 @@ import (
 )
 
 type TestVerifier struct {
-	canVerify    func(artifactType string) bool
-	verifyResult func(artifactType string) bool
+	CanVerifyFunc func(artifactType string) bool
+	VerifyResult  func(artifactType string) bool
 }
 
 func (s *TestVerifier) Name() string {
@@ -35,7 +35,7 @@ func (s *TestVerifier) Name() string {
 }
 
 func (s *TestVerifier) CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
-	return s.canVerify(referenceDescriptor.ArtifactType)
+	return s.CanVerifyFunc(referenceDescriptor.ArtifactType)
 }
 
 func (s *TestVerifier) Verify(ctx context.Context,
@@ -44,6 +44,6 @@ func (s *TestVerifier) Verify(ctx context.Context,
 	referrerStore referrerstore.ReferrerStore,
 	executor executor.Executor) (verifier.VerifierResult, error) {
 	return verifier.VerifierResult{
-		IsSuccess: s.verifyResult(referenceDescriptor.ArtifactType),
+		IsSuccess: s.VerifyResult(referenceDescriptor.ArtifactType),
 	}, nil
 }

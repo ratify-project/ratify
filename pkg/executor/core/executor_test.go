@@ -105,10 +105,10 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 		},
 	}
 	ver := &TestVerifier{
-		canVerify: func(at string) bool {
+		CanVerifyFunc: func(at string) bool {
 			return at == "test-type1"
 		},
-		verifyResult: func(artifactType string) bool {
+		VerifyResult: func(artifactType string) bool {
 			return true
 		},
 	}
@@ -153,10 +153,10 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 		},
 	}
 	ver := &TestVerifier{
-		canVerify: func(at string) bool {
+		CanVerifyFunc: func(at string) bool {
 			return true
 		},
-		verifyResult: func(artifactType string) bool {
+		VerifyResult: func(artifactType string) bool {
 			if artifactType == "test-type1" {
 				return false
 			}
@@ -205,10 +205,10 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 		},
 	}
 	ver := &TestVerifier{
-		canVerify: func(at string) bool {
+		CanVerifyFunc: func(at string) bool {
 			return true
 		},
-		verifyResult: func(artifactType string) bool {
+		VerifyResult: func(artifactType string) bool {
 			return true
 		},
 	}

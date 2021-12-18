@@ -33,7 +33,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const defaultRequestTimeoutSeconds = 8
+const defaultRequestTimeoutMilliseconds = 2800
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
@@ -58,11 +58,11 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 }
 
 func (executor Executor) GetVerifyRequestTimeout() time.Duration {
-	timeoutSeconds := defaultRequestTimeoutSeconds
+	timeoutMilliSeconds := defaultRequestTimeoutMilliseconds
 	if executor.Config != nil && executor.Config.RequestTimeout != nil {
-		timeoutSeconds = *executor.Config.RequestTimeout
+		timeoutMilliSeconds = *executor.Config.RequestTimeout
 	}
-	return time.Duration(timeoutSeconds) * time.Second
+	return time.Duration(timeoutMilliSeconds) * time.Millisecond
 }
 
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
