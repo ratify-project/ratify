@@ -3,6 +3,8 @@ module github.com/deislabs/ratify
 go 1.16
 
 require (
+	github.com/containerd/containerd v1.5.8 // indirect
+	github.com/docker/cli v20.10.9+incompatible // indirect
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/google/go-containerregistry v0.6.0
 	github.com/gorilla/mux v1.8.0

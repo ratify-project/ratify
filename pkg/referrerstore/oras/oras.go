@@ -19,8 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -31,6 +29,7 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/referrerstore/authprovider"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/opencontainers/go-digest"
@@ -46,11 +45,11 @@ const (
 
 // OrasStoreConf describes the configuration of ORAS store
 type OrasStoreConf struct {
-	Name           string `json:"name"`
-	UseHttp        bool   `json:"useHttp,omitempty"`
-	CosignEnabled  bool   `json:"cosign-enabled,omitempty"`
-	AuthProvider   string `json:"auth-provider,omitempty"`
-	LocalCachePath string `json:"localCachePath,omitempty"`
+	Name           string                          `json:"name"`
+	UseHttp        bool                            `json:"useHttp,omitempty"`
+	CosignEnabled  bool                            `json:"cosign-enabled,omitempty"`
+	AuthProvider   authprovider.AuthProviderConfig `json:"auth-provider,omitempty"`
+	LocalCachePath string                          `json:"localCachePath,omitempty"`
 }
 
 type orasStoreFactory struct{}
@@ -60,6 +59,8 @@ type orasStore struct {
 	rawConfig  config.StoreConfig
 	localCache *content.OCI
 }
+
+var authProvider authprovider.AuthProvider
 
 func init() {
 	factory.Register(storeName, &orasStoreFactory{})
@@ -77,8 +78,9 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("failed to parse oras store configuration: %v", err)
 	}
 
-	if conf.AuthProvider != "" {
-		return nil, fmt.Errorf("auth provider %s is not supported", conf.AuthProvider)
+	authProvider, err = authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create auth provider from configuration: %v", err)
 	}
 
 	// Set up the local cache where content will land when we pull
@@ -201,19 +203,19 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 	// Although DOCKER_CONFIG env is read by the default docker CLI config https://github.com/docker/cli/blob/9bc104eff0798097954f5d9bc25ca93f892e63f5/cli/config/config.go#L56
 	// the environment variable value that is fetched is empty. Hence reading the env variable
 	// and adding that config explicitly as a workaround.
-	var configs []string
-	e := os.Getenv("DOCKER_CONFIG")
 
-	if e != "" {
-		configs = append(configs, filepath.Join(e, dockerConfigFileName))
+	if authProvider == nil || !authProvider.Enabled() {
+		return nil, fmt.Errorf("auth provider not properly enabled")
+	}
+
+	authConfig := authProvider.Provide(targetRef.Original)
+	if authConfig.Username == "" || authConfig.Password == "" {
+		return nil, fmt.Errorf("auth provider resolved empty credentials")
 	}
 
 	registryOpts := content.RegistryOptions{
-		Configs:   configs,
-		Username:  "",
-		Password:  "",
-		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
-		PlainHTTP: store.config.UseHttp,
+		Username: authConfig.Username,
+		Password: authConfig.Password,
 	}
 
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
