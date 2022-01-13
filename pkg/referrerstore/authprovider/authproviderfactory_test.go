@@ -54,8 +54,12 @@ func TestCreateAuthProvidersFromConfig_BuiltInAuthProviders_ReturnsExpected(t *t
 // Checks the default auth provider is returned when a non registered auth provider is
 // specified in config
 func TestCreateAuthProvidersFromConfig_NonexistentAuthProviders_ReturnsExpected(t *testing.T) {
+	builtInAuthProviders = map[string]AuthProviderFactory{
+		"docker-config": &defaultProviderFactory{},
+	}
+
 	authProviderConfig := map[string]interface{}{
-		"name": "test-authprovider",
+		"name": "test-non-existent",
 	}
 
 	authProvider, err := CreateAuthProviderFromConfig(authProviderConfig)
