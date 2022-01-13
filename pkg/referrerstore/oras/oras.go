@@ -199,16 +199,15 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
-	// TODO: support authentication
-	// Although DOCKER_CONFIG env is read by the default docker CLI config https://github.com/docker/cli/blob/9bc104eff0798097954f5d9bc25ca93f892e63f5/cli/config/config.go#L56
-	// the environment variable value that is fetched is empty. Hence reading the env variable
-	// and adding that config explicitly as a workaround.
-
 	if authProvider == nil || !authProvider.Enabled() {
 		return nil, fmt.Errorf("auth provider not properly enabled")
 	}
 
-	authConfig := authProvider.Provide(targetRef.Original)
+	authConfig, err := authProvider.Provide(targetRef.Original)
+	if err != nil {
+		return nil, err
+	}
+
 	if authConfig.Username == "" || authConfig.Password == "" {
 		return nil, fmt.Errorf("auth provider resolved empty credentials")
 	}

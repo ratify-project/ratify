@@ -42,7 +42,7 @@ const (
 	ErrInternalFailure             uint = 999
 )
 
-const DefaultAuthProviderName string = "default"
+const DefaultAuthProviderName string = "docker-config"
 
 // TODO Versioned Referrers result (based on the version serialize/deserialize the result)
 // ReferrersResult is the result of ListReferrers as returned by the plugins

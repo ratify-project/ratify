@@ -30,7 +30,7 @@ type AuthProviderFactory interface {
 	Create(authProviderConfig AuthProviderConfig) (AuthProvider, error)
 }
 
-// Add the factory to the built in providers map
+// Register adds the factory to the built in providers map
 func Register(name string, factory AuthProviderFactory) {
 	if factory == nil {
 		panic("auth provider factory cannot be nil")
@@ -43,8 +43,8 @@ func Register(name string, factory AuthProviderFactory) {
 	builtInAuthProviders[name] = factory
 }
 
-// CreateAuthProvidersFromConfig creates AuthProviders from the provided configuration
-// If the AuthProviderConfig isn't specified, use default auth provider
+// CreateAuthProvidersFromConfig creates the AuthProvider from the provided configuration.
+// If the AuthProviderConfig isn't specified, use the default auth provider
 func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
 	// if auth provider not specified in config, return default provider
 	if authProviderConfig == nil {
@@ -60,6 +60,7 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 	if !ok {
 		return nil, fmt.Errorf("failed to find auth provider name in the auth providers config with key %s", "name")
 	}
+
 	providerNameStr := fmt.Sprintf("%s", authProviderName)
 	if strings.ContainsRune(providerNameStr, os.PathSeparator) {
 		return nil, fmt.Errorf("invalid plugin name for a store: %s", authProviderName)
@@ -68,7 +69,6 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 	authFactory, ok := builtInAuthProviders[providerNameStr]
 	if ok {
 		authProvider, err := authFactory.Create(authProviderConfig)
-
 		if err != nil {
 			return nil, err
 		}
@@ -76,7 +76,7 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 		return authProvider, nil
 	}
 
-	// return default docker config auth provider
+	// return default docker config auth provider if no matching provider exists
 	return builtInAuthProviders[types.DefaultAuthProviderName].Create(authProviderConfig)
 }
 
