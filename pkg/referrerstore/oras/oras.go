@@ -208,13 +208,11 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 		return nil, err
 	}
 
-	if authConfig.Username == "" || authConfig.Password == "" {
-		return nil, fmt.Errorf("auth provider resolved empty credentials")
-	}
-
 	registryOpts := content.RegistryOptions{
-		Username: authConfig.Username,
-		Password: authConfig.Password,
+		Username:  authConfig.Username,
+		Password:  authConfig.Password,
+		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
+		PlainHTTP: store.config.UseHttp,
 	}
 
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
