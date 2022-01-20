@@ -29,9 +29,9 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/authprovider"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
+	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -55,12 +55,12 @@ type OrasStoreConf struct {
 type orasStoreFactory struct{}
 
 type orasStore struct {
-	config     *OrasStoreConf
-	rawConfig  config.StoreConfig
-	localCache *content.OCI
+	config       *OrasStoreConf
+	rawConfig    config.StoreConfig
+	localCache   *content.OCI
+	authProvider authprovider.AuthProvider
+	authCache    map[common.Reference]*content.Registry
 }
-
-var authProvider authprovider.AuthProvider
 
 func init() {
 	factory.Register(storeName, &orasStoreFactory{})
@@ -78,7 +78,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("failed to parse oras store configuration: %v", err)
 	}
 
-	authProvider, err = authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
+	authenticationProvider, err := authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth provider from configuration: %v", err)
 	}
@@ -92,7 +92,11 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("could not create local oras cache at path #{conf.LocalCachePath}: #{err}")
 	}
 
-	return &orasStore{config: &conf, rawConfig: config.StoreConfig{Version: version, Store: storeConfig}, localCache: localRegistry}, nil
+	return &orasStore{config: &conf,
+		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
+		localCache:   localRegistry,
+		authProvider: authenticationProvider,
+		authCache:    make(map[common.Reference]*content.Registry)}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -199,11 +203,15 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
-	if authProvider == nil || !authProvider.Enabled() {
+	if store.authProvider == nil || !store.authProvider.Enabled() {
 		return nil, fmt.Errorf("auth provider not properly enabled")
 	}
 
-	authConfig, err := authProvider.Provide(targetRef.Original)
+	if registryClient, ok := store.authCache[targetRef]; ok {
+		return registryClient, nil
+	}
+
+	authConfig, err := store.authProvider.Provide(targetRef.Original)
 	if err != nil {
 		return nil, err
 	}
@@ -214,6 +222,13 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
 		PlainHTTP: store.config.UseHttp,
 	}
+
+	registryClient, err := content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	store.authCache[targetRef] = registryClient
 
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
 }
