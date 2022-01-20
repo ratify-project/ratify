@@ -30,7 +30,8 @@ helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
+    --set validatingWebhookTimeoutSeconds=15
 ```
 
 - Deploy ratify and a `demo` constraint on gatekeeper
