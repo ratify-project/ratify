@@ -24,7 +24,7 @@ import (
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	"github.com/containerd/containerd/reference"
-	provider "github.com/deislabs/ratify/pkg/referrerstore/authprovider"
+	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/klog/v2"
