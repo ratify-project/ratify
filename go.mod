@@ -3,8 +3,10 @@ module github.com/deislabs/ratify
 go 1.16
 
 require (
-	github.com/containerd/containerd v1.5.8 // indirect
-	github.com/docker/cli v20.10.9+incompatible // indirect
+	github.com/Azure/go-autorest/autorest v0.11.20
+	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
+	github.com/containerd/containerd v1.5.8
+	github.com/docker/cli v20.10.9+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/google/go-containerregistry v0.6.0
 	github.com/gorilla/mux v1.8.0
@@ -19,5 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/xlab/treeprint v1.1.0
+	k8s.io/apimachinery v0.20.7
+	k8s.io/klog/v2 v2.9.0
 	oras.land/oras-go v0.5.1-0.20211129233629-3b1e924da9d7
 )
