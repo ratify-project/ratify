@@ -24,6 +24,7 @@ build-cli:
 .PHONY: build-plugins
 build-plugins: 
 	go build -o ./bin/plugins/ ./plugins/verifier/cosign
+	go build -o ./bin/plugins/ ./plugins/verifier/licensechecker
 	go build -o ./bin/plugins/ ./plugins/verifier/sample
 	go build -o ./bin/plugins/ ./plugins/verifier/sbom
 
