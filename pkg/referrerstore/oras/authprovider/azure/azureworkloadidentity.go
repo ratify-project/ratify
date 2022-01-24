@@ -116,10 +116,6 @@ func getAADAccessToken(tenantID, resource string) (string, error) {
 	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
 	authorityHost := os.Getenv("AZURE_AUTHORITY_HOST")
 
-	// generate a token using the msal confidential client
-	// this will always generate a new token request to AAD
-	// TODO (aramase) consider using acquire token silent (https://github.com/Azure/azure-workload-identity/issues/76)
-
 	// read the service account token from the filesystem
 	signedAssertion, err := readJWTFromFS(tokenFilePath)
 	if err != nil {
@@ -131,6 +127,7 @@ func getAADAccessToken(tenantID, resource string) (string, error) {
 		klog.ErrorS(err, "failed to create credential from signed assertion")
 		return "", errors.Wrap(err, "failed to create confidential creds")
 	}
+
 	// create the confidential client to request an AAD token
 	confidentialClientApp, err := confidential.New(
 		clientID,

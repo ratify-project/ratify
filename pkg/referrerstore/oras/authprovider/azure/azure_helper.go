@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 
-Source: https://github.com/kubernetes-sigs/cloud-provider-azure/blob/3f223fe3931c6a6acfd01acab7c40bc3c5f75636/pkg/credentialprovider/azure_credentials.go
+Source: https://github.com/kubernetes-sigs/cloud-provider-azure/blob/3f223fe3931c6a6acfd01acab7c40bc3c5f75636/pkg/credentialprovider/azure_acr_helper.go
 */
 
 package azure
