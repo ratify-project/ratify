@@ -19,6 +19,7 @@ require (
 	github.com/sigstore/cosign v1.1.0
 	github.com/sigstore/sigstore v0.0.0-20210729211320-56a91f560f44
 	github.com/sirupsen/logrus v1.8.1
+	github.com/spdx/tools-golang v0.2.0
 	github.com/spf13/cobra v1.2.1
 	github.com/xlab/treeprint v1.1.0
 	k8s.io/apimachinery v0.20.7
