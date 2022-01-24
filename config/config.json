@@ -12,7 +12,8 @@
         "version": "1.0.0",
         "artifactVerificationPolicies": {
             "application/vnd.cncf.notary.v2": "any",
-            "org.example.sbom.v0": "all"
+            "org.example.sbom.v0": "all",
+            "application/vnd.ratify.spdx.v0": "any"
         }
     },
     "verifiers": {
@@ -29,6 +30,11 @@
                 "name":"sbom",
                 "artifactTypes":"org.example.sbom.v0",
                 "nestedReferences": "application/vnd.cncf.notary.v2.signature"
+            },
+            {
+                "name": "licensechecker",
+                "artifactTypes": "application/vnd.ratify.spdx.v0",
+                "allowedLicenses": ["MIT"]
             }
             
         ]
