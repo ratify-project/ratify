@@ -213,7 +213,8 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 
 	authConfig, err := store.authProvider.Provide(targetRef.Original)
 	if err != nil {
-		return nil, err
+		logrus.Warningf("auth provider failed with err, %v", err)
+		logrus.Info("attempting to use anonymous credentials")
 	}
 
 	registryOpts := content.RegistryOptions{
