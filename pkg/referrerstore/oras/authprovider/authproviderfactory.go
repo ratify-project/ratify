@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
 )
 
 var builtInAuthProviders = make(map[string]AuthProviderFactory)
@@ -48,7 +46,7 @@ func Register(name string, factory AuthProviderFactory) {
 func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
 	// if auth provider not specified in config, return default provider
 	if authProviderConfig == nil {
-		return builtInAuthProviders[types.DefaultAuthProviderName].Create(authProviderConfig)
+		return builtInAuthProviders[DefaultAuthProviderName].Create(authProviderConfig)
 	}
 
 	err := validateAuthProviderConfig(authProviderConfig)
@@ -56,14 +54,14 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 		return nil, err
 	}
 
-	authProviderName, ok := authProviderConfig[types.Name]
+	authProviderName, ok := authProviderConfig["name"]
 	if !ok {
 		return nil, fmt.Errorf("failed to find auth provider name in the auth providers config with key %s", "name")
 	}
 
 	providerNameStr := fmt.Sprintf("%s", authProviderName)
 	if strings.ContainsRune(providerNameStr, os.PathSeparator) {
-		return nil, fmt.Errorf("invalid plugin name for a store: %s", authProviderName)
+		return nil, fmt.Errorf("invalid auth provider name: %s", authProviderName)
 	}
 
 	authFactory, ok := builtInAuthProviders[providerNameStr]
@@ -77,7 +75,7 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 	}
 
 	// return default docker config auth provider if no matching provider exists
-	return builtInAuthProviders[types.DefaultAuthProviderName].Create(authProviderConfig)
+	return builtInAuthProviders[DefaultAuthProviderName].Create(authProviderConfig)
 }
 
 // TODO: add validation

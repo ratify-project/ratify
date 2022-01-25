@@ -21,7 +21,6 @@ import (
 	"os"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 )
@@ -54,9 +53,11 @@ type defaultAuthProviderConf struct {
 	ConfigPath string `json:"configPath,omitempty"`
 }
 
+const DefaultAuthProviderName string = "docker-config"
+
 // init calls Register for our default provider, which simply reads the .dockercfg file.
 func init() {
-	Register(types.DefaultAuthProviderName, &defaultProviderFactory{})
+	Register(DefaultAuthProviderName, &defaultProviderFactory{})
 }
 
 // Create returns an empty defaultAuthProvider instance if the AuthProviderConfig is nil.
