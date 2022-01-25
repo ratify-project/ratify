@@ -54,6 +54,7 @@ type acrAuthResponse struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+// formats and sends a challenge request to the server address
 func receiveChallengeFromLoginServer(serverAddress, scheme string) (*authDirective, error) {
 	challengeURL := url.URL{
 		Scheme: scheme,
@@ -113,6 +114,7 @@ func receiveChallengeFromLoginServer(serverAddress, scheme string) (*authDirecti
 	}, nil
 }
 
+// exchanges the specifed access token for a registry refresh token
 func performTokenExchange(
 	serverAddress string,
 	directive *authDirective,
@@ -239,6 +241,7 @@ func parseAssignments(statements string) (*map[string]string, error) {
 	}
 }
 
+// finds index of the next occurence of specified separator
 func nextOccurrence(str string, start int, sep string) int {
 	if start >= len(str) {
 		return -1
@@ -250,6 +253,7 @@ func nextOccurrence(str string, start int, sep string) int {
 	return offset + start
 }
 
+// finds the index of the next non-space character
 func nextNoneSpace(str string, start int) int {
 	if start >= len(str) {
 		return -1

@@ -42,14 +42,13 @@ const (
 	dockerTokenLoginUsernameGUID string = "00000000-0000-0000-0000-000000000000"
 )
 
-// init calls Register for our default provider, which simply reads the .dockercfg file.
+// init calls Register for our Azure Workload Identity provider
 func init() {
 	provider.Register(azureWIAuthProviderName, &AzureWIProviderFactory{})
 	logrus.Info("Azure-WI provider registered")
 }
 
-// Create returns an empty defaultAuthProvider instance if the AuthProviderConfig is nil.
-// Otherwise it returns the defaultAuthProvider with configPath set
+// Create returns an AzureWIAuthProvider
 func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProviderConfig) (provider.AuthProvider, error) {
 	conf := azureWIAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
@@ -64,15 +63,18 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	return &azureWIAuthProvider{}, nil
 }
 
-// Enabled always returns true for defaultAuthProvider
+// Enabled always returns true since there are no fields to verify
 func (d *azureWIAuthProvider) Enabled() bool {
 	return true
 }
 
-// Provide reads docker config file and returns corresponding credentials from file if exists
+// Provide returns the credentials for a specificed artifact.
+// Uses Azure Workload Identity to retrieve an AAD access token which can be
+// exchanged for a valid ACR refresh token for login.
 func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, error) {
 	tenantID := os.Getenv("AZURE_TENANT_ID")
 
+	// parse the artifact reference string to extract the registry host name
 	parsedSpec, err := reference.Parse(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, err
@@ -80,17 +82,20 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 
 	artifactHostName := parsedSpec.Hostname()
 
+	// retrieve an AAD Access token from ARM
 	aadToken, err := getAADAccessToken(tenantID, "https://management.azure.com/")
 	if err != nil {
 		return provider.AuthConfig{}, err
 	}
 
+	// send a challenge to the login server
 	directive, err := receiveChallengeFromLoginServer(artifactHostName, "https")
 	if err != nil {
 		klog.Errorf("failed to receive challenge: %s", err)
 		return provider.AuthConfig{}, err
 	}
 
+	// use challenge directive and AAD token to exchange for a registry token
 	refreshToken, err := performTokenExchange(artifactHostName, directive, tenantID, aadToken)
 	if err != nil {
 		return provider.AuthConfig{}, err
