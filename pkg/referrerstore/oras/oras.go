@@ -41,7 +41,7 @@ import (
 
 const (
 	storeName             = "oras"
-	defaultLocalCachePath = "~/.ratify/local_oras_cache"
+	defaultLocalCachePath = ".ratify/local_oras_cache"
 	dockerConfigFileName  = "config.json"
 )
 
@@ -92,11 +92,15 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 
 	// Set up the local cache where content will land when we pull
 	if conf.LocalCachePath == "" {
-		conf.LocalCachePath = defaultLocalCachePath
+		homeDir, err := os.UserHomeDir()
+		if err != nil {
+			return nil, err
+		}
+		conf.LocalCachePath = filepath.Join(homeDir, defaultLocalCachePath)
 	}
 	localRegistry, err := content.NewOCI(conf.LocalCachePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not create local oras cache at path #{conf.LocalCachePath}: #{err}")
+		return nil, fmt.Errorf("could not create local oras cache at path %s: %s", conf.LocalCachePath, err)
 	}
 
 	return &orasStore{config: &conf,
