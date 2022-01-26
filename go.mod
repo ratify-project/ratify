@@ -21,6 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spdx/tools-golang v0.2.0
 	github.com/spf13/cobra v1.2.1
+	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/xlab/treeprint v1.1.0
 	k8s.io/apimachinery v0.20.7
 	k8s.io/klog/v2 v2.9.0
