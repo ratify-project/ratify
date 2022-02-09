@@ -17,10 +17,12 @@ package authprovider
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"strings"
 
-	"github.com/containerd/containerd/reference"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 )
@@ -113,12 +115,11 @@ func (d *defaultAuthProvider) Provide(artifact string) (AuthConfig, error) {
 		}
 	}
 
-	parsedSpec, err := reference.Parse(artifact)
+	artifactHostName, err := getRegistryHostName(artifact)
 	if err != nil {
 		return AuthConfig{}, err
 	}
 
-	artifactHostName := parsedSpec.Hostname()
 	dockerAuthConfig := cfg.AuthConfigs[artifactHostName]
 	authConfig := AuthConfig{
 		Username: dockerAuthConfig.Username,
@@ -127,4 +128,25 @@ func (d *defaultAuthProvider) Provide(artifact string) (AuthConfig, error) {
 	}
 
 	return authConfig, nil
+}
+
+func getRegistryHostName(artifact string) (string, error) {
+	if strings.Contains(artifact, "://") {
+		return "", errors.New("invalid artifact reference")
+	}
+
+	u, err := url.Parse("dummy://" + artifact)
+	if err != nil {
+		return "", err
+	}
+
+	if u.Scheme != "dummy" {
+		return "", errors.New("invalid artifact reference: scheme missing")
+	}
+
+	if u.Host == "" {
+		return "", errors.New("invalid artifact reference: host could not be extracted")
+	}
+
+	return u.Host, nil
 }
