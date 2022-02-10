@@ -19,8 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -33,6 +31,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
+	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -46,19 +45,21 @@ const (
 
 // OrasStoreConf describes the configuration of ORAS store
 type OrasStoreConf struct {
-	Name           string `json:"name"`
-	UseHttp        bool   `json:"useHttp,omitempty"`
-	CosignEnabled  bool   `json:"cosign-enabled,omitempty"`
-	AuthProvider   string `json:"auth-provider,omitempty"`
-	LocalCachePath string `json:"localCachePath,omitempty"`
+	Name           string                          `json:"name"`
+	UseHttp        bool                            `json:"useHttp,omitempty"`
+	CosignEnabled  bool                            `json:"cosign-enabled,omitempty"`
+	AuthProvider   authprovider.AuthProviderConfig `json:"auth-provider,omitempty"`
+	LocalCachePath string                          `json:"localCachePath,omitempty"`
 }
 
 type orasStoreFactory struct{}
 
 type orasStore struct {
-	config     *OrasStoreConf
-	rawConfig  config.StoreConfig
-	localCache *content.OCI
+	config       *OrasStoreConf
+	rawConfig    config.StoreConfig
+	localCache   *content.OCI
+	authProvider authprovider.AuthProvider
+	authCache    map[common.Reference]*content.Registry
 }
 
 func init() {
@@ -77,8 +78,9 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("failed to parse oras store configuration: %v", err)
 	}
 
-	if conf.AuthProvider != "" {
-		return nil, fmt.Errorf("auth provider %s is not supported", conf.AuthProvider)
+	authenticationProvider, err := authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create auth provider from configuration: %v", err)
 	}
 
 	// Set up the local cache where content will land when we pull
@@ -90,7 +92,11 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("could not create local oras cache at path #{conf.LocalCachePath}: #{err}")
 	}
 
-	return &orasStore{config: &conf, rawConfig: config.StoreConfig{Version: version, Store: storeConfig}, localCache: localRegistry}, nil
+	return &orasStore{config: &conf,
+		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
+		localCache:   localRegistry,
+		authProvider: authenticationProvider,
+		authCache:    make(map[common.Reference]*content.Registry)}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -197,24 +203,33 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
-	// TODO: support authentication
-	// Although DOCKER_CONFIG env is read by the default docker CLI config https://github.com/docker/cli/blob/9bc104eff0798097954f5d9bc25ca93f892e63f5/cli/config/config.go#L56
-	// the environment variable value that is fetched is empty. Hence reading the env variable
-	// and adding that config explicitly as a workaround.
-	var configs []string
-	e := os.Getenv("DOCKER_CONFIG")
+	if store.authProvider == nil || !store.authProvider.Enabled() {
+		return nil, fmt.Errorf("auth provider not properly enabled")
+	}
 
-	if e != "" {
-		configs = append(configs, filepath.Join(e, dockerConfigFileName))
+	if registryClient, ok := store.authCache[targetRef]; ok {
+		return registryClient, nil
+	}
+
+	authConfig, err := store.authProvider.Provide(targetRef.Original)
+	if err != nil {
+		logrus.Warningf("auth provider failed with err, %v", err)
+		logrus.Info("attempting to use anonymous credentials")
 	}
 
 	registryOpts := content.RegistryOptions{
-		Configs:   configs,
-		Username:  "",
-		Password:  "",
+		Username:  authConfig.Username,
+		Password:  authConfig.Password,
 		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
 		PlainHTTP: store.config.UseHttp,
 	}
+
+	registryClient, err := content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	store.authCache[targetRef] = registryClient
 
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
 }

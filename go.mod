@@ -3,6 +3,7 @@ module github.com/deislabs/ratify
 go 1.16
 
 require (
+	github.com/docker/cli v20.10.9+incompatible
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/google/go-containerregistry v0.6.0
 	github.com/gorilla/mux v1.8.0
