@@ -115,7 +115,7 @@ func (d *defaultAuthProvider) Provide(artifact string) (AuthConfig, error) {
 		}
 	}
 
-	artifactHostName, err := getRegistryHostName(artifact)
+	artifactHostName, err := GetRegistryHostName(artifact)
 	if err != nil {
 		return AuthConfig{}, err
 	}
@@ -130,7 +130,7 @@ func (d *defaultAuthProvider) Provide(artifact string) (AuthConfig, error) {
 	return authConfig, nil
 }
 
-func getRegistryHostName(artifact string) (string, error) {
+func GetRegistryHostName(artifact string) (string, error) {
 	if strings.Contains(artifact, "://") {
 		return "", errors.New("invalid artifact reference")
 	}

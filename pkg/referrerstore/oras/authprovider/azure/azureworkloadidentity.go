@@ -23,11 +23,8 @@ import (
 	"strings"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"github.com/containerd/containerd/reference"
 	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"k8s.io/klog/v2"
 )
 
 type AzureWIProviderFactory struct{}
@@ -40,12 +37,12 @@ type azureWIAuthProviderConf struct {
 const (
 	azureWIAuthProviderName      string = "azure-wi"
 	dockerTokenLoginUsernameGUID string = "00000000-0000-0000-0000-000000000000"
+	AADResource                  string = "https://containerregistry.azure.net"
 )
 
 // init calls Register for our Azure Workload Identity provider
 func init() {
 	provider.Register(azureWIAuthProviderName, &AzureWIProviderFactory{})
-	logrus.Info("Azure-WI provider registered")
 }
 
 // Create returns an AzureWIAuthProvider
@@ -59,7 +56,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
 		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
 	}
-	logrus.Info("Azure-WI provider created succesfully")
+
 	return &azureWIAuthProvider{}, nil
 }
 
@@ -75,15 +72,13 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 	tenantID := os.Getenv("AZURE_TENANT_ID")
 
 	// parse the artifact reference string to extract the registry host name
-	parsedSpec, err := reference.Parse(artifact)
+	artifactHostName, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, err
 	}
 
-	artifactHostName := parsedSpec.Hostname()
-
-	// retrieve an AAD Access token from ARM
-	aadToken, err := getAADAccessToken(tenantID, "https://management.azure.com/")
+	// retrieve an AAD Access token
+	aadToken, err := getAADAccessToken(tenantID, AADResource)
 	if err != nil {
 		return provider.AuthConfig{}, err
 	}
@@ -91,7 +86,6 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 	// send a challenge to the login server
 	directive, err := receiveChallengeFromLoginServer(artifactHostName, "https")
 	if err != nil {
-		klog.Errorf("failed to receive challenge: %s", err)
 		return provider.AuthConfig{}, err
 	}
 
@@ -111,7 +105,7 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
 func getAADAccessToken(tenantID, resource string) (string, error) {
-	// Azure AD Workload Identity webhook will inject the following env vars
+	// Azure AD Workload Identity webhook will inject the following env vars:
 	// 	AZURE_CLIENT_ID with the clientID set in the service account annotation
 	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
 	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
@@ -124,12 +118,10 @@ func getAADAccessToken(tenantID, resource string) (string, error) {
 	// read the service account token from the filesystem
 	signedAssertion, err := readJWTFromFS(tokenFilePath)
 	if err != nil {
-		klog.ErrorS(err, "failed to read the service account token from the filesystem")
 		return "", errors.Wrap(err, "failed to read service account token")
 	}
 	cred, err := confidential.NewCredFromAssertion(signedAssertion)
 	if err != nil {
-		klog.ErrorS(err, "failed to create credential from signed assertion")
 		return "", errors.Wrap(err, "failed to create confidential creds")
 	}
 
@@ -139,7 +131,6 @@ func getAADAccessToken(tenantID, resource string) (string, error) {
 		cred,
 		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authorityHost, tenantID)))
 	if err != nil {
-		klog.ErrorS(err, "failed to create confidential client")
 		return "", errors.Wrap(err, "failed to create confidential client app")
 	}
 
@@ -150,7 +141,6 @@ func getAADAccessToken(tenantID, resource string) (string, error) {
 
 	result, err := confidentialClientApp.AcquireTokenByCredential(context.Background(), []string{resource})
 	if err != nil {
-		klog.ErrorS(err, "failed to acquire token")
 		return "", errors.Wrap(err, "failed to acquire token")
 	}
 
