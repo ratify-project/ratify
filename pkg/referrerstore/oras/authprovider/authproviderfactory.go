@@ -17,8 +17,8 @@ package authprovider
 
 import (
 	"fmt"
-	"os"
-	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 var builtInAuthProviders = make(map[string]AuthProviderFactory)
@@ -46,6 +46,7 @@ func Register(name string, factory AuthProviderFactory) {
 func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
 	// if auth provider not specified in config, return default provider
 	if authProviderConfig == nil {
+		logrus.Infof("selected default auth provider: %s", DefaultAuthProviderName)
 		return builtInAuthProviders[DefaultAuthProviderName].Create(authProviderConfig)
 	}
 
@@ -60,22 +61,18 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 	}
 
 	providerNameStr := fmt.Sprintf("%s", authProviderName)
-	if strings.ContainsRune(providerNameStr, os.PathSeparator) {
-		return nil, fmt.Errorf("invalid auth provider name: %s", authProviderName)
-	}
 
 	authFactory, ok := builtInAuthProviders[providerNameStr]
-	if ok {
-		authProvider, err := authFactory.Create(authProviderConfig)
-		if err != nil {
-			return nil, err
-		}
-
-		return authProvider, nil
+	if !ok {
+		return nil, fmt.Errorf("failed to find auth provider implementation with name %s", providerNameStr)
+	}
+	authProvider, err := authFactory.Create(authProviderConfig)
+	if err != nil {
+		return nil, err
 	}
 
-	// return default docker config auth provider if no matching provider exists
-	return builtInAuthProviders[DefaultAuthProviderName].Create(authProviderConfig)
+	logrus.Infof("selected auth provider: %s", providerNameStr)
+	return authProvider, nil
 }
 
 // TODO: add validation
