@@ -30,7 +30,7 @@ import (
 
 type k8SecretProviderFactory struct{}
 type k8SecretAuthProvider struct {
-	secrets map[string]loadedSecret
+	secrets map[string]*core.Secret
 }
 
 type secretConfig struct {
@@ -44,18 +44,13 @@ type k8SecretAuthProviderConf struct {
 	Secrets []secretConfig `json:"secrets,omitempty"`
 }
 
-type loadedSecret struct {
-	RegistryHost string
-	Secret       *core.Secret
-}
-
 // init calls Register for our k8s-secrets provider
 func init() {
 	Register("k8s-secrets", &k8SecretProviderFactory{})
 }
 
-// Create returns an empty defaultAuthProvider instance if the AuthProviderConfig is nil.
-// Otherwise it returns the defaultAuthProvider with configPath set
+// Create returns a k8AuthProvider instance after parsing auth config and resolving
+// named K8 secrets
 func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
 
 	conf := k8SecretAuthProviderConf{}
@@ -78,7 +73,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 		return nil, err
 	}
 
-	var extractedSecrets = make(map[string]loadedSecret)
+	var extractedSecrets = make(map[string]*core.Secret)
 	// iterate through configuration secrets,resolve each secret, and store in map
 	for _, secretConf := range conf.Secrets {
 		if secretConf.Namespace == "" {
@@ -94,10 +89,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 		if err != nil {
 			return nil, err
 		}
-		extractedSecrets[secretConf.RegistryHost] = loadedSecret{
-			RegistryHost: secretConf.RegistryHost,
-			Secret:       secret,
-		}
+		extractedSecrets[secretConf.RegistryHost] = secret
 	}
 
 	return &k8SecretAuthProvider{
@@ -105,7 +97,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	}, nil
 }
 
-// Enabled always returns true for defaultAuthProvider
+// Enabled checks if secrets map is not nil or empty
 func (d *k8SecretAuthProvider) Enabled() bool {
 	if d.secrets == nil || len(d.secrets) <= 0 {
 		return false
@@ -114,9 +106,8 @@ func (d *k8SecretAuthProvider) Enabled() bool {
 	return true
 }
 
-// Provide finds secret corresponding to artifact's registryhost,
-// extracts the authentication credentials from k8 secret, and
-// returns AuthConfig
+// Provide finds secret corresponding to artifact's registryHost, extracts
+// the authentication credentials from k8 secret, and returns AuthConfig
 func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
 	hostName, err := getRegistryHostName(artifact)
 	if err != nil {
@@ -128,16 +119,16 @@ func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
 		return AuthConfig{}, fmt.Errorf("could not find secret corresponding for artifact: %s", artifact)
 	}
 
-	if secretLoaded.Secret.Type == core.SecretTypeBasicAuth {
+	if secretLoaded.Type == core.SecretTypeBasicAuth {
 		// if secret is of type basic-auth
 		return AuthConfig{
-			Username: string(secretLoaded.Secret.Data[core.BasicAuthUsernameKey]),
-			Password: string(secretLoaded.Secret.Data[core.BasicAuthPasswordKey]),
+			Username: string(secretLoaded.Data[core.BasicAuthUsernameKey]),
+			Password: string(secretLoaded.Data[core.BasicAuthPasswordKey]),
 			Provider: d,
 		}, nil
-	} else if secretLoaded.Secret.Type == core.SecretTypeDockercfg {
+	} else if secretLoaded.Type == core.SecretTypeDockercfg {
 		// if secret is a legacy docker config type
-		dockercfg, exists := secretLoaded.Secret.Data[core.DockerConfigKey]
+		dockercfg, exists := secretLoaded.Data[core.DockerConfigKey]
 		if !exists {
 			return AuthConfig{}, fmt.Errorf("could not extract auth configs from .dockercfg")
 		}
@@ -157,9 +148,9 @@ func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
 			Password: authConfig.Password,
 			Provider: d,
 		}, nil
-	} else if secretLoaded.Secret.Type == core.SecretTypeDockerConfigJson {
+	} else if secretLoaded.Type == core.SecretTypeDockerConfigJson {
 		// if secret is a docker config json type
-		dockerconfig, exists := secretLoaded.Secret.Data[core.DockerConfigJsonKey]
+		dockerconfig, exists := secretLoaded.Data[core.DockerConfigJsonKey]
 		if !exists {
 			return AuthConfig{}, fmt.Errorf("could not extract auth configs from .docker/config.json")
 		}
@@ -181,5 +172,5 @@ func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
 		}, nil
 	}
 
-	return AuthConfig{}, nil
+	return AuthConfig{}, fmt.Errorf("secret with unsupported type %s provided", secretLoaded.Type)
 }
