@@ -22,6 +22,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
@@ -30,10 +31,11 @@ import (
 // This config represents the credentials that should be used
 // when pulling artifacts from specific repositories.
 type AuthConfig struct {
-	Username string
-	Password string
-	Email    string
-	Provider AuthProvider
+	Username  string
+	Password  string
+	Email     string
+	Provider  AuthProvider
+	ExpiresOn time.Time
 }
 
 type AuthProvider interface {

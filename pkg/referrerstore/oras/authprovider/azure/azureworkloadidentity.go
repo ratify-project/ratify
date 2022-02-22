@@ -20,10 +20,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 )
@@ -100,6 +102,16 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 		return provider.AuthConfig{}, err
 	}
 
+	// need to refresh AAD token if it's expired
+	if time.Now().After(d.aadToken.ExpiresOn) {
+		newToken, err := getAADAccessToken(d.tenantID)
+		if err != nil {
+			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
+		}
+		d.aadToken = newToken
+		logrus.Info("sucessfully refreshed AAD token")
+	}
+
 	// add protocol to generate complete URI
 	serverUrl := "https://" + artifactHostName
 
@@ -111,9 +123,10 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 	}
 
 	authConfig := provider.AuthConfig{
-		Username: dockerTokenLoginUsernameGUID,
-		Password: *rt.RefreshToken,
-		Provider: d,
+		Username:  dockerTokenLoginUsernameGUID,
+		Password:  *rt.RefreshToken,
+		Provider:  d,
+		ExpiresOn: d.aadToken.ExpiresOn,
 	}
 
 	return authConfig, nil

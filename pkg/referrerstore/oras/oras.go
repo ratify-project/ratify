@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
@@ -55,12 +56,17 @@ type OrasStoreConf struct {
 
 type orasStoreFactory struct{}
 
+type authCacheEntry struct {
+	client    *content.Registry
+	expiresOn time.Time
+}
+
 type orasStore struct {
 	config       *OrasStoreConf
 	rawConfig    config.StoreConfig
 	localCache   *content.OCI
 	authProvider authprovider.AuthProvider
-	authCache    map[common.Reference]*content.Registry
+	authCache    map[common.Reference]authCacheEntry
 }
 
 func init() {
@@ -97,7 +103,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
 		localCache:   localRegistry,
 		authProvider: authenticationProvider,
-		authCache:    make(map[common.Reference]*content.Registry)}, nil
+		authCache:    make(map[common.Reference]authCacheEntry)}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -208,8 +214,11 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 		return nil, fmt.Errorf("auth provider not properly enabled")
 	}
 
-	if registryClient, ok := store.authCache[targetRef]; ok {
-		return registryClient, nil
+	if cacheEntry, ok := store.authCache[targetRef]; ok {
+		// if the auth cache entry expiration has not expired or it was never set
+		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
+			return cacheEntry.client, nil
+		}
 	}
 
 	authConfig, err := store.authProvider.Provide(targetRef.Original)
@@ -230,7 +239,10 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 		return nil, err
 	}
 
-	store.authCache[targetRef] = registryClient
+	store.authCache[targetRef] = authCacheEntry{
+		client:    registryClient,
+		expiresOn: authConfig.ExpiresOn,
+	}
 
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
 }
