@@ -20,15 +20,19 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/pkg/errors"
+
+	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 )
 
 type AzureWIProviderFactory struct{}
-type azureWIAuthProvider struct{}
+type azureWIAuthProvider struct {
+	aadToken confidential.AuthResult
+	tenantID string
+}
 
 type azureWIAuthProviderConf struct {
 	Name string `json:"name"`
@@ -37,7 +41,7 @@ type azureWIAuthProviderConf struct {
 const (
 	azureWIAuthProviderName      string = "azure-wi"
 	dockerTokenLoginUsernameGUID string = "00000000-0000-0000-0000-000000000000"
-	AADResource                  string = "https://containerregistry.azure.net"
+	AADResource                  string = "https://containerregistry.azure.net/.default"
 )
 
 // init calls Register for our Azure Workload Identity provider
@@ -57,11 +61,32 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
 	}
 
-	return &azureWIAuthProvider{}, nil
+	tenant := os.Getenv("AZURE_TENANT_ID")
+	if tenant == "" {
+		return nil, fmt.Errorf("azure tenant id environment variable is empty")
+	}
+	// retrieve an AAD Access token
+	token, err := getAADAccessToken(tenant)
+	if err != nil {
+		return nil, err
+	}
+
+	return &azureWIAuthProvider{
+		aadToken: token,
+		tenantID: tenant,
+	}, nil
 }
 
-// Enabled always returns true since there are no fields to verify
+// Enabled checks for non empty tenant ID and AAD access token
 func (d *azureWIAuthProvider) Enabled() bool {
+	if d.tenantID == "" {
+		return false
+	}
+
+	if d.aadToken.AccessToken == "" {
+		return false
+	}
+
 	return true
 }
 
@@ -69,42 +94,33 @@ func (d *azureWIAuthProvider) Enabled() bool {
 // Uses Azure Workload Identity to retrieve an AAD access token which can be
 // exchanged for a valid ACR refresh token for login.
 func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, error) {
-	tenantID := os.Getenv("AZURE_TENANT_ID")
-
 	// parse the artifact reference string to extract the registry host name
 	artifactHostName, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, err
 	}
 
-	// retrieve an AAD Access token
-	aadToken, err := getAADAccessToken(tenantID, AADResource)
-	if err != nil {
-		return provider.AuthConfig{}, err
-	}
+	// add protocol to generate complete URI
+	serverUrl := "https://" + artifactHostName
 
-	// send a challenge to the login server
-	directive, err := receiveChallengeFromLoginServer(artifactHostName, "https")
+	// create registry client and exchange AAD token for registry refresh token
+	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
+	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
-		return provider.AuthConfig{}, err
-	}
-
-	// use challenge directive and AAD token to exchange for a registry token
-	refreshToken, err := performTokenExchange(artifactHostName, directive, tenantID, aadToken)
-	if err != nil {
-		return provider.AuthConfig{}, err
+		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry - %w", err)
 	}
 
 	authConfig := provider.AuthConfig{
 		Username: dockerTokenLoginUsernameGUID,
-		Password: refreshToken,
+		Password: *rt.RefreshToken,
 		Provider: d,
 	}
+
 	return authConfig, nil
 }
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
-func getAADAccessToken(tenantID, resource string) (string, error) {
+func getAADAccessToken(tenantID string) (confidential.AuthResult, error) {
 	// Azure AD Workload Identity webhook will inject the following env vars:
 	// 	AZURE_CLIENT_ID with the clientID set in the service account annotation
 	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
@@ -113,38 +129,36 @@ func getAADAccessToken(tenantID, resource string) (string, error) {
 	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
 	clientID := os.Getenv("AZURE_CLIENT_ID")
 	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
-	authorityHost := os.Getenv("AZURE_AUTHORITY_HOST")
+	authority := os.Getenv("AZURE_AUTHORITY_HOST")
+	if clientID == "" || tokenFilePath == "" || authority == "" {
+		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_CLIENT_ID: %s, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", clientID, tokenFilePath, authority)
+	}
 
 	// read the service account token from the filesystem
 	signedAssertion, err := readJWTFromFS(tokenFilePath)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read service account token")
+		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
 	}
 	cred, err := confidential.NewCredFromAssertion(signedAssertion)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create confidential creds")
+		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential creds")
 	}
 
 	// create the confidential client to request an AAD token
 	confidentialClientApp, err := confidential.New(
 		clientID,
 		cred,
-		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authorityHost, tenantID)))
+		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authority, tenantID)))
 	if err != nil {
-		return "", errors.Wrap(err, "failed to create confidential client app")
+		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential client app")
 	}
 
-	// .default needs to be added to the scope
-	if !strings.HasSuffix(resource, ".default") {
-		resource += "/.default"
-	}
-
-	result, err := confidentialClientApp.AcquireTokenByCredential(context.Background(), []string{resource})
+	result, err := confidentialClientApp.AcquireTokenByCredential(context.Background(), []string{AADResource})
 	if err != nil {
-		return "", errors.Wrap(err, "failed to acquire token")
+		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire token")
 	}
 
-	return result.AccessToken, nil
+	return result, nil
 }
 
 // readJWTFromFS reads the jwt from file system
