@@ -16,6 +16,7 @@ limitations under the License.
 package authprovider
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -42,9 +43,9 @@ type AuthProvider interface {
 	// Enabled returns true if the config provider is properly enabled
 	// It will verify necessary values provided in config file to
 	// create the AuthProvider
-	Enabled() bool
+	Enabled(ctx context.Context) bool
 	// Provide returns AuthConfig for registry.
-	Provide(artifact string) (AuthConfig, error)
+	Provide(ctx context.Context, artifact string) (AuthConfig, error)
 }
 
 type defaultProviderFactory struct{}
@@ -87,12 +88,12 @@ func (s *defaultProviderFactory) Create(authProviderConfig AuthProviderConfig) (
 }
 
 // Enabled always returns true for defaultAuthProvider
-func (d *defaultAuthProvider) Enabled() bool {
+func (d *defaultAuthProvider) Enabled(ctx context.Context) bool {
 	return true
 }
 
 // Provide reads docker config file and returns corresponding credentials from file if exists
-func (d *defaultAuthProvider) Provide(artifact string) (AuthConfig, error) {
+func (d *defaultAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
 	// load docker config file at default path if config file path not specified
 	var cfg *configfile.ConfigFile
 	if d.configPath == "" {

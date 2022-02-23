@@ -16,6 +16,7 @@ limitations under the License.
 package authprovider
 
 import (
+	"context"
 	"testing"
 )
 
@@ -41,7 +42,7 @@ func TestCreateAuthProvidersFromConfig_BuiltInAuthProviders_ReturnsExpected(t *t
 		t.Fatalf("create auth provider failed with err %v", err)
 	}
 
-	authConfig, err := authProvider.Provide("test-artifact")
+	authConfig, err := authProvider.Provide(context.Background(), "test-artifact")
 	if err != nil {
 		t.Fatalf("provide failed to get credential with err %v", err)
 	}

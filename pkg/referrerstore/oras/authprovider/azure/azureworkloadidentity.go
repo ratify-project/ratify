@@ -68,7 +68,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		return nil, fmt.Errorf("azure tenant id environment variable is empty")
 	}
 	// retrieve an AAD Access token
-	token, err := getAADAccessToken(tenant)
+	token, err := getAADAccessToken(context.Background(), tenant)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
-func (d *azureWIAuthProvider) Enabled() bool {
+func (d *azureWIAuthProvider) Enabled(ctx context.Context) bool {
 	if d.tenantID == "" {
 		return false
 	}
@@ -95,7 +95,7 @@ func (d *azureWIAuthProvider) Enabled() bool {
 // Provide returns the credentials for a specificed artifact.
 // Uses Azure Workload Identity to retrieve an AAD access token which can be
 // exchanged for a valid ACR refresh token for login.
-func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, error) {
+func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	// parse the artifact reference string to extract the registry host name
 	artifactHostName, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
@@ -104,7 +104,7 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 
 	// need to refresh AAD token if it's expired
 	if time.Now().After(d.aadToken.ExpiresOn) {
-		newToken, err := getAADAccessToken(d.tenantID)
+		newToken, err := getAADAccessToken(ctx, d.tenantID)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
 		}
@@ -133,7 +133,7 @@ func (d *azureWIAuthProvider) Provide(artifact string) (provider.AuthConfig, err
 }
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
-func getAADAccessToken(tenantID string) (confidential.AuthResult, error) {
+func getAADAccessToken(ctx context.Context, tenantID string) (confidential.AuthResult, error) {
 	// Azure AD Workload Identity webhook will inject the following env vars:
 	// 	AZURE_CLIENT_ID with the clientID set in the service account annotation
 	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
@@ -166,7 +166,7 @@ func getAADAccessToken(tenantID string) (confidential.AuthResult, error) {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential client app")
 	}
 
-	result, err := confidentialClientApp.AcquireTokenByCredential(context.Background(), []string{AADResource})
+	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{AADResource})
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire token")
 	}
