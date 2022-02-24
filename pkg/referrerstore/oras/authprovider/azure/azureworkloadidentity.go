@@ -92,10 +92,13 @@ func (d *azureWIAuthProvider) Enabled(ctx context.Context) bool {
 	return true
 }
 
-// Provide returns the credentials for a specificed artifact.
+// Provide returns the credentials for a specified artifact.
 // Uses Azure Workload Identity to retrieve an AAD access token which can be
 // exchanged for a valid ACR refresh token for login.
 func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
+	if !d.Enabled(ctx) {
+		return provider.AuthConfig{}, fmt.Errorf("azure workload identity auth provider is not properly enabled")
+	}
 	// parse the artifact reference string to extract the registry host name
 	artifactHostName, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
@@ -168,7 +171,7 @@ func getAADAccessToken(ctx context.Context, tenantID string) (confidential.AuthR
 
 	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{AADResource})
 	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire token")
+		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire AAD token")
 	}
 
 	return result, nil
