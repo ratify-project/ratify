@@ -66,7 +66,7 @@ type orasStore struct {
 	rawConfig    config.StoreConfig
 	localCache   *content.OCI
 	authProvider authprovider.AuthProvider
-	authCache    map[common.Reference]authCacheEntry
+	authCache    map[string]authCacheEntry
 }
 
 func init() {
@@ -103,7 +103,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
 		localCache:   localRegistry,
 		authProvider: authenticationProvider,
-		authCache:    make(map[common.Reference]authCacheEntry)}, nil
+		authCache:    make(map[string]authCacheEntry)}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -214,7 +214,7 @@ func (store *orasStore) createRegistryClient(ctx context.Context, targetRef comm
 		return nil, fmt.Errorf("auth provider not properly enabled")
 	}
 
-	if cacheEntry, ok := store.authCache[targetRef]; ok {
+	if cacheEntry, ok := store.authCache[targetRef.Original]; ok {
 		// if the auth cache entry expiration has not expired or it was never set
 		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
 			return cacheEntry.client, nil
@@ -239,7 +239,7 @@ func (store *orasStore) createRegistryClient(ctx context.Context, targetRef comm
 		return nil, err
 	}
 
-	store.authCache[targetRef] = authCacheEntry{
+	store.authCache[targetRef.Original] = authCacheEntry{
 		client:    registryClient,
 		expiresOn: authConfig.ExpiresOn,
 	}
