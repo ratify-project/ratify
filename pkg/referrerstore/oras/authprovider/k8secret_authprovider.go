@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/docker/cli/cli/config"
 	core "k8s.io/api/core/v1"
@@ -30,19 +31,22 @@ import (
 
 type k8SecretProviderFactory struct{}
 type k8SecretAuthProvider struct {
-	secrets map[string]*core.Secret
+	secrets []*core.Secret
 }
 
 type secretConfig struct {
-	RegistryHost string `json:"registryHost"`
-	SecretName   string `json:"secretName"`
-	Namespace    string `json:"namespace,omitempty"`
+	SecretName string `json:"secretName"`
+	Namespace  string `json:"namespace,omitempty"`
 }
 
 type k8SecretAuthProviderConf struct {
-	Name    string         `json:"name"`
-	Secrets []secretConfig `json:"secrets,omitempty"`
+	Name               string         `json:"name"`
+	ServiceAccountName string         `json:"serviceAccountName,omitempty"`
+	Secrets            []secretConfig `json:"secrets,omitempty"`
 }
+
+const defaultName = "default"
+const ratifyNamespaceEnv = "RATIFY_NAMESPACE"
 
 // init calls Register for our k8s-secrets provider
 func init() {
@@ -73,31 +77,64 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 		return nil, err
 	}
 
-	var extractedSecrets = make(map[string]*core.Secret)
-	// iterate through configuration secrets,resolve each secret, and store in map
-	for _, secretConf := range conf.Secrets {
-		if secretConf.Namespace == "" {
-			secretConf.Namespace = "default"
+	if conf.ServiceAccountName == "" {
+		conf.ServiceAccountName = defaultName
+	}
+
+	// get name of namespace ratify is running in
+	ratifyNamespace := os.Getenv(ratifyNamespaceEnv)
+	if ratifyNamespace == "" {
+		return nil, fmt.Errorf("environment variable %s not set", ratifyNamespaceEnv)
+	}
+
+	var k8secrets []*core.Secret
+	ctx := context.Background()
+
+	// iterate through config secrets, resolve each secret, and store in map
+	for _, k8secret := range conf.Secrets {
+		// default value of secret is assumed to be ratify namespace
+		if k8secret.Namespace == "" {
+			k8secret.Namespace = ratifyNamespace
 		}
 
-		// each registry host specified must be unique
-		if _, ok := extractedSecrets[secretConf.RegistryHost]; ok {
-			return nil, fmt.Errorf("registry host %s already has configured secret", secretConf.RegistryHost)
-		}
-
-		secret, err := clusterClientSet.CoreV1().Secrets(secretConf.Namespace).Get(context.Background(), secretConf.SecretName, meta.GetOptions{})
+		secret, err := clusterClientSet.CoreV1().Secrets(k8secret.Namespace).Get(ctx, k8secret.SecretName, meta.GetOptions{})
 		if err != nil {
 			return nil, err
 		}
-		extractedSecrets[secretConf.RegistryHost] = secret
+
+		// only dockercfg or docker config json secret type allowed
+		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
+			k8secrets = append(k8secrets, secret)
+		} else {
+			return nil, fmt.Errorf("secret with unsupported type %s provided in config", secret.Type)
+		}
+	}
+
+	// get the the service account for ratify
+	serviceAccount, err := clusterClientSet.CoreV1().ServiceAccounts(ratifyNamespace).Get(ctx, conf.ServiceAccountName, meta.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// extract the imagePullSecrets linked to service account
+	for _, imagePullSecret := range serviceAccount.ImagePullSecrets {
+		secret, err := clusterClientSet.CoreV1().Secrets(ratifyNamespace).Get(ctx, imagePullSecret.Name, meta.GetOptions{})
+		if err != nil {
+			return nil, err
+		}
+
+		// only dockercfg or docker config json secret type allowed
+		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
+			k8secrets = append(k8secrets, secret)
+		}
 	}
 
 	return &k8SecretAuthProvider{
-		secrets: extractedSecrets,
+		secrets: k8secrets,
 	}, nil
 }
 
-// Enabled checks if secrets map is not nil or empty
+// Enabled checks if secrets list is not nil or empty
 func (d *k8SecretAuthProvider) Enabled() bool {
 	if d.secrets == nil || len(d.secrets) <= 0 {
 		return false
@@ -106,71 +143,61 @@ func (d *k8SecretAuthProvider) Enabled() bool {
 	return true
 }
 
-// Provide finds secret corresponding to artifact's registryHost, extracts
+// Provide finds secret corresponding to artifact's registry host name, extracts
 // the authentication credentials from k8 secret, and returns AuthConfig
 func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
+	if !d.Enabled() {
+		return AuthConfig{}, fmt.Errorf("k8 secret provider not properly enabled")
+	}
+
 	hostName, err := getRegistryHostName(artifact)
 	if err != nil {
 		return AuthConfig{}, err
 	}
 
-	secretLoaded, exists := d.secrets[hostName]
-	if !exists {
-		return AuthConfig{}, fmt.Errorf("could not find secret corresponding for artifact: %s", artifact)
+	for _, secretLoaded := range d.secrets {
+		if secretLoaded.Type == core.SecretTypeDockercfg {
+			// if secret is a legacy docker config type
+			dockercfg, exists := secretLoaded.Data[core.DockerConfigKey]
+			if !exists {
+				return AuthConfig{}, fmt.Errorf("could not extract auth configs from .dockercfg")
+			}
+
+			configFile, err := config.LegacyLoadFromReader(bytes.NewReader(dockercfg))
+			if err != nil {
+				return AuthConfig{}, err
+			}
+
+			authConfig, exist := configFile.AuthConfigs[hostName]
+			if exist {
+				return AuthConfig{
+					Username: authConfig.Username,
+					Password: authConfig.Password,
+					Provider: d,
+				}, nil
+			}
+		} else if secretLoaded.Type == core.SecretTypeDockerConfigJson {
+			// if secret is a docker config json type
+			dockerconfig, exists := secretLoaded.Data[core.DockerConfigJsonKey]
+			if !exists {
+				return AuthConfig{}, fmt.Errorf("could not extract auth configs from .docker/config.json")
+			}
+
+			configFile, err := config.LoadFromReader(bytes.NewReader(dockerconfig))
+			if err != nil {
+				return AuthConfig{}, err
+			}
+
+			authConfig, exist := configFile.AuthConfigs[hostName]
+			if exist {
+				return AuthConfig{
+					Username: authConfig.Username,
+					Password: authConfig.Password,
+					Provider: d,
+				}, nil
+			}
+		}
 	}
 
-	if secretLoaded.Type == core.SecretTypeBasicAuth {
-		// if secret is of type basic-auth
-		return AuthConfig{
-			Username: string(secretLoaded.Data[core.BasicAuthUsernameKey]),
-			Password: string(secretLoaded.Data[core.BasicAuthPasswordKey]),
-			Provider: d,
-		}, nil
-	} else if secretLoaded.Type == core.SecretTypeDockercfg {
-		// if secret is a legacy docker config type
-		dockercfg, exists := secretLoaded.Data[core.DockerConfigKey]
-		if !exists {
-			return AuthConfig{}, fmt.Errorf("could not extract auth configs from .dockercfg")
-		}
-
-		configFile, err := config.LegacyLoadFromReader(bytes.NewReader(dockercfg))
-		if err != nil {
-			return AuthConfig{}, err
-		}
-
-		authConfig, exist := configFile.AuthConfigs[hostName]
-		if !exist {
-			return AuthConfig{}, fmt.Errorf("could not find credentials for %s in .dockercfg", hostName)
-		}
-
-		return AuthConfig{
-			Username: authConfig.Username,
-			Password: authConfig.Password,
-			Provider: d,
-		}, nil
-	} else if secretLoaded.Type == core.SecretTypeDockerConfigJson {
-		// if secret is a docker config json type
-		dockerconfig, exists := secretLoaded.Data[core.DockerConfigJsonKey]
-		if !exists {
-			return AuthConfig{}, fmt.Errorf("could not extract auth configs from .docker/config.json")
-		}
-
-		configFile, err := config.LoadFromReader(bytes.NewReader(dockerconfig))
-		if err != nil {
-			return AuthConfig{}, err
-		}
-
-		authConfig, exist := configFile.AuthConfigs[hostName]
-		if !exist {
-			return AuthConfig{}, fmt.Errorf("could not find credentials for %s in config.json", hostName)
-		}
-
-		return AuthConfig{
-			Username: authConfig.Username,
-			Password: authConfig.Password,
-			Provider: d,
-		}, nil
-	}
-
-	return AuthConfig{}, fmt.Errorf("secret with unsupported type %s provided", secretLoaded.Type)
+	return AuthConfig{}, fmt.Errorf("could not find credentials for %s", artifact)
 }

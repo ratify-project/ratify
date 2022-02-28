@@ -22,30 +22,6 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
-// Checks K8 Basic-Auth Secret is properly extracted and credentials
-// returned when Provide is called
-func TestProvide_K8SecretBasicAuth_ReturnsExpected(t *testing.T) {
-	var testSecret core.Secret
-	testSecret.Data = make(map[string][]byte)
-	testSecret.Type = core.SecretTypeBasicAuth
-	testSecret.Data[core.BasicAuthUsernameKey] = []byte("test-username")
-	testSecret.Data[core.BasicAuthPasswordKey] = []byte("test-password")
-
-	var secretMap = make(map[string]*core.Secret)
-	secretMap["test.ghcr.io"] = &testSecret
-	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretMap
-
-	authConfig, err := k8secretprovder.Provide("test.ghcr.io/test-artifact:v1")
-	if err != nil {
-		t.Fatalf("provide failed to get credential with err %v", err)
-	}
-
-	if authConfig.Username != "test-username" || authConfig.Password != "test-password" {
-		t.Fatalf("provide returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
-	}
-}
-
 // Checks K8 Docker Json Config Secret is properly extracted and
 // credentials returned when Provide is called
 func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
@@ -61,10 +37,9 @@ func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 	testSecret.Data[core.DockerConfigJsonKey] = []byte(js)
 	testSecret.Type = core.SecretTypeDockerConfigJson
 
-	var secretMap = make(map[string]*core.Secret)
-	secretMap["index.docker.io"] = &testSecret
+	secretList := []*core.Secret{&testSecret}
 	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretMap
+	k8secretprovder.secrets = secretList
 
 	authConfig, err := k8secretprovder.Provide("index.docker.io/test-artifact:v1")
 	if err != nil {
@@ -89,10 +64,9 @@ func TestProvide_K8SecretDockerCfg_ReturnsExpected(t *testing.T) {
 	testSecret.Data[core.DockerConfigKey] = []byte(js)
 	testSecret.Type = core.SecretTypeDockercfg
 
-	var secretMap = make(map[string]*core.Secret)
-	secretMap["index.docker.io"] = &testSecret
+	secretList := []*core.Secret{&testSecret}
 	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretMap
+	k8secretprovder.secrets = secretList
 
 	authConfig, err := k8secretprovder.Provide("index.docker.io/test-artifact:v1")
 	if err != nil {
@@ -104,19 +78,26 @@ func TestProvide_K8SecretDockerCfg_ReturnsExpected(t *testing.T) {
 	}
 }
 
-// Checks an error is returned for unsupported secret type
-func TestProvide_K8SecretUnsupportedType_ReturnsExpected(t *testing.T) {
+// // Checks an error is returned for non-existent registry credential
+func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
-	testSecret.Type = core.SecretTypeOpaque
-	expectedError := fmt.Errorf("secret with unsupported type %s provided", core.SecretTypeOpaque)
+	testArtifact := "nonexistent.ghcr.io/test-artifact:v1"
+	expectedErr := fmt.Errorf("could not find credentials for %s", testArtifact)
+	js := `{
+		"index.docker.io": {
+			"auth": "am9lam9lOmhlbGxv"
+		}
+	}`
+	testSecret.Data = make(map[string][]byte)
+	testSecret.Data[core.DockerConfigKey] = []byte(js)
+	testSecret.Type = core.SecretTypeDockercfg
 
-	var secretMap = make(map[string]*core.Secret)
-	secretMap["test.ghcr.io"] = &testSecret
+	secretList := []*core.Secret{&testSecret}
 	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretMap
+	k8secretprovder.secrets = secretList
 
-	_, err := k8secretprovder.Provide("test.ghcr.io/test-artifact:v1")
-	if err == nil {
-		t.Fatalf("expected error: %s but got nil", expectedError)
+	_, err := k8secretprovder.Provide(testArtifact)
+	if err.Error() != expectedErr.Error() {
+		t.Fatalf("expected err: %s, but got err: %s", expectedErr, err)
 	}
 }
