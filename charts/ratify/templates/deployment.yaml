@@ -47,10 +47,16 @@ spec:
             - mountPath: "/usr/local/docker"
               name: dockerconfig
               readOnly: true
+          {{- end }}
           env:
+          {{- if $dockerAuthMode }}
             - name: DOCKER_CONFIG
               value: "/usr/local/docker"
           {{- end }}
+            - name: RATIFY_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:

@@ -17,7 +17,7 @@ metadata:
 subjects:
 # You can specify more than one "subject"
 - kind: ServiceAccount
-  name: workload-identity-sa # "name" is case sensitive
+  name: default # "name" is case sensitive
   namespace: default
 roleRef:
   # "roleRef" specifies the binding to a Role / ClusterRole
