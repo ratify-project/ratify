@@ -27,6 +27,7 @@ import (
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
@@ -148,12 +149,19 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
 	roots := x509.NewCertPool()
 	for _, path := range certPaths {
-		bundledCerts, err := cryptoutil.ReadCertificateFile(path)
-		if err != nil {
+
+		files, err := utils.GetCertificatesFromPath(path)
+		if err != nil { //this block repeats to much?
 			return nil, err
 		}
-		for _, cert := range bundledCerts {
-			roots.AddCert(cert)
+		for _, file := range files {
+			bundledCerts, err := cryptoutil.ReadCertificateFile(file)
+			if err != nil {
+				return nil, err
+			}
+			for _, cert := range bundledCerts {
+				roots.AddCert(cert)
+			}
 		}
 	}
 	verifier := jws.NewVerifier()
