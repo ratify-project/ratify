@@ -29,7 +29,8 @@ func GetCertificatesFromPath(path string) ([]string, error) {
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			fileExtension := filepath.Ext(file)
-			if strings.EqualFold(fileExtension, ".Crt") { //what other files can be read?
+			// TODO: looking for consts on valid file formats, pem,crt,cer,key,.pfx,der,cer
+			if strings.EqualFold(fileExtension, ".Crt") {
 				files = append(files, file)
 			}
 		}
