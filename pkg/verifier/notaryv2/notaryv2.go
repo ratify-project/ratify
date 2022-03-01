@@ -151,8 +151,8 @@ func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
 	for _, path := range certPaths {
 
 		files, err := utils.GetCertificatesFromPath(path)
-		if err != nil { //this block repeats to much?
-			return nil, err
+		if err != nil {
+			return nil, fmt.Errorf("failed to find verification certificate path %v error %v", path, err)
 		}
 		for _, file := range files {
 			bundledCerts, err := cryptoutil.ReadCertificateFile(file)

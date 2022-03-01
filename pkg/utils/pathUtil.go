@@ -34,7 +34,7 @@ func GetCertificatesFromPath(path string) ([]string, error) {
 				files = append(files, file)
 			}
 		}
-		return nil // or return err?
+		return nil
 	})
 
 	if err != nil {
