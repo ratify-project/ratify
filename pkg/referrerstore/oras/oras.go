@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/pkg/content"
@@ -32,6 +33,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/azure"
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
@@ -54,12 +56,17 @@ type OrasStoreConf struct {
 
 type orasStoreFactory struct{}
 
+type authCacheEntry struct {
+	client    *content.Registry
+	expiresOn time.Time
+}
+
 type orasStore struct {
 	config       *OrasStoreConf
 	rawConfig    config.StoreConfig
 	localCache   *content.OCI
 	authProvider authprovider.AuthProvider
-	authCache    map[common.Reference]*content.Registry
+	authCache    map[string]authCacheEntry
 }
 
 func init() {
@@ -96,7 +103,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
 		localCache:   localRegistry,
 		authProvider: authenticationProvider,
-		authCache:    make(map[common.Reference]*content.Registry)}, nil
+		authCache:    make(map[string]authCacheEntry)}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -109,7 +116,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
 	// TODO: handle nextToken
-	registryClient, err := store.createRegistryClient(subjectReference)
+	registryClient, err := store.createRegistryClient(ctx, subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
@@ -148,7 +155,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 }
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	registryClient, err := store.createRegistryClient(subjectReference)
+	registryClient, err := store.createRegistryClient(ctx, subjectReference)
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +170,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	client, err := store.createRegistryClient(subjectReference)
+	client, err := store.createRegistryClient(ctx, subjectReference)
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
@@ -191,7 +198,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-	registryClient, err := store.createRegistryClient(subjectReference)
+	registryClient, err := store.createRegistryClient(ctx, subjectReference)
 	if err != nil {
 		return nil, err
 	}
@@ -202,16 +209,19 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
 
-func (store *orasStore) createRegistryClient(targetRef common.Reference) (*content.Registry, error) {
-	if store.authProvider == nil || !store.authProvider.Enabled() {
+func (store *orasStore) createRegistryClient(ctx context.Context, targetRef common.Reference) (*content.Registry, error) {
+	if store.authProvider == nil || !store.authProvider.Enabled(ctx) {
 		return nil, fmt.Errorf("auth provider not properly enabled")
 	}
 
-	if registryClient, ok := store.authCache[targetRef]; ok {
-		return registryClient, nil
+	if cacheEntry, ok := store.authCache[targetRef.Original]; ok {
+		// if the auth cache entry expiration has not expired or it was never set
+		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
+			return cacheEntry.client, nil
+		}
 	}
 
-	authConfig, err := store.authProvider.Provide(targetRef.Original)
+	authConfig, err := store.authProvider.Provide(ctx, targetRef.Original)
 	if err != nil {
 		logrus.Warningf("auth provider failed with err, %v", err)
 		logrus.Info("attempting to use anonymous credentials")
@@ -229,7 +239,10 @@ func (store *orasStore) createRegistryClient(targetRef common.Reference) (*conte
 		return nil, err
 	}
 
-	store.authCache[targetRef] = registryClient
+	store.authCache[targetRef.Original] = authCacheEntry{
+		client:    registryClient,
+		expiresOn: authConfig.ExpiresOn,
+	}
 
 	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
 }
