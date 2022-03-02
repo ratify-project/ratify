@@ -16,22 +16,24 @@ limitations under the License.
 package utils
 
 import (
+	"crypto/x509"
 	"os"
-	"strings"
 
 	"path/filepath"
+
+	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
 )
 
-func GetCertificatesFromPath(path string) ([]string, error) {
+func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
-	var files []string
+	var certs []*x509.Certificate
 
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			fileExtension := filepath.Ext(file)
-			// TODO: looking for consts on valid file formats, pem,crt,cer,key,.pfx,der,cer
-			if strings.EqualFold(fileExtension, ".Crt") {
-				files = append(files, file)
+			cert, certError := cryptoutil.ReadCertificateFile(file) // this method returns empty if file was not a certificate file
+			certs = append(certs, cert...)
+			if certError != nil {
+				return certError
 			}
 		}
 		return nil
@@ -41,5 +43,5 @@ func GetCertificatesFromPath(path string) ([]string, error) {
 		return nil, err
 	}
 
-	return files, nil
+	return certs, nil
 }

@@ -33,7 +33,6 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
 	"github.com/notaryproject/notation-go-lib"
-	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
 	"github.com/notaryproject/notation-go-lib/signature/jws"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -150,18 +149,14 @@ func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
 	roots := x509.NewCertPool()
 	for _, path := range certPaths {
 
-		files, err := utils.GetCertificatesFromPath(path)
+		bundledCerts, err := utils.GetCertificatesFromPath(path)
+
 		if err != nil {
-			return nil, fmt.Errorf("failed to find verification certificate path %v error %v", path, err)
+			return nil, err
 		}
-		for _, file := range files {
-			bundledCerts, err := cryptoutil.ReadCertificateFile(file)
-			if err != nil {
-				return nil, err
-			}
-			for _, cert := range bundledCerts {
-				roots.AddCert(cert)
-			}
+
+		for _, cert := range bundledCerts {
+			roots.AddCert(cert)
 		}
 	}
 	verifier := jws.NewVerifier()

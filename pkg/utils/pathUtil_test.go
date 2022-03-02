@@ -15,6 +15,7 @@ limitations under the License.
 package utils
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -25,12 +26,16 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	nestedDir := ".nestedFolder"
 	testFile1 := testDir + string(os.PathSeparator) + "file1.txt"
 	testFile2 := testDir + string(os.PathSeparator) + nestedDir + string(os.PathSeparator) + ".file2.crt"
+	testFile3 := testDir + string(os.PathSeparator) + "file3.crt"
+	testFile4 := testDir + string(os.PathSeparator) + "file4.crt"
 
-	setupDiretoryForTesting(t, testDir)
-	setupDiretoryForTesting(t, testDir+string(os.PathSeparator)+nestedDir)
+	setupDirectoryForTesting(t, testDir)
+	setupDirectoryForTesting(t, testDir+string(os.PathSeparator)+nestedDir)
 
 	createFile(t, testFile1)
-	createFile(t, testFile2)
+	createCertFile(t, testFile2)
+	createCertFile(t, testFile3)
+	createCertFile(t, testFile4)
 
 	// Invoke method to test
 	files, err := GetCertificatesFromPath(testDir)
@@ -39,12 +44,9 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	os.RemoveAll(testDir)
 
 	// Validate
-	if len(files) != 1 || err != nil {
-		t.Fatalf("File response length expected to be 1, actual %v, error %v", len(files), err)
-	}
-
-	if files[0] != testFile2 {
-		t.Fatalf(" Expected file name %v, actual '%v'", testFile2, files[0])
+	expectedFileCount := 3
+	if len(files) != expectedFileCount || err != nil {
+		t.Fatalf("response length expected to be %v, actual %v, error %v", expectedFileCount, len(files), err)
 	}
 }
 
@@ -53,8 +55,8 @@ func TestReadFilesFromPath_SingleFile(t *testing.T) {
 	testDir := "TestDirectory"
 	testFile1 := testDir + string(os.PathSeparator) + "file1.Crt"
 
-	setupDiretoryForTesting(t, testDir)
-	createFile(t, testFile1)
+	setupDirectoryForTesting(t, testDir)
+	createCertFile(t, testFile1)
 
 	// Invoke method to test
 	files, err := GetCertificatesFromPath(testDir)
@@ -62,14 +64,9 @@ func TestReadFilesFromPath_SingleFile(t *testing.T) {
 	// Teardown
 	os.RemoveAll(testDir)
 
-	// validation
 	// Validate
 	if len(files) != 1 || err != nil {
-		t.Fatalf("File response length expected to be 1, actual %v, error %v", len(files), err)
-	}
-
-	if files[0] != testFile1 {
-		t.Fatalf(" Expected file name %v, actual '%v'", testFile1, files[0])
+		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
 	}
 
 }
@@ -81,7 +78,30 @@ func createFile(t *testing.T, path string) {
 	}
 }
 
-func setupDiretoryForTesting(t *testing.T, path string) {
+func createCertFile(t *testing.T, path string) {
+
+	// open cert file
+	content, err := ioutil.ReadFile("testCert1.crt")
+
+	if err != nil {
+		t.Fatalf("open cert file '%s' failed with error '%v'", path, err)
+	}
+
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+
+	if err != nil {
+		t.Fatalf("creating new file '%s' failed with error '%v'", path, err)
+
+	}
+
+	_, err = file.Write(content)
+	if err != nil {
+		t.Fatalf("write file '%s' failed with error '%v'", path, err)
+	}
+
+}
+
+func setupDirectoryForTesting(t *testing.T, path string) {
 	err := os.Mkdir(path, 0755)
 	if err != nil {
 		t.Fatalf("Creating directory '%s' failed with '%v'", path, err)
