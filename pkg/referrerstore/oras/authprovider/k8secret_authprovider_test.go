@@ -16,6 +16,7 @@ limitations under the License.
 package authprovider
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -40,8 +41,9 @@ func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 	secretList := []*core.Secret{&testSecret}
 	var k8secretprovder k8SecretAuthProvider
 	k8secretprovder.secrets = secretList
+	ctx := context.Background()
 
-	authConfig, err := k8secretprovder.Provide("index.docker.io/test-artifact:v1")
+	authConfig, err := k8secretprovder.Provide(ctx, "index.docker.io/test-artifact:v1")
 	if err != nil {
 		t.Fatalf("provide failed to get credential with err %v", err)
 	}
@@ -67,8 +69,9 @@ func TestProvide_K8SecretDockerCfg_ReturnsExpected(t *testing.T) {
 	secretList := []*core.Secret{&testSecret}
 	var k8secretprovder k8SecretAuthProvider
 	k8secretprovder.secrets = secretList
+	ctx := context.Background()
 
-	authConfig, err := k8secretprovder.Provide("index.docker.io/test-artifact:v1")
+	authConfig, err := k8secretprovder.Provide(ctx, "index.docker.io/test-artifact:v1")
 	if err != nil {
 		t.Fatalf("provide failed to get credential with err %v", err)
 	}
@@ -95,8 +98,9 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 	secretList := []*core.Secret{&testSecret}
 	var k8secretprovder k8SecretAuthProvider
 	k8secretprovder.secrets = secretList
+	ctx := context.Background()
 
-	_, err := k8secretprovder.Provide(testArtifact)
+	_, err := k8secretprovder.Provide(ctx, testArtifact)
 	if err.Error() != expectedErr.Error() {
 		t.Fatalf("expected err: %s, but got err: %s", expectedErr, err)
 	}

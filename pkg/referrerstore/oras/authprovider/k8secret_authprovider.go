@@ -135,7 +135,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 }
 
 // Enabled checks if secrets list is not nil or empty
-func (d *k8SecretAuthProvider) Enabled() bool {
+func (d *k8SecretAuthProvider) Enabled(ctx context.Context) bool {
 	if d.secrets == nil || len(d.secrets) <= 0 {
 		return false
 	}
@@ -145,12 +145,12 @@ func (d *k8SecretAuthProvider) Enabled() bool {
 
 // Provide finds secret corresponding to artifact's registry host name, extracts
 // the authentication credentials from k8 secret, and returns AuthConfig
-func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
-	if !d.Enabled() {
+func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
+	if !d.Enabled(ctx) {
 		return AuthConfig{}, fmt.Errorf("k8 secret provider not properly enabled")
 	}
 
-	hostName, err := getRegistryHostName(artifact)
+	hostName, err := GetRegistryHostName(artifact)
 	if err != nil {
 		return AuthConfig{}, err
 	}
