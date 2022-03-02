@@ -16,6 +16,7 @@ limitations under the License.
 package authprovider
 
 import (
+	"context"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -24,11 +25,11 @@ import (
 
 type TestAuthProvider struct{}
 
-func (ap *TestAuthProvider) Enabled() bool {
+func (ap *TestAuthProvider) Enabled(ctx context.Context) bool {
 	return true
 }
 
-func (ap *TestAuthProvider) Provide(artifact string) (AuthConfig, error) {
+func (ap *TestAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
 	return AuthConfig{
 		Username: "test",
 		Password: "testpw",
@@ -62,7 +63,7 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 		configPath: fn,
 	}
 
-	authConfig, err := defaultProvider.Provide("index.docker.io/v1/test:v1")
+	authConfig, err := defaultProvider.Provide(context.Background(), "index.docker.io/v1/test:v1")
 	if err != nil {
 		t.Fatalf("unexpected error in Provide: %v", err)
 	}

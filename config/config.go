@@ -33,7 +33,7 @@ import (
 
 const (
 	ConfigFileName = "config.json"
-	configFileDir  = ".ratify"
+	ConfigFileDir  = ".ratify"
 	PluginsFolder  = "plugins"
 )
 
@@ -58,7 +58,7 @@ func InitDefaultPaths() {
 	}
 	configDir = os.Getenv("RATIFY_CONFIG")
 	if configDir == "" {
-		configDir = filepath.Join(getHomeDir(), configFileDir)
+		configDir = filepath.Join(getHomeDir(), ConfigFileDir)
 
 	}
 	defaultPluginsPath = filepath.Join(configDir, PluginsFolder)
