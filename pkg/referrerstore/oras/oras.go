@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	paths "path/filepath"
 	"strings"
 	"time"
 
@@ -94,7 +95,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 
 	// Set up the local cache where content will land when we pull
 	if conf.LocalCachePath == "" {
-		conf.LocalCachePath = filepath.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultLocalCachePath)
+		conf.LocalCachePath = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultLocalCachePath)
 	}
 	localRegistry, err := content.NewOCI(conf.LocalCachePath)
 	if err != nil {
