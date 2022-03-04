@@ -16,8 +16,6 @@ limitations under the License.
 package authprovider
 
 import (
-	"context"
-	"fmt"
 	"testing"
 
 	core "k8s.io/api/core/v1"
@@ -38,18 +36,15 @@ func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 	testSecret.Data[core.DockerConfigJsonKey] = []byte(js)
 	testSecret.Type = core.SecretTypeDockerConfigJson
 
-	secretList := []*core.Secret{&testSecret}
-	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretList
-	ctx := context.Background()
+	var k8secretprovider k8SecretAuthProvider
 
-	authConfig, err := k8secretprovder.Provide(ctx, "index.docker.io/test-artifact:v1")
+	authConfig, err := k8secretprovider.resolveCredentialFromSecret("index.docker.io", &testSecret)
 	if err != nil {
-		t.Fatalf("provide failed to get credential with err %v", err)
+		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
 
 	if authConfig.Username != "joejoe" || authConfig.Password != "hello" {
-		t.Fatalf("provide returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
+		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
 	}
 }
 
@@ -66,26 +61,21 @@ func TestProvide_K8SecretDockerCfg_ReturnsExpected(t *testing.T) {
 	testSecret.Data[core.DockerConfigKey] = []byte(js)
 	testSecret.Type = core.SecretTypeDockercfg
 
-	secretList := []*core.Secret{&testSecret}
-	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretList
-	ctx := context.Background()
+	var k8secretprovider k8SecretAuthProvider
 
-	authConfig, err := k8secretprovder.Provide(ctx, "index.docker.io/test-artifact:v1")
+	authConfig, err := k8secretprovider.resolveCredentialFromSecret("index.docker.io", &testSecret)
 	if err != nil {
-		t.Fatalf("provide failed to get credential with err %v", err)
+		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
 
 	if authConfig.Username != "joejoe" || authConfig.Password != "hello" {
-		t.Fatalf("provide returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
+		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
 	}
 }
 
-// // Checks an error is returned for non-existent registry credential
+// Checks an error is returned for non-existent registry credential
 func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
-	testArtifact := "nonexistent.ghcr.io/test-artifact:v1"
-	expectedErr := fmt.Errorf("could not find credentials for %s", testArtifact)
 	js := `{
 		"index.docker.io": {
 			"auth": "am9lam9lOmhlbGxv"
@@ -95,13 +85,14 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 	testSecret.Data[core.DockerConfigKey] = []byte(js)
 	testSecret.Type = core.SecretTypeDockercfg
 
-	secretList := []*core.Secret{&testSecret}
-	var k8secretprovder k8SecretAuthProvider
-	k8secretprovder.secrets = secretList
-	ctx := context.Background()
+	var k8secretprovider k8SecretAuthProvider
 
-	_, err := k8secretprovder.Provide(ctx, testArtifact)
-	if err.Error() != expectedErr.Error() {
-		t.Fatalf("expected err: %s, but got err: %s", expectedErr, err)
+	authConfig, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret)
+	if err != nil {
+		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
+	}
+
+	if authConfig != (AuthConfig{}) {
+		t.Fatalf("expected empty AuthConfig, but got: %v", authConfig)
 	}
 }
