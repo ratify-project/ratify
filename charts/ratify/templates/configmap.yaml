@@ -9,11 +9,11 @@ data:
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "oras",
+                "name": "oras"
                 {{- if .Values.cosign.enabled }}
-                "cosign-enabled": true,
+                ,
+                "cosign-enabled": true
                 {{- end }}
-                "localCachePath": "./local_oras_cache"
             }
         ]
       },
