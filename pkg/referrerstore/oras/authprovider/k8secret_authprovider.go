@@ -20,9 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/config/configfile"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -62,21 +64,21 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal authentication provider config: %v", err)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse authentication provider configuration: %v", err)
 	}
 
 	clusterConfig, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to generate cluster configuration: %v", err)
 	}
 
 	clientSet, err := kubernetes.NewForConfig(clusterConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create kubernetes client set from config: %v", err)
 	}
 
 	if conf.ServiceAccountName == "" {
@@ -126,7 +128,7 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 
 		secret, err := d.clusterClientSet.CoreV1().Secrets(k8secret.Namespace).Get(ctx, k8secret.SecretName, meta.GetOptions{})
 		if err != nil {
-			return AuthConfig{}, err
+			return AuthConfig{}, fmt.Errorf("failed to pull secret %s from cluster: %v", k8secret.SecretName, err)
 		}
 
 		// only dockercfg or docker config json secret type allowed
@@ -174,49 +176,36 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 }
 
 func (d *k8SecretAuthProvider) resolveCredentialFromSecret(hostName string, secret *core.Secret) (AuthConfig, error) {
+	var secretDataKey string
+	var configFileFn func(io.Reader) (*configfile.ConfigFile, error)
 	if secret.Type == core.SecretTypeDockercfg {
 		// if secret is a legacy docker config type
-		dockercfg, exists := secret.Data[core.DockerConfigKey]
-		if !exists {
-			return AuthConfig{}, fmt.Errorf("could not extract auth configs from .dockercfg")
-		}
-
-		configFile, err := config.LegacyLoadFromReader(bytes.NewReader(dockercfg))
-		if err != nil {
-			return AuthConfig{}, err
-		}
-
-		authConfig, exist := configFile.AuthConfigs[hostName]
-		if !exist {
-			return AuthConfig{}, nil
-		}
-
-		return AuthConfig{
-			Username: authConfig.Username,
-			Password: authConfig.Password,
-			Provider: d,
-		}, nil
+		secretDataKey = core.DockerConfigKey
+		configFileFn = config.LegacyLoadFromReader
 	} else {
 		// if secret is a docker config json type
-		dockerconfig, exists := secret.Data[core.DockerConfigJsonKey]
-		if !exists {
-			return AuthConfig{}, fmt.Errorf("could not extract auth configs from .docker/config.json")
-		}
-
-		configFile, err := config.LoadFromReader(bytes.NewReader(dockerconfig))
-		if err != nil {
-			return AuthConfig{}, err
-		}
-
-		authConfig, exist := configFile.AuthConfigs[hostName]
-		if !exist {
-			return AuthConfig{}, nil
-		}
-
-		return AuthConfig{
-			Username: authConfig.Username,
-			Password: authConfig.Password,
-			Provider: d,
-		}, nil
+		secretDataKey = core.DockerConfigJsonKey
+		configFileFn = config.LoadFromReader
 	}
+
+	dockercfg, exists := secret.Data[secretDataKey]
+	if !exists {
+		return AuthConfig{}, fmt.Errorf("could not extract auth configs from docker config")
+	}
+
+	configFile, err := configFileFn(bytes.NewReader(dockercfg))
+	if err != nil {
+		return AuthConfig{}, err
+	}
+
+	authConfig, exist := configFile.AuthConfigs[hostName]
+	if !exist {
+		return AuthConfig{}, nil
+	}
+
+	return AuthConfig{
+		Username: authConfig.Username,
+		Password: authConfig.Password,
+		Provider: d,
+	}, nil
 }
