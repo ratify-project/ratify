@@ -16,6 +16,9 @@ limitations under the License.
 package oras
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -25,7 +28,6 @@ import (
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sigstore/cosign/pkg/cosign"
-	"net/http"
 )
 
 const CosignArtifactType = "org.sigstore.cosign.v1"
@@ -40,7 +42,8 @@ func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.Referen
 		Algorithm: subjectReference.Digest.Algorithm().String(),
 		Hex:       subjectReference.Digest.Hex(),
 	}
-	signatureTag := cosign.AttachedImageTag(ref.Context(), hash, cosign.SignatureTagSuffix)
+
+	signatureTag := attachedImageTag(ref.Context(), hash, cosign.SignatureTagSuffix)
 
 	desc, err := remote.Get(signatureTag)
 	if terr, ok := err.(*transport.Error); ok && terr.StatusCode == http.StatusNotFound {
@@ -64,4 +67,10 @@ func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.Referen
 	})
 
 	return &references, nil
+}
+
+func attachedImageTag(repo name.Repository, digest v1.Hash, tagSuffix string) name.Tag {
+	// sha256:d34db33f -> sha256-d34db33f.suffix
+	tagStr := strings.ReplaceAll(digest.String(), ":", "-") + tagSuffix
+	return repo.Tag(tagStr)
 }

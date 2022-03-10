@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	paths "path/filepath"
 	"strings"
 	"time"
 
@@ -27,7 +28,9 @@ import (
 	"oras.land/oras-go/pkg/oras"
 	"oras.land/oras-go/pkg/target"
 
+	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -41,7 +44,7 @@ import (
 
 const (
 	storeName             = "oras"
-	defaultLocalCachePath = "~/.ratify/local_oras_cache"
+	defaultLocalCachePath = "local_oras_cache"
 	dockerConfigFileName  = "config.json"
 )
 
@@ -92,11 +95,11 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 
 	// Set up the local cache where content will land when we pull
 	if conf.LocalCachePath == "" {
-		conf.LocalCachePath = defaultLocalCachePath
+		conf.LocalCachePath = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultLocalCachePath)
 	}
 	localRegistry, err := content.NewOCI(conf.LocalCachePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not create local oras cache at path #{conf.LocalCachePath}: #{err}")
+		return nil, fmt.Errorf("could not create local oras cache at path %s: %s", conf.LocalCachePath, err)
 	}
 
 	return &orasStore{config: &conf,
