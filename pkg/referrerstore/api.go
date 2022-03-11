@@ -37,14 +37,14 @@ type ReferrerStore interface {
 
 	// ListReferrers returns the immediate set of supply chain objects for the given subject
 	// represented as artifact manifests
-	ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (ListReferrersResult, error)
+	ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (ListReferrersResult, error)
 
 	// GetBlobContent returns the blob with the given digest
 	// WARNING: This API is intended to use for small objects like signatures, SBoMs
 	GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
 
 	// GetReferenceManifest returns the reference artifact manifest as given by the descriptor
-	GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
+	GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, subjectDesc ...*ocispecs.SubjectDescriptor) (ocispecs.ReferenceManifest, error)
 
 	// GetConfig returns the configuration of this store
 	GetConfig() *config.StoreConfig
