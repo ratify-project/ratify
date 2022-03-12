@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -51,6 +52,8 @@ type k8SecretAuthProviderConf struct {
 
 const defaultName = "default"
 const ratifyNamespaceEnv = "RATIFY_NAMESPACE"
+
+var ErrorNoMatchingCredential = errors.New("no matching credential found for k8 secret")
 
 // init calls Register for our k8s-secrets provider
 func init() {
@@ -134,11 +137,11 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 		// only dockercfg or docker config json secret type allowed
 		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
-			if err != nil {
+			if err != nil && err != ErrorNoMatchingCredential {
 				return AuthConfig{}, err
 			}
-			// if a non empty AuthConfig is returned
-			if authConfig != (AuthConfig{}) {
+			// if a resolved AuthConfig is returned
+			if err == nil {
 				return authConfig, nil
 			}
 		} else {
@@ -200,7 +203,7 @@ func (d *k8SecretAuthProvider) resolveCredentialFromSecret(hostName string, secr
 
 	authConfig, exist := configFile.AuthConfigs[hostName]
 	if !exist {
-		return AuthConfig{}, nil
+		return AuthConfig{}, ErrorNoMatchingCredential
 	}
 
 	return AuthConfig{

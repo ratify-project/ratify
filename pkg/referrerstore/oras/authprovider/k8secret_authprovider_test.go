@@ -87,12 +87,8 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 
 	var k8secretprovider k8SecretAuthProvider
 
-	authConfig, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret)
-	if err != nil {
-		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
-	}
-
-	if authConfig != (AuthConfig{}) {
-		t.Fatalf("expected empty AuthConfig, but got: %v", authConfig)
+	_, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret)
+	if err != ErrorNoMatchingCredential {
+		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ErrorNoMatchingCredential, err)
 	}
 }
