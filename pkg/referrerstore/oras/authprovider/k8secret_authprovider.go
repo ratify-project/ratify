@@ -165,11 +165,11 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 		// only dockercfg or docker config json secret type allowed
 		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
-			if err != nil {
+			if err != nil && err != ErrorNoMatchingCredential {
 				return AuthConfig{}, err
 			}
-			// if a non empty AuthConfig is returned
-			if authConfig != (AuthConfig{}) {
+			// if a resolved AuthConfig is returned
+			if err == nil {
 				return authConfig, nil
 			}
 		}
