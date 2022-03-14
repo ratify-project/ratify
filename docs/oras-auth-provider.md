@@ -1,6 +1,6 @@
 # ORAS Authentication Provider
 
-The ORAS referrer store handles all registry and referrer resolution operations. ORAS provides authentication credentials to access referrer artifacts. Ratify contains many Authentication Providers to support different authentication scenarios. The user specifies which authentication provider to use in the configuration.
+ORAS handles all referrer operations using registry as the referrer store. It uses authentication credentials to authenticate to a registry and access referrer artifacts. Ratify contains many Authentication Providers to support different authentication scenarios. The user specifies which authentication provider to use in the configuration.
 
 The `auth-provider` section of configuration file specifies the authentication provider. Ratify **requires** the `name` field to bind to the correct provider implementation. 
 
@@ -36,7 +36,7 @@ The `auth-provider` section of configuration file specifies the authentication p
 ```
 
 
-NOTE: The authentication provider attempts to use anonymous credentials if it fails to resolve credentials
+NOTE: ORAS will attempt to use anonymous access if the authentication provider fails to resolve credentials.
 
 ## Supported Providers
 
@@ -120,7 +120,9 @@ EOF
 ```
 
 ### 3. Kubernetes Secrets
-Ratify resolves registry credentials from Docker Config Kubernetes secrets in the cluster. Ratify considers kubernetes secrets in two ways. First, the configuration can specify a list of `secrets`. Each entry requires the `secretName` field. The `namespace` field must also be provided if the secret does not exist in the namespace ratify is deployed in. Second, Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The  `serviceAccountName` field specifies the service account associated with Ratify.
+Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways. First, the configuration can specify a list of `secrets`. Each entry requires the `secretName` field. The `namespace` field must also be provided if the secret does not exist in the namespace Ratify is deployed in. The Ratify pod must be assigned the necessary read secret role in order to read the listed secrets from the namespace. Second, Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The `serviceAccountName` field specifies the service account associated with Ratify. Ratify must be assigned a role to read the service account and secrets in the Ratify namespace.
+
+The Ratify helm chart contains a roles.yaml file with role assignments. If a namespace other than Ratify's namespace is provided, the user must add a new role binding to the cluster role so Ratify's service account can operate. 
 
 Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legacy kubernetes.io/dockercfg type.  
 
@@ -131,7 +133,7 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
     "serviceAccountName": "ratify-sa", // will be 'default' if not specified
     "secrets" : [
         {
-            "secretName": "artifact-pull-docker-config" // ratify namespace will be used 
+            "secretName": "artifact-pull-docker-config" // Ratify namespace will be used 
         },
         {
             "secretName": "artifact-pull-docker-config2",
@@ -140,5 +142,3 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
     ]
 }
 ```
-
-NOTE: The provided Ratify Helm Chart consists of a roles.yaml file which establishes the necessary cluster role and role binding to the ratify namespace. This allows ratify to read secrets and get the service account. If a namespace other than Ratify's namespace is provided, the user must add a new role binding to the cluster role so ratify's service account can operate. 
