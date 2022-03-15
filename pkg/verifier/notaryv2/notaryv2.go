@@ -117,7 +117,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
-		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
+		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest, blobDesc)
 		if err != nil {
 			return verifier.VerifierResult{}, err
 		}
@@ -129,7 +129,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		}
 
 		// TODO get the subject descriptor and verify all the properties other than digest.
-		if desc.Digest != desc.Digest {
+		if desc.Digest != vdesc.Digest {
 			return verifier.VerifierResult{
 				Subject:   subjectReference.String(),
 				Name:      verifierName,

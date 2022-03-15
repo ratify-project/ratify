@@ -21,5 +21,5 @@ require (
 	github.com/spdx/tools-golang v0.2.0
 	github.com/spf13/cobra v1.2.1
 	github.com/xlab/treeprint v1.1.0
-	oras.land/oras-go/v2 v2.0.0-20220124135338-24c5637bde7b 
+	oras.land/oras-go/v2 v2.0.0-20220124135338-24c5637bde7b
 )

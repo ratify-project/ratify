@@ -66,6 +66,7 @@ func (executor Executor) GetVerifyRequestTimeout() time.Duration {
 }
 
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	starttime := time.Now()
 	subjectReference, err := utils.ParseSubjectReference(verifyParameters.Subject)
 	if err != nil {
 		return types.VerifyResult{}, err
@@ -90,7 +91,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	for _, referrerStore := range executor.ReferrerStores {
 		var continuationToken string
 		for {
-			referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken)
+			referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
 			if err != nil {
 				return types.VerifyResult{}, err
 			}
@@ -129,6 +130,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		}
 	}
 
+	logrus.Infof("completion time: %dms", time.Since(starttime).Milliseconds())
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
