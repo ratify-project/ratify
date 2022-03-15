@@ -33,6 +33,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/pkg/oci"
+	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
@@ -53,7 +55,7 @@ type PluginInputConfig struct {
 }
 
 func main() {
-	skel.PluginMain("cosign", "1.0.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("cosign", "1.1.0", VerifyReference, []string{"1.0.0"})
 }
 
 func parseInput(stdin []byte) (*PluginInputConfig, error) {
@@ -72,7 +74,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		return nil, err
 	}
 
-	payload, err := signatures(context.Background(), subjectReference.Original, input.Config.KeyRef, input)
+	payload, _, err := signatures(context.Background(), subjectReference.Original, input.Config.KeyRef, input)
 	if err != nil {
 		return &verifier.VerifierResult{
 			Name:      input.Config.Name,
@@ -94,7 +96,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}, nil
 }
 
-func signatures(ctx context.Context, img string, keyRef string, config *PluginInputConfig) ([]cosign.SignedPayload, error) {
+func signatures(ctx context.Context, img string, keyRef string, config *PluginInputConfig) (checkedSignatures []oci.Signature, bundleVerified bool, err error) {
 	var options []name.Option
 	if config.StoreConfig.UseHttp {
 		options = append(options, name.Insecure)
@@ -102,27 +104,31 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 
 	ref, err := name.ParseReference(img, options...)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	ecdsaVerifier, err := loadPublicKey(ctx, keyRef)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if config.StoreConfig.AuthProvider != "" {
-		return nil, fmt.Errorf("auth provider %s is not supported", config.StoreConfig.AuthProvider)
+		return nil, false, fmt.Errorf("auth provider %s is not supported", config.StoreConfig.AuthProvider)
 	}
 
 	registryClientOptions := []remote.Option{
 		remote.WithAuthFromKeychain(authn.DefaultKeychain),
 	}
 
-	return cosign.Verify(ctx, ref, &cosign.CheckOpts{
+	registryClientOptionsWrapper := []ociremote.Option{
+		ociremote.WithRemoteOptions(registryClientOptions...),
+	}
+
+	return cosign.VerifyImageSignatures(ctx, ref, &cosign.CheckOpts{
 		RootCerts:          nil, // TODO: TUF related metadata fulcio.Roots,
 		SigVerifier:        ecdsaVerifier,
 		ClaimVerifier:      cosign.SimpleClaimVerifier,
-		RegistryClientOpts: registryClientOptions,
+		RegistryClientOpts: registryClientOptionsWrapper,
 	})
 }
 
