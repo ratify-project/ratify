@@ -32,6 +32,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/opencontainers/go-digest"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type pcontext struct {
@@ -41,8 +42,8 @@ type pcontext struct {
 	Stderr     io.Writer
 }
 
-type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error)
-type GetBlobContent func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
+type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error)
+type GetBlobContent func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc ...oci.Descriptor) ([]byte, error)
 type GetReferenceManifest func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error)
 type GetSubjectDescriptor func(args *CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 
