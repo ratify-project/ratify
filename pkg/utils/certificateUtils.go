@@ -30,11 +30,13 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
-			cert, certError := cryptoutil.ReadCertificateFile(file) // this method returns empty if file was not a certificate file
+			cert, certError := cryptoutil.ReadCertificateFile(file) // ReadCertificateFile returns empty if file was not a certificate
 			if certError != nil {
 				return certError
 			}
-			certs = append(certs, cert...)
+			if cert != nil {
+				certs = append(certs, cert...)
+			}
 		}
 		return nil
 	})
