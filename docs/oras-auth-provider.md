@@ -46,10 +46,19 @@ This is the default authentication provider. Ratify attempts to look for credent
 Specify the `configPath` field for the `docker-config` authentication provider to use a different docker config file path. 
 
 ```
-"auth-provider": {
-    "name": "docker-config",
-    "configPath": <custom file path string>
-}
+"stores": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "localCachePath": "./local_oras_cache",
+                "auth-provider": {
+                    "name": "docker-config",
+                    "configPath": <custom file path string>
+                }
+            }
+        ]
+    }
 ```
 
 ### 2. Azure Workload Identity
@@ -98,7 +107,7 @@ EOF
 
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/${APPLICATION_OBJECT_ID}/federatedIdentityCredentials" --body @body.json
 ```
-11. In the Pod spec, add the `serviceAccountName` property. Example Pod spec:
+11. In the pod template defintion, add the `serviceAccountName` property. Example Pod definition:
 ```
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -114,33 +123,52 @@ EOF
 
 #### Ratify Auth Provider Configuration
 ```
-"auth-provider": {
-    "name": "azure-wi"
-}
+"stores": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "localCachePath": "./local_oras_cache",
+                "auth-provider": {
+                    "name": "azure-wi"
+                }
+            }
+        ]
+    }
 ```
 
 ### 3. Kubernetes Secrets
-Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways. First, the configuration can specify a list of `secrets`. Each entry REQUIRES the `secretName` field. The `namespace` field MUST also be provided if the secret does not exist in the namespace Ratify is deployed in. The Ratify pod MUST be assigned the necessary read secret role in order to read the listed secrets from the namespace. Second, Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The `serviceAccountName` field specifies the service account associated with Ratify. Ratify MUST be assigned a role to read the service account and secrets in the Ratify namespace.
+Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways:
+1. The configuration can specify a list of `secrets`. Each entry REQUIRES the `secretName` field. The `namespace` field MUST also be provided if the secret does not exist in the namespace Ratify is deployed in. The Ratify helm chart contains a roles.yaml file with role assignments. If a namespace other than Ratify's namespace is provided in the secret list, the user MUST add a new role binding to the cluster role for that new namespace.
 
-The Ratify helm chart contains a roles.yaml file with role assignments. If a namespace other than Ratify's namespace is provided, the user MUST add a new role binding to the cluster role so Ratify's service account can operate. 
+2. Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The `serviceAccountName` field specifies the service account associated with Ratify. Ratify MUST be assigned a role to read the service account and secrets in the Ratify namespace.
 
 Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legacy kubernetes.io/dockercfg type.  
 
 #### Sample Configuration
 ```
-"auth-provider": {
-    "name": "k8s-secrets",
-    "serviceAccountName": "ratify-sa", // will be 'default' if not specified
-    "secrets" : [
-        {
-            "secretName": "artifact-pull-docker-config" // Ratify namespace will be used 
-        },
-        {
-            "secretName": "artifact-pull-docker-config2",
-            "namespace": "test"
-        }
-    ]
-}
+"stores": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "localCachePath": "./local_oras_cache",
+                "auth-provider": {
+                    "name": "k8s-secrets",
+                    "serviceAccountName": "ratify-sa", // will be 'default' if not specified
+                    "secrets" : [
+                        {
+                            "secretName": "artifact-pull-docker-config" // Ratify namespace will be used 
+                        },
+                        {
+                            "secretName": "artifact-pull-docker-config2",
+                            "namespace": "test"
+                        }
+                    ]
+                }
+            }
+        ]
+    }
 ```
 
 ## Notational Conventions
