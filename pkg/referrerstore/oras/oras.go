@@ -143,7 +143,6 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		}
 	}
 
-	// TODO: handle nextToken
 	// find all referrers referencing subject descriptor
 	var referrerDescriptors []artifactspec.Descriptor
 	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, func(referrers []artifactspec.Descriptor) error {
