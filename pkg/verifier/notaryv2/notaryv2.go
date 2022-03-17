@@ -27,12 +27,12 @@ import (
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
 	"github.com/notaryproject/notation-go-lib"
-	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
 	"github.com/notaryproject/notation-go-lib/signature/jws"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -148,10 +148,13 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
 	roots := x509.NewCertPool()
 	for _, path := range certPaths {
-		bundledCerts, err := cryptoutil.ReadCertificateFile(path)
+
+		bundledCerts, err := utils.GetCertificatesFromPath(path)
+
 		if err != nil {
 			return nil, err
 		}
+
 		for _, cert := range bundledCerts {
 			roots.AddCert(cert)
 		}
