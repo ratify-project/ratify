@@ -76,6 +76,10 @@ The official steps for setting up Workload Identity on AKS can be found [here](h
 6. As the guide linked above shows, it's possible to use the AZ workload identity CLI or the regular az CLI to perform remaining setup. Following steps follow the AZ CLI.
 7. Create ACR AAD application: `az ad sp create-for-rbac --name "<APPLICATION_NAME>"`
 8. On Portal or AZ CLI, enable acrpull role to the AAD application for the ACR resource
+```
+// Sample AZ CLI command
+az role assignment create --assignee <AAD APPLICATION ID> --role acrpull --scope subscriptions/<SUBSCRIPTION NAME>/resourceGroups/<RESOURCE GROUP>/providers/Microsoft.ContainerRegistry/registries/<REGISTRY NAME>
+```
 9. Use kubectl to add service account to cluster: 
 ```
 cat <<EOF | kubectl apply -f -
@@ -139,7 +143,7 @@ EOF
 
 ### 3. Kubernetes Secrets
 Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways:
-1. The configuration can specify a list of `secrets`. Each entry REQUIRES the `secretName` field. The `namespace` field MUST also be provided if the secret does not exist in the namespace Ratify is deployed in. The Ratify helm chart contains a roles.yaml file with role assignments. If a namespace other than Ratify's namespace is provided in the secret list, the user MUST add a new role binding to the cluster role for that new namespace.
+1. The configuration can specify a list of `secrets`. Each entry REQUIRES the `secretName` field. The `namespace` field MUST also be provided if the secret does not exist in the namespace Ratify is deployed in. The Ratify helm chart contains a [roles.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/templates/roles.yaml) file with role assignments. If a namespace other than Ratify's namespace is provided in the secret list, the user MUST add a new role binding to the cluster role for that new namespace.
 
 2. Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The `serviceAccountName` field specifies the service account associated with Ratify. Ratify MUST be assigned a role to read the service account and secrets in the Ratify namespace.
 
