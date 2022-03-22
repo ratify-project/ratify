@@ -20,6 +20,27 @@ import (
 	"testing"
 )
 
+func TestHomepathReplacement(t *testing.T) {
+
+	result := ReplaceHomeShortcut("~/test")
+	home, err := os.UserHomeDir()
+	expectedPath := home + "/test"
+
+	if result != expectedPath {
+		t.Fatalf("value expected to be %v, actual %v, error %v", expectedPath, result, err)
+	}
+}
+
+func TestReadCertificatesFromPath_InvalidPath(t *testing.T) {
+
+	files, err := GetCertificatesFromPath("/invalid/path")
+
+	expectedFileCount := 0
+	if len(files) != expectedFileCount || err != nil {
+		t.Fatalf("response length expected to be %v, actual %v, error %v", expectedFileCount, len(files), err)
+	}
+}
+
 func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	// Setup to create nested directory structure
 	testDir := "TestDirectory"

@@ -18,18 +18,20 @@ package utils
 import (
 	"crypto/x509"
 	"os"
+	"strings"
 
 	"path/filepath"
 
 	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
+	"github.com/sirupsen/logrus"
 )
 
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 	var certs []*x509.Certificate
-
+	path = ReplaceHomeShortcut(path)
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
+		if info != nil && !info.IsDir() {
 			cert, certError := cryptoutil.ReadCertificateFile(file) // ReadCertificateFile returns empty if file was not a certificate
 			if certError != nil {
 				return certError
@@ -46,4 +48,16 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 	}
 
 	return certs, nil
+}
+
+func ReplaceHomeShortcut(path string) string {
+	if strings.HasPrefix(path, "~/") {
+		home, err := os.UserHomeDir()
+		if err == nil && len(home) > 0 {
+			return strings.Replace(path, "~", home, 1) //only replace 1 instance
+		} else {
+			logrus.Warningf("Path replacement failed, error %v, value of Home dir %v", err, home)
+		}
+	}
+	return path
 }
