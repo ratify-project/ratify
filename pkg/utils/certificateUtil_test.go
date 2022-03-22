@@ -22,12 +22,15 @@ import (
 
 func TestHomepathReplacement(t *testing.T) {
 
-	result := ReplaceHomeShortcut("~/test")
+	sampleFoldername := "test"
+	testPath := homeDirectoryUnixPrefix + sampleFoldername
+
+	result := ReplaceHomeShortcut(testPath)
 	home, err := os.UserHomeDir()
-	expectedPath := home + "/test"
+	expectedPath := home + "/" + sampleFoldername
 
 	if result != expectedPath {
-		t.Fatalf("value expected to be %v, actual %v, error %v", expectedPath, result, err)
+		t.Fatalf("sample input %v ,result expected to be %v, actual result %v, error %v", testPath, expectedPath, result, err)
 	}
 }
 

@@ -26,6 +26,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	homeDirectoryUnixShortcut = "~"
+	homeDirectoryUnixPrefix   = homeDirectoryUnixShortcut + "/"
+)
+
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 	var certs []*x509.Certificate
@@ -47,14 +52,15 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 		return nil, err
 	}
 
+	logrus.Infof("%v notary verification certificates loaded from path '%v'", len(certs), path)
 	return certs, nil
 }
 
 func ReplaceHomeShortcut(path string) string {
-	if strings.HasPrefix(path, "~/") {
+	if strings.HasPrefix(path, homeDirectoryUnixPrefix) {
 		home, err := os.UserHomeDir()
 		if err == nil && len(home) > 0 {
-			return strings.Replace(path, "~", home, 1) //only replace 1 instance
+			return strings.Replace(path, homeDirectoryUnixShortcut, home, 1) // replace 1 instance
 		} else {
 			logrus.Warningf("Path replacement failed, error %v, value of Home dir %v", err, home)
 		}
