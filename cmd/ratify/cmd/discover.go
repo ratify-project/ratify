@@ -144,55 +144,6 @@ func discover(opts discoverCmdOptions) error {
 	return PrintJSON(results)
 }
 
-func listReferrers(opts referrerCmdOptions) error {
-
-	if opts.subject == "" {
-		return errors.New("subject parameter is required")
-	}
-
-	subRef, err := utils.ParseSubjectReference(opts.subject)
-	if err != nil {
-		return err
-	}
-
-	cf, err := config.Load(opts.configFilePath)
-	if err != nil {
-		return err
-	}
-
-	// TODO replace with code
-	rootImage := treeprint.NewWithRoot(subRef.String())
-
-	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
-	if err != nil {
-		return err
-	}
-
-	type Result struct {
-		Name       string
-		References []ocispecs.ReferenceDescriptor
-	}
-
-	var results []listResult
-
-	for _, referrerStore := range stores {
-		storeNode := rootImage.AddBranch(referrerStore.Name())
-		result, err := listReferrersForStore(subRef, opts.artifactTypes, referrerStore, storeNode)
-		if err != nil {
-			return err
-		}
-		results = append(results, *result)
-	}
-
-	if !opts.flatOutput {
-		fmt.Println(rootImage.String())
-		return nil
-	}
-
-	return PrintJSON(results)
-}
-
 func listReferrersForStore(subRef common.Reference, artifactTypes []string, store referrerstore.ReferrerStore, treeNode treeprint.Tree) (*listResult, error) {
 	var continuationToken string
 	result := listResult{

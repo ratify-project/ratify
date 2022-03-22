@@ -26,7 +26,6 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/utils"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -37,7 +36,7 @@ const (
 type referrerCmdOptions struct {
 	configFilePath string
 	subject        string
-	artifactTypes  []string
+	artifactType   string
 	digest         string
 	storeName      string
 	flatOutput     bool
@@ -113,6 +112,7 @@ func NewCmdShowRefManifest(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringVarP(&opts.digest, "digest", "d", "", "blob digest")
 	flags.StringVar(&opts.storeName, "store", "", "store name")
+	flags.StringVar(&opts.artifactType, "artifactType", "", "artifact type")
 	return cmd
 }
 
@@ -177,6 +177,10 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return errors.New("digest parameter is required")
 	}
 
+	if opts.artifactType == "" {
+		return errors.New("artifact type is required")
+	}
+
 	subRef, err := utils.ParseSubjectReference(opts.subject)
 	if err != nil {
 		return err
@@ -198,10 +202,27 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return err
 	}
 
-	desc := ocispecs.ReferenceDescriptor{Descriptor: v1.Descriptor{Digest: digest}}
+	ref := fmt.Sprintf("%s@%s", subRef.Path, digest)
+
+	manifestRef, err := utils.ParseSubjectReference(ref)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
 	for _, referrerStore := range stores {
 		if referrerStore.Name() == opts.storeName {
-			manifest, err := referrerStore.GetReferenceManifest(context.Background(), subRef, desc)
+			manifestDesc, err := referrerStore.GetSubjectDescriptor(ctx, manifestRef)
+			if err != nil {
+				return err
+			}
+
+			manifestReferenceDesc := ocispecs.ReferenceDescriptor{
+				Descriptor:   manifestDesc.Descriptor,
+				ArtifactType: opts.artifactType,
+			}
+
+			manifest, err := referrerStore.GetReferenceManifest(ctx, subRef, manifestReferenceDesc)
 			if err != nil {
 				return err
 			}
