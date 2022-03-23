@@ -18,12 +18,14 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/deislabs/ratify/pkg/homedir"
 )
 
 func TestHomepathReplacement(t *testing.T) {
 
 	sampleFoldername := "test"
-	testPath := homeDirectoryUnixPrefix + sampleFoldername
+	testPath := homedir.GetShortcutString() + string(os.PathSeparator) + sampleFoldername
 
 	result := ReplaceHomeShortcut(testPath)
 	home, err := os.UserHomeDir()

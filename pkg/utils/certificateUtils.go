@@ -22,13 +22,9 @@ import (
 
 	"path/filepath"
 
+	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	homeDirectoryUnixShortcut = "~"
-	homeDirectoryUnixPrefix   = homeDirectoryUnixShortcut + "/"
 )
 
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
@@ -57,12 +53,14 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 }
 
 func ReplaceHomeShortcut(path string) string {
-	if strings.HasPrefix(path, homeDirectoryUnixPrefix) {
-		home, err := os.UserHomeDir()
-		if err == nil && len(home) > 0 {
-			return strings.Replace(path, homeDirectoryUnixShortcut, home, 1) // replace 1 instance
+
+	shortcutPrefix := homedir.GetShortcutString() + string(os.PathSeparator)
+	if strings.HasPrefix(path, shortcutPrefix) {
+		home := homedir.Get()
+		if len(home) > 0 {
+			return strings.Replace(path, homedir.GetShortcutString(), home, 1) // replace 1 instance
 		} else {
-			logrus.Warningf("Path replacement failed, error %v, value of Home dir %v", err, home)
+			logrus.Warningf("Path '%v' replacement failed , value of Home dir '%v'", path, home)
 		}
 	}
 	return path
