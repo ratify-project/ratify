@@ -36,7 +36,7 @@ const (
 type referrerCmdOptions struct {
 	configFilePath string
 	subject        string
-	artifactType   string
+	artifactTypes  []string
 	digest         string
 	storeName      string
 	flatOutput     bool
@@ -112,7 +112,6 @@ func NewCmdShowRefManifest(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringVarP(&opts.digest, "digest", "d", "", "blob digest")
 	flags.StringVar(&opts.storeName, "store", "", "store name")
-	flags.StringVar(&opts.artifactType, "artifactType", "", "artifact type")
 	return cmd
 }
 
@@ -177,10 +176,6 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return errors.New("digest parameter is required")
 	}
 
-	if opts.artifactType == "" {
-		return errors.New("artifact type is required")
-	}
-
 	subRef, err := utils.ParseSubjectReference(opts.subject)
 	if err != nil {
 		return err
@@ -218,8 +213,7 @@ func showRefManifest(opts referrerCmdOptions) error {
 			}
 
 			manifestReferenceDesc := ocispecs.ReferenceDescriptor{
-				Descriptor:   manifestDesc.Descriptor,
-				ArtifactType: opts.artifactType,
+				Descriptor: manifestDesc.Descriptor,
 			}
 
 			manifest, err := referrerStore.GetReferenceManifest(ctx, subRef, manifestReferenceDesc)
