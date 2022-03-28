@@ -26,6 +26,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/opencontainers/go-digest"
+	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type TestExecutor struct {
@@ -110,7 +111,7 @@ func TestPluginMain_GetBlobContent_InvokeExpected(t *testing.T) {
 	subject := common.Reference{
 		Original: "localhost",
 	}
-	result, err := storePlugin.GetBlobContent(context.Background(), subject, "")
+	result, err := storePlugin.GetBlobContent(context.Background(), subject, "", v1.Descriptor{})
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
 	}
@@ -275,7 +276,7 @@ func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 	subject := common.Reference{
 		Original: "localhost",
 	}
-	result, err := storePlugin.ListReferrers(context.Background(), subject, nil, "")
+	result, err := storePlugin.ListReferrers(context.Background(), subject, nil, "", nil)
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
 	}

@@ -37,11 +37,11 @@ func (s *TestStore) Name() string {
 	return "test-store"
 }
 
-func (s *TestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (s *TestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	return referrerstore.ListReferrersResult{Referrers: s.References}, nil
 }
 
-func (s *TestStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc ...oci.Descriptor) ([]byte, error) {
+func (s *TestStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error) {
 	return nil, nil
 }
 

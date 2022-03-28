@@ -28,7 +28,7 @@ func main() {
 	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, GetSubjectDescriptor, []string{"1.0.0"})
 }
 
-func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
+func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
 	artifactType := ""
 	if len(artifactTypes) > 0 {
 		artifactType = artifactTypes[0]
@@ -41,7 +41,7 @@ func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifa
 	}, nil
 }
 
-func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc ...v1.Descriptor) ([]byte, error) {
+func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc v1.Descriptor) ([]byte, error) {
 	return []byte(digest.String()), nil
 }
 

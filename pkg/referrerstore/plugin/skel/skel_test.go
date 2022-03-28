@@ -31,7 +31,7 @@ import (
 )
 
 func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
-	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc ...v1.Descriptor) ([]byte, error) {
+	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc v1.Descriptor) ([]byte, error) {
 		return []byte(digest.String()), nil
 	}
 	environment := map[string]string{
@@ -98,7 +98,7 @@ func TestPluginMain_GetReferenceManifest_ReturnsExpected(t *testing.T) {
 }
 
 func TestPluginMain_ListReferrers_ReturnsExpected(t *testing.T) {
-	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
+	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
 		return &referrerstore.ListReferrersResult{
 			NextToken: "next-token",
 			Referrers: []ocispecs.ReferenceDescriptor{
@@ -171,7 +171,7 @@ func TestPluginMain_GetSubjectDesc_ReturnsExpected(t *testing.T) {
 }
 
 func TestPluginMain_ErrorCases(t *testing.T) {
-	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc ...v1.Descriptor) ([]byte, error) {
+	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc v1.Descriptor) ([]byte, error) {
 		return nil, fmt.Errorf("simulated error")
 	}
 	environment := map[string]string{
@@ -244,7 +244,7 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 }
 
 func TestPluginMain_GetBlobContent_ErrorCases(t *testing.T) {
-	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc ...v1.Descriptor) ([]byte, error) {
+	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc v1.Descriptor) ([]byte, error) {
 		return []byte(digest.String()), nil
 	}
 	environment := map[string]string{
@@ -279,7 +279,7 @@ func TestPluginMain_GetBlobContent_ErrorCases(t *testing.T) {
 }
 
 func TestPluginMain_ListReferrers_ErrorCases(t *testing.T) {
-	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
+	listReferrers := func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
 		return &referrerstore.ListReferrersResult{
 			NextToken: "next-token",
 			Referrers: []ocispecs.ReferenceDescriptor{

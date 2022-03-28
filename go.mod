@@ -24,5 +24,5 @@ require (
 	k8s.io/api v0.22.5
 	k8s.io/apimachinery v0.22.5
 	k8s.io/client-go v0.22.5
-	oras.land/oras-go/v2 v2.0.0-20220124135338-24c5637bde7b
+	oras.land/oras-go/v2 v2.0.0-20220325063946-658879066ec1
 )

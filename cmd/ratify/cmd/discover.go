@@ -151,7 +151,7 @@ func listReferrersForStore(subRef common.Reference, artifactTypes []string, stor
 	}
 
 	for {
-		lr, err := store.ListReferrers(context.Background(), subRef, artifactTypes, continuationToken)
+		lr, err := store.ListReferrers(context.Background(), subRef, artifactTypes, continuationToken, nil)
 		if err != nil {
 			return nil, err
 		}

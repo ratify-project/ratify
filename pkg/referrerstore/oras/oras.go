@@ -50,6 +50,7 @@ const (
 	storeName             = "oras"
 	defaultLocalCachePath = "local_oras_cache"
 	dockerConfigFileName  = "config.json"
+	ratifyUserAgent       = "ratify"
 )
 
 // OrasStoreConf describes the configuration of ORAS store
@@ -126,7 +127,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 	return &store.rawConfig
 }
 
-func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	repository, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
@@ -134,8 +135,8 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 	// resolve subject descriptor if not provided
 	var resolvedSubjectDesc *ocispecs.SubjectDescriptor
-	if len(subjectDesc) > 0 {
-		resolvedSubjectDesc = subjectDesc[0]
+	if subjectDesc != nil {
+		resolvedSubjectDesc = subjectDesc
 	} else {
 		resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference)
 		if err != nil {
@@ -169,7 +170,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	return referrerstore.ListReferrersResult{Referrers: referrers}, nil
 }
 
-func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc ...oci.Descriptor) ([]byte, error) {
+func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error) {
 	var err error
 	repository, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
@@ -178,8 +179,8 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 
 	// resolve blob descriptor if not provided
 	var resolvedBlobDesc oci.Descriptor
-	if len(blobDesc) > 0 {
-		resolvedBlobDesc = blobDesc[0]
+	if blobDesc.Digest != "" {
+		resolvedBlobDesc = blobDesc
 	} else {
 		ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
 		resolvedBlobDesc, err = repository.Blobs().Resolve(ctx, ref)
@@ -308,7 +309,7 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 	// set the repository client credentials
 	repoClient := &auth.Client{
 		Header: http.Header{
-			"User-Agent": {"ratify"},
+			"User-Agent": {ratifyUserAgent},
 		},
 		Cache:      auth.DefaultCache,
 		Credential: credentialProvider,

@@ -56,7 +56,7 @@ func NewStore(version string, storeConfig config.StorePluginConfig, pluginPaths 
 	}, nil
 }
 
-func (sp *StorePlugin) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc ...*ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (sp *StorePlugin) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
@@ -97,7 +97,7 @@ func (sp *StorePlugin) Name() string {
 	return sp.name
 }
 
-func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc ...oci.Descriptor) ([]byte, error) {
+func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error) {
 	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
 		return nil, err
