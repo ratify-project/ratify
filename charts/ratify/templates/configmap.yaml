@@ -14,6 +14,18 @@ data:
                 ,
                 "cosign-enabled": true
                 {{- end }}
+                {{- if .Values.oras.authProviders.azurewi }}
+                ,
+                "auth-provider": {
+                    "name": "azure-wi"
+                }
+                {{- end }}
+                {{- if .Values.oras.authProviders.k8secrets }}
+                ,
+                "auth-provider": {
+                    "name": "k8secrets"
+                }
+                {{- end }}
             }
         ]
       },
