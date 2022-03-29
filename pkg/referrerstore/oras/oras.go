@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	paths "path/filepath"
 	"time"
 
@@ -101,10 +100,6 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	// Set up the local cache where content will land when we pull
 	if conf.LocalCachePath == "" {
 		conf.LocalCachePath = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultLocalCachePath)
-	}
-	// make the local cache path since ORAS won't create by default
-	if err := os.MkdirAll(conf.LocalCachePath, 0777); err != nil {
-		return nil, fmt.Errorf("failed to create directory for local cache at path %s", conf.LocalCachePath)
 	}
 
 	localRegistry, err := ocitarget.New(conf.LocalCachePath)
