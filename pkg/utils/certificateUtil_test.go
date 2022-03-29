@@ -17,6 +17,7 @@ package utils
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -73,6 +74,29 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	expectedFileCount := 3
 	if len(files) != expectedFileCount || err != nil {
 		t.Fatalf("response length expected to be %v, actual %v, error %v", expectedFileCount, len(files), err)
+	}
+}
+
+func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
+
+	// Setup
+	testDir := "TestDirectory"
+	testFile1 := testDir + string(os.PathSeparator) + "file1.Crt"
+
+	setupDirectoryForTesting(t, testDir)
+	createCertFile(t, testFile1)
+
+	symlink := filepath.Join(testDir, "symlink")
+	os.Symlink(testFile1, symlink)
+
+	files, err := GetCertificatesFromPath(testDir)
+
+	// Teardown
+	os.RemoveAll(testDir)
+
+	// Validate
+	if len(files) != 1 || err != nil {
+		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
 	}
 }
 

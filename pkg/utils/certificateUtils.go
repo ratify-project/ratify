@@ -17,6 +17,7 @@ package utils
 
 import (
 	"crypto/x509"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -24,23 +25,54 @@ import (
 
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
-
 	var certs []*x509.Certificate
+	fileMap := map[string]bool{} //a map to track path of physical files
+
 	path = ReplaceHomeShortcut(path)
+
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
-		if info != nil && !info.IsDir() {
-			cert, certError := cryptoutil.ReadCertificateFile(file) // ReadCertificateFile returns empty if file was not a certificate
-			if certError != nil {
-				return certError
+
+		physicalFileInfo := info
+		physicalFilePath := file
+
+		if info == nil || err != nil {
+			logrus.Warnf("Invalid path '%v' skipped, error %v", file, err)
+			return nil
+		}
+
+		// In a cluster environment, each mounted file results in a physical file () and a symlink ()
+		// check if file is a link and get the actual file path
+		if info.Mode()&os.ModeSymlink != 0 {
+
+			physicalFilePath, err = filepath.EvalSymlinks(file)
+
+			if err != nil {
+				logrus.Errorf("error evaluating symbolic link %v , error '%v'", file, file)
+				return nil
 			}
-			if cert != nil {
-				certs = append(certs, cert...)
+
+			physicalFileInfo, err = os.Lstat(physicalFilePath)
+
+			if err != nil {
+				logrus.Errorf("error getting file info for path '%v', error '%v'", physicalFilePath, err)
+				return nil
 			}
 		}
+
+		if !physicalFileInfo.IsDir() {
+			if _, ok := fileMap[physicalFilePath]; !ok {
+				err = loadCertFile(physicalFileInfo, physicalFilePath, &certs, fileMap)
+				if err != nil {
+					return errors.Wrap(err, "error reading certificate file "+physicalFilePath)
+				}
+			}
+		}
+
 		return nil
 	})
 
@@ -50,6 +82,20 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 	logrus.Infof("%v notary verification certificates loaded from path '%v'", len(certs), path)
 	return certs, nil
+}
+
+func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate *[]*x509.Certificate, fileMap map[string]bool) error {
+
+	cert, certError := cryptoutil.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
+	if certError != nil {
+		return certError
+	}
+	if cert != nil {
+		*certificate = append(*certificate, cert...)
+		fileMap[filePath] = true
+	}
+
+	return nil
 }
 
 func ReplaceHomeShortcut(path string) string {
