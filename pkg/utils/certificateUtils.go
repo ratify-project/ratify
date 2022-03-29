@@ -45,7 +45,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 			return nil
 		}
 
-		// In a cluster environment, each mounted file results in a physical file () and a symlink ()
+		// In a cluster environment, each mounted file results in a physical file and a symlink
 		// check if file is a link and get the actual file path
 		if info.Mode()&os.ModeSymlink != 0 {
 
@@ -64,7 +64,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 			}
 		}
 
-		if !physicalFileInfo.IsDir() {
+		if physicalFileInfo != nil && !physicalFileInfo.IsDir() {
 			if _, ok := fileMap[physicalFilePath]; !ok {
 				err = loadCertFile(physicalFileInfo, physicalFilePath, &certs, fileMap)
 				if err != nil {
