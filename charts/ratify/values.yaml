@@ -42,5 +42,5 @@ akvCertConfig:
   aadPodIdentity:
 oras:
   authProviders:
-    azurewi: false
+    azureWorkloadIdentity: false
     k8secrets: false
