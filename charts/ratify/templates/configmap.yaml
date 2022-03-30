@@ -14,13 +14,13 @@ data:
                 ,
                 "cosign-enabled": true
                 {{- end }}
-                {{- if .Values.oras.authProviders.azureWorkloadIdentity }}
+                {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
                 ,
                 "auth-provider": {
                     "name": "azure-wi"
                 }
                 {{- end }}
-                {{- if .Values.oras.authProviders.k8secrets }}
+                {{- if .Values.oras.authProviders.k8secretsEnabled }}
                 ,
                 "auth-provider": {
                     "name": "k8secrets"
