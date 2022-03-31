@@ -152,7 +152,7 @@ func showBlob(opts referrerCmdOptions) error {
 
 	for _, referrerStore := range stores {
 		if referrerStore.Name() == opts.storeName {
-			content, err := referrerStore.GetBlobContent(context.Background(), subRef, digest)
+			content, err := referrerStore.GetBlobContent(context.Background(), subRef, digest, v1.Descriptor{})
 			if err != nil {
 				return err
 			}
@@ -198,12 +198,28 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return err
 	}
 
-	desc := ocispecs.ReferenceDescriptor{Descriptor: v1.Descriptor{Digest: digest}}
+	ref := fmt.Sprintf("%s@%s", subRef.Path, digest)
+
+	manifestRef, err := utils.ParseSubjectReference(ref)
+	if err != nil {
+		return err
+	}
+
+	ctx := context.Background()
 	for _, referrerStore := range stores {
 		if referrerStore.Name() == opts.storeName {
-			manifest, err := referrerStore.GetReferenceManifest(context.Background(), subRef, desc)
+			manifestDesc, err := referrerStore.GetSubjectDescriptor(ctx, manifestRef)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to resolve subject descriptor from store: %v", err)
+			}
+
+			manifestReferenceDesc := ocispecs.ReferenceDescriptor{
+				Descriptor: manifestDesc.Descriptor,
+			}
+
+			manifest, err := referrerStore.GetReferenceManifest(ctx, subRef, manifestReferenceDesc)
+			if err != nil {
+				return fmt.Errorf("failed to fetch manifest for reference %s: %v", subRef.Original, err)
 			}
 			return PrintJSON(manifest)
 

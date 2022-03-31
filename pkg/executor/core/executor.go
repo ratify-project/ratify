@@ -90,7 +90,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	for _, referrerStore := range executor.ReferrerStores {
 		var continuationToken string
 		for {
-			referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken)
+			referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
 			if err != nil {
 				return types.VerifyResult{}, err
 			}
