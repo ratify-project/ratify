@@ -68,7 +68,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 		if targetFileInfo != nil && !targetFileInfo.IsDir() && !isSymbolicLink(targetFileInfo) {
 			if _, ok := fileMap[targetFilePath]; !ok {
-				err = loadCertFile(targetFileInfo, targetFilePath, &certs, fileMap)
+				certs, err = loadCertFile(targetFileInfo, targetFilePath, certs, fileMap)
 				if err != nil {
 					return errors.Wrap(err, "error reading certificate file "+targetFilePath)
 				}
@@ -90,20 +90,23 @@ func isSymbolicLink(info fs.FileInfo) bool {
 	return info.Mode()&os.ModeSymlink != 0
 }
 
-func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate *[]*x509.Certificate, fileMap map[string]bool) error {
+func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
 
+	result := certificate
 	cert, certError := cryptoutil.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
 	if certError != nil {
-		return certError
+		return certificate, certError
 	}
 	if cert != nil {
-		*certificate = append(*certificate, cert...)
+		result = append(certificate, cert...)
 		fileMap[filePath] = true
 	}
 
-	return nil
+	return result, nil
 }
 
+// Replace the shortcut prefix in a path with the home directory
+// For example in a unix os, ~/.config/ becomes /home/azureuser/.config after replacement
 func ReplaceHomeShortcut(path string) string {
 
 	shortcutPrefix := homedir.GetShortcutString() + string(os.PathSeparator)
