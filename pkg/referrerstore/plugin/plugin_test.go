@@ -276,6 +276,7 @@ func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 	subject := common.Reference{
 		Original: "localhost",
 	}
+	// subject descriptor has not been resolved thus nil passed in to ListReferrers
 	result, err := storePlugin.ListReferrers(context.Background(), subject, nil, "", nil)
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)

@@ -117,7 +117,7 @@ func (c *pcontext) cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) 
 			return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("unknown args %s", arg[0]), "")
 		}
 	}
-
+	// subject descriptor has not been resolved thus nil passed in to ListReferrers
 	result, err := pluginFunc(cmdArgs, cmdArgs.subjectRef, strings.Split(artifactType, ","), nextToken, nil)
 
 	if err != nil {

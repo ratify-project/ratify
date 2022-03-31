@@ -210,7 +210,7 @@ func showRefManifest(opts referrerCmdOptions) error {
 		if referrerStore.Name() == opts.storeName {
 			manifestDesc, err := referrerStore.GetSubjectDescriptor(ctx, manifestRef)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to resolve subject descriptor from store: %v", err)
 			}
 
 			manifestReferenceDesc := ocispecs.ReferenceDescriptor{
@@ -219,7 +219,7 @@ func showRefManifest(opts referrerCmdOptions) error {
 
 			manifest, err := referrerStore.GetReferenceManifest(ctx, subRef, manifestReferenceDesc)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to fetch manifest for reference %s: %v", subRef.Original, err)
 			}
 			return PrintJSON(manifest)
 
