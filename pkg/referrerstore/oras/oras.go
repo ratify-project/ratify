@@ -24,6 +24,7 @@ import (
 	"io"
 	"net/http"
 	paths "path/filepath"
+	"strings"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -135,6 +136,9 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	} else {
 		resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference)
 		if err != nil {
+			if strings.Contains(err.Error(), "401") {
+				delete(store.authCache, subjectReference.Original)
+			}
 			return referrerstore.ListReferrersResult{}, err
 		}
 	}
@@ -145,6 +149,9 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		referrerDescriptors = referrers
 		return nil
 	}); err != nil {
+		if strings.Contains(err.Error(), "401") {
+			delete(store.authCache, subjectReference.Original)
+		}
 		return referrerstore.ListReferrersResult{}, err
 	}
 
@@ -180,6 +187,9 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
 		resolvedBlobDesc, err = repository.Blobs().Resolve(ctx, ref)
 		if err != nil {
+			if strings.Contains(err.Error(), "401") {
+				delete(store.authCache, subjectReference.Original)
+			}
 			return nil, err
 		}
 	}
@@ -194,6 +204,9 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		// fetch blob content from remote repository
 		rc, err := repository.Fetch(ctx, resolvedBlobDesc)
 		if err != nil {
+			if strings.Contains(err.Error(), "401") {
+				delete(store.authCache, subjectReference.Original)
+			}
 			return nil, err
 		}
 
@@ -223,6 +236,9 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		// fetch manifest content from repository
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
+			if strings.Contains(err.Error(), "401") {
+				delete(store.authCache, subjectReference.Original)
+			}
 			return ocispecs.ReferenceManifest{}, err
 		}
 
@@ -260,6 +276,9 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 
 	desc, err := repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
+		if strings.Contains(err.Error(), "401") {
+			delete(store.authCache, subjectReference.Original)
+		}
 		return nil, err
 	}
 
