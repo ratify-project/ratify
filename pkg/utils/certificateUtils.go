@@ -29,6 +29,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Load certificate from path
+// when path is a directory, this method loads all certs in directory and resolve symlink if needed
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
 	fileMap := map[string]bool{} //a map to track path of physical files
@@ -37,8 +39,8 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
 
-		physicalFileInfo := info
-		physicalFilePath := file
+		targetFileInfo := info
+		targetFilePath := file
 
 		if info == nil || err != nil {
 			logrus.Warnf("Invalid path '%v' skipped, error %v", file, err)
@@ -47,28 +49,28 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 		// In a cluster environment, each mounted file results in a physical file and a symlink
 		// check if file is a link and get the actual file path
-		if info.Mode()&os.ModeSymlink != 0 {
 
-			physicalFilePath, err = filepath.EvalSymlinks(file)
+		if isSymbolicLink(info) {
 
-			if err != nil {
-				logrus.Errorf("error evaluating symbolic link %v , error '%v'", file, file)
+			targetFilePath, err = filepath.EvalSymlinks(file)
+			if err != nil || len(targetFilePath) == 0 {
+				logrus.Errorf("error evaluating symbolic link %v , error '%v'", file, err)
 				return nil
 			}
 
-			physicalFileInfo, err = os.Lstat(physicalFilePath)
+			targetFileInfo, err = os.Lstat(targetFilePath)
 
 			if err != nil {
-				logrus.Errorf("error getting file info for path '%v', error '%v'", physicalFilePath, err)
+				logrus.Errorf("error getting file info for path '%v', error '%v'", targetFilePath, err)
 				return nil
 			}
 		}
 
-		if physicalFileInfo != nil && !physicalFileInfo.IsDir() {
-			if _, ok := fileMap[physicalFilePath]; !ok {
-				err = loadCertFile(physicalFileInfo, physicalFilePath, &certs, fileMap)
+		if targetFileInfo != nil && !targetFileInfo.IsDir() && !isSymbolicLink(targetFileInfo) {
+			if _, ok := fileMap[targetFilePath]; !ok {
+				err = loadCertFile(targetFileInfo, targetFilePath, &certs, fileMap)
 				if err != nil {
-					return errors.Wrap(err, "error reading certificate file "+physicalFilePath)
+					return errors.Wrap(err, "error reading certificate file "+targetFilePath)
 				}
 			}
 		}
@@ -82,6 +84,10 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 	logrus.Infof("%v notary verification certificates loaded from path '%v'", len(certs), path)
 	return certs, nil
+}
+
+func isSymbolicLink(info fs.FileInfo) bool {
+	return info.Mode()&os.ModeSymlink != 0
 }
 
 func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate *[]*x509.Certificate, fileMap map[string]bool) error {

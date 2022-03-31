@@ -17,7 +17,6 @@ package utils
 import (
 	"io/ioutil"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -80,21 +79,48 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 
 	// Setup
-	testDir := "TestDirectory"
-	testFile1 := testDir + string(os.PathSeparator) + "file1.Crt"
+	currPath, _ := os.Getwd()
+	testDirName := "TestDirectory"
+	absTestDirPath := currPath + string(os.PathSeparator) + testDirName + string(os.PathSeparator)
+	testFile1 := absTestDirPath + "file1.Crt"
 
-	setupDirectoryForTesting(t, testDir)
+	setupDirectoryForTesting(t, testDirName)
 	createCertFile(t, testFile1)
 
-	symlink := filepath.Join(testDir, "symlink")
+	symlink := absTestDirPath + "symlink"
 	os.Symlink(testFile1, symlink)
-
-	files, err := GetCertificatesFromPath(testDir)
+	files, err := GetCertificatesFromPath(symlink)
 
 	// Teardown
-	os.RemoveAll(testDir)
+	os.RemoveAll(absTestDirPath)
 
 	// Validate
+	if len(files) != 1 || err != nil {
+		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
+	}
+}
+
+func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
+
+	// Setup
+	currPath, _ := os.Getwd()
+	testDirName := "TestDirectory"
+	absTestDirPath := currPath + string(os.PathSeparator) + testDirName + string(os.PathSeparator)
+	testFile1 := absTestDirPath + "file1.Crt"
+
+	setupDirectoryForTesting(t, testDirName)
+	createCertFile(t, testFile1)
+
+	symlink := absTestDirPath + "symlink"
+	twoLevelSymlink := absTestDirPath + "symlink2"
+	os.Symlink(testFile1, symlink)
+	os.Symlink(symlink, twoLevelSymlink)
+	files, err := GetCertificatesFromPath(twoLevelSymlink)
+
+	// Teardown
+	os.RemoveAll(absTestDirPath)
+
+	// validate
 	if len(files) != 1 || err != nil {
 		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
 	}
