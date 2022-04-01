@@ -113,19 +113,19 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 
 	if err != nil {
-		return verifier.VerifierResult{}, err
+		return verifier.VerifierResult{IsSuccess: false}, err
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest, blobDesc)
 		if err != nil {
-			return verifier.VerifierResult{}, err
+			return verifier.VerifierResult{IsSuccess: false}, err
 		}
 
 		var opts notation.VerifyOptions
 		vdesc, err := v.notationVerifier.Verify(context.Background(), refBlob, opts)
 		if err != nil {
-			return verifier.VerifierResult{}, err
+			return verifier.VerifierResult{IsSuccess: false}, err
 		}
 
 		// TODO get the subject descriptor and verify all the properties other than digest.
