@@ -361,7 +361,6 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, expiry time.Time) {
 	_, ok := store.authCache[ref]
 	if !ok {
-		logrus.Infof("adding repo to the auth cache: %s", ref)
 		store.authCache[ref] = authCacheEntry{
 			client:    repository,
 			expiresOn: expiry,
@@ -370,8 +369,11 @@ func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, 
 }
 
 func (store *orasStore) evictAuthCache(ref string, err error) {
-	if strings.Contains(err.Error(), "code 401") {
-		logrus.Infof("evicting from the auth cache: %s", ref)
-		delete(store.authCache, ref)
+	err_codes := []int{400, 401, 403}
+	for code := range err_codes {
+		if strings.Contains(err.Error(), fmt.Sprintf("code %d", code)) {
+			delete(store.authCache, ref)
+			break
+		}
 	}
 }
