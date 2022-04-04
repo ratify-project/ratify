@@ -32,4 +32,6 @@ type PolicyProvider interface {
 	// ErrorToVerifyResult determines the final outcome of verification that is constructed using the results from
 	// individual verifications or other errors that occurred during the workflow
 	ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult
+
+	OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool
 }

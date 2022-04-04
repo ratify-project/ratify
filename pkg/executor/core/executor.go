@@ -82,10 +82,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	subjectReference.Digest = desc.Digest
 
 	var verifierReports []interface{}
-	anyVerifySuccess := map[string]bool{}
-	for _, referenceType := range verifyParameters.ReferenceTypes {
-		anyVerifySuccess[referenceType] = false
-	}
 
 	for _, referrerStore := range executor.ReferrerStores {
 		var continuationToken string
@@ -106,8 +102,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) {
 							return result, nil
 						}
-					} else {
-						anyVerifySuccess[reference.ArtifactType] = true
 					}
 				}
 			}
@@ -121,13 +115,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		return types.VerifyResult{}, ReferrersNotFound
 	}
 
-	overallVerifySuccess := true
-	for _, referenceType := range verifyParameters.ReferenceTypes {
-		if anyVerifySuccess[referenceType] == false {
-			overallVerifySuccess = false
-			break
-		}
-	}
+	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
 
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
@@ -146,6 +134,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 					Results:   []string{fmt.Sprintf("an error thrown by the verifier %v", err)}}
 			}
 
+			verifyResult.ArtifactType = referenceDesc.ArtifactType
 			verifyResults = append(verifyResults, verifyResult)
 			isSuccess = verifyResult.IsSuccess
 			break
