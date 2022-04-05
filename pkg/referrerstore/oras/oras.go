@@ -24,7 +24,6 @@ import (
 	"io"
 	"net/http"
 	paths "path/filepath"
-	"strings"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -369,11 +368,6 @@ func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, 
 }
 
 func (store *orasStore) evictAuthCache(ref string, err error) {
-	err_codes := []int{400, 401, 403}
-	for code := range err_codes {
-		if strings.Contains(err.Error(), fmt.Sprintf("code %d", code)) {
-			delete(store.authCache, ref)
-			break
-		}
-	}
+	delete(store.authCache, ref)
+	// TODO: add reliable way to conditionally evict based on error code
 }
