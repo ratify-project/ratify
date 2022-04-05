@@ -39,7 +39,7 @@ akvCertConfig:
   vaultName:
   certName:
   tenantId:
-  aadPodIdentity:
+  clientId:
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
