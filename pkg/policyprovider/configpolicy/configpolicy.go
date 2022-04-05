@@ -17,6 +17,7 @@ package config
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/deislabs/ratify/pkg/common"
@@ -24,6 +25,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
+	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
 	vt "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/verifier"
 )
@@ -33,15 +35,37 @@ type PolicyEnforcer struct {
 	ArtifactTypePolicies map[string]vt.ArtifactTypeVerifyPolicy
 }
 
+type configPolicyEnforcerConf struct {
+	Name                         string                                 `json:"name"`
+	ArtifactVerificationPolicies map[string]vt.ArtifactTypeVerifyPolicy `json:"artifactVerificationPolicies,omitempty"`
+}
+
 const defaultPolicyName string = "default"
 
-// CreatePolicyEnforcerFromConfig creates a policy enforcer from the given configuration
-func CreatePolicyEnforcerFromConfig(policiesConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
+type configPolicyFactory struct{}
+
+// init calls Register for our k8s-secrets provider
+func init() {
+	pf.Register("configPolicy", &configPolicyFactory{})
+}
+
+func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
 	policyEnforcer := PolicyEnforcer{}
-	if policiesConfig.ArtifactVerificationPolicies == nil {
+
+	conf := configPolicyEnforcerConf{}
+	policyProviderConfigBytes, err := json.Marshal(policyConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
+		return nil, fmt.Errorf("failed to parse policy provider configuration: %v", err)
+	}
+
+	if conf.ArtifactVerificationPolicies == nil {
 		policyEnforcer.ArtifactTypePolicies = map[string]vt.ArtifactTypeVerifyPolicy{}
 	} else {
-		policyEnforcer.ArtifactTypePolicies = policiesConfig.ArtifactVerificationPolicies
+		policyEnforcer.ArtifactTypePolicies = conf.ArtifactVerificationPolicies
 	}
 	if policyEnforcer.ArtifactTypePolicies[defaultPolicyName] == "" {
 		policyEnforcer.ArtifactTypePolicies[defaultPolicyName] = vt.AnyVerifySuccess
