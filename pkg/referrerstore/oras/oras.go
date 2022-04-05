@@ -291,7 +291,7 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 	if cacheEntry, ok := store.authCache[targetRef.Original]; ok {
 		// if the auth cache entry expiration has not expired or it was never set
 		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
-			return cacheEntry.client, time.Now(), nil
+			return cacheEntry.client, cacheEntry.expiresOn, nil
 		}
 	}
 
