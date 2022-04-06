@@ -30,13 +30,10 @@ func (p *TestPolicyProvider) VerifyNeeded(ctx context.Context, subjectReference 
 	return true
 }
 
-// ContinueVerifyOnFailure determines if the given error can be ignored and verification can be continued.
 func (p *TestPolicyProvider) ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool {
 	return true
 }
 
-// ErrorToVerifyResult determines the final outcome of verification that is constructed using the results from
-// individual verifications or other errors that occurred during the workflow
 func (p *TestPolicyProvider) ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult {
 	errorReport := verifier.VerifierResult{
 		Subject:   subjectRefString,
