@@ -29,7 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Load certificate from path
+// Return list of certificates loaded from path
 // when path is a directory, this method loads all certs in directory and resolve symlink if needed
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
@@ -49,9 +49,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 
 		// In a cluster environment, each mounted file results in a physical file and a symlink
 		// check if file is a link and get the actual file path
-
 		if isSymbolicLink(info) {
-
 			targetFilePath, err = filepath.EvalSymlinks(file)
 			if err != nil || len(targetFilePath) == 0 {
 				logrus.Errorf("error evaluating symbolic link %v , error '%v'", file, err)
@@ -91,7 +89,6 @@ func isSymbolicLink(info fs.FileInfo) bool {
 }
 
 func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
-
 	result := certificate
 	cert, certError := cryptoutil.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
 	if certError != nil {
@@ -108,7 +105,6 @@ func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Cer
 // Replace the shortcut prefix in a path with the home directory
 // For example in a unix os, ~/.config/ becomes /home/azureuser/.config after replacement
 func ReplaceHomeShortcut(path string) string {
-
 	shortcutPrefix := homedir.GetShortcutString() + string(os.PathSeparator)
 	if strings.HasPrefix(path, shortcutPrefix) {
 		home := homedir.Get()
