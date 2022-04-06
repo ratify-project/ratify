@@ -80,7 +80,7 @@ func serve(opts serveCmdOptions) error {
 
 	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
 
-	policyEnforcer, err := pf.CreatePolicyProvidersFromConfig(cf.PoliciesConfig)
+	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
 
 	if err != nil {
 		return err

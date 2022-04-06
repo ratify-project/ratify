@@ -26,7 +26,7 @@ import (
 
 var builtInPolicyProviders = make(map[string]PolicyFactory)
 
-// PolicyFactory is an interface that defines methods to create a policy
+// PolicyFactory is an interface that defines methods to create a policy provider
 type PolicyFactory interface {
 	Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error)
 }
@@ -43,15 +43,10 @@ func Register(name string, factory PolicyFactory) {
 	builtInPolicyProviders[name] = factory
 }
 
-// CreateStoresFromConfig creates a stores from the provided configuration
-func CreatePolicyProvidersFromConfig(policyConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
+// CreatePolicyProvidersFromConfig creates a policy provider from the provided configuration
+func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
 	if policyConfig.PolicyPlugin == nil {
 		return nil, errors.New("policy provider config must be specified")
-	}
-
-	err := validatePolicyConfig(policyConfig)
-	if err != nil {
-		return nil, err
 	}
 
 	policyProviderName, ok := policyConfig.PolicyPlugin[types.Name]
@@ -72,11 +67,4 @@ func CreatePolicyProvidersFromConfig(policyConfig config.PoliciesConfig) (policy
 	}
 
 	return policyProvider, nil
-}
-
-func validatePolicyConfig(storesConfig config.PoliciesConfig) error {
-	// TODO check for existence of plugin dirs
-	// TODO check if version is supported
-	return nil
-
 }

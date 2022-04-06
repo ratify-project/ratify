@@ -90,7 +90,7 @@ func verify(opts verifyCmdOptions) error {
 		return err
 	}
 
-	policyEnforcer, err := pf.CreatePolicyProvidersFromConfig(cf.PoliciesConfig)
+	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
 
 	if err != nil {
 		return err

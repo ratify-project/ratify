@@ -15,68 +15,56 @@ limitations under the License.
 
 package factory
 
-// type TestStoreFactory struct{}
+import (
+	"testing"
 
-// func (f *TestStoreFactory) Create(version string, storesConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error) {
-// 	return &mocks.TestStore{}, nil
-// }
+	"github.com/deislabs/ratify/pkg/policyprovider"
+	"github.com/deislabs/ratify/pkg/policyprovider/config"
+	"github.com/deislabs/ratify/pkg/policyprovider/mocks"
+)
 
-// func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
-// 	builtInStores = map[string]StoreFactory{
-// 		"test-store": &TestStoreFactory{},
-// 	}
+type TestPolicyProviderFactory struct{}
 
-// 	var storeConfig config.StorePluginConfig
-// 	storeConfig = map[string]interface{}{
-// 		"name": "test-store",
-// 	}
-// 	storesConfig := config.StoresConfig{
-// 		Stores: []config.StorePluginConfig{storeConfig},
-// 	}
+func (f *TestPolicyProviderFactory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
+	return &mocks.TestPolicyProvider{}, nil
+}
 
-// 	stores, err := CreateStoresFromConfig(storesConfig, "")
+// Checks the correct registered policy provider is invoked based on config
+func TestCreatePolicyProvidersFromConfig_BuiltInPolicyProviders_ReturnsExpected(t *testing.T) {
+	builtInPolicyProviders = map[string]PolicyFactory{
+		"test-policyprovider": &TestPolicyProviderFactory{},
+	}
 
-// 	if err != nil {
-// 		t.Fatalf("create stores failed with err %v", err)
-// 	}
+	configPolicyConfig := map[string]interface{}{
+		"name": "test-policyprovider",
+	}
+	policyProviderConfig := config.PoliciesConfig{
+		Version:      "1.0.0",
+		PolicyPlugin: configPolicyConfig,
+	}
 
-// 	if len(stores) != 1 {
-// 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
-// 	}
+	_, err := CreatePolicyProviderFromConfig(policyProviderConfig)
+	if err != nil {
+		t.Fatalf("create policy provider failed with err %v", err)
+	}
+}
 
-// 	if stores[0].Name() != "test-store" {
-// 		t.Fatalf("expected to create test store")
-// 	}
+// Checks the auth provider creation fails if auth provider specified does not exist
+func TestCreatePolicyProvidersFromConfig_NonexistentPolicyProviders_ReturnsExpected(t *testing.T) {
+	builtInPolicyProviders = map[string]PolicyFactory{
+		"test-policyprovider": &TestPolicyProviderFactory{},
+	}
 
-// 	if _, ok := stores[0].(*plugin.StorePlugin); ok {
-// 		t.Fatalf("type assertion failed expected a built in store")
-// 	}
-// }
+	configPolicyConfig := map[string]interface{}{
+		"name": "test-nonexistent",
+	}
+	policyProviderConfig := config.PoliciesConfig{
+		Version:      "1.0.0",
+		PolicyPlugin: configPolicyConfig,
+	}
 
-// func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
-// 	var storeConfig config.StorePluginConfig
-// 	storeConfig = map[string]interface{}{
-// 		"name": "plugin-store",
-// 	}
-// 	storesConfig := config.StoresConfig{
-// 		Stores: []config.StorePluginConfig{storeConfig},
-// 	}
-
-// 	stores, err := CreateStoresFromConfig(storesConfig, "")
-
-// 	if err != nil {
-// 		t.Fatalf("create stores failed with err %v", err)
-// 	}
-
-// 	if len(stores) != 1 {
-// 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
-// 	}
-
-// 	if stores[0].Name() != "plugin-store" {
-// 		t.Fatalf("expected to create plugin store")
-// 	}
-
-// 	if _, ok := stores[0].(*plugin.StorePlugin); !ok {
-// 		t.Fatalf("type assertion failed expected a plugin store")
-// 	}
-// }
+	_, err := CreatePolicyProviderFromConfig(policyProviderConfig)
+	if err == nil {
+		t.Fatalf("create policy provider should have failed for non existent provider")
+	}
+}

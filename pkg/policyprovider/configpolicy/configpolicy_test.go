@@ -13,59 +13,78 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package configpolicy
 
-// func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
-// 	config := pc.PoliciesConfig{
-// 		Version: "1.0.0",
-// 		ArtifactVerificationPolicies: map[string]types.ArtifactTypeVerifyPolicy{
-// 			"application/vnd.cncf.notary.v2": "any",
-// 			"org.example.sbom.v0":            "all",
-// 			"default":                        "any",
-// 		},
-// 	}
+import (
+	"context"
+	"testing"
 
-// 	policyEnforcer, err := CreatePolicyEnforcerFromConfig(config)
+	"github.com/deislabs/ratify/pkg/common"
+	vt "github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/ocispecs"
+	pc "github.com/deislabs/ratify/pkg/policyprovider/config"
+	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
+	"github.com/deislabs/ratify/pkg/policyprovider/types"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
+)
 
-// 	if err != nil {
-// 		t.Fatalf("PolicyEnforcer should create from PoliciesConfig")
-// 	}
+func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
+	configPolicyConfig := map[string]interface{}{
+		"name": "configPolicy",
+		"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
+			"application/vnd.cncf.notary.v2": "any",
+			"org.example.sbom.v0":            "all",
+			"default":                        "any",
+		},
+	}
+	config := pc.PoliciesConfig{
+		Version:      "1.0.0",
+		PolicyPlugin: configPolicyConfig,
+	}
 
-// 	ctx := context.Background()
-// 	subjectReference := common.Reference{
-// 		Path:     "",
-// 		Digest:   "",
-// 		Tag:      "",
-// 		Original: "",
-// 	}
-// 	referenceDesc := ocispecs.ReferenceDescriptor{
-// 		Descriptor:   oci.Descriptor{},
-// 		ArtifactType: "application/vnd.cncf.notary.v2",
-// 	}
-// 	result := vt.VerifyResult{
-// 		IsSuccess:       false,
-// 		VerifierReports: nil,
-// 	}
+	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(config)
 
-// 	check := policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
+	if err != nil {
+		t.Fatalf("PolicyEnforcer should create from PoliciesConfig")
+	}
 
-// 	if check != true {
-// 		t.Fatalf("For policy of 'any' PolicyEnforcer should allow continuing on verify failure")
-// 	}
+	ctx := context.Background()
+	subjectReference := common.Reference{
+		Path:     "",
+		Digest:   "",
+		Tag:      "",
+		Original: "",
+	}
+	referenceDesc := ocispecs.ReferenceDescriptor{
+		Descriptor:   oci.Descriptor{},
+		ArtifactType: "application/vnd.cncf.notary.v2",
+	}
+	result := vt.VerifyResult{
+		IsSuccess:       false,
+		VerifierReports: nil,
+	}
 
-// 	referenceDesc.ArtifactType = "org.example.sbom.v0"
+	check := policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
 
-// 	check = policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
+	if check != true {
+		t.Fatalf("For policy of 'any' PolicyEnforcer should allow continuing on verify failure")
+	}
 
-// 	if check != false {
-// 		t.Fatalf("For policy 'all' PolicyEnforcer should not allow continuing on verify failure")
-// 	}
+	referenceDesc.ArtifactType = "org.example.sbom.v0"
 
-// 	referenceDesc.ArtifactType = "unknown"
+	check = policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
 
-// 	check = policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
+	if check != false {
+		t.Fatalf("For policy 'all' PolicyEnforcer should not allow continuing on verify failure")
+	}
 
-// 	if check != true {
-// 		t.Fatalf("For artifact types without a policy the default policy should be followed")
-// 	}
-// }
+	referenceDesc.ArtifactType = "unknown"
+
+	check = policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
+
+	if check != true {
+		t.Fatalf("For artifact types without a policy the default policy should be followed")
+	}
+}
+
+// TODO: add test for OverallVerifyResult

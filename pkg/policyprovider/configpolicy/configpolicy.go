@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package configpolicy
 
 import (
 	"context"
@@ -44,7 +44,7 @@ const defaultPolicyName string = "default"
 
 type configPolicyFactory struct{}
 
-// init calls Register for our k8s-secrets provider
+// init calls Register for our config policy provider
 func init() {
 	pf.Register("configPolicy", &configPolicyFactory{})
 }
