@@ -22,6 +22,7 @@ import (
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/sirupsen/logrus"
 )
 
 var builtInPolicyProviders = make(map[string]PolicyFactory)
@@ -67,5 +68,6 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 		return nil, fmt.Errorf("failed to Create policy provider: %v", err)
 	}
 
+	logrus.Infof("selected policy provider: %s", providerNameStr)
 	return policyProvider, nil
 }
