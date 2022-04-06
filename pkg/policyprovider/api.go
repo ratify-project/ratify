@@ -29,9 +29,9 @@ type PolicyProvider interface {
 	VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool
 	// ContinueVerifyOnFailure determines if the given error can be ignored and verification can be continued.
 	ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool
-	// ErrorToVerifyResult determines the final outcome of verification that is constructed using the results from
-	// individual verifications or other errors that occurred during the workflow
+	// ErrorToVerifyResult converts an error to a properly formatted verify result
 	ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult
-
+	// OverallVerifyResult determines the final outcome of verification that is constructed using the results from
+	// individual verifications
 	OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool
 }

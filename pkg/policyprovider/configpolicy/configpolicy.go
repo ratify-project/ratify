@@ -49,13 +49,14 @@ func init() {
 	pf.Register("configPolicy", &configPolicyFactory{})
 }
 
+// Create initializes a new policy provider based on the provider selected in config
 func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
 	policyEnforcer := PolicyEnforcer{}
 
 	conf := configPolicyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal policy config: %v", err)
 	}
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
@@ -73,10 +74,12 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 	return &policyEnforcer, nil
 }
 
+// VerifyNeeded determines if the given reference needs verification
 func (enforcer PolicyEnforcer) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
 	return true
 }
 
+// ContinueVerifyOnFailure determines if the given error can be ignored and verification can be continued.
 func (enforcer PolicyEnforcer) ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool {
 	artifactType := referenceDesc.ArtifactType
 	policy := enforcer.ArtifactTypePolicies[artifactType]
@@ -90,6 +93,7 @@ func (enforcer PolicyEnforcer) ContinueVerifyOnFailure(ctx context.Context, subj
 	}
 }
 
+// ErrorToVerifyResult converts an error to a properly formatted verify result
 func (enforcer PolicyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult {
 	errorReport := verifier.VerifierResult{
 		Subject:   subjectRefString,
@@ -101,6 +105,8 @@ func (enforcer PolicyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectR
 	return types.VerifyResult{IsSuccess: false, VerifierReports: reports}
 }
 
+// OverallVerifyResult determines the final outcome of verification that is constructed using the results from
+// individual verifications
 func (enforcer PolicyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
 	// use boolean map to track if each artifact type policy constraint is satisfied
 	verifySuccess := map[string]bool{}

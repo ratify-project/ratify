@@ -31,6 +31,7 @@ type PolicyFactory interface {
 	Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error)
 }
 
+// Register adds the factory to the built in providers map
 func Register(name string, factory PolicyFactory) {
 	if factory == nil {
 		panic("store factory cannot be nil")
@@ -63,7 +64,7 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 
 	policyProvider, err := policyFactory.Create(policyConfig.PolicyPlugin)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to Create policy provider: %v", err)
 	}
 
 	return policyProvider, nil
