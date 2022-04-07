@@ -52,7 +52,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 		if isSymbolicLink(info) {
 			targetFilePath, err = filepath.EvalSymlinks(file)
 			if err != nil || len(targetFilePath) == 0 {
-				logrus.Errorf("error evaluating symbolic link %v , error '%v'", file, err)
+				logrus.Errorf("Unable to resolve symbolic link %v , error '%v'", file, err)
 				return nil
 			}
 
@@ -64,6 +64,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 			}
 		}
 
+		// if filepath.EvalSymlinks fails to resolve multi level sym link, skip this file
 		if targetFileInfo != nil && !targetFileInfo.IsDir() && !isSymbolicLink(targetFileInfo) {
 			if _, ok := fileMap[targetFilePath]; !ok {
 				certs, err = loadCertFile(targetFileInfo, targetFilePath, certs, fileMap)
@@ -89,17 +90,16 @@ func isSymbolicLink(info fs.FileInfo) bool {
 }
 
 func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
-	result := certificate
 	cert, certError := cryptoutil.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
 	if certError != nil {
 		return certificate, certError
 	}
 	if cert != nil {
-		result = append(certificate, cert...)
+		certificate = append(certificate, cert...)
 		fileMap[filePath] = true
 	}
 
-	return result, nil
+	return certificate, nil
 }
 
 // Replace the shortcut prefix in a path with the home directory
