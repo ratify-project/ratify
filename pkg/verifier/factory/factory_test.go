@@ -45,7 +45,7 @@ func (s *TestVerifier) Verify(ctx context.Context,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	referrerStore referrerstore.ReferrerStore,
 	executor executor.Executor) (verifier.VerifierResult, error) {
-	return verifier.VerifierResult{}, nil
+	return verifier.VerifierResult{IsSuccess: false}, nil
 }
 
 func (f *TestVerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {
