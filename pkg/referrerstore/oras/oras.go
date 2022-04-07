@@ -16,17 +16,20 @@ limitations under the License.
 package oras
 
 import (
+	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	paths "path/filepath"
-	"strings"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/pkg/content"
-	"oras.land/oras-go/pkg/oras"
-	"oras.land/oras-go/pkg/target"
+	ocitarget "oras.land/oras-go/v2/content/oci"
+	"oras.land/oras-go/v2/registry/remote"
+	"oras.land/oras-go/v2/registry/remote/auth"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
@@ -46,6 +49,7 @@ const (
 	storeName             = "oras"
 	defaultLocalCachePath = "local_oras_cache"
 	dockerConfigFileName  = "config.json"
+	ratifyUserAgent       = "ratify"
 )
 
 // OrasStoreConf describes the configuration of ORAS store
@@ -60,14 +64,14 @@ type OrasStoreConf struct {
 type orasStoreFactory struct{}
 
 type authCacheEntry struct {
-	client    *content.Registry
+	client    *remote.Repository
 	expiresOn time.Time
 }
 
 type orasStore struct {
 	config       *OrasStoreConf
 	rawConfig    config.StoreConfig
-	localCache   *content.OCI
+	localCache   *ocitarget.Store
 	authProvider authprovider.AuthProvider
 	authCache    map[string]authCacheEntry
 }
@@ -97,7 +101,8 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	if conf.LocalCachePath == "" {
 		conf.LocalCachePath = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultLocalCachePath)
 	}
-	localRegistry, err := content.NewOCI(conf.LocalCachePath)
+
+	localRegistry, err := ocitarget.New(conf.LocalCachePath)
 	if err != nil {
 		return nil, fmt.Errorf("could not create local oras cache at path %s: %s", conf.LocalCachePath, err)
 	}
@@ -117,30 +122,37 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 	return &store.rawConfig
 }
 
-func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (referrerstore.ListReferrersResult, error) {
-	// TODO: handle nextToken
-	registryClient, err := store.createRegistryClient(ctx, subjectReference)
+func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+	repository, expiry, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
 
-	ref := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest)
-	var referrerDescriptors []artifactspec.Descriptor
-	if artifactTypes == nil {
-		artifactTypes = []string{""}
-	}
-	for _, artifactType := range artifactTypes {
-		_, res, err := oras.Discover(ctx, registryClient.Resolver, ref, artifactType)
+	// resolve subject descriptor if not provided
+	var resolvedSubjectDesc *ocispecs.SubjectDescriptor
+	if subjectDesc != nil {
+		resolvedSubjectDesc = subjectDesc
+	} else {
+		resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference)
 		if err != nil {
-			if strings.Contains(err.Error(), "404 Not Found") && store.config.CosignEnabled {
-				logrus.Info("Registry doesn't support oras artifacts, but we can check for cosign artifacts")
-			} else {
-				return referrerstore.ListReferrersResult{}, err
-			}
+			store.evictAuthCache(subjectReference.Original, err)
+			return referrerstore.ListReferrersResult{}, err
 		}
-		referrerDescriptors = append(referrerDescriptors, res...)
 	}
 
+	// find all referrers referencing subject descriptor
+	var referrerDescriptors []artifactspec.Descriptor
+	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, func(referrers []artifactspec.Descriptor) error {
+		referrerDescriptors = referrers
+		return nil
+	}); err != nil {
+		store.evictAuthCache(subjectReference.Original, err)
+		return referrerstore.ListReferrersResult{}, err
+	}
+	// add the repository client to the auth cache if all repository operations successful
+	store.addAuthCache(subjectReference.Original, repository, expiry)
+
+	// convert artifact descriptors to oci descriptor with artifact type
 	var referrers []ocispecs.ReferenceDescriptor
 	for _, referrer := range referrerDescriptors {
 		referrers = append(referrers, ArtifactDescriptorToReferenceDescriptor(referrer))
@@ -157,70 +169,129 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	return referrerstore.ListReferrersResult{Referrers: referrers}, nil
 }
 
-func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
-	registryClient, err := store.createRegistryClient(ctx, subjectReference)
+func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error) {
+	var err error
+	repository, expiry, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return nil, err
 	}
 
-	ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
-	desc, err := oras.Copy(ctx, registryClient, ref, store.localCache, "")
+	// resolve blob descriptor if not provided
+	var resolvedBlobDesc oci.Descriptor
+	if blobDesc.Digest != "" {
+		resolvedBlobDesc = blobDesc
+	} else {
+		ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
+		resolvedBlobDesc, err = repository.Blobs().Resolve(ctx, ref)
+		if err != nil {
+			store.evictAuthCache(subjectReference.Original, err)
+			return nil, err
+		}
+	}
+
+	// check if blob exists in local ORAS cache
+	isCached, err := store.localCache.Exists(ctx, resolvedBlobDesc)
 	if err != nil {
 		return nil, err
 	}
 
-	return store.getRawContentFromCache(ctx, desc)
+	if !isCached {
+		// fetch blob content from remote repository
+		rc, err := repository.Fetch(ctx, resolvedBlobDesc)
+		if err != nil {
+			store.evictAuthCache(subjectReference.Original, err)
+			return nil, err
+		}
+
+		// push fetched content to local ORAS cache
+		err = store.localCache.Push(ctx, resolvedBlobDesc, rc)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// add the repository client to the auth cache if all repository operations successful
+	store.addAuthCache(subjectReference.Original, repository, expiry)
+
+	return store.getRawContentFromCache(ctx, resolvedBlobDesc)
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	client, err := store.createRegistryClient(ctx, subjectReference)
+	repository, expiry, err := store.createRepository(ctx, subjectReference)
+	if err != nil {
+		return ocispecs.ReferenceManifest{}, err
+	}
+	var manifestBytes []byte
+	// check if manifest exists in local ORAS cache
+	isCached, err := store.localCache.Exists(ctx, referenceDesc.Descriptor)
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
 
-	var result ocispecs.ReferenceManifest
-	artifactManifestFound := false
-	_, err = oras.Graph(ctx, subjectReference.Original, referenceDesc.ArtifactType, client.Resolver,
-		func(parent artifactspec.Descriptor, parentManifest artifactspec.Manifest, objects []target.Object) error {
-			if parent.Digest == referenceDesc.Digest {
-				result = ArtifactManifestToReferenceManifest(parentManifest)
-				artifactManifestFound = true
-			}
-			return nil
-		})
+	if !isCached {
+		// fetch manifest content from repository
+		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
+		if err != nil {
+			store.evictAuthCache(subjectReference.Original, err)
+			return ocispecs.ReferenceManifest{}, err
+		}
 
-	if err != nil {
+		manifestBytes, err = io.ReadAll(manifestReader)
+		if err != nil {
+			return ocispecs.ReferenceManifest{}, err
+		}
+
+		// push fetched manifest to local ORAS cache
+		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+		if err != nil {
+			return ocispecs.ReferenceManifest{}, err
+		}
+
+		// add the repository client to the auth cache if all repository operations successful
+		store.addAuthCache(subjectReference.Original, repository, expiry)
+	} else {
+		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
+		if err != nil {
+			return ocispecs.ReferenceManifest{}, err
+		}
+	}
+
+	// marshal manifest bytes into reference manifest descriptor
+	referenceManifest := ocispecs.ReferenceManifest{}
+	if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
 
-	if !artifactManifestFound {
-		return ocispecs.ReferenceManifest{}, fmt.Errorf("cannot find artifact manifest with digest %s", referenceDesc.Digest)
-	}
-
-	return result, nil
+	return referenceManifest, nil
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-	registryClient, err := store.createRegistryClient(ctx, subjectReference)
+	repository, expiry, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return nil, err
 	}
-	_, desc, err := registryClient.Resolve(ctx, subjectReference.Original)
+
+	desc, err := repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
+		store.evictAuthCache(subjectReference.Original, err)
 		return nil, err
 	}
+
+	// add the repository client to the auth cache if all repository operations successful
+	store.addAuthCache(subjectReference.Original, repository, expiry)
+
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
 
-func (store *orasStore) createRegistryClient(ctx context.Context, targetRef common.Reference) (*content.Registry, error) {
+func (store *orasStore) createRepository(ctx context.Context, targetRef common.Reference) (*remote.Repository, time.Time, error) {
 	if store.authProvider == nil || !store.authProvider.Enabled(ctx) {
-		return nil, fmt.Errorf("auth provider not properly enabled")
+		return nil, time.Now(), fmt.Errorf("auth provider not properly enabled")
 	}
 
 	if cacheEntry, ok := store.authCache[targetRef.Original]; ok {
 		// if the auth cache entry expiration has not expired or it was never set
 		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
-			return cacheEntry.client, nil
+			return cacheEntry.client, cacheEntry.expiresOn, nil
 		}
 	}
 
@@ -230,24 +301,47 @@ func (store *orasStore) createRegistryClient(ctx context.Context, targetRef comm
 		logrus.Info("attempting to use anonymous credentials")
 	}
 
-	registryOpts := content.RegistryOptions{
-		Username:  authConfig.Username,
-		Password:  authConfig.Password,
-		Insecure:  isInsecureRegistry(targetRef.Original, store.config),
-		PlainHTTP: store.config.UseHttp,
-	}
-
-	registryClient, err := content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
+	// create new ORAS repository target to the image/repository reference
+	repository, err := remote.NewRepository(targetRef.Original)
 	if err != nil {
-		return nil, err
+		return nil, time.Now(), err
 	}
 
-	store.authCache[targetRef.Original] = authCacheEntry{
-		client:    registryClient,
-		expiresOn: authConfig.ExpiresOn,
+	// set the provider to return the resolved credentials
+	credentialProvider := func(ctx context.Context, registry string) (auth.Credential, error) {
+		if authConfig.Username != "" || authConfig.Password != "" {
+			return auth.Credential{
+				Username: authConfig.Username,
+				Password: authConfig.Password,
+			}, nil
+		}
+		return auth.EmptyCredential, nil
 	}
 
-	return content.NewRegistryWithDiscover(targetRef.Original, registryOpts)
+	// set the repository client credentials
+	repoClient := &auth.Client{
+		Header: http.Header{
+			"User-Agent": {ratifyUserAgent},
+		},
+		Cache:      auth.DefaultCache,
+		Credential: credentialProvider,
+	}
+
+	// enable insecure if specified in config
+	if isInsecureRegistry(targetRef.Original, store.config) {
+		repoClient.Client = http.DefaultClient
+		repoClient.Client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
+
+	repository.Client = repoClient
+	// enable plain HTTP if specified in config
+	repository.PlainHTTP = store.config.UseHttp
+
+	return repository, authConfig.ExpiresOn, nil
 }
 
 func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor oci.Descriptor) ([]byte, error) {
@@ -261,4 +355,19 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 		return nil, err
 	}
 	return buf, nil
+}
+
+func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, expiry time.Time) {
+	_, ok := store.authCache[ref]
+	if !ok {
+		store.authCache[ref] = authCacheEntry{
+			client:    repository,
+			expiresOn: expiry,
+		}
+	}
+}
+
+func (store *orasStore) evictAuthCache(ref string, err error) {
+	delete(store.authCache, ref)
+	// TODO: add reliable way to conditionally evict based on error code
 }

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
@@ -52,6 +53,7 @@ type k8SecretAuthProviderConf struct {
 
 const defaultName = "default"
 const ratifyNamespaceEnv = "RATIFY_NAMESPACE"
+const secretTimeout = time.Hour * 12
 
 var ErrorNoMatchingCredential = errors.New("no matching credential found for k8 secret")
 
@@ -207,8 +209,9 @@ func (d *k8SecretAuthProvider) resolveCredentialFromSecret(hostName string, secr
 	}
 
 	return AuthConfig{
-		Username: authConfig.Username,
-		Password: authConfig.Password,
-		Provider: d,
+		Username:  authConfig.Username,
+		Password:  authConfig.Password,
+		Provider:  d,
+		ExpiresOn: time.Now().Add(secretTimeout),
 	}, nil
 }

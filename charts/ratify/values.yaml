@@ -40,3 +40,7 @@ akvCertConfig:
   certName:
   tenantId:
   aadPodIdentity:
+oras:
+  authProviders:
+    azureWorkloadIdentityEnabled: false
+    k8secretsEnabled: false

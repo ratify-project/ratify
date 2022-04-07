@@ -104,7 +104,7 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 		nestedVerifyResult, err := executor.VerifySubject(ctx, verifyParameters)
 
 		if err != nil {
-			return verifier.VerifierResult{}, err
+			return verifier.VerifierResult{IsSuccess: false}, err
 		}
 
 		for _, vr := range nestedVerifyResult.VerifierReports {
@@ -127,7 +127,7 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	referrerStoreConfig := store.GetConfig()
 	vr, err := vp.verifyReference(ctx, subjectReference, referenceDescriptor, referrerStoreConfig)
 	if err != nil {
-		return verifier.VerifierResult{}, err
+		return verifier.VerifierResult{IsSuccess: false}, err
 	}
 
 	vr.NestedResults = nestedResults

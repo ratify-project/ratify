@@ -27,7 +27,7 @@ import (
 // VerifierResult describes the result of verifying a reference manifest for a subject
 type VerifierResult struct {
 	Subject       string           `json:"subject,omitempty"`
-	IsSuccess     bool             `json:"isSuccess,omitempty"`
+	IsSuccess     bool             `json:"isSuccess"`
 	Name          string           `json:"name,omitempty"`
 	Results       []string         `json:"results,omitempty"`
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`

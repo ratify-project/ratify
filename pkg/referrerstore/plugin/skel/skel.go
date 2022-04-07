@@ -32,6 +32,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/opencontainers/go-digest"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 type pcontext struct {
@@ -41,8 +42,8 @@ type pcontext struct {
 	Stderr     io.Writer
 }
 
-type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string) (*referrerstore.ListReferrersResult, error)
-type GetBlobContent func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
+type ListReferrers func(args *CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error)
+type GetBlobContent func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error)
 type GetReferenceManifest func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error)
 type GetSubjectDescriptor func(args *CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 
@@ -116,8 +117,8 @@ func (c *pcontext) cmdListReferrers(cmdArgs *CmdArgs, pluginFunc ListReferrers) 
 			return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("unknown args %s", arg[0]), "")
 		}
 	}
-
-	result, err := pluginFunc(cmdArgs, cmdArgs.subjectRef, strings.Split(artifactType, ","), nextToken)
+	// subject descriptor has not been resolved thus nil passed in to ListReferrers
+	result, err := pluginFunc(cmdArgs, cmdArgs.subjectRef, strings.Split(artifactType, ","), nextToken, nil)
 
 	if err != nil {
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
@@ -153,7 +154,7 @@ func (c *pcontext) cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plug
 		return plugin.NewError(types.ErrArgsParsingFailure, fmt.Sprintf("cannot parse digest arg %s", digestArg), err.Error())
 	}
 
-	result, err := pluginFunc(cmdArgs, cmdArgs.subjectRef, digest)
+	result, err := pluginFunc(cmdArgs, cmdArgs.subjectRef, digest, oci.Descriptor{})
 
 	if err != nil {
 		return plugin.NewError(types.ErrPluginCmdFailure, fmt.Sprintf("plugin command %s failed", sp.ListReferrersCommand), err.Error())
