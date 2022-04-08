@@ -38,6 +38,8 @@ helm install gatekeeper/gatekeeper  \
     --set validatingWebhookTimeoutSeconds=7
 ```
 
+(NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify operations complete in complex scenarios)
+
 - Deploy ratify and a `demo` constraint on gatekeeper
 
 ```bash
