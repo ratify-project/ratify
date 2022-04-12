@@ -177,9 +177,6 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		return nil, err
 	}
 
-	// generate the reference path with digest
-	ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
-
 	// create a dummy Descriptor to check the local store cache
 	blobDescriptor := oci.Descriptor{
 		Digest: digest,
@@ -193,6 +190,9 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 	}
 
 	if !isCached {
+		// generate the reference path with digest
+		ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
+
 		// fetch blob content from remote repository
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
 		if err != nil {
