@@ -38,6 +38,7 @@ akvCertConfig:
   enabled: false
   vaultName:
   certName:
+  cert2Name:
   tenantId:
   aadPodIdentity:
 oras:
