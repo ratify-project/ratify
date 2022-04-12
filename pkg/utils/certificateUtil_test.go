@@ -18,7 +18,33 @@ import (
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/deislabs/ratify/pkg/homedir"
 )
+
+func TestHomepathReplacement(t *testing.T) {
+
+	sampleFoldername := "test"
+	testPath := homedir.GetShortcutString() + string(os.PathSeparator) + sampleFoldername
+
+	result := ReplaceHomeShortcut(testPath)
+	home, err := os.UserHomeDir()
+	expectedPath := home + "/" + sampleFoldername
+
+	if result != expectedPath {
+		t.Fatalf("sample input %v ,result expected to be %v, actual result %v, error %v", testPath, expectedPath, result, err)
+	}
+}
+
+func TestReadCertificatesFromPath_InvalidPath(t *testing.T) {
+
+	files, err := GetCertificatesFromPath("/invalid/path")
+
+	expectedFileCount := 0
+	if len(files) != expectedFileCount || err != nil {
+		t.Fatalf("response length expected to be %v, actual %v, error %v", expectedFileCount, len(files), err)
+	}
+}
 
 func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	// Setup to create nested directory structure
@@ -47,6 +73,56 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	expectedFileCount := 3
 	if len(files) != expectedFileCount || err != nil {
 		t.Fatalf("response length expected to be %v, actual %v, error %v", expectedFileCount, len(files), err)
+	}
+}
+
+func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
+
+	// Setup
+	currPath, _ := os.Getwd()
+	testDirName := "TestDirectory"
+	absTestDirPath := currPath + string(os.PathSeparator) + testDirName + string(os.PathSeparator)
+	testFile1 := absTestDirPath + "file1.Crt"
+
+	setupDirectoryForTesting(t, testDirName)
+	createCertFile(t, testFile1)
+
+	symlink := absTestDirPath + "symlink"
+	os.Symlink(testFile1, symlink)
+	files, err := GetCertificatesFromPath(symlink)
+
+	// Teardown
+	os.RemoveAll(absTestDirPath)
+
+	// Validate
+	if len(files) != 1 || err != nil {
+		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
+	}
+}
+
+func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
+
+	// Setup
+	currPath, _ := os.Getwd()
+	testDirName := "TestDirectory"
+	absTestDirPath := currPath + string(os.PathSeparator) + testDirName + string(os.PathSeparator)
+	testFile1 := absTestDirPath + "file1.Crt"
+
+	setupDirectoryForTesting(t, testDirName)
+	createCertFile(t, testFile1)
+
+	symlink := absTestDirPath + "symlink"
+	twoLevelSymlink := absTestDirPath + "symlink2"
+	os.Symlink(testFile1, symlink)
+	os.Symlink(symlink, twoLevelSymlink)
+	files, err := GetCertificatesFromPath(twoLevelSymlink)
+
+	// Teardown
+	os.RemoveAll(absTestDirPath)
+
+	// validate
+	if len(files) != 1 || err != nil {
+		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
 	}
 }
 
