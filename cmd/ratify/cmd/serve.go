@@ -92,6 +92,7 @@ func serve(opts serveCmdOptions) error {
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
 		PolicyEnforcer: policyEnforcer,
+		Config:         &cf.ExecutorConfig,
 	}
 
 	if opts.httpServerAddress != "" {
