@@ -17,27 +17,63 @@ package utils
 
 import (
 	"crypto/x509"
+	"io/fs"
 	"os"
+	"strings"
 
 	"path/filepath"
 
+	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
+// Return list of certificates loaded from path
+// when path is a directory, this method loads all certs in directory and resolve symlink if needed
 func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
-
 	var certs []*x509.Certificate
+	fileMap := map[string]bool{} //a map to track path of physical files
+
+	path = ReplaceHomeShortcut(path)
 
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
-		if !info.IsDir() {
-			cert, certError := cryptoutil.ReadCertificateFile(file) // ReadCertificateFile returns empty if file was not a certificate
-			if certError != nil {
-				return certError
+
+		targetFileInfo := info
+		targetFilePath := file
+
+		if info == nil || err != nil {
+			logrus.Warnf("Invalid path '%v' skipped, error %v", file, err)
+			return nil
+		}
+
+		// In a cluster environment, each mounted file results in a physical file and a symlink
+		// check if file is a link and get the actual file path
+		if isSymbolicLink(info) {
+			targetFilePath, err = filepath.EvalSymlinks(file)
+			if err != nil || len(targetFilePath) == 0 {
+				logrus.Errorf("Unable to resolve symbolic link %v , error '%v'", file, err)
+				return nil
 			}
-			if cert != nil {
-				certs = append(certs, cert...)
+
+			targetFileInfo, err = os.Lstat(targetFilePath)
+
+			if err != nil {
+				logrus.Errorf("error getting file info for path '%v', error '%v'", targetFilePath, err)
+				return nil
 			}
 		}
+
+		// if filepath.EvalSymlinks fails to resolve multi level sym link, skip this file
+		if targetFileInfo != nil && !targetFileInfo.IsDir() && !isSymbolicLink(targetFileInfo) {
+			if _, ok := fileMap[targetFilePath]; !ok {
+				certs, err = loadCertFile(targetFileInfo, targetFilePath, certs, fileMap)
+				if err != nil {
+					return errors.Wrap(err, "error reading certificate file "+targetFilePath)
+				}
+			}
+		}
+
 		return nil
 	})
 
@@ -45,5 +81,38 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 		return nil, err
 	}
 
+	logrus.Infof("%v notary verification certificates loaded from path '%v'", len(certs), path)
 	return certs, nil
+}
+
+func isSymbolicLink(info fs.FileInfo) bool {
+	return info.Mode()&os.ModeSymlink != 0
+}
+
+func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
+	cert, certError := cryptoutil.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
+	if certError != nil {
+		return certificate, certError
+	}
+	if cert != nil {
+		certificate = append(certificate, cert...)
+		fileMap[filePath] = true
+	}
+
+	return certificate, nil
+}
+
+// Replace the shortcut prefix in a path with the home directory
+// For example in a unix os, ~/.config/ becomes /home/azureuser/.config after replacement
+func ReplaceHomeShortcut(path string) string {
+	shortcutPrefix := homedir.GetShortcutString() + string(os.PathSeparator)
+	if strings.HasPrefix(path, shortcutPrefix) {
+		home := homedir.Get()
+		if len(home) > 0 {
+			return strings.Replace(path, homedir.GetShortcutString(), home, 1) // replace 1 instance
+		} else {
+			logrus.Warningf("Path '%v' replacement failed , value of Home dir '%v'", path, home)
+		}
+	}
+	return path
 }

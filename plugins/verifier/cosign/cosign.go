@@ -26,6 +26,7 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -133,7 +134,8 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 }
 
 func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verifier, err error) {
-	raw, err := ioutil.ReadFile(filepath.Clean(keyRef))
+	keyPath := filepath.Clean(utils.ReplaceHomeShortcut(keyRef))
+	raw, err := ioutil.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
 	}
