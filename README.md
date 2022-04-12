@@ -26,6 +26,8 @@ by its developers, nor is it "supported" software.
 
 Try out ratify in Kuberenetes through Gatekeeper as the admission controller.
 
+Prerequisite: Kubernetes v1.20 or higher
+
 - Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
 
 ```bash
@@ -35,8 +37,10 @@ helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+    --set validatingWebhookTimeoutSeconds=7
 ```
+
+NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify operations complete in complex scenarios. Kubernetes v1.20 or higher is REQUIRED to increase timeout.  
 
 - Deploy ratify and a `demo` constraint on gatekeeper
 

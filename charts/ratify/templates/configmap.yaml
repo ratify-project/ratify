@@ -5,6 +5,9 @@ metadata:
 data:
   config.json: |
     {
+      "executor": {
+        "requestTimeout": 6800
+      },
       "stores": {
         "version": "1.0.0",
         "plugins": [
