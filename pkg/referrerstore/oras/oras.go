@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	paths "path/filepath"
 	"time"
@@ -169,42 +170,38 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	return referrerstore.ListReferrersResult{Referrers: referrers}, nil
 }
 
-func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error) {
+func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	var err error
 	repository, expiry, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return nil, err
 	}
 
-	// resolve blob descriptor if not provided
-	var resolvedBlobDesc oci.Descriptor
-	if blobDesc.Digest != "" {
-		resolvedBlobDesc = blobDesc
-	} else {
-		ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
-		resolvedBlobDesc, err = repository.Blobs().Resolve(ctx, ref)
-		if err != nil {
-			store.evictAuthCache(subjectReference.Original, err)
-			return nil, err
-		}
+	// generate the reference path with digest
+	ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
+
+	// create a dummy Descriptor to check the local store cache
+	blobDescriptor := oci.Descriptor{
+		Digest: digest,
+		Size:   0, // dummy size value
 	}
 
 	// check if blob exists in local ORAS cache
-	isCached, err := store.localCache.Exists(ctx, resolvedBlobDesc)
+	isCached, err := store.localCache.Exists(ctx, blobDescriptor)
 	if err != nil {
 		return nil, err
 	}
 
 	if !isCached {
 		// fetch blob content from remote repository
-		rc, err := repository.Fetch(ctx, resolvedBlobDesc)
+		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
 		if err != nil {
 			store.evictAuthCache(subjectReference.Original, err)
 			return nil, err
 		}
 
 		// push fetched content to local ORAS cache
-		err = store.localCache.Push(ctx, resolvedBlobDesc, rc)
+		err = store.localCache.Push(ctx, blobDesc, rc)
 		if err != nil {
 			return nil, err
 		}
@@ -213,7 +210,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 	// add the repository client to the auth cache if all repository operations successful
 	store.addAuthCache(subjectReference.Original, repository, expiry)
 
-	return store.getRawContentFromCache(ctx, resolvedBlobDesc)
+	return store.getRawContentFromCache(ctx, blobDescriptor)
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
@@ -349,8 +346,8 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 	if err != nil {
 		return nil, err
 	}
-	buf := make([]byte, descriptor.Size)
-	_, err = reader.Read(buf)
+
+	buf, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

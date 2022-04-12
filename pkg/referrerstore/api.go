@@ -22,7 +22,6 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/opencontainers/go-digest"
-	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // ListReferrersResult represents the result of ListReferrers API
@@ -42,7 +41,7 @@ type ReferrerStore interface {
 
 	// GetBlobContent returns the blob with the given digest
 	// WARNING: This API is intended to use for small objects like signatures, SBoMs
-	GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error)
+	GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
 
 	// GetReferenceManifest returns the reference artifact manifest as given by the descriptor
 	GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
