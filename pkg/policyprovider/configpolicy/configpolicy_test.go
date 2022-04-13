@@ -35,6 +35,7 @@ func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
 		"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
 			"application/vnd.cncf.notary.v2": "any",
 			"org.example.sbom.v0":            "all",
+			"default":                        "any",
 		},
 	}
 	config := pc.PoliciesConfig{
@@ -117,6 +118,17 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				},
 			},
 			output: true,
+		},
+		{
+			// any notary artifact policy but no artifact verifier reports
+			configPolicyConfig: map[string]interface{}{
+				"name": "configPolicy",
+				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
+					"application/vnd.cncf.notary.v2": "any",
+				},
+			},
+			verifierReports: []interface{}{},
+			output:          false,
 		},
 		{
 			// any notary artifact policy and only 1 notary report is true

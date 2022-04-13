@@ -111,7 +111,7 @@ func (enforcer PolicyEnforcer) OverallVerifyResult(ctx context.Context, verifier
 	// use boolean map to track if each artifact type policy constraint is satisfied
 	verifySuccess := map[string]bool{}
 	for artifactType := range enforcer.ArtifactTypePolicies {
-		// add all policies excpept for default
+		// add all policies except for default
 		if artifactType != defaultPolicyName {
 			verifySuccess[artifactType] = false
 		}
