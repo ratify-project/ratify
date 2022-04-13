@@ -12,7 +12,7 @@
         "policyPlugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "all"
+                "application/vnd.cncf.notary.v2.signature": "any"
             }
         }
     },
