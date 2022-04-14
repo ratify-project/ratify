@@ -14,10 +14,10 @@ spec:
     metadata:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
-        {{- if .Values.akvCertConfig.enabled }}
-        aadpodidbinding: {{ required "aadPodIdentity must be provided when AKV cert config is enabled" .Values.akvCertConfig.aadPodIdentity  }}
-        {{- end }}
     spec:
+      {{- if or (.Values.akvCertConfig.enabled) (.Values.oras.authProviders.azureWorkloadIdentityEnabled)}} 
+      serviceAccountName: {{ required "service account must be provided when using workload identity for AKV cert config or oras authentication" .Values.serviceAccount.name  }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
