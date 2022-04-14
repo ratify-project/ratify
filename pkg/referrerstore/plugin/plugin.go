@@ -29,7 +29,6 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/opencontainers/go-digest"
-	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // StorePlugin describes a store that is implemented by invoking the plugins
@@ -97,7 +96,7 @@ func (sp *StorePlugin) Name() string {
 	return sp.name
 }
 
-func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest, blobDesc oci.Descriptor) ([]byte, error) {
+func (sp *StorePlugin) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	pluginPath, err := sp.executor.FindInPaths(sp.name, sp.path)
 	if err != nil {
 		return nil, err
