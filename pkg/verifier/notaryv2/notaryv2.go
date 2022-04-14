@@ -117,7 +117,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
-		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest, blobDesc)
+		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
 			return verifier.VerifierResult{IsSuccess: false}, err
 		}

@@ -68,7 +68,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, desc
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
-		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest, blobDesc)
+		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
 			return nil, err
 		}

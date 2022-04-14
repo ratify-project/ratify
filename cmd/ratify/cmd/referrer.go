@@ -26,7 +26,6 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/utils"
-	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
 
@@ -152,7 +151,7 @@ func showBlob(opts referrerCmdOptions) error {
 
 	for _, referrerStore := range stores {
 		if referrerStore.Name() == opts.storeName {
-			content, err := referrerStore.GetBlobContent(context.Background(), subRef, digest, v1.Descriptor{})
+			content, err := referrerStore.GetBlobContent(context.Background(), subRef, digest)
 			if err != nil {
 				return err
 			}
