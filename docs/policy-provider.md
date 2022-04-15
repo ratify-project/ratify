@@ -10,7 +10,7 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
 ...
 "policies": {
     "version": "1.0.0",
-    "policyPlugin": {
+    "plugin": {
         "name": "configPolicy",
         "artifactVerificationPolicies": {
             "application/vnd.cncf.notary.v2.signature": "all"
@@ -33,7 +33,7 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
         ...
         "policies": {
             "version": "1.0.0",
-            "policyPlugin": {
+            "plugin": {
                 "name": "configPolicy",
                 "artifactVerificationPolicies": {
                     "default": "any"

@@ -21,5 +21,5 @@ type PolicyPluginConfig map[string]interface{}
 // PoliciesConfig describes policies that are defined in the configuration
 type PoliciesConfig struct {
 	Version      string             `json:"version,omitempty"`
-	PolicyPlugin PolicyPluginConfig `json:"policyPlugin"`
+	PolicyPlugin PolicyPluginConfig `json:"plugin"`
 }

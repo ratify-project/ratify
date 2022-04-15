@@ -9,7 +9,7 @@
     },
     "policies": {
         "version": "1.0.0",
-        "policyPlugin": {
+        "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
                 "application/vnd.cncf.notary.v2.signature": "any"

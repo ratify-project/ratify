@@ -35,7 +35,7 @@ type PolicyFactory interface {
 // Register adds the factory to the built in providers map
 func Register(name string, factory PolicyFactory) {
 	if factory == nil {
-		panic("store factory cannot be nil")
+		panic("policy factory cannot be nil")
 	}
 	_, registered := builtInPolicyProviders[name]
 	if registered {
