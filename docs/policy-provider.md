@@ -24,6 +24,24 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
 - `artifactVerificationPolicies`: map of artifact type to policy; each entry in the map's policy must be satisfied for Ratify to return true.
     - `any`: policy that REQUIRES at least one artifact of specified type to verify to `true` 
     - `all`: policy that REQUIRES all artifacts of specified type to verify to `true`
+    - `none`: policy that does NOT require any artifacts to verify to `true`
+- Default policy:
+    - The `default` policy applies to unspecified artifact types. The `default` policy is set to `none`. Thus, all unspecified artifact types will be ignored in determing overall success result.
+    - The `default` policy can be overriden to `any` or `all` in the map:
+        
+        ```
+        ...
+        "policies": {
+            "version": "1.0.0",
+            "policyPlugin": {
+                "name": "configPolicy",
+                "artifactVerificationPolicies": {
+                    "default": "any"
+                }
+            }
+        },
+        ...
+        ```
 
 ## Notational Conventions
 

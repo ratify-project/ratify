@@ -69,14 +69,19 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 		policyEnforcer.ArtifactTypePolicies = conf.ArtifactVerificationPolicies
 	}
 	if policyEnforcer.ArtifactTypePolicies[defaultPolicyName] == "" {
-		policyEnforcer.ArtifactTypePolicies[defaultPolicyName] = vt.AnyVerifySuccess
+		policyEnforcer.ArtifactTypePolicies[defaultPolicyName] = vt.NoneVerifySuccess
 	}
 	return &policyEnforcer, nil
 }
 
-// VerifyNeeded determines if the given reference needs verification
+// VerifyNeeded determines if the given reference has policy 'all' or 'any' specified
 func (enforcer PolicyEnforcer) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
-	return true
+	artifactTypePolicy, ok := enforcer.ArtifactTypePolicies[referenceDesc.ArtifactType]
+	if !ok {
+		// use the default policy if artifact is unspecified in artifactTypePolicies
+		artifactTypePolicy = enforcer.ArtifactTypePolicies[defaultPolicyName]
+	}
+	return artifactTypePolicy == vt.AllVerifySuccess || artifactTypePolicy == vt.AnyVerifySuccess
 }
 
 // ContinueVerifyOnFailure determines if the given error can be ignored and verification can be continued.
@@ -119,20 +124,25 @@ func (enforcer PolicyEnforcer) OverallVerifyResult(ctx context.Context, verifier
 
 	for _, report := range verifierReports {
 		castedReport := report.(verifier.VerifierResult)
-		// the artifact type of the verified artifact matches type specified in policy
-		if policyType, ok := enforcer.ArtifactTypePolicies[castedReport.ArtifactType]; ok {
-			// the artifact type of the verified artifact matches type specified in policy
-			if policyType == vt.AnyVerifySuccess && castedReport.IsSuccess {
-				// if policy is 'any' and report is successful
-				verifySuccess[castedReport.ArtifactType] = true
-			} else if policyType == vt.AllVerifySuccess {
-				// if policy is 'all'
-				if !castedReport.IsSuccess {
-					// return false after first failure
-					return false
-				}
-				verifySuccess[castedReport.ArtifactType] = true
+		// extract the policy for the artifact type of the verified artifact if specified
+		policyType, ok := enforcer.ArtifactTypePolicies[castedReport.ArtifactType]
+		// if artifact type policy not specified, set policy to be default policy and add artifact type to success map
+		if !ok {
+			policyType = enforcer.ArtifactTypePolicies[defaultPolicyName]
+			// set the artifact type success field in map to true if the policy type is none
+			verifySuccess[castedReport.ArtifactType] = policyType == vt.NoneVerifySuccess
+		}
+
+		if policyType == vt.AnyVerifySuccess && castedReport.IsSuccess {
+			// if policy is 'any' and report is successful
+			verifySuccess[castedReport.ArtifactType] = true
+		} else if policyType == vt.AllVerifySuccess {
+			// if policy is 'all'
+			if !castedReport.IsSuccess {
+				// return false after first failure
+				return false
 			}
+			verifySuccess[castedReport.ArtifactType] = true
 		}
 	}
 

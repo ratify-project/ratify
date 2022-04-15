@@ -19,6 +19,7 @@ package types
 type ArtifactTypeVerifyPolicy string
 
 const (
-	AnyVerifySuccess ArtifactTypeVerifyPolicy = "any"
-	AllVerifySuccess                          = "all"
+	NoneVerifySuccess ArtifactTypeVerifyPolicy = "none"
+	AnyVerifySuccess  ArtifactTypeVerifyPolicy = "any"
+	AllVerifySuccess  ArtifactTypeVerifyPolicy = "all"
 )

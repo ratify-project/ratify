@@ -113,11 +113,28 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			verifierReports: []interface{}{
 				vr.VerifierResult{
 					Subject:      "",
-					IsSuccess:    true,
+					IsSuccess:    false,
 					ArtifactType: "application/vnd.cncf.notary.v2",
 				},
 			},
 			output: true,
+		},
+		{
+			// no artifact policies but default policy is any
+			configPolicyConfig: map[string]interface{}{
+				"name": "configPolicy",
+				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
+					"default": "any",
+				},
+			},
+			verifierReports: []interface{}{
+				vr.VerifierResult{
+					Subject:      "",
+					IsSuccess:    false,
+					ArtifactType: "application/vnd.cncf.notary.v2",
+				},
+			},
+			output: false,
 		},
 		{
 			// any notary artifact policy but no artifact verifier reports
@@ -262,4 +279,53 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			t.Fatalf("Expected %v from OverallVerifyResult but got %v", testcase.output, overallVerifyResult)
 		}
 	}
+}
+
+func TestPolicyEnforcer_VerifyNeeded(t *testing.T) {
+	configPolicyConfig := map[string]interface{}{
+		"name": "configPolicy",
+		"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
+			"application/vnd.cncf.notary.v2": "any",
+			"org.example.sbom.v0":            "all",
+		},
+	}
+	config := pc.PoliciesConfig{
+		Version:      "1.0.0",
+		PolicyPlugin: configPolicyConfig,
+	}
+
+	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(config)
+
+	if err != nil {
+		t.Fatalf("PolicyEnforcer should create from PoliciesConfig")
+	}
+
+	ctx := context.Background()
+	subjectReference := common.Reference{
+		Path:     "",
+		Digest:   "",
+		Tag:      "",
+		Original: "",
+	}
+
+	referenceDescNonexistent := ocispecs.ReferenceDescriptor{
+		Descriptor:   oci.Descriptor{},
+		ArtifactType: "nonexistent",
+	}
+
+	shouldVerifyNonexistent := policyEnforcer.VerifyNeeded(ctx, subjectReference, referenceDescNonexistent)
+	if shouldVerifyNonexistent {
+		t.Fatalf("Expected %v from VerifyNeeded, but got %v", false, shouldVerifyNonexistent)
+	}
+
+	referenceDescExists := ocispecs.ReferenceDescriptor{
+		Descriptor:   oci.Descriptor{},
+		ArtifactType: "application/vnd.cncf.notary.v2",
+	}
+
+	shouldVerifyExists := policyEnforcer.VerifyNeeded(ctx, subjectReference, referenceDescExists)
+	if !shouldVerifyExists {
+		t.Fatalf("Expected %v from VerifyNeeded, but got %v", true, shouldVerifyExists)
+	}
+
 }
