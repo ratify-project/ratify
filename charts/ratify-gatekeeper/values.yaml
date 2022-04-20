@@ -8,7 +8,7 @@ gatekeeper:
   auditFromCache: false
   disableMutation: false
   disableValidatingWebhook: false
-  validatingWebhookTimeoutSeconds: 3
+  validatingWebhookTimeoutSeconds: 7
   validatingWebhookFailurePolicy: Ignore
   validatingWebhookCheckIgnoreFailurePolicy: Fail
   enableDeleteOperations: false
