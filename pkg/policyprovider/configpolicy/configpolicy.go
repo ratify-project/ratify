@@ -69,19 +69,14 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 		policyEnforcer.ArtifactTypePolicies = conf.ArtifactVerificationPolicies
 	}
 	if policyEnforcer.ArtifactTypePolicies[defaultPolicyName] == "" {
-		policyEnforcer.ArtifactTypePolicies[defaultPolicyName] = vt.NoneVerifySuccess
+		policyEnforcer.ArtifactTypePolicies[defaultPolicyName] = vt.AllVerifySuccess
 	}
 	return &policyEnforcer, nil
 }
 
-// VerifyNeeded determines if the given reference has policy 'all' or 'any' specified
+// VerifyNeeded determines if the given subject/reference artifact should be verified
 func (enforcer PolicyEnforcer) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
-	artifactTypePolicy, ok := enforcer.ArtifactTypePolicies[referenceDesc.ArtifactType]
-	if !ok {
-		// use the default policy if artifact is unspecified in artifactTypePolicies
-		artifactTypePolicy = enforcer.ArtifactTypePolicies[defaultPolicyName]
-	}
-	return artifactTypePolicy == vt.AllVerifySuccess || artifactTypePolicy == vt.AnyVerifySuccess
+	return true
 }
 
 // ContinueVerifyOnFailure determines if the given error can be ignored and verification can be continued.
@@ -129,8 +124,10 @@ func (enforcer PolicyEnforcer) OverallVerifyResult(ctx context.Context, verifier
 		// if artifact type policy not specified, set policy to be default policy and add artifact type to success map
 		if !ok {
 			policyType = enforcer.ArtifactTypePolicies[defaultPolicyName]
-			// set the artifact type success field in map to true if the policy type is none
-			verifySuccess[castedReport.ArtifactType] = policyType == vt.NoneVerifySuccess
+			// set the artifact type success field in map to false to start
+			verifySuccess[castedReport.ArtifactType] = false
+			// add the unspecified artifact type to the enforcer's artifact type map
+			enforcer.ArtifactTypePolicies[castedReport.ArtifactType] = policyType
 		}
 
 		if policyType == vt.AnyVerifySuccess && castedReport.IsSuccess {

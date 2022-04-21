@@ -91,10 +91,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 				return types.VerifyResult{}, err
 			}
 			continuationToken = referrersResult.NextToken
-			// no referrers found for artifact if no continuation token and referrers list length is 0
-			if len(referrersResult.Referrers) == 0 && continuationToken == "" {
-				return types.VerifyResult{}, ReferrersNotFound
-			}
 
 			for _, reference := range referrersResult.Referrers {
 
@@ -114,6 +110,10 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 				break
 			}
 		}
+	}
+
+	if len(verifierReports) == 0 {
+		return types.VerifyResult{}, ReferrersNotFound
 	}
 
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)

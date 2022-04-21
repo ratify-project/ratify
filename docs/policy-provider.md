@@ -13,7 +13,7 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
     "plugin": {
         "name": "configPolicy",
         "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "all"
+            "application/vnd.cncf.notary.v2.signature": "any"
         }
     }
 },
@@ -23,11 +23,10 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
 - The `name` field is REQUIRED and MUST match the name of the registered policy provider
 - `artifactVerificationPolicies`: map of artifact type to policy; each entry in the map's policy must be satisfied for Ratify to return true.
     - `any`: policy that REQUIRES at least one artifact of specified type to verify to `true` 
-    - `all`: policy that REQUIRES all artifacts of specified type to verify to `true`
-    - `none`: policy that does NOT require any artifacts to verify to `true`
+    - `all`: policy that REQUIRES all artifacts of specified type to verify to `true``
 - Default policy:
-    - The `default` policy applies to unspecified artifact types. The `default` policy is set to `none`. Thus, all unspecified artifact types will be ignored in determing overall success result.
-    - The `default` policy can be overriden to `any` or `all` in the map:
+    - The `default` policy applies to unspecified artifact types. The `default` policy is set to `all`. Thus, all unspecified artifact types must have all successful verification results for an overall success result.
+    - The `default` policy can be overriden to `any` in the map:
         
         ```
         ...
@@ -42,6 +41,47 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
         },
         ...
         ```
+### Examples:
+
+- Require all reference artifacts associated with subject image to be verify successfully:
+    ```
+    ...
+    "policies": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy"
+        }
+    },
+    ...
+    ```
+- Require at least one reference artifact of the same type to verify succesfully. (relaxes the default policy to 'any'):
+    ```
+    ...
+    "policies": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "default": "any"
+            }
+        }
+    },
+    ...
+    ```
+- For a specific artifact type, relax requirement so only one success is needed for artifacts of that type:
+    ```
+    ...
+    "policies": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
+        }
+    },
+    ...
+    ```
 
 ## Notational Conventions
 

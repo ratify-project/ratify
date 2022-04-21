@@ -191,10 +191,6 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 	if result.IsSuccess {
 		t.Fatal("verification expected to fail")
 	}
-
-	if len(result.VerifierReports) != 1 {
-		t.Fatalf("verification expected to return single report but actual count %d", len(result.VerifierReports))
-	}
 }
 
 func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
