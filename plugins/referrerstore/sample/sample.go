@@ -41,7 +41,7 @@ func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifa
 	}, nil
 }
 
-func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest, blobDesc v1.Descriptor) ([]byte, error) {
+func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	return []byte(digest.String()), nil
 }
 
