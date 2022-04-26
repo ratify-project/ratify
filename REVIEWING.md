@@ -35,7 +35,6 @@ Be trustworthy. During a review, your actions both build and help maintain the t
 ### PR Lifecycle
 
 #### 1. PR creation
-
 * Ensure that an issue has been created to track the feature enhancement or bug that is being fixed.
 * In the PR description, make sure you've included "Fixes #{issue_number}" e.g. "Fixes #242" so that GitHub knows to link it to an issue.
 * To avoid multiple contributors working on the same issue, please add a comment to the issue to let us know you plan to work on it.
