@@ -45,13 +45,11 @@ NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify oper
 - Deploy ratify and a `demo` constraint on gatekeeper
 
 ```bash
-git clone https://github.com/deislabs/ratify.git
-cd ratify
-
+helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
-    ./charts/ratify --atomic
+    ratify/ratify --atomic
 
-kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl apply -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
 ```
 
 Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
