@@ -1,7 +1,9 @@
 # Reviewing Guide
+
 This document covers who may review pull requests for this project, and provides guidance on how to perform code reviews that meet our community standards and code of conduct. All reviewers must read this document and agree to follow the project review guidelines. Reviewers who do not follow these guidelines may have their privileges revoked.
 
 ## Attribution
+
 The reviewing guide was created using content and verbiage from [CNCF reviewing guide]( https://contribute.cncf.io/maintainers/github/templates/recommended/reviewing/)
 
 ## Values
@@ -35,6 +37,7 @@ Be trustworthy. During a review, your actions both build and help maintain the t
 ### PR Lifecycle
 
 #### 1. PR creation
+
 * Ensure that an issue has been created to track the feature enhancement or bug that is being fixed.
 * In the PR description, make sure you've included "Fixes #{issue_number}" e.g. "Fixes #242" so that GitHub knows to link it to an issue.
 * To avoid multiple contributors working on the same issue, please add a comment to the issue to let us know you plan to work on it.
@@ -44,18 +47,22 @@ Be trustworthy. During a review, your actions both build and help maintain the t
 
 * Everyone is encouraged to participate in code reviews.
 * It is best to get approval from contributors with knowledge about the code paths being modified. You can identify an appropriate reviewer by looking through the file history to find frequent contributor. Contributors can not be directly added as reviews but can be notified via a comment.
-* If your code review has had no activity for 7days a maintainer should assist in reassigning the review.  If a maintainer has not updated your review, please reach out to @project maintainers.
+* When you provide feedback, make it clear if the change must be made for the pull request to be approved, or if it is just a suggestion. Mark suggestions with `nit`.
+* If your code review has had no activity for 7 days, a maintainer should assist in reassigning the review.  If a maintainer has not updated your review, please reach out to @project maintainers.
 
 #### 3. Merge or close
 
 * Maintainers are responsible for handling final approval and merging of pull requests. Contributors can approve pull requests and provide input.
+* Maintainers can merge their own pull requests after being approved by other maintainers.
 
 ## Checklist
 
 Below are a set of common questions that apply to all pull requests:
+
 - [ ] Does the affected code have corresponding tests?
 - [ ] Are the changes documented, not just with inline documentation, but also with conceptual documentation such as an overview of a new feature, or task-based documentation like a tutorial? Consider if this change should be announced on your project blog.
 - [ ] Does this introduce breaking changes that would require an announcement or bumping the major version?
+- [ ] Does all new files have appropriate license header?
 
 ## Reading List
 
