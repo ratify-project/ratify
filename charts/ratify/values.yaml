@@ -43,5 +43,7 @@ akvCertConfig:
   clientId:
 oras:
   authProviders:
-    azureWorkloadIdentityEnabled: false
+    azureWorkloadIdentity:
+      enabled: false
+      serviceAccountName:
     k8secretsEnabled: false

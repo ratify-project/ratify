@@ -17,7 +17,7 @@ data:
                 ,
                 "cosign-enabled": true
                 {{- end }}
-                {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
+                {{- if .Values.oras.authProviders.azureWorkloadIdentity.enabled }}
                 ,
                 "auth-provider": {
                     "name": "azure-wi"
