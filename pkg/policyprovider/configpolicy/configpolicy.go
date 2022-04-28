@@ -108,6 +108,10 @@ func (enforcer PolicyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectR
 // OverallVerifyResult determines the final outcome of verification that is constructed using the results from
 // individual verifications
 func (enforcer PolicyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
+	if len(verifierReports) <= 0 {
+		return false
+	}
+
 	// use boolean map to track if each artifact type policy constraint is satisfied
 	verifySuccess := map[string]bool{}
 	for artifactType := range enforcer.ArtifactTypePolicies {

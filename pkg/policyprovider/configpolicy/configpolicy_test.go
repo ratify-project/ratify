@@ -102,7 +102,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{},
 			},
 			verifierReports: []interface{}{},
-			output:          true,
+			output:          false,
 		},
 		{
 			// no artifact policies
