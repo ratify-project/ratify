@@ -79,7 +79,7 @@ You just validated the container images in your k8s cluster!
 - Uninstall Ratify
 
 ```bash=
-kubectl delete -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl delete -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
 helm delete ratify
 kubectl delete namespace demo
 ```
