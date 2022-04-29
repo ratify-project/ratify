@@ -4,7 +4,11 @@ Ratify implements an extensible policy provider interface allowing for different
 
 Currently, Ratify supports a Configuration based Policy Provider named `configPolicy`.
 
-## Sample Config
+
+## How is the Policy Provider used in Ratify execution?
+
+The executor is the "glue" that links all Ratify plugin-based components such as the verifiers, referrer stores, and policy providers. The policy provider is primarily invoked for each reference artifact discovered AFTER a configured verifier is found that can be used to verify that particular artifacy type. If a reference artifact is found that does not have a corresponding verifier configured that can perform verification, the executor will ignore this artifact. As a result, this unverifiable artifact will NOT influence the final overall verification success determined by the policy provider. 
+## Config Policy Provider
 
 ```
 ...
