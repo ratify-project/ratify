@@ -22,6 +22,7 @@ import (
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	"github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/verifier"
@@ -92,7 +93,10 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 
 func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{}
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"test-type1": types.AnyVerifySuccess,
+		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
 			ArtifactType: "test-type1",
@@ -140,7 +144,10 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 
 func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{}
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"test-type1": types.AnyVerifySuccess,
+		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
 			ArtifactType: "test-type1",
@@ -184,15 +191,15 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 	if result.IsSuccess {
 		t.Fatal("verification expected to fail")
 	}
-
-	if len(result.VerifierReports) != 1 {
-		t.Fatalf("verification expected to return single report but actual count %d", len(result.VerifierReports))
-	}
 }
 
 func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{}
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"test-type1": types.AnyVerifySuccess,
+			"test-type2": types.AnyVerifySuccess,
+		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
 			ArtifactType: "test-type1",

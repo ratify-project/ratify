@@ -15,10 +15,11 @@ limitations under the License.
 
 package config
 
-import "github.com/deislabs/ratify/pkg/policyprovider/types"
+// PolicyPluginConfig represents the configuration of a policy plugin
+type PolicyPluginConfig map[string]interface{}
 
 // PoliciesConfig describes policies that are defined in the configuration
 type PoliciesConfig struct {
-	Version                      string                                    `json:"version,omitempty"`
-	ArtifactVerificationPolicies map[string]types.ArtifactTypeVerifyPolicy `json:"artifactVerificationPolicies,omitempty"`
+	Version      string             `json:"version,omitempty"`
+	PolicyPlugin PolicyPluginConfig `json:"plugin"`
 }
