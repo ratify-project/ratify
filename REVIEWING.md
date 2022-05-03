@@ -49,6 +49,7 @@ Be trustworthy. During a review, your actions both build and help maintain the t
 * It is best to get approval from contributors with knowledge about the code paths being modified. You can identify an appropriate reviewer by looking through the file history to find frequent contributor. Contributors can not be directly added as reviews but can be notified via a comment.
 * When you provide feedback, make it clear if the change must be made for the pull request to be approved, or if it is just a suggestion. Mark suggestions with `nit`.
 * If your code review has had no activity for 7 days, a maintainer should assist in reassigning the review.  If a maintainer has not updated your review, please reach out to @project maintainers.
+* Reviewers are welcome to suggest changes through [applying a suggested change](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/incorporating-feedback-in-your-pull-request#applying-a-suggested-change) workflow.
 
 #### 3. Merge or close
 
