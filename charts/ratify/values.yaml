@@ -34,6 +34,9 @@ resources:
    requests:
      cpu: 100m
      memory: 128Mi
+serviceAccount:
+  create: false
+  name:
 akvCertConfig:
   enabled: false
   vaultName:
@@ -45,5 +48,5 @@ oras:
   authProviders:
     azureWorkloadIdentity:
       enabled: false
-      serviceAccountName:
+      clientId:
     k8secretsEnabled: false
