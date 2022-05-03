@@ -37,13 +37,6 @@ The Ratify project is composed of the following main components:
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
 
-### Ratify Code
-
-* Ensure that an issue has been created to track the feature enhancement or bug that is being fixed.
-* In the PR description, make sure you've included "Fixes #{issue_number}" e.g. "Fixes #242" so that GitHub knows to link it to an issue.
-* To avoid multiple contributors working on the same issue, please add a comment to the issue to let us know you plan to work on it.
-* If a significant amount of design is required, please include a proposal in the issue and wait for approval before working on code. If there's anything you're not sure about, please feel free to discuss this in the issue. We'd much rather all be on the same page at the start, so that there's less chance that drastic changes will be needed when your pull request is reviewed.
-
 ### Plugins
 
 If you'd like to contribute to the collection of plugins:
