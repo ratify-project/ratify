@@ -61,7 +61,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the service account to use
 */}}
 {{- define "ratify.serviceAccountName" -}}
-{{- if or .Values.oras.authProviders.azureWorkloadIdentity.enabled .Values.serviceAccount.create }}
+{{- if or .Values.azureWorkloadIdentity.clientId .Values.serviceAccount.create }}
 {{- default (include "ratify.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}

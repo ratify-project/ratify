@@ -37,16 +37,21 @@ resources:
 serviceAccount:
   create: false
   name:
+
+# Can be used to authenticate to:
+# ACR -> oras.authProviders.azureWorkloadIdentityEnabled
+# Key Vault -> akvCertConfig.enabled
+azureWorkloadIdentity:
+  clientId:
+
 akvCertConfig:
   enabled: false
   vaultName:
   cert1Name:
   cert2Name:
   tenantId:
-  clientId:
+
 oras:
   authProviders:
-    azureWorkloadIdentity:
-      enabled: false
-      clientId:
+    azureWorkloadIdentityEnabled: false
     k8secretsEnabled: false
