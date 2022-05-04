@@ -20,5 +20,5 @@ type ArtifactTypeVerifyPolicy string
 
 const (
 	AnyVerifySuccess ArtifactTypeVerifyPolicy = "any"
-	AllVerifySuccess                          = "all"
+	AllVerifySuccess ArtifactTypeVerifyPolicy = "all"
 )
