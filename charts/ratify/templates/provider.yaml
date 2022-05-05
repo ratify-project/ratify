@@ -3,5 +3,5 @@ kind: Provider
 metadata:
   name: ratify-provider
 spec:
-  url: "http://ratify-svc.default:6001/ratify/gatekeeper/v1/verify"
+  url: "http://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify"
   timeout: 100
