@@ -34,13 +34,23 @@ resources:
    requests:
      cpu: 100m
      memory: 128Mi
+serviceAccount:
+  create: false
+  name:
+
+# Can be used to authenticate to:
+# ACR -> oras.authProviders.azureWorkloadIdentityEnabled
+# Key Vault -> akvCertConfig.enabled
+azureWorkloadIdentity:
+  clientId:
+
 akvCertConfig:
   enabled: false
   vaultName:
   cert1Name:
   cert2Name:
   tenantId:
-  clientId:
+
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
