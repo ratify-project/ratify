@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/Azure/azure-sdk-for-go v63.4.0+incompatible
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
-	github.com/docker/cli v20.10.14+incompatible
+	github.com/docker/cli v20.10.15+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/google/go-containerregistry v0.8.1-0.20220125170349-50dfc2733d10
 	github.com/gorilla/mux v1.8.0
