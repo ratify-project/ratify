@@ -21,6 +21,7 @@ by its developers, nor is it "supported" software.
 
 - Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
 - Calendar: https://calendar.google.com/event?action=TEMPLATE&tmeid=MXFuMjM0NTlucHRiZDBwNnU0cGQ2OGlxZ2pfMjAyMjAxMjZUMDAwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL
+- We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 
 ## Quick Start
 
