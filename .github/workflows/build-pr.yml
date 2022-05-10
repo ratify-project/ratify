@@ -20,8 +20,8 @@ jobs:
       - name: Check build
         run: bin/ratify version
 
-  build_test_externaldata:
-    name: "[External Data] Build and Test"
+  build_test_e2e:
+    name: "[External Data] Build and run e2e Test"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
