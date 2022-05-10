@@ -113,7 +113,7 @@ e2e-helm-install:
 	./.staging/helm/linux-amd64/helm version --client
 
 e2e-deploy-gatekeeper: e2e-helm-install
-	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/chartsrepo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts 
+	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts 
 	./.staging/helm/linux-amd64/helm gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
