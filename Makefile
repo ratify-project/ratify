@@ -114,15 +114,15 @@ e2e-helm-install:
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts 
-	./.staging/helm/linux-amd64/helm gatekeeper/gatekeeper  \
+	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7
 
 e2e-deploy-ratify:
-	docker build -f ./httpserver/Dockerfile -t dummy-provider:test	 
+	docker build -f ./httpserver/Dockerfile -t dummy-provider:test . 
 	kind load docker-image --name kind dummy-provider:test
 	./.staging/helm/linux-amd64/helm repo add ratify https://deislabs.github.io/ratify
 	./.staging/helm/linux-amd64/helm install ratify \
-    ratify/ratify --atomic	
+    ratify/ratify --atomic 

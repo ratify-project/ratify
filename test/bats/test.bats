@@ -1,3 +1,6 @@
+#!/usr/bin/env bats
+
+load helpers
 @test "quick start test" {
     # deployment, service and provider for dummy-provider
     run kubectl apply -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
