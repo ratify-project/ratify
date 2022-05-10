@@ -118,7 +118,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set validatingWebhookTimeoutSeconds=7
 
 e2e-deploy-ratify:
-	docker build -f ./httpserver/Dockerfile -t localBuild:test . 
-	kind load docker-image --name kind localBuild:test	 
+	docker build -f ./httpserver/Dockerfile -t localbuild:test . 
+	kind load docker-image --name kind localbuild:test	 
 	./.staging/helm/linux-amd64/helm install ratify \
-    ./charts/ratify --atomic --set image.repository=localBuild --set image.tag=test
+    ./charts/ratify --atomic --set image.repository=localbuild --set image.tag=test
