@@ -90,8 +90,6 @@ e2e-dependencies:
 	curl -L https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64 --output ${GITHUB_WORKSPACE}/bin/kind && chmod +x ${GITHUB_WORKSPACE}/bin/kind
 	# Download and install kubectl
 	curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl -o ${GITHUB_WORKSPACE}/bin/kubectl && chmod +x ${GITHUB_WORKSPACE}/bin/kubectl
-	# Download and install kustomize
-	curl -L https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz -o kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz && tar -zxvf kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz && chmod +x kustomize && mv kustomize ${GITHUB_WORKSPACE}/bin/kustomize
 	# Download and install bats
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
 	# Install yq
@@ -120,7 +118,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7
 
-e2e-deploy-ratify: docker-buildx-builder
+e2e-deploy-ratify:
 	docker build -f ./httpserver/Dockerfile -t dummy-provider:test	 
 	kind load docker-image --name kind dummy-provider:test
 	./.staging/helm/linux-amd64/helm repo add ratify https://deislabs.github.io/ratify
