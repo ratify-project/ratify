@@ -46,7 +46,7 @@ jobs:
       - name: Run e2e
         run: |
           make e2e-deploy-gatekeeper
-          make e2e-build-ratify           
+          make e2e-deploy-ratify           
           go mod tidy
           # there should be no additional manifest or go.mod changes
           git diff --exit-code
