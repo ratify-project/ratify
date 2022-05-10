@@ -14,6 +14,8 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 KIND_VERSION ?= 0.11.0
 HELM_VERSION ?= 3.7.2
 BATS_TESTS_FILE ?= test/bats/test.bats
+BATS_VERSION ?= 1.2.1
+YQ_VERSION ?= 4.2.0
 
 all: build test
 
