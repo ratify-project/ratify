@@ -15,7 +15,6 @@ KIND_VERSION ?= 0.11.0
 HELM_VERSION ?= 3.7.2
 BATS_TESTS_FILE ?= test/bats/test.bats
 BATS_VERSION ?= 1.2.1
-YQ_VERSION ?= 4.2.0
 
 all: build test
 
@@ -94,8 +93,6 @@ e2e-dependencies:
 	curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl -o ${GITHUB_WORKSPACE}/bin/kubectl && chmod +x ${GITHUB_WORKSPACE}/bin/kubectl
 	# Download and install bats
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
-	# Install yq
-	curl -L https://github.com/mikefarah/yq/releases/download/v$(YQ_VERSION)/yq_linux_amd64 -o ${GITHUB_WORKSPACE}/bin/yq && chmod +x ${GITHUB_WORKSPACE}/bin/yq
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
@@ -121,8 +118,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set validatingWebhookTimeoutSeconds=7
 
 e2e-deploy-ratify:
-	docker build -f ./httpserver/Dockerfile -t dummy-provider:test . 
-	kind load docker-image --name kind dummy-provider:test
-	./.staging/helm/linux-amd64/helm repo add ratify https://deislabs.github.io/ratify
+	docker build -f ./httpserver/Dockerfile -t localBuild:test . 
+	kind load docker-image --name kind localBuild:test	 
 	./.staging/helm/linux-amd64/helm install ratify \
-    ratify/ratify --atomic 
+    ./charts/ratify --atomic --set image.repository=localBuild --set image.tag=test
