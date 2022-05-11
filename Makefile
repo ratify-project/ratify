@@ -121,4 +121,4 @@ e2e-deploy-ratify:
 	docker build -f ./httpserver/Dockerfile -t localbuild:test . 
 	kind load docker-image --name kind localbuild:test	 
 	./.staging/helm/linux-amd64/helm install ratify \
-    ./charts/ratify --atomic --set image.repository=localbuild --set image.tag=test
+    ./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.tag=test 
