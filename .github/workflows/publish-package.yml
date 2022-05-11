@@ -28,7 +28,7 @@ jobs:
         run: |
           docker build -f ./httpserver/Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} .
       - name: docker login
-        uses: docker/login-action@v1
+        uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
