@@ -2,7 +2,6 @@
 
 load helpers
 @test "quick start test" {
-    # deployment, service and provider for dummy-provider
     run kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
     assert_success
     run kubectl create ns demo
