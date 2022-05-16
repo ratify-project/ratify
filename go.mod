@@ -3,7 +3,7 @@ module github.com/deislabs/ratify
 go 1.16
 
 require (
-	github.com/Azure/azure-sdk-for-go v63.4.0+incompatible
+	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
 	github.com/docker/cli v20.10.14+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
