@@ -58,6 +58,6 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
-          name: externaldata-logs
+          name: e2e-logs
           path: |
             logs-*.json        
