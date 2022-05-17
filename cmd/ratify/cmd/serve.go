@@ -24,6 +24,7 @@ import (
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
+	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -60,6 +61,7 @@ func NewCmdServe(argv ...string) *cobra.Command {
 
 func serve(opts serveCmdOptions) error {
 	cf, err := config.Load(opts.configFilePath)
+	logrus.Infof("configuration loaded %v", opts.configFilePath)
 	if err != nil {
 		return err
 	}
@@ -94,6 +96,52 @@ func serve(opts serveCmdOptions) error {
 		PolicyEnforcer: policyEnforcer,
 		Config:         &cf.ExecutorConfig,
 	}
+
+	/* test code */
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logrus.Infof("NewWatcher failed: ", err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		close(done)
+
+		for {
+			select {
+			case event, ok := <-watcher.Events:
+				if !ok {
+					return
+				}
+				if event.Op&fsnotify.Write == fsnotify.Write {
+					logrus.Infof("Event! %s %s\n", event.Name, event.Op)
+
+					stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
+
+					if err != nil {
+						logrus.Infof("store reload error:", err)
+					}
+
+					executor.ReloadStores(stores)
+				}
+
+			case err, ok := <-watcher.Errors:
+				if !ok {
+					return
+				}
+				logrus.Infof("error:", err)
+			}
+		}
+		//close(done)
+	}()
+
+	logrus.Infof("added watcher on file %v", opts.configFilePath)
+	err = watcher.Add(opts.configFilePath)
+	if err != nil {
+		logrus.Infof("Add failed:", err)
+	}
+	<-done
 
 	if opts.httpServerAddress != "" {
 		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, &executor)

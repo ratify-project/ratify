@@ -18,6 +18,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/deislabs/ratify/pkg/common"
@@ -38,6 +39,7 @@ const defaultRequestTimeoutMilliseconds = 2800
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
 type Executor struct {
+	mu             sync.Mutex
 	ReferrerStores []referrerstore.ReferrerStore
 	PolicyEnforcer policyprovider.PolicyProvider
 	Verifiers      []vr.ReferenceVerifier
@@ -46,7 +48,9 @@ type Executor struct {
 
 // TODO Logging within executor
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	executor.mu.Lock()
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
+	executor.mu.Unlock()
 
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -63,6 +67,13 @@ func (executor Executor) GetVerifyRequestTimeout() time.Duration {
 		timeoutMilliSeconds = *executor.Config.RequestTimeout
 	}
 	return time.Duration(timeoutMilliSeconds) * time.Millisecond
+}
+
+func (executor Executor) ReloadStores(newStore []referrerstore.ReferrerStore) error {
+	executor.mu.Lock()
+	executor.ReferrerStores = newStore
+	executor.mu.Unlock()
+	return nil
 }
 
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
