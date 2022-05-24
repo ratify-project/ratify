@@ -20,11 +20,6 @@ import (
 
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
-	ef "github.com/deislabs/ratify/pkg/executor/core"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	vf "github.com/deislabs/ratify/pkg/verifier/factory"
-	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -60,88 +55,11 @@ func NewCmdServe(argv ...string) *cobra.Command {
 }
 
 func serve(opts serveCmdOptions) error {
-	cf, err := config.Load(opts.configFilePath)
-	logrus.Infof("configuration loaded %v", opts.configFilePath)
+
+	executor, err := config.GetExecutorAndWatchForUpdate(opts.configFilePath)
 	if err != nil {
 		return err
 	}
-
-	logrus.Info("configuration successfully loaded.")
-	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
-	if err != nil {
-		return err
-	}
-	logrus.Infof("stores successfully created. number of stores %d", len(stores))
-
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath())
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
-
-	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infof("policies successfully created.")
-
-	executor := ef.Executor{
-		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
-		Config:         &cf.ExecutorConfig,
-	}
-
-	/* test code */
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		logrus.Infof("NewWatcher failed: ", err)
-	}
-	defer watcher.Close()
-
-	done := make(chan bool)
-	go func() {
-		close(done)
-
-		for {
-			select {
-			case event, ok := <-watcher.Events:
-				if !ok {
-					return
-				}
-				if event.Op&fsnotify.Write == fsnotify.Write {
-					logrus.Infof("Event! %s %s\n", event.Name, event.Op)
-
-					stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
-					if err != nil {
-						logrus.Infof("store reload error:", err)
-					}
-
-					executor.ReloadStores(stores)
-				}
-
-			case err, ok := <-watcher.Errors:
-				if !ok {
-					return
-				}
-				logrus.Infof("error:", err)
-			}
-		}
-		//close(done)
-	}()
-
-	logrus.Infof("added watcher on file %v", opts.configFilePath)
-	err = watcher.Add(opts.configFilePath)
-	if err != nil {
-		logrus.Infof("Add failed:", err)
-	}
-	<-done
 
 	if opts.httpServerAddress != "" {
 		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, &executor)

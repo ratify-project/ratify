@@ -39,11 +39,11 @@ const defaultRequestTimeoutMilliseconds = 2800
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
 type Executor struct {
-	mu             sync.Mutex
 	ReferrerStores []referrerstore.ReferrerStore
 	PolicyEnforcer policyprovider.PolicyProvider
 	Verifiers      []vr.ReferenceVerifier
 	Config         *config.ExecutorConfig
+	mu             sync.RWMutex
 }
 
 // TODO Logging within executor
@@ -74,6 +74,16 @@ func (executor Executor) ReloadStores(newStore []referrerstore.ReferrerStore) er
 	executor.ReferrerStores = newStore
 	executor.mu.Unlock()
 	return nil
+}
+
+func (executor Executor) ReloadAll(newStores []referrerstore.ReferrerStore,
+	newVerifiers []vr.ReferenceVerifier, newPolicy policyprovider.PolicyProvider, newConfig *config.ExecutorConfig) {
+	executor.mu.Lock()
+	executor.ReferrerStores = newStores
+	executor.PolicyEnforcer = newPolicy
+	executor.Verifiers = newVerifiers
+	executor.Config = newConfig
+	executor.mu.Unlock()
 }
 
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
