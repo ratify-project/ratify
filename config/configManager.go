@@ -78,17 +78,18 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (ef.Executor, error) {
 	if err != nil {
 		return executor, err // todo: wrap
 	}
-	updateExecutorOnConfigurationChange(configFilePath, &executor) // err handling
+
+	watchForConfigurationChange(configFilePath, &executor) // err handling
 
 	return executor, nil
 }
 
-func updateExecutorOnConfigurationChange(configFilePath string, executor *ef.Executor) error {
+func watchForConfigurationChange(configFilePath string, executor *ef.Executor) error {
 
 	// setup file watcher with handler
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logrus.Infof("NewWatcher failed: ", err)
+		logrus.Infof("Initializing file watcher on configuration file %v failed with error %v ", configFilePath, err)
 	}
 	defer watcher.Close()
 
@@ -103,7 +104,9 @@ func updateExecutorOnConfigurationChange(configFilePath string, executor *ef.Exe
 					return
 				}
 				if event.Op&fsnotify.Write == fsnotify.Write {
-					logrus.Infof("Config write event detected! %s %s\n", event.Name, event.Op)
+
+					logrus.Infof("Config write event detected %s %s\n", event.Name, event.Op)
+
 					cf, err := Load(configFilePath)
 
 					stores, verifiers, policyEnforcer, err := createFromConfig(cf)
@@ -113,11 +116,11 @@ func updateExecutorOnConfigurationChange(configFilePath string, executor *ef.Exe
 					}
 
 					if configHash != cf.FileHash {
-						logrus.Infof("Config change detected!")
+						logrus.Infof("configuration file has been updated, reloading executor ")
 						executor.ReloadAll(stores, verifiers, policyEnforcer, &cf.ExecutorConfig)
 						configHash = cf.FileHash
 					} else {
-						logrus.Infof("config file was same ")
+						logrus.Infof("no change found in config file, no executor update needed")
 					}
 
 				}
@@ -126,16 +129,17 @@ func updateExecutorOnConfigurationChange(configFilePath string, executor *ef.Exe
 				if !ok {
 					return
 				}
-				logrus.Infof("error:", err)
+				logrus.Infof("configuration file watcher returned error : %v", err)
 			}
 		}
 		//close(done)
 	}()
 
-	logrus.Infof("added watcher on file %v", configFilePath)
 	err = watcher.Add(configFilePath)
 	if err != nil {
-		logrus.Infof("Add failed:", err)
+		logrus.Infof("add configuration file failed, err: %v", err)
+	} else {
+		logrus.Infof("watcher added on configuration file %v", configFilePath)
 	}
 	<-done
 

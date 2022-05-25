@@ -33,7 +33,6 @@ import (
 	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
 	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	vfConfig "github.com/deislabs/ratify/pkg/verifier/config"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -91,7 +90,6 @@ func Load(configFilePath string) (Config, error) {
 	}
 
 	file, err := os.OpenFile(configFilePath, os.O_RDONLY, 0644)
-	//s, _ := ioutil.ReadAll(file) // copy the file and get content
 
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -105,22 +103,11 @@ func Load(configFilePath string) (Config, error) {
 		return config, err
 	}
 
-	config.FileHash, _ = GetFileHash(file) // todo: file pointer could be pointing at EOF ,need to point back at begining of file , handle error
+	// reset pointer for computing hash
+	file.Seek(0, io.SeekStart)
+	config.FileHash, _ = getFileHash(file)
 	defer file.Close()
 	return config, nil
-}
-
-func GetFileHash(file io.Reader) (fileHash string, err error) {
-	hash := sha256.New()
-	s, readErr := ioutil.ReadAll(file)
-
-	if readErr != nil {
-		log.Fatal(readErr)
-	}
-	hash.Write(s)
-	logrus.Infof("hash of file %v", hex.EncodeToString(hash.Sum(nil)))
-	return hex.EncodeToString(hash.Sum(nil)), nil
-
 }
 
 func GetDefaultPluginPath() string {
@@ -128,4 +115,17 @@ func GetDefaultPluginPath() string {
 		initConfigDir.Do(InitDefaultPaths)
 	}
 	return defaultPluginsPath
+}
+
+func getFileHash(file io.Reader) (fileHash string, err error) {
+	hash := sha256.New()
+	s, readErr := ioutil.ReadAll(file)
+
+	if readErr != nil {
+		log.Fatal(readErr)
+	}
+	hash.Write(s)
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
+
 }

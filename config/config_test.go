@@ -56,7 +56,7 @@ func TestLoad_FromDefaultPath(t *testing.T) {
 	}
 }
 
-func TestLoad_FromGiventPath(t *testing.T) {
+func TestLoad_FromGivenPath(t *testing.T) {
 	tmpDir, err := ioutil.TempDir("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
@@ -143,5 +143,36 @@ func TestLoad_InvalidConfigFile(t *testing.T) {
 	_, err = Load(fileName)
 	if err == nil {
 		t.Fatalf("loading config is expected to failed")
+	}
+}
+
+func TestLoad_ComputeHash(t *testing.T) {
+	tmpDir, err := ioutil.TempDir("", "test-config")
+	if err != nil {
+		t.Fatalf("temp dir creation failed %v", err)
+	}
+
+	defer os.RemoveAll(tmpDir)
+
+	fileName := filepath.Join(tmpDir, ConfigFileName)
+	content := []byte(`{"stores":  { "version": "1.0.0" }}`)
+	err = ioutil.WriteFile(fileName, content, 0644)
+	if err != nil {
+		t.Fatalf("config file creation failed %v", err)
+	}
+
+	config, err := Load(fileName)
+	if err != nil {
+		t.Fatalf("loading config failed %v", err)
+	}
+
+	if config.StoresConfig.Version != "1.0.0" {
+		t.Fatalf("mismatch of the loaded config expected version %s actual %s", "1.0.0", config.StoresConfig.Version)
+	}
+
+	expectedHash := "25a43245af3af9e260312c817ba6e65920db90cd2bba334ba6ca8662400d3a1c"
+
+	if config.FileHash != expectedHash {
+		t.Fatalf("Unexpected configuration hash, expected %v, actual %v", expectedHash, config.FileHash)
 	}
 }
