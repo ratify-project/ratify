@@ -23,6 +23,6 @@ require (
 	github.com/xlab/treeprint v1.1.0
 	k8s.io/api v0.22.10
 	k8s.io/apimachinery v0.22.10
-	k8s.io/client-go v0.22.9
+	k8s.io/client-go v0.22.10
 	oras.land/oras-go/v2 v2.0.0-20220411024522-db4a48eade0e
 )
