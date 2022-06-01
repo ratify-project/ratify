@@ -21,8 +21,8 @@ require (
 	github.com/spdx/tools-golang v0.2.0
 	github.com/spf13/cobra v1.3.0
 	github.com/xlab/treeprint v1.1.0
-	k8s.io/api v0.22.9
-	k8s.io/apimachinery v0.22.9
+	k8s.io/api v0.22.10
+	k8s.io/apimachinery v0.22.10
 	k8s.io/client-go v0.22.9
 	oras.land/oras-go/v2 v2.0.0-20220411024522-db4a48eade0e
 )
