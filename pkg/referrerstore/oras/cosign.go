@@ -27,7 +27,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sigstore/cosign/pkg/cosign"
+	cosign "github.com/sigstore/cosign/pkg/oci/remote"
 )
 
 const CosignArtifactType = "org.sigstore.cosign.v1"
