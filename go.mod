@@ -10,7 +10,7 @@ require (
 	github.com/google/go-containerregistry v0.8.1-0.20220125170349-50dfc2733d10
 	github.com/gorilla/mux v1.8.0
 	github.com/notaryproject/notation-go-lib v1.0.0-alpha-1
-	github.com/open-policy-agent/frameworks/constraint v0.0.0-20211029184625-8b4a99a9a65a
+	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220527234808-13b0f3dbe9f0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2
 	github.com/oras-project/artifacts-spec v1.0.0-draft.1.1
@@ -19,10 +19,12 @@ require (
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spdx/tools-golang v0.2.0
-	github.com/spf13/cobra v1.3.0
+	github.com/spf13/cobra v1.4.0
 	github.com/xlab/treeprint v1.1.0
-	k8s.io/api v0.22.10
-	k8s.io/apimachinery v0.22.10
-	k8s.io/client-go v0.22.10
+	k8s.io/api v0.24.1
+	k8s.io/apimachinery v0.24.1
+	k8s.io/client-go v0.24.1
 	oras.land/oras-go/v2 v2.0.0-20220411024522-db4a48eade0e
 )
+
+replace github.com/open-policy-agent/opa => github.com/open-policy-agent/opa v0.40.0
