@@ -1,15 +1,16 @@
 module github.com/deislabs/ratify
 
-go 1.16
+go 1.17
 
 require (
 	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
 	github.com/docker/cli v20.10.16+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
+	github.com/golang-jwt/jwt/v4 v4.3.0 // indirect
 	github.com/google/go-containerregistry v0.8.1-0.20220125170349-50dfc2733d10
 	github.com/gorilla/mux v1.8.0
-	github.com/notaryproject/notation-go-lib v1.0.0-alpha-1
+	github.com/notaryproject/notation-go v0.8.0-alpha.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220527234808-13b0f3dbe9f0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2
