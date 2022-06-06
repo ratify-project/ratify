@@ -25,4 +25,4 @@ Please describe the tests that you ran to verify your changes. Please also list 
 - [ ] Does the affected code have corresponding tests?
 - [ ] Are the changes documented, not just with inline documentation, but also with conceptual documentation such as an overview of a new feature, or task-based documentation like a tutorial? Consider if this change should be announced on your project blog.
 - [ ] Does this introduce breaking changes that would require an announcement or bumping the major version?
-- [ ] Does all new files have appropriate license header?
+- [ ] Do all new files have appropriate license header?
