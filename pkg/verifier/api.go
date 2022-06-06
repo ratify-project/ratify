@@ -32,6 +32,7 @@ type VerifierResult struct {
 	Message       string           `json:"message,omitempty"`
 	Extensions    interface{}      `json:"extensions,omitempty"`
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
+	ArtifactType  string           `json:"artifactType,omitempty"`
 }
 
 // ReferenceVerifier is an interface that defines methods to verify a reference for a subject

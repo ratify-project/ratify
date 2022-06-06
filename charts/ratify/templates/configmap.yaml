@@ -26,17 +26,20 @@ data:
                 {{- if .Values.oras.authProviders.k8secretsEnabled }}
                 ,
                 "auth-provider": {
-                    "name": "k8secrets"
+                    "name": "k8s-secrets"
                 }
                 {{- end }}
             }
         ]
       },
       "policies": {
-          "version": "1.0.0",
-          "artifactVerificationPolicies": {
-              "application/vnd.cncf.notary.v2.signature": "any"
-          }
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "all"
+            }
+        }
       },
       "verifiers": {
           "version": "1.0.0",

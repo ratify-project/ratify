@@ -82,10 +82,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	subjectReference.Digest = desc.Digest
 
 	var verifierReports []interface{}
-	anyVerifySuccess := map[string]bool{}
-	for _, referenceType := range verifyParameters.ReferenceTypes {
-		anyVerifySuccess[referenceType] = false
-	}
 
 	for _, referrerStore := range executor.ReferrerStores {
 		var continuationToken string
@@ -95,6 +91,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 				return types.VerifyResult{}, err
 			}
 			continuationToken = referrersResult.NextToken
+
 			for _, reference := range referrersResult.Referrers {
 
 				if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
@@ -107,8 +104,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 							executor.Config.ExecutionMode != config.PassthroughExecutionMode {
 							return result, nil
 						}
-					} else {
-						anyVerifySuccess[reference.ArtifactType] = true
 					}
 				}
 			}
@@ -122,13 +117,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		return types.VerifyResult{}, ReferrersNotFound
 	}
 
-	overallVerifySuccess := true
-	for _, referenceType := range verifyParameters.ReferenceTypes {
-		if anyVerifySuccess[referenceType] == false {
-			overallVerifySuccess = false
-			break
-		}
-	}
+	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
 
 	if executor.Config.ExecutionMode == config.PassthroughExecutionMode {
 		overallVerifySuccess = true
@@ -151,6 +140,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 					Message:   fmt.Sprintf("an error thrown by the verifier %v", err)}
 			}
 
+			verifyResult.ArtifactType = referenceDesc.ArtifactType
 			verifyResults = append(verifyResults, verifyResult)
 			isSuccess = verifyResult.IsSuccess
 			break
