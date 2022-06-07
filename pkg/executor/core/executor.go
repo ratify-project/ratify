@@ -43,14 +43,14 @@ type Executor struct {
 	PolicyEnforcer policyprovider.PolicyProvider
 	Verifiers      []vr.ReferenceVerifier
 	Config         *config.ExecutorConfig
-	mu             sync.RWMutex
+	Mu             sync.RWMutex
 }
 
 // TODO Logging within executor
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	executor.mu.Lock()
+	executor.Mu.RLock()
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
-	executor.mu.Unlock()
+	executor.Mu.RUnlock()
 
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -69,21 +69,14 @@ func (executor Executor) GetVerifyRequestTimeout() time.Duration {
 	return time.Duration(timeoutMilliSeconds) * time.Millisecond
 }
 
-func (executor Executor) ReloadStores(newStore []referrerstore.ReferrerStore) error {
-	executor.mu.Lock()
-	executor.ReferrerStores = newStore
-	executor.mu.Unlock()
-	return nil
-}
-
 func (executor Executor) ReloadAll(newStores []referrerstore.ReferrerStore,
 	newVerifiers []vr.ReferenceVerifier, newPolicy policyprovider.PolicyProvider, newConfig *config.ExecutorConfig) {
-	executor.mu.Lock()
+	executor.Mu.Lock()
 	executor.ReferrerStores = newStores
 	executor.PolicyEnforcer = newPolicy
 	executor.Verifiers = newVerifiers
 	executor.Config = newConfig
-	executor.mu.Unlock()
+	executor.Mu.Unlock()
 }
 
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {

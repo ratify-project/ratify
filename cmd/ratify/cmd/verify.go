@@ -18,6 +18,7 @@ package cmd
 import (
 	"context"
 	"errors"
+	"sync"
 
 	"github.com/deislabs/ratify/config"
 	e "github.com/deislabs/ratify/pkg/executor"
@@ -100,6 +101,7 @@ func verify(opts verifyCmdOptions) error {
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
 		PolicyEnforcer: policyEnforcer,
+		Mu:             sync.RWMutex{},
 	}
 
 	verifyParameters := e.VerifyParameters{
