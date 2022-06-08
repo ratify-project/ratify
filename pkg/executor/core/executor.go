@@ -34,7 +34,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const defaultRequestTimeoutMilliseconds = 2800
+const defaultRequestTimeoutMilliseconds = 40000
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
@@ -47,7 +47,7 @@ type Executor struct {
 }
 
 // TODO Logging within executor
-func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+func (executor *Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	executor.Mu.RLock()
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	executor.Mu.RUnlock()
@@ -69,8 +69,9 @@ func (executor Executor) GetVerifyRequestTimeout() time.Duration {
 	return time.Duration(timeoutMilliSeconds) * time.Millisecond
 }
 
-func (executor Executor) ReloadAll(newStores []referrerstore.ReferrerStore,
+func (executor *Executor) ReloadAll(newStores []referrerstore.ReferrerStore,
 	newVerifiers []vr.ReferenceVerifier, newPolicy policyprovider.PolicyProvider, newConfig *config.ExecutorConfig) {
+
 	executor.Mu.Lock()
 	executor.ReferrerStores = newStores
 	executor.PolicyEnforcer = newPolicy
@@ -84,7 +85,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	if err != nil {
 		return types.VerifyResult{}, err
 	}
-
+	time.Sleep(40 * time.Second)
 	desc, err := su.ResolveSubjectDescriptor(ctx, &executor.ReferrerStores, subjectReference)
 
 	if err != nil {
@@ -135,12 +136,14 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
-func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
+func (ex *Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
+
 	for _, verifier := range ex.Verifiers {
+
 		if verifier.CanVerify(ctx, referenceDesc) {
-			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
+			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex) // should ex change since the signature has changed?
 			verifyResult.Subject = subjectRef.String()
 			if err != nil {
 				verifyResult = vr.VerifierResult{

@@ -62,7 +62,7 @@ func serve(opts serveCmdOptions) error {
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, &executor)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, executor)
 		if err != nil {
 			return err
 		}
