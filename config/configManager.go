@@ -16,7 +16,11 @@ limitations under the License.
 package config
 
 import (
+	"bufio"
+	"fmt"
+	"os"
 	"sync"
+	"time"
 
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/policyprovider"
@@ -106,7 +110,21 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
 
-	logrus.Infof("executor pointer %v", executor)
+	go func() {
+		for {
+			logrus.StandardLogger().Infof("see this msg every 30sec")
+			time.Sleep(30 * time.Second)
+			file, err := os.Open(configFilePath)
+			if err != nil {
+				logrus.Warnf("failed to print config file , err: %v", err)
+			}
+
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				fmt.Println(scanner.Text())
+			}
+		}
+	}()
 
 	go func() {
 
