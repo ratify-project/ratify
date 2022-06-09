@@ -136,8 +136,8 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 					return
 				}
 
-				logrus.Infof("file event detected %v", event)
-
+				logrus.Infof("Debug info: file watcher event detected %v", event)
+				// This only works for local scenario, will need more work to handle cluster Configmap udpates
 				if event.Op&fsnotify.Write == fsnotify.Write {
 
 					cf, err := Load(configFilePath)
