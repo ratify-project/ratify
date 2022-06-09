@@ -111,16 +111,41 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
 
+	info, err := os.Lstat(configFilePath)
+	fileToWatch := configFilePath
+	if info.Mode()&os.ModeSymlink != 0 {
+		// if symlink
+		targetFilePath, err := filepath.EvalSymlinks(configFilePath)
+		if err != nil || len(targetFilePath) == 0 {
+			logrus.Errorf("Unable to resolve symbolic link %v , error '%v'", configFilePath, err)
+			return nil
+		}
+		fileToWatch = targetFilePath
+		logrus.Infof("symlink resolved %v", targetFilePath)
+		// check if this is now a physical path
+	}
+
 	go func() {
 		for {
-			logrus.StandardLogger().Infof("see this msg every 30sec")
+			logrus.StandardLogger().Infof("see this msg every 30sec %v ", fileToWatch)
 			time.Sleep(30 * time.Second)
-			file, err := os.Open(configFilePath)
+			file, err := os.Open(fileToWatch)
+			if err != nil {
+				logrus.Warnf("failed to print config file , err: %v", err)
+			}
+			logrus.Infof("printing configFilePath  %v", fileToWatch)
+			scanner := bufio.NewScanner(file)
+			for scanner.Scan() {
+				fmt.Println(scanner.Text())
+			}
+
+			logrus.Infof("printing configFilePath  %v", configFilePath)
+			file, err = os.Open(configFilePath)
 			if err != nil {
 				logrus.Warnf("failed to print config file , err: %v", err)
 			}
 
-			scanner := bufio.NewScanner(file)
+			scanner = bufio.NewScanner(file)
 			for scanner.Scan() {
 				fmt.Println(scanner.Text())
 			}
@@ -132,13 +157,15 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		for {
 			select {
 			case event, ok := <-watcher.Events:
-
 				if !ok {
+					logrus.Warnf("watcher channel closed, ")
 					return
 				}
+				logrus.Infof("file event detected %v", event)
+
 				if event.Op&fsnotify.Write == fsnotify.Write {
 
-					cf, err := Load(configFilePath)
+					cf, err := Load(fileToWatch)
 
 					if err != nil {
 						logrus.Warnf("failed to load from config file , err: %v", err)
@@ -171,27 +198,14 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		}
 	}()
 
-	info, err := os.Lstat(configFilePath)
-
-	if info.Mode()&os.ModeSymlink != 0 {
-		// if symlink
-		targetFilePath, err := filepath.EvalSymlinks(configFilePath)
-		if err != nil || len(targetFilePath) == 0 {
-			logrus.Errorf("Unable to resolve symbolic link %v , error '%v'", configFilePath, err)
-			return nil
-		}
-		err = watcher.Add(targetFilePath)
-		logrus.Infof("watcher added on configuration file %v", targetFilePath)
-		// check if this is now a physical path
-	} else {
-		err = watcher.Add(configFilePath)
-		logrus.Infof("watcher added on configuration file %v", configFilePath)
-	}
+	err = watcher.Add(fileToWatch)
 
 	if err != nil {
 		logrus.Error("adding configuration file failed, err: %v", err)
 		return err
 	}
+
+	logrus.Infof("watcher added on configuration file %v", fileToWatch)
 
 	return nil
 }
