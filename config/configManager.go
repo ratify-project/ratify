@@ -19,7 +19,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -111,41 +110,16 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
 
-	info, err := os.Lstat(configFilePath)
-	fileToWatch := configFilePath
-	if info.Mode()&os.ModeSymlink != 0 {
-		// if symlink
-		targetFilePath, err := filepath.EvalSymlinks(configFilePath)
-		if err != nil || len(targetFilePath) == 0 {
-			logrus.Errorf("Unable to resolve symbolic link %v , error '%v'", configFilePath, err)
-			return nil
-		}
-		fileToWatch = targetFilePath
-		logrus.Infof("symlink resolved %v", targetFilePath)
-		// check if this is now a physical path
-	}
-
 	go func() {
 		for {
-			logrus.StandardLogger().Infof("see this msg every 30sec %v ", fileToWatch)
+			logrus.StandardLogger().Infof("see this msg every 30sec %v ", configFilePath)
 			time.Sleep(30 * time.Second)
-			file, err := os.Open(fileToWatch)
+			file, err := os.Open(configFilePath)
 			if err != nil {
 				logrus.Warnf("failed to print config file , err: %v", err)
 			}
-			logrus.Infof("printing configFilePath  %v", fileToWatch)
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				fmt.Println(scanner.Text())
-			}
-
 			logrus.Infof("printing configFilePath  %v", configFilePath)
-			file, err = os.Open(configFilePath)
-			if err != nil {
-				logrus.Warnf("failed to print config file , err: %v", err)
-			}
-
-			scanner = bufio.NewScanner(file)
+			scanner := bufio.NewScanner(file)
 			for scanner.Scan() {
 				fmt.Println(scanner.Text())
 			}
@@ -158,14 +132,15 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
-					logrus.Warnf("watcher channel closed, ")
+					logrus.Warnf("No longer watching configuration file changes, file watcher event channel closed")
 					return
 				}
+
 				logrus.Infof("file event detected %v", event)
 
 				if event.Op&fsnotify.Write == fsnotify.Write {
 
-					cf, err := Load(fileToWatch)
+					cf, err := Load(configFilePath)
 
 					if err != nil {
 						logrus.Warnf("failed to load from config file , err: %v", err)
@@ -198,14 +173,14 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		}
 	}()
 
-	err = watcher.Add(fileToWatch)
+	err = watcher.Add(configFilePath)
 
 	if err != nil {
 		logrus.Error("adding configuration file failed, err: %v", err)
 		return err
 	}
 
-	logrus.Infof("watcher added on configuration file %v", fileToWatch)
+	logrus.Infof("watcher added on configuration file %v", configFilePath)
 
 	return nil
 }
