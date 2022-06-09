@@ -19,6 +19,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -170,13 +171,27 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		}
 	}()
 
-	err = watcher.Add(configFilePath)
+	info, err := os.Lstat(configFilePath)
+
+	if info.Mode()&os.ModeSymlink != 0 {
+		// if symlink
+		targetFilePath, err := filepath.EvalSymlinks(configFilePath)
+		if err != nil || len(targetFilePath) == 0 {
+			logrus.Errorf("Unable to resolve symbolic link %v , error '%v'", configFilePath, err)
+			return nil
+		}
+		err = watcher.Add(targetFilePath)
+		logrus.Infof("watcher added on configuration file %v", targetFilePath)
+		// check if this is now a physical path
+	} else {
+		err = watcher.Add(configFilePath)
+		logrus.Infof("watcher added on configuration file %v", configFilePath)
+	}
+
 	if err != nil {
 		logrus.Error("adding configuration file failed, err: %v", err)
 		return err
 	}
-
-	logrus.Infof("watcher added on configuration file %v", configFilePath)
 
 	return nil
 }
