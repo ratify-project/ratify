@@ -19,6 +19,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -173,14 +174,15 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		}
 	}()
 
-	err = watcher.Add(configFilePath)
+	dir := filepath.Dir(configFilePath)
+	err = watcher.Add(dir)
 
 	if err != nil {
 		logrus.Error("adding configuration file failed, err: %v", err)
 		return err
 	}
 
-	logrus.Infof("watcher added on configuration file %v", configFilePath)
+	logrus.Infof("watcher added on configuration file %v", dir)
 
 	return nil
 }
