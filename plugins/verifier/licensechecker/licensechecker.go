@@ -82,15 +82,10 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, desc
 		disallowedLicenses := utils.FilterPackageLicenses(packageLicenses, allowedLicenses)
 
 		if len(disallowedLicenses) > 0 {
-			resultStrings := []string{"License Check: FAILED"}
-			for _, disallowedLicense := range disallowedLicenses {
-				s := fmt.Sprintf("package '%s' has unpermitted license '%s'", disallowedLicense.PackageName, disallowedLicense.PackageLicense)
-				resultStrings = append(resultStrings, s)
-			}
 			return &verifier.VerifierResult{
 				Name:      input.Name,
 				IsSuccess: false,
-				Results:   resultStrings,
+				Message:   fmt.Sprintf("License Check: FAILED. %s", disallowedLicenses),
 			}, nil
 		}
 	}
@@ -98,6 +93,6 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, desc
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: true,
-		Results:   []string{"License Check: SUCCESS", "All packages have allowed licenses"},
+		Message:   "License Check: SUCCESS. All packages have allowed licenses",
 	}, nil
 }
