@@ -134,8 +134,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 				Message:   "error getting extension data from root cert",
 			}, err
 		}
-		extensions["O"] = cert.Issuer.Organization[0]
-		extensions["CN"] = cert.Issuer.CommonName
+		extensions["SN"] = cert.Subject.String()
 
 		var opts notation.VerifyOptions
 		vdesc, err := v.notationVerifier.Verify(context.Background(), refBlob, opts)

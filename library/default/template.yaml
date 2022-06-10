@@ -26,6 +26,7 @@ spec:
         # Check if there are any system errors
         general_violation[{"result": result}] {
           err := remote_data.system_error
+          err != ""
           result := sprintf("System error calling external data provider: %s", [err])
         }
         
