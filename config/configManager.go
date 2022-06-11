@@ -19,7 +19,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"path/filepath"
 	"sync"
 	"time"
 
@@ -138,6 +137,29 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 				}
 
 				logrus.Infof("Debug info: file watcher event detected %v", event)
+
+				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
+					logrus.Infof("Config remove detected")
+					// after the remove event, the watcher will also be removed
+					// sleep until the file exist add a new watcher on it
+					time.Sleep(1 * time.Second)
+					_, err := os.Stat(configFilePath)
+					for err != nil {
+						logrus.Infof("Config file does not exist yet, sleeping again")
+						_, err = os.Stat(configFilePath)
+						time.Sleep(1 * time.Second)
+					}
+
+					err = watcher.Add(configFilePath)
+
+					if err != nil {
+						logrus.Error("Adding configuration file watcher failed, err: %v", err)
+						continue
+					}
+
+					logrus.Infof("watcher added on configuration directory %v", configFilePath)
+				}
+
 				// This only works for local scenario, will need more work to handle cluster Configmap udpates
 				if event.Op&fsnotify.Write == fsnotify.Write {
 
@@ -174,15 +196,14 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		}
 	}()
 
-	dir := filepath.Dir(configFilePath)
-	err = watcher.Add(dir)
+	err = watcher.Add(configFilePath)
 
 	if err != nil {
-		logrus.Error("adding configuration file failed, err: %v", err)
+		logrus.Error("adding configuration file watcher failed, err: %v", err)
 		return err
 	}
 
-	logrus.Infof("watcher added on configuration file %v", dir)
+	logrus.Infof("watcher added on configuration file %v", configFilePath)
 
 	return nil
 }
