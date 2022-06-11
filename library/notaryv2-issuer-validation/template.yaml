@@ -1,22 +1,22 @@
 apiVersion: templates.gatekeeper.sh/v1beta1
 kind: ConstraintTemplate
 metadata:
-  name: notaryv2snvalidation
+  name: notaryv2issuervalidation
 spec:
   crd:
     spec:
       names:
-        kind: NotaryV2SNValidation
+        kind: NotaryV2IssuerValidation
       validation:
         openAPIV3Schema:
           type: object
           properties:
-            sn:
+            issuer:
               type: string
   targets:
     - target: admission.k8s.gatekeeper.sh
       rego: |
-        package notaryv2snvalidation
+        package notaryv2issuervalidation
         
         # Get data from Ratify
         remote_data := response {
@@ -49,14 +49,14 @@ spec:
           result := sprintf("Subject failed verification: %s", [subject_validation[0]])
         }
 
-        # Check that signature result for SN exists
+        # Check that signature result for Issuer exists
         general_violation[{"result": result}] {
           subject_results := remote_data.responses[_]
           subject_result := subject_results[1]
           notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
-          sn_results := [res | notaryv2_results[i].extensions.SN == input.parameters.sn; res := notaryv2_results[i]]
-          count(sn_results) == 0
-          result := sprintf("Subject %s has no signatures for certificate with SN: %s", [subject_results[0], input.parameters.sn])
+          issuer_results := [res | notaryv2_results[i].extensions.Issuer == input.parameters.issuer; res := notaryv2_results[i]]
+          count(issuer_results) == 0
+          result := sprintf("Subject %s has no signatures for certificate with Issuer: %s", [subject_results[0], input.parameters.issuer])
         }
         
         # Check for valid signature
@@ -66,6 +66,6 @@ spec:
           notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
           notaryv2_result := notaryv2_results[_]
           notaryv2_result.isSuccess == false
-          notaryv2_result.extensions.SN == input.parameters.sn
+          notaryv2_result.extensions.Issuer == input.parameters.issuer
           result = sprintf("Subject %s failed signature validation: %s", [subject_results[0], notaryv2_result.message])
         }

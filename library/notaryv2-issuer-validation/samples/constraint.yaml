@@ -1,5 +1,5 @@
 apiVersion: constraints.gatekeeper.sh/v1beta1
-kind: NotaryV2SNValidation
+kind: NotaryV2IssuerValidation
 metadata:
   name: localhost-signature-validation
 spec:
@@ -10,4 +10,4 @@ spec:
         kinds: ["Pod"]
     namespaces: ["*"]
   parameters:
-    sn: "localhost:5000"
+    issuer: "localhost:5000"

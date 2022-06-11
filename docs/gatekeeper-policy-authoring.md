@@ -95,6 +95,7 @@ actual values of fields may differ):
           {
             "artifactType": "application/vnd.cncf.notary.v2.signature",
             "extensions": {
+              "Issuer": "CN=localhost:5000,O=Ratify,L=Seattle,ST=Washington,C=US",
               "SN": "CN=localhost:5000,O=Ratify,L=Seattle,ST=Washington,C=US"
             },
             "isSuccess": true,
@@ -160,15 +161,15 @@ The most commonly used fields are:
 
 The `Extensions` field allows the verifiers to include additional metadata as
 part of the response to use for policy evaluation (for example, the notaryv2
-verifier includes the SubjectName from the certificate as an extension field).
+verifier includes the Issuer and SubjectName from the certificate as an extension field).
 Currently, the best way to determine the extension fields for a verifier is to
 check the source for that verifier.
 
 ## Sample Rego Policy
 Let's look at a Ratify policy from the library in more detail. Below is the
-rego from the `notaryv2snvalidation` policy:
+rego from the `notaryv2issuervalidation` policy:
 ```rego
-package notaryv2snvalidation
+package notaryv2issuervalidation
 
 # Get data from Ratify
 remote_data := response {
@@ -201,14 +202,14 @@ general_violation[{"result": result}] {
   result := sprintf("Subject failed verification: %s", [subject_validation[0]])
 }
 
-# Check that signature result for SN exists
+# Check that signature result for Issuer exists
 general_violation[{"result": result}] {
   subject_results := remote_data.responses[_]
   subject_result := subject_results[1]
   notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
-  sn_results := [res | notaryv2_results[i].extensions.SN == input.parameters.sn; res := notaryv2_results[i]]
-  count(sn_results) == 0
-  result := sprintf("Subject %s has no signatures for certificate with SN: %s", [subject_results[0], input.parameters.sn])
+  issuer_results := [res | notaryv2_results[i].extensions.Issuer == input.parameters.issuer; res := notaryv2_results[i]]
+  count(issuer_results) == 0
+  result := sprintf("Subject %s has no signatures for certificate with Issuer: %s", [subject_results[0], input.parameters.issuer])
 }
 
 # Check for valid signature
@@ -218,7 +219,7 @@ general_violation[{"result": result}] {
   notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
   notaryv2_result := notaryv2_results[_]
   notaryv2_result.isSuccess == false
-  notaryv2_result.extensions.SN == input.parameters.sn
+  notaryv2_result.extensions.Issuer == input.parameters.issuer
   result = sprintf("Subject %s failed signature validation: %s", [subject_results[0], notaryv2_result.message])
 }
 ```
