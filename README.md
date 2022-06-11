@@ -50,27 +50,22 @@ helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
     ratify/ratify --atomic
 
-kubectl apply -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
+kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 ```
 
 Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
 
-- Create the namespace `demo`
+- This will successfully create the pod `demo`
 
 ```bash=
-kubectl create ns demo
-```
-
-- This will successfully create the pod `demo` in the namespace `demo`
-
-```bash=
-kubectl run demo --image=ratify.azurecr.io/testimage:signed -n demo
+kubectl run demo --image=ratify.azurecr.io/testimage:signed
 ```
 
 - Now deploy an unsigned image
 
 ```bash=
-kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned -n demo
+kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned
 ```
 
 You will see a deny message from Gatekeeper as the image doesn't have any signatures.
@@ -80,9 +75,8 @@ You just validated the container images in your k8s cluster!
 - Uninstall Ratify
 
 ```bash=
-kubectl delete -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
 helm delete ratify
-kubectl delete namespace demo
 ```
 
 ## Documents
