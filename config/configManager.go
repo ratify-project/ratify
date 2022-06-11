@@ -102,6 +102,31 @@ func createFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 	return stores, verifiers, policyEnforcer, nil
 }
 
+func reloadExecutor(configFilePath string, executor *ef.Executor) error {
+	cf, err := Load(configFilePath)
+
+	if err != nil {
+		logrus.Warnf("failed to load from config file , err: %v", err)
+		return err
+	}
+
+	stores, verifiers, policyEnforcer, err := createFromConfig(cf)
+
+	if err != nil {
+		logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
+		return err
+	}
+
+	if configHash != cf.FileHash {
+		executor.ReloadAll(stores, verifiers, policyEnforcer, &cf.ExecutorConfig)
+		configHash = cf.FileHash
+		logrus.Infof("configuration file has been updated, reloading executor succeeded")
+	} else {
+		logrus.Infof("no change found in config file, no executor update needed")
+	}
+
+}
+
 // Setup a watcher on file at configFilePath, reload executor on file change
 func watchForConfigurationChange(configFilePath string, executor *ef.Executor) error {
 
@@ -138,10 +163,11 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 
 				logrus.Infof("Debug info: file watcher event detected %v", event)
 
+				// In a cluster scenario, a configMap will recreate the config file
+				// after the remove event, the watcher will also be removed
+				// since a watcher on a non existent file is not supported, we sleep until the file exist add the watcher back
 				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
 					logrus.Infof("Config remove detected")
-					// after the remove event, the watcher will also be removed
-					// sleep until the file exist add a new watcher on it
 					time.Sleep(1 * time.Second)
 					_, err := os.Stat(configFilePath)
 					for err != nil {
@@ -158,33 +184,12 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 					}
 
 					logrus.Infof("watcher added on configuration directory %v", configFilePath)
+					reloadExecutor(configFilePath, executor)
 				}
 
-				// This only works for local scenario, will need more work to handle cluster Configmap udpates
-				if event.Op&fsnotify.Write == fsnotify.Write {
-
-					cf, err := Load(configFilePath)
-
-					if err != nil {
-						logrus.Warnf("failed to load from config file , err: %v", err)
-						continue // we don't want to return, as returning will close the file watcher
-					}
-
-					stores, verifiers, policyEnforcer, err := createFromConfig(cf)
-
-					if err != nil {
-						logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
-						continue
-					}
-
-					if configHash != cf.FileHash {
-						executor.ReloadAll(stores, verifiers, policyEnforcer, &cf.ExecutorConfig)
-						configHash = cf.FileHash
-						logrus.Infof("configuration file has been updated, reloading executor succeeded")
-					} else {
-						logrus.Infof("no change found in config file, no executor update needed")
-					}
-
+				// In a local scenario, the configuration will be updated through a write event
+				if event.Name == configFilePath && event.Op&fsnotify.Write == fsnotify.Write {
+					reloadExecutor(configFilePath, executor)
 				}
 
 			case err, ok := <-watcher.Errors:
