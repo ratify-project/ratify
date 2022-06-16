@@ -55,3 +55,4 @@ oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
     k8secretsEnabled: false
+    awsIrsaBasicEnabled: false
