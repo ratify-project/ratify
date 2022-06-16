@@ -245,7 +245,7 @@ kubectl -n ratify get po ratify-... -oyaml | grep serviceAccount
       - serviceAccountToken:
 ```
 
-11. Verify that the Amazon EKS Pod Identity Webhook created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
+11. Verify that the [Amazon EKS Pod Identity Webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
 ```
 kubectl -n ratify get po ratify-... -oyaml
 ...
