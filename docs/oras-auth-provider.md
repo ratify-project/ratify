@@ -178,7 +178,7 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
 Note: Kubernetes secrets are reloaded and refreshed for Ratify to use every 12 hours. Changes to the Secret may not be reflected immediately. 
 
 ### 4. AWS IAM Roles for Service Accounts (IRSA)
-Ratify pulls artifacts from a private Amazon Elastic Container Registry (ECR) using a federated workload identity assigned to pods via [IAM Roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html). The AWS IAM Roles for Service Accounts Basic Auth provider uses the [AWS SDK for Go v2](https://github.com/aws/aws-sdk-go-v2) to retrieve basic auth credentials base on a role assigned to a Kubernetes Service Account referenced by a pod specification. For a specific example of how IAM Roles for Service Accounts, a.k.a. IRSA, works with pods running the AWS SDK for Go v2, please see this [post](https://blog.jimmyray.io/kubernetes-workload-identity-with-aws-sdk-for-go-v2-927d2f258057).
+Ratify pulls artifacts from a private Amazon Elastic Container Registry (ECR) using a an ECR auth token. This token is accessed using the federated workload identity assigned to pods via [IAM Roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html). The AWS IAM Roles for Service Accounts Basic Auth provider uses the [AWS SDK for Go v2](https://github.com/aws/aws-sdk-go-v2) to retrieve basic auth credentials base on a role assigned to a Kubernetes Service Account referenced by a pod specification. For a specific example of how IAM Roles for Service Accounts, a.k.a. IRSA, works with pods running the AWS SDK for Go v2, please see this [post](https://blog.jimmyray.io/kubernetes-workload-identity-with-aws-sdk-for-go-v2-927d2f258057).
 
 #### User steps to set up IAM Roles for Service Accounts with Amazon EKS to access Amazon ECR:
 The official steps for setting up IAM Roles for Service Accounts with Amazon EKS can be found [here](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html).
@@ -221,13 +221,13 @@ serviceAccount:
   name: ratify
 ```
 
-8. Specify the _AWS IRSA Basic Auth_ provider in the Ratify helm chart [values](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) file.
+8. Specify the _AWS ECR Basic Auth_ provider in the Ratify helm chart [values](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) file.
 ```
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
     k8secretsEnabled: false
-    awsIrsaBasicEnabled: true
+    awsEcrBasicEnabled: true
 ```
 
 9. [Install Ratify](https://github.com/deislabs/ratify#quick-start)
@@ -277,7 +277,7 @@ kubectl -n ratify get po ratify-... -oyaml
           path: token
 ...
 ```
-12. Verify the _AWS IRSA Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
+12. Verify the _AWS ECR Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
 ```
 kubectl -n ratify get cm ratify-configuration -oyaml
 ...
@@ -288,7 +288,7 @@ kubectl -n ratify get cm ratify-configuration -oyaml
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
                 "auth-provider": {
-                    "name": "aws-irsa-basic"
+                    "name": "aws-ecr-basic"
                 }
             }
         ]

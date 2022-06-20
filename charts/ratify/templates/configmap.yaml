@@ -29,10 +29,10 @@ data:
                     "name": "k8s-secrets"
                 }
                 {{- end }}
-                {{- if .Values.oras.authProviders.awsIrsaBasicEnabled }}
+                {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
                 ,
                 "auth-provider": {
-                    "name": "aws-irsa-basic"
+                    "name": "aws-ecr-basic"
                 }
                 {{- end }}
             }

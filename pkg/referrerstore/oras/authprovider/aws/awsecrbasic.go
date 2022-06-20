@@ -28,30 +28,32 @@ import (
 	"time"
 )
 
-type AwsIrsaBasicProviderFactory struct{}
-type awsIrsaBasicAuthProvider struct {
+type AwsEcrBasicProviderFactory struct{}
+type awsEcrBasicAuthProvider struct {
 	ecrAuthToken EcrAuthToken
 	providerName string
 }
 
-type awsIrsaBasicAuthProviderConf struct {
+type awsEcrBasicAuthProviderConf struct {
 	Name string `json:"name"`
 }
 
 const (
-	awsIrsaEcrAuthProviderName string = "aws-irsa-basic"
+	awsEcrAuthProviderName string = "aws-ecr-basic"
 )
 
 // init calls Register for AWS IRSA Basic Auth provider
 func init() {
-	provider.Register(awsIrsaEcrAuthProviderName, &AwsIrsaBasicProviderFactory{})
+	provider.Register(awsEcrAuthProviderName, &AwsEcrBasicProviderFactory{})
 }
 
+// Get ECR auth token from IRSA config
 func getEcrAuthToken() (EcrAuthToken, error) {
 	region := os.Getenv("AWS_REGION")
 	roleArn := os.Getenv("AWS_ROLE_ARN")
 	tokenFilePath := os.Getenv("AWS_WEB_IDENTITY_TOKEN_FILE")
 
+	// Verify IRSA ENV is present
 	if region == "" || roleArn == "" || tokenFilePath == "" {
 		return EcrAuthToken{}, fmt.Errorf("required environment variables not set, AWS_REGION: %s, AWS_ROLE_ARN: %s, AWS_WEB_IDENTITY_TOKEN_FILE: %s", region, roleArn, tokenFilePath)
 	}
@@ -61,56 +63,18 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 		return EcrAuthToken{}, fmt.Errorf("failed to load default config: %v", err)
 	}
 
-	//client := sts.NewFromConfig(cfg)
-	//
-	//credsCache := aws.NewCredentialsCache(stscreds.NewWebIdentityRoleProvider(
-	//	client,
-	//	roleArn,
-	//	stscreds.IdentityTokenFile(tokenFilePath),
-	//	func(o *stscreds.WebIdentityRoleOptions) {
-	//		o.RoleSessionName = awsSessionName
-	//	}))
-	//
-	//creds, err := credsCache.Retrieve(context.TODO())
-	//if err != nil {
-	//	return aws.Credentials{}, fmt.Errorf("credentials not returned by AWS credential cache: %v", err)
-	//}
-	//
-	//if !creds.HasKeys() || creds.SessionToken == "" {
-	//	return aws.Credentials{}, fmt.Errorf("credential keys not returned")
-	//}
-
 	ecrClient := ecr.NewFromConfig(cfg)
-	authOuput, err := ecrClient.GetAuthorizationToken(context.TODO(), nil)
+	authOutput, err := ecrClient.GetAuthorizationToken(context.TODO(), nil)
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("could not reteive ECR auth token collection: %v", err)
 	}
 
-	//ecrAuthToken := tokenCollection.AuthorizationData[0]
-	//rawDecodedToken, err := base64.StdEncoding.DecodeString(*ecrAuthToken.AuthorizationToken)
-	//if err != nil {
-	//	return awsIrsaBasicAuthProvider{}, fmt.Errorf("could not decode ECR auth token: %v", err)
-	//}
-	//
-	//decodedAuthCreds := strings.Split(string(rawDecodedToken), ":")
-	//
-	//if decodedAuthCreds[0] == "" || decodedAuthCreds[1] == "" {
-	//	return awsIrsaBasicAuthProvider{}, fmt.Errorf("empty ECR credentials returned")
-	//}
-	//
-	//auth := awsIrsaBasicAuthProvider{}
-	//auth.userName = decodedAuthCreds[0]
-	//auth.password = decodedAuthCreds[1]
-	//auth.proxyEndpoint = *ecrAuthToken.ProxyEndpoint
-	//auth.providerName = awsIrsaAuthProviderName
-	//auth.expiry = *ecrAuthToken.ExpiresAt
-
-	return EcrAuthToken{AuthData: authOuput.AuthorizationData[0]}, nil
+	return EcrAuthToken{AuthData: authOutput.AuthorizationData[0]}, nil
 }
 
 // Create returns an AwsIrsaBasicAuthProvider
-func (s *AwsIrsaBasicProviderFactory) Create(authProviderConfig provider.AuthProviderConfig) (provider.AuthProvider, error) {
-	conf := awsIrsaBasicAuthProviderConf{}
+func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProviderConfig) (provider.AuthProvider, error) {
+	conf := awsEcrBasicAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
 		return nil, err
@@ -126,14 +90,14 @@ func (s *AwsIrsaBasicProviderFactory) Create(authProviderConfig provider.AuthPro
 		return nil, fmt.Errorf("failed to get ECR auth data: %v", err)
 	}
 
-	return &awsIrsaBasicAuthProvider{
+	return &awsEcrBasicAuthProvider{
 		ecrAuthToken: authData,
-		providerName: awsIrsaEcrAuthProviderName,
+		providerName: awsEcrAuthProviderName,
 	}, nil
 }
 
 // Enabled checks for non empty AWS IAM creds
-func (d *awsIrsaBasicAuthProvider) Enabled(ctx context.Context) bool {
+func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
 	creds, err := d.ecrAuthToken.BasicAuthCreds()
 	if creds == nil || err != nil {
 		logrus.Errorf("error getting basic ECR creds: %v", err)
@@ -152,12 +116,16 @@ func (d *awsIrsaBasicAuthProvider) Enabled(ctx context.Context) bool {
 		return false
 	}
 
+	if d.ecrAuthToken.AuthData.ExpiresAt == nil {
+		return false
+	}
+
 	return true
 }
 
 // Provide returns the credentials for a specified artifact.
 // Uses AWS IRSA to retrieve creds from IRSA credential chain
-func (d *awsIrsaBasicAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
+func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	if !d.Enabled(ctx) {
 		return provider.AuthConfig{}, fmt.Errorf("AWS IRSA basic auth provider is not properly enabled")
 	}
@@ -170,9 +138,10 @@ func (d *awsIrsaBasicAuthProvider) Provide(ctx context.Context, artifact string)
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh ECR auth token")
 		}
 		d.ecrAuthToken = authToken
-		logrus.Info("successfully refreshed ECS auth token")
+		logrus.Info("successfully refreshed ECR auth token")
 	}
 
+	// Get ECR basic auth creds from auth data token
 	creds, err := d.ecrAuthToken.BasicAuthCreds()
 	if err != nil {
 		return provider.AuthConfig{}, errors.Wrap(err, "could not retrieve ECR credentials")
