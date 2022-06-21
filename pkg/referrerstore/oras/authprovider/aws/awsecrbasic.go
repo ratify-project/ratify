@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/pkg/errors"
@@ -40,6 +41,7 @@ type awsEcrBasicAuthProviderConf struct {
 
 const (
 	awsEcrAuthProviderName string = "aws-ecr-basic"
+	awsSessionName         string = "ratify-ecr-basic-auth"
 )
 
 // init calls Register for AWS IRSA Basic Auth provider
@@ -58,7 +60,10 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 		return EcrAuthToken{}, fmt.Errorf("required environment variables not set, AWS_REGION: %s, AWS_ROLE_ARN: %s, AWS_WEB_IDENTITY_TOKEN_FILE: %s", region, roleArn, tokenFilePath)
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region))
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region),
+		config.WithWebIdentityRoleCredentialOptions(func(options *stscreds.WebIdentityRoleOptions) {
+			options.RoleSessionName = awsSessionName
+		}))
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("failed to load default config: %v", err)
 	}
@@ -72,7 +77,7 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 	return EcrAuthToken{AuthData: authOutput.AuthorizationData[0]}, nil
 }
 
-// Create returns an AwsIrsaBasicAuthProvider
+// Create returns an AwsEcrBasicProvider
 func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProviderConfig) (provider.AuthProvider, error) {
 	conf := awsEcrBasicAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
@@ -84,7 +89,7 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
 	}
 
-	// Build auth provider from AWS IRSA ECR
+	// Build auth provider from AWS IRSA and ECR auth token
 	authData, err := getEcrAuthToken()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ECR auth data: %v", err)

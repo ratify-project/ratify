@@ -23,18 +23,22 @@ import (
 	"time"
 )
 
+// EcrAuthToken provides helper functions for ECR auth token data
 type EcrAuthToken struct {
 	AuthData types.AuthorizationData
 }
 
+// Expiry
 func (e EcrAuthToken) Expiry() time.Time {
 	return *e.AuthData.ExpiresAt
 }
 
+// ProxyEndpoint
 func (e EcrAuthToken) ProxyEndpoint() string {
 	return *e.AuthData.ProxyEndpoint
 }
 
+// BasicAuthCreds
 func (e EcrAuthToken) BasicAuthCreds() ([]string, error) {
 	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData.AuthorizationToken)
 	if err != nil {
