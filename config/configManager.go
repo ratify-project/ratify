@@ -124,7 +124,7 @@ func reloadExecutor(configFilePath string, executor *ef.Executor) error {
 	} else {
 		logrus.Infof("no change found in config file, no executor update needed")
 	}
-
+	return nil
 }
 
 // Setup a watcher on file at configFilePath, reload executor on file change

@@ -47,9 +47,14 @@ type Executor struct {
 }
 
 // TODO Logging within executor
-func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-
+// Returns the verify result for the subject, executor will be locked for reading during verification
+// This method should never modify any verifier/store/policy configuration
+func (executor *Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	logrus.Infof("Test msg, remove later executor locked for subject verification")
+	executor.Mu.RLock()
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
+	executor.Mu.RUnlock()
+	logrus.Infof("Test msg, remove later executor unlocked for subject verification")
 
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -79,7 +84,7 @@ func (executor *Executor) ReloadAll(newStores []referrerstore.ReferrerStore,
 	executor.Mu.Unlock()
 }
 
-func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+func (executor *Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	subjectReference, err := utils.ParseSubjectReference(verifyParameters.Subject)
 	if err != nil {
 		return types.VerifyResult{}, err
@@ -135,7 +140,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
-func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
+func (ex *Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
 

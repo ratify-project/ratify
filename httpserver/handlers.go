@@ -55,11 +55,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			Subject: subject,
 		}
 
-		logrus.Infof("executor locked for subject verification")
-		server.Executor.Mu.RLock()
 		result, err := server.Executor.VerifySubject(ctx, verifyParameters)
-		server.Executor.Mu.RUnlock()
-		logrus.Infof("executor lock released")
 
 		if err != nil {
 			return err
