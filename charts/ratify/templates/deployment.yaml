@@ -15,7 +15,7 @@ spec:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if or .Values.azureWorkloadIdentity.clientId .Values.serviceAccount.create }}
+      {{- if or .Values.azureWorkloadIdentity.clientId .Values.serviceAccount.create .Values.serviceAccount.name }}
       serviceAccountName: {{ include "ratify.serviceAccountName" . }}
       {{- end }}
       containers:

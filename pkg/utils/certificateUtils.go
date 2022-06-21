@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/deislabs/ratify/pkg/homedir"
-	"github.com/notaryproject/notation-go-lib/crypto/cryptoutil"
+	"github.com/notaryproject/notation-go/crypto/cryptoutil"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
