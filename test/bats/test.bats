@@ -11,7 +11,7 @@ teardown() {
 }
 
 teardown_file() {
-  run kubectl delete namespace demo
+  wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete namespace demo"
 }
 
 @test "quick start test" {
