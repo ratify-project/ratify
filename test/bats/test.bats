@@ -24,7 +24,7 @@ teardown_file() {
     assert_failure
 }
 
-@test "configmap update test"{
+@test "configmap update test" {
     run kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
     run kubectl create ns demo
     run kubectl run demo --image=ratify.azurecr.io/testimage:signed -n demo
