@@ -168,7 +168,7 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 				// since a watcher on a non existent file is not supported, we sleep until the file exist add the watcher back
 				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
 					logrus.Infof("Config remove detected")
-					time.Sleep(1 * time.Second)
+					//time.Sleep(1 * time.Second) <- keep
 					_, err := os.Stat(configFilePath)
 					for err != nil {
 						logrus.Infof("Config file does not exist yet, sleeping again")
@@ -179,7 +179,7 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 					err = watcher.Add(configFilePath)
 
 					if err != nil {
-						logrus.Error("Adding configuration file watcher failed, err: %v", err)
+						logrus.Errorf("Adding configuration file watcher failed, err: %v", err)
 						continue
 					}
 
@@ -204,7 +204,7 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 	err = watcher.Add(configFilePath)
 
 	if err != nil {
-		logrus.Error("adding configuration file watcher failed, err: %v", err)
+		logrus.Errorf("adding configuration file watcher failed, err: %v", err)
 		return err
 	}
 
