@@ -22,6 +22,7 @@ teardown_file() {
     assert_success
     run kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned -n demo
     assert_failure
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete namespace demo"
 }
 
 @test "configmap update test" {
