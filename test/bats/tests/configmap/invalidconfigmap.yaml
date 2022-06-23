@@ -13,10 +13,6 @@ data:
         "plugins": [
             {
                 "name": "oras"
-                ,
-                "auth-provider": {
-                    "name": "azure-wi"
-                }
             }
         ]
       },
