@@ -38,13 +38,23 @@ var (
 
 // Create a executor from configurationFile and setup config file watcher
 func GetExecutorAndWatchForUpdate(configFilePath string) (*ef.Executor, error) {
+
+	if configFilePath == "" {
+
+		if configDir == "" {
+			initConfigDir.Do(InitDefaultPaths)
+		}
+
+		configFilePath = defaultConfigFilePath
+	}
+
 	cf, err := Load(configFilePath)
 
 	if err != nil {
 		return &ef.Executor{}, err
 	}
 
-	configHash = cf.FileHash
+	configHash = cf.fileHash
 
 	stores, verifiers, policyEnforcer, err := createFromConfig(cf)
 
@@ -114,9 +124,9 @@ func reloadExecutor(configFilePath string, executor *ef.Executor) error {
 		return err
 	}
 
-	if configHash != cf.FileHash {
+	if configHash != cf.fileHash {
 		executor.ReloadAll(stores, verifiers, policyEnforcer, &cf.ExecutorConfig)
-		configHash = cf.FileHash
+		configHash = cf.fileHash
 		logrus.Infof("configuration file has been updated, reloading executor succeeded")
 	} else {
 		logrus.Infof("no change found in config file, no executor update needed")
@@ -131,6 +141,15 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 	if err != nil {
 		errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
+
+	err = watcher.Add(configFilePath)
+
+	if err != nil {
+		logrus.Errorf("adding configuration file watcher failed, err: %v", err)
+		return err
+	}
+
+	logrus.Infof("watcher added on configuration file %v", configFilePath)
 
 	// setup for loop to listen for events
 	go func() {
@@ -181,15 +200,6 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 			}
 		}
 	}()
-
-	err = watcher.Add(configFilePath)
-
-	if err != nil {
-		logrus.Errorf("adding configuration file watcher failed, err: %v", err)
-		return err
-	}
-
-	logrus.Infof("watcher added on configuration file %v", configFilePath)
 
 	return nil
 }

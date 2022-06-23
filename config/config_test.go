@@ -109,7 +109,7 @@ func TestLoad_EmptyConfigSucceeds(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
-	content := []byte("")
+	content := []byte("{}")
 	err = ioutil.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
@@ -172,7 +172,7 @@ func TestLoad_ComputeHash(t *testing.T) {
 
 	expectedHash := "25a43245af3af9e260312c817ba6e65920db90cd2bba334ba6ca8662400d3a1c"
 
-	if config.FileHash != expectedHash {
-		t.Fatalf("Unexpected configuration hash, expected %v, actual %v", expectedHash, config.FileHash)
+	if config.fileHash != expectedHash {
+		t.Fatalf("Unexpected configuration hash, expected %v, actual %v", expectedHash, config.fileHash)
 	}
 }
