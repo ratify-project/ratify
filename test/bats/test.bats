@@ -33,8 +33,12 @@ teardown() {
     run kubectl delete namespace demo
                                             
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
+<<<<<<< HEAD
     echo "Waitiing for 150 second for configuration update"
     sleep 150
+=======
+    sleep ${WAIT_TIME}
+>>>>>>> adding sleep
     
     run kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
     run kubectl create ns demo
