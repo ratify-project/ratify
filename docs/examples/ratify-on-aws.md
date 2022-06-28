@@ -123,8 +123,11 @@ but we can look at what will be generated below:
     },
     "policies": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
         }
     },
     "verifiers": {
