@@ -72,8 +72,11 @@ cat <<'EOF' >> spdxconfig.json
     },
     "policies": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.ratify.spdx.v0": "all"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.ratify.spdx.v0": "all"
+            }
         }
     },
     "verifiers": {
