@@ -3,9 +3,9 @@ module github.com/deislabs/ratify
 go 1.17
 
 require (
-	github.com/Azure/azure-sdk-for-go v64.1.0+incompatible
+	github.com/Azure/azure-sdk-for-go v66.0.0+incompatible
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
-	github.com/docker/cli v20.10.16+incompatible
+	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/google/go-containerregistry v0.8.1-0.20220209165246-a44adc326839
 	github.com/gorilla/mux v1.8.0
@@ -21,9 +21,9 @@ require (
 	github.com/spdx/tools-golang v0.2.0
 	github.com/spf13/cobra v1.4.0
 	github.com/xlab/treeprint v1.1.0
-	k8s.io/api v0.24.1
-	k8s.io/apimachinery v0.24.1
-	k8s.io/client-go v0.24.1
+	k8s.io/api v0.24.2
+	k8s.io/apimachinery v0.24.2
+	k8s.io/client-go v0.24.2
 	oras.land/oras-go/v2 v2.0.0-20220411024522-db4a48eade0e
 )
 

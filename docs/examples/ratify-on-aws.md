@@ -123,8 +123,11 @@ but we can look at what will be generated below:
     },
     "policies": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.dev.cosign.simplesigning.v1+json": "any"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.dev.cosign.simplesigning.v1+json": "any"
+            }
         }
     },
     "verifiers": {
