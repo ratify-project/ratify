@@ -27,10 +27,10 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/sigstore/cosign/pkg/cosign"
 )
 
-const CosignArtifactType = "org.sigstore.cosign.v1"
+const CosignArtifactType = "application/vnd.dev.cosign.simplesigning.v1+json"
+const CosignSignatureTagSuffix = ".sig"
 
 func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.ReferenceDescriptor, error) {
 	var references []ocispecs.ReferenceDescriptor
@@ -43,7 +43,7 @@ func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.Referen
 		Hex:       subjectReference.Digest.Hex(),
 	}
 
-	signatureTag := attachedImageTag(ref.Context(), hash, cosign.SignatureTagSuffix)
+	signatureTag := attachedImageTag(ref.Context(), hash, CosignSignatureTagSuffix)
 
 	desc, err := remote.Get(signatureTag)
 	if terr, ok := err.(*transport.Error); ok && terr.StatusCode == http.StatusNotFound {
