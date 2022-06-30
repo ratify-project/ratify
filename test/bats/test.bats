@@ -38,7 +38,7 @@ teardown_file() {
                                             
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
     echo "Current time after replace1 : $(date +"%T")"
-    sleep ${WAIT_TIME}
+    sleep 1
     echo "Current time after sleep : $(date +"%T")"
     run kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
     run kubectl create ns demo

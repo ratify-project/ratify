@@ -36,5 +36,5 @@ wait_for_process() {
 sleep() {
   sleep_time="$1"
   sleep "$sleep_time"
-  return 1
+  return 0
 }
