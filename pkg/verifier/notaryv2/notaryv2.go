@@ -32,8 +32,8 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
-	"github.com/notaryproject/notation-go-lib"
-	"github.com/notaryproject/notation-go-lib/signature/jws"
+	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/signature/jws"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
