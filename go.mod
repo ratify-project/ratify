@@ -13,7 +13,7 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220527234808-13b0f3dbe9f0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.2
-	github.com/oras-project/artifacts-spec v1.0.0-draft.1.1
+	github.com/oras-project/artifacts-spec v1.0.0-rc.1
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign v1.5.2
 	github.com/sigstore/sigstore v1.1.1-0.20220130134424-bae9b66b8442
@@ -24,7 +24,7 @@ require (
 	k8s.io/api v0.24.1
 	k8s.io/apimachinery v0.24.1
 	k8s.io/client-go v0.24.1
-	oras.land/oras-go/v2 v2.0.0-20220411024522-db4a48eade0e
+	oras.land/oras-go/v2 v2.0.0-20220630033939-f37492936f3e
 )
 
 replace github.com/open-policy-agent/opa => github.com/open-policy-agent/opa v0.40.0

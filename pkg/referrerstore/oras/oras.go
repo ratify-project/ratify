@@ -143,7 +143,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 	// find all referrers referencing subject descriptor
 	var referrerDescriptors []artifactspec.Descriptor
-	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, func(referrers []artifactspec.Descriptor) error {
+	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, "", func(referrers []artifactspec.Descriptor) error {
 		referrerDescriptors = referrers
 		return nil
 	}); err != nil {
