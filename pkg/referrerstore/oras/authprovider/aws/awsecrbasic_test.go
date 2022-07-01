@@ -31,8 +31,7 @@ const (
 	testProxy    = "PROXY_ENDPOINT"
 )
 
-// Verifies that userName, password, and
-// environment variables are properly set
+// Verifies that awsEcrBasicAuthProvider is properly constructed by mocking EcrAuthToken
 
 func mockAuthData() types.AuthorizationData {
 	// Setup
@@ -45,7 +44,8 @@ func mockAuthData() types.AuthorizationData {
 		ProxyEndpoint:      aws.String(testProxy),
 	}
 }
-func TestAwsIrsaBasicAuthProvider_Enabled(t *testing.T) {
+
+func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
 
 	authProvider := awsEcrBasicAuthProvider{
 		ecrAuthToken: EcrAuthToken{mockAuthData()},
