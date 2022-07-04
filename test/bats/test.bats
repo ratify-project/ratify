@@ -11,10 +11,6 @@ teardown() {
   bash -c "${CLEAN_CMD}"
 }
 
-teardown_file() {
-  wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete namespace demo"
-}
-
 @test "quick start test" {
     run kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
     assert_success
@@ -38,7 +34,7 @@ teardown_file() {
                                             
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
     echo "Current time after replace1 : $(date +"%T")"
-     
+    
     echo "Current time after sleep : $(date +"%T")"
     run kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
     run kubectl create ns demo

@@ -115,7 +115,8 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=7
+    --set validatingWebhookTimeoutSeconds=7 \
+	--set auditInterval=0
 
 e2e-deploy-ratify:
 	docker build -f ./httpserver/Dockerfile -t localbuild:test . 
