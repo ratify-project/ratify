@@ -16,8 +16,6 @@ limitations under the License.
 package config
 
 import (
-	"bufio"
-	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -88,7 +86,6 @@ func createFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 		return nil, nil, nil, errors.Wrap(err, "failed to load verifiers from config")
 	}
 
-	logrus.Infof("verifiers address %v ,%v ", verifiers[0].Name(), &verifiers[0])
 	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
 
 	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
@@ -135,7 +132,7 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
 
-	go func() {
+	/*go func() {
 		for {
 			logrus.StandardLogger().Infof("see this msg every 30sec %v ", configFilePath)
 			time.Sleep(30 * time.Second)
@@ -149,7 +146,7 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 				fmt.Println(scanner.Text())
 			}
 		}
-	}()
+	}()*/
 
 	go func() {
 
@@ -161,14 +158,14 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 					return
 				}
 
-				logrus.Infof("Debug info: file watcher event detected %v", event)
+				logrus.Infof("File watcher event detected %v", event)
 
 				// In a cluster scenario, a configMap will recreate the config file
 				// after the remove event, the watcher will also be removed
 				// since a watcher on a non existent file is not supported, we sleep until the file exist add the watcher back
 				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
-					logrus.Infof("Config remove detected")
-					//time.Sleep(1 * time.Second) <- keep
+					logrus.Infof("Config remove event detected")
+
 					_, err := os.Stat(configFilePath)
 					for err != nil {
 						logrus.Infof("Config file does not exist yet, sleeping again")
