@@ -20,7 +20,8 @@ by its developers, nor is it "supported" software.
 ## Community meetings
 
 - Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
-- Calendar: https://calendar.google.com/event?action=TEMPLATE&tmeid=MXFuMjM0NTlucHRiZDBwNnU0cGQ2OGlxZ2pfMjAyMjAxMjZUMDAwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL
+- Series #1 every two weeks Tues 4-5pm, get calender invite [here](https://calendar.google.com/event?action=TEMPLATE&tmeid=MXVxYXNiYnJ0NHM2ZXQ0NW8xYmw1aGtscGZfMjAyMjA3MTJUMjMwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL)   
+  Series #2 every two weeks Wed 1-2pm: get calender invite [here](https://calendar.google.com/event?action=TEMPLATE&tmeid=NjVjNzNvbGU5cWtrdGVzZDI2MDN2NnF2czZfMjAyMjA3MjBUMjAwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL)
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 
 ## Quick Start
