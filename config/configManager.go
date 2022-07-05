@@ -132,43 +132,27 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 		errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
 
-	/*go func() {
-		for {
-			logrus.StandardLogger().Infof("see this msg every 30sec %v ", configFilePath)
-			time.Sleep(30 * time.Second)
-			file, err := os.Open(configFilePath)
-			if err != nil {
-				logrus.Warnf("failed to print config file , err: %v", err)
-			}
-			logrus.Infof("printing configFilePath  %v", configFilePath)
-			scanner := bufio.NewScanner(file)
-			for scanner.Scan() {
-				fmt.Println(scanner.Text())
-			}
-		}
-	}()*/
-
+	// setup for loop to listen for events
 	go func() {
-
 		for {
 			select {
 			case event, ok := <-watcher.Events:
 				if !ok {
-					logrus.Warnf("No longer watching configuration file changes, file watcher event channel closed")
+					logrus.Warnf("no longer watching configuration file changes, file watcher event channel closed")
 					return
 				}
 
-				logrus.Infof("File watcher event detected %v", event)
+				logrus.Infof("file watcher event detected %v", event)
 
 				// In a cluster scenario, a configMap will recreate the config file
 				// after the remove event, the watcher will also be removed
 				// since a watcher on a non existent file is not supported, we sleep until the file exist add the watcher back
 				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
-					logrus.Infof("Config remove event detected")
+					logrus.Infof("config remove event detected")
 
 					_, err := os.Stat(configFilePath)
 					for err != nil {
-						logrus.Infof("Config file does not exist yet, sleeping again")
+						logrus.Infof("config file does not exist yet, sleeping again")
 						_, err = os.Stat(configFilePath)
 						time.Sleep(1 * time.Second)
 					}
@@ -176,7 +160,7 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 					err = watcher.Add(configFilePath)
 
 					if err != nil {
-						logrus.Errorf("Adding configuration file watcher failed, err: %v", err)
+						logrus.Errorf("adding configuration file watcher failed, err: %v", err)
 						continue
 					}
 
