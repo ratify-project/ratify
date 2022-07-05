@@ -33,6 +33,7 @@ teardown() {
     run kubectl delete namespace demo
                                             
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
+    sleep 120
     echo "Current time after replace1 : $(date +"%T")"
     
     echo "Current time after sleep : $(date +"%T")"
