@@ -288,7 +288,7 @@ kubectl -n ratify get cm ratify-configuration -oyaml
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
                 "auth-provider": {
-                    "name": "aws-ecr-basic"
+                    "name": "awsEcrBasic"
                 }
             }
         ]

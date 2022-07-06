@@ -40,8 +40,8 @@ type awsEcrBasicAuthProviderConf struct {
 }
 
 const (
-	awsEcrAuthProviderName string = "aws-ecr-basic"
-	awsSessionName         string = "ratify-ecr-basic-auth"
+	awsEcrAuthProviderName string = "awsEcrBasic"
+	awsSessionName         string = "ratifyEcrBasicAuth"
 )
 
 // init calls Register for AWS IRSA Basic Auth provider
@@ -110,18 +110,22 @@ func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
 	}
 
 	if len(creds) < 2 {
+		logrus.Error("creds array had incorrect length")
 		return false
 	}
 
 	if creds[0] == "" || creds[1] == "" {
+		logrus.Error("creds were empty")
 		return false
 	}
 
 	if d.providerName == "" {
+		logrus.Error("providerName was empty")
 		return false
 	}
 
 	if d.ecrAuthToken.AuthData.ExpiresAt == nil {
+		logrus.Error("expiry was nil")
 		return false
 	}
 
