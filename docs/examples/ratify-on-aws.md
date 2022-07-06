@@ -116,7 +116,7 @@ but we can look at what will be generated below:
         "plugins": [
             {
                 "name": "oras",
-                "cosign-enabled": true,
+                "cosignEnabled": true,
                 "localCachePath": "./local_oras_cache"
             }
         ]

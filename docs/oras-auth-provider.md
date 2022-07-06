@@ -2,7 +2,7 @@
 
 ORAS handles all referrer operations using registry as the referrer store. It uses authentication credentials to authenticate to a registry and access referrer artifacts. Ratify contains many Authentication Providers to support different authentication scenarios. The user specifies which authentication provider to use in the configuration.
 
-The `auth-provider` section of configuration file specifies the authentication provider. The `name` field is REQUIRED for Ratify to bind to the correct provider implementation. 
+The `authProvider` section of configuration file specifies the authentication provider. The `name` field is REQUIRED for Ratify to bind to the correct provider implementation. 
 
 ## Example config.json
 ```
@@ -13,7 +13,7 @@ The `auth-provider` section of configuration file specifies the authentication p
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
+                "authProvider": {
                     "name": "<auth provider name>",
                     <other provider specific fields>
                 }
@@ -41,9 +41,9 @@ NOTE: ORAS will attempt to use anonymous access if the authentication provider f
 ## Supported Providers
 
 ### 1. Docker Config
-This is the default authentication provider. Ratify attempts to look for credentials at the default docker configuration path ($HOME/.docker/config.json) if the `auth-provider` section is not specified.
+This is the default authentication provider. Ratify attempts to look for credentials at the default docker configuration path ($HOME/.docker/config.json) if the `authProvider` section is not specified.
 
-Specify the `configPath` field for the `docker-config` authentication provider to use a different docker config file path. 
+Specify the `configPath` field for the `dockerConfig` authentication provider to use a different docker config file path. 
 
 ```
 "stores": {
@@ -52,8 +52,8 @@ Specify the `configPath` field for the `docker-config` authentication provider t
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
-                    "name": "docker-config",
+                "authProvider": {
+                    "name": "dockerConfig",
                     "configPath": <custom file path string>
                 }
             }
@@ -133,8 +133,8 @@ EOF
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
-                    "name": "azure-wi"
+                "authProvider": {
+                    "name": "azureWorkloadIdentity"
                 }
             }
         ]
@@ -142,7 +142,7 @@ EOF
 ```
 
 ### 3. Kubernetes Secrets
-Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways:
+Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#dockerConfig-secrets) in the cluster. Ratify considers kubernetes secrets in two ways:
 1. The configuration can specify a list of `secrets`. Each entry REQUIRES the `secretName` field. The `namespace` field MUST also be provided if the secret does not exist in the namespace Ratify is deployed in. The Ratify helm chart contains a [roles.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/templates/roles.yaml) file with role assignments. If a namespace other than Ratify's namespace is provided in the secret list, the user MUST add a new role binding to the cluster role for that new namespace.
 
 2. Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The `serviceAccountName` field specifies the service account associated with Ratify. Ratify MUST be assigned a role to read the service account and secrets in the Ratify namespace.
@@ -157,15 +157,15 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
-                    "name": "k8s-secrets",
+                "authProvider": {
+                    "name": "k8Secrets",
                     "serviceAccountName": "ratify-sa", // will be 'default' if not specified
                     "secrets" : [
                         {
-                            "secretName": "artifact-pull-docker-config" // Ratify namespace will be used 
+                            "secretName": "artifact-pull-dockerConfig" // Ratify namespace will be used 
                         },
                         {
-                            "secretName": "artifact-pull-docker-config2",
+                            "secretName": "artifact-pull-dockerConfig2",
                             "namespace": "test"
                         }
                     ]
