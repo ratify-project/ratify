@@ -134,7 +134,7 @@ EOF
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
                 "auth-provider": {
-                    "name": "azure-wi"
+                    "name": "azureWI"
                 }
             }
         ]
@@ -158,7 +158,7 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
                 "auth-provider": {
-                    "name": "k8s-secrets",
+                    "name": "k8sSecrets",
                     "serviceAccountName": "ratify-sa", // will be 'default' if not specified
                     "secrets" : [
                         {
