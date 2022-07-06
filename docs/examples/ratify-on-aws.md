@@ -111,7 +111,7 @@ but we can look at what will be generated below:
 
 ```json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -121,7 +121,7 @@ but we can look at what will be generated below:
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -130,7 +130,7 @@ but we can look at what will be generated below:
             }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [        
           {

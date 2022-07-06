@@ -114,7 +114,7 @@ This completes the creation of the supply chain graph.
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
-    "stores": { 
+    "store": { 
         "version": "1.0.0", 
         "plugins": [ 
             { 
@@ -122,7 +122,7 @@ cat <<EOF > ~/.ratify/config.json
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -132,7 +132,7 @@ cat <<EOF > ~/.ratify/config.json
             }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

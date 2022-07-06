@@ -7,7 +7,7 @@ The `authProvider` section of configuration file specifies the authentication pr
 ## Example config.json
 ```
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -20,7 +20,16 @@ The `authProvider` section of configuration file specifies the authentication pr
             }
         ]
     },
-    "verifiers": {
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
+        }
+    },
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -46,7 +55,7 @@ This is the default authentication provider. Ratify attempts to look for credent
 Specify the `configPath` field for the `dockerConfig` authentication provider to use a different docker config file path. 
 
 ```
-"stores": {
+"store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -127,7 +136,7 @@ EOF
 
 #### Ratify Auth Provider Configuration
 ```
-"stores": {
+"store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -151,7 +160,7 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
 
 #### Sample Configuration
 ```
-"stores": {
+"store": {
         "version": "1.0.0",
         "plugins": [
             {
