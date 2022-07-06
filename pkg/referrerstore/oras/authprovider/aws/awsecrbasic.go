@@ -60,7 +60,9 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 		return EcrAuthToken{}, fmt.Errorf("required environment variables not set, AWS_REGION: %s, AWS_ROLE_ARN: %s, AWS_WEB_IDENTITY_TOKEN_FILE: %s", region, roleArn, tokenFilePath)
 	}
 
-	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithRegion(region),
+	ctx := context.Background()
+	
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region),
 		config.WithWebIdentityRoleCredentialOptions(func(options *stscreds.WebIdentityRoleOptions) {
 			options.RoleSessionName = awsSessionName
 		}))
@@ -69,7 +71,7 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 	}
 
 	ecrClient := ecr.NewFromConfig(cfg)
-	authOutput, err := ecrClient.GetAuthorizationToken(context.TODO(), nil)
+	authOutput, err := ecrClient.GetAuthorizationToken(ctx, nil)
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("could not reteive ECR auth token collection: %v", err)
 	}
