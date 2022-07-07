@@ -61,7 +61,7 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 	}
 
 	ctx := context.Background()
-	
+
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region),
 		config.WithWebIdentityRoleCredentialOptions(func(options *stscreds.WebIdentityRoleOptions) {
 			options.RoleSessionName = awsSessionName
