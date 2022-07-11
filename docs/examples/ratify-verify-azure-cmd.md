@@ -1,6 +1,6 @@
 # Notary v2 Signature Verification With ACR Using Ratify
 
-## Install Notar
+## Install Notation, ORAS, and Ratify
 
 ### Notation
 
