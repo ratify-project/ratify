@@ -20,8 +20,10 @@ by its developers, nor is it "supported" software.
 ## Community meetings
 
 - Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
-- Series #1 every two weeks Tues 4-5pm, get calender invite [here](https://calendar.google.com/event?action=TEMPLATE&tmeid=MXVxYXNiYnJ0NHM2ZXQ0NW8xYmw1aGtscGZfMjAyMjA3MTJUMjMwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL)   
-  Series #2 every two weeks Wed 1-2pm: get calender invite [here](https://calendar.google.com/event?action=TEMPLATE&tmeid=NjVjNzNvbGU5cWtrdGVzZDI2MDN2NnF2czZfMjAyMjA3MjBUMjAwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL)
+- We hold a weekly Ratify community meeting with alternating times to accommodate more time zones. 
+Series #1 Tues 4-5pm   
+Series #2 Wed 1-2pm    
+Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 
 ## Quick Start
