@@ -104,6 +104,19 @@ func GetDefaultPluginPath() string {
 	return defaultPluginsPath
 }
 
+// if configFilePath is empty, return configuration path from environment variable
+func getConfigurationFile(configFilePath string) string {
+	if configFilePath == "" {
+
+		if configDir == "" {
+			initConfigDir.Do(InitDefaultPaths)
+		}
+
+		return defaultConfigFilePath
+	}
+	return configFilePath
+}
+
 func getFileHash(file []byte) (fileHash string, err error) {
 	hash := sha256.New()
 

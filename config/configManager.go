@@ -39,15 +39,7 @@ var (
 // Create a executor from configurationFile and setup config file watcher
 func GetExecutorAndWatchForUpdate(configFilePath string) (*ef.Executor, error) {
 
-	if configFilePath == "" {
-
-		if configDir == "" {
-			initConfigDir.Do(InitDefaultPaths)
-		}
-
-		configFilePath = defaultConfigFilePath
-	}
-
+	configFilePath = getConfigurationFile(configFilePath)
 	cf, err := Load(configFilePath)
 
 	if err != nil {
