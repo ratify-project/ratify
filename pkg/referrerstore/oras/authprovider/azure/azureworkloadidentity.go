@@ -41,7 +41,7 @@ type azureWIAuthProviderConf struct {
 }
 
 const (
-	azureWIAuthProviderName      string = "azure-wi"
+	azureWIAuthProviderName      string = "azureWorkloadIdentity"
 	dockerTokenLoginUsernameGUID string = "00000000-0000-0000-0000-000000000000"
 	AADResource                  string = "https://containerregistry.azure.net/.default"
 )
