@@ -2,25 +2,34 @@
 
 ORAS handles all referrer operations using registry as the referrer store. It uses authentication credentials to authenticate to a registry and access referrer artifacts. Ratify contains many Authentication Providers to support different authentication scenarios. The user specifies which authentication provider to use in the configuration.
 
-The `auth-provider` section of configuration file specifies the authentication provider. The `name` field is REQUIRED for Ratify to bind to the correct provider implementation. 
+The `authProvider` section of configuration file specifies the authentication provider. The `name` field is REQUIRED for Ratify to bind to the correct provider implementation. 
 
 ## Example config.json
 ```
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
+                "authProvider": {
                     "name": "<auth provider name>",
                     <other provider specific fields>
                 }
             }
         ]
     },
-    "verifiers": {
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
+        }
+    },
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -41,19 +50,19 @@ NOTE: ORAS will attempt to use anonymous access if the authentication provider f
 ## Supported Providers
 
 ### 1. Docker Config
-This is the default authentication provider. Ratify attempts to look for credentials at the default docker configuration path ($HOME/.docker/config.json) if the `auth-provider` section is not specified.
+This is the default authentication provider. Ratify attempts to look for credentials at the default docker configuration path ($HOME/.docker/config.json) if the `authProvider` section is not specified.
 
-Specify the `configPath` field for the `docker-config` authentication provider to use a different docker config file path. 
+Specify the `configPath` field for the `dockerConfig` authentication provider to use a different docker config file path. 
 
 ```
-"stores": {
+"store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
-                    "name": "docker-config",
+                "authProvider": {
+                    "name": "dockerConfig",
                     "configPath": <custom file path string>
                 }
             }
@@ -127,14 +136,14 @@ EOF
 
 #### Ratify Auth Provider Configuration
 ```
-"stores": {
+"store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
-                    "name": "azure-wi"
+                "authProvider": {
+                    "name": "azureWorkloadIdentity"
                 }
             }
         ]
@@ -151,21 +160,21 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
 
 #### Sample Configuration
 ```
-"stores": {
+"store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
                 "localCachePath": "./local_oras_cache",
-                "auth-provider": {
-                    "name": "k8s-secrets",
+                "authProvider": {
+                    "name": "k8Secrets",
                     "serviceAccountName": "ratify-sa", // will be 'default' if not specified
                     "secrets" : [
                         {
-                            "secretName": "artifact-pull-docker-config" // Ratify namespace will be used 
+                            "secretName": "artifact-pull-dockerConfig" // Ratify namespace will be used 
                         },
                         {
-                            "secretName": "artifact-pull-docker-config2",
+                            "secretName": "artifact-pull-dockerConfig2",
                             "namespace": "test"
                         }
                     ]

@@ -111,17 +111,17 @@ but we can look at what will be generated below:
 
 ```json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
-                "cosign-enabled": true,
+                "cosignEnabled": true,
                 "localCachePath": "./local_oras_cache"
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -130,7 +130,7 @@ but we can look at what will be generated below:
             }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [        
           {
