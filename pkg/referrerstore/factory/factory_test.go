@@ -32,12 +32,12 @@ func (f *TestStoreFactory) Create(version string, storesConfig config.StorePlugi
 
 func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 	builtInStores = map[string]StoreFactory{
-		"test-store": &TestStoreFactory{},
+		"testStore": &TestStoreFactory{},
 	}
 
 	var storeConfig config.StorePluginConfig
 	storeConfig = map[string]interface{}{
-		"name": "test-store",
+		"name": "testStore",
 	}
 	storesConfig := config.StoresConfig{
 		Stores: []config.StorePluginConfig{storeConfig},
@@ -53,7 +53,7 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
 	}
 
-	if stores[0].Name() != "test-store" {
+	if stores[0].Name() != "testStore" {
 		t.Fatalf("expected to create test store")
 	}
 

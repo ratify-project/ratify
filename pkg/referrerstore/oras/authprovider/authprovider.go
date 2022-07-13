@@ -58,7 +58,7 @@ type defaultAuthProviderConf struct {
 	ConfigPath string `json:"configPath,omitempty"`
 }
 
-const DefaultAuthProviderName string = "docker-config"
+const DefaultAuthProviderName string = "dockerConfig"
 
 // init calls Register for our default provider, which simply reads the .dockercfg file.
 func init() {
