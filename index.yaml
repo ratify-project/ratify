@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   ratify:
   - apiVersion: v2
+    appVersion: v1.0.0-alpha.1
+    created: "2022-07-14T18:32:58.693034375Z"
+    description: A Helm chart for Ratify
+    digest: 8d6f896ccd4264770874b72b41cebcd7b63ec35e57bd4720033781f922138d20
+    home: https://github.com/deislabs/ratify
+    name: ratify
+    urls:
+    - https://deislabs.github.io/ratify/ratify-1.0.0.tgz
+    version: 1.0.0
+  - apiVersion: v2
     appVersion: v0.1.1-alpha.1
     created: "2022-07-12T23:57:26.95787814Z"
     description: A Helm chart for Ratify
@@ -14,16 +24,16 @@ entries:
   ratify-gatekeeper:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2022-07-12T23:57:26.960160149Z"
+    created: "2022-07-14T18:32:58.695333377Z"
     dependencies:
     - name: gatekeeper
       repository: https://open-policy-agent.github.io/gatekeeper/charts
       version: v3.7.0
     description: A Helm chart for Kubernetes
-    digest: e8dca8c5bcff91714fb98c166b46369a12b6e1c88e7858063875ab9489245742
+    digest: 0e0f93809d2530813f9affd9300e5880e14af809bba75e86c2185b2d23316c95
     name: ratify-gatekeeper
     type: application
     urls:
     - https://deislabs.github.io/ratify/ratify-gatekeeper-0.1.0.tgz
     version: 0.1.0
-generated: "2022-07-12T23:57:26.956771888Z"
+generated: "2022-07-14T18:32:58.691869173Z"
