@@ -61,7 +61,7 @@ Next we will create the config file we will use for validation:
 ```shell
 cat <<'EOF' >> spdxconfig.json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -70,7 +70,7 @@ cat <<'EOF' >> spdxconfig.json
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -79,7 +79,7 @@ cat <<'EOF' >> spdxconfig.json
             }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

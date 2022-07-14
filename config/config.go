@@ -38,9 +38,9 @@ const (
 )
 
 type Config struct {
-	StoresConfig    rsConfig.StoresConfig    `json:"stores,omitempty"`
-	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policies,omitempty"`
-	VerifiersConfig vfConfig.VerifiersConfig `json:"verifiers,omitempty"`
+	StoresConfig    rsConfig.StoresConfig    `json:"store,omitempty"`
+	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policy,omitempty"`
+	VerifiersConfig vfConfig.VerifiersConfig `json:"verifier,omitempty"`
 	ExecutorConfig  exConfig.ExecutorConfig  `json:"executor,omitempty"`
 }
 

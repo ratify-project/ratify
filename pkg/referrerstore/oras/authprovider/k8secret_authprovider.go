@@ -57,9 +57,9 @@ const secretTimeout = time.Hour * 12
 
 var ErrorNoMatchingCredential = errors.New("no matching credential found for k8 secret")
 
-// init calls Register for our k8s-secrets provider
+// init calls Register for our k8Secrets provider
 func init() {
-	Register("k8s-secrets", &k8SecretProviderFactory{})
+	Register("k8Secrets", &k8SecretProviderFactory{})
 }
 
 // Create returns a k8AuthProvider instance after parsing auth config and resolving
