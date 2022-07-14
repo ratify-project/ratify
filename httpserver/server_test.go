@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 	"time"
 
@@ -76,16 +75,20 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			PolicyEnforcer: configPolicy,
 			ReferrerStores: []referrerstore.ReferrerStore{store},
 			Verifiers:      []verifier.ReferenceVerifier{ver},
-			Mu:             sync.RWMutex{},
 		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
 		server := &Server{
-			Executor: ex,
-			Context:  request.Context(),
+			GetExecutor: getExecutor,
+			Context:     request.Context(),
 		}
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.Executor.GetVerifyRequestTimeout()),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
