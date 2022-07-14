@@ -18,7 +18,6 @@ package core
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/deislabs/ratify/pkg/common"
@@ -43,7 +42,6 @@ type Executor struct {
 	PolicyEnforcer policyprovider.PolicyProvider
 	Verifiers      []vr.ReferenceVerifier
 	Config         *config.ExecutorConfig
-	Mu             sync.RWMutex
 }
 
 // TODO Logging within executor
@@ -51,9 +49,9 @@ type Executor struct {
 // This method should never modify any verifier/store/policy configuration
 func (executor *Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	logrus.Infof("Test msg, remove later executor locked for subject verification")
-	executor.Mu.RLock()
+
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
-	executor.Mu.RUnlock()
+
 	logrus.Infof("Test msg, remove later executor unlocked for subject verification")
 
 	if err != nil {
@@ -71,17 +69,6 @@ func (executor Executor) GetVerifyRequestTimeout() time.Duration {
 		timeoutMilliSeconds = *executor.Config.RequestTimeout
 	}
 	return time.Duration(timeoutMilliSeconds) * time.Millisecond
-}
-
-func (executor *Executor) ReloadAll(newStores []referrerstore.ReferrerStore,
-	newVerifiers []vr.ReferenceVerifier, newPolicy policyprovider.PolicyProvider, newConfig *config.ExecutorConfig) {
-
-	executor.Mu.Lock()
-	executor.ReferrerStores = newStores
-	executor.PolicyEnforcer = newPolicy
-	executor.Verifiers = newVerifiers
-	executor.Config = newConfig
-	executor.Mu.Unlock()
 }
 
 func (executor *Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {

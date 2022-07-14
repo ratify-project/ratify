@@ -17,7 +17,6 @@ package config
 
 import (
 	"os"
-	"sync"
 	"time"
 
 	ef "github.com/deislabs/ratify/pkg/executor/core"
@@ -32,18 +31,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type GetExecutor func() *ef.Executor
+
 var (
 	configHash string
+	executor   ef.Executor
 )
 
 // Create a executor from configurationFile and setup config file watcher
-func GetExecutorAndWatchForUpdate(configFilePath string) (*ef.Executor, error) {
+func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 
 	configFilePath = getConfigurationFile(configFilePath)
 	cf, err := Load(configFilePath)
 
 	if err != nil {
-		return &ef.Executor{}, err
+		return func() *ef.Executor { return &ef.Executor{} }, err
 	}
 
 	configHash = cf.fileHash
@@ -51,26 +53,25 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (*ef.Executor, error) {
 	stores, verifiers, policyEnforcer, err := createFromConfig(cf)
 
 	if err != nil {
-		return &ef.Executor{}, err
+		return func() *ef.Executor { return &ef.Executor{} }, err
 	}
 
-	executor := ef.Executor{
+	executor = ef.Executor{
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
 		PolicyEnforcer: policyEnforcer,
 		Config:         &cf.ExecutorConfig,
-		Mu:             sync.RWMutex{},
 	}
 
-	err = watchForConfigurationChange(configFilePath, &executor)
+	err = watchForConfigurationChange(configFilePath)
 
 	if err != nil {
-		return &ef.Executor{}, err
+		return func() *ef.Executor { return &ef.Executor{} }, err
 	}
 
 	logrus.Info("configuration successfully loaded.")
 
-	return &executor, nil
+	return func() *ef.Executor { return &executor }, nil
 }
 
 // Returns created referer store, verifier, policyprovider objects from config
@@ -101,7 +102,7 @@ func createFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 	return stores, verifiers, policyEnforcer, nil
 }
 
-func reloadExecutor(configFilePath string, executor *ef.Executor) error {
+func reloadExecutor(configFilePath string) error {
 	cf, err := Load(configFilePath)
 
 	if err != nil {
@@ -111,13 +112,20 @@ func reloadExecutor(configFilePath string, executor *ef.Executor) error {
 
 	stores, verifiers, policyEnforcer, err := createFromConfig(cf)
 
+	newExecutor := ef.Executor{
+		Verifiers:      verifiers,
+		ReferrerStores: stores,
+		PolicyEnforcer: policyEnforcer,
+		Config:         &cf.ExecutorConfig,
+	}
+
 	if err != nil {
 		logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
 		return err
 	}
 
 	if configHash != cf.fileHash {
-		executor.ReloadAll(stores, verifiers, policyEnforcer, &cf.ExecutorConfig)
+		executor = newExecutor
 		configHash = cf.fileHash
 		logrus.Infof("configuration file has been updated, reloading executor succeeded")
 	} else {
@@ -127,7 +135,7 @@ func reloadExecutor(configFilePath string, executor *ef.Executor) error {
 }
 
 // Setup a watcher on file at configFilePath, reload executor on file change
-func watchForConfigurationChange(configFilePath string, executor *ef.Executor) error {
+func watchForConfigurationChange(configFilePath string) error {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -176,12 +184,12 @@ func watchForConfigurationChange(configFilePath string, executor *ef.Executor) e
 					}
 
 					logrus.Infof("watcher added on configuration directory %v", configFilePath)
-					reloadExecutor(configFilePath, executor)
+					reloadExecutor(configFilePath)
 				}
 
 				// In a local scenario, the configuration will be updated through a write event
 				if event.Name == configFilePath && event.Op&fsnotify.Write == fsnotify.Write {
-					reloadExecutor(configFilePath, executor)
+					reloadExecutor(configFilePath)
 				}
 
 			case err, ok := <-watcher.Errors:

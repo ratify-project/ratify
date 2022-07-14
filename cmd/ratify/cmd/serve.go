@@ -56,13 +56,13 @@ func NewCmdServe(argv ...string) *cobra.Command {
 
 func serve(opts serveCmdOptions) error {
 
-	executor, err := config.GetExecutorAndWatchForUpdate(opts.configFilePath)
+	getExecutor, err := config.GetExecutorAndWatchForUpdate(opts.configFilePath)
 	if err != nil {
 		return err
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, executor)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor)
 		if err != nil {
 			return err
 		}
