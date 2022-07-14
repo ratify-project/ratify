@@ -171,7 +171,7 @@ func TestLoad_ComputeHash(t *testing.T) {
 		t.Fatalf("mismatch of the loaded config expected version %s actual %s", "1.0.0", config.StoresConfig.Version)
 	}
 
-	expectedHash := "25a43245af3af9e260312c817ba6e65920db90cd2bba334ba6ca8662400d3a1c"
+	expectedHash := "97660cbbd5c340a844fd5093a7afbccb68673fa2e418cd74528078cf018b60cb"
 
 	if config.fileHash != expectedHash {
 		t.Fatalf("Unexpected configuration hash, expected %v, actual %v", expectedHash, config.fileHash)
