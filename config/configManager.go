@@ -110,21 +110,21 @@ func reloadExecutor(configFilePath string) error {
 		return err
 	}
 
-	stores, verifiers, policyEnforcer, err := createFromConfig(cf)
-
-	newExecutor := ef.Executor{
-		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
-		Config:         &cf.ExecutorConfig,
-	}
-
-	if err != nil {
-		logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
-		return err
-	}
-
 	if configHash != cf.fileHash {
+		stores, verifiers, policyEnforcer, err := createFromConfig(cf)
+
+		newExecutor := ef.Executor{
+			Verifiers:      verifiers,
+			ReferrerStores: stores,
+			PolicyEnforcer: policyEnforcer,
+			Config:         &cf.ExecutorConfig,
+		}
+
+		if err != nil {
+			logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
+			return err
+		}
+
 		executor = newExecutor
 		configHash = cf.fileHash
 		logrus.Infof("configuration file has been updated, reloading executor succeeded")
@@ -167,13 +167,21 @@ func watchForConfigurationChange(configFilePath string) error {
 				// after the remove event, the watcher will also be removed
 				// since a watcher on a non existent file is not supported, we sleep until the file exist add the watcher back
 				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
-					logrus.Infof("config remove event detected")
-
+					logrus.Infof("config file remove event detected")
+					time.Sleep(1 * time.Second)
 					_, err := os.Stat(configFilePath)
+
+					sleepTime := 1 * time.Second
+					waitTime := 60 //1min
 					for err != nil {
+						if waitTime < 0 {
+							logrus.Warnf("config file not found after waiting for %v sec, os.Stat error %v", waitTime, err)
+							return
+						}
 						logrus.Infof("config file does not exist yet, sleeping again")
 						_, err = os.Stat(configFilePath)
-						time.Sleep(1 * time.Second)
+						time.Sleep(sleepTime)
+						waitTime--
 					}
 
 					err = watcher.Add(configFilePath)
