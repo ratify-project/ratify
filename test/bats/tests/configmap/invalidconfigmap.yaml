@@ -8,7 +8,7 @@ data:
       "executor": {
         "requestTimeout": 6800
       },
-      "stores": {
+      "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -16,7 +16,7 @@ data:
             }
         ]
       },
-      "policies": {
+      "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -25,7 +25,7 @@ data:
             }
         }
       },
-      "verifiers": {
+      "verifier": {
           "version": "1.0.0",
           "plugins": [
             {

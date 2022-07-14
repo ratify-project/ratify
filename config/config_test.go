@@ -156,7 +156,7 @@ func TestLoad_ComputeHash(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
-	content := []byte(`{"stores":  { "version": "1.0.0" }}`)
+	content := []byte(`{"store":  { "version": "1.0.0" }}`)
 	err = ioutil.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
