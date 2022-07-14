@@ -57,8 +57,8 @@ const (
 type OrasStoreConf struct {
 	Name           string                          `json:"name"`
 	UseHttp        bool                            `json:"useHttp,omitempty"`
-	CosignEnabled  bool                            `json:"cosign-enabled,omitempty"`
-	AuthProvider   authprovider.AuthProviderConfig `json:"auth-provider,omitempty"`
+	CosignEnabled  bool                            `json:"cosignEnabled,omitempty"`
+	AuthProvider   authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
 	LocalCachePath string                          `json:"localCachePath,omitempty"`
 }
 
@@ -142,8 +142,9 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	}
 
 	// find all referrers referencing subject descriptor
+	artifactTypeFilter := ""
 	var referrerDescriptors []artifactspec.Descriptor
-	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, func(referrers []artifactspec.Descriptor) error {
+	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
 		referrerDescriptors = referrers
 		return nil
 	}); err != nil {

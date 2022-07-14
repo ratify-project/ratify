@@ -15,6 +15,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: "1.17"
+      - name: Run tidy
+        run: go mod tidy -compat=1.17
       - name: Build CLI
         run: make
       - name: Check build
