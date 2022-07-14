@@ -103,6 +103,8 @@ func createFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 }
 
 func reloadExecutor(configFilePath string) error {
+
+	configFilePath = getConfigurationFile(configFilePath)
 	cf, err := Load(configFilePath)
 
 	if err != nil {
