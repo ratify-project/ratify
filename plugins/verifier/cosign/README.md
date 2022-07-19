@@ -5,12 +5,14 @@ This README outlines how this validation framework can be used to verify signatu
 ### Fallback in OCIRegistry store
 A configuration flag called ```cosign-enabled``` is introduced to the plugin configuration. If this flag is enabled, the ```ListReferrers``` API will attempt to query for the cosign signatures for a subject in addition to the references queried using ```referrers API```. All the cosign signatures are returned as the reference artifacts with the artifact type ```org.sigstore.cosign.v1``` This option will enable to verify cosign signatures against any registry including the onces that don't support the [notaryproject](https://github.com/notaryproject)'s ```referrers API```. 
 
+IMPORTANT NOTE: Cosign signatures cannot be verified from private registries. ```cosign-enabled``` flag should not be enabled for any private registry scenario even for non-cosign signature verifications.
+
 ### Configuration
 The only configuration that is needed for cosign verifier is the path to the public key that is used to verify the signature. This is specified using ```key``` property in the plugin config. Here is the sample ```ratify``` config with cosign verifier
 
 ```json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -19,7 +21,16 @@ The only configuration that is needed for cosign verifier is the path to the pub
             }
         ]
     },
-    "verifiers": {
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
+        }
+    },
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

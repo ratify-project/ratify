@@ -20,7 +20,11 @@ by its developers, nor is it "supported" software.
 ## Community meetings
 
 - Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
-- Calendar: https://calendar.google.com/event?action=TEMPLATE&tmeid=MXFuMjM0NTlucHRiZDBwNnU0cGQ2OGlxZ2pfMjAyMjAxMjZUMDAwMDAwWiA5YmN1MXYzdmJkaG5ubWY2YnIwOHNzazA1NEBn&tmsrc=9bcu1v3vbdhnnmf6br08ssk054%40group.calendar.google.com&scp=ALL
+- We hold a weekly Ratify community meeting with alternating times to accommodate more time zones. 
+Series #1 Tues 4-5pm   
+Series #2 Wed 1-2pm    
+Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
+- We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 
 ## Quick Start
 
@@ -45,13 +49,11 @@ NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify oper
 - Deploy ratify and a `demo` constraint on gatekeeper
 
 ```bash
-git clone https://github.com/deislabs/ratify.git
-cd ratify
-
+helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
-    ./charts/ratify --atomic
+    ratify/ratify --atomic
 
-kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl apply -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
 ```
 
 Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
@@ -81,7 +83,7 @@ You just validated the container images in your k8s cluster!
 - Uninstall Ratify
 
 ```bash=
-kubectl delete -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl delete -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
 helm delete ratify
 kubectl delete namespace demo
 ```

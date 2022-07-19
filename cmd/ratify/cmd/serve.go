@@ -21,7 +21,7 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/sirupsen/logrus"
@@ -80,7 +80,7 @@ func serve(opts serveCmdOptions) error {
 
 	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
 
-	policyEnforcer, err := pf.CreatePolicyEnforcerFromConfig(cf.PoliciesConfig)
+	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
 
 	if err != nil {
 		return err

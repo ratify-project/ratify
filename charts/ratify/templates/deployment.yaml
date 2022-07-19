@@ -15,8 +15,8 @@ spec:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
     spec:
-      {{- if or (.Values.akvCertConfig.enabled) (.Values.oras.authProviders.azureWorkloadIdentityEnabled)}} 
-      serviceAccountName: {{ required "service account must be provided when using workload identity for AKV cert config or oras authentication" .Values.serviceAccount.name  }}
+      {{- if or .Values.azureWorkloadIdentity.clientId .Values.serviceAccount.create .Values.serviceAccount.name }}
+      serviceAccountName: {{ include "ratify.serviceAccountName" . }}
       {{- end }}
       containers:
         - name: {{ .Chart.Name }}

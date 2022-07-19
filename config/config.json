@@ -1,5 +1,5 @@
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -7,15 +7,16 @@
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2": "any",
-            "org.example.sbom.v0": "all",
-            "application/vnd.ratify.spdx.v0": "any"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

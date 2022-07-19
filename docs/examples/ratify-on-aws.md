@@ -111,39 +111,34 @@ but we can look at what will be generated below:
 
 ```json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
-                "cosign-enabled": true,
+                "cosignEnabled": true,
                 "localCachePath": "./local_oras_cache"
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.dev.cosign.simplesigning.v1+json": "any"
+            }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
-        "plugins": [
-          {
-            "name":"notaryv2",
-            "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
-            "verificationCerts": [
-              "/usr/local/ratify-certs/ratify-test.crt"
-            ]
-          },
+        "plugins": [        
           {
             "name": "cosign",
             "artifactTypes": "application/vnd.dev.cosign.simplesigning.v1+json",
             "key": "/usr/local/ratify-certs/cosign.pub"
           }
-        ]
-        
+        ]        
     }
 }
 ```
@@ -151,8 +146,6 @@ but we can look at what will be generated below:
 This configuration file does the following:
 - Enables the built-in `oras` referrer store with cosign support which will retrieve the necessary manifests and
   signature artifacts from the container registry
-- Enables the built-in `notaryv2` verifier (this is not used in this demo, but is part of the default Ratify
-  configuration)
 - Enables the `cosign` verifier that will validate cosign signatures on container images
 
 The configuration file and cosign public key will be mounted into the Ratify container via the helm chart.

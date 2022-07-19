@@ -114,7 +114,7 @@ This completes the creation of the supply chain graph.
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
-    "stores": { 
+    "store": { 
         "version": "1.0.0", 
         "plugins": [ 
             { 
@@ -122,14 +122,17 @@ cat <<EOF > ~/.ratify/config.json
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any",
-            "sbom/example": "all"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any",
+                "sbom/example": "all"
+            }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

@@ -1,29 +1,42 @@
 # Notary v2 Signature Verification With ACR Using Ratify
 
-## Binaries
+## Install Notation, ORAS, and Ratify
 
 ### Notation
 
-```bash
-curl -Lo notation.tar.gz https://github.com/shizhMSFT/notation/releases/download/v0.7.0-shizh.2/notation_0.7.0-shizh.2_linux_amd64.tar.gz
+Install Notation v0.9.0-alpha.1 with plugin support from [Notation GitHub Release](https://github.com/notaryproject/notation/releases/tag/v0.9.0-alpha.1). 
 
-tar xvzf notation.tar.gz -C ~/bin notation
+```bash
+# Download the Notation binary
+curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v0.9.0-alpha.1/notation_0.9.0-alpha.1_linux_amd64.tar.gz
+# Extract it from the binary
+tar xvzf notation.tar.gz
+# Copy the Notation CLI to your bin directory
+mkdir -p ~/bin && cp ./notation ~/bin
 ```
 
 ### ORAS
 
+Install ORAS 0.13.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
+
 ```bash
-curl -LO https://github.com/oras-project/oras/releases/download/v0.2.1-alpha.1/oras_0.2.1-alpha.1_linux_amd64.tar.gz
-mkdir oras
-tar -xvf ./oras_0.2.1-alpha.1_linux_amd64.tar.gz -C ./oras/
-cp ./oras/oras ~/bin/oras
+# Download the ORAS binary
+curl -LO https://github.com/oras-project/oras/releases/download/v0.13.0/oras_0.13.0_linux_amd64.tar.gz
+# Create a folder to extract the ORAS binary
+mkdir -p oras-install/
+tar -zxf oras_0.13.0_*.tar.gz -C oras-install/
+# Copy the Notation CLI to your bin directory
+mv oras-install/oras /usr/local/bin/
 ```
 
 ### Ratify
 
+Install Notation v0.1.4-alpha.1 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v0.1.4-alpha.1). 
+
 ```bash
-# TODO update according to release and copy the plugin to ~/.ratify/plugins path
-curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v0.0.1/ratify_0.0.1_linux_amd64.tar.gz
+# Download the Ratify binary
+curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v0.1.4-alpha.1/ratify_0.1.4-alpha.1_Linux_amd64.tar.gz
+# Extract it from the binary and copy it to the bin directory
 tar xvzf ratify.tar.gz -C ~/bin ratify
 ```
 
@@ -88,12 +101,12 @@ notation list $IMAGE
 
 ### Discover & Verify using Ratify
 
-- Create a Ratify config with ACR as the signature store and notary v2 as the signature verifier.
+- Create a Ratify config with ORAS as the signature store and notary v2 as the signature verifier.
 
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
-    "stores": { 
+    "store": { 
         "version": "1.0.0", 
         "plugins": [ 
             { 
@@ -101,13 +114,16 @@ cat <<EOF > ~/.ratify/config.json
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -168,12 +184,12 @@ notation sign $REPO@$SBOM_DIGEST
 
 ### Discover & Verify using Ratify
 
-- Create a Ratify config with ACR as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBoM and scan results in the config.
+- Create a Ratify config with ORAS as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBoM and scan results in the config.
 
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
-    "stores": { 
+    "store": { 
         "version": "1.0.0", 
         "plugins": [ 
             { 
@@ -181,14 +197,14 @@ cat <<EOF > ~/.ratify/config.json
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "artifactVerificationPolicies": {
             "application/vnd.cncf.notary.v2.signature": "any",
             "sbom/example": "all"
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {
