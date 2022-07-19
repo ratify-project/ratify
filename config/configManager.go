@@ -102,14 +102,13 @@ func createFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 	return stores, verifiers, policyEnforcer, nil
 }
 
-func reloadExecutor(configFilePath string) error {
+func reloadExecutor(configFilePath string) {
 
-	configFilePath = getConfigurationFile(configFilePath)
 	cf, err := Load(configFilePath)
 
 	if err != nil {
 		logrus.Warnf("failed to load from config file , err: %v", err)
-		return err
+		return
 	}
 
 	if configHash != cf.fileHash {
@@ -124,7 +123,7 @@ func reloadExecutor(configFilePath string) error {
 
 		if err != nil {
 			logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
-			return err
+			return
 		}
 
 		executor = newExecutor
@@ -133,7 +132,7 @@ func reloadExecutor(configFilePath string) error {
 	} else {
 		logrus.Infof("no change found in config file, no executor update needed")
 	}
-	return nil
+	return
 }
 
 // Setup a watcher on file at configFilePath, reload executor on file change
@@ -155,6 +154,7 @@ func watchForConfigurationChange(configFilePath string) error {
 
 	// setup for loop to listen for events
 	go func() {
+
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -170,11 +170,12 @@ func watchForConfigurationChange(configFilePath string) error {
 				// since a watcher on a non existent file is not supported, we sleep until the file exist add the watcher back
 				if event.Name == configFilePath && event.Op&fsnotify.Remove == fsnotify.Remove {
 					logrus.Infof("config file remove event detected")
-					time.Sleep(1 * time.Second)
-					_, err := os.Stat(configFilePath)
-
 					sleepTime := 1 * time.Second
 					waitTime := 60 //1min
+
+					time.Sleep(sleepTime)
+					_, err := os.Stat(configFilePath)
+
 					for err != nil {
 						if waitTime < 0 {
 							logrus.Warnf("config file not found after waiting for %v sec, os.Stat error %v", waitTime, err)
@@ -185,7 +186,7 @@ func watchForConfigurationChange(configFilePath string) error {
 						time.Sleep(sleepTime)
 						waitTime--
 					}
-
+					reloadExecutor(configFilePath)
 					err = watcher.Add(configFilePath)
 
 					if err != nil {
@@ -194,7 +195,7 @@ func watchForConfigurationChange(configFilePath string) error {
 					}
 
 					logrus.Infof("watcher added on configuration directory %v", configFilePath)
-					reloadExecutor(configFilePath)
+
 				}
 
 				// In a local scenario, the configuration will be updated through a write event

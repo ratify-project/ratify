@@ -107,7 +107,6 @@ func GetDefaultPluginPath() string {
 // if configFilePath is empty, return configuration path from environment variable
 func getConfigurationFile(configFilePath string) string {
 	if configFilePath == "" {
-
 		if configDir == "" {
 			initConfigDir.Do(InitDefaultPaths)
 		}
@@ -121,9 +120,8 @@ func getFileHash(file []byte) (fileHash string, err error) {
 	hash := sha256.New()
 
 	length, err := hash.Write(file)
-
 	if err != nil || length == 0 {
-		return "", fmt.Errorf("unable to unmarshal config body: %v, hash length %v", err, length)
+		return "", fmt.Errorf("unable to generate hash for configuration file, err '%v', hash length %v", err, length)
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
