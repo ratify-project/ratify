@@ -4,4 +4,5 @@ metadata:
   name: ratify-provider
 spec:
   url: "http://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify"
-  timeout: 100
+  timeout: 7
+  insecureTLSSkipVerify: true # need to enable this if the provider uses HTTP so that Gatekeeper can skip TLS verification.
