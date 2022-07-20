@@ -26,7 +26,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/xlab/treeprint v1.1.0
 	k8s.io/api v0.24.2
-	k8s.io/apimachinery v0.24.2
+	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v0.24.2
 	oras.land/oras-go/v2 v2.0.0-20220630033939-f37492936f3e
 )
