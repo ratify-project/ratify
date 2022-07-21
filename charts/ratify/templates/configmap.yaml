@@ -29,6 +29,12 @@ data:
                     "name": "k8Secrets"
                 }
                 {{- end }}
+                {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
+                ,
+                "auth-provider": {
+                    "name": "awsEcrBasic"
+                }
+                {{- end }}
             }
         ]
       },

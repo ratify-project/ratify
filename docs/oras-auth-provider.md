@@ -186,6 +186,125 @@ Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legac
 
 Note: Kubernetes secrets are reloaded and refreshed for Ratify to use every 12 hours. Changes to the Secret may not be reflected immediately. 
 
+### 4. AWS IAM Roles for Service Accounts (IRSA)
+Ratify pulls artifacts from a private Amazon Elastic Container Registry (ECR) using an ECR auth token. This token is accessed using the federated workload identity assigned to pods via [IAM Roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html). The AWS IAM Roles for Service Accounts Basic Auth provider uses the [AWS SDK for Go v2](https://github.com/aws/aws-sdk-go-v2) to retrieve basic auth credentials based on a role assigned to a Kubernetes Service Account referenced by a pod specification. For a specific example of how IAM Roles for Service Accounts, a.k.a. IRSA, works with pods running the AWS SDK for Go v2, please see this [post](https://blog.jimmyray.io/kubernetes-workload-identity-with-aws-sdk-for-go-v2-927d2f258057).
+
+#### User steps to set up IAM Roles for Service Accounts with Amazon EKS to access Amazon ECR:
+The official steps for setting up IAM Roles for Service Accounts with Amazon EKS can be found [here](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html).
+
+1. Create an OIDC enabled Amazon EKS cluster by following steps [here](https://docs.aws.amazon.com/eks/latest/userguide/enable-iam-roles-for-service-accounts.html).
+2. Connect to cluster using `kubectl` by following steps [here](https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html)
+3. Create an AWS Identity and Access Management (IAM) policy with permissions needed for Ratify to access Amazon ECR. Please see the official [documentation](https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies_create.html) for creating AWS IAM policies. The AWS managed policy `arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly` will work for this purpose.
+4. Create the `ratify` Namespace in your Amazon EKS cluster.
+5. Using [eksctl](https://eksctl.io/usage/iamserviceaccounts/), create a Kubernetes Service Account that uses the policy from above.
+```
+eksctl create iamserviceaccount \
+    --name ratify \
+    --namespace ratify \
+    --cluster ratify \
+    --attach-policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly \
+    --approve \
+    --override-existing-serviceaccounts
+```
+6. Verify that the Service Account was successfully created and annotated with a newly created role.
+```
+kubectl -n ratify get sa ratify -oyaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  annotations:
+    eks.amazonaws.com/role-arn: <IAM_ROLE_ARN>
+  labels:
+    app.kubernetes.io/managed-by: eksctl
+  name: ratify
+  namespace: ratify
+secrets:
+- name: ratify-token-...
+```
+___Note__: The creation of the role was done in the background by `eksctl` and an AWS CloudFormation stack, created by `eksctl`._ 
+
+7. The Service Account created above should be referenced in the helm chart values, without creating the Service Account.
+```
+serviceAccount:
+  create: false
+  name: ratify
+```
+
+8. Specify the _AWS ECR Basic Auth_ provider in the Ratify helm chart [values](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) file.
+```
+oras:
+  authProviders:
+    azureWorkloadIdentityEnabled: false
+    k8secretsEnabled: false
+    awsEcrBasicEnabled: true
+```
+
+9. [Install Ratify](https://github.com/deislabs/ratify#quick-start)
+```
+helm install ratify \
+    ratify/ratify --atomic \
+    --namespace ratify --values values.yaml
+```
+10. After install, verify that the Service Account is referenced by the `ratify` pod(s).
+```
+kubectl -n ratify get pod ratify-... -oyaml | grep serviceAccount
+  serviceAccount: ratify
+  serviceAccountName: ratify
+      - serviceAccountToken:
+      - serviceAccountToken:
+```
+
+11. Verify that the [Amazon EKS Pod Identity Webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
+```
+kubectl -n ratify get po ratify-... -oyaml
+...
+    - name: AWS_STS_REGIONAL_ENDPOINTS
+      value: regional
+    - name: AWS_DEFAULT_REGION
+      value: us-east-2
+    - name: AWS_REGION
+      value: us-east-2
+    - name: AWS_ROLE_ARN
+      value: <AWS_ROLE_ARN>
+    - name: AWS_WEB_IDENTITY_TOKEN_FILE
+      value: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
+...
+    volumeMounts:
+...
+    - mountPath: /var/run/secrets/eks.amazonaws.com/serviceaccount
+      name: aws-iam-token
+      readOnly: true
+...
+  volumes:
+  - name: aws-iam-token
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          audience: sts.amazonaws.com
+          expirationSeconds: 86400
+          path: token
+...
+```
+12. Verify the _AWS ECR Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
+```
+kubectl -n ratify get cm ratify-configuration -oyaml
+...
+"stores": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "localCachePath": "./local_oras_cache",
+                "auth-provider": {
+                    "name": "awsEcrBasic"
+                }
+            }
+        ]
+    }
+...
+```
+
 ## Notational Conventions
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" are to be interpreted as described in [RFC 2119](http://tools.ietf.org/html/rfc2119).
