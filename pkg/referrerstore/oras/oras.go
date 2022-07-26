@@ -40,6 +40,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/aws"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/azure"
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
@@ -57,8 +58,8 @@ const (
 type OrasStoreConf struct {
 	Name           string                          `json:"name"`
 	UseHttp        bool                            `json:"useHttp,omitempty"`
-	CosignEnabled  bool                            `json:"cosign-enabled,omitempty"`
-	AuthProvider   authprovider.AuthProviderConfig `json:"auth-provider,omitempty"`
+	CosignEnabled  bool                            `json:"cosignEnabled,omitempty"`
+	AuthProvider   authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
 	LocalCachePath string                          `json:"localCachePath,omitempty"`
 }
 
@@ -142,8 +143,9 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	}
 
 	// find all referrers referencing subject descriptor
+	artifactTypeFilter := ""
 	var referrerDescriptors []artifactspec.Descriptor
-	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, func(referrers []artifactspec.Descriptor) error {
+	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
 		referrerDescriptors = referrers
 		return nil
 	}); err != nil {

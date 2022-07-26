@@ -29,11 +29,11 @@ func (f *TestAuthProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 // Checks the correct registered auth provider is invoked based on config
 func TestCreateAuthProvidersFromConfig_BuiltInAuthProviders_ReturnsExpected(t *testing.T) {
 	builtInAuthProviders = map[string]AuthProviderFactory{
-		"test-authprovider": &TestAuthProviderFactory{},
+		"testAuthProvider": &TestAuthProviderFactory{},
 	}
 
 	authProviderConfig := map[string]interface{}{
-		"name": "test-authprovider",
+		"name": "testAuthProvider",
 	}
 
 	authProvider, err := CreateAuthProviderFromConfig(authProviderConfig)
@@ -55,7 +55,7 @@ func TestCreateAuthProvidersFromConfig_BuiltInAuthProviders_ReturnsExpected(t *t
 // Checks the auth provider creation fails if auth provider specified does not exist
 func TestCreateAuthProvidersFromConfig_NonexistentAuthProviders_ReturnsExpected(t *testing.T) {
 	builtInAuthProviders = map[string]AuthProviderFactory{
-		"docker-config": &defaultProviderFactory{},
+		"dockerConfig": &defaultProviderFactory{},
 	}
 
 	authProviderConfig := map[string]interface{}{
@@ -73,7 +73,7 @@ func TestCreateAuthProvidersFromConfig_NonexistentAuthProviders_ReturnsExpected(
 // specified in config
 func TestCreateAuthProvidersFromConfig_NullAuthProviders_ReturnsExpected(t *testing.T) {
 	builtInAuthProviders = map[string]AuthProviderFactory{
-		"docker-config": &defaultProviderFactory{},
+		"dockerConfig": &defaultProviderFactory{},
 	}
 
 	authProvider, err := CreateAuthProviderFromConfig(nil)

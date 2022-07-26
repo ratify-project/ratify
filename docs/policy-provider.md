@@ -1,6 +1,6 @@
 # Policy Providers
 
-Ratify implements an extensible policy provider interface allowing for different policy providers to be created and registered. The policy provider to be used is determined by the policy plugin specified in the `policies` section of the configuration. 
+Ratify implements an extensible policy provider interface allowing for different policy providers to be created and registered. The policy provider to be used is determined by the policy plugin specified in the `policy` section of the configuration. 
 
 Currently, Ratify supports a Configuration based Policy Provider named `configPolicy`.
 
@@ -12,7 +12,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
 
 ```
 ...
-"policies": {
+"policy": {
     "version": "1.0.0",
     "plugin": {
         "name": "configPolicy",
@@ -34,7 +34,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
         
         ```
         ...
-        "policies": {
+        "policy": {
             "version": "1.0.0",
             "plugin": {
                 "name": "configPolicy",
@@ -50,7 +50,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
 - Require all reference artifacts associated with subject image to be verify successfully:
     ```
     ...
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy"
@@ -61,7 +61,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
 - Require at least one reference artifact of the same type to verify succesfully. (relaxes the default policy to 'any'):
     ```
     ...
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -75,7 +75,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
 - For a specific artifact type, relax requirement so only one success is needed for artifacts of that type:
     ```
     ...
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",

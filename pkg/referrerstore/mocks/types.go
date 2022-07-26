@@ -33,7 +33,7 @@ type TestStore struct {
 }
 
 func (s *TestStore) Name() string {
-	return "test-store"
+	return "testStore"
 }
 
 func (s *TestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {

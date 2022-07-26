@@ -35,7 +35,7 @@ func TestLoad_FromDefaultPath(t *testing.T) {
 	defer os.Unsetenv("RATIFY_CONFIG")
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
-	content := []byte(`{"stores":  { "version": "1.0.0" }}`)
+	content := []byte(`{"store":  { "version": "1.0.0" }}`)
 	err = ioutil.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
@@ -65,7 +65,7 @@ func TestLoad_FromGiventPath(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
-	content := []byte(`{"stores":  { "version": "1.0.0" }}`)
+	content := []byte(`{"store":  { "version": "1.0.0" }}`)
 	err = ioutil.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
@@ -134,7 +134,7 @@ func TestLoad_InvalidConfigFile(t *testing.T) {
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
-	content := []byte(`"stores":  { "version": "1.0.0" }}`)
+	content := []byte(`"store":  { "version": "1.0.0" }}`)
 	err = ioutil.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
