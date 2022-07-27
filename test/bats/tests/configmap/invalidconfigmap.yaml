@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratify-configuration
+data:
+  config.json: |
+    {
+      "executor": {
+        "requestTimeout": 6800
+      },
+      "store": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras"
+            }
+        ]
+      },
+      "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.dev.cosign.simplesigning.v1+json": "any"
+            }
+        }
+      },
+      "verifier": {
+          "version": "1.0.0",
+          "plugins": [
+            {
+                "name":"notaryv2",
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "verificationCerts": [
+                    "/usr/local/ratify-certs"
+                  ]
+            }
+          ]
+      }
+    }

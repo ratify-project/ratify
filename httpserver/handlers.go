@@ -55,7 +55,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			Subject: subject,
 		}
 
-		result, err := server.Executor.VerifySubject(ctx, verifyParameters)
+		result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
 
 		if err != nil {
 			return err

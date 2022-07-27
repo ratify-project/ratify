@@ -46,8 +46,8 @@ type Executor struct {
 
 // TODO Logging within executor
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 
+	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
 		// Do we need to consider no referrers as success or failure?
@@ -129,7 +129,9 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
+
 	for _, verifier := range ex.Verifiers {
+
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
 			verifyResult.Subject = subjectRef.String()
