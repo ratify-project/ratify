@@ -17,7 +17,6 @@ SLEEP_TIME=1
     assert_success
     run kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned
     assert_failure
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete namespace demo"
 }
 
 @test "configmap update test" {
