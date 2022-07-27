@@ -1,0 +1,71 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: notaryv2issuervalidation
+spec:
+  crd:
+    spec:
+      names:
+        kind: NotaryV2IssuerValidation
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            issuer:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package notaryv2issuervalidation
+        
+        # Get data from Ratify
+        remote_data := response {
+          images := [img | img = input.review.object.spec.containers[_].image]
+          response := external_data({"provider": "ratify-provider", "keys": images})
+        }
+
+        # Base Gatekeeper violation
+        violation[{"msg": msg}] {
+          general_violation[{"result": msg}]
+        }
+        
+        # Check if there are any system errors
+        general_violation[{"result": result}] {
+          err := remote_data.system_error
+          err != ""
+          result := sprintf("System error calling external data provider: %s", [err])
+        }
+        
+        # Check if there are errors for any of the images
+        general_violation[{"result": result}] {
+          count(remote_data.errors) > 0
+          result := sprintf("Error validating one or more images: %s", remote_data.errors)
+        }
+        
+        # Check if the success criteria is true
+        general_violation[{"result": result}] {
+          subject_validation := remote_data.responses[_]
+          subject_validation[1].isSuccess == false
+          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+        }
+
+        # Check that signature result for Issuer exists
+        general_violation[{"result": result}] {
+          subject_results := remote_data.responses[_]
+          subject_result := subject_results[1]
+          notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
+          issuer_results := [res | notaryv2_results[i].extensions.Issuer == input.parameters.issuer; res := notaryv2_results[i]]
+          count(issuer_results) == 0
+          result := sprintf("Subject %s has no signatures for certificate with Issuer: %s", [subject_results[0], input.parameters.issuer])
+        }
+        
+        # Check for valid signature
+        general_violation[{"result": result}] {
+          subject_results := remote_data.responses[_]
+          subject_result := subject_results[1]
+          notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
+          notaryv2_result := notaryv2_results[_]
+          notaryv2_result.isSuccess == false
+          notaryv2_result.extensions.Issuer == input.parameters.issuer
+          result = sprintf("Subject %s failed signature validation: %s", [subject_results[0], notaryv2_result.message])
+        }

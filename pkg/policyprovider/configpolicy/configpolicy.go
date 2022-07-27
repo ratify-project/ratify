@@ -98,7 +98,7 @@ func (enforcer PolicyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectR
 	errorReport := verifier.VerifierResult{
 		Subject:   subjectRefString,
 		IsSuccess: false,
-		Results:   []string{fmt.Sprintf("verification failed: %v", verifyError)},
+		Message:   fmt.Sprintf("verification failed: %v", verifyError),
 	}
 	var reports []interface{}
 	reports = append(reports, errorReport)

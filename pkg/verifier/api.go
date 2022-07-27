@@ -29,7 +29,8 @@ type VerifierResult struct {
 	Subject       string           `json:"subject,omitempty"`
 	IsSuccess     bool             `json:"isSuccess"`
 	Name          string           `json:"name,omitempty"`
-	Results       []string         `json:"results,omitempty"`
+	Message       string           `json:"message,omitempty"`
+	Extensions    interface{}      `json:"extensions,omitempty"`
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
 	ArtifactType  string           `json:"artifactType,omitempty"`
 }
