@@ -100,7 +100,8 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 
 					if !verifyResult.IsSuccess {
 						result := types.VerifyResult{IsSuccess: false, VerifierReports: verifierReports}
-						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) {
+						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) &&
+							executor.Config.ExecutionMode != config.PassthroughExecutionMode {
 							return result, nil
 						}
 					}
@@ -118,6 +119,10 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
 
+	if executor.Config.ExecutionMode == config.PassthroughExecutionMode {
+		overallVerifySuccess = true
+	}
+
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
@@ -134,7 +139,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Results:   []string{fmt.Sprintf("an error thrown by the verifier %v", err)}}
+					Message:   fmt.Sprintf("an error thrown by the verifier %v", err)}
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType

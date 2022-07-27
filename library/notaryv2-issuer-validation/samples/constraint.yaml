@@ -1,0 +1,13 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: NotaryV2IssuerValidation
+metadata:
+  name: localhost-signature-validation
+spec:
+  enforcementAction: deny
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    namespaces: ["*"]
+  parameters:
+    issuer: "localhost:5000"
