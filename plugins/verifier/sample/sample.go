@@ -58,6 +58,6 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: referenceDescriptor.Size > 0,
-		Results:   []string{"Sample verification success"},
+		Message:   "Sample verification success",
 	}, nil
 }

@@ -38,7 +38,7 @@ func (p *TestPolicyProvider) ErrorToVerifyResult(ctx context.Context, subjectRef
 	errorReport := verifier.VerifierResult{
 		Subject:   subjectRefString,
 		IsSuccess: false,
-		Results:   []string{"this a test"},
+		Message:   "this a test",
 	}
 	var reports []interface{}
 	reports = append(reports, errorReport)

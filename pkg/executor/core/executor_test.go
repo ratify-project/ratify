@@ -17,6 +17,7 @@ package core
 
 import (
 	"context"
+	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"testing"
 
 	e "github.com/deislabs/ratify/pkg/executor"
@@ -78,6 +79,10 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 			},
 		}},
 		Verifiers: []verifier.ReferenceVerifier{&TestVerifier{}},
+		Config: &exConfig.ExecutorConfig{
+			ExecutionMode:  "",
+			RequestTimeout: nil,
+		},
 	}
 
 	verifyParameters := e.VerifyParameters{
@@ -121,6 +126,10 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 		PolicyEnforcer: configPolicy,
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			ExecutionMode:  "default",
+			RequestTimeout: nil,
+		},
 	}
 
 	verifyParameters := e.VerifyParameters{
@@ -176,6 +185,10 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 		PolicyEnforcer: configPolicy,
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			ExecutionMode:  "",
+			RequestTimeout: nil,
+		},
 	}
 
 	verifyParameters := e.VerifyParameters{
@@ -224,6 +237,10 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 		PolicyEnforcer: configPolicy,
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			ExecutionMode:  "",
+			RequestTimeout: nil,
+		},
 	}
 
 	verifyParameters := e.VerifyParameters{

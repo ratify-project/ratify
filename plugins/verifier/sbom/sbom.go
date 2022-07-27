@@ -90,7 +90,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			return &verifier.VerifierResult{
 				Name:      input.Name,
 				IsSuccess: false,
-				Results:   []string{fmt.Sprintf("SBOM verification failed. The contents is %s.", sbomBlob.Contents)},
+				Message:   fmt.Sprintf("SBOM verification failed. The contents is %s.", sbomBlob.Contents),
 			}, nil
 		}
 	}
@@ -98,7 +98,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: true,
-		Results:   []string{"SBOM verification success. The contents is good."},
+		Message:   "SBOM verification success. The contents is good.",
 	}, nil
 
 }

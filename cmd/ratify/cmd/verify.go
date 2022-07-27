@@ -100,6 +100,7 @@ func verify(opts verifyCmdOptions) error {
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
 		PolicyEnforcer: policyEnforcer,
+		Config:         &cf.ExecutorConfig,
 	}
 
 	verifyParameters := e.VerifyParameters{

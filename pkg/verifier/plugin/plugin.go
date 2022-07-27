@@ -118,7 +118,7 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 				Subject:       subjectReference.Original,
 				IsSuccess:     false,
 				Name:          vp.name,
-				Results:       []string{"nested verification failed"},
+				Message:       "nested verification failed",
 				NestedResults: nestedResults,
 			}, nil
 		}

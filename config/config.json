@@ -1,4 +1,7 @@
 {
+    "executor": {
+        "executionMode": "passthrough"
+    },
     "store": {
         "version": "1.0.0",
         "plugins": [
