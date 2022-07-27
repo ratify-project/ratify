@@ -21,7 +21,7 @@ import (
 	"net"
 	"net/http"
 
-	ef "github.com/deislabs/ratify/pkg/executor/core"
+	"github.com/deislabs/ratify/config"
 	"github.com/gorilla/mux"
 )
 
@@ -31,23 +31,23 @@ const (
 
 type (
 	Server struct {
-		Address  string
-		Router   *mux.Router
-		Executor *ef.Executor
-		Context  context.Context
+		Address     string
+		Router      *mux.Router
+		GetExecutor config.GetExecutor
+		Context     context.Context
 	}
 )
 
-func NewServer(context context.Context, address string, executor *ef.Executor) (*Server, error) {
+func NewServer(context context.Context, address string, getExecutor config.GetExecutor) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
 	}
 
 	server := &Server{
-		Address:  address,
-		Executor: executor,
-		Router:   mux.NewRouter(),
-		Context:  context,
+		Address:     address,
+		GetExecutor: getExecutor,
+		Router:      mux.NewRouter(),
+		Context:     context,
 	}
 	server.registerHandlers()
 
@@ -78,7 +78,7 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 }
 
 func (server *Server) registerHandlers() {
-	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.Executor.GetVerifyRequestTimeout()))
+	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()))
 }
 
 type ServerAddrNotFoundError struct{}
