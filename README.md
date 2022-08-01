@@ -85,6 +85,7 @@ You just validated the container images in your k8s cluster!
 
 ```bash=
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
+kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 helm delete ratify
 ```
 
