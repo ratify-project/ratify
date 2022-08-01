@@ -33,6 +33,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
 	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/crypto/jwsutil"
 	"github.com/notaryproject/notation-go/signature/jws"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -110,6 +111,8 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		Digest: subjectReference.Digest,
 	}
 
+	extensions := make(map[string]string)
+
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 
 	if err != nil {
@@ -122,27 +125,72 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 			return verifier.VerifierResult{IsSuccess: false}, err
 		}
 
+		cert, err := getCert(refBlob)
+		if err != nil {
+			return verifier.VerifierResult{
+				Subject:   subjectReference.String(),
+				IsSuccess: false,
+				Name:      verifierName,
+				Message:   "error getting extension data from root cert",
+			}, err
+		}
+		extensions["Issuer"] = cert.Issuer.String()
+		extensions["SN"] = cert.Subject.String()
+
 		var opts notation.VerifyOptions
 		vdesc, err := v.notationVerifier.Verify(context.Background(), refBlob, opts)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, err
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, err
 		}
 
 		// TODO get the subject descriptor and verify all the properties other than digest.
 		if desc.Digest != vdesc.Digest {
 			return verifier.VerifierResult{
-				Subject:   subjectReference.String(),
-				Name:      verifierName,
-				IsSuccess: false,
-				Results:   []string{fmt.Sprintf("verification failure: digest mismatch: %v: %v", desc.Digest, vdesc.Digest)}}, nil
+				Subject:    subjectReference.String(),
+				Name:       verifierName,
+				IsSuccess:  false,
+				Message:    fmt.Sprintf("verification failure: digest mismatch: %v: %v", desc.Digest, vdesc.Digest),
+				Extensions: extensions}, nil
 		}
 	}
 
 	return verifier.VerifierResult{
-		Name:      verifierName,
-		IsSuccess: true,
-		Results:   []string{"signature verification success"},
+		Name:       verifierName,
+		IsSuccess:  true,
+		Message:    "signature verification success",
+		Extensions: extensions,
 	}, nil
+}
+
+// This function is borrowed internals from the notation-go jws verifier
+// https://github.com/notaryproject/notation-go/blob/main/signature/jws/verifier.go
+func getCert(refBlob []byte) (*x509.Certificate, error) {
+	var envelope jwsutil.Envelope
+	if err := json.Unmarshal(refBlob, &envelope); err != nil {
+		return nil, err
+	}
+	if len(envelope.Signatures) != 1 {
+		return nil, errors.New("single signature envelope expected")
+	}
+	sig := envelope.Open()
+
+	var header struct {
+		TimeStampToken []byte   `json:"timestamp,omitempty"`
+		CertChain      [][]byte `json:"x5c,omitempty"`
+	}
+	if err := json.Unmarshal(sig.Unprotected, &header); err != nil {
+		return nil, err
+	}
+	if len(header.CertChain) == 0 {
+		return nil, errors.New("signer certificates not found")
+	}
+
+	cert, err := x509.ParseCertificate(header.CertChain[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return cert, nil
 }
 
 func getVerifierService(certPaths ...string) (*jws.Verifier, error) {

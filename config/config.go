@@ -16,10 +16,11 @@ limitations under the License.
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -42,6 +43,7 @@ type Config struct {
 	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policy,omitempty"`
 	VerifiersConfig vfConfig.VerifiersConfig `json:"verifier,omitempty"`
 	ExecutorConfig  exConfig.ExecutorConfig  `json:"executor,omitempty"`
+	fileHash        string                   `json:"-"`
 }
 
 var (
@@ -75,26 +77,21 @@ func getHomeDir() string {
 func Load(configFilePath string) (Config, error) {
 
 	config := Config{}
-	if configFilePath == "" {
 
-		if configDir == "" {
-			initConfigDir.Do(InitDefaultPaths)
-		}
+	body, readErr := ioutil.ReadFile(configFilePath)
 
-		configFilePath = defaultConfigFilePath
+	if readErr != nil {
+		return config, fmt.Errorf("unable to read config file at path %s", readErr)
 	}
 
-	file, err := os.OpenFile(configFilePath, os.O_RDONLY, 0644)
+	err := json.Unmarshal(body, &config)
 	if err != nil {
-		if os.IsNotExist(err) {
-			return config, fmt.Errorf("could not find config file at path %s", configFilePath)
-		}
-		return config, err
+		return config, fmt.Errorf("unable to unmarshal config body: %v", err)
 	}
-	defer file.Close()
 
-	if err := json.NewDecoder(file).Decode(&config); err != nil && !errors.Is(err, io.EOF) {
-		return config, err
+	config.fileHash, err = getFileHash(body)
+	if err != nil {
+		return config, fmt.Errorf("error getting configuration file hash error %v", err)
 	}
 
 	return config, nil
@@ -105,4 +102,27 @@ func GetDefaultPluginPath() string {
 		initConfigDir.Do(InitDefaultPaths)
 	}
 	return defaultPluginsPath
+}
+
+// if configFilePath is empty, return configuration path from environment variable
+func getConfigurationFile(configFilePath string) string {
+	if configFilePath == "" {
+		if configDir == "" {
+			initConfigDir.Do(InitDefaultPaths)
+		}
+
+		return defaultConfigFilePath
+	}
+	return configFilePath
+}
+
+func getFileHash(file []byte) (fileHash string, err error) {
+	hash := sha256.New()
+
+	length, err := hash.Write(file)
+	if err != nil || length == 0 {
+		return "", fmt.Errorf("unable to generate hash for configuration file, err '%v', hash length %v", err, length)
+	}
+
+	return hex.EncodeToString(hash.Sum(nil)), nil
 }

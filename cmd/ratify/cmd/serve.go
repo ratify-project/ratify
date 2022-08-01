@@ -20,10 +20,6 @@ import (
 
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
-	ef "github.com/deislabs/ratify/pkg/executor/core"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -59,44 +55,14 @@ func NewCmdServe(argv ...string) *cobra.Command {
 }
 
 func serve(opts serveCmdOptions) error {
-	cf, err := config.Load(opts.configFilePath)
+
+	getExecutor, err := config.GetExecutorAndWatchForUpdate(opts.configFilePath)
 	if err != nil {
 		return err
-	}
-
-	logrus.Info("configuration successfully loaded.")
-	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
-	if err != nil {
-		return err
-	}
-	logrus.Infof("stores successfully created. number of stores %d", len(stores))
-
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath())
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
-
-	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
-
-	if err != nil {
-		return err
-	}
-
-	logrus.Infof("policies successfully created.")
-
-	executor := ef.Executor{
-		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
-		Config:         &cf.ExecutorConfig,
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, &executor)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor)
 		if err != nil {
 			return err
 		}

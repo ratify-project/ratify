@@ -23,14 +23,14 @@ jobs:
         run: bin/ratify version
 
   build_test_e2e:
-    name: "[External Data] Build and run e2e Test"
+    name: "Build and run e2e Test"
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.23.0"]
+        KUBERNETES_VERSION: ["1.23.6"]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
