@@ -74,6 +74,11 @@ kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned
 ```
 
 You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
+
+```bash=
+Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [ratify-constraint] Subject failed verification: ratify.azurecr.io/testimage:unsigned
+```
+
 You just validated the container images in your k8s cluster!
 
 - Uninstall Ratify
