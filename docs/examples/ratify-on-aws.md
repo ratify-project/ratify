@@ -182,7 +182,8 @@ helm install ratify charts/ratify \
     --set cosign.enabled=true \
     --set cosign.key=$COSIGN_PUBLIC_KEY
 
-kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl apply -f ./library/default/template.yaml
+kubectl apply -f ./library/default/samples/constraint.yaml
 ```
 
 We can then confirm all pods are running:
