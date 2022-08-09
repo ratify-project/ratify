@@ -111,17 +111,17 @@ but we can look at what will be generated below:
 
 ```json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras",
-                "cosign-enabled": true,
+                "cosignEnabled": true,
                 "localCachePath": "./local_oras_cache"
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -130,7 +130,7 @@ but we can look at what will be generated below:
             }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [        
           {
@@ -182,7 +182,8 @@ helm install ratify charts/ratify \
     --set cosign.enabled=true \
     --set cosign.key=$COSIGN_PUBLIC_KEY
 
-kubectl apply -f ./charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl apply -f ./library/default/template.yaml
+kubectl apply -f ./library/default/samples/constraint.yaml
 ```
 
 We can then confirm all pods are running:

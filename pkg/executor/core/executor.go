@@ -46,8 +46,8 @@ type Executor struct {
 
 // TODO Logging within executor
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 
+	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
 		// Do we need to consider no referrers as success or failure?
@@ -100,7 +100,8 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 
 					if !verifyResult.IsSuccess {
 						result := types.VerifyResult{IsSuccess: false, VerifierReports: verifierReports}
-						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) {
+						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) &&
+							executor.Config.ExecutionMode != config.PassthroughExecutionMode {
 							return result, nil
 						}
 					}
@@ -118,13 +119,19 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
 
+	if executor.Config.ExecutionMode == config.PassthroughExecutionMode {
+		overallVerifySuccess = true
+	}
+
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
 func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
+
 	for _, verifier := range ex.Verifiers {
+
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
 			verifyResult.Subject = subjectRef.String()
@@ -132,7 +139,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Results:   []string{fmt.Sprintf("an error thrown by the verifier %v", err)}}
+					Message:   fmt.Sprintf("an error thrown by the verifier %v", err)}
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType

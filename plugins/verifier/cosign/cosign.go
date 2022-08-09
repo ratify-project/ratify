@@ -80,20 +80,20 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		return &verifier.VerifierResult{
 			Name:      input.Config.Name,
 			IsSuccess: false,
-			Results:   []string{fmt.Sprintf("cosign verification failed with error %v", err)},
+			Message:   fmt.Sprintf("cosign verification failed with error %v", err),
 		}, nil
 	} else if len(payload) > 0 {
 		return &verifier.VerifierResult{
 			Name:      input.Config.Name,
 			IsSuccess: true,
-			Results:   []string{"cosign verification success. valid signatures found"},
+			Message:   "cosign verification success. valid signatures found",
 		}, nil
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Config.Name,
 		IsSuccess: false,
-		Results:   []string{"cosign verification failed. no valid signatures found"},
+		Message:   "cosign verification failed. no valid signatures found",
 	}, nil
 }
 

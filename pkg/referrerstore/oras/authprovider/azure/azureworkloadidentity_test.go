@@ -55,7 +55,7 @@ func TestAzureWIEnabled_ExpectedResults(t *testing.T) {
 // environment variables are properly set
 func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	authProviderConfig := map[string]interface{}{
-		"name": "azure-wi",
+		"name": "azureWorkloadIdentity",
 	}
 
 	err := os.Setenv("AZURE_TENANT_ID", "")

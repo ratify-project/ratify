@@ -1,5 +1,8 @@
 {
-    "stores": {
+    "executor": {
+        "executionMode": "passthrough"
+    },
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -7,7 +10,7 @@
             }
         ]
     },
-    "policies": {
+    "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -16,7 +19,7 @@
             }
         }
     },
-    "verifiers": {
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

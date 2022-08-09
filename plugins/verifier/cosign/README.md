@@ -12,7 +12,7 @@ The only configuration that is needed for cosign verifier is the path to the pub
 
 ```json
 {
-    "stores": {
+    "store": {
         "version": "1.0.0",
         "plugins": [
             {
@@ -21,7 +21,16 @@ The only configuration that is needed for cosign verifier is the path to the pub
             }
         ]
     },
-    "verifiers": {
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any"
+            }
+        }
+    },
+    "verifier": {
         "version": "1.0.0",
         "plugins": [
             {

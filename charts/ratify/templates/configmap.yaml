@@ -8,31 +8,37 @@ data:
       "executor": {
         "requestTimeout": 6800
       },
-      "stores": {
+      "store": {
         "version": "1.0.0",
         "plugins": [
             {
                 "name": "oras"
                 {{- if .Values.cosign.enabled }}
                 ,
-                "cosign-enabled": true
+                "cosignEnabled": true
                 {{- end }}
                 {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
                 ,
-                "auth-provider": {
-                    "name": "azure-wi"
+                "authProvider": {
+                    "name": "azureWorkloadIdentity"
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.k8secretsEnabled }}
                 ,
+                "authProvider": {
+                    "name": "k8Secrets"
+                }
+                {{- end }}
+                {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
+                ,
                 "auth-provider": {
-                    "name": "k8s-secrets"
+                    "name": "awsEcrBasic"
                 }
                 {{- end }}
             }
         ]
       },
-      "policies": {
+      "policy": {
         "version": "1.0.0",
         "plugin": {
             "name": "configPolicy",
@@ -41,7 +47,7 @@ data:
             }
         }
       },
-      "verifiers": {
+      "verifier": {
           "version": "1.0.0",
           "plugins": [
             {

@@ -55,7 +55,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			Subject: subject,
 		}
 
-		result, err := server.Executor.VerifySubject(ctx, verifyParameters)
+		result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
 
 		if err != nil {
 			return err
@@ -66,17 +66,10 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			fmt.Println(string(res))
 		}
 
-		if result.IsSuccess {
-			results = append(results, externaldata.Item{
-				Key:   subject,
-				Value: subject + "_valid",
-			})
-		} else {
-			results = append(results, externaldata.Item{
-				Key:   subject,
-				Error: subject + "_invalid",
-			})
-		}
+		results = append(results, externaldata.Item{
+			Key:   subject,
+			Value: result,
+		})
 	}
 	return sendResponse(&results, "", w, http.StatusOK)
 }
