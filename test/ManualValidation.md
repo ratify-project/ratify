@@ -5,8 +5,8 @@ Our goal is to automate as much testing as possible with unit and integration te
 |                      | E2E available | Notes                                                                |
 |----------------------|---------------|----------------------------------------------------------------------|
 | Azure auth provider |  No           |                                                                      |
-| K8 secrets auth provider           |               |                                                                      |
-| Docker config auth provider  |               |                                                                      |
+| K8 secrets auth provider           |    No        |                                                                      |
+| Docker config auth provider  |     No      |                                                                      |
 | AWS Auth Provider    |    No         |                                                                      |
 | Cosign Verifier      |    Yes        | Known issue [231](https://github.com/deislabs/ratify/issues/231), validation should cover both Azure and AWS as they are differences in code path |
-| Notary Verifier      |               | Yes           |                                                                      
+| Notary Verifier      | Yes           | |                                                                      
