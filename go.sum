@@ -1598,6 +1598,8 @@ github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c0123
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402/go.mod h1:Ct6YrxaLT9c28X7yv+GtDEKapG/EbI29ZsAO9oWs9Vg=
 github.com/open-policy-agent/opa v0.42.1 h1:5R5hVrxgLFK3lxPAcel7iWz3TzbumAZj8qunOIx6fhk=
 github.com/open-policy-agent/opa v0.42.1/go.mod h1:MrmoTi/BsKWT58kXlVayBb+rYVeaMwuBm3nYAN3923s=
+github.com/opencontainers/distribution-spec/specs-go v0.0.0-20220620172159-4ab4752c3b86 h1:Oumw+lPnO8qNLTY2mrqPJZMoGExLi/0h/DdikoLTXVU=
+github.com/opencontainers/distribution-spec/specs-go v0.0.0-20220620172159-4ab4752c3b86/go.mod h1:aA4vdXRS8E1TG7pLZOz85InHi3BiPdErh8IpJN6E0x4=
 github.com/opencontainers/go-digest v0.0.0-20170106003457-a6d0ee40d420/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/go-digest v0.0.0-20180430190053-c9281466c8b2/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
 github.com/opencontainers/go-digest v1.0.0-rc1/go.mod h1:cMLVZDEM3+U2I4VmLI6N8jQYUd2OVphdqWwCJHrFt2s=
@@ -1639,6 +1641,8 @@ github.com/openzipkin/zipkin-go v0.3.0/go.mod h1:4c3sLeE8xjNqehmF5RpAFLPLJxXscc0
 github.com/oras-project/artifacts-spec v1.0.0-draft.1.1/go.mod h1:Xch2aLzSwtkhbFFN6LUzTfLtukYvMMdXJ4oZ8O7BOdc=
 github.com/oras-project/artifacts-spec v1.0.0-rc.1 h1:bCHf9mPbrgiNwQFyVzBX79BYZVAl0OUrmvICZOCOwts=
 github.com/oras-project/artifacts-spec v1.0.0-rc.1/go.mod h1:Xch2aLzSwtkhbFFN6LUzTfLtukYvMMdXJ4oZ8O7BOdc=
+github.com/oras-project/artifacts-spec v1.0.0-rc.2 h1:9SMCNSxkJEHqWGDiMCuy6TXHgvjgwXGdXZZGXLKQvVE=
+github.com/oras-project/artifacts-spec v1.0.0-rc.2/go.mod h1:Xch2aLzSwtkhbFFN6LUzTfLtukYvMMdXJ4oZ8O7BOdc=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
@@ -3145,6 +3149,8 @@ oras.land/oras-go v1.2.0 h1:yoKosVIbsPoFMqAIFHTnrmOuafHal+J/r+I5bdbVWu4=
 oras.land/oras-go v1.2.0/go.mod h1:pFNs7oHp2dYsYMSS82HaX5l4mpnGO7hbpPN6EWH2ltc=
 oras.land/oras-go/v2 v2.0.0-20220630033939-f37492936f3e h1:qthvvepl0qYS9TPhSpXQvcT19npAtw0lHh76SFcyIvA=
 oras.land/oras-go/v2 v2.0.0-20220630033939-f37492936f3e/go.mod h1:0IQiLwHUJuMs0+QYGavaeQWw5FD4ABD/RP5YamXT/sc=
+oras.land/oras-go/v2 v2.0.0-rc.2 h1:dks9BxPg6HQOxn5+jVNuTFl45FuYvHfLQ6wcP7hVRdE=
+oras.land/oras-go/v2 v2.0.0-rc.2/go.mod h1:IZRIoIJqkAH6x0pL3tVnpyPUyZgthjSyPcH2kgJvBMo=
 pgregory.net/rapid v0.3.3/go.mod h1:UYpPVyjFHzYBGHIxLFoupi8vwk6rXNzRY9OMvVxFIOU=
 rsc.io/binaryregexp v0.2.0/go.mod h1:qTv7/COck+e2FymRvadv62gMdZztPaShugOCi3I+8D8=
 rsc.io/quote/v3 v3.1.0/go.mod h1:yEA65RcK8LyAZtP9Kv3t0HmxON59tX3rD+tICJqUlj0=
