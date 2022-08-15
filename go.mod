@@ -5,12 +5,13 @@ go 1.17
 require (
 	github.com/Azure/azure-sdk-for-go v66.0.0+incompatible
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
-	github.com/aws/aws-sdk-go-v2 v1.16.7
+	github.com/aws/aws-sdk-go-v2 v1.16.11
 	github.com/aws/aws-sdk-go-v2/config v1.15.14
-	github.com/aws/aws-sdk-go-v2/credentials v1.12.9
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.13
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
+	github.com/fsnotify/fsnotify v1.5.4
 	github.com/google/go-containerregistry v0.10.0
 	github.com/gorilla/mux v1.8.0
 	github.com/notaryproject/notation-go v0.8.0-alpha.1
@@ -42,14 +43,14 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.8 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.14 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.8 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.12 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.18 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.12 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.15 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.11.12 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.16.9 // indirect
-	github.com/aws/smithy-go v1.12.0 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.12 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.11.16 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.16.13 // indirect
+	github.com/aws/smithy-go v1.12.1 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
@@ -71,7 +72,6 @@ require (
 	github.com/emicklei/go-restful v2.9.5+incompatible // indirect
 	github.com/envoyproxy/go-control-plane v0.10.2-0.20220325020618-49ff273808a1 // indirect
 	github.com/envoyproxy/protoc-gen-validate v0.6.2 // indirect
-	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
