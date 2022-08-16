@@ -20,6 +20,9 @@ The Ratify project follows [semantic versioning](https://semver.org/) beginning 
 
 Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc3`.  Pre-release versions are not required and stages can be bypassed (i.e. an `alpha` release does not require a `beta` release).  Pre-releases must be in order and gaps are not allowed (i.e. the only releases that can follow `rc1` are the full release or `rc2`).
 
+## Pre Release Activity
+ [Test.bats](test/bats/test.bats) provides limited end to end test coverage, while we are working on improving our coverage, please perform [manual validations](test/ManualValidation.md) to ensure release quality.
+
 ## Git Release Flow
 
 This section deals with the practical considerations of versioning in Git, this repo's version control system.  See the semantic versioning specification for the scope of changes allowed for each release type.
