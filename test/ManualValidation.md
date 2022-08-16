@@ -8,6 +8,6 @@ Please use a combination of ratify cli and k8s to cover both cluster and local s
 | Azure auth provider |  No           |                                                                      |
 | K8s secrets auth provider           |    No        |                                                                      |
 | Docker config auth provider  |     No      |                                                                      |
-| AWS Auth Provider    |    No         |                                                                      |
-| Cosign Verifier      |    Yes        | Known issue [231](https://github.com/deislabs/ratify/issues/231), validation should cover both Azure and AWS as they are differences in code path |
-| Notary Verifier      | Yes           | |                                                                      
+| AWS auth provider    |    No         |                                                                      |
+| Cosign verifier      |    Yes        | Known issue [231](https://github.com/deislabs/ratify/issues/231), validation should cover both Azure and AWS as there are differences in code path |
+| Notary verifier      | Yes           | |                                                                      
