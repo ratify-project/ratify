@@ -1,7 +1,7 @@
 # Check the documentation at https://goreleaser.com for more options
 before:
   hooks:
-    - go mod tidy -compat=1.17
+    - go mod tidy -compat=1.18
 builds:
   - id: ratify
     dir: cmd/ratify

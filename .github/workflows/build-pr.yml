@@ -14,9 +14,9 @@ jobs:
       - name: setup go environment
         uses: actions/setup-go@v3
         with:
-          go-version: "1.17"
+          go-version: "1.18"
       - name: Run tidy
-        run: go mod tidy -compat=1.17
+        run: go mod tidy -compat=1.18
       - name: Build CLI
         run: make
       - name: Check build
@@ -35,10 +35,10 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
 
-      - name: Set up Go 1.17
+      - name: Set up Go 1.18
         uses: actions/setup-go@v3
         with:
-          go-version: 1.17
+          go-version: 1.18
 
       - name: Bootstrap e2e
         run: |
