@@ -24,10 +24,7 @@
         "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
-                "verificationCerts": [
-                    "<cert folder>"
-                  ]
+                "artifactTypes" : "application/vnd.cncf.notary.v2.signature"
             },
             {
                 "name":"sbom",

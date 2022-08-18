@@ -36,6 +36,7 @@ build-plugins:
 .PHONY: install
 install: 
 	mkdir -p ${INSTALL_DIR}
+	mkdir -p ${INSTALL_DIR}/ratify-certs
 	cp -r ./bin/* ${INSTALL_DIR}
 
 .PHONY: test
