@@ -72,7 +72,6 @@ func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.V
 		return nil, err
 	}
 
-	//fmt.Print("test\n")
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
 		return nil, fmt.Errorf("failed to parse config for the input: %v", err)
 	}
