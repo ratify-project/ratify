@@ -21,10 +21,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	paths "path/filepath"
 	"strings"
 
+	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -39,7 +42,8 @@ import (
 )
 
 const (
-	verifierName = "notaryv2"
+	verifierName    = "notaryv2"
+	defaultCertPath = "ratify-certs"
 )
 
 // NotaryV2VerifierConfig describes the configuration of notation verifier
@@ -68,14 +72,12 @@ func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.V
 		return nil, err
 	}
 
-	//fmt.Print("test\n")
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
 		return nil, fmt.Errorf("failed to parse config for the input: %v", err)
 	}
 
-	if len(conf.VerificationCerts) == 0 {
-		return nil, errors.New("verification certs are missing")
-	}
+	defaultDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
+	conf.VerificationCerts = append(conf.VerificationCerts, defaultDir)
 
 	artifactTypes := strings.Split(fmt.Sprintf("%s", conf.ArtifactTypes), ",")
 
