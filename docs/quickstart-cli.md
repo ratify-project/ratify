@@ -89,9 +89,8 @@ notation sign --plain-http $IMAGE
 echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
 
 # Push to the registry with the oras cli
-oras push ${REGISTRY}/${REPO} \
+oras attach $IMAGE \
   --artifact-type sbom/example \
-  --subject $IMAGE \
   --plain-http \
   sbom.json:application/json
 ```
