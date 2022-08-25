@@ -45,9 +45,10 @@ const (
 
 // VerifierResult describes the verification result returned from the verifier plugin
 type VerifierResult struct {
-	IsSuccess bool     `json:"isSuccess"`
-	Results   []string `json:"results"`
-	Name      string   `json:"name"`
+	IsSuccess  bool        `json:"isSuccess"`
+	Message    string      `json:"message"`
+	Name       string      `json:"name"`
+	Extensions interface{} `json:"extensions"`
 }
 
 // GetVerifierResult encodes the given JSON data into verify result object
@@ -57,9 +58,10 @@ func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 		return nil, err
 	}
 	return &verifier.VerifierResult{
-		IsSuccess: vResult.IsSuccess,
-		Results:   vResult.Results,
-		Name:      vResult.Name,
+		IsSuccess:  vResult.IsSuccess,
+		Message:    vResult.Message,
+		Name:       vResult.Name,
+		Extensions: vResult.Extensions,
 	}, nil
 }
 

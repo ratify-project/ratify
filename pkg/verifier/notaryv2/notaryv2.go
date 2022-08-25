@@ -21,10 +21,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	paths "path/filepath"
 	"strings"
 
+	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -33,12 +36,14 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
 	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/crypto/jwsutil"
 	"github.com/notaryproject/notation-go/signature/jws"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
-	verifierName = "notaryv2"
+	verifierName    = "notaryv2"
+	defaultCertPath = "ratify-certs"
 )
 
 // NotaryV2VerifierConfig describes the configuration of notation verifier
@@ -67,14 +72,12 @@ func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.V
 		return nil, err
 	}
 
-	//fmt.Print("test\n")
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
 		return nil, fmt.Errorf("failed to parse config for the input: %v", err)
 	}
 
-	if len(conf.VerificationCerts) == 0 {
-		return nil, errors.New("verification certs are missing")
-	}
+	defaultDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
+	conf.VerificationCerts = append(conf.VerificationCerts, defaultDir)
 
 	artifactTypes := strings.Split(fmt.Sprintf("%s", conf.ArtifactTypes), ",")
 
@@ -110,6 +113,8 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		Digest: subjectReference.Digest,
 	}
 
+	extensions := make(map[string]string)
+
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 
 	if err != nil {
@@ -122,27 +127,72 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 			return verifier.VerifierResult{IsSuccess: false}, err
 		}
 
+		cert, err := getCert(refBlob)
+		if err != nil {
+			return verifier.VerifierResult{
+				Subject:   subjectReference.String(),
+				IsSuccess: false,
+				Name:      verifierName,
+				Message:   "error getting extension data from root cert",
+			}, err
+		}
+		extensions["Issuer"] = cert.Issuer.String()
+		extensions["SN"] = cert.Subject.String()
+
 		var opts notation.VerifyOptions
 		vdesc, err := v.notationVerifier.Verify(context.Background(), refBlob, opts)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, err
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, err
 		}
 
 		// TODO get the subject descriptor and verify all the properties other than digest.
 		if desc.Digest != vdesc.Digest {
 			return verifier.VerifierResult{
-				Subject:   subjectReference.String(),
-				Name:      verifierName,
-				IsSuccess: false,
-				Results:   []string{fmt.Sprintf("verification failure: digest mismatch: %v: %v", desc.Digest, vdesc.Digest)}}, nil
+				Subject:    subjectReference.String(),
+				Name:       verifierName,
+				IsSuccess:  false,
+				Message:    fmt.Sprintf("verification failure: digest mismatch: %v: %v", desc.Digest, vdesc.Digest),
+				Extensions: extensions}, nil
 		}
 	}
 
 	return verifier.VerifierResult{
-		Name:      verifierName,
-		IsSuccess: true,
-		Results:   []string{"signature verification success"},
+		Name:       verifierName,
+		IsSuccess:  true,
+		Message:    "signature verification success",
+		Extensions: extensions,
 	}, nil
+}
+
+// This function is borrowed internals from the notation-go jws verifier
+// https://github.com/notaryproject/notation-go/blob/main/signature/jws/verifier.go
+func getCert(refBlob []byte) (*x509.Certificate, error) {
+	var envelope jwsutil.Envelope
+	if err := json.Unmarshal(refBlob, &envelope); err != nil {
+		return nil, err
+	}
+	if len(envelope.Signatures) != 1 {
+		return nil, errors.New("single signature envelope expected")
+	}
+	sig := envelope.Open()
+
+	var header struct {
+		TimeStampToken []byte   `json:"timestamp,omitempty"`
+		CertChain      [][]byte `json:"x5c,omitempty"`
+	}
+	if err := json.Unmarshal(sig.Unprotected, &header); err != nil {
+		return nil, err
+	}
+	if len(header.CertChain) == 0 {
+		return nil, errors.New("signer certificates not found")
+	}
+
+	cert, err := x509.ParseCertificate(header.CertChain[0])
+	if err != nil {
+		return nil, err
+	}
+
+	return cert, nil
 }
 
 func getVerifierService(certPaths ...string) (*jws.Verifier, error) {

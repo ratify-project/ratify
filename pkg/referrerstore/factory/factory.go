@@ -58,7 +58,7 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 	}
 
 	if len(storesConfig.Stores) == 0 {
-		return nil, errors.New("referrer store config should have atleast one store")
+		return nil, errors.New("referrer store config should have at least one store")
 	}
 
 	var stores []referrerstore.ReferrerStore

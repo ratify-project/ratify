@@ -26,6 +26,8 @@ import (
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	"github.com/sirupsen/logrus"
+
 	"github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
@@ -39,8 +41,11 @@ func TestServer_Timeout_Failed(t *testing.T) {
 	testImageName := "localhost:5000/net-monitor:v1"
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
+
 		json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageName}))
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
 		responseRecorder := httptest.NewRecorder()
 
 		testDigest := digest.FromString("test")
@@ -71,14 +76,19 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			ReferrerStores: []referrerstore.ReferrerStore{store},
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
 		server := &Server{
-			Executor: ex,
-			Context:  request.Context(),
+			GetExecutor: getExecutor,
+			Context:     request.Context(),
 		}
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.Executor.GetVerifyRequestTimeout()),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)

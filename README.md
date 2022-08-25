@@ -20,9 +20,9 @@ by its developers, nor is it "supported" software.
 ## Community meetings
 
 - Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
-- We hold a weekly Ratify community meeting with alternating times to accommodate more time zones. 
-Series #1 Tues 4-5pm   
-Series #2 Wed 1-2pm    
+- We hold a weekly Ratify community meeting with alternating times to accommodate more time zones.
+Series #1 Tues 4-5pm
+Series #2 Wed 1-2pm
 Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 
@@ -44,48 +44,49 @@ helm install gatekeeper/gatekeeper  \
     --set validatingWebhookTimeoutSeconds=7
 ```
 
-NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify operations complete in complex scenarios. Kubernetes v1.20 or higher is REQUIRED to increase timeout.  
+NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify operations complete in complex scenarios. See [discussion here](https://github.com/deislabs/ratify/issues/269) to remove this requirement. Kubernetes v1.20 or higher is REQUIRED to increase timeout.  
 
-- Deploy ratify and a `demo` constraint on gatekeeper
+- Deploy ratify and a `demo` constraint on gatekeeper in the default namespace.
 
 ```bash
 helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
     ratify/ratify --atomic
 
-kubectl apply -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
+kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 ```
 
 Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
 
-- Create the namespace `demo`
+- This will successfully create the pod `demo`
 
 ```bash=
-kubectl create ns demo
+kubectl run demo --image=ratify.azurecr.io/testimage:signed
+kubectl get pods -w
 ```
-
-- This will successfully create the pod `demo` in the namespace `demo`
-
-```bash=
-kubectl run demo --image=ratify.azurecr.io/testimage:signed -n demo
-```
+You will see the "successful" created pod in a CrashLoopBackoff because the container by design executes a shell script displaying text and then crashes.
 
 - Now deploy an unsigned image
 
 ```bash=
-kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned -n demo
+kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned
 ```
 
-You will see a deny message from Gatekeeper as the image doesn't have any signatures.
+You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
+
+```bash=
+Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [ratify-constraint] Subject failed verification: ratify.azurecr.io/testimage:unsigned
+```
 
 You just validated the container images in your k8s cluster!
 
 - Uninstall Ratify
 
 ```bash=
-kubectl delete -f https://deislabs.github.io/ratify/charts/ratify-gatekeeper/templates/constraint.yaml
+kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
+kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 helm delete ratify
-kubectl delete namespace demo
 ```
 
 ## Documents
