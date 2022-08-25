@@ -74,6 +74,7 @@ func getHomeDir() string {
 	return homeDir
 }
 
+// Load the config from file path provided, read from default path if configFilePath is empty
 func Load(configFilePath string) (Config, error) {
 
 	config := Config{}
