@@ -5,9 +5,9 @@ go 1.18
 require (
 	github.com/Azure/azure-sdk-for-go v66.0.0+incompatible
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.4.0
-	github.com/aws/aws-sdk-go-v2 v1.16.11
+	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.15.14
-	github.com/aws/aws-sdk-go-v2/credentials v1.12.14
+	github.com/aws/aws-sdk-go-v2/credentials v1.12.18
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
@@ -43,14 +43,15 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.12 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.18 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.12 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.15 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.1.21 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.4.15 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.15 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.12 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.11.17 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.16.13 // indirect
-	github.com/aws/smithy-go v1.12.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.15 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.11.21 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.13.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.16.17 // indirect
+	github.com/aws/smithy-go v1.13.2 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bgentry/speakeasy v0.1.0 // indirect
