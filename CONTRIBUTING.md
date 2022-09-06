@@ -69,6 +69,27 @@ Sample curl request to invoke Ratify endpoint:
 ```
 curl -X POST http://127.0.0.1:6001/ratify/gatekeeper/v1/verify -H "Content-Type: application/json" -d '{"apiVersion":"externaldata.gatekeeper.sh/v1alpha1","kind":"ProviderRequest","request":{"keys":["localhost:5000/net-monitor:v1"]}}'
 ```
+### Test local changes in the k8s cluster scenario
+There are some changes that should be validated in a cluster scenario.   
+Follow the steps below to build and deploy a Ratify image with your private changes:   
+1. build an image with your local changes
+```
+docker build -f httpserver/Dockerfile -t yourregistry/deislabs/ratify:yourtag .
+```
+2. [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
+```
+docker push yourregistry/deislabs/ratify:yourtag
+```
+3. Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry
+```json
+image:
+  repository: yourregistry/deislabs/ratify
+  tag: yourtag
+```
+4. Deploy from local helm chart
+```
+helm install ratify ./charts/ratify --atomic
+```
 ## Pull Requests
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
