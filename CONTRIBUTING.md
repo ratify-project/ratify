@@ -32,7 +32,65 @@ The Ratify project is composed of the following main components:
 
 * Once built run Ratify from the bin directory `./bin/ratify` for a list of the available commands.
 * For any command the `--help` argument can be passed for more information and a list of possible arguments.
+* 
+### Debugging Ratify with VS Code
+Ratify can run through cli command or run as a http server. Create a [launch.json](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) file in the .vscode directory, then hit F5 to debug. Note the first debug session may take a few minutes to load, subsequent session will be much faster.
 
+Sample json for cli:
+```json
+{
+    "version": "0.2.0",
+    "configurations": [{
+      "name": "Debug Ratify cli ",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/ratify",
+      "args": ["verify", "-s", "ratify.azurecr.io/testimage@sha256:9515b691095051d68b4409a30c4819c98bd6f4355d5993a7487687cdc6d47cc3"]
+    }]
+}
+```
+Sample launch json for http server:
+```json
+{
+    "version": "0.2.0",
+    "configurations": [{
+      "name": "Debug Ratify ",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/cmd/ratify",
+      "args": ["serve", "--http", ":6001", "-c", "/home/azureuser/.ratify/config.json"]
+    }]
+}
+```
+Sample curl request to invoke Ratify endpoint:
+
+```
+curl -X POST http://127.0.0.1:6001/ratify/gatekeeper/v1/verify -H "Content-Type: application/json" -d '{"apiVersion":"externaldata.gatekeeper.sh/v1alpha1","kind":"ProviderRequest","request":{"keys":["localhost:5000/net-monitor:v1"]}}'
+```
+### Test local changes in the k8s cluster scenario
+There are some changes that should be validated in a cluster scenario.   
+Follow the steps below to build and deploy a Ratify image with your private changes:   
+1. build an image with your local changes
+```
+docker build -f httpserver/Dockerfile -t yourregistry/deislabs/ratify:yourtag .
+```
+2. [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
+```
+docker push yourregistry/deislabs/ratify:yourtag
+```
+3. Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
+```json
+image:
+  repository: yourregistry/deislabs/ratify
+  tag: yourtag
+  pullPolicy: Always
+```
+4. Deploy from local helm chart
+```
+helm install ratify ./charts/ratify --atomic
+```
 ## Pull Requests
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
