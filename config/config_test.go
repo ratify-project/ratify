@@ -41,8 +41,7 @@ func TestLoad_FromDefaultPath(t *testing.T) {
 		t.Fatalf("config file creation failed %v", err)
 	}
 
-	configurationPath := getConfigurationFile("")
-	config, err := Load(configurationPath)
+	config, err := Load("")
 	if err != nil {
 		t.Fatalf("loading config failed %v", err)
 	}

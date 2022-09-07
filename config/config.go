@@ -74,11 +74,12 @@ func getHomeDir() string {
 	return homeDir
 }
 
+// Load the config from file path provided, read from default path if configFilePath is empty
 func Load(configFilePath string) (Config, error) {
 
 	config := Config{}
 
-	body, readErr := ioutil.ReadFile(configFilePath)
+	body, readErr := ioutil.ReadFile(getConfigurationFile(configFilePath))
 
 	if readErr != nil {
 		return config, fmt.Errorf("unable to read config file at path %s", readErr)
