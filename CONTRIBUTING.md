@@ -80,11 +80,12 @@ docker build -f httpserver/Dockerfile -t yourregistry/deislabs/ratify:yourtag .
 ```
 docker push yourregistry/deislabs/ratify:yourtag
 ```
-3. Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry
+3. Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
 ```json
 image:
   repository: yourregistry/deislabs/ratify
   tag: yourtag
+  pullPolicy: Always
 ```
 4. Deploy from local helm chart
 ```
