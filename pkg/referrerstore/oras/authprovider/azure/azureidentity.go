@@ -37,13 +37,11 @@ type azureManagedIdentityAuthProvider struct {
 	identityToken azcore.AccessToken
 	clientID      string
 	tenantID      string
-	aadResource   string
 }
 
 type azureManagedIdentityAuthProviderConf struct {
 	Name     string `json:"name"`
 	ClientID string `json:"clientID"`
-	Cloud    string `json:"cloud"`
 }
 
 var (
@@ -85,12 +83,11 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 			return nil, fmt.Errorf("AZURE_CLIENT_ID environment variable is empty")
 		}
 	}
-	aadResource, err := getAADResource(conf.Cloud)
 	if err != nil {
 		return nil, err
 	}
 	// retrieve an AAD Access token
-	token, err := getManagedIdentityToken(context.Background(), client, aadResource)
+	token, err := getManagedIdentityToken(context.Background(), client)
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +96,6 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		identityToken: token,
 		clientID:      client,
 		tenantID:      tenant,
-		aadResource:   aadResource,
 	}, nil
 }
 
@@ -135,7 +131,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 
 	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.identityToken.ExpiresOn) {
-		newToken, err := getManagedIdentityToken(ctx, d.clientID, d.aadResource)
+		newToken, err := getManagedIdentityToken(ctx, d.clientID)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
 		}
@@ -162,14 +158,14 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	return authConfig, nil
 }
 
-func getManagedIdentityToken(ctx context.Context, clientID string, aadResource string) (azcore.AccessToken, error) {
+func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
 	id := azidentity.ClientID(clientID)
 	opts := azidentity.ManagedIdentityCredentialOptions{ID: id}
 	cred, err := azidentity.NewManagedIdentityCredential(&opts)
 	if err != nil {
 		return azcore.AccessToken{}, err
 	}
-	scopes := []string{aadResource}
+	scopes := []string{AADResource}
 	if cred != nil {
 		return cred.GetToken(ctx, policy.TokenRequestOptions{Scopes: scopes})
 	}

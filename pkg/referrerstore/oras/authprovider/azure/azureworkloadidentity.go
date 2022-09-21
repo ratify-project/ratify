@@ -167,7 +167,7 @@ func getAADAccessToken(ctx context.Context, tenantID string) (confidential.AuthR
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential client app")
 	}
 
-	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{AADResourcePublicCloud})
+	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{AADResource})
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire AAD token")
 	}
