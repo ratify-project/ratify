@@ -41,9 +41,7 @@ type azureWIAuthProviderConf struct {
 }
 
 const (
-	azureWIAuthProviderName      string = "azureWorkloadIdentity"
-	dockerTokenLoginUsernameGUID string = "00000000-0000-0000-0000-000000000000"
-	AADResource                  string = "https://containerregistry.azure.net/.default"
+	azureWIAuthProviderName string = "azureWorkloadIdentity"
 )
 
 // init calls Register for our Azure Workload Identity provider
@@ -106,7 +104,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	}
 
 	// need to refresh AAD token if it's expired
-	if time.Now().After(d.aadToken.ExpiresOn) {
+	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
 		newToken, err := getAADAccessToken(ctx, d.tenantID)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
