@@ -69,7 +69,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse azure managed identity auth provider configuration: %v", err)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
@@ -133,10 +133,10 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	if time.Now().Add(time.Minute * 5).After(d.identityToken.ExpiresOn) {
 		newToken, err := getManagedIdentityToken(ctx, d.clientID)
 		if err != nil {
-			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
+			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh azure managed identity token")
 		}
 		d.identityToken = newToken
-		logrus.Info("sucessfully refreshed AAD token")
+		logrus.Info("sucessfully refreshed azure managed identity token")
 	}
 	// add protocol to generate complete URI
 	serverUrl := "https://" + artifactHostName
@@ -145,7 +145,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
 	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
-		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry - %w", err)
+		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry by azure managed identity token - %w", err)
 	}
 
 	authConfig := provider.AuthConfig{
