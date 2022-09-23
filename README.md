@@ -89,6 +89,10 @@ kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/cons
 helm delete ratify
 ```
 
+### Notes
+
+If the image reference provided resolves to an OCI Index or a Docker Manifest List, validation will occur ONLY at the index or manifest list level. Ratify currently does NOT support image validation based on automatic platform selection. 
+
 ## Documents
 
 The [docs](docs/README.md) folder contains the beginnings of a formal
