@@ -31,7 +31,7 @@ data:
                 {{- end }}
                 {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
                 ,
-                "auth-provider": {
+                "authProvider": {
                     "name": "awsEcrBasic"
                 }
                 {{- end }}
