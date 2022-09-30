@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,4 +28,14 @@ jobs:
         args: release --rm-dist
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
+    - name: Generate SBOM
+      run: |
+        curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+        chmod +x $RUNNER_TEMP/sbom-tool
+        $RUNNER_TEMP/sbom-tool generate -b ./buildOutput -bc . -pn ratify -pv ${{env.GITHUB_REF_NAME}}-${{env.GITHUB_SHA}} -ps Microsoft -nsb https://microsoft.com -V Verbose
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: buildOutput
