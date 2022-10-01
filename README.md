@@ -6,7 +6,7 @@ Is a policy engine as a binary executable and on Kubernetes which enables verifi
 by its developers, nor is it "supported" software.
 
 [![build-pr](https://github.com/deislabs/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/deislabs/ratify/actions/workflows/build-pr.yml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/deislabs/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/deislabs/ratify)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/dtzar/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/dtzar/ratify)
 
 ## Table of Contents
 
