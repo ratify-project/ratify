@@ -1,14 +1,16 @@
 # Ratify
 
-The project provides a framework to integrate scenarios that require
-verification of reference artifacts and provides a set of interfaces
-that can be consumed by various systems that can participate in
-artifact ratification.
+Is a policy engine as a binary executable and on Kubernetes which enables verification of artifact security metadata and admits for deployment only those that comply with policies you create.
 
-**WARNING:** This is experimental code. It is not considered production-grade
+**WARNING:** This is not considered production-grade code
 by its developers, nor is it "supported" software.
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/deislabs/ratify)](https://goreportcard.com/report/github.com/deislabs/ratify)
+[![build-pr](https://github.com/deislabs/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/deislabs/ratify/actions/workflows/build-pr.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/deislabs/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/deislabs/ratify)
+
 ## Table of Contents
+
 - [Community Meetings](#community-meetings)
 - [Quick Start](#quick-start)
 - [Documents](#documents)

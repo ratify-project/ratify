@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -11,14 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # tag=3.0.2
       with:
           fetch-depth: 0
           
     - name: Set up Go
-      uses: actions/setup-go@v3
+      uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f # tag=3.3.0
       with:
-        go-version: 1.18
+        go-version: 1.19
 
     - name: Goreleaser
       uses: goreleaser/goreleaser-action@v3
@@ -27,4 +28,15 @@ jobs:
         args: release --rm-dist
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
+
+    - name: Generate SBOM
+      run: |
+        curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+        chmod +x $RUNNER_TEMP/sbom-tool
+        $RUNNER_TEMP/sbom-tool generate -b . -bc . -pn ratify -pv $GITHUB_REF_NAME -ps Microsoft -nsb https://microsoft.com -V Verbose
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # tag=v3.1.0
+      with:
+        name: SBOM SPDX files
+        path: _manifest/spdx_2.2/**
