@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	paths "path/filepath"
+	"sync"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -71,11 +72,12 @@ type authCacheEntry struct {
 }
 
 type orasStore struct {
-	config       *OrasStoreConf
-	rawConfig    config.StoreConfig
-	localCache   *ocitarget.Store
-	authProvider authprovider.AuthProvider
-	authCache    map[string]authCacheEntry
+	config         *OrasStoreConf
+	rawConfig      config.StoreConfig
+	localCache     *ocitarget.Store
+	localCacheLock sync.Mutex
+	authProvider   authprovider.AuthProvider
+	authCache      sync.Map
 }
 
 func init() {
@@ -112,8 +114,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	return &orasStore{config: &conf,
 		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
 		localCache:   localRegistry,
-		authProvider: authenticationProvider,
-		authCache:    make(map[string]authCacheEntry)}, nil
+		authProvider: authenticationProvider}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -203,10 +204,20 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		}
 
 		// push fetched content to local ORAS cache
-		err = store.localCache.Push(ctx, blobDesc, rc)
+		store.localCacheLock.Lock()
+		// check if blob exists in local ORAS cache
+		isCached, err := store.localCache.Exists(ctx, blobDescriptor)
 		if err != nil {
 			return nil, err
 		}
+		if !isCached {
+			err = store.localCache.Push(ctx, blobDesc, rc)
+			if err != nil {
+				store.localCacheLock.Unlock()
+				return nil, err
+			}
+		}
+		store.localCacheLock.Unlock()
 	}
 
 	// add the repository client to the auth cache if all repository operations successful
@@ -241,10 +252,20 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
-		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+		store.localCacheLock.Lock()
+		isCached, err := store.localCache.Exists(ctx, referenceDesc.Descriptor)
 		if err != nil {
+			store.localCacheLock.Unlock()
 			return ocispecs.ReferenceManifest{}, err
 		}
+		if !isCached {
+			err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+			if err != nil {
+				store.localCacheLock.Unlock()
+				return ocispecs.ReferenceManifest{}, err
+			}
+		}
+		store.localCacheLock.Unlock()
 
 		// add the repository client to the auth cache if all repository operations successful
 		store.addAuthCache(subjectReference.Original, repository, expiry)
@@ -287,8 +308,9 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 		return nil, time.Now(), fmt.Errorf("auth provider not properly enabled")
 	}
 
-	if cacheEntry, ok := store.authCache[targetRef.Original]; ok {
+	if entry, ok := store.authCache.Load(targetRef.Original); ok {
 		// if the auth cache entry expiration has not expired or it was never set
+		cacheEntry := entry.(authCacheEntry)
 		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
 			return cacheEntry.client, cacheEntry.expiresOn, nil
 		}
@@ -357,16 +379,13 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 }
 
 func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, expiry time.Time) {
-	_, ok := store.authCache[ref]
-	if !ok {
-		store.authCache[ref] = authCacheEntry{
-			client:    repository,
-			expiresOn: expiry,
-		}
-	}
+	store.authCache.LoadOrStore(ref, authCacheEntry{
+		client:    repository,
+		expiresOn: expiry,
+	})
 }
 
 func (store *orasStore) evictAuthCache(ref string, err error) {
-	delete(store.authCache, ref)
+	store.authCache.Delete(ref)
 	// TODO: add reliable way to conditionally evict based on error code
 }

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	e "github.com/deislabs/ratify/pkg/executor"
@@ -46,30 +47,48 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	results := make([]externaldata.Item, 0)
+	start := time.Now()
+	wg := sync.WaitGroup{}
+	mu := sync.RWMutex{}
+
 	// iterate over all keys
 	for _, subject := range providerRequest.Request.Keys {
-		// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
-		logrus.Infof("subject for request %v %v is %v", r.Method, r.URL, subject)
+		wg.Add(1)
 
-		verifyParameters := e.VerifyParameters{
-			Subject: subject,
-		}
+		go func(subject string) {
+			defer wg.Done()
+			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
+			logrus.Infof("subject for request %v %v is %v", r.Method, r.URL, subject)
+			returnItem := externaldata.Item{
+				Key: subject,
+			}
 
-		result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
+			verifyParameters := e.VerifyParameters{
+				Subject: subject,
+			}
 
-		if err != nil {
-			return err
-		}
+			result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
+			if err != nil {
+				returnItem.Error = err.Error()
+			}
 
-		res, err := json.MarshalIndent(result, "", "  ")
-		if err == nil {
-			fmt.Println(string(res))
-		}
+			res, err := json.MarshalIndent(result, "", "  ")
+			if err == nil {
+				fmt.Println(string(res))
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			results = append(results, externaldata.Item{
+				Key:   subject,
+				Value: result,
+			})
+		}(subject)
+	}
+	wg.Wait()
+	fmt.Printf("total time elapsed: %d", time.Since(start).Milliseconds())
 
-		results = append(results, externaldata.Item{
-			Key:   subject,
-			Value: result,
-		})
+	if err != nil {
+		sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w, http.StatusInternalServerError)
 	}
 	return sendResponse(&results, "", w, http.StatusOK)
 }

@@ -159,6 +159,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 }
 
 func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
+	fmt.Println(clientID)
 	id := azidentity.ClientID(clientID)
 	opts := azidentity.ManagedIdentityCredentialOptions{ID: id}
 	cred, err := azidentity.NewManagedIdentityCredential(&opts)
@@ -167,6 +168,7 @@ func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.Acces
 	}
 	scopes := []string{AADResource}
 	if cred != nil {
+		fmt.Println(cred)
 		return cred.GetToken(ctx, policy.TokenRequestOptions{Scopes: scopes})
 	}
 	return azcore.AccessToken{}, ErrorNilConfig
