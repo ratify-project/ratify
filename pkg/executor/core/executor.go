@@ -18,6 +18,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/deislabs/ratify/pkg/common"
@@ -31,6 +32,7 @@ import (
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 const defaultRequestTimeoutMilliseconds = 2800
@@ -82,35 +84,46 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	subjectReference.Digest = desc.Digest
 
 	var verifierReports []interface{}
+	eg := errgroup.Group{}
+	var mu sync.Mutex
 
 	for _, referrerStore := range executor.ReferrerStores {
-		var continuationToken string
-		for {
-			referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
-			if err != nil {
-				return types.VerifyResult{}, err
-			}
-			continuationToken = referrersResult.NextToken
-
-			for _, reference := range referrersResult.Referrers {
-
-				if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
-					verifyResult := executor.verifyReference(ctx, subjectReference, desc, reference, referrerStore)
-					verifierReports = append(verifierReports, verifyResult.VerifierReports...)
-
-					if !verifyResult.IsSuccess {
-						result := types.VerifyResult{IsSuccess: false, VerifierReports: verifierReports}
-						if !executor.PolicyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, reference, result) &&
-							executor.Config.ExecutionMode != config.PassthroughExecutionMode {
-							return result, nil
+		referrerStore := referrerStore
+		eg.Go(func() error {
+			var continuationToken string
+			for {
+				referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
+				if err != nil {
+					return err
+				}
+				continuationToken = referrersResult.NextToken
+				wg := sync.WaitGroup{}
+				for _, reference := range referrersResult.Referrers {
+					wg.Add(1)
+					go func(reference ocispecs.ReferenceDescriptor) {
+						defer wg.Done()
+						fmt.Println("new thread spun up")
+						if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
+							verifyResult := executor.verifyReference(ctx, subjectReference, desc, reference, referrerStore)
+							mu.Lock()
+							defer mu.Unlock()
+							verifierReports = append(verifierReports, verifyResult.VerifierReports...)
 						}
-					}
+						fmt.Println("new thread done up")
+					}(reference)
+					fmt.Println("made a new thread!")
+				}
+				wg.Wait()
+				if continuationToken == "" {
+					break
 				}
 			}
-			if continuationToken == "" {
-				break
-			}
-		}
+			return nil
+		})
+	}
+
+	if err = eg.Wait(); err != nil {
+		return types.VerifyResult{}, err
 	}
 
 	if len(verifierReports) == 0 {
