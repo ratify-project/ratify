@@ -17,7 +17,6 @@ package httpserver
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
 
@@ -84,5 +83,5 @@ func (server *Server) registerHandlers() {
 type ServerAddrNotFoundError struct{}
 
 func (err ServerAddrNotFoundError) Error() string {
-	return fmt.Sprint("The http server address configuration is not set. Skipping server creation")
+	return "The http server address configuration is not set. Skipping server creation"
 }

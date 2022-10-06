@@ -30,6 +30,7 @@ import (
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	ocitarget "oras.land/oras-go/v2/content/oci"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
@@ -72,12 +73,11 @@ type authCacheEntry struct {
 }
 
 type orasStore struct {
-	config         *OrasStoreConf
-	rawConfig      config.StoreConfig
-	localCache     *ocitarget.Store
-	localCacheLock sync.Mutex
-	authProvider   authprovider.AuthProvider
-	authCache      sync.Map
+	config       *OrasStoreConf
+	rawConfig    config.StoreConfig
+	localCache   *ocitarget.Store
+	authProvider authprovider.AuthProvider
+	authCache    sync.Map
 }
 
 func init() {
@@ -147,7 +147,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	artifactTypeFilter := ""
 	var referrerDescriptors []artifactspec.Descriptor
 	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
-		referrerDescriptors = referrers
+		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
 	}); err != nil {
 		store.evictAuthCache(subjectReference.Original, err)
@@ -204,22 +204,11 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		}
 
 		// push fetched content to local ORAS cache
-		store.localCacheLock.Lock()
-		// check if blob exists in local ORAS cache
-		isCached, err := store.localCache.Exists(ctx, blobDescriptor)
-		if err != nil {
+		err = store.localCache.Push(ctx, blobDesc, rc)
+		if err != nil && err != errdef.ErrAlreadyExists {
 			return nil, err
 		}
-		if !isCached {
-			err = store.localCache.Push(ctx, blobDesc, rc)
-			if err != nil {
-				store.localCacheLock.Unlock()
-				return nil, err
-			}
-		}
-		store.localCacheLock.Unlock()
 	}
-
 	// add the repository client to the auth cache if all repository operations successful
 	store.addAuthCache(subjectReference.Original, repository, expiry)
 
@@ -252,20 +241,10 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
-		store.localCacheLock.Lock()
-		isCached, err := store.localCache.Exists(ctx, referenceDesc.Descriptor)
-		if err != nil {
-			store.localCacheLock.Unlock()
+		store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+		if err != nil && err != errdef.ErrAlreadyExists {
 			return ocispecs.ReferenceManifest{}, err
 		}
-		if !isCached {
-			err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
-			if err != nil {
-				store.localCacheLock.Unlock()
-				return ocispecs.ReferenceManifest{}, err
-			}
-		}
-		store.localCacheLock.Unlock()
 
 		// add the repository client to the auth cache if all repository operations successful
 		store.addAuthCache(subjectReference.Original, repository, expiry)

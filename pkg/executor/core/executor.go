@@ -91,33 +91,30 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 		referrerStore := referrerStore
 		eg.Go(func() error {
 			var continuationToken string
+			wg := sync.WaitGroup{}
 			for {
 				referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
 				if err != nil {
 					return err
 				}
 				continuationToken = referrersResult.NextToken
-				wg := sync.WaitGroup{}
 				for _, reference := range referrersResult.Referrers {
 					wg.Add(1)
 					go func(reference ocispecs.ReferenceDescriptor) {
 						defer wg.Done()
-						fmt.Println("new thread spun up")
 						if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
 							verifyResult := executor.verifyReference(ctx, subjectReference, desc, reference, referrerStore)
 							mu.Lock()
 							defer mu.Unlock()
 							verifierReports = append(verifierReports, verifyResult.VerifierReports...)
 						}
-						fmt.Println("new thread done up")
 					}(reference)
-					fmt.Println("made a new thread!")
 				}
-				wg.Wait()
 				if continuationToken == "" {
 					break
 				}
 			}
+			wg.Wait()
 			return nil
 		})
 	}
@@ -127,7 +124,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 
 	if len(verifierReports) == 0 {
-		return types.VerifyResult{}, ReferrersNotFound
+		return types.VerifyResult{}, ErrReferrersNotFound
 	}
 
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)

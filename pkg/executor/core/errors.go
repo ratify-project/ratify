@@ -18,6 +18,6 @@ package core
 import "errors"
 
 var (
-	// ReferrersNotFound is thrown when there aren't any references for an artifact
-	ReferrersNotFound = errors.New("no referrers found for this artifact")
+	// ErrReferrersNotFound is thrown when there aren't any references for an artifact
+	ErrReferrersNotFound = errors.New("no referrers found for this artifact")
 )
