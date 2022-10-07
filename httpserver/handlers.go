@@ -47,7 +47,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	results := make([]externaldata.Item, 0)
-	start := time.Now()
 	wg := sync.WaitGroup{}
 	mu := sync.RWMutex{}
 
@@ -85,7 +84,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 		}(subject)
 	}
 	wg.Wait()
-	fmt.Printf("total time elapsed: %d", time.Since(start).Milliseconds())
 
 	if err != nil {
 		sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w, http.StatusInternalServerError)
