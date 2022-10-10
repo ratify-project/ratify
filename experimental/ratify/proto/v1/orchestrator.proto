@@ -1,0 +1,90 @@
+syntax="proto3";
+
+package orchestrator;
+
+option go_package = "github.com/deislabs/ratify/experimental/proto/v1/orchestrator";
+
+import "common.proto";
+import "google/protobuf/struct.proto";
+
+/* These endpoints allow Verifier plugins to call Ratify instead of having to  know about and communicate directly with any given Store plugin.
+*/
+service PluginOrchestrator {
+    // Fetch the contents of blob.
+    rpc GetBlobs (GetBlobsRequest) returns (GetBlobsResponse);
+    // Fetch the contents of a given manifest.
+    rpc GetManifest (GetManifestRequest) returns (GetManifestResponse);
+}
+
+// The request for GetBlobContent
+message GetBlobsRequest {
+    // The artifact for which to retrieve blobs.
+    common.Descriptor artifact = 1;
+    // The name of the appropriate configured Store plugin to call.
+    string storePluginName = 2;
+}
+
+// The response for GetBlobContent
+message GetBlobsResponse {
+    common.Descriptor artifact = 1;
+    repeated bytes content = 2;
+}
+
+// The request for GetManifest
+message GetManifestRequest {
+    // The subject.
+    common.Descriptor subject = 1;
+    // The referrer for which the manifest is being requested.
+    common.Referrer referrer = 2;
+    // The name of the appropriate configured Store plugin to call.
+    string storePluginName = 3;
+}
+
+// The response for GetManifest
+message GetManifestResponse {
+    // The fully realized Manifest object for the referrer.
+    common.Manifest manifest = 1;
+}
+
+// The request for VerifySubject
+message VerifySubjectRequest {
+    // The subject under verification.
+    string subjectReference = 1;
+    // The configurations of the store plugins to be used.
+    repeated google.protobuf.Struct storeConfigurations = 2;
+    // The configurations of the verifier plugins to be used.
+    repeated google.protobuf.Struct verifierConfigurations = 3;
+}
+
+// The response for VerifySubject
+message VerifySubjectResponse {
+    // what a single verifier returns
+    message VerificationReport {
+        message ExtensionData {
+            map<string, string> values = 1;
+        }
+        // The name of the verifier which evaluated the artifact.
+        string verifierName = 1;
+        // Whether the artifact passed validation
+        bool valid = 2;
+        // Details surrounding why the verifier considered the artifact valid or invalid
+        repeated string reasons = 3;
+        // Custom metadata realized as a part of verification process.
+        // These properties can be used to compose more robust constraints.
+        repeated ExtensionData data = 4;
+    }
+    // A collection of verification results for a single Referrer.
+    message ReferrerVerificationReport {
+        // The artifact being verified
+        common.Referrer referrer = 1;
+        // The results of all verifier evaluation for the artifact.
+        repeated VerificationReport reports = 2;
+        // Verification results for all nested artifacts (artifacts which refer to this one).
+        repeated ReferrerVerificationReport children = 3;
+    }
+
+    // The subject under verification
+    string subjectReference = 1;
+    // The verification results for all artifacts which reference the given subject.
+    repeated ReferrerVerificationReport results = 2;
+}
