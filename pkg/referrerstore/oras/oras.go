@@ -323,7 +323,7 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 		Header: http.Header{
 			"User-Agent": {ratifyUserAgent},
 		},
-		Cache:      auth.DefaultCache,
+		Cache:      auth.NewCache(),
 		Credential: credentialProvider,
 	}
 

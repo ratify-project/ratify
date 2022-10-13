@@ -85,9 +85,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 	wg.Wait()
 
-	if err != nil {
-		sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w, http.StatusInternalServerError)
-	}
 	return sendResponse(&results, "", w, http.StatusOK)
 }
 
