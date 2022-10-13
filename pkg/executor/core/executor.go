@@ -84,7 +84,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	subjectReference.Digest = desc.Digest
 
 	var verifierReports []interface{}
-	eg := errgroup.Group{}
+	eg, errCtx := errgroup.WithContext(ctx)
 	var mu sync.Mutex
 
 	for _, referrerStore := range executor.ReferrerStores {
@@ -93,7 +93,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 			var continuationToken string
 			wg := sync.WaitGroup{}
 			for {
-				referrersResult, err := referrerStore.ListReferrers(ctx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
+				referrersResult, err := referrerStore.ListReferrers(errCtx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
 				if err != nil {
 					return err
 				}
@@ -103,8 +103,8 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 					go func(reference ocispecs.ReferenceDescriptor) {
 						defer wg.Done()
 						if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
-							verifyResult := executor.verifyReference(ctx, subjectReference, desc, reference, referrerStore)
-							mu.Lock()
+							verifyResult := executor.verifyReference(errCtx, subjectReference, desc, reference, referrerStore)
+							mu.Lock() // locks the verifierReports List for write safety
 							defer mu.Unlock()
 							verifierReports = append(verifierReports, verifyResult.VerifierReports...)
 						}
