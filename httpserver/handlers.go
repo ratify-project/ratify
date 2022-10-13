@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -53,7 +54,8 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	// iterate over all keys
 	for _, subject := range providerRequest.Request.Keys {
 		wg.Add(1)
-
+		escapedSubject := strings.Replace(subject, "\n", "", -1)
+		escapedSubject = strings.Replace(escapedSubject, "\r", "", -1)
 		go func(subject string) {
 			defer wg.Done()
 			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
@@ -81,7 +83,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				Key:   subject,
 				Value: result,
 			})
-		}(subject)
+		}(escapedSubject)
 	}
 	wg.Wait()
 
