@@ -21,11 +21,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"sync"
 	"time"
 
 	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/utils"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
 )
@@ -50,16 +50,16 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	results := make([]externaldata.Item, 0)
 	wg := sync.WaitGroup{}
 	mu := sync.RWMutex{}
+	sanitizedMethod := utils.SanitizeString(r.Method)
+	sanitizedURL := utils.SanitizeString(r.URL.String())
 
 	// iterate over all keys
 	for _, subject := range providerRequest.Request.Keys {
 		wg.Add(1)
-		escapedSubject := strings.Replace(subject, "\n", "", -1)
-		escapedSubject = strings.Replace(escapedSubject, "\r", "", -1)
 		go func(subject string) {
 			defer wg.Done()
 			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
-			logrus.Infof("subject for request %v %v is %v", r.Method, r.URL, subject)
+			logrus.Infof("subject for request %v %v is %v", sanitizedMethod, sanitizedURL, subject)
 			returnItem := externaldata.Item{
 				Key: subject,
 			}
@@ -83,7 +83,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				Key:   subject,
 				Value: result,
 			})
-		}(escapedSubject)
+		}(utils.SanitizeString(subject))
 	}
 	wg.Wait()
 
