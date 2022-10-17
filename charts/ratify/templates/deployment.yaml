@@ -22,6 +22,10 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.image.pullSecrets }}
+          imagePullSecrets:
+           {{- toYaml .Values.image.pullSecrets | nindent 12 }}
+          {{- end }}
           command:
             - "/app/ratify"
           args:

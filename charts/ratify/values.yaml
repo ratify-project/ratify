@@ -2,6 +2,7 @@ image:
   repository: ghcr.io/deislabs/ratify
   tag: v1.0.0-alpha.2
   pullPolicy: IfNotPresent
+  pullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 ratifyTestCert: |
