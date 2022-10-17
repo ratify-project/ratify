@@ -18,14 +18,14 @@ spec:
       {{- if or .Values.azureWorkloadIdentity.clientId .Values.serviceAccount.create .Values.serviceAccount.name }}
       serviceAccountName: {{ include "ratify.serviceAccountName" . }}
       {{- end }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.image.pullSecrets | nindent 8 }}
+      {{- end }}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          {{- if .Values.image.pullSecrets }}
-          imagePullSecrets:
-           {{- toYaml .Values.image.pullSecrets | nindent 12 }}
-          {{- end }}
           command:
             - "/app/ratify"
           args:
