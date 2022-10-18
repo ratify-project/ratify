@@ -13,6 +13,18 @@ data:
         "plugins": [
             {
                 "name": "oras"
+                {{- if .Values.oras.useHttp }}
+                ,
+                "useHttp": true
+                {{- end }}
+                {{- if .Values.oras.useInsecure }}
+                ,
+                "useInsecure": true
+                {{- end }}
+                {{- if (include "ratify.orasCaCertsEnc" . ) }}
+                ,
+                "caCerts": [{{include "ratify.orasCaCertsEnc" .}}]
+                {{- end }}
                 {{- if .Values.cosign.enabled }}
                 ,
                 "cosignEnabled": true

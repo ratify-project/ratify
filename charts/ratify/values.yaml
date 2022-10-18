@@ -52,6 +52,7 @@ akvCertConfig:
   tenantId:
 
 oras:
+  caCerts: []
   authProviders:
     azureWorkloadIdentityEnabled: false
     k8secretsEnabled: false

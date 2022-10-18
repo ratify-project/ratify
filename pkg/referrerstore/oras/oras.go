@@ -19,6 +19,8 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -58,9 +60,11 @@ const (
 type OrasStoreConf struct {
 	Name           string                          `json:"name"`
 	UseHttp        bool                            `json:"useHttp,omitempty"`
+	UseInsecure    bool                            `json:"useInsecure,omitempty"`
 	CosignEnabled  bool                            `json:"cosignEnabled,omitempty"`
 	AuthProvider   authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
 	LocalCachePath string                          `json:"localCachePath,omitempty"`
+	CaCerts        []string                        `json:"caCerts,omitempty"`
 }
 
 type orasStoreFactory struct{}
@@ -334,8 +338,22 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 				InsecureSkipVerify: true,
 			},
 		}
-	}
+	} else if len(store.config.CaCerts) > 0 {
+		caCertPool := x509.NewCertPool()
+		for _, caCert := range store.config.CaCerts {
+			caCertDec, err := base64.StdEncoding.DecodeString(caCert)
+			if err == nil {
+				caCertPool.AppendCertsFromPEM([]byte(caCertDec))
+			}
+		}
+		repoClient.Client = http.DefaultClient
+		repoClient.Client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				RootCAs: caCertPool,
+			},
+		}
 
+	}
 	repository.Client = repoClient
 	// enable plain HTTP if specified in config
 	repository.PlainHTTP = store.config.UseHttp

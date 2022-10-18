@@ -67,3 +67,14 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Create base64 encoded list of custom ca certs
+*/}}
+{{- define "ratify.orasCaCertsEnc" -}}
+{{- $orasCaCertsEnc := list -}}
+{{- range .Values.oras.caCerts -}}
+{{- $orasCaCertsEnc = (. | b64enc | quote) | append $orasCaCertsEnc -}}
+{{- end -}}
+{{- join "," $orasCaCertsEnc }}
+{{- end -}}
