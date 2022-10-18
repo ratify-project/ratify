@@ -71,8 +71,8 @@ contrib.go.opencensus.io/exporter/stackdriver v0.13.12/go.mod h1:mmxnWlrvrFdpiOH
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/Antonboom/errname v0.1.5/go.mod h1:DugbBstvPFQbv/5uLcRRzfrNqKE9tVdVCqWCLp6Cifo=
 github.com/Antonboom/nilnil v0.1.0/go.mod h1:PhHLvRPSghY5Y7mX4TW+BHZQYo1A8flE5H20D3IPZBo=
-github.com/Azure/azure-sdk-for-go v66.0.0+incompatible h1:bmmC38SlE8/E81nNADlgmVGurPWMHDX2YNXVQMrBpEE=
-github.com/Azure/azure-sdk-for-go v66.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
+github.com/Azure/azure-sdk-for-go v67.0.0+incompatible h1:SVBwznSETB0Sipd0uyGJr7khLhJOFRUEUb+0JgkCvDo=
+github.com/Azure/azure-sdk-for-go v67.0.0+incompatible/go.mod h1:9XXNKU+eRnpl9moKnB4QOLf1HestfXbmab5FXxiDBjc=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.4 h1:pqrAR74b6EoR4kcxF7L7Wg2B8Jgil9UUZtMvxhEFqWo=
 github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.4/go.mod h1:uGG2W01BaETf0Ozp+QxxKJdMBNRWPdstHG0Fmdwn1/U=
 github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0 h1:QkAcEIAKbNL4KoFr4SathZPhDhF4mVwpBMFlYjyAqy8=
