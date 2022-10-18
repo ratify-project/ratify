@@ -35,9 +35,11 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
+	_ "github.com/notaryproject/notation-core-go/signature/jws"
+	_ "github.com/notaryproject/notation-core-go/signature/cose"
 	"github.com/notaryproject/notation-go"
 	"github.com/notaryproject/notation-go/crypto/jwsutil"
-	"github.com/notaryproject/notation-go/signature/jws"
+	"github.com/notaryproject/notation-go/signature"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -55,7 +57,7 @@ type NotaryV2VerifierConfig struct {
 
 type notaryV2Verifier struct {
 	artifactTypes    []string
-	notationVerifier *jws.Verifier
+	notationVerifier *notation.Verifier
 }
 
 type notaryv2VerifierFactory struct{}
@@ -79,14 +81,14 @@ func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.V
 	defaultDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultDir)
 
-	artifactTypes := strings.Split(fmt.Sprintf("%s", conf.ArtifactTypes), ",")
+	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
 
 	verfiyService, err := getVerifierService(conf.VerificationCerts...)
 	if err != nil {
 		return nil, err
 	}
 
-	return &notaryV2Verifier{artifactTypes: artifactTypes, notationVerifier: verfiyService}, nil
+	return &notaryV2Verifier{artifactTypes: artifactTypes, notationVerifier: &verfiyService}, nil
 }
 
 func (v *notaryV2Verifier) Name() string {
@@ -139,9 +141,13 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		extensions["Issuer"] = cert.Issuer.String()
 		extensions["SN"] = cert.Subject.String()
 
-		var opts notation.VerifyOptions
-		vdesc, err := v.notationVerifier.Verify(context.Background(), refBlob, opts)
+		opts := notation.VerifyOptions{
+			SignatureMediaType: blobDesc.MediaType,
+		}
+
+		vdesc, err := (*v.notationVerifier).Verify(context.Background(), refBlob, opts)
 		if err != nil {
+			fmt.Printf("err: %v\n", err)
 			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, err
 		}
 
@@ -195,8 +201,8 @@ func getCert(refBlob []byte) (*x509.Certificate, error) {
 	return cert, nil
 }
 
-func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
-	roots := x509.NewCertPool()
+func getVerifierService(certPaths ...string) (notation.Verifier, error) {
+	certs := make([]*x509.Certificate, 0)
 	for _, path := range certPaths {
 
 		bundledCerts, err := utils.GetCertificatesFromPath(path)
@@ -205,11 +211,10 @@ func getVerifierService(certPaths ...string) (*jws.Verifier, error) {
 			return nil, err
 		}
 
-		for _, cert := range bundledCerts {
-			roots.AddCert(cert)
-		}
+		certs = append(certs, bundledCerts...)
 	}
-	verifier := jws.NewVerifier()
-	verifier.VerifyOptions.Roots = roots
+
+	verifier := signature.NewVerifier()
+	verifier.TrustedCerts = certs
 	return verifier, nil
 }

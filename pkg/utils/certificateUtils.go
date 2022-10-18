@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/deislabs/ratify/pkg/homedir"
-	"github.com/notaryproject/notation-go/crypto/cryptoutil"
+	notationx509 "github.com/notaryproject/notation-core-go/x509"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -90,7 +90,7 @@ func isSymbolicLink(info fs.FileInfo) bool {
 }
 
 func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
-	cert, certError := cryptoutil.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
+	cert, certError := notationx509.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
 	if certError != nil {
 		return certificate, certError
 	}
