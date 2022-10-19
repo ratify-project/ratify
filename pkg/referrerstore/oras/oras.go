@@ -50,6 +50,12 @@ import (
 )
 
 const (
+	HttpMaxIdleConns        = 100
+	HttpMaxConnsPerHost     = 100
+	HttpMaxIdleConnsPerHost = 100
+)
+
+const (
 	storeName             = "oras"
 	defaultLocalCachePath = "local_oras_cache"
 	dockerConfigFileName  = "config.json"
@@ -115,15 +121,15 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 
 	// define the http Transport for TLS enabled
 	secureTransport := http.DefaultTransport.(*http.Transport).Clone()
-	secureTransport.MaxIdleConns = 100
-	secureTransport.MaxConnsPerHost = 100
-	secureTransport.MaxIdleConnsPerHost = 100
+	secureTransport.MaxIdleConns = HttpMaxIdleConns
+	secureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
+	secureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
 
 	// define the http Transport for TLS disabled
 	insecureTransport := http.DefaultTransport.(*http.Transport).Clone()
-	insecureTransport.MaxIdleConns = 100
-	insecureTransport.MaxConnsPerHost = 100
-	insecureTransport.MaxIdleConnsPerHost = 100
+	insecureTransport.MaxIdleConns = HttpMaxIdleConns
+	insecureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
+	insecureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
 	insecureTransport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
