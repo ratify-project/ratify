@@ -352,7 +352,6 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 				RootCAs: caCertPool,
 			},
 		}
-
 	}
 	repository.Client = repoClient
 	// enable plain HTTP if specified in config
