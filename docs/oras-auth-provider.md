@@ -105,7 +105,7 @@ EOF
 ```
 10. From Azure Cloud Shell: 
 ```
-export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query objectId -otsv)"
+export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query id -otsv)"
 cat <<EOF > body.json
 {
   "name": "kubernetes-federated-credential",
