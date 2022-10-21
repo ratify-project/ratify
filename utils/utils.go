@@ -13,11 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package core
+package utils
 
-import "errors"
+import "strings"
 
-var (
-	// ErrReferrersNotFound is thrown when there aren't any references for an artifact
-	ErrReferrersNotFound = errors.New("no referrers found for this artifact")
-)
+func SanitizeString(input string) string {
+	sanitized := strings.Replace(input, "\n", "", -1)
+	sanitized = strings.Replace(sanitized, "\r", "", -1)
+	return sanitized
+}

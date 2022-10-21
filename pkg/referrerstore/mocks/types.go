@@ -18,6 +18,7 @@ package mocks
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -28,8 +29,9 @@ import (
 )
 
 type TestStore struct {
-	References []ocispecs.ReferenceDescriptor
-	ResolveMap map[string]digest.Digest
+	References   []ocispecs.ReferenceDescriptor
+	ResolveMap   map[string]digest.Digest
+	ExtraSubject string
 }
 
 func (s *TestStore) Name() string {
@@ -53,6 +55,10 @@ func (s *TestStore) GetConfig() *config.StoreConfig {
 }
 
 func (s *TestStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+	if s.ExtraSubject != "" && subjectReference.Original == s.ExtraSubject {
+		time.Sleep(2 * time.Second)
+	}
+
 	if s.ResolveMap != nil {
 		if result, ok := s.ResolveMap[subjectReference.Tag]; ok {
 			return &ocispecs.SubjectDescriptor{Descriptor: v1.Descriptor{Digest: result}}, nil
