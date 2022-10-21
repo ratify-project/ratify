@@ -201,7 +201,8 @@ cat <<EOF > ~/.ratify/config.json
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "any"
+                "application/vnd.cncf.notary.v2.signature": "any",
+                "sbom/example": "all"
             }
         }
     },
