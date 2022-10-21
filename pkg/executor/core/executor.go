@@ -149,7 +149,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Message:   fmt.Sprintf("an error thrown by the verifier %v", err)}
+					Message:   fmt.Sprintf("an error thrown by the verifier: %v", err)}
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
