@@ -25,10 +25,12 @@ import (
 	"io/ioutil"
 	"net/http"
 	paths "path/filepath"
+	"sync"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	ocitarget "oras.land/oras-go/v2/content/oci"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 
@@ -45,6 +47,12 @@ import (
 	"github.com/opencontainers/go-digest"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
+)
+
+const (
+	HttpMaxIdleConns        = 100
+	HttpMaxConnsPerHost     = 100
+	HttpMaxIdleConnsPerHost = 100
 )
 
 const (
@@ -71,11 +79,13 @@ type authCacheEntry struct {
 }
 
 type orasStore struct {
-	config       *OrasStoreConf
-	rawConfig    config.StoreConfig
-	localCache   *ocitarget.Store
-	authProvider authprovider.AuthProvider
-	authCache    map[string]authCacheEntry
+	config             *OrasStoreConf
+	rawConfig          config.StoreConfig
+	localCache         *ocitarget.Store
+	authProvider       authprovider.AuthProvider
+	authCache          sync.Map
+	httpClient         *http.Client
+	httpClientInsecure *http.Client
 }
 
 func init() {
@@ -109,11 +119,27 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("could not create local oras cache at path %s: %s", conf.LocalCachePath, err)
 	}
 
+	// define the http Transport for TLS enabled
+	secureTransport := http.DefaultTransport.(*http.Transport).Clone()
+	secureTransport.MaxIdleConns = HttpMaxIdleConns
+	secureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
+	secureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
+
+	// define the http Transport for TLS disabled
+	insecureTransport := http.DefaultTransport.(*http.Transport).Clone()
+	insecureTransport.MaxIdleConns = HttpMaxIdleConns
+	insecureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
+	insecureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
+	insecureTransport.TLSClientConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
 	return &orasStore{config: &conf,
-		rawConfig:    config.StoreConfig{Version: version, Store: storeConfig},
-		localCache:   localRegistry,
-		authProvider: authenticationProvider,
-		authCache:    make(map[string]authCacheEntry)}, nil
+		rawConfig:          config.StoreConfig{Version: version, Store: storeConfig},
+		localCache:         localRegistry,
+		authProvider:       authenticationProvider,
+		httpClient:         &http.Client{Timeout: 10 * time.Second, Transport: secureTransport},
+		httpClientInsecure: &http.Client{Timeout: 10 * time.Second, Transport: insecureTransport}}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -146,7 +172,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	artifactTypeFilter := ""
 	var referrerDescriptors []artifactspec.Descriptor
 	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
-		referrerDescriptors = referrers
+		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
 	}); err != nil {
 		store.evictAuthCache(subjectReference.Original, err)
@@ -174,6 +200,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	var err error
+	starttime := time.Now()
 	repository, expiry, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return nil, err
@@ -197,6 +224,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 
 		// fetch blob content from remote repository
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
+		fmt.Printf("oras get blob time: %d\n", time.Since(starttime).Milliseconds())
 		if err != nil {
 			store.evictAuthCache(subjectReference.Original, err)
 			return nil, err
@@ -204,11 +232,10 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 
 		// push fetched content to local ORAS cache
 		err = store.localCache.Push(ctx, blobDesc, rc)
-		if err != nil {
+		if err != nil && err != errdef.ErrAlreadyExists {
 			return nil, err
 		}
 	}
-
 	// add the repository client to the auth cache if all repository operations successful
 	store.addAuthCache(subjectReference.Original, repository, expiry)
 
@@ -241,8 +268,8 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
-		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
-		if err != nil {
+		store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+		if err != nil && err != errdef.ErrAlreadyExists {
 			return ocispecs.ReferenceManifest{}, err
 		}
 
@@ -287,8 +314,9 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 		return nil, time.Now(), fmt.Errorf("auth provider not properly enabled")
 	}
 
-	if cacheEntry, ok := store.authCache[targetRef.Original]; ok {
+	if entry, ok := store.authCache.Load(targetRef.Original); ok {
 		// if the auth cache entry expiration has not expired or it was never set
+		cacheEntry := entry.(authCacheEntry)
 		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
 			return cacheEntry.client, cacheEntry.expiresOn, nil
 		}
@@ -319,21 +347,17 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 
 	// set the repository client credentials
 	repoClient := &auth.Client{
+		Client: store.httpClient,
 		Header: http.Header{
 			"User-Agent": {ratifyUserAgent},
 		},
-		Cache:      auth.DefaultCache,
+		Cache:      auth.NewCache(),
 		Credential: credentialProvider,
 	}
 
 	// enable insecure if specified in config
 	if isInsecureRegistry(targetRef.Original, store.config) {
-		repoClient.Client = http.DefaultClient
-		repoClient.Client.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: true,
-			},
-		}
+		repoClient.Client = store.httpClientInsecure
 	}
 
 	repository.Client = repoClient
@@ -357,16 +381,13 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 }
 
 func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, expiry time.Time) {
-	_, ok := store.authCache[ref]
-	if !ok {
-		store.authCache[ref] = authCacheEntry{
-			client:    repository,
-			expiresOn: expiry,
-		}
-	}
+	store.authCache.LoadOrStore(ref, authCacheEntry{
+		client:    repository,
+		expiresOn: expiry,
+	})
 }
 
 func (store *orasStore) evictAuthCache(ref string, err error) {
-	delete(store.authCache, ref)
+	store.authCache.Delete(ref)
 	// TODO: add reliable way to conditionally evict based on error code
 }
