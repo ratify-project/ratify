@@ -81,7 +81,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			defer mu.Unlock()
 			results = append(results, externaldata.Item{
 				Key:   subject,
-				Value: result,
+				Value: fromVerifyResult(result),
 			})
 		}(utils.SanitizeString(subject))
 	}
