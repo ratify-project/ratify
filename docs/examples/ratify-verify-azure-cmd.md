@@ -31,11 +31,11 @@ mv oras-install/oras /usr/local/bin/
 
 ### Ratify
 
-Install Ratify v1.0.0-alpha.2 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-alpha.2).
+Install Ratify v1.0.0-alpha.3 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-alpha.3).
 
 ```bash
 # Download the Ratify binary
-curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v1.0.0-alpha.2/ratify_1.0.0-alpha.2_Linux_amd64.tar.gz
+curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v1.0.0-alpha.3/ratify_1.0.0-alpha.3_Linux_amd64.tar.gz
 # Extract it from the binary and copy it to the bin directory
 tar xvzf ratify.tar.gz -C ~/bin ratify
 ```
