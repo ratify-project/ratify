@@ -3,3 +3,4 @@ dist/
 local_oras_cache/
 .idea
 .vscode
+.coverage.out

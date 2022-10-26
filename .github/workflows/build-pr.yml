@@ -21,6 +21,8 @@ jobs:
         run: go mod tidy
       - name: Build CLI
         run: make
+      - name: Upload coverage to codecov.io
+        uses: codecov/codecov-action@v3
       - name: Check build
         run: bin/ratify version
 

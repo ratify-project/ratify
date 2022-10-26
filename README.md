@@ -1,5 +1,6 @@
 # Ratify
 
+
 Is a policy engine as a binary executable and on Kubernetes which enables verification of artifact security metadata and admits for deployment only those that comply with policies you create.
 
 **WARNING:** This is not considered production-grade code
@@ -7,6 +8,7 @@ by its developers, nor is it "supported" software.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/deislabs/ratify)](https://goreportcard.com/report/github.com/deislabs/ratify)
 [![build-pr](https://github.com/deislabs/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/deislabs/ratify/actions/workflows/build-pr.yml)
+[![codecov](https://codecov.io/gh/binbin-li/ratify/branch/main/graph/badge.svg)](https://codecov.io/gh/binbin-li/ratify)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/deislabs/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/deislabs/ratify)
 
 ## Table of Contents
