@@ -41,7 +41,7 @@ install:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
 .PHONY: clean
 clean:
