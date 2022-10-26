@@ -78,39 +78,42 @@ Ratify pulls artifacts from a private Azure Container Registry using Workload Fe
 The official steps for setting up Workload Identity on AKS can be found [here](https://azure.github.io/azure-workload-identity/docs/quick-start.html).  
 
 1. Create ACR
-2. Create OIDC enabled AKS cluster by following steps [here](https://docs.microsoft.com/en-us/azure/aks/cluster-configuration#oidc-issuer-preview)
+2. Create OIDC enabled AKS cluster by following steps [here](https://learn.microsoft.com/en-us/azure/aks/cluster-configuration#oidc-issuer)
 3. Connect to cluster using kubectl by following steps [here](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-cluster?tabs=azure-cli#connect-to-cluster-using-kubectl)
-4. Save the cluster's SERVICE_ACCOUNT_ISSUER (OIDC url): `az aks show --resource-group <resource_group> --name <cluster_name> --query "oidcIssuerProfile.issuerUrl" -otsv`
+4. Save the cluster's SERVICE_ACCOUNT_ISSUER (OIDC url): 
+```
+export SERVICE_ACCOUNT_ISSUER="$(az aks show --resource-group <resource_group> --name <cluster_name> --query "oidcIssuerProfile.issuerUrl" -otsv)"
+```
 5. Install Mutating Admission Webhook onto AKS cluster by following steps [here](https://azure.github.io/azure-workload-identity/docs/installation/mutating-admission-webhook.html)
 6. As the guide linked above shows, it's possible to use the AZ workload identity CLI or the regular az CLI to perform remaining setup. Following steps follow the AZ CLI.
-7. Create ACR AAD application: `az ad sp create-for-rbac --name "<APPLICATION_NAME>"`
+7. Create ACR AAD application: 
+```
+az ad sp create-for-rbac --name "<APPLICATION_NAME>"
+
+export APPLICATION_NAME=<APPLICATION_NAME>
+
+export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
+```
 8. On Portal or AZ CLI, enable acrpull role to the AAD application for the ACR resource
 ```
 // Sample AZ CLI command
-az role assignment create --assignee <AAD APPLICATION ID> --role acrpull --scope subscriptions/<SUBSCRIPTION NAME>/resourceGroups/<RESOURCE GROUP>/providers/Microsoft.ContainerRegistry/registries/<REGISTRY NAME>
+az role assignment create --assignee ${APPLICATION_CLIENT_ID} --role acrpull --scope subscriptions/<SUBSCRIPTION NAME>/resourceGroups/<RESOURCE GROUP>/providers/Microsoft.ContainerRegistry/registries/<REGISTRY NAME>
 ```
-9. Use kubectl to add service account to cluster: 
+9. Update `serviceAccount` attribute in ./charts/ratify/values.yaml file to add service account to cluster: 
 ```
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  annotations:
-    azure.workload.identity/client-id: ${APPLICATION_CLIENT_ID}
-  labels:
-    azure.workload.identity/use: "true"
-  name: ${SERVICE_ACCOUNT_NAME}
-  namespace: ${SERVICE_ACCOUNT_NAMESPACE}
-EOF
+serviceAccount:
+  create: true
+  name: <Service Account Name>
 ```
-10. From Azure Cloud Shell: 
+10. From Azure Cloud Shell, `<Service Account Namespace>` is where you deploy Ratify:
 ```
-export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query objectId -otsv)"
+export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query id -otsv)"
+
 cat <<EOF > body.json
 {
   "name": "kubernetes-federated-credential",
   "issuer": "${SERVICE_ACCOUNT_ISSUER}",
-  "subject": "system:serviceaccount:${SERVICE_ACCOUNT_NAMESPACE}:${SERVICE_ACCOUNT_NAME}",
+  "subject": "system:serviceaccount:<Service Account Namespace>:<Service Account Name>",
   "description": "Kubernetes service account federated credential",
   "audiences": [
     "api://AzureADTokenExchange"
@@ -120,34 +123,22 @@ EOF
 
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/${APPLICATION_OBJECT_ID}/federatedIdentityCredentials" --body @body.json
 ```
-11. In the pod template defintion, add the `serviceAccountName` property. Example Pod definition:
+
+11. Update `azureWorkloadIdentity` and `oras` attributes in ./charts/ratify/values.yaml file:
 ```
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  name: quick-start
-  namespace: <SERVICE_ACCOUNT_NAMESPACE>
-spec:
-  serviceAccountName: <SERVICE_ACCOUNT_NAME>
-  ...
-EOF
+azureWorkloadIdentity:
+  clientId: <APPLICATION_CLIENT_ID>
+
+oras:
+  authProviders:
+    azureWorkloadIdentityEnabled: true
+    k8secretsEnabled: false
+    awsEcrBasicEnabled: false
 ```
 
-#### Ratify Auth Provider Configuration
+12. Deploy from local helm chart:
 ```
-"store": {
-        "version": "1.0.0",
-        "plugins": [
-            {
-                "name": "oras",
-                "localCachePath": "./local_oras_cache",
-                "authProvider": {
-                    "name": "azureWorkloadIdentity"
-                }
-            }
-        ]
-    }
+helm install ratify ./charts/ratify --atomic
 ```
 
 ### 3. Kubernetes Secrets
