@@ -62,6 +62,5 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
-          name: e2e-logs
-          path: |
-            logs-*.json        
+          name: test-results
+          path: logs-*.json        
