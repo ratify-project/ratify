@@ -200,7 +200,6 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	var err error
-	starttime := time.Now()
 	repository, expiry, err := store.createRepository(ctx, subjectReference)
 	if err != nil {
 		return nil, err
@@ -224,7 +223,6 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 
 		// fetch blob content from remote repository
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
-		fmt.Printf("oras get blob time: %d\n", time.Since(starttime).Milliseconds())
 		if err != nil {
 			store.evictAuthCache(subjectReference.Original, err)
 			return nil, err

@@ -118,7 +118,7 @@ cat <<EOF > ~/.ratify/config.json
         "plugins": [ 
             { 
                 "name": "oras",
-                "useHttp": true,
+                "useHttp": true
             }
         ]
     },
@@ -148,7 +148,6 @@ cat <<EOF > ~/.ratify/config.json
                 "nestedReferences": "application/vnd.cncf.notary.v2.signature"
             }
         ]
-        
     }
 }
 EOF
