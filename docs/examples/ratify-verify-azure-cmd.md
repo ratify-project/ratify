@@ -4,11 +4,11 @@
 
 ### Notation
 
-Install Notation v0.9.0-alpha.1 with plugin support from [Notation GitHub Release](https://github.com/notaryproject/notation/releases/tag/v0.9.0-alpha.1). 
+Install Notation v0.11.0-alpha.4 with plugin support from [Notation GitHub Release](https://github.com/notaryproject/notation/releases/tag/v0.11.0-alpha.4).
 
 ```bash
 # Download the Notation binary
-curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v0.9.0-alpha.1/notation_0.9.0-alpha.1_linux_amd64.tar.gz
+curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v0.11.0-alpha.4/notation_0.11.0-alpha.4_linux_amd64.tar.gz
 # Extract it from the binary
 tar xvzf notation.tar.gz
 # Copy the Notation CLI to your bin directory
@@ -17,25 +17,25 @@ mkdir -p ~/bin && cp ./notation ~/bin
 
 ### ORAS
 
-Install ORAS 0.13.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
+Install ORAS 0.15.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
 
 ```bash
 # Download the ORAS binary
-curl -LO https://github.com/oras-project/oras/releases/download/v0.13.0/oras_0.13.0_linux_amd64.tar.gz
+curl -LO https://github.com/oras-project/oras/releases/download/v0.15.0/oras_0.15.0_linux_amd64.tar.gz
 # Create a folder to extract the ORAS binary
 mkdir -p oras-install/
-tar -zxf oras_0.13.0_*.tar.gz -C oras-install/
+tar -zxf oras_0.15.0_*.tar.gz -C oras-install/
 # Copy the Notation CLI to your bin directory
 mv oras-install/oras /usr/local/bin/
 ```
 
 ### Ratify
 
-Install Notation v0.1.4-alpha.1 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v0.1.4-alpha.1). 
+Install Ratify v1.0.0-alpha.3 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-alpha.3).
 
 ```bash
 # Download the Ratify binary
-curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v0.1.4-alpha.1/ratify_0.1.4-alpha.1_Linux_amd64.tar.gz
+curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v1.0.0-alpha.3/ratify_1.0.0-alpha.3_Linux_amd64.tar.gz
 # Extract it from the binary and copy it to the bin directory
 tar xvzf ratify.tar.gz -C ~/bin ratify
 ```
@@ -49,10 +49,11 @@ export REGISTRY=$ACR_NAME.azurecr-test.io
 export REPO=${REGISTRY}/net-monitor
 export IMAGE=${REPO}:v1
 
+
 # Create an ACR
 # Premium to use tokens
-az acr create -n $ACR_NAME -g $(ACR_NAME)-acr --sku Premium
-az configure --default acr=wabbitnetworks
+az acr create -n $ACR_NAME -g $ACR_NAME-acr --sku Premium
+az configure --default acr=$ACR_NAME
 az acr update --anonymous-pull-enabled true
 
 # Using ACR Auth with Tokens
@@ -97,7 +98,7 @@ notation sign $IMAGE
 # List the signatures
 notation list $IMAGE
 ```
-> You can repeat step 3-4 to create multiple signatures to the image.
+> You can repeat step 4-5 to create multiple signatures to the image.
 
 ### Discover & Verify using Ratify
 
@@ -130,7 +131,7 @@ cat <<EOF > ~/.ratify/config.json
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "~/.config/notation/certificate/wabbit-networks.io.crt"
+                    "~/.config/notation/localkeys/wabbit-networks.io.crt"
                   ]
             }
         ]
@@ -163,12 +164,10 @@ ratify verify -s $IMAGE_DIGEST_REF
 # Create, Push
 echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
 
-oras push $REPO \
-  --artifact-type 'sbom/example' \
-  --subject $IMAGE \
+oras attach $IMAGE \
+  --artifact-type sbom/example \
   -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-  ./sbom.json:application/json
-
+  sbom.json:application/json
 ```
 
 - Sign the SBoM
@@ -177,7 +176,7 @@ oras push $REPO \
 SBOM_DIGEST=$(oras discover -o json \
                 --artifact-type sbom/example \
                 -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-                $IMAGE | jq -r ".references[0].digest")
+                $IMAGE | jq -r ".referrers[0].digest")
 
 notation sign $REPO@$SBOM_DIGEST
 ```
@@ -199,9 +198,12 @@ cat <<EOF > ~/.ratify/config.json
     },
     "policy": {
         "version": "1.0.0",
-        "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any",
-            "sbom/example": "all"
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.cncf.notary.v2.signature": "any",
+                "sbom/example": "all"
+            }
         }
     },
     "verifier": {
@@ -211,7 +213,7 @@ cat <<EOF > ~/.ratify/config.json
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "~/.config/notation/certificate/wabbit-networks.io.crt"
+                    "~/.config/notation/localkeys/wabbit-networks.io.crt"
                   ]
             },
             {
@@ -219,6 +221,8 @@ cat <<EOF > ~/.ratify/config.json
                 "artifactTypes" : "sbom/example",
                 "nestedReferences": "application/vnd.cncf.notary.v2.signature"
             }
+        ]
+    }
 }
 EOF
 ```

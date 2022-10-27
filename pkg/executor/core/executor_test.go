@@ -17,8 +17,10 @@ package core
 
 import (
 	"context"
-	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"testing"
+	"time"
+
+	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -63,8 +65,8 @@ func TestVerifySubject_ResolveSubjectDescriptor_Success(t *testing.T) {
 
 	_, err := executor.verifySubjectInternal(context.Background(), verifyParameters)
 
-	if err != ReferrersNotFound {
-		t.Fatalf("expected ReferrersNotFound actual %v", err)
+	if err != ErrReferrersNotFound {
+		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
 
@@ -91,8 +93,8 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 
 	_, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
-	if err != ReferrersNotFound {
-		t.Fatalf("expected ReferrersNotFound actual %v", err)
+	if err != ErrReferrersNotFound {
+		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
 
@@ -260,4 +262,69 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 	if len(result.VerifierReports) != 2 {
 		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
 	}
+}
+
+// TestVerifySubject_MultipleArtifacts_ExpectedResults tests multiple artifacts are verified concurrently
+func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
+	testDigest := digest.FromString("test")
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"test-type1": types.AnyVerifySuccess,
+			"test-type2": types.AnyVerifySuccess,
+		}}
+	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
+		{
+			ArtifactType: "test-type1",
+		},
+		{
+			ArtifactType: "test-type2",
+		}},
+		ResolveMap: map[string]digest.Digest{
+			"v1": testDigest,
+		},
+	}
+	ver := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return true
+		},
+		VerifyResult: func(artifactType string) bool {
+			if artifactType == "test-type1" {
+				time.Sleep(2 * time.Second)
+			}
+			return true
+		},
+	}
+
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			ExecutionMode:  "",
+			RequestTimeout: nil,
+		},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != nil {
+		t.Fatalf("verification failed with err %v", err)
+	}
+
+	if !result.IsSuccess {
+		t.Fatal("verification expected to fail")
+	}
+
+	if len(result.VerifierReports) != 2 {
+		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
+	}
+
+	if result.VerifierReports[0].(verifier.VerifierResult).ArtifactType != "test-type2" {
+		t.Fatalf("verification expected to return second artifact verifier report first")
+	}
+
 }

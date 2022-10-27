@@ -1,40 +1,38 @@
 image:
   repository: ghcr.io/deislabs/ratify
-  tag: v1.0.0-alpha.2
+  tag: v1.0.0-alpha.3
   pullPolicy: IfNotPresent
   pullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 ratifyTestCert: |
   -----BEGIN CERTIFICATE-----
-  MIIDAzCCAeugAwIBAgIQdbFNMJJ7bsCjFz9NTjm60TANBgkqhkiG9w0BAQsFADAW
-  MRQwEgYDVQQDEwtyYXRpZnktdGVzdDAeFw0yMTExMTcwMDQxMjBaFw0yMjExMTcw
-  MDQxMjBaMBYxFDASBgNVBAMTC3JhdGlmeS10ZXN0MIIBIjANBgkqhkiG9w0BAQEF
-  AAOCAQ8AMIIBCgKCAQEA2qNunZGbxboQ8ZRPDcjRIwxbHvoQm154lizfnwTvhv15
-  2mLptfJgpVRXTvFYpWacRath7ZNKSeIcItSTBVJtevTaH5eD46jysoy81AKKt9mf
-  1zY4hATZfnQ5JlqPc0d0fztBHIqOtx6/YzJ7Ojlq89jfgundpN+hbv7R9LoH+bM5
-  rkeQQtRg+ylE19ERlqypwBEz8i9vPjyb/pWHdAD9F/6kJSZ7iNvcBc5poZKoPG/+
-  XXlBQd+pPRSYkROm2Fz8er/j3PmCfi9Wb7Slr1lmqeS53nedun9/0sbYE/xQwT4Z
-  OcG8ki21H7gGrvYsHYNr4+7DXr/5hX6VBHqMCBcAqQIDAQABo00wSzAOBgNVHQ8B
-  Af8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwMwDAYDVR0TAQH/BAIwADAWBgNV
-  HREEDzANggtyYXRpZnktdGVzdDANBgkqhkiG9w0BAQsFAAOCAQEAkmsnbd02MQS2
-  64ItCWgfa96eZtMOC4hyf/gjw5ePOILl+fke32DMiYyIoQ4C2JxUli8VVUctzM7S
-  x0doF7neSz9a/M7AVdIq9cRUuc46Med1n+UqyMTXC1lvcrXszmZo3J61jOZlels0
-  N7wnH3yS5UbsZLqS7A5v6+fLJBj5QIG4EPVqIACNhE4fpiChih6Louu98AQWgFG/
-  HzWwHl1ycgSCK4ADh7rGyLyaSDgwTM1knzxvq0vBdKX+hS2rfVI5QGZLNi/K4qpr
-  +QsmXjQo4s6vYCeUXeg/fRlNbPrcHFscDPe62gfSD/h2ziKnvGASh8JFY9jaITCn
-  c92MWya0Lw==
+  MIIDNjCCAh6gAwIBAgIQH775NeR9QruFa7zk7yzgWDANBgkqhkiG9w0BAQsFADAdMRswGQYDVQQD
+  ExJ3YWJiaXQtbmV0d29ya3MuaW8wHhcNMjIxMDIwMjEyMzU0WhcNMjMxMDIwMjEzMzU0WjAdMRsw
+  GQYDVQQDExJ3YWJiaXQtbmV0d29ya3MuaW8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
+  AQDGLZtDqEJGdou/m2sPOQLMAaPSGTCaJ4uWw3J56GlD/L0ahIvzaj0LnL1ovRYerUvBemAJtUqy
+  FJHobSEUq+eXfpOMs9hbxY8bJ90YYMNh2CZ6vTIDgSKw7JowFJNN6FnjPEPfwV2xAi/CU9r1ijMU
+  5m5MImnzbj4JiikdBjtQRPolQNWLubDqCw5hceC2pgcKlpWM//8SodAqu1lPBtlG5BhzPL8bQMAo
+  hW8Qe+Jo2J/AxO7Zp/mJFP4ipMhfAHDcQ1CWC0PRIO0qk9JhtSD+o0gQyTXQwFcWi5PgSnMe3rSE
+  kmI8WMe+oz7DYDENGz2Pgy7IqtTAphiDycQW6G3ZAgMBAAGjcjBwMA4GA1UdDwEB/wQEAwIFoDAJ
+  BgNVHRMEAjAAMBMGA1UdJQQMMAoGCCsGAQUFBwMDMB8GA1UdIwQYMBaAFGFzdC0AfxDJkxM1ZIVx
+  BxTrEGvKMB0GA1UdDgQWBBRhc3QtAH8QyZMTNWSFcQcU6xBryjANBgkqhkiG9w0BAQsFAAOCAQEA
+  mmXh2QAH03O5+ADia1AXAb97SIAEVSQj6mgYN9E9Os0/3aXDYVLKVShA1OiBidr6Iya9epFBbpzc
+  vJv15bGDg+k5KYAsRYSzfQpILADMYW4T/E3uaFBpbt0GYiwTlpRSKnEvyEwf9cRZOouE9CesIn2L
+  L0j/+zhBb8RpB7UbrcEL0PXnn/UbnQKkkekpwEOV/USrpT2T/AwE2GUiAzaLj8ps2qgm/4fPj/uh
+  w2W7SbZafkVYxirVIdra1Yq2V6BvnnCkbnBLdjAHbQ48+BgiJJTk3QZFofP88tRjGHPYN3TH2Ycv
+  Ibo/J0urezLK/M8/QeMkkhY1WClsAi+xLhVWUw==
   -----END CERTIFICATE-----
 cosign:
   enabled: false
   key: ""
 resources:
    limits:
-     cpu: 100m
-     memory: 128Mi
+     cpu: 1000m
+     memory: 512Mi
    requests:
-     cpu: 100m
-     memory: 128Mi
+     cpu: 600m
+     memory: 512Mi
 serviceAccount:
   create: false
   name:

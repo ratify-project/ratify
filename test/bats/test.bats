@@ -13,9 +13,9 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl run demo --image=ratify.azurecr.io/testimage:signed
+    run kubectl run demo --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     assert_success
-    run kubectl run demo1 --image=ratify.azurecr.io/testimage:unsigned
+    run kubectl run demo1 --image=wabbitnetworks.azurecr.io/test/net-monitor:unsigned
     assert_failure
 }
 
@@ -26,7 +26,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl run demo2 --image=ratify.azurecr.io/testimage:signed
+    run kubectl run demo2 --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     assert_success
 
     run kubectl get configmaps ratify-configuration --namespace=ratify-service -o yaml > currentConfig.yaml
@@ -38,7 +38,7 @@ SLEEP_TIME=1
 
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-    run kubectl run demo3 --image=ratify.azurecr.io/testimage:signed
+    run kubectl run demo3 --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     echo "Current time after validate : $(date +"%T")"
     assert_failure
      

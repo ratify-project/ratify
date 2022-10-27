@@ -21,9 +21,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"sync"
 	"time"
 
 	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/utils"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
 )
@@ -46,31 +48,45 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 
 	results := make([]externaldata.Item, 0)
+	wg := sync.WaitGroup{}
+	mu := sync.RWMutex{}
+	sanitizedMethod := utils.SanitizeString(r.Method)
+	sanitizedURL := utils.SanitizeString(r.URL.String())
+
 	// iterate over all keys
 	for _, subject := range providerRequest.Request.Keys {
-		// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
-		logrus.Infof("subject for request %v %v is %v", r.Method, r.URL, subject)
+		wg.Add(1)
+		go func(subject string) {
+			defer wg.Done()
+			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
+			logrus.Infof("subject for request %v %v is %v", sanitizedMethod, sanitizedURL, subject)
+			returnItem := externaldata.Item{
+				Key: subject,
+			}
 
-		verifyParameters := e.VerifyParameters{
-			Subject: subject,
-		}
+			verifyParameters := e.VerifyParameters{
+				Subject: subject,
+			}
 
-		result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
+			result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
+			if err != nil {
+				returnItem.Error = err.Error()
+			}
 
-		if err != nil {
-			return err
-		}
-
-		res, err := json.MarshalIndent(result, "", "  ")
-		if err == nil {
-			fmt.Println(string(res))
-		}
-
-		results = append(results, externaldata.Item{
-			Key:   subject,
-			Value: result,
-		})
+			res, err := json.MarshalIndent(result, "", "  ")
+			if err == nil {
+				fmt.Println(string(res))
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			results = append(results, externaldata.Item{
+				Key:   subject,
+				Value: fromVerifyResult(result),
+			})
+		}(utils.SanitizeString(subject))
 	}
+	wg.Wait()
+
 	return sendResponse(&results, "", w, http.StatusOK)
 }
 

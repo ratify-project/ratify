@@ -101,7 +101,7 @@ oras attach $IMAGE \
 # Capture the digest of the SBOM, to sign it
 SBOM_DIGEST=$(oras discover -o json \
                 --artifact-type sbom/example \
-                $IMAGE | jq -r ".references[0].digest")
+                $IMAGE | jq -r ".referrers[0].digest")
 
 notation sign --plain-http $REGISTRY/$REPO@$SBOM_DIGEST
 ```
@@ -117,7 +117,8 @@ cat <<EOF > ~/.ratify/config.json
         "version": "1.0.0", 
         "plugins": [ 
             { 
-                "name": "oras"
+                "name": "oras",
+                "useHttp": true,
             }
         ]
     },
@@ -138,7 +139,7 @@ cat <<EOF > ~/.ratify/config.json
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "~/.config/notation/certificate/wabbit-networks.io.crt"
+                    "~/.config/notation/localkeys/wabbit-networks.io.crt"
                   ]
             },
             {

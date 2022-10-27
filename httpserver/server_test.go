@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	exconfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
@@ -94,6 +95,76 @@ func TestServer_Timeout_Failed(t *testing.T) {
 		handler.ServeHTTP(responseRecorder, request)
 		if responseRecorder.Code != http.StatusInternalServerError {
 			t.Errorf("Want status '%d', got '%d'", http.StatusInternalServerError, responseRecorder.Code)
+		}
+	})
+}
+
+// TestServer_MultipleSubjects_Success tests multiple subjects are verified concurrently
+func TestServer_MultipleSubjects_Success(t *testing.T) {
+	testImageNames := []string{"localhost:5000/net-monitor:v1", "localhost:5000/net-monitor:v2"}
+	t.Run("server_multiple_subjects_success", func(t *testing.T) {
+		body := new(bytes.Buffer)
+
+		json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames))
+		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
+		responseRecorder := httptest.NewRecorder()
+
+		testDigest := digest.FromString("test")
+		configPolicy := config.PolicyEnforcer{
+			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+				"test-type1": types.AnyVerifySuccess,
+			}}
+		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
+			{
+				ArtifactType: "test-type1",
+			}},
+			ResolveMap: map[string]digest.Digest{
+				"v1": testDigest,
+				"v2": testDigest,
+			},
+			ExtraSubject: testImageNames[0],
+		}
+		ver := &core.TestVerifier{
+			CanVerifyFunc: func(at string) bool {
+				return at == "test-type1"
+			},
+			VerifyResult: func(artifactType string) bool {
+				return true
+			},
+		}
+
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+			Config: &exconfig.ExecutorConfig{
+				ExecutionMode:  "",
+				RequestTimeout: nil,
+			},
+		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
+		server := &Server{
+			GetExecutor: getExecutor,
+			Context:     request.Context(),
+		}
+
+		handler := contextHandler{
+			context: server.Context,
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()),
+		}
+
+		handler.ServeHTTP(responseRecorder, request)
+		var respBody externaldata.ProviderResponse
+		json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody)
+		retFirstKey := respBody.Response.Items[0].Key
+		if retFirstKey != testImageNames[1] {
+			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[1], retFirstKey)
 		}
 	})
 }
