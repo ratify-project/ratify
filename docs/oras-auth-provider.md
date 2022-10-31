@@ -105,7 +105,7 @@ serviceAccount:
   create: true
   name: <Service Account Name>
 ```
-10. From Azure Cloud Shell, `<Service Account Namespace>` is where you deploy Ratify:
+10. On AZ CLI `<Service Account Namespace>` is where you deploy Ratify:
 ```
 export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query id -otsv)"
 
