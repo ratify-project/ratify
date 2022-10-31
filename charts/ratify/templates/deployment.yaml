@@ -22,6 +22,17 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
           command:
             - "/app/ratify"
           args:
@@ -30,6 +41,13 @@ spec:
             - ":6001"
             - "-c"
             - "/usr/local/ratify/config.json"
+            {{- if eq .Values.provider.auth "tls" }}
+            - --cert-dir=/usr/local/tls
+            {{- end }}
+            {{- if eq .Values.provider.auth "mtls" }}
+            - --cert-dir=/usr/local/tls
+            - --ca-cert-file=usr/local/tls/client-ca/ca.crt
+            {{- end }}
           ports:
             - containerPort: 6001
           volumeMounts:
@@ -43,11 +61,21 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
-          {{- if $dockerAuthMode }}
+              {{- if $dockerAuthMode }}
             - mountPath: "/usr/local/docker"
               name: dockerconfig
               readOnly: true
-          {{- end }}
+              {{- end }}
+            {{- if and (.Values.provider.tls.cabundle) (or (eq .Values.provider.auth "tls") (eq .Values.provider.auth "mtls")) }}
+            - mountPath: /usr/local/tls
+              name: tls
+              readOnly: true
+            {{- if eq .Values.provider.auth "mtls" }}
+            - mountPath: /usr/local/tls/client-ca
+              name: client-ca-cert
+              readOnly: true
+            {{- end }}
+            {{- end }}
           env:
           {{- if $dockerAuthMode }}
             - name: DOCKER_CONFIG
@@ -86,3 +114,25 @@ spec:
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
+        {{- if and (.Values.provider.tls.cabundle) (or (eq .Values.provider.auth "tls") (eq .Values.provider.auth "mtls")) }}
+        - name: tls
+          secret:
+            {{- if and .Values.provider.tls.crt .Values.provider.tls.key }}
+            secretName: {{ include "ratify.fullname" . }}-tls
+            {{- else }}
+            secretName: ratify-cert-secret
+            {{- end }}
+            items:
+              - key: tls.key
+                path: tls.key
+              - key: tls.crt
+                path: tls.crt
+        {{- if eq .Values.provider.auth "mtls" }}
+        - name: client-ca-cert
+          secret:
+            secretName: gatekeeper-webhook-server-cert
+            items:
+              - key: ca.crt
+                path: ca.crt
+        {{- end }}
+        {{- end }}

@@ -3,6 +3,9 @@ kind: Provider
 metadata:
   name: ratify-provider
 spec:
-  url: "http://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify"
+  url: {{ if .Values.provider.auth }}https{{ else }}http{{ end }}://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
   timeout: 7
-  insecureTLSSkipVerify: true # need to enable this if the provider uses HTTP so that Gatekeeper can skip TLS verification.
+  insecureTLSSkipVerify: {{ .Values.provider.tls.skipVerify }} # enable this if the provider uses HTTP so that Gatekeeper can skip TLS verification.
+  {{- if .Values.provider.auth }}
+  caBundle: {{ required "You must provide .Values.provider.tls.cabundle when .Values.provider.auth is set" .Values.provider.tls.cabundle }}
+  {{- end }}

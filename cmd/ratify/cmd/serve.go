@@ -31,6 +31,8 @@ const (
 type serveCmdOptions struct {
 	configFilePath    string
 	httpServerAddress string
+	certDirectory     string
+	caCertFile        string
 }
 
 func NewCmdServe(argv ...string) *cobra.Command {
@@ -51,6 +53,8 @@ func NewCmdServe(argv ...string) *cobra.Command {
 
 	flags.StringVar(&opts.httpServerAddress, "http", "", "HTTP Address")
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
+	flags.StringVar(&opts.certDirectory, "cert-dir", "", "Path to ratify certs")
+	flags.StringVar(&opts.caCertFile, "ca-cert-file", "", "Path to CA cert file")
 	return cmd
 }
 
@@ -62,7 +66,7 @@ func serve(opts serveCmdOptions) error {
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile)
 		if err != nil {
 			return err
 		}

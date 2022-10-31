@@ -37,7 +37,7 @@ This framework will use a plugin architecture to integrate custom stores & verif
 - The initial version of the framework allows plugins to be binaries. Future versions of the framework MAY support plugins that are services invoked through gRPC or HTTP.
 - The plugins MUST be registered in the framework's configuration file. When registered, they can have custom settings that are specific to that plugin. A set of reserved keys like ``name`` will be used by the framework.  The framework MUST pass through other fields, unchanged to the plugin at the time of execution.
 - The location of these plugin binaries MAY be defined as part of registration. However, if not provided, the default path ${HOME}/.ratify/plugins will be used as the path to search for the plugins.
-- The framework MUST validate the existence of plugin binaries in the appropiate paths at the start up and fail with error if any of the registered plugins are not found in the configured paths.
+- The framework MUST validate the existence of plugin binaries in the appropriate paths at the start up and fail with error if any of the registered plugins are not found in the configured paths.
 - [TODO] Permissions and threat model for executing these plugins SHOULD be specified.
 - In addition to the specification, the framework SHOULD provide libraries for writing plugins. A simple CLI for example ```ratify plugin verifier add myverifier``` to create a stub for a plugin using these libraries MAY be provided by the framework.
 
