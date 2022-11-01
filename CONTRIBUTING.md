@@ -1,11 +1,11 @@
-# Contributing to Ratify
+# Contributing to Ratify 
 
 Welcome! We are very happy to accept community contributions to Ratify, whether those are [Pull Requests](#pull-requests), [Plugins](#plugins), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)! Please note that by participating in this project, you agree to abide by the [Code of Conduct](./CODE_OF_CONDUCT.md), as well as the terms of the [CLA](#cla).
 
 ## Getting Started
 
 * If you don't already have it, you will need [go](https://golang.org/dl/) v1.16+ installed locally to build the project.
-* You can work on Ratify using any platform using any editor, but you may find it quickest to get started using [VSCode](https://code.visualstudio.com/Download) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.Go). 
+* You can work on Ratify using any platform using any editor, but you may find it quickest to get started using [VSCode](https://code.visualstudio.com/Download) with the [Go extension](https://marketplace.visualstudio.com/items?itemName=golang.Go).
 * Fork this repo (see [this forking guide](https://guides.github.com/activities/forking/) for more information).
 * Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
@@ -32,7 +32,7 @@ The Ratify project is composed of the following main components:
 
 * Once built run Ratify from the bin directory `./bin/ratify` for a list of the available commands.
 * For any command the `--help` argument can be passed for more information and a list of possible arguments.
-* 
+
 ### Debugging Ratify with VS Code
 Ratify can run through cli command or run as a http server. Create a [launch.json](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) file in the .vscode directory, then hit F5 to debug. Note the first debug session may take a few minutes to load, subsequent session will be much faster.
 
@@ -70,27 +70,97 @@ Sample curl request to invoke Ratify endpoint:
 curl -X POST http://127.0.0.1:6001/ratify/gatekeeper/v1/verify -H "Content-Type: application/json" -d '{"apiVersion":"externaldata.gatekeeper.sh/v1alpha1","kind":"ProviderRequest","request":{"keys":["localhost:5000/net-monitor:v1"]}}'
 ```
 ### Test local changes in the k8s cluster scenario
-There are some changes that should be validated in a cluster scenario.   
-Follow the steps below to build and deploy a Ratify image with your private changes:   
-1. build an image with your local changes
+There are some changes that should be validated in a cluster scenario.
+Follow the steps below to build and deploy a Ratify image with your private changes:
+
+#### build an image with your local changes
 ```
 docker build -f httpserver/Dockerfile -t yourregistry/deislabs/ratify:yourtag .
 ```
-2. [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
+
+#### [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
 ```
 docker push yourregistry/deislabs/ratify:yourtag
 ```
-3. Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
+
+#### Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
 ```json
 image:
   repository: yourregistry/deislabs/ratify
   tag: yourtag
   pullPolicy: Always
 ```
-4. Deploy from local helm chart
+
+### Deploy from local helm chart
+Deploy using one of the following deployments.
+
+**Option 1**
+Client and server auth disabled
 ```
 helm install ratify ./charts/ratify --atomic
 ```
+
+**Option 2**
+Client auth disabled and server auth enabled using self signed certificate
+
+1. Supply a certificate to use with Ratify (httpserver) or use the following script to create a self-signed certificate.
+
+```
+./scripts/generate-tls-cert.sh
+```
+
+2. Deploy using a certificate
+```
+helm install ratify ./charts/ratify \
+    --set provider.auth="tls" \
+    --set provider.tls.skipVerify=false \
+    --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
+    --set provider.tls.key="$(cat certs/tls.key)" \
+    --set provider.tls.crt="$(cat certs/tls.crt)" \
+    --atomic
+```
+
+**Option 3**
+Client auth disabled and server auth enabled using a secret
+
+*Note: There must be an existing secret in the 'default' namespace named 'ratify-cert-secret'.*
+
+```
+# Example secret schema
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ratify-cert-secret
+data:
+    tls.crt: <base64 crt value>
+    tls.key: <base64 key value>
+```
+
+*Note: The 'provider.tls.cabundle' must be supplied. Update the path or send in a base64 encoded value.*
+
+```
+helm install ratify ./charts/ratify \
+    --set provider.auth="tls" \
+    --set provider.tls.skipVerify=false \
+    --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
+    --atomic
+```
+
+**Option 4**
+Client / Server auth enabled (mTLS)  
+
+*Note: Ratify and Gatekeeper must be installed in the same namespace which allows Ratify access to Gatekeepers CA certificate. The Ratify certificate must have a CN and subjectAltName name which matches the namespace of Gatekeeper and Ratify. For example, if installed to the namespace 'gatekeeper-system', the CN and subjectAltName should be 'ratify.gatekeeper-system'*
+```
+helm install ratify ./charts/ratify \
+    --namespace gatekeeper-system
+    --set provider.auth="mtls" \
+    --set provider.tls.skipVerify=false \
+    --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
+    --set provider.tls.key="$(cat certs/tls.key)" \
+    --set provider.tls.crt="$(cat certs/tls.crt)" \
+    --atomic
+```
+
 ## Pull Requests
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
