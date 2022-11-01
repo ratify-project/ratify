@@ -3,4 +3,7 @@ dist/
 local_oras_cache/
 .idea
 .vscode
-.coverage.out
+__debug_bin
+
+# generated certificate directory
+certs/

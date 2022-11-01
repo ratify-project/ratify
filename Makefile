@@ -21,20 +21,20 @@ all: build test
 .PHONY: build
 build: build-cli build-plugins
 
-.PHONY: build-cli 
+.PHONY: build-cli
 build-cli:
 	go build --ldflags="$(LDFLAGS)" \
 	-o ./bin/${BINARY_NAME} ./cmd/${BINARY_NAME}
 
 .PHONY: build-plugins
-build-plugins: 
+build-plugins:
 	go build -o ./bin/plugins/ ./plugins/verifier/cosign
 	go build -o ./bin/plugins/ ./plugins/verifier/licensechecker
 	go build -o ./bin/plugins/ ./plugins/verifier/sample
 	go build -o ./bin/plugins/ ./plugins/verifier/sbom
 
 .PHONY: install
-install: 
+install:
 	mkdir -p ${INSTALL_DIR}
 	mkdir -p ${INSTALL_DIR}/ratify-certs
 	cp -r ./bin/* ${INSTALL_DIR}
@@ -48,7 +48,7 @@ clean:
 	go clean
 	rm ./bin/${BINARY_NAME}
 
-.PHONY: deploy-demo 
+.PHONY: deploy-demo
 deploy-demo: deploy-gatekeeper deploy-ratify deploy-demo-constraints
 
 .PHONY: delete-demo
@@ -63,7 +63,7 @@ delete-ratify:
 	helm delete ratify
 
 .PHONY: deploy-demo-constraints
-deploy-demo-constraints:	
+deploy-demo-constraints:
 	kubectl apply -f ./library/default/template.yaml
 	kubectl apply -f ./library/default/samples/constraint.yaml
 
@@ -74,7 +74,7 @@ delete-demo-constraints:
 
 .PHONY: deploy-gatekeeper
 deploy-gatekeeper:
-	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts 
+	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm install gatekeeper/gatekeeper  \
 	    --name-template=gatekeeper \
 	    --namespace gatekeeper-system --create-namespace \
@@ -83,7 +83,7 @@ deploy-gatekeeper:
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
-	helm delete gatekeeper --namespace gatekeeper-system 
+	helm delete gatekeeper --namespace gatekeeper-system
 
 .PHONY: test-e2e
 test-e2e:
@@ -113,7 +113,7 @@ e2e-helm-install:
 	./.staging/helm/linux-amd64/helm version --client
 
 e2e-deploy-gatekeeper: e2e-helm-install
-	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts 
+	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
@@ -122,7 +122,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set auditInterval=0
 
 e2e-deploy-ratify:
-	docker build -f ./httpserver/Dockerfile -t localbuild:test . 
-	kind load docker-image --name kind localbuild:test	 
+	docker build -f ./httpserver/Dockerfile -t localbuild:test .
+	kind load docker-image --name kind localbuild:test
 	./.staging/helm/linux-amd64/helm install ratify \
-    ./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.tag=test 
+    ./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.tag=test
