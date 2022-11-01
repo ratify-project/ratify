@@ -149,7 +149,7 @@ helm install ratify ./charts/ratify \
 **Option 4**
 Client / Server auth enabled (mTLS)  
 
-*Note: The cert must have a CN and subjectAltName name of ratify.gatekeeper-system*
+*Note: Ratify and Gatekeeper must be installed in the same namespace which allows Ratify access to Gatekeepers CA certificate. The Ratify certificate must have a CN and subjectAltName name which matches the namespace of Gatekeeper and Ratify. For example, if installed to the namespace 'gatekeeper-system', the CN and subjectAltName should be 'ratify.gatekeeper-system'*
 ```
 helm install ratify ./charts/ratify \
     --namespace gatekeeper-system
