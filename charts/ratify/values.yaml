@@ -54,3 +54,13 @@ oras:
     azureWorkloadIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
+
+provider:
+  auth: ""                  # tls, mtls
+  tls:
+    skipVerify: true        # skip TLS verification
+    crt: ""                 # crt used by ratify (httpserver)
+    key: ""                 # key used by ratify (httpserver)
+    cabundle: ""            # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+
+

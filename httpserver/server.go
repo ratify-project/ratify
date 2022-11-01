@@ -17,36 +17,48 @@ package httpserver
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
+	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
+	"path/filepath"
 
 	"github.com/deislabs/ratify/config"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 const (
 	ServerRootURL = "/ratify/gatekeeper/v1"
+	certName      = "tls.crt"
+	keyName       = "tls.key"
 )
 
 type (
 	Server struct {
-		Address     string
-		Router      *mux.Router
-		GetExecutor config.GetExecutor
-		Context     context.Context
+		Address       string
+		Router        *mux.Router
+		GetExecutor   config.GetExecutor
+		Context       context.Context
+		CertDirectory string
+		CaCertFile    string
 	}
 )
 
-func NewServer(context context.Context, address string, getExecutor config.GetExecutor) (*Server, error) {
+func NewServer(context context.Context, address string, getExecutor config.GetExecutor, certDir string, caCertFile string) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
 	}
 
 	server := &Server{
-		Address:     address,
-		GetExecutor: getExecutor,
-		Router:      mux.NewRouter(),
-		Context:     context,
+		Address:       address,
+		GetExecutor:   getExecutor,
+		Router:        mux.NewRouter(),
+		Context:       context,
+		CertDirectory: certDir,
+		CaCertFile:    caCertFile,
 	}
 	server.registerHandlers()
 
@@ -58,15 +70,45 @@ func (server *Server) Run() error {
 	if err != nil {
 		return err
 	}
+
 	lsnr, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
 		return err
 	}
-	svr := http.Server{
+
+	svr := &http.Server{
 		Addr:    server.Address,
 		Handler: server.Router,
 	}
-	return svr.Serve(lsnr)
+
+	if server.CertDirectory != "" {
+		certFile := filepath.Join(server.CertDirectory, certName)
+		keyFile := filepath.Join(server.CertDirectory, keyName)
+
+		logrus.Info(fmt.Sprintf("%s: [%s:%s] [%s:%s]", "starting server using TLS", "certFile", certFile, "keyFile", keyFile))
+
+		if server.CaCertFile != "" {
+			caCert, err := ioutil.ReadFile(server.CaCertFile)
+			if err != nil {
+				panic(err)
+			}
+
+			clientCAs := x509.NewCertPool()
+			clientCAs.AppendCertsFromPEM(caCert)
+
+			config := &tls.Config{
+				MinVersion: tls.VersionTLS13,
+				ClientCAs:  clientCAs,
+				ClientAuth: tls.RequireAndVerifyClientCert,
+			}
+			svr.TLSConfig = config
+			logrus.Info(fmt.Sprintf("%s: [%s:%s] ", "loaded client CA certificate for mTLS", "CaFIle", server.CaCertFile))
+		}
+		return svr.ServeTLS(lsnr, certFile, keyFile)
+	} else {
+		logrus.Info("starting server without TLS")
+		return svr.Serve(lsnr)
+	}
 }
 
 func (server *Server) register(method, path string, handler ContextHandler) {
