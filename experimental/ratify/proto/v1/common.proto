@@ -1,0 +1,52 @@
+syntax="proto3";
+
+package common;
+
+option go_package = "github.com/deislabs/ratify/experimental/proto/v1/common";
+
+/* Descriptor holds various properties of an artifact.
+
+(oci.Descriptor)
+
+The only strictly defined property is `rawPath`. Beyond that, it is designed to be flexible: only what is known is included.
+*/
+message Descriptor {
+    message Attributes {
+        map<string,string> values = 1;
+    }
+    // The path or address that can be used to retrieve the artifact
+    string rawPath = 1;
+    // Collection of key/value pairs containing relevant known metadata
+    // Examples would include tag or digest.
+    repeated Attributes attributes = 2;
+}
+
+/* Referrer holds properties on a given Artifact.
+
+(Ratify.ocispecs.ReferenceDescriptor)
+*/
+message Referrer {
+    // The type of the artifact.
+    string artifactType = 1;
+    // All known properties (parsed or retrieved) for the artifact.
+    Descriptor descriptor = 2;
+}
+
+/* Manifest includes all relevant properties and blobs for a reference artifact.
+
+(Ratify.ocispecs.ReferenceManifest)
+*/
+message Manifest {
+    message Blobs {
+        repeated Descriptor descriptor = 1;
+    }
+    message Subjects {
+        repeated Descriptor descriptor = 1;
+    }
+    // The properties of the referrer.
+    Referrer referrer = 1;
+    // The collection of layers which together form the content of the referrer.
+    Blobs blobs = 2;
+    // The parents (subjects) for which this referrer describes and supplements.
+    Subjects subject = 3;
+}
