@@ -4,7 +4,6 @@ local_oras_cache/
 .idea
 .vscode
 __debug_bin
-.devcontainer
 
 # generated certificate directory
 certs/
