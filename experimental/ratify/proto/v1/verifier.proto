@@ -1,0 +1,45 @@
+syntax="proto3";
+
+package verifier;
+
+option go_package = "github.com/deislabs/ratify/experimental/proto/v1/verifier";
+
+import "common.proto";
+import "google/protobuf/struct.proto";
+
+
+// Verifier plugin interface
+service VerifierPlugin {
+    // Perform verification of a given artifact
+    rpc VerifyReference (VerifyReferenceRequest) returns (VerifyReferenceResponse);
+}
+
+// Request for VerifyReference
+message VerifyReferenceRequest {
+    // The subject of the artifact.
+    common.Descriptor subject = 1;
+    // The artifact to be evaluated.
+    common.Referrer reference = 2;
+    // Optional. Custom to the verifier plugin. Can be used to further customize the artifact verification logic.
+    google.protobuf.Struct configuration = 3;
+}
+
+// Response for VerifyReference
+message VerifyReferenceResponse {
+    message ExtensionData {
+        map<string, string> values = 1;
+    }
+     // The name of the verifier which evaluated the artifact.
+    string verifierName = 1;
+    // The subject of the artifact.
+    string subject = 2;
+    // The artifact under evaluation.
+    common.Descriptor reference = 3;
+    // Whether the artifact passed validation
+    bool valid = 4;
+    // Details surrounding why the verifier considered the artifact valid or invalid
+    repeated string reasons = 5;
+    // Custom metadata realized as a part of verification process. 
+    // These properties can be used to compose more robust constraints.
+    repeated ExtensionData data = 6;
+}

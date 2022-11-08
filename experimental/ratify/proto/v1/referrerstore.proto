@@ -1,0 +1,88 @@
+syntax="proto3";
+
+package referrerstore;
+
+option go_package = "github.com/deislabs/ratify/experimental/proto/v1/referrerstore";
+
+import "common.proto";
+import "google/protobuf/struct.proto";
+
+
+// Referrer Store plugin interface
+service ReferrerStorePlugin {
+    //  Query all the referrers that are linked to a subject.
+    rpc ListReferrers (ListReferrersRequest) returns (stream ListReferrersResponse);
+    // Fetch the contents of a blob for a given artifact.
+    rpc GetBlobContent (GetBlobContentRequest) returns ( GetBlobContentResponse);
+    // Fetch additional metadata for a subject.
+    rpc GetSubjectDescriptor (GetSubjectDescriptorRequest) returns (GetSubjectDescriptorResponse);
+    // Fetch the contents of a reference manifest.
+    rpc GetReferenceManifest (GetManifestRequest) returns (GetManifestResponse);
+}
+
+// The request object for ListReferrers.
+message ListReferrersRequest {
+    // The subject.
+    common.Descriptor subject = 1;
+    // The specific types of artifacts to query and return. If empty, all artifacts regardless of type are returned.
+    repeated string artifactTypes = 2;
+    // Optional. Custom to the store plugin. Can be used to modify the query performed or results returned, e.g: paging.
+    google.protobuf.Struct configuration = 3;
+}
+
+// The response object for ListReferrers.
+message ListReferrersResponse {
+    // The subject.
+    common.Descriptor subject = 1;
+    // The collection of results.
+    repeated common.Referrer artifacts = 2;
+    // If paging is supported and more results were found,
+    // this value can be provided in a follow up to get the next set.
+    string nextToken = 3;
+}
+
+// The request for GetBlobContent.
+message GetBlobContentRequest {
+    // The artifact for which blobs have been requested.
+    common.Descriptor artifact = 1;
+    // Optional. Custom to the store plugin. Can be used to modify the query performed or results returned.
+    google.protobuf.Struct configuration = 2;
+}
+
+// The response for GetBlobContent.
+message GetBlobContentResponse {
+    // The artifact for which blobs have been requested.
+    common.Descriptor artifact = 1;
+    // The collection of blob contents.
+    repeated bytes content = 2;
+}
+
+// The request for GetSubjectDescriptor.
+message GetSubjectDescriptorRequest {
+    // The provided path for the subject.
+    string path = 1;
+    // Optional. Custom to the store plugin. Can be used to modify the query performed or results returned.
+    google.protobuf.Struct configuration = 2;
+}
+
+// The response for GetSubjectDescriptor.
+message GetSubjectDescriptorResponse {
+    // The retrieved properties for the provided subject (path).
+    common.Descriptor subject = 1;
+}
+
+// The request for GetReferenceManifest.
+message GetManifestRequest {
+    // The path of the subject.
+    string subjectPath = 1;
+    // The referrer for which the manifest is being requested.
+    common.Descriptor referrer = 2;
+    // Optional. Custom to the store plugin. Can be used to modify the query performed or results returned.
+    google.protobuf.Struct configuration = 3;
+}
+
+// The response for GetReferenceManifest.
+message GetManifestResponse {
+    // The fully realized Manifest object for the requested referrer.
+    common.Manifest manifest = 1;
+}
