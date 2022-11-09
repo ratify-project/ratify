@@ -41,10 +41,7 @@ data:
       "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy",
-            "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "all"
-            }
+            "name": "configPolicy"
         }
       },
       "verifier": {
@@ -54,14 +51,14 @@ data:
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs"
+                    "/usr/local/ratify-certs/notary"
                   ]
             {{- if .Values.cosign.enabled }}
             },
             {
                 "name": "cosign",
                 "artifactTypes": "org.sigstore.cosign.v1",
-                "key": "/usr/local/ratify-certs/cosign.pub"
+                "key": "/usr/local/ratify-certs/cosign/cosign.pub"
             {{- end }}
             }
           ]

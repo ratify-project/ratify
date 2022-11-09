@@ -21,7 +21,7 @@ data:
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.dev.cosign.simplesigning.v1+json": "any"
+                "org.sigstore.cosign.v1": "any"
             }
         }
       },
@@ -32,7 +32,7 @@ data:
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs"
+                    "/usr/local/ratify-certs/notary"
                   ]
             }
           ]
