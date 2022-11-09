@@ -229,8 +229,9 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		}
 
 		// push fetched content to local ORAS cache
+		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", blobDesc.Digest, blobDesc.MediaType, errdef.ErrAlreadyExists)
 		err = store.localCache.Push(ctx, blobDesc, rc)
-		if err != nil && err != errdef.ErrAlreadyExists {
+		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return nil, err
 		}
 	}
@@ -266,8 +267,9 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
+		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
 		store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
-		if err != nil && err != errdef.ErrAlreadyExists {
+		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return ocispecs.ReferenceManifest{}, err
 		}
 
