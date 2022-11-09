@@ -29,7 +29,7 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const CosignArtifactType = "application/vnd.dev.cosign.simplesigning.v1+json"
+const CosignArtifactType = "org.sigstore.cosign.v1"
 const CosignSignatureTagSuffix = ".sig"
 
 func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.ReferenceDescriptor, error) {

@@ -126,7 +126,7 @@ but we can look at what will be generated below:
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.dev.cosign.simplesigning.v1+json": "any"
+                "org.sigstore.cosign.v1": "any"
             }
         }
     },
@@ -135,8 +135,8 @@ but we can look at what will be generated below:
         "plugins": [        
           {
             "name": "cosign",
-            "artifactTypes": "application/vnd.dev.cosign.simplesigning.v1+json",
-            "key": "/usr/local/ratify-certs/cosign.pub"
+            "artifactTypes": "org.sigstore.cosign.v1",
+            "key": "/usr/local/ratify-certs/cosign/cosign.pub"
           }
         ]        
     }
