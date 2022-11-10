@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -174,7 +175,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
 		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
-	}); err != nil {
+	}); err != nil && !errors.Is(err, errdef.ErrNotFound) {
 		store.evictAuthCache(subjectReference.Original, err)
 		return referrerstore.ListReferrersResult{}, err
 	}
