@@ -30,7 +30,7 @@ jobs:
           docker build -f ./httpserver/Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} .
       - name: docker build ratify-crds
         run: |
-          docker build --build-arg KUBE_VERSION="1.25.0" -f crd.Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} ./charts/ratify/crds
+          docker build --build-arg KUBE_VERSION="1.25.0" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }} ./charts/ratify/crds
       - name: docker login
         uses: docker/login-action@v2
         with:
