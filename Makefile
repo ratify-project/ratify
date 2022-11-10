@@ -12,9 +12,14 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
+KUBERNETES_VERSION ?= 1.25.0
+
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
 BATS_VERSION ?= 1.7.0
+
+# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
+ENVTEST_K8S_VERSION = 1.24.2
 
 all: build test
 
@@ -22,7 +27,7 @@ all: build test
 build: build-cli build-plugins
 
 .PHONY: build-cli
-build-cli:
+build-cli: generate fmt vet
 	go build --ldflags="$(LDFLAGS)" \
 	-o ./bin/${BINARY_NAME} ./cmd/${BINARY_NAME}
 
@@ -42,7 +47,7 @@ install:
 .PHONY: test
 test:
 	go test -v ./...
-
+	
 .PHONY: clean
 clean:
 	go clean
@@ -122,7 +127,79 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set auditInterval=0
 
 e2e-deploy-ratify:
-	docker build -f ./httpserver/Dockerfile -t localbuild:test .
+	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
+	
+	docker build --progress=plain --no-cache --build-arg KUBE_VERSION="1.25.0" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
+	kind load docker-image --name kind localbuildcrd:test
+
 	./.staging/helm/linux-amd64/helm install ratify \
-    ./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.tag=test
+    ./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.crdRepository=localbuildcrd --set image.tag=test
+
+##@ Development
+
+.PHONY: manifests
+manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+
+.PHONY: generate
+generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	go fmt ./...
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet ./...
+
+##@ Deployment
+
+ifndef ignore-not-found
+  ignore-not-found = false
+endif
+
+.PHONY: install-crds
+install-crds: manifests kustomize ## Install CRDs into the K8s cluster specified in ~/.kube/config.
+	$(KUSTOMIZE) build config/crd | kubectl apply -f -
+
+.PHONY: uninstall-crds
+uninstall-crds: manifests kustomize ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/crd | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+.PHONY: deploy
+deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
+	$(KUSTOMIZE) build config/default | kubectl apply -f -
+
+.PHONY: undeploy
+undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
+	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
+
+##@ Build Dependencies
+
+## Location to install dependencies to
+LOCALBIN ?= $(shell pwd)/bin
+$(LOCALBIN):
+	mkdir -p $(LOCALBIN)
+
+## Tool Binaries
+KUSTOMIZE ?= $(LOCALBIN)/kustomize
+CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+
+## Tool Versions
+KUSTOMIZE_VERSION ?= v3.8.7
+CONTROLLER_TOOLS_VERSION ?= v0.9.2
+
+KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
+.PHONY: kustomize
+kustomize: $(KUSTOMIZE) ## Download kustomize locally if necessary.
+$(KUSTOMIZE): $(LOCALBIN)
+	test -s $(LOCALBIN)/kustomize || { curl -s $(KUSTOMIZE_INSTALL_SCRIPT) | bash -s -- $(subst v,,$(KUSTOMIZE_VERSION)) $(LOCALBIN); }
+
+.PHONY: controller-gen
+controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
+$(CONTROLLER_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)

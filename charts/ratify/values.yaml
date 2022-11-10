@@ -2,6 +2,7 @@ image:
   repository: ghcr.io/deislabs/ratify
   tag: v1.0.0-alpha.3
   pullPolicy: IfNotPresent
+
 nameOverride: ""
 fullnameOverride: ""
 ratifyTestCert: |
@@ -63,4 +64,28 @@ provider:
     key: ""                 # key used by ratify (httpserver)
     cabundle: ""            # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
 
+podAnnotations: {}
+podLabels: {}
+enableRuntimeDefaultSeccompProfile: true
 
+rbac:
+  create: true
+  
+upgradeCRDs:
+  enabled: true
+  extraRules: []
+
+crds:
+  affinity: {}
+  tolerations: []
+  nodeSelector: {kubernetes.io/os: linux}
+  resources: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsGroup: 65532
+    runAsNonRoot: true
+    runAsUser: 65532
