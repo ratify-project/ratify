@@ -19,13 +19,15 @@ SLEEP_TIME=1
     assert_failure
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
 }
 
 @test "validate crd add, replace and delete" {     
     echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_licensechecker.yaml
+    assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    assert_success
     run kubectl run crdtest --namespace default --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     assert_failure
 
@@ -37,7 +39,7 @@ SLEEP_TIME=1
     assert_success
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod crdtest
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod crdtest --namespace default
 }
 
 @test "configmap update test" {

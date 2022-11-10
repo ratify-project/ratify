@@ -1,7 +1,7 @@
 image:
-  repository: ghcr.io/deislabs/ratify
-  crdRepository: ghcr.io/deislabs/ratify-crd
-  tag: v1.0.0-alpha.3
+  repository: ghcr.io/susanshi/ratify
+  crdRepository: ghcr.io/susanshi/ratify-crds
+  tag: v6.0
   pullPolicy: IfNotPresent
 
 nameOverride: ""
