@@ -20,12 +20,6 @@ import (
 	"time"
 
 	ef "github.com/deislabs/ratify/pkg/executor/core"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/verifier"
-	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -50,7 +44,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 
 	configHash = cf.fileHash
 
-	stores, verifiers, policyEnforcer, err := createFromConfig(cf)
+	stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
 	if err != nil {
 		return func() *ef.Executor { return &ef.Executor{} }, err
@@ -74,34 +68,6 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	return func() *ef.Executor { return &executor }, nil
 }
 
-// Returns created referer store, verifier, policyprovider objects from config
-func createFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
-	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
-
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load store from config")
-	}
-	logrus.Infof("stores successfully created. number of stores %d", len(stores))
-
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, GetDefaultPluginPath())
-
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load verifiers from config")
-	}
-
-	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
-
-	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
-
-	if err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to load policy provider from config")
-	}
-
-	logrus.Infof("policies successfully created.")
-
-	return stores, verifiers, policyEnforcer, nil
-}
-
 func reloadExecutor(configFilePath string) {
 
 	cf, err := Load(configFilePath)
@@ -112,7 +78,7 @@ func reloadExecutor(configFilePath string) {
 	}
 
 	if configHash != cf.fileHash {
-		stores, verifiers, policyEnforcer, err := createFromConfig(cf)
+		stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
 		newExecutor := ef.Executor{
 			Verifiers:      verifiers,
