@@ -34,7 +34,7 @@ The documents in this directory are for developers who want to contribute to Rat
 
 developer
 
-- Create guidance for new verifiers
+- [Guidance for new plugins](https://github.com/deislabs/ratify/issues/405)
 - [Create a new plugin scaffold](https://github.com/deislabs/ratify/issues/8)
 - Streamline documentation between contributing, framework readme and providers, executor, store, verifier docs.
 
