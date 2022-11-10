@@ -41,6 +41,7 @@ spec:
             - ":6001"
             - "-c"
             - "/usr/local/ratify/config.json"
+            - "--enable-crd-manager"
             {{- if eq .Values.provider.auth "tls" }}
             - --cert-dir=/usr/local/tls
             {{- end }}

@@ -46,6 +46,25 @@ func Register(name string, factory StoreFactory) {
 	builtInStores[name] = factory
 }
 
+func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion string, pluginBinDir []string) (referrerstore.ReferrerStore, error) {
+	storeName, ok := storeConfig[types.Name]
+	if !ok {
+		return nil, fmt.Errorf("failed to find store name in the stores config with key %s", "name")
+	}
+
+	storeNameStr := fmt.Sprintf("%s", storeName)
+	if strings.ContainsRune(storeNameStr, os.PathSeparator) {
+		return nil, fmt.Errorf("invalid plugin name for a store: %s", storeName)
+	}
+
+	storeFactory, ok := builtInStores[storeNameStr]
+	if ok {
+		return storeFactory.Create(configVersion, storeConfig)
+	} else {
+		return plugin.NewStore(configVersion, storeConfig, pluginBinDir)
+	}
+}
+
 // CreateStoresFromConfig creates a stores from the provided configuration
 func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath string) ([]referrerstore.ReferrerStore, error) {
 	if storesConfig.Version == "" {
@@ -65,34 +84,15 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 
 	if len(storesConfig.PluginBinDirs) == 0 {
 		storesConfig.PluginBinDirs = []string{defaultPluginPath}
+	} else {
+		storesConfig.PluginBinDirs = append(storesConfig.PluginBinDirs, defaultPluginPath)
 	}
+
 	for _, storeConfig := range storesConfig.Stores {
-		storeName, ok := storeConfig[types.Name]
-		if !ok {
-			return nil, fmt.Errorf("failed to find store name in the stores config with key %s", "name")
-		}
-
-		storeNameStr := fmt.Sprintf("%s", storeName)
-		if strings.ContainsRune(storeNameStr, os.PathSeparator) {
-			return nil, fmt.Errorf("invalid plugin name for a store: %s", storeName)
-		}
-
-		storeFactory, ok := builtInStores[storeNameStr]
-		if ok {
-			store, err := storeFactory.Create(storesConfig.Version, storeConfig)
-
-			if err != nil {
-				return nil, err
-			}
-
-			stores = append(stores, store)
+		store, err := CreateStoreFromConfig(storeConfig, storesConfig.Version, storesConfig.PluginBinDirs)
+		if err != nil {
+			return nil, err
 		} else {
-			store, err := plugin.NewStore(storesConfig.Version, storeConfig, append(storesConfig.PluginBinDirs, defaultPluginPath))
-
-			if err != nil {
-				return nil, err
-			}
-
 			stores = append(stores, store)
 		}
 	}
