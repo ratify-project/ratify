@@ -1,0 +1,24 @@
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: Store
+metadata:
+  name: store-oras
+spec:
+  name: oras
+  parameters:
+    {{- if .Values.cosign.enabled }}
+    cosign-enabled: true
+    {{- end }}
+    {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
+    authProvider:
+      name: azureWorkloadIdentity
+    {{- end }}
+    {{- if .Values.oras.authProviders.k8secretsEnabled }}
+    authProvider:
+      name: k8Secrets
+      secrets: 
+      - secretName: myregistrykey 
+    {{- end }}
+    {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
+    authProvider:
+      name: awsEcrBasic
+    {{- end }}

@@ -45,7 +45,29 @@ func Register(name string, factory VerifierFactory) {
 	builtInVerifiers[name] = factory
 }
 
+// returns a single verifier from a verifierConfig
+func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string) (verifier.ReferenceVerifier, error) {
+
+	verifierName, ok := verifierConfig[types.Name]
+	if !ok {
+		return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
+	}
+
+	verifierNameStr := fmt.Sprintf("%s", verifierName)
+	if strings.ContainsRune(verifierNameStr, os.PathSeparator) {
+		return nil, fmt.Errorf("invalid plugin name for a verifier: %s", verifierNameStr)
+	}
+
+	verifierFactory, ok := builtInVerifiers[verifierNameStr]
+	if ok {
+		return verifierFactory.Create(configVersion, verifierConfig)
+	} else {
+		return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
+	}
+}
+
 // TODO pointer to avoid copy
+// returns an array of verifiers from VerifiersConfig
 func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPluginPath string) ([]verifier.ReferenceVerifier, error) {
 	if verifiersConfig.Version == "" {
 		verifiersConfig.Version = types.SpecVersion
@@ -57,7 +79,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, errors.New("verifiers config should have atleast one verifer")
+		return nil, errors.New("verifiers config should have at least one verifier")
 	}
 
 	var verifiers []verifier.ReferenceVerifier
@@ -65,36 +87,15 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	if len(verifiersConfig.PluginBinDirs) == 0 {
 		verifiersConfig.PluginBinDirs = []string{defaultPluginPath}
 	}
+
+	// TODO: do we need to append defaultPlugin path?
 	for _, verifierConfig := range verifiersConfig.Verifiers {
-		verifierName, ok := verifierConfig[types.Name]
-		if !ok {
-			return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
-		}
-
-		verifierNameStr := fmt.Sprintf("%s", verifierName)
-		if strings.ContainsRune(verifierNameStr, os.PathSeparator) {
-			return nil, fmt.Errorf("invalid plugin name for a verifier: %s", verifierNameStr)
-		}
-
-		verifierFactory, ok := builtInVerifiers[verifierNameStr]
-		if ok {
-			verifier, err := verifierFactory.Create(verifiersConfig.Version, verifierConfig)
-
-			if err != nil {
-				return nil, err
-			}
-
-			verifiers = append(verifiers, verifier)
+		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs)
+		if err != nil {
+			return nil, err
 		} else {
-			verifier, err := plugin.NewVerifier(verifiersConfig.Version, verifierConfig, verifiersConfig.PluginBinDirs)
-
-			if err != nil {
-				return nil, err
-			}
-
 			verifiers = append(verifiers, verifier)
 		}
-
 	}
 
 	return verifiers, nil

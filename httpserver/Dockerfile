@@ -43,3 +43,4 @@ EXPOSE 6001
 USER 65532:65532
 
 ENTRYPOINT ["/app/ratify", "serve", "--http", ":6001"]
+
