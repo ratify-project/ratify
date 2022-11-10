@@ -28,7 +28,7 @@ require (
 	github.com/sigstore/sigstore v1.4.5
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spdx/tools-golang v0.2.0
-	github.com/spf13/cobra v1.6.0
+	github.com/spf13/cobra v1.6.1
 	github.com/xlab/treeprint v1.1.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.50.1
