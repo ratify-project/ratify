@@ -6,4 +6,4 @@ spec:
   name: cosign
   artifactTypes: org.sigstore.cosign.v1
   parameters:
-    key: /usr/local/ratify-certs/cosign.pub
+    key: /usr/local/ratify-certs/cosign/cosign.pub
