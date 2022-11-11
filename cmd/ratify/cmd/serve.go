@@ -67,7 +67,7 @@ func serve(opts serveCmdOptions) error {
 	if opts.enableCrdManager {
 		logrus.Infof("starting crd manager")
 		go manager.StartManager()
-		manager.StartServer(opts.httpServerAddress, opts.certDirectory, opts.caCertFile)
+		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile)
 
 		return nil
 	}
