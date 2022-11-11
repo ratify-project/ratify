@@ -99,6 +99,7 @@ func storeAddOrReplace(spec configv1alpha1.StoreSpec, fullname string) error {
 	storeConfigVersion := "1.0.0"
 	if spec.Address == "" {
 		spec.Address = config.GetDefaultPluginPath()
+		storeLogger.Info(fmt.Sprintf("Address was empty, setting to default path %v", spec.Address))
 	}
 	storeReference, err := sf.CreateStoreFromConfig(storeConfig, storeConfigVersion, []string{spec.Address})
 
