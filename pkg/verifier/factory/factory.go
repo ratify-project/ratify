@@ -25,6 +25,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/plugin"
 	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/sirupsen/logrus"
 )
 
 var builtInVerifiers = make(map[string]VerifierFactory)
@@ -86,6 +87,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 
 	if len(verifiersConfig.PluginBinDirs) == 0 {
 		verifiersConfig.PluginBinDirs = []string{defaultPluginPath}
+		logrus.Info("defaultPluginPath set to " + defaultPluginPath)
 	}
 
 	// TODO: do we need to append defaultPlugin path?

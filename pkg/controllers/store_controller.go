@@ -27,8 +27,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
 )
@@ -96,6 +97,10 @@ func storeAddOrReplace(spec configv1alpha1.StoreSpec, fullname string) error {
 	// factory only support a single version of configuration today
 	// when we support multi version store CRD, we will also pass in the corresponding config version so factory can create different version of the object
 	storeConfigVersion := "1.0.0"
+	if spec.Address == "" {
+		spec.Address = config.GetDefaultPluginPath()
+		storeLogger.Info(fmt.Sprintf("Address was empty, setting to default path %v", spec.Address))
+	}
 	storeReference, err := sf.CreateStoreFromConfig(storeConfig, storeConfigVersion, []string{spec.Address})
 
 	if err != nil || storeReference == nil {
@@ -115,14 +120,14 @@ func storeRemove(resourceName string) {
 }
 
 // Returns a store reference from spec
-func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (config.StorePluginConfig, error) {
+func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig, error) {
 
-	storeConfig := config.StorePluginConfig{}
+	storeConfig := rc.StorePluginConfig{}
 
 	if string(storeSpec.Parameters.Raw) != "" {
 		if err := json.Unmarshal(storeSpec.Parameters.Raw, &storeConfig); err != nil {
 			storeLogger.Error(err, "unable to decode store parameters", "Parameters.Raw", storeSpec.Parameters.Raw)
-			return config.StorePluginConfig{}, err
+			return rc.StorePluginConfig{}, err
 		}
 	}
 	storeConfig[types.Name] = storeSpec.Name
