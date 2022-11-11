@@ -6,7 +6,7 @@ spec:
   name: oras
   parameters:
     {{- if .Values.cosign.enabled }}
-    cosign-enabled: true
+    cosignEnabled: true
     {{- end }}
     {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
     authProvider:

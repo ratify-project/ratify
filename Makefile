@@ -12,7 +12,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
-KUBERNETES_VERSION ?= 1.25.0
+KUBERNETES_VERSION ?= 1.25.4
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -130,7 +130,7 @@ e2e-deploy-ratify:
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 	
-	docker build --progress=plain --no-cache --build-arg KUBE_VERSION="1.25.0" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
+	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
 	./.staging/helm/linux-amd64/helm install ratify \
