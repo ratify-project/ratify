@@ -1,15 +1,15 @@
 # Ratify on AWS
-This guide will explain how to get up and running with Ratify on AWS using EKS and ECR. This will involve setting up
-necessary AWS resources, installing necessary components, and configuring them properly. Once everything is set up we
-will walk through a simple scenario of verifying the signature on a container image at deployment time.
 
-By the end of this guide you will have a public ECR repository, an EKS cluster with Gatekeeper and Ratify installed,
-and have validated that only images signed with a particular key can be deployed.
+This guide will explain how to get up and running with Ratify on AWS using EKS and ECR. This will involve setting up necessary AWS resources, installing necessary components, and configuring them properly. Once everything is set up we will walk through a simple scenario of verifying the signature on a container image at deployment time.
 
-This guide assumes you are starting from scratch, but portions of the guide can be skipped if you have an existing EKS
-cluster or ECR repository.
+By the end of this guide you will have a public ECR repository, an EKS cluster with Gatekeeper and Ratify installed, and have validated that only images signed with a particular key can be deployed.
+
+> Note: The Cosign verifier with ratify today only supports images in a public (non-authenticated) registry.
+
+This guide assumes you are starting from scratch, but portions of the guide can be skipped if you have an existing EKS cluster or ECR repository.
 
 ## Table of Contents
+
 1. [Prerequisites](#prerequisites)
 2. [Setting Up ECR](#set-up-ecr)
 3. [Setting Up EKS](#set-up-eks)
@@ -20,7 +20,9 @@ cluster or ECR repository.
 8. [Cleaning Up](#cleaning-up)
 
 ## Prerequisites
+
 There are a couple tools you will need locally to complete this guide:
+
 - [awscli](https://aws.amazon.com/cli/): This is used to interact with AWS and provision necessary resources
 - [eksctl](https://docs.aws.amazon.com/eks/latest/userguide/eksctl.html): This is used to easily provision EKS clusters
 - [kubectl](https://kubernetes.io/docs/tasks/tools/): This is used to interact with the EKS cluster we will create
@@ -33,9 +35,9 @@ There are a couple tools you will need locally to complete this guide:
 If you have not done so already, configure awscli to interact with your AWS account by following these [instructions](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-prereqs.html).
 
 ## Set Up ECR
+
 We need to provision a public container repository to make our container images and their associated artifacts
-available to our EKS cluster. We will do this using awscli. For this guide we will be provisioning a public ECR
-repository to keep things simple.
+available to our EKS cluster. We will do this using awscli. For this guide we will be provisioning a public ECR repository to keep things simple.
 
 ```shell
 export REPO_NAME=ratifydemo
@@ -47,6 +49,7 @@ We will use the repository URI returned by the create command later to build and
 For more information on provisioning ECR repositories check the [documentation](https://docs.aws.amazon.com/AmazonECR/latest/public/public-getting-started.html).
 
 ## Set Up EKS
+
 We will need to provision a Kubernetes cluster to deploy everything on. We will do this using the `eksctl` command line
 utility. Before provisioning our EKS cluster we will need to create a key pair for the nodes:
 
@@ -71,6 +74,7 @@ The template will provision a basic EKS cluster with default settings.
 Additional information on EKS deployment can be found in the EKS [documentation](https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html).
 
 ## Prepare Container Image
+
 For this guide we will create a basic container image we can use to simulate deployments of a service. We will start by
 building the container image:
 
@@ -104,7 +108,9 @@ cosign verify --key cosign.pub $REPO_URI:v1
 ```
 
 ## Configure Ratify
+
 ### Ratify
+
 We need to ensure that Ratify is properly configured to find signature artifacts for our container image. This is done
 using a json configuration file. The Ratify configuration file for the guide is created and deployed by the helm chart,
 but we can look at what will be generated below:
@@ -144,13 +150,14 @@ but we can look at what will be generated below:
 ```
 
 This configuration file does the following:
-- Enables the built-in `oras` referrer store with cosign support which will retrieve the necessary manifests and
-  signature artifacts from the container registry
+
+- Enables the built-in `oras` referrer store with cosign support which will retrieve the necessary manifests and signature artifacts from the container registry
 - Enables the `cosign` verifier that will validate cosign signatures on container images
 
 The configuration file and cosign public key will be mounted into the Ratify container via the helm chart.
 
 ### Gatekeeper
+
 The Ratify container will perform the actual validation of images and their artifacts, but
 [Gatekeeper](https://github.com/open-policy-agent/gatekeeper) is used as the policy controller for Kubernetes. The helm
 chart for this guide has a basic Gatekeeper rego that checks for the string "false" in the results from the Ratify
@@ -161,6 +168,7 @@ verifiers can be used to accomplish many types of checks. See the [Gatekeeper do
 for more information on rego authoring.
 
 ## Deploy Ratify
+
 We first need to install Gatekeeper into the cluster. We will use the Gatekeeper helm chart with some customizations:
 
 ```shell
@@ -195,6 +203,7 @@ kubectl get po -A
 We should see a ratify pod and some gatekeeper pods running
 
 ## Deploy Container Image
+
 Now that the signed container image is in the registry and Ratify is installed into the EKS cluster we can deploy our
 container image:
 
@@ -225,6 +234,7 @@ kubectl logs deployment/ratify
 ```
 
 ## Cleaning Up
+
 We can use awscli and eksctl to delete our ECR repository and EKS cluster:
 
 ```shell
