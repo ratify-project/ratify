@@ -21,8 +21,9 @@ import (
 	"fmt"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/config"
 	vr "github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/config"
+	vc "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/deislabs/ratify/pkg/verifier/types"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -98,7 +99,11 @@ func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) e
 
 	// verifier factory only support a single version of configuration today
 	// when we support multi version verifier CRD, we will also pass in the corresponding config version so factory can create different version of the object
-	verifierConfigVersion := "1.0.0"
+	verifierConfigVersion := "1.0.0" // TODO: move default values to defaulting webhook in the future #413
+	if spec.Address == "" {
+		spec.Address = config.GetDefaultPluginPath()
+		verifierLogger.Info(fmt.Sprintf("Address was empty, setting to default path %v", spec.Address))
+	}
 	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address})
 
 	if err != nil || verifierReference == nil {
@@ -117,14 +122,14 @@ func verifierRemove(objectName string) {
 }
 
 // returns a verifier reference from spec
-func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (config.VerifierConfig, error) {
+func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (vc.VerifierConfig, error) {
 
-	verifierConfig := config.VerifierConfig{}
+	verifierConfig := vc.VerifierConfig{}
 
 	if string(verifierSpec.Parameters.Raw) != "" {
 		if err := json.Unmarshal(verifierSpec.Parameters.Raw, &verifierConfig); err != nil {
 			verifierLogger.Error(err, "unable to decode verifier parameters", "Parameters.Raw", verifierSpec.Parameters.Raw)
-			return config.VerifierConfig{}, err
+			return vc.VerifierConfig{}, err
 		}
 	}
 
