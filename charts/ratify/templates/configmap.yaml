@@ -26,7 +26,8 @@ data:
                 {{- if .Values.oras.authProviders.k8secretsEnabled }}
                 ,
                 "authProvider": {
-                    "name": "k8Secrets"
+                    "name": "k8Secrets",
+                    "serviceAccountName": "{{ include "ratify.serviceAccountName" . }}"
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
