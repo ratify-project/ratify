@@ -15,8 +15,7 @@ spec:
     {{- if .Values.oras.authProviders.k8secretsEnabled }}
     authProvider:
       name: k8Secrets
-      secrets: 
-      - secretName: myregistrykey 
+      serviceAccountName: {{ include "ratify.serviceAccountName" . }} 
     {{- end }}
     {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
     authProvider:
