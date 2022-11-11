@@ -34,11 +34,13 @@ The documents in this directory are for developers who want to contribute to Rat
 
 developer
 
+- Overhaul the root readme as this was from original creation and the design has been more finalized since then.  Likely combined effort with the next item to streamline.
+- Streamline documentation between contributing, framework readme and providers, executor, store, verifier docs.
 - [Guidance for new plugins](https://github.com/deislabs/ratify/issues/405)
 - [Create a new plugin scaffold](https://github.com/deislabs/ratify/issues/8)
-- Streamline documentation between contributing, framework readme and providers, executor, store, verifier docs.
 
 examples
+
 - [Azure e2e walkthrough](https://github.com/deislabs/ratify/issues/59)
 - [Cosign walkthrough](https://github.com/deislabs/ratify/issues/230)
 - Using ratify in pass-through execution mode
