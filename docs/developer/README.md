@@ -52,11 +52,11 @@ A reference artifact is linked to another artifact through descriptor and enable
 
 ![tree view of artifact hierarchy](artifact-hierarchy.svg)
 
-This new way of defining reference types to artifacts and creating relationships is described in the [spec](https://github.com/oras-project/artifacts-spec/releases/tag/1.0.0-draft.1). This framework queries for this graph of reference types artifacts for a subject to verify it. For existing systems that do not support these reference types, there will be storage wrappers that can adapt the corresponding supply chain objects as reference types. The advantage  is to have a uniform data format that can be consumed by different components of the framework.
+This new way of defining reference types to artifacts and creating relationships is described in the [spec](https://github.com/oras-project/artifacts-spec/releases/tag/v1.0.0-rc.2). This framework queries for this graph of reference types artifacts for a subject to verify it. For existing systems that do not support these reference types, there will be storage wrappers that can adapt the corresponding supply chain objects as reference types. The advantage  is to have a uniform data format that can be consumed by different components of the framework.
 
 ### Example
 
-Cosign signatures are stored as specially formatted tags that are queried using cosign libraries during verification. There will be an adapter that can represent these signatures as reference type on fly if exists, so that it can be consumed by the cosign verifier that is registered in the framework.
+Cosign signatures are stored as specially formatted tags that are queried using cosign libraries during verification. There will be an adapter that can represent these signatures as the reference types on fly if exists, so that it can be consumed by the cosign verifier that is registered in the framework.
 
 ## Referrer Store
 
@@ -69,13 +69,27 @@ A referrer store is an interface that defines the following capabilities
 
 ### Sample Interface
 
-```go=
+```go
 type ReferrerStore interface {
- Name() string
- ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectReference) (ListReferrersResult, error)
- // Used for small objects.
- GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
- GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
+    // Name is the name of the store
+    Name() string
+
+    // ListReferrers returns the immediate set of supply chain objects for the given subject
+    // represented as artifact manifests
+    ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (ListReferrersResult, error)
+
+    // GetBlobContent returns the blob with the given digest
+    // WARNING: This API is intended to use for small objects like signatures, SBoMs
+    GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
+
+    // GetReferenceManifest returns the reference artifact manifest as given by the descriptor
+    GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
+
+    // GetConfig returns the configuration of this store
+    GetConfig() *config.StoreConfig
+
+    // GetSubjectDescriptor returns the descriptor for the given subject.
+    GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error)
 }
 ```
 
@@ -108,19 +122,6 @@ The framework can be configured with multiple referrer stores. A referrers provi
 
 - Order or selection does not ensure order of return of the references and there will be no ordinal sequencing of references retruned from the provider.
 
-### Sample interface
-
-```go=
-type ReferrerProvider interface {
- ListAllReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string) (ListAllReferrersResult, error)
-}
-```
-
-### Open Questions
-
-- Will the result be a union of all references queried from all the selected stores for an artifact? Or will the provider stop when it gets a non empty/non error response from any one of the selected stores?
-- If the result is union, can provider invoke stores in parallel to optimize the performance?
-- Will the provider handle references in pages or will it exhaust all pages returned from the stores? If so, we need to consider the limits of keeping all reference items in memory especially when an item has embedded ```manifest``` within in it.  
 
 ## Reference Verifier
 
