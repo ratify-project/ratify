@@ -68,11 +68,10 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress string, certDirectory string, caCertFile string) {
+func StartServer(httpServerAddress string, configFilePath string, certDirectory string, caCertFile string) {
 
 	logrus.Infof("initializing executor with config file at default config path")
 
-	configFilePath := ""
 	cf, err := config.Load(configFilePath)
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
