@@ -1,0 +1,29 @@
+{
+  "executor": {},
+  "store": {
+    "version": "1.0.0",
+    "plugins": [
+      {
+        "name": "oras"
+      }
+    ]
+  },
+  "policy": {
+    "version": "1.0.0",
+    "plugin": {
+      "name": "configPolicy",
+      "artifactVerificationPolicies": {
+        "application/vnd.cncf.notary.v2.signature": "all"
+      }
+    }
+  },
+  "verifier": {
+    "version": "1.0.0",
+    "plugins": [
+      {
+        "name": "notaryv2",
+        "artifactTypes": "application/vnd.cncf.notary.v2.signature"
+      }
+    ]
+  }
+}

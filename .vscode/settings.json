@@ -1,0 +1,8 @@
+{
+  "git.enableCommitSigning": true,
+  "protoc": {
+    "options": [
+      "--proto_path=experimental/ratify/proto/v1"
+    ]
+  },
+}
