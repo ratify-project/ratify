@@ -15,7 +15,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/golang/protobuf v1.5.2
-	github.com/google/go-containerregistry v0.12.0
+	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
 	github.com/notaryproject/notation-core-go v0.1.0-alpha.4
 	github.com/notaryproject/notation-go v0.11.0-alpha.4
