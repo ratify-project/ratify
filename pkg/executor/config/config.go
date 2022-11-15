@@ -17,6 +17,8 @@ package config
 
 // ExecutorConfig represents the configuration for the executor
 type ExecutorConfig struct {
-	RequestTimeout *int   `json:"requestTimeout"`
+	ExecutionMode    string          `json:"executionMode,omitempty"`
+	RequestTimeout   *int            `json:"requestTimeout"`
+	NestedReferences map[string]bool `json:"nestedReferences,omitempty"`
 	// TODO Add cache config
 }

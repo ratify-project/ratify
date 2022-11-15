@@ -57,7 +57,6 @@ The following are the keys used to describe configuration of  individual plugins
 | name     | string     | true     |The name of the plugin that should match with plugin binary on disk. Must not contain characters disallowed in file paths for the system (e.g. / or \) |
 | pluginBinDirs     | array     | false     |The list of paths to look for the plugin binary to execute. Default: the home path of the framework. |
 | artifactTypes     | array     | true     |The list of artifact types for which this verifier plugin has to be executed. [TBD] May change to `matchingLabels` |
-| nestedReferences     | array     | false     |The list of artifact types for which this verifier should initiate nested verification. [TBD] This is subject to change as it is under review |
 
 Any other fields specified for a plugin other than the above mentioned are considered as opaque. The framework MUST preserve unknown fields and pass through these fields to the plugins at the time of execution. Plugins may define additional fields that they accept and may generate an error if called with unknown fields.
 
@@ -73,7 +72,6 @@ verifiers:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
 ```
 
 ### Section2 : Verifier Interface
@@ -89,8 +87,7 @@ type ReferenceVerifier interface {
  Verify(ctx context.Context,
   subjectReference common.Reference,
   referenceDescriptor ocispecs.ReferenceDescriptor,
-        referrerStore *referrerStore.Store,
-  executor executor.Executor
+  referrerStore *referrerStore.Store
   ) (VerifierResult, error)
 }
 
@@ -106,7 +103,7 @@ The framework will invoke this method of the verifier to determine if it support
 
 #### Verify
 
-If verifier acknowledges its support for a reference type, the framework will invoke this method on the verifier to trigger the verification of the artifact reference. In addition to the artifact reference that has to be verified, the framework MUST include the associated referrer store and the framework's execution engine as part of the invocation. This will enable the verifier to query additional data from the store and also to initiate [nested verification](https://hackmd.io/9htAyk-OQmauWPnNqMTVIw?both#Nested-Verification) as needed.
+If verifier acknowledges its support for a reference type, the framework will invoke this method on the verifier to trigger the verification of the artifact reference. In addition to the artifact reference that has to be verified, the framework MUST include the associated referrer store and the framework's execution engine as part of the invocation. This will enable the verifier to query additional data from the store as needed.
 
 ### Section 3 : Plugin Based Verifier
 
@@ -114,7 +111,7 @@ The framework MUST provide a reference implementation of the verifier interface 
 
 The interface method ```CanVerify``` can be implemented by the framework using the verifier configuration without executing the plugin. It can use ```artifactTypes``` key (or ```matchingLabels```) to determine the support of a verifier plugin for a given artifact reference.
 
-Nested verification can also be handled by the framework with the use of executor engine that is pasased through the interface method.
+[Nested verification](./executor.md#nested-references-configuration-object) can also be handled by the framework's executor engine by supplying the ```artifactType``` as ```true``` in the executor's ```nestedReferences``` config.
 
 The rest of the sections of the document defines the protocol for executing the plugins to implement the ```Verify``` method of the verifier interface.
 
@@ -190,7 +187,6 @@ verifiers:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
 executor:
   cache: false
 policy:

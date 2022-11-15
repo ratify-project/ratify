@@ -210,7 +210,6 @@ verifiers:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
 executor:
   cache: false
 policy:

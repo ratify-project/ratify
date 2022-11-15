@@ -25,7 +25,6 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -124,8 +123,7 @@ func (v *notaryV2Verifier) CanVerify(ctx context.Context, referenceDescriptor oc
 func (v *notaryV2Verifier) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	store referrerstore.ReferrerStore,
-	executor executor.Executor) (verifier.VerifierResult, error) {
+	store referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 
 	extensions := make(map[string]string)
 

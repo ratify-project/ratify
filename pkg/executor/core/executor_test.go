@@ -323,3 +323,54 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	}
 
 }
+
+func TestVerify_NestedReferences_Verify(t *testing.T) {
+	testArtifactType := "org.example.sbom.v0"
+
+	// Revisit after config policy provider handles nestedReferences
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"default": "all",
+		}}
+
+	store := mocks.CreateNewTestStoreForNestedSbom()
+
+	ver := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return true
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			RequestTimeout: nil,
+			NestedReferences: map[string]bool{
+				testArtifactType: true,
+			},
+		},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: mocks.TestSubjectWithDigest,
+	}
+
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != nil {
+		t.Fatalf("verification failed with err %v", err)
+	}
+
+	if !result.IsSuccess {
+		t.Fatal("verification failed false")
+	}
+
+	if len(result.VerifierReports) != 2 {
+		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
+	}
+}

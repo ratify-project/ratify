@@ -6,7 +6,8 @@ data:
   config.json: |
     {
       "executor": {
-        "requestTimeout": 6800
+        "requestTimeout": 6800,
+        "nestedReferences": {{- .Values.executor.nestedReferences | toJson }}
       },
       "store": {
         "version": "1.0.0",

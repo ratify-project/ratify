@@ -138,13 +138,20 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	for _, verifier := range ex.Verifiers {
 
 		if verifier.CanVerify(ctx, referenceDesc) {
-			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
+			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
 			verifyResult.Subject = subjectRef.String()
 			if err != nil {
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
 					Message:   fmt.Sprintf("an error thrown by the verifier: %v", err)}
+			}
+
+			// TODO: how to handle
+			// TODO: make signature default to false
+			// TODO: is default for others true or false?
+			if shouldCheckNested, ok := ex.Config.NestedReferences[referenceDesc.ArtifactType]; ok && shouldCheckNested {
+				ex.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
@@ -155,4 +162,26 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	}
 
 	return types.VerifyResult{IsSuccess: isSuccess, VerifierReports: verifyResults}
+}
+
+func (ex Executor) addNestedVerifierResult(ctx context.Context, referenceDesc ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifyResult *vr.VerifierResult) {
+	verifyParameters := e.VerifyParameters{
+		Subject:        fmt.Sprintf("%s@%s", subjectRef.Path, referenceDesc.Digest),
+		ReferenceTypes: []string{"*"},
+	}
+	nestedVerifyResult, err := ex.VerifySubject(ctx, verifyParameters)
+
+	if err != nil {
+		nestedVerifyResult = types.VerifyResult{IsSuccess: false}
+	}
+
+	for _, report := range nestedVerifyResult.VerifierReports {
+		if result, ok := report.(vr.VerifierResult); ok {
+			verifyResult.NestedResults = append(verifyResult.NestedResults, result)
+			if !nestedVerifyResult.IsSuccess {
+				verifyResult.IsSuccess = false
+				verifyResult.Message = "nested verification failed"
+			}
+		}
+	}
 }
