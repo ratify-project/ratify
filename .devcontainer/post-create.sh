@@ -6,13 +6,15 @@ set -euo pipefail
 
 go mod tidy
 
-# copy the default dev configuration
+# copy the default dev configuration if one does not exist
 mkdir -p ~/.ratify
-cp .devcontainer/config.default.json ~/.ratify/config.json
+if [ ! -f ~/.ratify/config.json ]; then
+  cp .devcontainer/config.default.json ~/.ratify/config.json
+fi
 
 # create the sample cert so that the default launch task works by default
-mkdir -p ~/.ratify/ratify-certs
-cat <<EOF >~/.ratify/ratify-certs/wabbit-networks.io.crt
+mkdir -p ~/.ratify/ratify-certs/notary
+cat <<EOF >~/.ratify/ratify-certs/notary/wabbit-networks.io.crt
 -----BEGIN CERTIFICATE-----
 MIIDNjCCAh6gAwIBAgIQH775NeR9QruFa7zk7yzgWDANBgkqhkiG9w0BAQsFADAdMRswGQYDVQQD
 ExJ3YWJiaXQtbmV0d29ya3MuaW8wHhcNMjIxMDIwMjEyMzU0WhcNMjMxMDIwMjEzMzU0WjAdMRsw
