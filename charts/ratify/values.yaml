@@ -35,8 +35,8 @@ resources:
      cpu: 600m
      memory: 512Mi
 serviceAccount:
-  create: false
-  name:
+  create: true
+  name: ratify-admin
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
