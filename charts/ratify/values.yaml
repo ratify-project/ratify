@@ -44,6 +44,10 @@ serviceAccount:
 azureWorkloadIdentity:
   clientId:
 
+azureManagedIdentity:
+  clientId:
+  tenantId:
+
 akvCertConfig:
   enabled: false
   vaultName:
@@ -54,6 +58,7 @@ akvCertConfig:
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
+    azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
 
