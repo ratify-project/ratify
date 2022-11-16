@@ -160,8 +160,51 @@ oras:
 ```shell
 helm install ratify ./charts/ratify --atomic
 ```
+### 3. Azure Managed Identity
 
-### 3. Kubernetes Secrets
+Ratify pulls artifacts from a private Azure Container Registry using User-assigned Managed Identity in an Azure Kubernetes Service cluster.  
+Currently, it does not support cross tenants for MSI and ACR.
+
+#### User steps to set up Managed Identity with AKS and ACR:
+
+1. Create ACR
+2. Create AKS cluster
+3. Configure managed identity on the AKS managed VMSS.  
+   a. Directly using kubelet identity:
+      If your AKS cluster has already run `az aks update --attach-acr` to ensure access to the private ACR, kubelet identity will directly has the permission to pull artifacts.
+      ```shell
+      export IDENTITY_CLIENT_ID=$(az aks show -g ${AKS_CLUSTER_NAME} -n ${RESOURCE_GROUP} --query "identityProfile.kubeletidentity.clientId")
+      ```
+   b. Bring your own user-assigned managed identity:
+      ```shell
+      # Create one identity
+      az identity create --name ${IDENTITY_NAME} --resource-group ${RESOURCE_GROUP}
+      export IDENTITY_CLIENT_ID=$(az identity show --name myIdentity --resource-group ${RESOURCE_GROUP} --query 'clientId' -o tsv)
+      export IDENTITY_PRINCIPAL_ID=$(az identity show --name myIdentity --resource-group ${RESOURCE_GROUP} --query 'principalId' -o tsv)
+      export IDENTITY_RESOURCE_ID=$(az identity show --name myIdentity --resource-group ${RESOURCE_GROUP} --query 'id' -o tsv)
+
+      # Assign identity ACR pull permission to ACR
+      az role assignment create --assignee ${IDENTITY_PRINCIPAL_ID} --role "Acrpull" --scope "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}"
+
+      # Configure MSI on all AKS agent pools
+      node_resource_group=$(az aks show -g ${AKS_CLUSTER_NAME} -n ${RESOURCE_GROUP} --query "nodeResourceGroup")
+      for vm in ${az vmss list -g $nodeResourceGroup --query "[].name" -o tsv}
+      do
+        az vmss identity assign -g $node_resource_group -n $vm --identities ${IDENTITY_RESOURCE_ID}
+      done
+      ```
+
+4. Deploy ratify helm chart
+```shell
+export TENANT_ID={{ Tenant Id }}
+helm install ratify \
+    ratify/ratify --atomic \
+    --set oras.authProviders.azureManagedIdentityEnabled=true \
+    --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
+    --set azureManagedIdentity.tenantId=${TENANT_ID}
+```
+
+### 4. Kubernetes Secrets
 
 Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways:
 
@@ -226,7 +269,7 @@ helm install ratify charts/ratify --set-file dockerConfig=<path to the local Doc
 
 Both the above modes uses a k8s secret of type ```dockerconfigjson``` that is described in the [document](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
 
-### 4. AWS IAM Roles for Service Accounts (IRSA)
+### 5. AWS IAM Roles for Service Accounts (IRSA)
 
 Ratify pulls artifacts from a private Amazon Elastic Container Registry (ECR) using an ECR auth token. This token is accessed using the federated workload identity assigned to pods via [IAM Roles for Service Accounts](https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts.html). The AWS IAM Roles for Service Accounts Basic Auth provider uses the [AWS SDK for Go v2](https://github.com/aws/aws-sdk-go-v2) to retrieve basic auth credentials based on a role assigned to a Kubernetes Service Account referenced by a pod specification. For a specific example of how IAM Roles for Service Accounts, a.k.a. IRSA, works with pods running the AWS SDK for Go v2, please see this [post](https://blog.jimmyray.io/kubernetes-workload-identity-with-aws-sdk-for-go-v2-927d2f258057).
 
