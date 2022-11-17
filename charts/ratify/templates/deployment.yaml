@@ -87,6 +87,10 @@ spec:
             - name: DOCKER_CONFIG
               value: "/usr/local/docker"
           {{- end }}
+          {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
+            - name: AZURE_TENANT_ID
+              value: {{ .Values.azureManagedIdentity.tenantId }}
+          {{- end }}
             - name: RATIFY_NAMESPACE
               valueFrom:
                 fieldRef:
