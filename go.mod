@@ -27,7 +27,7 @@ require (
 	github.com/sigstore/cosign v1.12.1
 	github.com/sigstore/sigstore v1.4.6
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spdx/tools-golang v0.2.0
+	github.com/spdx/tools-golang v0.3.0
 	github.com/spf13/cobra v1.6.1
 	github.com/xlab/treeprint v1.1.0
 	golang.org/x/sync v0.1.0

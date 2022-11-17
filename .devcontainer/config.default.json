@@ -20,7 +20,7 @@
   "verifier": {
     "version": "1.0.0",
     "plugins": [
-      {
+        {
         "name": "notaryv2",
         "artifactTypes": "application/vnd.cncf.notary.signature",
         "trustPolicyDoc": {

@@ -28,6 +28,8 @@ import (
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
+
+	"github.com/spdx/tools-golang/jsonloader/parser2v2"
 )
 
 // PluginConfig describes the configuration of the sbom verifier
@@ -47,6 +49,12 @@ type PackageInfo struct {
 type SbomContents struct {
 	Contents string `json:"contents"`
 }
+
+const (
+	// TODO: Update to be "application/spdx+json"
+	// after test after is correctly tagged
+	SpdxJsonMediaType string = "application/json"
+)
 
 func main() {
 	skel.PluginMain("sbom", "1.0.0", VerifyReference, []string{"1.0.0"})
@@ -70,35 +78,53 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 	ctx := context.Background()
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
-
 	if err != nil {
-		return nil, err
+		return &verifier.VerifierResult{
+			Name:      input.Name,
+			IsSuccess: false,
+			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor),
+		}, err
 	}
 
+	var mediaType string
 	for _, blobDesc := range referenceManifest.Blobs {
+		mediaType = blobDesc.MediaType
 		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
+
 		if err != nil {
-			return nil, err
-		}
-
-		var sbomBlob SbomContents
-		if err := json.Unmarshal(refBlob, &sbomBlob); err != nil {
-			return nil, fmt.Errorf("failed to parse sbom: %v", err)
-		}
-
-		if sbomBlob.Contents == "bad" {
 			return &verifier.VerifierResult{
 				Name:      input.Name,
 				IsSuccess: false,
-				Message:   fmt.Sprintf("SBOM verification failed. The contents is %s.", sbomBlob.Contents),
-			}, nil
+				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s", subjectReference, blobDesc.Digest),
+			}, err
+		}
+
+		switch mediaType {
+		case SpdxJsonMediaType:
+			return ProcessSpdxJsonMediaType(input.Name, refBlob)
+		default:
 		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
-		IsSuccess: true,
-		Message:   "SBOM verification success. The contents is good.",
+		IsSuccess: false,
+		Message:   fmt.Sprintf("Unsupported mediaType: %s", mediaType),
 	}, nil
+}
 
+func ProcessSpdxJsonMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
+	if ok, err := parser2v2.Load2_2(refBlob); ok != nil {
+		return &verifier.VerifierResult{
+			Name:      name,
+			IsSuccess: true,
+			Message:   "SBOM verification success. The schema is good.",
+		}, err
+	} else {
+		return &verifier.VerifierResult{
+			Name:      name,
+			IsSuccess: false,
+			Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
+		}, err
+	}
 }
