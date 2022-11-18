@@ -16,11 +16,12 @@ limitations under the License.
 package oras
 
 import (
+	"regexp"
+	"strings"
+
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
-	"regexp"
-	"strings"
 )
 
 // Detect the loopback IP (127.0.0.1)
@@ -47,16 +48,10 @@ func isInsecureRegistry(registry string, config *OrasStoreConf) bool {
 	return false
 }
 
-func ArtifactDescriptorToReferenceDescriptor(artifactDescriptor artifactspec.Descriptor) ocispecs.ReferenceDescriptor {
+func OciDescriptorToReferenceDescriptor(ociDescriptor oci.Descriptor) ocispecs.ReferenceDescriptor {
 	return ocispecs.ReferenceDescriptor{
-		Descriptor: oci.Descriptor{
-			MediaType:   artifactDescriptor.MediaType,
-			Digest:      artifactDescriptor.Digest,
-			Size:        artifactDescriptor.Size,
-			URLs:        artifactDescriptor.URLs,
-			Annotations: artifactDescriptor.Annotations,
-		},
-		ArtifactType: artifactDescriptor.ArtifactType,
+		Descriptor:   ociDescriptor,
+		ArtifactType: ociDescriptor.ArtifactType,
 	}
 }
 

@@ -46,7 +46,6 @@ import (
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/aws"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/azure"
 	"github.com/opencontainers/go-digest"
-	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 )
 
@@ -171,8 +170,8 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 	// find all referrers referencing subject descriptor
 	artifactTypeFilter := ""
-	var referrerDescriptors []artifactspec.Descriptor
-	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
+	var referrerDescriptors []oci.Descriptor
+	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []oci.Descriptor) error {
 		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
 	}); err != nil && !errors.Is(err, errdef.ErrNotFound) {
@@ -185,7 +184,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	// convert artifact descriptors to oci descriptor with artifact type
 	var referrers []ocispecs.ReferenceDescriptor
 	for _, referrer := range referrerDescriptors {
-		referrers = append(referrers, ArtifactDescriptorToReferenceDescriptor(referrer))
+		referrers = append(referrers, OciDescriptorToReferenceDescriptor(referrer))
 	}
 
 	if store.config.CosignEnabled {

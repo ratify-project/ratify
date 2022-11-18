@@ -6,6 +6,7 @@ spec:
   name: notaryv2
   artifactTypes: application/vnd.cncf.notary.v2.signature
   parameters:
-    verificationCerts: 
-    - /usr/local/ratify-certs/notary
+    verificationCerts:
+    - /usr/local/ratify-certs/notary/truststore
+    trustPolicy: /usr/local/ratify-certs/notary/trustpolicy.json
      
