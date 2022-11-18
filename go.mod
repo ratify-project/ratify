@@ -17,8 +17,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
-	github.com/notaryproject/notation-core-go v0.1.0-alpha.4
-	github.com/notaryproject/notation-go v0.11.0-alpha.4
+	github.com/notaryproject/notation-core-go v0.2.0-beta.1
+	github.com/notaryproject/notation-go v0.12.0-beta.1.0.20221117032523-ed3112236845
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
@@ -36,7 +36,13 @@ require (
 	k8s.io/api v0.24.8
 	k8s.io/apimachinery v0.24.8
 	k8s.io/client-go v0.24.8
-	oras.land/oras-go/v2 v2.0.0-rc.3
+	oras.land/oras-go/v2 v2.0.0-rc.4
+)
+
+require (
+	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
+	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
+	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
 )
 
 require (
@@ -147,7 +153,6 @@ require (
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
 	github.com/open-policy-agent/opa v0.44.0 // indirect
-	github.com/opencontainers/distribution-spec/specs-go v0.0.0-20220620172159-4ab4752c3b86 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/pelletier/go-toml v1.9.5 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.5 // indirect
