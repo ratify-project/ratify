@@ -49,49 +49,22 @@ data:
       "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy"
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "org.sigstore.cosign.v1": "any"
+            }
         }
       },
       "verifier": {
           "version": "1.0.0",
           "plugins": [
-            {
-                "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
-                "verificationCerts": [
-                  "/usr/local/ratify-certs/notary/truststore"
-                  ],
-                "trustPolicy": "/usr/local/ratify-certs/notary/trustpolicy.json"
             {{- if .Values.cosign.enabled }}
-            },
             {
                 "name": "cosign",
                 "artifactTypes": "org.sigstore.cosign.v1",
                 "key": "/usr/local/ratify-certs/cosign/cosign.pub"
-            {{- end }}
             }
+            {{- end }}
           ]
       }
-    }
-
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "ratify.fullname" . }}-notation-policy
-data:
-  trustpolicy.json: |
-    {
-      "version": "1.0",
-      "trustPolicies": [
-        {
-          "name": "default",
-          "registryScopes": [ "*" ],
-          "signatureVerification": {
-            "level" : "strict" 
-          },
-          "trustStores": ["ca:certs"],
-          "trustedIdentities": ["*"]
-        }
-      ]
     }

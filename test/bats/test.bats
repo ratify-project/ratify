@@ -22,6 +22,22 @@ SLEEP_TIME=1
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
 }
 
+@test "cosign test" {
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl run demo --namespace default --image=libinbinacr.azurecr-test.io/cosign-image:signed
+    assert_success
+    run kubectl run demo1 --namespace default --image=libinbinacr.azurecr-test.io/cosign-image:unsigned
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
+}
+
 @test "validate crd add, replace and delete" {     
     echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_licensechecker.yaml
