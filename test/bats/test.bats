@@ -23,7 +23,23 @@ SLEEP_TIME=1
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
 }
 
-@test "validate crd add, replace and delete" {     
+@test "cosign test" {
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl run cosign-demo --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed
+    assert_success
+    run kubectl run cosign-demo2 --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:unsigned
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod cosign-demo --namespace default
+}
+
+@test "validate crd add, replace and delete" {
     skip "Skipping test for now as ACR does not support OCI artifacts which is required by Notary Verifier"
     echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_licensechecker.yaml
@@ -36,7 +52,7 @@ SLEEP_TIME=1
     echo "Add notary verifier and validate deployment succeeds"
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
     assert_success
-    
+
     run kubectl run crdtest --namespace default --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     assert_success
 
@@ -55,9 +71,9 @@ SLEEP_TIME=1
     run kubectl run demo2 --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     assert_success
 
-    run kubectl get configmaps ratify-configuration --namespace=ratify-service -o yaml > currentConfig.yaml
+    run kubectl get configmaps ratify-configuration --namespace=ratify-service -o yaml >currentConfig.yaml
     run kubectl delete -f ./library/default/samples/constraint.yaml
-                                            
+
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
     echo "Waiting for 150 second for configuration update"
     sleep 150
@@ -67,6 +83,6 @@ SLEEP_TIME=1
     run kubectl run demo3 --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     echo "Current time after validate : $(date +"%T")"
     assert_failure
-     
+
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f currentConfig.yaml"
 }
