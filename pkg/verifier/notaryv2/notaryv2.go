@@ -148,8 +148,8 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 
 		// TODO: notary verify API only accepts digested reference now.
 		// Pass in tagged reference instead once notation-go supports it.
-		subjectRef := subjectReference.Path + "@" + subjectReference.Digest.String()
-		outcome, err := v.verifySignature(subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
+		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
+		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
 			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, fmt.Errorf("failed to verify signature, err: %v", err)
 		}
@@ -200,13 +200,13 @@ func loadPolicyDocument(policyPath string) (*trustpolicy.Document, error) {
 	return policyDocument, nil
 }
 
-func (v *notaryV2Verifier) verifySignature(subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
+func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
 	opts := notation.VerifyOptions{
 		SignatureMediaType: mediaType,
 		ArtifactReference:  subjectRef,
 	}
 
-	return (*v.notationVerifier).Verify(context.Background(), subjectDesc, refBlob, opts)
+	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
 func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2VerifierConfig, error) {

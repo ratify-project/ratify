@@ -257,7 +257,7 @@ func TestVerifySignature(t *testing.T) {
 		notationVerifier: &testNotaryVerifier,
 	}
 
-	outcome, err := v.verifySignature(testArtifactType1, testMediaType, testDesc1, testRefBlob)
+	outcome, err := v.verifySignature(context.Background(), testArtifactType1, testMediaType, testDesc1, testRefBlob)
 	if err != nil {
 		t.Errorf("got unexpected error: %v", err)
 	}
