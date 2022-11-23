@@ -17,14 +17,14 @@ mkdir -p ~/bin && cp ./notation ~/bin
 
 ### ORAS
 
-Install ORAS 0.15.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
+Install ORAS 0.16.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
 
 ```bash
 # Download the ORAS binary
-curl -LO https://github.com/oras-project/oras/releases/download/v0.15.0/oras_0.15.0_linux_amd64.tar.gz
+curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
 # Create a folder to extract the ORAS binary
 mkdir -p oras-install/
-tar -zxf oras_0.15.0_*.tar.gz -C oras-install/
+tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
 # Copy the Notation CLI to your bin directory
 mv oras-install/oras /usr/local/bin/
 ```
@@ -89,16 +89,41 @@ docker push $IMAGE
 # Generate a test certificate
 notation cert generate-test --default "wabbit-networks.io"
 ```
-4. Sign the image
+4. Create a trustpolicy.json under `~/.config/notation/` for notary verifier.
+
+Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy
+```json
+{
+    "version": "1.0",
+    "trustPolicies": [
+        {
+            "name": "default",
+            "registryScopes": [
+                "*"
+            ],
+            "signatureVerification": {
+                "level": "strict"
+            },
+            "trustStores": [
+                "ca:certs"
+            ],
+            "trustedIdentities": [
+                "*"
+            ]
+        }
+    ]
+}
+```
+5. Sign the image[Notation Sign command only works in the next rc.1 release version]
 ```bash
 notation sign $IMAGE
 ```
-5.  List the signatures with notation
+6.  List the signatures with notation
 ```bash
 # List the signatures
 notation list $IMAGE
 ```
-> You can repeat step 4-5 to create multiple signatures to the image.
+> You can repeat step 5-6 to create multiple signatures to the image.
 
 ### Discover & Verify using Ratify
 
@@ -131,11 +156,11 @@ cat <<EOF > ~/.ratify/config.json
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "~/.config/notation/localkeys/wabbit-networks.io.crt"
-                  ]
+                    "~/.config/notation/truststore/x509/ca/wabbit-networks.io/wabbit-networks.io.crt"
+                ],
+                "trustPolicy": "~/.config/notation/trustpolicy.json"
             }
         ]
-        
     }
 }
 EOF
