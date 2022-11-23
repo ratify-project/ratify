@@ -7,6 +7,7 @@ WAIT_TIME=60
 SLEEP_TIME=1
 
 @test "quick start test" {
+    skip "Skipping test for now as ACR does not support OCI artifacts which is required by Notary Verifier"
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -23,6 +24,7 @@ SLEEP_TIME=1
 }
 
 @test "validate crd add, replace and delete" {     
+    skip "Skipping test for now as ACR does not support OCI artifacts which is required by Notary Verifier"
     echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_licensechecker.yaml
     assert_success

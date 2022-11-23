@@ -19,8 +19,8 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"os"
 	paths "path/filepath"
 	"strings"
 
@@ -38,26 +38,36 @@ import (
 	_ "github.com/notaryproject/notation-core-go/signature/cose"
 	_ "github.com/notaryproject/notation-core-go/signature/jws"
 	"github.com/notaryproject/notation-go"
-	"github.com/notaryproject/notation-go/crypto/jwsutil"
-	"github.com/notaryproject/notation-go/signature"
+	notaryVerifier "github.com/notaryproject/notation-go/verifier"
+	"github.com/notaryproject/notation-go/verifier/trustpolicy"
+	"github.com/notaryproject/notation-go/verifier/truststore"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
 	verifierName    = "notaryv2"
-	defaultCertPath = "ratify-certs/notary"
+	defaultCertPath = "ratify-certs/notary/truststore"
 )
 
 // NotaryV2VerifierConfig describes the configuration of notation verifier
 type NotaryV2VerifierConfig struct {
-	Name              string   `json:"name"`
-	ArtifactTypes     string   `json:"artifactTypes"`
+	Name          string `json:"name"`
+	ArtifactTypes string `json:"artifactTypes"`
+
+	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
+
+	// TrustPolicy is the path to the trustpolicy.json.
+	TrustPolicy string `json:"trustPolicy"`
 }
 
 type notaryV2Verifier struct {
 	artifactTypes    []string
 	notationVerifier *notation.Verifier
+}
+
+type trustStore struct {
+	certPaths []string
 }
 
 type notaryv2VerifierFactory struct{}
@@ -66,29 +76,37 @@ func init() {
 	factory.Register(verifierName, &notaryv2VerifierFactory{})
 }
 
-func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {
-	conf := NotaryV2VerifierConfig{}
+// trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221117143817-2573c88a5f62/verifier/truststore#X509TrustStore]
+// Note: this api gets invoked when Ratify calls verify API, so the certificates
+// will be loaded for each signature verification.
+func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	certs := make([]*x509.Certificate, 0)
+	for _, path := range s.certPaths {
+		bundledCerts, err := utils.GetCertificatesFromPath(path)
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, bundledCerts...)
+	}
+	return certs, nil
+}
 
-	verifierConfigBytes, err := json.Marshal(verifierConfig)
+func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {
+	conf, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse config for the input: %v", err)
+	verfiyService, err := getVerifierService(conf)
+	if err != nil {
+		return nil, err
 	}
-
-	defaultDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
-	conf.VerificationCerts = append(conf.VerificationCerts, defaultDir)
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
-
-	verfiyService, err := getVerifierService(conf.VerificationCerts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return &notaryV2Verifier{artifactTypes: artifactTypes, notationVerifier: &verfiyService}, nil
+	return &notaryV2Verifier{
+		artifactTypes:    artifactTypes,
+		notationVerifier: &verfiyService,
+	}, nil
 }
 
 func (v *notaryV2Verifier) Name() string {
@@ -110,56 +128,36 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	store referrerstore.ReferrerStore,
 	executor executor.Executor) (verifier.VerifierResult, error) {
 
-	// TODO get the subject descriptor
-	desc := oci.Descriptor{
-		Digest: subjectReference.Digest,
-	}
-
 	extensions := make(map[string]string)
 
-	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
-
+	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, err
+		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to resolve subject: %+v, err: %v", subjectReference, err)
+	}
+
+	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
+	if err != nil {
+		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get reference manifest for reference: %s, err: %v", subjectReference.Original, err)
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, err
+			return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get blob content of digest: %s, err: %v", blobDesc.Digest, err)
 		}
 
-		cert, err := getCert(refBlob)
+		// TODO: notary verify API only accepts digested reference now.
+		// Pass in tagged reference instead once notation-go supports it.
+		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
+		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
-			return verifier.VerifierResult{
-				Subject:   subjectReference.String(),
-				IsSuccess: false,
-				Name:      verifierName,
-				Message:   "error getting extension data from root cert",
-			}, err
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, fmt.Errorf("failed to verify signature, err: %v", err)
 		}
+
+		// Note: notary verifier already validates certificate chain is not empty.
+		cert := outcome.EnvelopeContent.SignerInfo.CertificateChain[0]
 		extensions["Issuer"] = cert.Issuer.String()
 		extensions["SN"] = cert.Subject.String()
-
-		opts := notation.VerifyOptions{
-			SignatureMediaType: blobDesc.MediaType,
-		}
-
-		vdesc, err := (*v.notationVerifier).Verify(context.Background(), refBlob, opts)
-		if err != nil {
-			fmt.Printf("err: %v\n", err)
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, err
-		}
-
-		// TODO get the subject descriptor and verify all the properties other than digest.
-		if desc.Digest != vdesc.Digest {
-			return verifier.VerifierResult{
-				Subject:    subjectReference.String(),
-				Name:       verifierName,
-				IsSuccess:  false,
-				Message:    fmt.Sprintf("verification failure: digest mismatch: %v: %v", desc.Digest, vdesc.Digest),
-				Extensions: extensions}, nil
-		}
 	}
 
 	return verifier.VerifierResult{
@@ -170,51 +168,61 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	}, nil
 }
 
-// This function is borrowed internals from the notation-go jws verifier
-// https://github.com/notaryproject/notation-go/blob/main/signature/jws/verifier.go
-func getCert(refBlob []byte) (*x509.Certificate, error) {
-	var envelope jwsutil.Envelope
-	if err := json.Unmarshal(refBlob, &envelope); err != nil {
-		return nil, err
-	}
-	if len(envelope.Signatures) != 1 {
-		return nil, errors.New("single signature envelope expected")
-	}
-	sig := envelope.Open()
-
-	var header struct {
-		TimeStampToken []byte   `json:"timestamp,omitempty"`
-		CertChain      [][]byte `json:"x5c,omitempty"`
-	}
-	if err := json.Unmarshal(sig.Unprotected, &header); err != nil {
-		return nil, err
-	}
-	if len(header.CertChain) == 0 {
-		return nil, errors.New("signer certificates not found")
-	}
-
-	cert, err := x509.ParseCertificate(header.CertChain[0])
+func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
+	policyDoc, err := loadPolicyDocument(conf.TrustPolicy)
 	if err != nil {
 		return nil, err
 	}
 
-	return cert, nil
-}
-
-func getVerifierService(certPaths ...string) (notation.Verifier, error) {
-	certs := make([]*x509.Certificate, 0)
-	for _, path := range certPaths {
-
-		bundledCerts, err := utils.GetCertificatesFromPath(path)
-
-		if err != nil {
-			return nil, err
-		}
-
-		certs = append(certs, bundledCerts...)
+	store := &trustStore{
+		certPaths: conf.VerificationCerts,
 	}
 
-	verifier := signature.NewVerifier()
-	verifier.TrustedCerts = certs
-	return verifier, nil
+	return notaryVerifier.New(policyDoc, store, nil)
+}
+
+// loadPolicyDocument is brorrowd from notation-go [https://github.com/notaryproject/notation-go/blob/75b3248459d677d2a6abcae3dd880775f4456271/verification/helpers.go#L15]
+func loadPolicyDocument(policyPath string) (*trustpolicy.Document, error) {
+	policyDocument := &trustpolicy.Document{}
+	jsonFile, err := os.ReadFile(policyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(jsonFile, &policyDocument); err != nil {
+		return nil, err
+	}
+
+	if err := policyDocument.Validate(); err != nil {
+		return nil, err
+	}
+
+	return policyDocument, nil
+}
+
+func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
+	opts := notation.VerifyOptions{
+		SignatureMediaType: mediaType,
+		ArtifactReference:  subjectRef,
+	}
+
+	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
+}
+
+func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2VerifierConfig, error) {
+	conf := &NotaryV2VerifierConfig{}
+
+	verifierConfigBytes, err := json.Marshal(verifierConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal to notaryV2VerifierConfig from： %+v, err: %v", verifierConfig, err)
+	}
+
+	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
+	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
+
+	return conf, nil
 }
