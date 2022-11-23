@@ -35,14 +35,18 @@ resources:
      cpu: 600m
      memory: 512Mi
 serviceAccount:
-  create: false
-  name:
+  create: true
+  name: ratify-admin
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
 # Key Vault -> akvCertConfig.enabled
 azureWorkloadIdentity:
   clientId:
+
+azureManagedIdentity:
+  clientId:
+  tenantId:
 
 akvCertConfig:
   enabled: false
@@ -54,6 +58,7 @@ akvCertConfig:
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
+    azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
 
