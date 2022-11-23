@@ -102,7 +102,7 @@ func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) e
 	verifierConfigVersion := "1.0.0" // TODO: move default values to defaulting webhook in the future #413
 	if spec.Address == "" {
 		spec.Address = config.GetDefaultPluginPath()
-		verifierLogger.Info(fmt.Sprintf("Address was empty, setting to default path %v", spec.Address))
+		verifierLogger.Info(fmt.Sprintf("Address was empty, setting to default path: %v", spec.Address))
 	}
 	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address})
 
