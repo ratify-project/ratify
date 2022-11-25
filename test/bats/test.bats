@@ -23,6 +23,28 @@ SLEEP_TIME=1
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
 }
 
+@test "licensechecker test" {
+    skip "Skipping test for now as ACR does not support OCI artifacts which is required by Notary Verifier"
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_partial_licensechecker.yaml
+    sleep 5
+    run kubectl run license-checker --namespace default --image=wabbitnetworks.azurecr.io/test/license-checker-image:v1
+    assert_success
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
+    sleep 5
+    run kubectl run license-checker2 --namespace default --image=wabbitnetworks.azurecr.io/test/license-checker-image:v1
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod license-checker --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default
+}
+
 @test "validate crd add, replace and delete" {     
     skip "Skipping test for now as ACR does not support OCI artifacts which is required by Notary Verifier"
     echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
