@@ -1,32 +1,37 @@
 {
-    "executor": {
-        "executionMode": "passthrough"
-    },
     "store": {
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "oras"
+                "name": "oras",
+                "cosignEnabled": true
             }
         ]
     },
     "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy",
-            "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.signature": "any"
-            }
+            "name": "configPolicy"
         }
     },
     "verifier": {
         "version": "1.0.0",
         "plugins": [
             {
+                "name": "sbom",
+                "artifactTypes": "sbom/example",
+                "nestedReferences": "application/vnd.cncf.notary.signature"
+            },
+            {
+                "name": "cosign",
+                "artifactTypes": "org.sigstore.cosign.v1",
+                "key": "~/.ratify/ratify-certs/cosign/cosign.pub"
+            },
+            {
                 "name": "notaryv2",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs/notary/truststore"
+                    "~/.ratify/ratify-certs/notary/wabbit-networks.io.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
@@ -48,18 +53,6 @@
                         }
                     ]
                 }
-            },
-            {
-                "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
-            },
-            {
-                "name": "licensechecker",
-                "artifactTypes": "application/vnd.ratify.spdx.v0",
-                "allowedLicenses": [
-                    "MIT"
-                ]
             }
         ]
     }

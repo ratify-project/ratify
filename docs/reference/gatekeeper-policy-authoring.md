@@ -93,7 +93,7 @@ actual values of fields may differ):
             "subject": "localhost:5000/net-monitor:v1"
           },
           {
-            "artifactType": "application/vnd.cncf.notary.v2.signature",
+            "artifactType": "application/vnd.cncf.notary.signature",
             "extensions": {
               "Issuer": "CN=localhost:5000,O=Ratify,L=Seattle,ST=Washington,C=US",
               "SN": "CN=localhost:5000,O=Ratify,L=Seattle,ST=Washington,C=US"
