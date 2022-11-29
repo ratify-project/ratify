@@ -16,6 +16,7 @@ KUBERNETES_VERSION ?= 1.25.4
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
+BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_VERSION ?= 1.7.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -41,8 +42,14 @@ build-plugins:
 .PHONY: install
 install:
 	mkdir -p ${INSTALL_DIR}
-	mkdir -p ${INSTALL_DIR}/ratify-certs
+	mkdir -p ${INSTALL_DIR}/ratify-certs/cosign
 	cp -r ./bin/* ${INSTALL_DIR}
+
+.PHONY: ratify-config
+ratify-config:
+	cp ./test/bats/tests/config/config.json ${INSTALL_DIR}/config.json
+	cp ./test/bats/tests/certificates/wabbit-networks.io.crt ${INSTALL_DIR}/wabbit-networks.io.crt
+	cp ./test/bats/tests/certificates/cosign.pub ${INSTALL_DIR}/ratify-certs/cosign/cosign.pub
 
 .PHONY: test
 test:
@@ -93,6 +100,14 @@ delete-gatekeeper:
 .PHONY: test-e2e
 test-e2e:
 	bats -t ${BATS_TESTS_FILE}
+
+.PHONY: test-e2e-cli
+test-e2e-cli:
+	RATIFY_DIR=${INSTALL_DIR} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+
+install-bats:
+	# Download and install bats
+	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
 
 e2e-dependencies:
 	# Download and install kind
