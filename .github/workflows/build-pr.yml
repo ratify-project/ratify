@@ -52,6 +52,7 @@ jobs:
           make e2e-deploy-gatekeeper
           make e2e-deploy-ratify
           make test-e2e
+          make test-e2e-cli
       - name: Save logs
         if: ${{ always() }}
         run: |

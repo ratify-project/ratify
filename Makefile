@@ -16,6 +16,7 @@ KUBERNETES_VERSION ?= 1.25.4
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
+BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_VERSION ?= 1.7.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -94,6 +95,10 @@ delete-gatekeeper:
 test-e2e:
 	bats -t ${BATS_TESTS_FILE}
 
+.PHONY: test-e2e-cli
+test-e2e-cli:
+	bats -t ${BATS_CLI_TESTS_FILE}
+
 e2e-dependencies:
 	# Download and install kind
 	curl -L https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64 --output ${GITHUB_WORKSPACE}/bin/kind && chmod +x ${GITHUB_WORKSPACE}/bin/kind
@@ -101,6 +106,8 @@ e2e-dependencies:
 	curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl --output ${GITHUB_WORKSPACE}/bin/kubectl && chmod +x ${GITHUB_WORKSPACE}/bin/kubectl
 	# Download and install bats
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
+	# Download and install notation
+	curl -sSLo notation.zip https://github.com/patrickzheng200/notation/archive/refs/heads/rc1.zip && unzip notation.zip && cd notation-rc1 && go build -o ${GITHUB_WORKSPACE}/bin ./cmd/notation && chmod +x ${GITHUB_WORKSPACE}/bin/notation
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
