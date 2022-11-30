@@ -18,7 +18,7 @@ require (
 	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
 	github.com/notaryproject/notation-core-go v0.2.0-beta.1
-	github.com/notaryproject/notation-go v0.12.0-beta.1.0.20221117032523-ed3112236845
+	github.com/notaryproject/notation-go v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2

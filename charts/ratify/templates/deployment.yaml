@@ -64,9 +64,6 @@ spec:
               name: cosign-certs
               readOnly: true
             {{- end }}
-            - mountPath: "/usr/local/ratify-certs/notary"
-              name: notation-trust-policy
-              readOnly: true
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
@@ -132,9 +129,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
-        - name: notation-trust-policy
-          configMap:
-            name: {{ include "ratify.fullname" . }}-notation-policy
         {{- if and (.Values.provider.tls.cabundle) (or (eq .Values.provider.auth "tls") (eq .Values.provider.auth "mtls")) }}
         - name: tls
           secret:
