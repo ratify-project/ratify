@@ -23,6 +23,22 @@ SLEEP_TIME=1
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
 }
 
+@test "cosign test" {
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl run cosign-demo --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed
+    assert_success
+    run kubectl run cosign-demo2 --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:unsigned
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod cosign-demo --namespace default
+}
+
 @test "licensechecker test" {
     skip "Skipping test for now as ACR does not support OCI artifacts which is required by Notary Verifier"
     run kubectl apply -f ./library/default/template.yaml
