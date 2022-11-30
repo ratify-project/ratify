@@ -20,7 +20,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"os"
 	paths "path/filepath"
 	"strings"
 
@@ -57,8 +56,8 @@ type NotaryV2VerifierConfig struct {
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
 
-	// TrustPolicy is the path to the trustpolicy.json.
-	TrustPolicy string `json:"trustPolicy"`
+	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
+	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
 
 type notaryV2Verifier struct {
@@ -169,35 +168,11 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 }
 
 func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
-	policyDoc, err := loadPolicyDocument(conf.TrustPolicy)
-	if err != nil {
-		return nil, err
-	}
-
 	store := &trustStore{
 		certPaths: conf.VerificationCerts,
 	}
 
-	return notaryVerifier.New(policyDoc, store, nil)
-}
-
-// loadPolicyDocument is brorrowd from notation-go [https://github.com/notaryproject/notation-go/blob/75b3248459d677d2a6abcae3dd880775f4456271/verification/helpers.go#L15]
-func loadPolicyDocument(policyPath string) (*trustpolicy.Document, error) {
-	policyDocument := &trustpolicy.Document{}
-	jsonFile, err := os.ReadFile(policyPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(jsonFile, &policyDocument); err != nil {
-		return nil, err
-	}
-
-	if err := policyDocument.Validate(); err != nil {
-		return nil, err
-	}
-
-	return policyDocument, nil
+	return notaryVerifier.New(&conf.TrustPolicyDoc, store, nil)
 }
 
 func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {

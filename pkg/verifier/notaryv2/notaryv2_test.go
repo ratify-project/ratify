@@ -87,6 +87,20 @@ var (
 		Digest: invalidDigest,
 	}
 	defaultCertDir = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
+	testTrustPolicy = map[string]interface{}{
+		"version": "1.0",
+		"trustPolicies": []map[string]interface{}{
+			{
+				"name": "default",
+				"registryScopes": []string{"*"},
+				"signatureVerification": map[string]string{
+					"level": "strict",
+				},
+				"trustStores": []string{"ca:certs"},
+				"trustedIdentities": []string{"*"},
+			},
+		},
+	}
 )
 
 type mockNotaryVerifier struct{}
@@ -266,53 +280,6 @@ func TestVerifySignature(t *testing.T) {
 	}
 }
 
-func TestLoadPolicyDocument(t *testing.T) {
-	tests := []struct {
-		name      string
-		path      string
-		expect    *trustpolicy.Document
-		expectErr bool
-	}{
-		{
-			name:      "not existent path",
-			path:      "./nonexistent.json",
-			expect:    nil,
-			expectErr: true,
-		},
-		{
-			name:      "invalid json file",
-			path:      "../../../test/testdata/invalid_json.json",
-			expect:    nil,
-			expectErr: true,
-		},
-		{
-			name:      "invalid policy document",
-			path:      "../../../test/testdata/invalid_trust_policy.json",
-			expect:    nil,
-			expectErr: true,
-		},
-		{
-			name:      "invalid policy document",
-			path:      "../../../test/testdata/valid_trust_policy.json",
-			expect:    validPolicy,
-			expectErr: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			policy, err := loadPolicyDocument(tt.path)
-
-			if (err != nil) != tt.expectErr {
-				t.Fatalf("error = %v, expectErr = %v", err, tt.expectErr)
-			}
-			if !reflect.DeepEqual(policy, tt.expect) {
-				t.Fatalf("expect %+v, got %+v", tt.expect, policy)
-			}
-		})
-	}
-}
-
 func TestCreate(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -331,7 +298,7 @@ func TestCreate(t *testing.T) {
 			name: "failed loading policy",
 			configMap: map[string]interface{}{
 				"name":        test,
-				"trustPolicy": "./nonexistent.json",
+				"trustPolicy": "{",
 			},
 			expectErr: true,
 		},
@@ -339,7 +306,7 @@ func TestCreate(t *testing.T) {
 			name: "created verifier successfully",
 			configMap: map[string]interface{}{
 				"name":        test,
-				"trustPolicy": "../../../test/testdata/valid_trust_policy.json",
+				"trustPolicyDoc": testTrustPolicy,
 			},
 			expectErr: false,
 		},
