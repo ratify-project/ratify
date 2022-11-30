@@ -25,8 +25,12 @@ ratifyTestCert: |
   Ibo/J0urezLK/M8/QeMkkhY1WClsAi+xLhVWUw==
   -----END CERTIFICATE-----
 cosign:
-  enabled: false
-  key: ""
+  enabled: true
+  key: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvjrMZFyaBDsvg5e0C8JaHqw8ULuc
+    n947ODVAMvfdqtjqK2eW77OGrsFLdkbG3BET9U4Dj37odn4kI5lC4Lj9Eg==
+    -----END PUBLIC KEY-----
 resources:
    limits:
      cpu: 1000m

@@ -165,6 +165,18 @@ verifier includes the Issuer and SubjectName from the certificate as an extensio
 Currently, the best way to determine the extension fields for a verifier is to
 check the source for that verifier.
 
+When Ratify is verifying against a notation signature, there might be ambiguity
+in the verifierReport from notary verifier. Notary verifier introduces 
+a [trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy) component in the rc.1 release. Users 
+could control the verification level and scopes applied to specified artifact. There 
+could be 2 scenarios needed to pay attention:
+
+1. If Ratify is running in passthrough execution mode, but users forgot to set up scopes 
+for some repositories/artifacts. Then the verification result from notary verifier will be an error saying the policy is missing.
+2. If users set the verification level in trust policy to any value except `strict`,
+then the notary verification result might be a success even though some underlying
+validation failed. Check the verification level provided in notation for more information: [Signature Verification Level](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#signature-verification-details)
+
 ## Sample Rego Policy
 Let's look at a Ratify policy from the library in more detail. Below is the
 rego from the `notaryv2issuervalidation` policy:

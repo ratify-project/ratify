@@ -59,8 +59,22 @@ data:
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs/notary"
+                  "/usr/local/ratify-certs/notary/truststore"
+                  ],
+                "trustPolicyDoc": {
+                  "version": "1.0",
+                  "trustPolicies": [
+                    {
+                      "name": "default",
+                      "registryScopes": [ "*" ],
+                      "signatureVerification": {
+                        "level" : "strict" 
+                      },
+                      "trustStores": ["ca:certs"],
+                      "trustedIdentities": ["*"]
+                    }
                   ]
+                }
             {{- if .Values.cosign.enabled }}
             },
             {

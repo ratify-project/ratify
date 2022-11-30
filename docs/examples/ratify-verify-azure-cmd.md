@@ -17,14 +17,14 @@ mkdir -p ~/bin && cp ./notation ~/bin
 
 ### ORAS
 
-Install ORAS 0.15.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
+Install ORAS 0.16.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
 
 ```bash
 # Download the ORAS binary
-curl -LO https://github.com/oras-project/oras/releases/download/v0.15.0/oras_0.15.0_linux_amd64.tar.gz
+curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
 # Create a folder to extract the ORAS binary
 mkdir -p oras-install/
-tar -zxf oras_0.15.0_*.tar.gz -C oras-install/
+tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
 # Copy the Notation CLI to your bin directory
 mv oras-install/oras /usr/local/bin/
 ```
@@ -89,7 +89,8 @@ docker push $IMAGE
 # Generate a test certificate
 notation cert generate-test --default "wabbit-networks.io"
 ```
-4. Sign the image
+
+4. Sign the image[Notation Sign command only works in the next rc.1 release version]
 ```bash
 notation sign $IMAGE
 ```
@@ -103,7 +104,7 @@ notation list $IMAGE
 ### Discover & Verify using Ratify
 
 - Create a Ratify config with ORAS as the signature store and notary v2 as the signature verifier.
-
+Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
@@ -131,11 +132,24 @@ cat <<EOF > ~/.ratify/config.json
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
                 "verificationCerts": [
-                    "~/.config/notation/localkeys/wabbit-networks.io.crt"
-                  ]
+                    "~/.config/notation/truststore/x509/ca/wabbit-networks.io/wabbit-networks.io.crt"
+                ],
+                "trustPolicyDoc": {
+                    "version": "1.0",
+                    "trustPolicies": [
+                        {
+                            "name": "default",
+                            "registryScopes": [ "*" ],
+                            "signatureVerification": {
+                                "level" : "strict" 
+                            },
+                            "trustStores": ["ca:certs"],
+                            "trustedIdentities": ["*"]
+                        }
+                    ]
+                }
             }
         ]
-        
     }
 }
 EOF
@@ -176,7 +190,7 @@ oras attach $IMAGE \
 SBOM_DIGEST=$(oras discover -o json \
                 --artifact-type sbom/example \
                 -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-                $IMAGE | jq -r ".referrers[0].digest")
+                $IMAGE | jq -r ".manifests[0].digest")
 
 notation sign $REPO@$SBOM_DIGEST
 ```

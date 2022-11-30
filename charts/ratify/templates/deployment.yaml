@@ -52,7 +52,7 @@ spec:
           ports:
             - containerPort: 6001
           volumeMounts:
-            - mountPath: "/usr/local/ratify-certs/notary"
+            - mountPath: "/usr/local/ratify-certs/notary/truststore"
             {{- if .Values.akvCertConfig.enabled }}
               name: cert-from-akv
             {{- else }}
