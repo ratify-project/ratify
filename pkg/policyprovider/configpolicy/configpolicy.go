@@ -128,10 +128,10 @@ func (enforcer PolicyEnforcer) OverallVerifyResult(ctx context.Context, verifier
 		// if artifact type policy not specified, set policy to be default policy and add artifact type to success map
 		if !ok {
 			policyType = enforcer.ArtifactTypePolicies[defaultPolicyName]
-			// set the artifact type success field in map to false to start
+		}
+		// set the artifact type success field in map to false to start
+		if _, ok = verifySuccess[castedReport.ArtifactType]; !ok {
 			verifySuccess[castedReport.ArtifactType] = false
-			// add the unspecified artifact type to the enforcer's artifact type map
-			enforcer.ArtifactTypePolicies[castedReport.ArtifactType] = policyType
 		}
 
 		if policyType == vt.AnyVerifySuccess && castedReport.IsSuccess {
