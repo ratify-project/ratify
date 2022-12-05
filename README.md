@@ -64,7 +64,7 @@ Once the installation is completed, you can test the deployment of an image that
 
 - This will successfully create the pod `demo`
 
-```bash=
+```bash
 kubectl run demo --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
 kubectl get pods demo
 ```
@@ -73,13 +73,13 @@ Optionally you can see the output of the pod logs via: `kubectl logs demo`
 
 - Now deploy an unsigned image
 
-```bash=
+```bash
 kubectl run demo1 --image=wabbitnetworks.azurecr.io/test/net-monitor:unsigned
 ```
 
 You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
 
-```bash=
+```bash
 Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [ratify-constraint] Subject failed verification: wabbitnetworks.azurecr.io/test/net-monitor:unsigned
 ```
 
@@ -87,7 +87,7 @@ You just validated the container images in your k8s cluster!
 
 - Uninstall Ratify
 
-```bash=
+```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 helm delete ratify
