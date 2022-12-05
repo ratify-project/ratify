@@ -21,7 +21,7 @@ by its developers, nor is it "supported" software.
 
 ## Community meetings
 
-- Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
+- Agenda: <https://hackmd.io/ABueHjizRz2iFQpWnQrnNA>
 - We hold a weekly Ratify community meeting with alternating times to accommodate more time zones.
 Series #1 Tues 4-5pm
 Series #2 Wed 1-2pm
