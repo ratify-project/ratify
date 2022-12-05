@@ -6,6 +6,9 @@ on:
       - main
     paths-ignore:
       - '*.md'
+  workflow_dispatch:
+
+permissions: read-all
 
 jobs:
   build:
