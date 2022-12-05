@@ -211,6 +211,7 @@ func (d *k8SecretAuthProvider) resolveCredentialFromSecret(hostName string, secr
 	return AuthConfig{
 		Username:  authConfig.Username,
 		Password:  authConfig.Password,
+		IdentityToken: authConfig.IdentityToken,
 		Provider:  d,
 		ExpiresOn: time.Now().Add(secretTimeout),
 	}, nil
