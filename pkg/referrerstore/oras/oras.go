@@ -336,10 +336,11 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 
 	// set the provider to return the resolved credentials
 	credentialProvider := func(ctx context.Context, registry string) (auth.Credential, error) {
-		if authConfig.Username != "" || authConfig.Password != "" {
+		if authConfig.Username != "" || authConfig.Password != "" || authConfig.IdentityToken != "" {
 			return auth.Credential{
 				Username: authConfig.Username,
 				Password: authConfig.Password,
+				RefreshToken: authConfig.IdentityToken,
 			}, nil
 		}
 		return auth.EmptyCredential, nil

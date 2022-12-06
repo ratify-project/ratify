@@ -34,6 +34,7 @@ import (
 type AuthConfig struct {
 	Username  string
 	Password  string
+	IdentityToken string
 	Email     string
 	Provider  AuthProvider
 	ExpiresOn time.Time
@@ -127,6 +128,7 @@ func (d *defaultAuthProvider) Provide(ctx context.Context, artifact string) (Aut
 	authConfig := AuthConfig{
 		Username: dockerAuthConfig.Username,
 		Password: dockerAuthConfig.Password,
+		IdentityToken: dockerAuthConfig.IdentityToken,
 		Provider: d,
 	}
 

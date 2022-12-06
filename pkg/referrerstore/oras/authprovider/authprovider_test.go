@@ -72,3 +72,39 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 		t.Fatalf("incorrect username %v or password %v returned", authConfig.Username, authConfig.Password)
 	}
 }
+
+func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *testing.T) {
+	tmpHome, err := ioutil.TempDir("", "config-test")
+	if err != nil {
+		t.Fatalf("unexpected error when creating temporary directory: %v", err)
+	}
+	defer os.RemoveAll(tmpHome)
+
+	fn := filepath.Join(tmpHome, "config.json")
+	js := `{
+		"auths": {
+			"index.docker.io": {
+				"auth": "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwOg==",
+				"identitytoken": "OPAQUE_TOKEN"
+			}
+		}
+	}`
+
+	err = ioutil.WriteFile(fn, []byte(js), 0600)
+	if err != nil {
+		t.Fatalf("unexpected error when writing config file: %v", err)
+	}
+
+	defaultProvider := defaultAuthProvider{
+		configPath: fn,
+	}
+
+	authConfig, err := defaultProvider.Provide(context.Background(), "index.docker.io/v1/test:v1")
+	if err != nil {
+		t.Fatalf("unexpected error in Provide: %v", err)
+	}
+
+	if authConfig.Username != "00000000-0000-0000-0000-000000000000" || authConfig.IdentityToken != "OPAQUE_TOKEN" {
+		t.Fatalf("incorrect username %v or identitytoken %v returned", authConfig.Username, authConfig.IdentityToken)
+	}
+}
