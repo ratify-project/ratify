@@ -15,10 +15,17 @@ limitations under the License.
 
 package utils
 
-import "strings"
+import (
+	"net/url"
+	"strings"
+)
 
 func SanitizeString(input string) string {
 	sanitized := strings.Replace(input, "\n", "", -1)
 	sanitized = strings.Replace(sanitized, "\r", "", -1)
 	return sanitized
+}
+
+func SanitizeURL(input url.URL) string {
+	return SanitizeString(input.String())
 }
