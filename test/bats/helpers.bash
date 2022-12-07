@@ -18,6 +18,26 @@ assert_failure() {
   fi
 }
 
+assert_cmd_verify_success() {
+  if [[ "$status" != 0 ]]; then
+    return 1
+  fi
+  if [[ "$output" == *'"isSuccess": false,'* ]]; then
+    echo $output
+    return 1
+  fi
+}
+
+assert_cmd_verify_failure() {
+  if [[ "$status" != 0 ]]; then
+    return 1
+  fi
+  if [[ "$output" == *'"isSuccess": true,'* ]]; then
+    echo $output
+    return 1
+  fi
+}
+
 wait_for_process() {
   wait_time="$1"
   sleep_time="$2"
@@ -32,4 +52,3 @@ wait_for_process() {
   done
   return 1
 }
-

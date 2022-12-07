@@ -1,0 +1,37 @@
+{
+    "store": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras"
+            }
+        ]
+    },
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.ratify.spdx.v0": "all"
+            }
+        }
+    },
+    "verifier": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "licensechecker",
+                "artifactTypes": "application/vnd.ratify.spdx.v0",
+                "allowedLicenses": [
+                    "GPL-2.0-only",
+                    "MIT",
+                    "OpenSSL",
+                    "BSD-2-Clause AND BSD-3-Clause",
+                    "Zlib",
+                    "MPL-2.0 AND MIT",
+                    "ISC"
+                ]
+            }
+        ]
+    }
+}

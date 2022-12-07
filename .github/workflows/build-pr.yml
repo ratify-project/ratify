@@ -26,6 +26,27 @@ jobs:
         run: make
       - name: Check build
         run: bin/ratify version
+  
+  build_test_cli:
+    name: "Build and run tests for CLI"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: setup go environment
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
+      - name: Run tidy
+        run: go mod tidy
+      - name: Build CLI
+        run: make
+      - name: Check build
+        run: bin/ratify version
+      - name: Test CLI
+        run: |
+          make install ratify-config install-bats
+          make test-e2e-cli
 
   build_test_e2e:
     name: "Build and run e2e Test"
@@ -39,12 +60,10 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
-
       - name: Set up Go 1.19
         uses: actions/setup-go@v3
         with:
           go-version: 1.19
-
       - name: Bootstrap e2e
         run: |
           mkdir -p $GITHUB_WORKSPACE/bin
