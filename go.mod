@@ -17,8 +17,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
-	github.com/notaryproject/notation-core-go v0.2.0-beta.1.0.20221205183432-3022517b84c1
-	github.com/notaryproject/notation-go v0.12.0-beta.1.0.20221206024746-1a9436d7a19c
+	github.com/notaryproject/notation-core-go v1.0.0-rc.1
+	github.com/notaryproject/notation-go v1.0.0-rc.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
