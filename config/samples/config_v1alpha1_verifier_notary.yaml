@@ -8,5 +8,15 @@ spec:
   parameters:
     verificationCerts:
     - /usr/local/ratify-certs/notary/truststore
-    trustPolicy: /usr/local/ratify-certs/notary/trustpolicy.json
-     
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: default
+          registryScopes:
+            - "*"
+          signatureVerification:
+            level: strict
+          trustStores:
+            - ca:certs
+          trustedIdentities:
+            - "*"
