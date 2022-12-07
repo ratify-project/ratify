@@ -17,8 +17,8 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
-	github.com/notaryproject/notation-core-go v0.2.0-beta.1
-	github.com/notaryproject/notation-go v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c
+	github.com/notaryproject/notation-core-go v1.0.0-rc.1
+	github.com/notaryproject/notation-go v1.0.0-rc.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
@@ -186,7 +186,7 @@ require (
 	github.com/transparency-dev/merkle v0.0.1 // indirect
 	github.com/urfave/cli v1.22.7 // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
-	github.com/veraison/go-cose v1.0.0-rc.1.0.20220824135457-9d2fab636b83 // indirect
+	github.com/veraison/go-cose v1.0.0-rc.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
