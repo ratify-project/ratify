@@ -33,7 +33,9 @@ import (
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
 
 func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	logrus.Infof("start request %v %v", r.Method, r.URL)
+	sanitizedMethod := utils.SanitizeString(r.Method)
+	sanitizedURL := utils.SanitizeURL(*r.URL)
+	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -50,8 +52,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	results := make([]externaldata.Item, 0)
 	wg := sync.WaitGroup{}
 	mu := sync.RWMutex{}
-	sanitizedMethod := utils.SanitizeString(r.Method)
-	sanitizedURL := utils.SanitizeString(r.URL.String())
 
 	// iterate over all keys
 	for _, subject := range providerRequest.Request.Keys {

@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/deislabs/ratify/utils"
 	"github.com/docker/distribution/registry/api/errcode"
 	"github.com/sirupsen/logrus"
 )
@@ -40,11 +41,13 @@ type contextHandler struct {
 
 // ServeHTTP serves an HTTP request and implements the http.Handler interface.
 func (ch *contextHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("received request %v %v ", r.Method, r.URL)
+	sanitizedMethod := utils.SanitizeString(r.Method)
+	sanitizedURL := utils.SanitizeURL(*r.URL)
+	logrus.Infof("received request %s %s ", sanitizedMethod, sanitizedURL)
 	if err := ch.handler(ch.context, w, r); err != nil {
-		logrus.Errorf("request %v %v failed with error %v", r.Method, r.URL, err)
+		logrus.Errorf("request %s %s failed with error %v", sanitizedMethod, sanitizedURL, err)
 		if serveErr := errcode.ServeJSON(w, err); serveErr != nil {
-			logrus.Errorf("request %v %v failed to send with error  %v", r.Method, r.URL, serveErr)
+			logrus.Errorf("request %s %s failed to send with error  %v", sanitizedMethod, sanitizedURL, serveErr)
 		}
 	}
 }
