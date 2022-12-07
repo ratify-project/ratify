@@ -60,10 +60,10 @@ Be trustworthy. During a review, your actions both build and help maintain the t
 
 Below are a set of common questions that apply to all pull requests:
 
-- [ ] Does the affected code have corresponding tests?
-- [ ] Are the changes documented, not just with inline documentation, but also with conceptual documentation such as an overview of a new feature, or task-based documentation like a tutorial? Consider if this change should be announced on your project blog.
-- [ ] Does this introduce breaking changes that would require an announcement or bumping the major version?
-- [ ] Does all new files have appropriate license header?
+* [ ] Does the affected code have corresponding tests?
+* [ ] Are the changes documented, not just with inline documentation, but also with conceptual documentation such as an overview of a new feature, or task-based documentation like a tutorial? Consider if this change should be announced on your project blog.
+* [ ] Does this introduce breaking changes that would require an announcement or bumping the major version?
+* [ ] Does all new files have appropriate license header?
 
 ## Reading List
 
