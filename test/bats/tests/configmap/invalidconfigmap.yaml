@@ -30,7 +30,7 @@ data:
           "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "/usr/local/ratify-certs/notary"
                   ]

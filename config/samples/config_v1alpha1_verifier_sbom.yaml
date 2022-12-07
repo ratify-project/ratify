@@ -6,6 +6,6 @@ spec:
   name: sbom
   artifactTypes: org.example.sbom.v0
   parameters: 
-    nestedReferences: application/vnd.cncf.notary.v2.signature
+    nestedReferences: application/vnd.cncf.notary.signature
  
      
