@@ -35,7 +35,7 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
 	var testVerifierSpec = configv1alpha1.VerifierSpec{
 		Name:          "notaryv2",
-		ArtifactTypes: "application/vnd.cncf.notary.v2.signature",
+		ArtifactTypes: "application/vnd.cncf.notary.signature",
 	}
 	var resource = "notaryv2"
 
