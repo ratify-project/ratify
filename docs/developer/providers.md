@@ -24,7 +24,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
     "plugin": {
         "name": "configPolicy",
         "artifactVerificationPolicies": {
-            "application/vnd.cncf.notary.v2.signature": "any"
+            "application/vnd.cncf.notary.signature": "any"
         }
     }
 },
@@ -87,7 +87,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "any"
+                "application/vnd.cncf.notary.signature": "any"
             }
         }
     },

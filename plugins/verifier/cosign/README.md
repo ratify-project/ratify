@@ -26,7 +26,7 @@ The only configuration that is needed for cosign verifier is the path to the pub
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "any"
+                "application/vnd.cncf.notary.signature": "any"
             }
         }
     },

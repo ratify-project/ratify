@@ -121,7 +121,7 @@ cat <<EOF > ~/.ratify/config.json
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "any"
+                "application/vnd.cncf.notary.signature": "any"
             }
         }
     },
@@ -130,7 +130,7 @@ cat <<EOF > ~/.ratify/config.json
         "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/truststore/x509/ca/wabbit-networks.io/wabbit-networks.io.crt"
                 ],
@@ -215,7 +215,7 @@ cat <<EOF > ~/.ratify/config.json
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "any",
+                "application/vnd.cncf.notary.signature": "any",
                 "sbom/example": "all"
             }
         }
@@ -225,7 +225,7 @@ cat <<EOF > ~/.ratify/config.json
         "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/localkeys/wabbit-networks.io.crt"
                   ]
@@ -233,7 +233,7 @@ cat <<EOF > ~/.ratify/config.json
             {
                 "name":"sbom",
                 "artifactTypes" : "sbom/example",
-                "nestedReferences": "application/vnd.cncf.notary.v2.signature"
+                "nestedReferences": "application/vnd.cncf.notary.signature"
             }
         ]
     }
