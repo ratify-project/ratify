@@ -65,7 +65,7 @@ Once the installation is completed, you can test the deployment of an image that
 - This will successfully create the pod `demo`
 
 ```bash
-kubectl run demo --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
+kubectl run demo --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
 kubectl get pods demo
 ```
 
@@ -74,7 +74,7 @@ Optionally you can see the output of the pod logs via: `kubectl logs demo`
 - Now deploy an unsigned image
 
 ```bash
-kubectl run demo1 --image=wabbitnetworks.azurecr.io/test/net-monitor:unsigned
+kubectl run demo1 --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:unsigned
 ```
 
 You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
