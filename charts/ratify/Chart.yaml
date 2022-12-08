@@ -1,6 +1,6 @@
 apiVersion: v2
 name: ratify
 description: A Helm chart for Ratify
-version: 1.2.0
-appVersion: v1.0.0-beta.1
+version: 1.3.0
+appVersion: v1.0.0-beta.2
 home: https://github.com/deislabs/ratify
