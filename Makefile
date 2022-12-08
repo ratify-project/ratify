@@ -133,7 +133,7 @@ e2e-helm-install:
 	cd .staging/helm && tar -xvf helmbin.tar.gz
 	./.staging/helm/linux-amd64/helm version --client
 
-e2e-deploy-gatekeeper: e2e-helm-install
+e2e-deploy-gatekeeper: e2e-helm-install uninstall-gatekeeper
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
@@ -150,7 +150,29 @@ e2e-deploy-ratify:
 	kind load docker-image --name kind localbuildcrd:test
 
 	./.staging/helm/linux-amd64/helm install ratify \
-    ./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.crdRepository=localbuildcrd --set image.tag=test
+	./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.crdRepository=localbuildcrd --set image.tag=test
+
+e2e-deploy-ratify-to-aks: build-push-to-acr uninstall-ratify
+	./.staging/helm/linux-amd64/helm install ratify \
+	./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=${ACR_TEST_REGISTRY}/test/localbuild --set image.crdRepository=${ACR_TEST_REGISTRY}/test/localbuildcrd --set image.tag=test --set azureWorkloadIdentity.clientId=${APPLICATION_CLIENT_ID} --set oras.authProviders.azureWorkloadIdentityEnabled=true
+
+build-push-to-acr:
+	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t ${ACR_TEST_REGISTRY}/test/localbuild:test .
+	docker push ${ACR_TEST_REGISTRY}/test/localbuild:test
+
+	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${ACR_TEST_REGISTRY}/test/localbuildcrd:test ./charts/ratify/crds
+	docker push ${ACR_TEST_REGISTRY}/test/localbuildcrd:test
+
+uninstall-gatekeeper:
+	helm delete gatekeeper --namespace gatekeeper-system || true
+	kubectl delete crd -l gatekeeper.sh/system=yes || true
+
+uninstall-ratify:
+	./.staging/helm/linux-amd64/helm uninstall ratify --namespace ratify-service || true
+
+.PHONY: clean-up
+clean-up: uninstall-ratify uninstall-gatekeeper
+	kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml || true
 
 ##@ Development
 

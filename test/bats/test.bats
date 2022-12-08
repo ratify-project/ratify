@@ -7,38 +7,51 @@ WAIT_TIME=60
 SLEEP_TIME=1
 
 @test "notary test" {
+    echo "cleaning up"
+    run kubectl delete pod demo --namespace default
+
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
+
     run kubectl run demo --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
     assert_success
     run kubectl run demo1 --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:unsigned
     assert_failure
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod demo --namespace default"
 }
 
 @test "cosign test" {
+    echo "cleaning up"
+    run kubectl delete pod cosign-demo --namespace default
+
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
+
     run kubectl run cosign-demo --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed
     assert_success
+
     run kubectl run cosign-demo2 --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:unsigned
     assert_failure
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod cosign-demo --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod cosign-demo --namespace default"
 }
 
 @test "licensechecker test" {
+    echo "cleaning up"
+    run kubectl delete pod license-checker2 --namespace default
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace
+
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -57,11 +70,14 @@ SLEEP_TIME=1
     assert_success
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod license-checker --namespace default
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod license-checker2 --namespace default"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default"
 }
 
 @test "sbom verifier test" {
+    echo "cleaning up"
+    run kubectl delete pod sbom --namespace default
+
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -80,10 +96,15 @@ SLEEP_TIME=1
     assert_failure
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod sbom --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod sbom --namespace default"
 }
 
 @test "sbom/notary/cosign/licensechecker verifiers test" {
+    echo "cleaning up"
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default
+    run kubectl delete pod all-in-one --namespace default
+
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -100,13 +121,15 @@ SLEEP_TIME=1
     assert_success
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod all-in-one --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod all-in-one --namespace default"
 }
 
 @test "validate crd add, replace and delete" {
-    echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
+    echo "pre cleaning up"
+    run kubectl delete pod crdtest --namespace default
+
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
@@ -122,7 +145,7 @@ SLEEP_TIME=1
     assert_success
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod crdtest --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod crdtest --namespace default"
 }
 
 @test "configmap update test" {
