@@ -1,8 +1,10 @@
 # Description
 
-Please include a summary of the changes and relevant context. Please also reference any related issue in your repository.
+## What this PR does / why we need it:
+<!--Please include a summary of the changes and relevant context. -->
 
-Fixes # (issue)
+## Which issue(s) this PR fixes *(optional, using `fixes #<issue number>(, fixes #<issue_number>, ...)` format, will close the issue(s) when the PR gets merged)*:
+Fixes #
 
 ## Type of change
 
