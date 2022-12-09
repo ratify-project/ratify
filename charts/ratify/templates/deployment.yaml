@@ -91,6 +91,14 @@ spec:
             - name: AZURE_TENANT_ID
               value: {{ .Values.azureManagedIdentity.tenantId }}
           {{- end }}
+          {{- if .Values.awsApiOverride.enabled }}
+            - name: AWS_API_OVERRIDE_ENDPOINT
+              value: {{ .Values.awsApiOverride.endpoint }}
+            - name: AWS_API_OVERRIDE_PARTITION
+              value: {{ .Values.awsApiOverride.partition }}
+            - name: AWS_API_OVERRIDE_REGION
+              value: {{ .Values.awsApiOverride.region }}
+          {{- end }}
             - name: RATIFY_NAMESPACE
               valueFrom:
                 fieldRef:

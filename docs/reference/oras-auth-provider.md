@@ -250,7 +250,7 @@ eksctl create iamserviceaccount \
     --override-existing-serviceaccounts
 ```
 
-1. Verify that the Service Account was successfully created and annotated with a newly created role.
+6. Verify that the Service Account was successfully created and annotated with a newly created role.
 
 ```shell
 kubectl -n ratify get sa ratify -oyaml
@@ -287,7 +287,26 @@ oras:
     awsEcrBasicEnabled: true
 ```
 
-9. [Install Ratify](https://github.com/deislabs/ratify#quick-start)
+9. If your AWS environment requires you to use a custom AWS endpoint resolver then you need to enable this feature in the helm chart [values](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) file.
+
+```yaml
+awsApiOverride:
+  enabled: true
+  endpoint: <AWS_ENDPOINT>
+  partition: <AWS_PARTITION>
+  region: <AWS_REGION>
+```
+
+Once ratify is started, if an AWS custom endpoint resolver is successfully enabled, you will see the following log entries in the ratify pod logs, with no following errors:
+
+```bash
+AWS ECR basic auth using custom endpoint resolver...
+AWS ECR basic auth API override endpoint: <AWS_ENDPOINT>
+AWS ECR basic auth API override partition: <AWS_PARTITION>
+AWS ECR basic auth API override region: <AWS_REGION>
+```
+
+10. [Install Ratify](https://github.com/deislabs/ratify#quick-start)
 
 ```shell
 helm install ratify \
@@ -295,7 +314,7 @@ helm install ratify \
     --namespace ratify --values values.yaml
 ```
 
-10. After install, verify that the Service Account is referenced by the `ratify` pod(s).
+11. After install, verify that the Service Account is referenced by the `ratify` pod(s).
 
 ```shell
 kubectl -n ratify get pod ratify-... -oyaml | grep serviceAccount
@@ -305,7 +324,7 @@ kubectl -n ratify get pod ratify-... -oyaml | grep serviceAccount
       - serviceAccountToken:
 ```
 
-11. Verify that the [Amazon EKS Pod Identity Webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
+12. Verify that the [Amazon EKS Pod Identity Webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
 
 ```shell
 kubectl -n ratify get po ratify-... -oyaml
@@ -339,7 +358,7 @@ kubectl -n ratify get po ratify-... -oyaml
 ...
 ```
 
-12. Verify the _AWS ECR Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
+13. Verify the _AWS ECR Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
 
 ```shell
 kubectl -n ratify get cm ratify-configuration -oyaml

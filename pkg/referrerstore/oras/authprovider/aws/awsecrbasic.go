@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
@@ -54,6 +55,9 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 	region := os.Getenv("AWS_REGION")
 	roleArn := os.Getenv("AWS_ROLE_ARN")
 	tokenFilePath := os.Getenv("AWS_WEB_IDENTITY_TOKEN_FILE")
+	apiOverrideEndpoint := os.Getenv("AWS_API_OVERRIDE_ENDPOINT")
+	apiOverridePartition := os.Getenv("AWS_API_OVERRIDE_PARTITION")
+	apiOverrideRegion := os.Getenv("AWS_API_OVERRIDE_REGION")
 
 	// Verify IRSA ENV is present
 	if region == "" || roleArn == "" || tokenFilePath == "" {
@@ -62,12 +66,29 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 
 	ctx := context.Background()
 
-	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region),
+	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+		if service == ecr.ServiceID && region == apiOverrideRegion {
+			logrus.Info("AWS ECR basic auth using custom endpoint resolver...")
+			logrus.Infof("AWS ECR basic auth API override endpoint: %s", apiOverrideEndpoint)
+			logrus.Infof("AWS ECR basic auth API override partition: %s", apiOverridePartition)
+			logrus.Infof("AWS ECR basic auth API override region: %s", apiOverrideRegion)
+			return aws.Endpoint{
+				URL:           apiOverrideEndpoint,
+				PartitionID:   apiOverridePartition,
+				SigningRegion: apiOverrideRegion,
+			}, nil
+		}
+		// returning EndpointNotFoundError will allow the service to fall back to its default resolution
+		return aws.Endpoint{}, &aws.EndpointNotFoundError{}
+	})
+
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithEndpointResolverWithOptions(resolver),
 		config.WithWebIdentityRoleCredentialOptions(func(options *stscreds.WebIdentityRoleOptions) {
 			options.RoleSessionName = awsSessionName
 		}))
+
 	if err != nil {
-		return EcrAuthToken{}, fmt.Errorf("failed to load default config: %v", err)
+		return EcrAuthToken{}, fmt.Errorf("failed to load default AWS basic auth config: %v", err)
 	}
 
 	ecrClient := ecr.NewFromConfig(cfg)
@@ -103,7 +124,7 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 	}, nil
 }
 
-// Enabled checks for non empty AWS IAM creds
+// Enabled checks for non-empty AWS IAM creds
 func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
 	creds, err := d.ecrAuthToken.BasicAuthCreds()
 	if creds == nil || err != nil {
@@ -112,22 +133,22 @@ func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
 	}
 
 	if len(creds) < 2 {
-		logrus.Error("creds array had incorrect length")
+		logrus.Error("basic ECR creds array had incorrect length")
 		return false
 	}
 
 	if creds[0] == "" || creds[1] == "" {
-		logrus.Error("creds were empty")
+		logrus.Error("basic ECR creds were empty")
 		return false
 	}
 
 	if d.providerName == "" {
-		logrus.Error("providerName was empty")
+		logrus.Error("basic ECR providerName was empty")
 		return false
 	}
 
 	if d.ecrAuthToken.AuthData.ExpiresAt == nil {
-		logrus.Error("expiry was nil")
+		logrus.Error("basic ECR expiry was nil")
 		return false
 	}
 
