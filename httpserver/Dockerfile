@@ -24,6 +24,7 @@ COPY . .
 RUN go build -o /app/out/ /app/cmd/ratify 
 RUN go build -o /app/out/plugins/ /app/plugins/verifier/sbom
 RUN go build -o /app/out/plugins/ /app/plugins/verifier/cosign
+RUN go build -o /app/out/plugins/ /app/plugins/verifier/licensechecker
 
 FROM $BASEIMAGE
 LABEL org.opencontainers.image.source https://github.com/deislabs/ratify
@@ -43,3 +44,4 @@ EXPOSE 6001
 USER 65532:65532
 
 ENTRYPOINT ["/app/ratify", "serve", "--http", ":6001"]
+

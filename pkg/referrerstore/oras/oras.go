@@ -20,6 +20,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -45,7 +46,6 @@ import (
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/aws"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/azure"
 	"github.com/opencontainers/go-digest"
-	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 )
 
@@ -170,11 +170,11 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 	// find all referrers referencing subject descriptor
 	artifactTypeFilter := ""
-	var referrerDescriptors []artifactspec.Descriptor
-	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []artifactspec.Descriptor) error {
+	var referrerDescriptors []oci.Descriptor
+	if err := repository.Referrers(ctx, resolvedSubjectDesc.Descriptor, artifactTypeFilter, func(referrers []oci.Descriptor) error {
 		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
-	}); err != nil {
+	}); err != nil && !errors.Is(err, errdef.ErrNotFound) {
 		store.evictAuthCache(subjectReference.Original, err)
 		return referrerstore.ListReferrersResult{}, err
 	}
@@ -184,7 +184,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	// convert artifact descriptors to oci descriptor with artifact type
 	var referrers []ocispecs.ReferenceDescriptor
 	for _, referrer := range referrerDescriptors {
-		referrers = append(referrers, ArtifactDescriptorToReferenceDescriptor(referrer))
+		referrers = append(referrers, OciDescriptorToReferenceDescriptor(referrer))
 	}
 
 	if store.config.CosignEnabled {
@@ -229,8 +229,9 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		}
 
 		// push fetched content to local ORAS cache
+		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", blobDesc.Digest, blobDesc.MediaType, errdef.ErrAlreadyExists)
 		err = store.localCache.Push(ctx, blobDesc, rc)
-		if err != nil && err != errdef.ErrAlreadyExists {
+		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return nil, err
 		}
 	}
@@ -266,8 +267,9 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
+		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
 		store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
-		if err != nil && err != errdef.ErrAlreadyExists {
+		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return ocispecs.ReferenceManifest{}, err
 		}
 
@@ -334,10 +336,11 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 
 	// set the provider to return the resolved credentials
 	credentialProvider := func(ctx context.Context, registry string) (auth.Credential, error) {
-		if authConfig.Username != "" || authConfig.Password != "" {
+		if authConfig.Username != "" || authConfig.Password != "" || authConfig.IdentityToken != "" {
 			return auth.Credential{
 				Username: authConfig.Username,
 				Password: authConfig.Password,
+				RefreshToken: authConfig.IdentityToken,
 			}, nil
 		}
 		return auth.EmptyCredential, nil

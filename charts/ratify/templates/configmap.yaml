@@ -23,10 +23,18 @@ data:
                     "name": "azureWorkloadIdentity"
                 }
                 {{- end }}
+                {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
+                ,
+                "authProvider": {
+                    "name": "azureManagedIdentity",
+                    "clientID": "{{ .Values.azureManagedIdentity.clientId }}"
+                }
+                {{- end }}
                 {{- if .Values.oras.authProviders.k8secretsEnabled }}
                 ,
                 "authProvider": {
-                    "name": "k8Secrets"
+                    "name": "k8Secrets",
+                    "serviceAccountName": "{{ include "ratify.serviceAccountName" . }}"
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
@@ -41,10 +49,7 @@ data:
       "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy",
-            "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "all"
-            }
+            "name": "configPolicy"
         }
       },
       "verifier": {
@@ -52,16 +57,30 @@ data:
           "plugins": [
             {
                 "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature",
+                "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs"
+                  "/usr/local/ratify-certs/notary/truststore"
+                  ],
+                "trustPolicyDoc": {
+                  "version": "1.0",
+                  "trustPolicies": [
+                    {
+                      "name": "default",
+                      "registryScopes": [ "*" ],
+                      "signatureVerification": {
+                        "level" : "strict" 
+                      },
+                      "trustStores": ["ca:certs"],
+                      "trustedIdentities": ["*"]
+                    }
                   ]
+                }
             {{- if .Values.cosign.enabled }}
             },
             {
                 "name": "cosign",
                 "artifactTypes": "org.sigstore.cosign.v1",
-                "key": "/usr/local/ratify-certs/cosign.pub"
+                "key": "/usr/local/ratify-certs/cosign/cosign.pub"
             {{- end }}
             }
           ]

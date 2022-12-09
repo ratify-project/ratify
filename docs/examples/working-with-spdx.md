@@ -43,9 +43,8 @@ After building the image and generating the SBoM push them to the registry:
 ```shell
 docker push localhost:5000/only-spdx:v1
 
-oras push localhost:5000/only-spdx \
+oras attach localhost:5000/only-spdx:v1 \
   --artifact-type application/vnd.ratify.spdx.v0 \
-  --subject localhost:5000/only-spdx:v1 \
   --plain-http \
   sbom.spdx:application/text
 ```
@@ -66,6 +65,7 @@ cat <<'EOF' >> spdxconfig.json
         "plugins": [
             {
                 "name": "oras",
+                "useHttp": true,
                 "localCachePath": "./local_oras_cache"
             }
         ]

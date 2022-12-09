@@ -41,6 +41,7 @@ spec:
             - ":6001"
             - "-c"
             - "/usr/local/ratify/config.json"
+            - "--enable-crd-manager"
             {{- if eq .Values.provider.auth "tls" }}
             - --cert-dir=/usr/local/tls
             {{- end }}
@@ -51,13 +52,18 @@ spec:
           ports:
             - containerPort: 6001
           volumeMounts:
-            - mountPath: "/usr/local/ratify-certs"
-              {{- if .Values.akvCertConfig.enabled }}
+            - mountPath: "/usr/local/ratify-certs/notary/truststore"
+            {{- if .Values.akvCertConfig.enabled }}
               name: cert-from-akv
-              {{- else }}
-              name: certs
-              {{- end }}
+            {{- else }}
+              name: notary-certs
+            {{- end }}
               readOnly: true
+            {{- if .Values.cosign.enabled }}
+            - mountPath: "/usr/local/ratify-certs/cosign"
+              name: cosign-certs
+              readOnly: true
+            {{- end }}
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
@@ -81,6 +87,10 @@ spec:
             - name: DOCKER_CONFIG
               value: "/usr/local/docker"
           {{- end }}
+          {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
+            - name: AZURE_TENANT_ID
+              value: {{ .Values.azureManagedIdentity.tenantId }}
+          {{- end }}
             - name: RATIFY_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -88,9 +98,14 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: certs
+        - name: notary-certs
           secret:
-            secretName: {{ include "ratify.fullname" . }}-certificate
+            secretName: {{ include "ratify.fullname" . }}-notary-certificate         
+        {{- if .Values.cosign.enabled }}
+        - name: cosign-certs
+          secret:
+            secretName: {{ include "ratify.fullname" . }}-cosign-certificate         
+        {{- end }}
         {{- if $dockerAuthMode }}
         - name: dockerconfig
           secret:

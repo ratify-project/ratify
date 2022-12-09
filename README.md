@@ -1,6 +1,6 @@
 # Ratify
 
-Is a policy engine as a binary executable and on Kubernetes which enables verification of artifact security metadata and admits for deployment only those that comply with policies you create.
+Is a verification engine as a binary executable and on Kubernetes which enables verification of artifact security metadata and admits for deployment only those that comply with policies you create.
 
 **WARNING:** This is not considered production-grade code
 by its developers, nor is it "supported" software.
@@ -21,16 +21,17 @@ by its developers, nor is it "supported" software.
 
 ## Community meetings
 
-- Agenda: https://hackmd.io/ABueHjizRz2iFQpWnQrnNA
+- Agenda: <https://hackmd.io/ABueHjizRz2iFQpWnQrnNA>
 - We hold a weekly Ratify community meeting with alternating times to accommodate more time zones.
 Series #1 Tues 4-5pm
 Series #2 Wed 1-2pm
 Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
+- Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).
 
 ## Quick Start
 
-Try out ratify in Kuberenetes through Gatekeeper as the admission controller.
+Try out ratify in Kubernetes through Gatekeeper as the admission controller.
 
 Prerequisite: Kubernetes v1.20 or higher
 
@@ -63,7 +64,7 @@ Once the installation is completed, you can test the deployment of an image that
 
 - This will successfully create the pod `demo`
 
-```bash=
+```bash
 kubectl run demo --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
 kubectl get pods demo
 ```
@@ -72,13 +73,13 @@ Optionally you can see the output of the pod logs via: `kubectl logs demo`
 
 - Now deploy an unsigned image
 
-```bash=
+```bash
 kubectl run demo1 --image=wabbitnetworks.azurecr.io/test/net-monitor:unsigned
 ```
 
 You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
 
-```bash=
+```bash
 Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [ratify-constraint] Subject failed verification: wabbitnetworks.azurecr.io/test/net-monitor:unsigned
 ```
 
@@ -86,7 +87,7 @@ You just validated the container images in your k8s cluster!
 
 - Uninstall Ratify
 
-```bash=
+```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 helm delete ratify
@@ -125,4 +126,4 @@ This project is released under the [Apache-2.0 License](./LICENSE).
 
 This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines][microsoft-trademark]. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
 
-[microsoft-trademark]: https://www.microsoft.com/en-us/legal/intellectualproperty/trademarks
+[microsoft-trademark]: https://www.microsoft.com/legal/intellectualproperty/trademarks

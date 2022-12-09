@@ -15,7 +15,7 @@
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.v2.signature": "any"
+                "application/vnd.cncf.notary.signature": "any"
             }
         }
     },
@@ -23,21 +23,44 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.v2.signature"
+                "name": "notaryv2",
+                "artifactTypes": "application/vnd.cncf.notary.signature",
+                "verificationCerts": [
+                    "/usr/local/ratify-certs/notary/truststore"
+                ],
+                "trustPolicyDoc": {
+                    "version": "1.0",
+                    "trustPolicies": [
+                        {
+                            "name": "default",
+                            "registryScopes": [
+                                "*"
+                            ],
+                            "signatureVerification": {
+                                "level": "strict"
+                            },
+                            "trustStores": [
+                                "ca:certs"
+                            ],
+                            "trustedIdentities": [
+                                "*"
+                            ]
+                        }
+                    ]
+                }
             },
             {
-                "name":"sbom",
-                "artifactTypes":"org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.v2.signature"
+                "name": "sbom",
+                "artifactTypes": "org.example.sbom.v0",
+                "nestedReferences": "application/vnd.cncf.notary.signature"
             },
             {
                 "name": "licensechecker",
                 "artifactTypes": "application/vnd.ratify.spdx.v0",
-                "allowedLicenses": ["MIT"]
+                "allowedLicenses": [
+                    "MIT"
+                ]
             }
-            
         ]
-        
     }
 }

@@ -1,30 +1,39 @@
 image:
   repository: ghcr.io/deislabs/ratify
-  tag: v1.0.0-alpha.3
+  crdRepository: ghcr.io/deislabs/ratify-crds
+  tag: v1.0.0-beta.2
   pullPolicy: IfNotPresent
+
 nameOverride: ""
 fullnameOverride: ""
 ratifyTestCert: |
   -----BEGIN CERTIFICATE-----
-  MIIDNjCCAh6gAwIBAgIQH775NeR9QruFa7zk7yzgWDANBgkqhkiG9w0BAQsFADAdMRswGQYDVQQD
-  ExJ3YWJiaXQtbmV0d29ya3MuaW8wHhcNMjIxMDIwMjEyMzU0WhcNMjMxMDIwMjEzMzU0WjAdMRsw
-  GQYDVQQDExJ3YWJiaXQtbmV0d29ya3MuaW8wggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIB
-  AQDGLZtDqEJGdou/m2sPOQLMAaPSGTCaJ4uWw3J56GlD/L0ahIvzaj0LnL1ovRYerUvBemAJtUqy
-  FJHobSEUq+eXfpOMs9hbxY8bJ90YYMNh2CZ6vTIDgSKw7JowFJNN6FnjPEPfwV2xAi/CU9r1ijMU
-  5m5MImnzbj4JiikdBjtQRPolQNWLubDqCw5hceC2pgcKlpWM//8SodAqu1lPBtlG5BhzPL8bQMAo
-  hW8Qe+Jo2J/AxO7Zp/mJFP4ipMhfAHDcQ1CWC0PRIO0qk9JhtSD+o0gQyTXQwFcWi5PgSnMe3rSE
-  kmI8WMe+oz7DYDENGz2Pgy7IqtTAphiDycQW6G3ZAgMBAAGjcjBwMA4GA1UdDwEB/wQEAwIFoDAJ
-  BgNVHRMEAjAAMBMGA1UdJQQMMAoGCCsGAQUFBwMDMB8GA1UdIwQYMBaAFGFzdC0AfxDJkxM1ZIVx
-  BxTrEGvKMB0GA1UdDgQWBBRhc3QtAH8QyZMTNWSFcQcU6xBryjANBgkqhkiG9w0BAQsFAAOCAQEA
-  mmXh2QAH03O5+ADia1AXAb97SIAEVSQj6mgYN9E9Os0/3aXDYVLKVShA1OiBidr6Iya9epFBbpzc
-  vJv15bGDg+k5KYAsRYSzfQpILADMYW4T/E3uaFBpbt0GYiwTlpRSKnEvyEwf9cRZOouE9CesIn2L
-  L0j/+zhBb8RpB7UbrcEL0PXnn/UbnQKkkekpwEOV/USrpT2T/AwE2GUiAzaLj8ps2qgm/4fPj/uh
-  w2W7SbZafkVYxirVIdra1Yq2V6BvnnCkbnBLdjAHbQ48+BgiJJTk3QZFofP88tRjGHPYN3TH2Ycv
-  Ibo/J0urezLK/M8/QeMkkhY1WClsAi+xLhVWUw==
+  MIIDWDCCAkCgAwIBAgIBUTANBgkqhkiG9w0BAQsFADBaMQswCQYDVQQGEwJVUzEL
+  MAkGA1UECBMCV0ExEDAOBgNVBAcTB1NlYXR0bGUxDzANBgNVBAoTBk5vdGFyeTEb
+  MBkGA1UEAxMSd2FiYml0LW5ldHdvcmtzLmlvMCAXDTIyMTIwMjA4MDg0NFoYDzIx
+  MjIxMjAzMDgwODQ0WjBaMQswCQYDVQQGEwJVUzELMAkGA1UECBMCV0ExEDAOBgNV
+  BAcTB1NlYXR0bGUxDzANBgNVBAoTBk5vdGFyeTEbMBkGA1UEAxMSd2FiYml0LW5l
+  dHdvcmtzLmlvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnoskJWB0
+  ZsYcfbTvCYQMLqWaB/yN3Jf7Ryxvndrij83fWEQPBQJi8Mk8SpNqm2x9uP3gsQDc
+  L/73a0p6/D+hza2jQQVhebe/oB0LJtUoD5LXlJ83UQdZETLMYAzeBNcBR4kMecrY
+  CnE6yjHeiEWdAH+U7Mt39zJh+9lGIcbk0aUE5UOp8o3t5RWFDcl9hQ7QOXROwmpO
+  thLUIiY/bcPpsg/2nH1nzFjqiBef3sgopFCTgtJ7qF8B83Xy/+hJ5vD29xsbSwuB
+  3iLE7qLxu2NxdIa4oL0Y2QKMh/getjI0xnvwAmPkFiFbzC7LFdDfd6+gA5GpUXxL
+  u6UmwucAgiljGQIDAQABoycwJTAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYI
+  KwYBBQUHAwMwDQYJKoZIhvcNAQELBQADggEBAFvRW/mGjnnMNFKJc/e3o/+yiJor
+  dcrq/1UzyD7eNmOaASXz8rrrFT/6/TBXExPuB2OIf9OgRJFfPGLxmzCwVgaWQbK0
+  VfTN4MQzRrSwPmNYsBAAwLxXbarYlMbm4DEmdJGyVikq08T2dZI51GC/YXEwzlnv
+  ldN0dBflb/FKkY5rAp0JgpHLGKeStxFvB62noBjWfrm7ShCf9gkn1CjmgvP/sYK0
+  pJgA1FHPd6EeB6yRBpLV4EJgQYUJoOpbHz+us62jKj5fAXsX052LPmk9ArmP0uJ1
+  CJLNdj+aShCs4paSWOObDmIyXHwCx3MxCvYsFk/Wsnwura6jGC+cNsjzSx4=
   -----END CERTIFICATE-----
 cosign:
-  enabled: false
-  key: ""
+  enabled: true
+  key: |
+    -----BEGIN PUBLIC KEY-----
+    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvjrMZFyaBDsvg5e0C8JaHqw8ULuc
+    n947ODVAMvfdqtjqK2eW77OGrsFLdkbG3BET9U4Dj37odn4kI5lC4Lj9Eg==
+    -----END PUBLIC KEY-----
 resources:
    limits:
      cpu: 1000m
@@ -33,14 +42,18 @@ resources:
      cpu: 600m
      memory: 512Mi
 serviceAccount:
-  create: false
-  name:
+  create: true
+  name: ratify-admin
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
 # Key Vault -> akvCertConfig.enabled
 azureWorkloadIdentity:
   clientId:
+
+azureManagedIdentity:
+  clientId:
+  tenantId:
 
 akvCertConfig:
   enabled: false
@@ -52,6 +65,7 @@ akvCertConfig:
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
+    azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
 
@@ -63,4 +77,28 @@ provider:
     key: ""                 # key used by ratify (httpserver)
     cabundle: ""            # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
 
+podAnnotations: {}
+podLabels: {}
+enableRuntimeDefaultSeccompProfile: true
 
+rbac:
+  create: true
+  
+upgradeCRDs:
+  enabled: true
+  extraRules: []
+
+crds:
+  affinity: {}
+  tolerations: []
+  nodeSelector: {kubernetes.io/os: linux}
+  resources: {}
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsGroup: 65532
+    runAsNonRoot: true
+    runAsUser: 65532

@@ -20,6 +20,7 @@ import (
 
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
+	"github.com/deislabs/ratify/pkg/manager"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -33,6 +34,7 @@ type serveCmdOptions struct {
 	httpServerAddress string
 	certDirectory     string
 	caCertFile        string
+	enableCrdManager  bool
 }
 
 func NewCmdServe(argv ...string) *cobra.Command {
@@ -55,10 +57,20 @@ func NewCmdServe(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringVar(&opts.certDirectory, "cert-dir", "", "Path to ratify certs")
 	flags.StringVar(&opts.caCertFile, "ca-cert-file", "", "Path to CA cert file")
+	flags.BoolVar(&opts.enableCrdManager, "enable-crd-manager", false, "Start crd manager if enabled")
 	return cmd
 }
 
 func serve(opts serveCmdOptions) error {
+
+	// in crd mode, the manager gets latest store/verifier from crd and pass on to the http server
+	if opts.enableCrdManager {
+		logrus.Infof("starting crd manager")
+		go manager.StartManager()
+		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile)
+
+		return nil
+	}
 
 	getExecutor, err := config.GetExecutorAndWatchForUpdate(opts.configFilePath)
 	if err != nil {
