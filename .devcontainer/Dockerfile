@@ -16,15 +16,29 @@ ARG BATS_VERSION="1.8.2"
 RUN curl -Lo bats.tar.gz https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz \
   && tar -zxf bats.tar.gz \
   && bash ./bats-core-${BATS_VERSION}/install.sh /usr/local \
-  && rm -rf ./bats-core-${BATS_VERSION}
+  && rm -rf bats.tar.gz ./bats-core-${BATS_VERSION}
+
+ARG NOTATION_VERSION="1.0.0-rc.1"
+RUN curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz \
+  && tar -zxf notation.tar.gz \
+  && mv ./notation /usr/local/bin/notation \
+  && rm -rf ./notation.tar.gz
+
+ARG ORAS_VERSION="0.16.0"
+RUN curl -Lo oras.tar.gz https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz \
+  && mkdir -p oras-install \
+  && tar -zxf oras.tar.gz -C oras-install \
+  && mv oras-install/oras /usr/local/bin/ \
+  && rm -rf ./oras-install oras.tar.gz
 
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-  && apt-get -y install --no-install-recommends protobuf-compiler
+  && apt-get -y install --no-install-recommends protobuf-compiler libprotobuf-dev
 
 # [Optional] Uncomment the next lines to use go get to install anything else you need
-# USER vscode
-# RUN go get -x <your-dependency-or-tool>
+USER vscode
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 \
+  && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 
 # [Optional] Uncomment this line to install global node packages.
 # RUN su vscode -c "source /usr/local/share/nvm/nvm.sh && npm install -g <your-package-here>" 2>&1
