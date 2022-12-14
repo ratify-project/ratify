@@ -21,10 +21,12 @@ import (
 	"os"
 	"strings"
 
+	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
+	"github.com/sirupsen/logrus"
 )
 
 var builtInStores = make(map[string]StoreFactory)
@@ -55,6 +57,16 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 	storeNameStr := fmt.Sprintf("%s", storeName)
 	if strings.ContainsRune(storeNameStr, os.PathSeparator) {
 		return nil, fmt.Errorf("invalid plugin name for a store: %s", storeName)
+	}
+
+	// if source is specified, download the plugin
+	if source, ok := storeConfig[types.Source]; ok {
+		sourceStr := fmt.Sprintf("%s", source)
+		err := pluginCommon.DownloadPlugin(storeNameStr, sourceStr, pluginBinDir[0])
+		if err != nil {
+			return nil, fmt.Errorf("failed to download plugin: %v", err)
+		}
+		logrus.Infof("downloaded store plugin %s from %s to %s", storeNameStr, sourceStr, pluginBinDir[0])
 	}
 
 	storeFactory, ok := builtInStores[storeNameStr]

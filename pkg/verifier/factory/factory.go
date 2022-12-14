@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/plugin"
@@ -57,6 +58,16 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	verifierNameStr := fmt.Sprintf("%s", verifierName)
 	if strings.ContainsRune(verifierNameStr, os.PathSeparator) {
 		return nil, fmt.Errorf("invalid plugin name for a verifier: %s", verifierNameStr)
+	}
+
+	// if source is specified, download the plugin
+	if source, ok := verifierConfig[types.Source]; ok {
+		sourceStr := fmt.Sprintf("%s", source)
+		err := pluginCommon.DownloadPlugin(verifierNameStr, sourceStr, pluginBinDir[0])
+		if err != nil {
+			return nil, fmt.Errorf("failed to download plugin: %v", err)
+		}
+		logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierNameStr, sourceStr, pluginBinDir[0])
 	}
 
 	verifierFactory, ok := builtInVerifiers[verifierNameStr]
