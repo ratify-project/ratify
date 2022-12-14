@@ -1,0 +1,49 @@
+{
+  "executor": {},
+  "store": {
+    "version": "1.0.0",
+    "plugins": [
+      {
+        "name": "oras"
+      }
+    ]
+  },
+  "policy": {
+    "version": "1.0.0",
+    "plugin": {
+      "name": "configPolicy",
+      "artifactVerificationPolicies": {
+        "application/vnd.cncf.notary.signature": "any"
+      }
+    }
+  },
+  "verifier": {
+    "version": "1.0.0",
+    "plugins": [
+      {
+        "name": "notaryv2",
+        "artifactTypes": "application/vnd.cncf.notary.signature",
+        "trustPolicyDoc": {
+          "version": "1.0",
+          "trustPolicies": [
+            {
+              "name": "default",
+              "registryScopes": [
+                "*"
+              ],
+              "signatureVerification": {
+                "level": "strict"
+              },
+              "trustStores": [
+                "ca:certs"
+              ],
+              "trustedIdentities": [
+                "*"
+              ]
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
