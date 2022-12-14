@@ -2,8 +2,10 @@ bin
 dist/
 local_oras_cache/
 .idea
-.vscode
 __debug_bin
 
 # generated certificate directory
 certs/
+
+# symlink to ~/.ratify folder
+/.ratify
