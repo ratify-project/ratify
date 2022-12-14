@@ -18,17 +18,21 @@ package skel
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-
+	sp "github.com/deislabs/ratify/pkg/referrerstore/plugin"
 	"github.com/deislabs/ratify/pkg/verifier/plugin"
 	"github.com/deislabs/ratify/pkg/verifier/types"
 
 	"github.com/deislabs/ratify/pkg/verifier"
+
+	// This import is required to utilize the oras built-in referrer store
+	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 )
 
 func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
@@ -40,6 +44,15 @@ func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
 		if referrerStore.Name() != "test-store" {
 			t.Fatalf("expected store name %s actual %s", "test-store", referrerStore.Name())
 		}
+
+		// the parsed pluginBinDirs should include the data that was provided by Ratify, plus the default (currently assumed to be "")
+		expectedPluginBinDirs := []string{"/tmp/ratify/plugins", ""}
+		pluginStore := referrerStore.(*sp.StorePlugin)
+		actualPluginBinDirs := pluginStore.GetPath()
+		if !reflect.DeepEqual(expectedPluginBinDirs, actualPluginBinDirs) {
+			t.Fatalf("expected plugin bin dirs %#v actual %#v", expectedPluginBinDirs, actualPluginBinDirs)
+		}
+
 		return &verifier.VerifierResult{IsSuccess: true}, nil
 	}
 
@@ -49,7 +62,44 @@ func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "storeConfig" : {"store": {"name":"test-store", "some": "config"}}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData := `{ "storeConfig" : {"store": {"name":"test-store", "some": "config"}, "pluginBinDirs": ["/tmp/ratify/plugins"]}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	pluginContext := &pcontext{
+		GetEnviron: func(key string) string { return environment[key] },
+		Stdin:      strings.NewReader(stdinData),
+		Stdout:     stdout,
+		Stderr:     stderr,
+	}
+
+	err := pluginContext.pluginMainCore("skel-test-case", "1.0.0", verifyReference, []string{"1.0.0"})
+	if err != nil {
+		t.Fatalf("plugin execution failed %v", err)
+	}
+
+	out := fmt.Sprintf("%s", stdout)
+	if !strings.Contains(out, `"isSuccess":true`) {
+		t.Fatalf("plugin execution failed. expected %v actual %v", "isSuccess: true", out)
+	}
+}
+
+func TestPluginMain_VerifyReference_CanUseBuiltinStores(t *testing.T) {
+	verifyReference := func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
+		// expect to find a builtin store and fail if it was configured as a plugin
+		if _, ok := referrerStore.(*sp.StorePlugin); ok {
+			t.Fatalf("expected store to be builtin")
+		}
+
+		return &verifier.VerifierResult{IsSuccess: true}, nil
+	}
+
+	environment := map[string]string{
+		plugin.CommandEnvKey: plugin.VerifyCommand,
+		plugin.VersionEnvKey: "1.0.0",
+		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+	}
+
+	stdinData := `{ "storeConfig" : {"store": {"name":"oras"}}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
