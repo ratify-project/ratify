@@ -16,7 +16,7 @@ These walk through end-to-end examples of using ratify.
 
 These documents can be found generally useful to understand using or implementing ratify, but do not walk through end-to-end examples.
 
-- [gatekeeper-policy-authoring](reference/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify when it is in passthrough execution mode, including rego references/examples.
+- [gatekeeper-policy-authoring](reference/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify, including rego references/examples.
 - [oras-auth-provider](reference/oras-auth-provider.md) - Explanation of various authentication mechanisms available for use with ratify.
 
 ## developer

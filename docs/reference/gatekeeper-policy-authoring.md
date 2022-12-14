@@ -1,5 +1,5 @@
 # Gatekeeper Policy Authoring
-Ratify can be deployed using passthrough execution mode behind admission
+Ratify can be deployed behind admission
 controllers such as Gatekeeper. When deployed in this manner Ratify will provide
 the results of all verifiers back to Gatekeeper so that policies can be authored
 in rego.
@@ -136,9 +136,8 @@ interface. This structure includes:
   external data provider or result from some communication issue with the
   external data provider.
 
-When Ratify is configured in passthrough execution mode an array of each
-`VerifyResult` for a subject is included in the `response` field and the overall
-`isSuccess` value will always be true. This allows the policy to be entirely
+An array of each
+`VerifyResult` for a subject is included in the `response` field. This allows the policy to be entirely
 authored in the rego using all the results from the individual verifiers.
 
 Each verifier produces a `VerifierResult` with the following potential fields:
@@ -171,8 +170,8 @@ a [trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/
 could control the verification level and scopes applied to specified artifact. There 
 could be 2 scenarios needed to pay attention:
 
-1. If Ratify is running in passthrough execution mode, but users forgot to set up scopes 
-for some repositories/artifacts. Then the verification result from notary verifier will be an error saying the policy is missing.
+1. If users forgot to set up scopes
+for some repositories/artifacts, then the verification result from notary verifier will be an error saying the policy is missing.
 2. If users set the verification level in trust policy to any value except `strict`,
 then the notary verification result might be a success even though some underlying
 validation failed. Check the verification level provided in notation for more information: [Signature Verification Level](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#signature-verification-details)
