@@ -86,17 +86,17 @@ var (
 	invalidBlobDesc = ocispec.Descriptor{
 		Digest: invalidDigest,
 	}
-	defaultCertDir = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
+	defaultCertDir  = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	testTrustPolicy = map[string]interface{}{
 		"version": "1.0",
 		"trustPolicies": []map[string]interface{}{
 			{
-				"name": "default",
+				"name":           "default",
 				"registryScopes": []string{"*"},
 				"signatureVerification": map[string]string{
 					"level": "strict",
 				},
-				"trustStores": []string{"ca:certs"},
+				"trustStores":       []string{"ca:certs"},
 				"trustedIdentities": []string{"*"},
 			},
 		},
@@ -305,7 +305,7 @@ func TestCreate(t *testing.T) {
 		{
 			name: "created verifier successfully",
 			configMap: map[string]interface{}{
-				"name":        test,
+				"name":           test,
 				"trustPolicyDoc": testTrustPolicy,
 			},
 			expectErr: false,
@@ -335,9 +335,9 @@ func TestVerify(t *testing.T) {
 	}{
 		{
 			name:      "failed getting manifest",
-			ref: invalidRef,
-			refBlob: []byte(""),
-			manifest: ocispecs.ReferenceManifest{},
+			ref:       invalidRef,
+			refBlob:   []byte(""),
+			manifest:  ocispecs.ReferenceManifest{},
 			expect:    failedResult,
 			expectErr: true,
 		},
@@ -352,13 +352,13 @@ func TestVerify(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "verified successfully",
-			ref: validRef,
+			name:    "verified successfully",
+			ref:     validRef,
 			refBlob: testRefBlob,
 			manifest: ocispecs.ReferenceManifest{
 				Blobs: []ocispec.Descriptor{validBlobDesc},
 			},
-			expect: verifier.VerifierResult{IsSuccess: true},
+			expect:    verifier.VerifierResult{IsSuccess: true},
 			expectErr: false,
 		},
 	}
