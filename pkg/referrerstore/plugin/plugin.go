@@ -201,3 +201,7 @@ func (sp *StorePlugin) GetConfig() *config.StoreConfig {
 		Store:         sp.rawConfig,
 	}
 }
+
+func (sp *StorePlugin) GetPath() []string {
+	return sp.path
+}
