@@ -24,7 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/config"
@@ -32,6 +31,7 @@ import (
 	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
+	"github.com/sirupsen/logrus"
 )
 
 // StoreReconciler reconciles a Store object
@@ -42,8 +42,7 @@ type StoreReconciler struct {
 
 var (
 	// a map to track active stores
-	StoreMap    = map[string]referrerstore.ReferrerStore{}
-	storeLogger = log.Log
+	StoreMap = map[string]referrerstore.ReferrerStore{}
 )
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores,verbs=get;list;watch;create;update;patch;delete
@@ -56,16 +55,16 @@ var (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	storeLogger := log.FromContext(ctx)
+	storeLogger := logrus.WithContext(ctx)
 
 	var store configv1alpha1.Store
 	var resource = req.Name
-	storeLogger.Info(fmt.Sprintf("reconciling store '%v'", resource))
+	storeLogger.Infof("reconciling store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 
 		if apierrors.IsNotFound(err) {
-			storeLogger.Info(fmt.Sprintf("deletion detected, removing store %v", req.Name))
+			storeLogger.Infof("deletion detected, removing store %v", req.Name)
 			storeRemove(resource)
 		} else {
 			storeLogger.Error(err, "unable to fetch store")
@@ -99,17 +98,17 @@ func storeAddOrReplace(spec configv1alpha1.StoreSpec, fullname string) error {
 	storeConfigVersion := "1.0.0"
 	if spec.Address == "" {
 		spec.Address = config.GetDefaultPluginPath()
-		storeLogger.Info(fmt.Sprintf("Address was empty, setting to default path %v", spec.Address))
+		logrus.Infof("Address was empty, setting to default path %v", spec.Address)
 	}
 	storeReference, err := sf.CreateStoreFromConfig(storeConfig, storeConfigVersion, []string{spec.Address})
 
 	if err != nil || storeReference == nil {
-		storeLogger.Error(err, "store factory failed to create store from store config")
+		logrus.Error(err, "store factory failed to create store from store config")
 		return fmt.Errorf("store factory failed to create store from store config, err: %q", err)
 	}
 
 	StoreMap[fullname] = storeReference
-	storeLogger.Info(fmt.Sprintf("store '%v' added to store map", storeReference.Name()))
+	logrus.Infof("store '%v' added to store map", storeReference.Name())
 
 	return nil
 }
@@ -126,7 +125,7 @@ func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig
 
 	if string(storeSpec.Parameters.Raw) != "" {
 		if err := json.Unmarshal(storeSpec.Parameters.Raw, &storeConfig); err != nil {
-			storeLogger.Error(err, "unable to decode store parameters", "Parameters.Raw", storeSpec.Parameters.Raw)
+			logrus.Error(err, "unable to decode store parameters", "Parameters.Raw", storeSpec.Parameters.Raw)
 			return rc.StorePluginConfig{}, err
 		}
 	}
