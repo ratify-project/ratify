@@ -19,6 +19,7 @@ These documents can be found generally useful to understand using or implementin
 - [usage](reference/usage.md) - Additional information for using the `ratify` executable
 - [gatekeeper-policy-authoring](reference/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify when it is in passthrough execution mode, including rego references/examples.
 - [oras-auth-provider](reference/oras-auth-provider.md) - Explanation of various authentication mechanisms available for use with ratify.
+- [creating-plugins](reference/creating-plugins.md) - Details on creating your own plugins for use with ratify.
 
 ## developer
 
