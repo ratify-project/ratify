@@ -15,13 +15,8 @@ limitations under the License.
 
 package config
 
-const (
-	PassthroughExecutionMode = "passthrough"
-)
-
 // ExecutorConfig represents the configuration for the executor
 type ExecutorConfig struct {
-	ExecutionMode  string `json:"executionMode,omitempty"`
 	RequestTimeout *int   `json:"requestTimeout"`
 	// TODO Add cache config
 }
