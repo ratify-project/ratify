@@ -22,7 +22,8 @@ import (
 )
 
 func TestSetLoggingLevel_DefaultsToInfo_NoEnvVar(t *testing.T) {
-	SetLoggingLevel("")
+	SetLoggingLevel("", logrus.StandardLogger())
+	defer logrus.SetLevel(logrus.InfoLevel)
 
 	if logrus.GetLevel() != logrus.InfoLevel {
 		t.Errorf("Expected log level to be %s, got %s", logrus.InfoLevel, logrus.GetLevel())
@@ -30,7 +31,8 @@ func TestSetLoggingLevel_DefaultsToInfo_NoEnvVar(t *testing.T) {
 }
 
 func TestSetLoggingLevel_DefaultsToInfo_BadEnvVar(t *testing.T) {
-	SetLoggingLevel("undefinedlogginglevel")
+	SetLoggingLevel("undefinedlogginglevel", logrus.StandardLogger())
+	defer logrus.SetLevel(logrus.InfoLevel)
 
 	if logrus.GetLevel() != logrus.InfoLevel {
 		t.Errorf("Expected log level to be %s, got %s", logrus.InfoLevel, logrus.GetLevel())
@@ -38,9 +40,25 @@ func TestSetLoggingLevel_DefaultsToInfo_BadEnvVar(t *testing.T) {
 }
 
 func TestSetLoggingLevel_UsesEnvVar(t *testing.T) {
-	SetLoggingLevel("debug")
+	SetLoggingLevel("debug", logrus.StandardLogger())
+	defer logrus.SetLevel(logrus.InfoLevel)
 
 	if logrus.GetLevel() != logrus.DebugLevel {
 		t.Errorf("Expected log level to be %s, got %s", logrus.DebugLevel, logrus.GetLevel())
+	}
+}
+
+func TestSetLoggingLevel_UpdatesTargetLogger(t *testing.T) {
+	testLogger := logrus.New()
+	SetLoggingLevel("debug", testLogger)
+
+	// ensure the test logger is updated
+	if testLogger.GetLevel() != logrus.DebugLevel {
+		t.Errorf("Expected log level to be %s, got %s", logrus.DebugLevel, testLogger.GetLevel())
+	}
+
+	// ensure the standard logger is not updated
+	if logrus.GetLevel() != logrus.InfoLevel {
+		t.Errorf("Expected log level to be %s, got %s", logrus.InfoLevel, logrus.GetLevel())
 	}
 }

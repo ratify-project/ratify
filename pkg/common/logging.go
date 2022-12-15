@@ -16,12 +16,18 @@ limitations under the License.
 package common
 
 import (
+	"os"
+
 	"github.com/sirupsen/logrus"
 )
 
 const defaultLevel = logrus.InfoLevel
 
-func SetLoggingLevel(level string) {
+func SetLoggingLevelFromEnv(logger *logrus.Logger) {
+	SetLoggingLevel(os.Getenv("RATIFY_LOG_LEVEL"), logger)
+}
+
+func SetLoggingLevel(level string, logger *logrus.Logger) {
 	var logrusLevel logrus.Level
 	if level == "" {
 		logrusLevel = defaultLevel
@@ -30,10 +36,10 @@ func SetLoggingLevel(level string) {
 		logrusLevel, err = logrus.ParseLevel(level)
 		if err != nil {
 			logrusLevel = defaultLevel
-			logrus.Infof("Invalid log level %s, defaulting to %s", level, defaultLevel)
-			logrus.Infof("Valid log levels are: %v", logrus.AllLevels)
+			logger.Infof("Invalid log level %s, defaulting to %s", level, defaultLevel)
+			logger.Infof("Valid log levels are: %v", logrus.AllLevels)
 		}
 	}
-	logrus.Infof("Setting log level to %s", logrusLevel)
-	logrus.SetLevel(logrusLevel)
+	logger.Infof("Setting log level to %s", logrusLevel)
+	logger.SetLevel(logrusLevel)
 }

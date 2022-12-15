@@ -16,9 +16,8 @@ limitations under the License.
 package cmd
 
 import (
-	"os"
-
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +29,7 @@ const (
 var Root = New(use, shortDesc)
 
 func New(use, short string) *cobra.Command {
-	common.SetLoggingLevel(os.Getenv("RATIFY_LOG_LEVEL"))
+	common.SetLoggingLevelFromEnv(logrus.StandardLogger())
 	root := &cobra.Command{
 		Use:   use,
 		Short: short,
