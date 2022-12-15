@@ -147,9 +147,6 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 					Message:   fmt.Sprintf("an error thrown by the verifier: %v", err)}
 			}
 
-			// TODO: how to handle
-			// TODO: make signature default to false
-			// TODO: is default for others true or false?
 			if shouldCheckNested, ok := ex.Config.NestedReferences[referenceDesc.ArtifactType]; ok && shouldCheckNested {
 				ex.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
