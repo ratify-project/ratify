@@ -87,7 +87,7 @@ func (pc *pcontext) pluginMainCore(name, version string, verifyReference VerifyR
 	// The below is a workaround to be able to use built-in referrer store plugins from within verifier plugins
 	storeConfigs := storeConfig.StoresConfig{
 		Version:       version,
-		PluginBinDirs: nil,
+		PluginBinDirs: input.StoreConfig.PluginBinDirs,
 		Stores:        []storeConfig.StorePluginConfig{input.StoreConfig.Store},
 	}
 	stores, storeErr := factory.CreateStoresFromConfig(storeConfigs, "")
