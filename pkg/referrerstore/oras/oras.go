@@ -45,6 +45,8 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/aws"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/azure"
+	"github.com/deislabs/ratify/pkg/referrerstore/utils"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
 )
@@ -53,6 +55,9 @@ const (
 	HttpMaxIdleConns        = 100
 	HttpMaxConnsPerHost     = 100
 	HttpMaxIdleConnsPerHost = 100
+	HttpRetryMax            = 10
+	HttpRetryDurationMin    = 100 // value in millisecond
+	HttpRetryDurationMax    = 200 // value in millisecond
 )
 
 const (
@@ -119,13 +124,26 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return nil, fmt.Errorf("could not create local oras cache at path %s: %s", conf.LocalCachePath, err)
 	}
 
-	// define the http Transport for TLS enabled
+	// define the http client for TLS enabled
+	secureRetryClient := retryablehttp.NewClient()
+	secureRetryClient.RetryMax = HttpRetryMax
+	secureRetryClient.Backoff = retryablehttp.LinearJitterBackoff
+	secureRetryClient.RetryWaitMin = time.Duration(HttpRetryDurationMin * time.Millisecond)
+	secureRetryClient.RetryWaitMax = time.Duration(HttpRetryDurationMax * time.Millisecond)
+	secureRetryClient.Logger = utils.HttpRetryLogger{}
 	secureTransport := http.DefaultTransport.(*http.Transport).Clone()
 	secureTransport.MaxIdleConns = HttpMaxIdleConns
 	secureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
 	secureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
+	secureRetryClient.HTTPClient.Transport = secureTransport
 
-	// define the http Transport for TLS disabled
+	// define the http client for TLS disabled
+	insecureRetryClient := retryablehttp.NewClient()
+	insecureRetryClient.RetryMax = HttpRetryMax
+	insecureRetryClient.Backoff = retryablehttp.LinearJitterBackoff
+	insecureRetryClient.RetryWaitMin = time.Duration(HttpRetryDurationMin * time.Millisecond)
+	insecureRetryClient.RetryWaitMax = time.Duration(HttpRetryDurationMax * time.Millisecond)
+	insecureRetryClient.Logger = utils.HttpRetryLogger{}
 	insecureTransport := http.DefaultTransport.(*http.Transport).Clone()
 	insecureTransport.MaxIdleConns = HttpMaxIdleConns
 	insecureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
@@ -133,13 +151,14 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	insecureTransport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
+	insecureRetryClient.HTTPClient.Transport = insecureTransport
 
 	return &orasStore{config: &conf,
 		rawConfig:          config.StoreConfig{Version: version, Store: storeConfig},
 		localCache:         localRegistry,
 		authProvider:       authenticationProvider,
-		httpClient:         &http.Client{Timeout: 10 * time.Second, Transport: secureTransport},
-		httpClientInsecure: &http.Client{Timeout: 10 * time.Second, Transport: insecureTransport}}, nil
+		httpClient:         secureRetryClient.StandardClient(),
+		httpClientInsecure: insecureRetryClient.StandardClient()}, nil
 }
 
 func (store *orasStore) Name() string {
@@ -338,8 +357,8 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 	credentialProvider := func(ctx context.Context, registry string) (auth.Credential, error) {
 		if authConfig.Username != "" || authConfig.Password != "" || authConfig.IdentityToken != "" {
 			return auth.Credential{
-				Username: authConfig.Username,
-				Password: authConfig.Password,
+				Username:     authConfig.Username,
+				Password:     authConfig.Password,
 				RefreshToken: authConfig.IdentityToken,
 			}, nil
 		}

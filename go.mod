@@ -17,6 +17,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
+	github.com/hashicorp/go-retryablehttp v0.7.1
 	github.com/notaryproject/notation-core-go v1.0.0-rc.1
 	github.com/notaryproject/notation-go v1.0.0-rc.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
@@ -44,6 +45,7 @@ require (
 	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 )
 
 require (
