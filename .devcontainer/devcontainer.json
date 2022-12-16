@@ -44,8 +44,7 @@
 				"ms-kubernetes-tools.vscode-kubernetes-tools",
 				"DavidAnson.vscode-markdownlint",
 				"humao.rest-client",
-				"zxh404.vscode-proto3",
-				"hediet.vscode-drawio"
+				"zxh404.vscode-proto3"
 			]
 		}
 	},
