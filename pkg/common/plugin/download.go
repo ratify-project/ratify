@@ -12,11 +12,14 @@ import (
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
 func DownloadPlugin(name string, source string, pluginBinDir string) error {
+	ctx := context.TODO()
+
 	// Initialize a repository
 	repository, err := remote.NewRepository(source)
 	if err != nil {
@@ -36,7 +39,7 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 				return auth.EmptyCredential, err
 			}
 
-			authConfig, err := authProvider.Provide(context.TODO(), source)
+			authConfig, err := authProvider.Provide(ctx, source)
 			if err != nil {
 				return auth.EmptyCredential, err
 			}
@@ -53,12 +56,14 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	}
 
 	// read the reference manifest
-	referenceManifestDescriptor, err := repository.Resolve(context.TODO(), source)
+	logrus.Infof("Downloading plugin %s from %s", name, source)
+	referenceManifestDescriptor, err := repository.Resolve(ctx, source)
 	if err != nil {
 		return err
 	}
+	logrus.Debugf("Resolved plugin manifest: %v", referenceManifestDescriptor)
 
-	manifestReader, err := repository.Fetch(context.TODO(), referenceManifestDescriptor)
+	manifestReader, err := repository.Fetch(ctx, referenceManifestDescriptor)
 	if err != nil {
 		return err
 	}
@@ -76,12 +81,14 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	// Download the contents of the first blob as the named plugin. This matches `oras push registry.example.com/sample-plugin:v1 ./sample`
 	// TODO: should this be "first/only blob of media type `application/vnd.ratify.plugin`"?
 	blobReference := fmt.Sprintf("%s@%s", source, referenceManifest.Blobs[0].Digest)
-	_, blobReader, err := repository.Blobs().FetchReference(context.TODO(), blobReference)
+	logrus.Debugf("Downloading blob %s", blobReference)
+	_, blobReader, err := repository.Blobs().FetchReference(ctx, blobReference)
 	if err != nil {
 		return err
 	}
 	
 	pluginPath := path.Join(pluginBinDir, name)
+	logrus.Infof("Downloading plugin %s to %s", name, pluginPath)
 	pluginFile, err := os.Create(pluginPath)
 	if err != nil {
 		return err
@@ -94,6 +101,7 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	}
 
 	// Mark the plugin as executable
+	logrus.Debugf("Marking plugin %s as executable", pluginPath)
 	err = os.Chmod(pluginPath, 0700)
 	if err != nil {
 		return err
