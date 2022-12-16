@@ -128,11 +128,6 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
-
-	if executor.Config.ExecutionMode == config.PassthroughExecutionMode {
-		overallVerifySuccess = true
-	}
-
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
