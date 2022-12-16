@@ -1,3 +1,4 @@
+{{- $dockerAuthMode := or .Values.dockerConfig .Values.registryCredsSecret -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -41,6 +42,13 @@ data:
                 ,
                 "authProvider": {
                     "name": "awsEcrBasic"
+                }
+                {{- end }}
+                {{- if $dockerAuthMode }}
+                ,
+                "authProvider": {
+                    "name": "dockerConfig",
+                    "configPath": "/usr/local/docker"
                 }
                 {{- end }}
             }
