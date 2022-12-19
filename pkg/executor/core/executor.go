@@ -35,7 +35,8 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const defaultRequestTimeoutMilliseconds = 2800
+const defaultVerifyRequestTimeoutMilliseconds = 2900
+const defaultMutateRequestTimeoutMilliseconds = 950
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
@@ -60,9 +61,17 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 }
 
 func (executor Executor) GetVerifyRequestTimeout() time.Duration {
-	timeoutMilliSeconds := defaultRequestTimeoutMilliseconds
-	if executor.Config != nil && executor.Config.RequestTimeout != nil {
-		timeoutMilliSeconds = *executor.Config.RequestTimeout
+	timeoutMilliSeconds := defaultVerifyRequestTimeoutMilliseconds
+	if executor.Config != nil && executor.Config.VerificationRequestTimeout != nil {
+		timeoutMilliSeconds = *executor.Config.VerificationRequestTimeout
+	}
+	return time.Duration(timeoutMilliSeconds) * time.Millisecond
+}
+
+func (executor Executor) GetMutationRequestTimeout() time.Duration {
+	timeoutMilliSeconds := defaultMutateRequestTimeoutMilliseconds
+	if executor.Config != nil && executor.Config.MutationRequestTimeout != nil {
+		timeoutMilliSeconds = *executor.Config.MutationRequestTimeout
 	}
 	return time.Duration(timeoutMilliSeconds) * time.Millisecond
 }

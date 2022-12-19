@@ -17,6 +17,7 @@ package config
 
 // ExecutorConfig represents the configuration for the executor
 type ExecutorConfig struct {
-	RequestTimeout *int   `json:"requestTimeout"`
+	VerificationRequestTimeout *int `json:"verificationRequestTimeout"`
+	MutationRequestTimeout     *int `json:"mutationRequestTimeout"`
 	// TODO Add cache config
 }

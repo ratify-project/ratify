@@ -1,10 +1,26 @@
 apiVersion: externaldata.gatekeeper.sh/v1alpha1
 kind: Provider
 metadata:
-  name: ratify-provider
+  name: ratify-verification-provider
 spec:
   url: {{ if .Values.provider.auth }}https{{ else }}http{{ end }}://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
   timeout: 7
+  {{- if .Values.provider.tls.skipVerify }} # allow gatekeeper with version < 3.9.x
+  insecureTLSSkipVerify: true # enable this if the provider uses HTTP so that Gatekeeper can skip TLS verification.
+  {{- end }}
+  {{- if .Values.provider.auth }}
+  caBundle: {{ required "You must provide .Values.provider.tls.cabundle when .Values.provider.auth is set" .Values.provider.tls.cabundle }}
+  {{- end }}
+
+---
+
+apiVersion: externaldata.gatekeeper.sh/v1alpha1
+kind: Provider
+metadata:
+  name: ratify-mutation-provider
+spec:
+  url: {{ if .Values.provider.auth }}https{{ else }}http{{ end }}://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/mutate
+  timeout: 1
   {{- if .Values.provider.tls.skipVerify }} # allow gatekeeper with version < 3.9.x
   insecureTLSSkipVerify: true # enable this if the provider uses HTTP so that Gatekeeper can skip TLS verification.
   {{- end }}

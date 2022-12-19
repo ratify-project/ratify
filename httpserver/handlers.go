@@ -25,6 +25,7 @@ import (
 	"time"
 
 	e "github.com/deislabs/ratify/pkg/executor"
+	pkgUtils "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/utils"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
@@ -87,6 +88,58 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 	wg.Wait()
 
+	return sendResponse(&results, "", w, http.StatusOK)
+}
+
+func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	sanitizedMethod := utils.SanitizeString(r.Method)
+	sanitizedURL := utils.SanitizeURL(*r.URL)
+	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return fmt.Errorf("unable to read request body: %v", err)
+	}
+
+	// parse request body
+	var providerRequest externaldata.ProviderRequest
+	err = json.Unmarshal(body, &providerRequest)
+	if err != nil {
+		return fmt.Errorf("unable to unmarshal request body: %v", err)
+	}
+
+	results := make([]externaldata.Item, 0)
+	wg := sync.WaitGroup{}
+	mu := sync.RWMutex{}
+
+	for _, image := range providerRequest.Request.Keys {
+		wg.Add(1)
+		go func(image string) {
+			defer wg.Done()
+			logrus.Infof("image for request %v %v is %v", sanitizedMethod, sanitizedURL, image)
+			returnItem := externaldata.Item{
+				Key:   image,
+				Value: image,
+			}
+			parsedReference, err := pkgUtils.ParseSubjectReference(image)
+			if err != nil {
+				logrus.Errorf("failed to mutate image reference %s: %v", image, err)
+				returnItem.Error = err.Error() // TODO: wrap error
+			}
+			if parsedReference.Digest != "" {
+				descriptor, err := server.GetExecutor().ReferrerStores[0].GetSubjectDescriptor(ctx, parsedReference)
+				if err != nil {
+					logrus.Errorf("failed to mutate image reference %s: %v", image, err)
+					returnItem.Error = err.Error() // TODO: wrap error
+				}
+				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
+			}
+			mu.Lock()
+			defer mu.Unlock()
+			results = append(results, returnItem)
+
+		}(utils.SanitizeString(image))
+	}
 	return sendResponse(&results, "", w, http.StatusOK)
 }
 
