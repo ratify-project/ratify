@@ -3,7 +3,6 @@ dist/
 local_oras_cache/
 .idea
 __debug_bin
-.DS_Store
 
 # generated certificate directory
 certs/
