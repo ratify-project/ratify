@@ -5,5 +5,4 @@ metadata:
 spec:
   name: sbom
   artifactTypes: sbom/example
-  parameters: 
-    nestedReferences: application/vnd.cncf.notary.signature
+  parameters: {}

@@ -1,5 +1,8 @@
 {
     "executor": {
+        "nestedReferences": {
+            "org.example.sbom.v0": true
+        }
     },
     "store": {
         "version": "1.0.0",
@@ -50,8 +53,7 @@
             },
             {
                 "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
+                "artifactTypes": "org.example.sbom.v0"
             },
             {
                 "name": "licensechecker",

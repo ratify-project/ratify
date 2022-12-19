@@ -162,7 +162,7 @@ type ReferenceVerifier interface {
 
 ## Executor
 
-The executor is responsible for composing multiple verifiers with multiple stores to create a workflow of verification for an artifact. For a given subject, it fetches all referrers from multiple stores and ensures multiple verifiers can be chained and executed one after the other. It is also responsible for handling [**nested verification**](#Nested-Verification) as required for some artifact types.
+The executor is responsible for composing multiple verifiers with multiple stores to create a workflow of verification for an artifact. For a given subject, it fetches all referrers from multiple stores and ensures multiple verifiers can be chained and executed one after the other. It is also responsible for handling [**nested verification**](./README.md#nested-verification) as required for some artifact types.
 
 ### Sample Interface
 
@@ -188,7 +188,7 @@ type Executor interface {
 
 ### Nested Verification
 
-For some artifact types, nested verification MAY be required for hierarchical verification. For e.g. when verifying an SBOM, we first need to ensure that the attestation for SBOM is validated before validating the actual SBOM.
+For some artifact types, nested verification MAY be required for hierarchical verification. For e.g. when verifying an SBOM, we need to ensure that the attestation for SBOM is validated as well as validating the actual SBOM.
 
 ```yaml
 IMAGE
@@ -196,7 +196,7 @@ IMAGE
     └── SIGNATURE
 ```
 
-There could be a tree of references that needs to be traversed and verified before verifying a reference artifact. Verification of nested references creates a recursive process of verification within the workflow. The final verification result should include the results of each and every verifier that is invoked as part of nested verification.
+There could be a tree of references that needs to be traversed and verified when verifying a reference artifact. Verification of nested references creates a recursive process of verification within the workflow. The final verification result should include the results of each and every verifier that is invoked as part of nested verification.
 
 ### Sample Data Flow for executor
 
@@ -542,7 +542,6 @@ A verifier will be registered as a plugin with the following configuration param
 | name     | string     | true     |The name of the plugin|
 | pluginBinDirs     | array     | false     |The list of paths to look for the plugin binary to execute. Default: the home path of the framework. |
 | artifactTypes     | array     | true     |The list of artifact types for which this verifier plugin has to be invoked. [TBD] May change to `matchingLabels` |
-| nestedReferences     | array     | false     |The list of artifact types for which this verifier should initiate nested verification. [TBD] This is subject to change as it is under review |
 
 Any other parameters specified for a plugin other than the above mentioned are considered as opaque and will be passed to the plugin when invoked.
 
@@ -554,7 +553,7 @@ The section `executor` defines the configuration of the framework executor compo
 | -------- | -------- | -------- | --------- |
 | cache     | bool     | false     |Default: false. Determines if in-memory cache can be used to cache the executor outcomes for an artifact. |
 | cacheExpiry     | string     | false     |Default: [TBD]. Determines the TTL for the executor cache item. |
-
+| nestedReferences     | map[string]bool     | false     |The list of artifact types for which the executor should initiate nested verification. |
 ### Policy Engine Configuration
 
 The section `policy` defines the configuration of the policy engine used by the framework.
@@ -582,7 +581,6 @@ verifiers:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
 executor:
   cache: false
 policy:

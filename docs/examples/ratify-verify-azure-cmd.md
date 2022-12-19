@@ -202,6 +202,11 @@ notation sign $REPO@$SBOM_DIGEST
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
+    "executor": {
+        "nestedReferences": {
+            "sbom/example": true
+        }
+    }
     "store": { 
         "version": "1.0.0", 
         "plugins": [ 
@@ -232,8 +237,7 @@ cat <<EOF > ~/.ratify/config.json
             },
             {
                 "name":"sbom",
-                "artifactTypes" : "sbom/example",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
+                "artifactTypes" : "sbom/example"
             }
         ]
     }
