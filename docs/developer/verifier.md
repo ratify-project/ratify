@@ -103,7 +103,7 @@ The framework will invoke this method of the verifier to determine if it support
 
 #### Verify
 
-If verifier acknowledges its support for a reference type, the framework will invoke this method on the verifier to trigger the verification of the artifact reference. In addition to the artifact reference that has to be verified, the framework MUST include the associated referrer store and the framework's execution engine as part of the invocation. This will enable the verifier to query additional data from the store as needed.
+If verifier acknowledges its support for a reference type, the framework will invoke this method on the verifier to trigger the verification of the artifact reference. In addition to the artifact reference that has to be verified, the framework MUST include the associated referrer store as part of the invocation. This will enable the verifier to query additional data from the store as needed.
 
 ### Section 3 : Plugin Based Verifier
 
