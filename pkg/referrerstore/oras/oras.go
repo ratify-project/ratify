@@ -52,12 +52,12 @@ import (
 )
 
 const (
-	HttpMaxIdleConns        = 100
-	HttpMaxConnsPerHost     = 100
-	HttpMaxIdleConnsPerHost = 100
-	HttpRetryMax            = 10
-	HttpRetryDurationMin    = 100 // value in millisecond
-	HttpRetryDurationMax    = 200 // value in millisecond
+	HttpMaxIdleConns                      = 100
+	HttpMaxConnsPerHost                   = 100
+	HttpMaxIdleConnsPerHost               = 100
+	HttpRetryMax                          = 10
+	HttpRetryDurationMin    time.Duration = 100 * time.Millisecond
+	HttpRetryDurationMax    time.Duration = 200 * time.Millisecond
 )
 
 const (
@@ -128,8 +128,8 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	secureRetryClient := retryablehttp.NewClient()
 	secureRetryClient.RetryMax = HttpRetryMax
 	secureRetryClient.Backoff = retryablehttp.LinearJitterBackoff
-	secureRetryClient.RetryWaitMin = time.Duration(HttpRetryDurationMin * time.Millisecond)
-	secureRetryClient.RetryWaitMax = time.Duration(HttpRetryDurationMax * time.Millisecond)
+	secureRetryClient.RetryWaitMin = HttpRetryDurationMin
+	secureRetryClient.RetryWaitMax = HttpRetryDurationMax
 	secureRetryClient.Logger = utils.HttpRetryLogger{}
 	secureTransport := http.DefaultTransport.(*http.Transport).Clone()
 	secureTransport.MaxIdleConns = HttpMaxIdleConns
@@ -141,8 +141,8 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	insecureRetryClient := retryablehttp.NewClient()
 	insecureRetryClient.RetryMax = HttpRetryMax
 	insecureRetryClient.Backoff = retryablehttp.LinearJitterBackoff
-	insecureRetryClient.RetryWaitMin = time.Duration(HttpRetryDurationMin * time.Millisecond)
-	insecureRetryClient.RetryWaitMax = time.Duration(HttpRetryDurationMax * time.Millisecond)
+	insecureRetryClient.RetryWaitMin = HttpRetryDurationMin
+	insecureRetryClient.RetryWaitMax = HttpRetryDurationMax
 	insecureRetryClient.Logger = utils.HttpRetryLogger{}
 	insecureTransport := http.DefaultTransport.(*http.Transport).Clone()
 	insecureTransport.MaxIdleConns = HttpMaxIdleConns
