@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.18.4
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.4
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
-	github.com/docker/cli v20.10.21+incompatible
+	github.com/docker/cli v20.10.22+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/golang/protobuf v1.5.2
