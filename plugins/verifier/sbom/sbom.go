@@ -46,10 +46,6 @@ type PackageInfo struct {
 	Version string `json:"versionInfo,omitempty"`
 }
 
-type SbomContents struct {
-	Contents string `json:"contents"`
-}
-
 const (
 	// TODO: Update to be "application/spdx+json"
 	// after test after is correctly tagged
