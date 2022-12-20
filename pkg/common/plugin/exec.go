@@ -24,6 +24,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -52,6 +54,22 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 	c.Stdin = bytes.NewBuffer(stdinData)
 	c.Stdout = stdout
 	c.Stderr = stderr
+
+	// DEBUG: log the process details used to launch the binary plugin
+	if logrus.IsLevelEnabled(logrus.DebugLevel) {
+		logrus.Debugf("launching plugin %s", pluginPath)
+
+		pluginEnv := make([]string, 3)
+		for _, env := range environ {
+			// plugins inherit all env vars, but we're interested in the RATIFY_* ones. This also helps to keep secret values out of the logs.
+			if strings.HasPrefix(env, "RATIFY_") {
+				pluginEnv = append(pluginEnv, env)
+			}
+		}
+		logrus.Debugf("env vars: %v", pluginEnv)
+		logrus.Debugf("args: %v", cmdArgs)
+		logrus.Debugf("stdin: %s", stdinData)
+	}
 
 	// Retry the command on "text file busy" errors
 	for i := 0; i <= maxRetryCount; i++ {

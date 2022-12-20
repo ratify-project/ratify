@@ -82,7 +82,6 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 		}},
 		Verifiers: []verifier.ReferenceVerifier{&TestVerifier{}},
 		Config: &exConfig.ExecutorConfig{
-			ExecutionMode:  "",
 			RequestTimeout: nil,
 		},
 	}
@@ -129,7 +128,6 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			ExecutionMode:  "default",
 			RequestTimeout: nil,
 		},
 	}
@@ -188,7 +186,6 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			ExecutionMode:  "",
 			RequestTimeout: nil,
 		},
 	}
@@ -240,7 +237,6 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			ExecutionMode:  "",
 			RequestTimeout: nil,
 		},
 	}
@@ -300,7 +296,6 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			ExecutionMode:  "",
 			RequestTimeout: nil,
 		},
 	}
