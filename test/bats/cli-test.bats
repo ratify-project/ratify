@@ -35,6 +35,11 @@ load helpers
     assert_cmd_verify_failure
 }
 
+@test "schemavalidator verifier test" {   
+    run bin/ratify verify -c $RATIFY_DIR/config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed
+    assert_cmd_verify_success
+}
+
 @test "sbom/notary/cosign/licensechecker verifiers test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_cmd_verify_success
