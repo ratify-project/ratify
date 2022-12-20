@@ -126,7 +126,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				logrus.Errorf("failed to mutate image reference %s: %v", image, err)
 				returnItem.Error = err.Error() // TODO: wrap error
 			}
-			if parsedReference.Digest != "" {
+			if parsedReference.Digest == "" {
 				descriptor, err := server.GetExecutor().ReferrerStores[0].GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
 					logrus.Errorf("failed to mutate image reference %s: %v", image, err)
@@ -140,6 +140,8 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 
 		}(utils.SanitizeString(image))
 	}
+	wg.Wait()
+
 	return sendResponse(&results, "", w, http.StatusOK)
 }
 

@@ -18,6 +18,7 @@ package httpserver
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -165,6 +166,76 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 		retFirstKey := respBody.Response.Items[0].Key
 		if retFirstKey != testImageNames[1] {
 			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[1], retFirstKey)
+		}
+	})
+}
+
+func TestServer_Mutation_Success(t *testing.T) {
+	timeoutDuration := 6
+	testImageNameTagged := "localhost:5000/net-monitor:v1"
+	testDigest := digest.FromString("test")
+	testImageNameDigested := fmt.Sprintf("localhost:5000/net-monitor@%s", testDigest)
+	t.Run("server_timeout_fail", func(t *testing.T) {
+		body := new(bytes.Buffer)
+
+		json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageNameTagged}))
+		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/mutate", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
+		responseRecorder := httptest.NewRecorder()
+
+		configPolicy := config.PolicyEnforcer{
+			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+				"test-type1": types.AnyVerifySuccess,
+			}}
+		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
+			{
+				ArtifactType: "test-type1",
+			}},
+			ResolveMap: map[string]digest.Digest{
+				"v1": testDigest,
+			},
+		}
+		ver := &core.TestVerifier{
+			CanVerifyFunc: func(at string) bool {
+				return at == "test-type1"
+			},
+			VerifyResult: func(artifactType string) bool {
+				time.Sleep(time.Duration(timeoutDuration) * time.Second)
+				return true
+			},
+		}
+
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
+		server := &Server{
+			GetExecutor: getExecutor,
+			Context:     request.Context(),
+		}
+
+		handler := contextHandler{
+			context: server.Context,
+			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout()),
+		}
+
+		handler.ServeHTTP(responseRecorder, request)
+		if responseRecorder.Code != http.StatusOK {
+			t.Errorf("Want status '%d', got '%d'", http.StatusOK, responseRecorder.Code)
+		}
+
+		var respBody externaldata.ProviderResponse
+		json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody)
+		retFirstValue := respBody.Response.Items[0].Value
+		if retFirstValue != testImageNameDigested {
+			t.Fatalf("Expected mutation response to be %s but got %s", testImageNameDigested, retFirstValue)
 		}
 	})
 }
