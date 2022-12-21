@@ -26,3 +26,7 @@ spec:
     authProvider:
       name: awsEcrBasic
     {{- end }}
+    {{- if .Values.oras.cache.enabled }}
+    cacheEnabled: true
+    ttl: {{ .Values.oras.cache.ttl }}
+    {{- end }}

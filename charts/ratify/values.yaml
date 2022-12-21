@@ -71,6 +71,9 @@ oras:
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
+  cache:
+    enabled: true
+    ttl: 10  # in seconds
 
 provider:
   tls:

@@ -43,6 +43,7 @@ require (
 require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
+	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
