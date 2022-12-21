@@ -61,7 +61,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	// if source is specified, download the plugin
-	if source, ok := verifierConfig[types.Source]; ok {
+	if source, ok := verifierConfig[types.Source]; ok && source != "" {
 		sourceStr := fmt.Sprintf("%s", source)
 		err := pluginCommon.DownloadPlugin(verifierNameStr, sourceStr, pluginBinDir[0])
 		if err != nil {

@@ -60,7 +60,7 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 	}
 
 	// if source is specified, download the plugin
-	if source, ok := storeConfig[types.Source]; ok {
+	if source, ok := storeConfig[types.Source]; ok && source != "" {
 		sourceStr := fmt.Sprintf("%s", source)
 		err := pluginCommon.DownloadPlugin(storeNameStr, sourceStr, pluginBinDir[0])
 		if err != nil {
