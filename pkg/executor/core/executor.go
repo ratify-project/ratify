@@ -171,7 +171,7 @@ func (ex Executor) addNestedVerifierResult(ctx context.Context, referenceDesc oc
 	nestedVerifyResult, err := ex.VerifySubject(ctx, verifyParameters)
 
 	if err != nil {
-		logrus.Errorf("Error verifying subject %s@%s: %w", subjectRef.Path, referenceDesc.Digest, err)
+		logrus.Errorf("Error verifying subject %s@%s: %v", subjectRef.Path, referenceDesc.Digest, err)
 	}
 
 	for _, report := range nestedVerifyResult.VerifierReports {
