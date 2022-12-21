@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
-	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 )
 
 // Verifies that Enabled checks if tenantID is empty or AAD token is empty
