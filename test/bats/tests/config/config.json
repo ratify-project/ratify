@@ -19,7 +19,8 @@
         "plugins": [
             {
                 "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0"
+                "artifactTypes": "org.example.sbom.v0",
+                "nestedReferences": "application/vnd.cncf.notary.signature"
             },
             {
                 "name": "cosign",
