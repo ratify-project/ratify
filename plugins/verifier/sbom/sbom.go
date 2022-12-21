@@ -47,9 +47,7 @@ type PackageInfo struct {
 }
 
 const (
-	// TODO: Update to be "application/spdx+json"
-	// after test after is correctly tagged
-	SpdxJsonMediaType string = "application/json"
+	SpdxJsonMediaType string = "application/spdx+json"
 )
 
 func main() {
