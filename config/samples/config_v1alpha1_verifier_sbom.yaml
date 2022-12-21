@@ -4,6 +4,4 @@ metadata:
   name: verifier-sbom
 spec:
   name: sbom
-  artifactTypes: sbom/example
-  parameters: 
-    nestedReferences: application/vnd.cncf.notary.signature
+  artifactTypes: org.example.sbom.v0
