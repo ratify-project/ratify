@@ -292,19 +292,27 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-	repository, expiry, err := store.createRepository(ctx, subjectReference)
-	if err != nil {
-		return nil, err
-	}
+	var desc oci.Descriptor
+	if subjectReference.Digest != "" {
+		desc = oci.Descriptor{
+			Digest: subjectReference.Digest,
+			Size:   0,
+		}
+	} else {
+		repository, expiry, err := store.createRepository(ctx, subjectReference)
+		if err != nil {
+			return nil, err
+		}
 
-	desc, err := repository.Resolve(ctx, subjectReference.Original)
-	if err != nil {
-		store.evictAuthCache(subjectReference.Original, err)
-		return nil, err
-	}
+		desc, err = repository.Resolve(ctx, subjectReference.Original)
+		if err != nil {
+			store.evictAuthCache(subjectReference.Original, err)
+			return nil, err
+		}
 
-	// add the repository client to the auth cache if all repository operations successful
-	store.addAuthCache(subjectReference.Original, repository, expiry)
+		// add the repository client to the auth cache if all repository operations successful
+		store.addAuthCache(subjectReference.Original, repository, expiry)
+	}
 
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
