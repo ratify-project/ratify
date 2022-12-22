@@ -79,13 +79,14 @@ type authCacheEntry struct {
 }
 
 type orasStore struct {
-	config             *OrasStoreConf
-	rawConfig          config.StoreConfig
-	localCache         *ocitarget.Store
-	authProvider       authprovider.AuthProvider
-	authCache          sync.Map
-	httpClient         *http.Client
-	httpClientInsecure *http.Client
+	config                 *OrasStoreConf
+	rawConfig              config.StoreConfig
+	localCache             *ocitarget.Store
+	authProvider           authprovider.AuthProvider
+	authCache              sync.Map
+	subjectDescriptorCache sync.Map
+	httpClient             *http.Client
+	httpClientInsecure     *http.Client
 }
 
 func init() {
@@ -293,12 +294,10 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	var desc oci.Descriptor
-	if subjectReference.Digest != "" {
-		desc = oci.Descriptor{
-			Digest: subjectReference.Digest,
-			Size:   0,
-		}
+	if cachedDesc, ok := store.subjectDescriptorCache.Load(subjectReference.Digest); ok && subjectReference.Digest != "" {
+		desc = cachedDesc.(oci.Descriptor)
 	} else {
+		logrus.Info("no digest provided. attempting to resolve...")
 		repository, expiry, err := store.createRepository(ctx, subjectReference)
 		if err != nil {
 			return nil, err
@@ -309,7 +308,8 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 			store.evictAuthCache(subjectReference.Original, err)
 			return nil, err
 		}
-
+		// add the subject descriptor to cache
+		store.subjectDescriptorCache.Store(desc.Digest, desc)
 		// add the repository client to the auth cache if all repository operations successful
 		store.addAuthCache(subjectReference.Original, repository, expiry)
 	}

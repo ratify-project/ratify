@@ -123,13 +123,15 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 			}
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
-				logrus.Errorf("failed to mutate image reference %s: %v", image, err)
-				returnItem.Error = err.Error() // TODO: wrap error
+				errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+				logrus.Error(errMessage)
+				returnItem.Error = errMessage
 			} else if parsedReference.Digest == "" {
 				descriptor, err := server.GetExecutor().ReferrerStores[0].GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
-					logrus.Errorf("failed to mutate image reference %s: %v", image, err)
-					returnItem.Error = err.Error() // TODO: wrap error
+					errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+					logrus.Error(errMessage)
+					returnItem.Error = errMessage
 				} else {
 					returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 				}
