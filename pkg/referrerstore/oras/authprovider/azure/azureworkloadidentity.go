@@ -142,14 +142,18 @@ func getAADAccessToken(ctx context.Context, tenantID string) (confidential.AuthR
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
 	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
 	clientID := os.Getenv("AZURE_CLIENT_ID")
+	logrus.Info("Oras Auth client Id %v", clientID)
 	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
+	logrus.Info("Oras Auth tokenFilePath %v", tokenFilePath)
 	authority := os.Getenv("AZURE_AUTHORITY_HOST")
+	logrus.Info("Oras Auth authority %v", authority)
 	if clientID == "" || tokenFilePath == "" || authority == "" {
 		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_CLIENT_ID: %s, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", clientID, tokenFilePath, authority)
 	}
 
 	// read the service account token from the filesystem
 	signedAssertion, err := readJWTFromFS(tokenFilePath)
+	logrus.Info("Oras Auth signedAssertion %v", signedAssertion)
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
 	}
@@ -171,7 +175,10 @@ func getAADAccessToken(ctx context.Context, tenantID string) (confidential.AuthR
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire AAD token")
 	}
-
+	logrus.Info("Oras Auth result %v", result.AccessToken)
+	logrus.Info("Oras Auth result %v", result.GrantedScopes)
+	logrus.Info("Oras Auth result %v", result.DeclinedScopes)
+	logrus.Info("Oras Auth result %v", result.ExpiresOn)
 	return result, nil
 }
 

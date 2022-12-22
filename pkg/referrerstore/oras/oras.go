@@ -338,8 +338,8 @@ func (store *orasStore) createRepository(ctx context.Context, targetRef common.R
 	credentialProvider := func(ctx context.Context, registry string) (auth.Credential, error) {
 		if authConfig.Username != "" || authConfig.Password != "" || authConfig.IdentityToken != "" {
 			return auth.Credential{
-				Username: authConfig.Username,
-				Password: authConfig.Password,
+				Username:     authConfig.Username,
+				Password:     authConfig.Password,
 				RefreshToken: authConfig.IdentityToken,
 			}, nil
 		}
