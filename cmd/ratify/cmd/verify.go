@@ -18,12 +18,14 @@ package cmd
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/deislabs/ratify/config"
 	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
+	"github.com/deislabs/ratify/pkg/utils"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/spf13/cobra"
 )
@@ -71,6 +73,15 @@ func TestVerify(subject string) {
 func verify(opts verifyCmdOptions) error {
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
+	}
+
+	subRef, err := utils.ParseSubjectReference(opts.subject)
+	if err != nil {
+		return err
+	}
+
+	if subRef.Digest == "" {
+		fmt.Println("Warning: Tagged references should NOT be used. The resolved digest may not point to the same signed artifact, since tags are mutable.")
 	}
 
 	cf, err := config.Load(opts.configFilePath)

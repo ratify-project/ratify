@@ -181,6 +181,10 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return err
 	}
 
+	if subRef.Digest == "" {
+		fmt.Println("Warning: Tagged references should NOT be used. The resolved digest may not point to the same signed artifact, since tags are mutable.")
+	}
+
 	digest, err := utils.ParseDigest(opts.digest)
 	if err != nil {
 		return err

@@ -99,6 +99,10 @@ func discover(opts discoverCmdOptions) error {
 		return err
 	}
 
+	if subRef.Digest == "" {
+		fmt.Println("Warning: Tagged references should NOT be used. The resolved digest may not point to the same signed artifact, since tags are mutable.")
+	}
+
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
 		return err
