@@ -88,7 +88,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 	wg.Wait()
 
-	return sendResponse(&results, "", w, http.StatusOK)
+	return sendResponse(&results, "", w, http.StatusOK, false)
 }
 
 func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -125,14 +125,14 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 			if err != nil {
 				logrus.Errorf("failed to mutate image reference %s: %v", image, err)
 				returnItem.Error = err.Error() // TODO: wrap error
-			}
-			if parsedReference.Digest == "" {
+			} else if parsedReference.Digest == "" {
 				descriptor, err := server.GetExecutor().ReferrerStores[0].GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
 					logrus.Errorf("failed to mutate image reference %s: %v", image, err)
 					returnItem.Error = err.Error() // TODO: wrap error
+				} else {
+					returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 				}
-				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 			}
 			mu.Lock()
 			defer mu.Unlock()
@@ -142,13 +142,18 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	}
 	wg.Wait()
 
-	return sendResponse(&results, "", w, http.StatusOK)
+	return sendResponse(&results, "", w, http.StatusOK, true)
 }
 
-func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter, respCode int) error {
+func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter, respCode int, isMutation bool) error {
 	response := externaldata.ProviderResponse{
 		APIVersion: apiVersion,
 		Kind:       "ProviderResponse",
+	}
+
+	// only mutation webhook requires idempotency
+	if isMutation {
+		response.Response.Idempotent = true
 	}
 
 	if results != nil {
@@ -161,7 +166,7 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
-func processTimeout(h ContextHandler, duration time.Duration) ContextHandler {
+func processTimeout(h ContextHandler, duration time.Duration, isMutation bool) ContextHandler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ctx, cancel := context.WithTimeout(r.Context(), duration)
 		defer cancel()
@@ -182,7 +187,7 @@ func processTimeout(h ContextHandler, duration time.Duration) ContextHandler {
 		}
 
 		if err != nil {
-			return sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w, http.StatusInternalServerError)
+			return sendResponse(nil, fmt.Sprintf("operation failed with error %v", err), w, http.StatusInternalServerError, isMutation)
 		}
 
 		return nil

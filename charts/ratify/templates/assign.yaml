@@ -1,0 +1,24 @@
+apiVersion: mutations.gatekeeper.sh/v1beta1
+kind: Assign
+metadata:
+  name: mutate-image
+spec:
+  match:
+    scope: Namespaced
+    kinds:
+    - apiGroups: ["*"]
+      kinds: ["Pod"]
+    excludedNamespaces:
+      - "gatekeeper-system"
+      {{- if ne .Release.Namespace "gatekeeper-system"}}
+      - {{ .Release.Namespace }}
+      {{- end }}
+  applyTo:
+  - groups: [""]
+    kinds: ["Pod"]
+    versions: ["v1"]
+  location: "spec.containers[name:*].image"
+  parameters:
+    assign:
+      externalData:
+        provider: ratify-mutation-provider

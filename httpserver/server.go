@@ -119,8 +119,8 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 }
 
 func (server *Server) registerHandlers() {
-	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()))
-	server.register("POST", ServerRootURL+"/mutate", processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout()))
+	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
+	server.register("POST", ServerRootURL+"/mutate", processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
 }
 
 type ServerAddrNotFoundError struct{}
