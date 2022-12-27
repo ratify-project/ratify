@@ -31,19 +31,21 @@ import (
 )
 
 const (
-	ServerRootURL = "/ratify/gatekeeper/v1"
-	certName      = "tls.crt"
-	keyName       = "tls.key"
+	ServerRootURL                    = "/ratify/gatekeeper/v1"
+	certName                         = "tls.crt"
+	keyName                          = "tls.key"
+	defaultMutationReferrerStoreName = "oras"
 )
 
 type (
 	Server struct {
-		Address       string
-		Router        *mux.Router
-		GetExecutor   config.GetExecutor
-		Context       context.Context
-		CertDirectory string
-		CaCertFile    string
+		Address           string
+		Router            *mux.Router
+		GetExecutor       config.GetExecutor
+		Context           context.Context
+		CertDirectory     string
+		CaCertFile        string
+		MutationStoreName string
 	}
 )
 
@@ -53,12 +55,13 @@ func NewServer(context context.Context, address string, getExecutor config.GetEx
 	}
 
 	server := &Server{
-		Address:       address,
-		GetExecutor:   getExecutor,
-		Router:        mux.NewRouter(),
-		Context:       context,
-		CertDirectory: certDir,
-		CaCertFile:    caCertFile,
+		Address:           address,
+		GetExecutor:       getExecutor,
+		Router:            mux.NewRouter(),
+		Context:           context,
+		CertDirectory:     certDir,
+		CaCertFile:        caCertFile,
+		MutationStoreName: defaultMutationReferrerStoreName,
 	}
 	server.registerHandlers()
 

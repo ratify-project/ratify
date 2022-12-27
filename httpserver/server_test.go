@@ -217,8 +217,9 @@ func TestServer_Mutation_Success(t *testing.T) {
 		}
 
 		server := &Server{
-			GetExecutor: getExecutor,
-			Context:     request.Context(),
+			GetExecutor:       getExecutor,
+			Context:           request.Context(),
+			MutationStoreName: store.Name(),
 		}
 
 		handler := contextHandler{

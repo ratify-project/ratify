@@ -25,6 +25,7 @@ import (
 	"time"
 
 	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/referrerstore"
 	pkgUtils "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/utils"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
@@ -34,6 +35,7 @@ import (
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
 
 func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
 	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
@@ -59,6 +61,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 		wg.Add(1)
 		go func(subject string) {
 			defer wg.Done()
+			routineStartTime := time.Now()
 			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
 			logrus.Infof("subject for request %v %v is %v", sanitizedMethod, sanitizedURL, subject)
 			returnItem := externaldata.Item{
@@ -84,14 +87,16 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				Key:   subject,
 				Value: fromVerifyResult(result),
 			})
+			logrus.Debugf("verification: execution time for image %s: %dms", subject, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(subject))
 	}
 	wg.Wait()
-
+	logrus.Debugf("verification: execution time for request: %dms", time.Since(startTime).Milliseconds())
 	return sendResponse(&results, "", w, http.StatusOK, false)
 }
 
 func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
 	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
@@ -116,6 +121,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 		wg.Add(1)
 		go func(image string) {
 			defer wg.Done()
+			routineStartTime := time.Now()
 			logrus.Infof("image for request %v %v is %v", sanitizedMethod, sanitizedURL, image)
 			returnItem := externaldata.Item{
 				Key:   image,
@@ -127,23 +133,36 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				logrus.Error(errMessage)
 				returnItem.Error = errMessage
 			} else if parsedReference.Digest == "" {
-				descriptor, err := server.GetExecutor().ReferrerStores[0].GetSubjectDescriptor(ctx, parsedReference)
-				if err != nil {
-					errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+				var selectedStore referrerstore.ReferrerStore
+				for _, store := range server.GetExecutor().ReferrerStores {
+					if store.Name() == server.MutationStoreName {
+						selectedStore = store
+						break
+					}
+				}
+				if selectedStore == nil {
+					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store: %v", image, err)
 					logrus.Error(errMessage)
 					returnItem.Error = errMessage
 				} else {
-					returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
+					descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
+					if err != nil {
+						errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+						logrus.Error(errMessage)
+						returnItem.Error = errMessage
+					} else {
+						returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
+					}
 				}
 			}
 			mu.Lock()
 			defer mu.Unlock()
 			results = append(results, returnItem)
-
+			logrus.Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(image))
 	}
 	wg.Wait()
-
+	logrus.Debugf("mutation: execution time for request: %dms", time.Since(startTime).Milliseconds())
 	return sendResponse(&results, "", w, http.StatusOK, true)
 }
 
