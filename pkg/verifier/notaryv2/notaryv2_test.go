@@ -361,7 +361,7 @@ func TestVerify(t *testing.T) {
 				manifest: tt.manifest,
 			}
 
-			result, err := v.Verify(context.Background(), tt.ref, ocispecs.ReferenceDescriptor{}, store, testExecutor)
+			result, err := v.Verify(context.Background(), tt.ref, ocispecs.ReferenceDescriptor{}, store)
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("error = %v, expectErr = %v", err, tt.expectErr)

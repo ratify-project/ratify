@@ -321,3 +321,153 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 		t.Fatalf("verification expected to return second artifact verifier report first")
 	}
 }
+
+// TestVerifySubject_NestedReferences_Expected tests verifier config can specify nested results
+func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"default": "all",
+		}}
+	store := mocks.CreateNewTestStoreForNestedSbom()
+
+	// sbom verifier WITH nested references in config
+	sbomVerifier := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SbomArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+		nestedReferences: []string{"string-content-does-not-matter"},
+	}
+
+	signatureVerifier := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SignatureArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{sbomVerifier, signatureVerifier},
+		Config: &exConfig.ExecutorConfig{
+			RequestTimeout: nil,
+		},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: mocks.TestSubjectWithDigest,
+	}
+
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != nil {
+		t.Fatalf("verification failed with err %v", err)
+	}
+
+	if !result.IsSuccess {
+		t.Fatal("verification expected to fail")
+	}
+
+	if len(result.VerifierReports) != 2 {
+		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
+	}
+
+	// check that sbom has a nested result
+	for _, report := range result.VerifierReports {
+		castedReport := report.(verifier.VerifierResult)
+
+		// check sbom report
+		if castedReport.ArtifactType == mocks.SbomArtifactType {
+			// check sbom has one nested results
+			if len(castedReport.NestedResults) != 1 {
+				t.Fatalf("Expected sbom to have a nested result")
+			}
+			// check sbom nested result is successful
+			if !castedReport.NestedResults[0].IsSuccess {
+				t.Fatalf("Expected the sbom nested result to be successful")
+			}
+		} else {
+			// check non-sbom reports have zero nested results
+			if len(castedReport.NestedResults) != 0 {
+				t.Fatalf("Expected sbom to have a nested result")
+			}
+		}
+	}
+
+}
+
+// TestVerifySubject__NoNestedReferences_Expected tests verifier config can specify no nested results
+func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"default": "all",
+		}}
+	store := mocks.CreateNewTestStoreForNestedSbom()
+
+	// sbom verifier WITHOUT nested references in config
+	sbomVer := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SbomArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	signatureVer := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SignatureArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{sbomVer, signatureVer},
+		Config: &exConfig.ExecutorConfig{
+			RequestTimeout: nil,
+		},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: mocks.TestSubjectWithDigest,
+	}
+
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != nil {
+		t.Fatalf("verification failed with err %v", err)
+	}
+
+	if !result.IsSuccess {
+		t.Fatal("verification expected to fail")
+	}
+
+	if len(result.VerifierReports) != 2 {
+		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
+	}
+
+	// check that reports have zero nested results
+	// check each result for:
+	for _, report := range result.VerifierReports {
+		castedReport := report.(verifier.VerifierResult)
+
+		// check success
+		if !castedReport.IsSuccess {
+			t.Fatal("verification expected to succeed")
+		}
+		// no nested results
+		if len(castedReport.NestedResults) != 0 {
+			t.Fatalf("no nested results")
+		}
+	}
+
+}
