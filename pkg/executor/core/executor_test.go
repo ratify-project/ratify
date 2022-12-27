@@ -322,12 +322,13 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	}
 }
 
-// TestVerifySubject_NestedReferences_Expected tests verifier config can specify nested results
+// TestVerifySubject_NestedReferences_Expected tests verifier config can specify nested references
 func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 	configPolicy := config.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
 			"default": "all",
 		}}
+
 	store := mocks.CreateNewTestStoreForNestedSbom()
 
 	// sbom verifier WITH nested references in config
@@ -370,14 +371,13 @@ func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 	}
 
 	if !result.IsSuccess {
-		t.Fatal("verification expected to fail")
+		t.Fatal("verification expected to succeed")
 	}
 
 	if len(result.VerifierReports) != 2 {
 		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
 	}
 
-	// check that sbom has a nested result
 	for _, report := range result.VerifierReports {
 		castedReport := report.(verifier.VerifierResult)
 
@@ -385,7 +385,7 @@ func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 		if castedReport.ArtifactType == mocks.SbomArtifactType {
 			// check sbom has one nested results
 			if len(castedReport.NestedResults) != 1 {
-				t.Fatalf("Expected sbom to have a nested result")
+				t.Fatalf("Expected sbom report to have 1 nested result")
 			}
 			// check sbom nested result is successful
 			if !castedReport.NestedResults[0].IsSuccess {
@@ -394,14 +394,14 @@ func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 		} else {
 			// check non-sbom reports have zero nested results
 			if len(castedReport.NestedResults) != 0 {
-				t.Fatalf("Expected sbom to have a nested result")
+				t.Fatalf("Expected non-sboms reports to have zero nested results")
 			}
 		}
 	}
 
 }
 
-// TestVerifySubject__NoNestedReferences_Expected tests verifier config can specify no nested results
+// TestVerifySubject__NoNestedReferences_Expected tests verifier config can specify no nested references
 func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
 	configPolicy := config.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
@@ -448,25 +448,24 @@ func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
 	}
 
 	if !result.IsSuccess {
-		t.Fatal("verification expected to fail")
+		t.Fatal("verification expected to succeed")
 	}
 
 	if len(result.VerifierReports) != 2 {
 		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
 	}
 
-	// check that reports have zero nested results
-	// check each result for:
+	// check each report for: success, zero nested results
 	for _, report := range result.VerifierReports {
 		castedReport := report.(verifier.VerifierResult)
 
-		// check success
+		// check for success
 		if !castedReport.IsSuccess {
 			t.Fatal("verification expected to succeed")
 		}
-		// no nested results
+		// check there are no nested results
 		if len(castedReport.NestedResults) != 0 {
-			t.Fatalf("no nested results")
+			t.Fatalf("expected reports to have zero nested results")
 		}
 	}
 
