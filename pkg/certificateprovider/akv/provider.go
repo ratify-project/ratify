@@ -2,6 +2,7 @@ package akv
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
@@ -18,7 +19,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
-	"github.com/deislabs/ratify/pkg/certProvider/akv/types"
+	"github.com/deislabs/ratify/pkg/certificateprovider/akv/types"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -30,7 +31,7 @@ type keyvaultObject struct {
 	version        string
 }
 
-func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string) (map[string]string, error) {
+func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string) ([]types.SecretFile, error) {
 
 	keyvaultName := types.GetKeyVaultName(attrib)
 	cloudName := types.GetCloudName(attrib)
@@ -38,7 +39,7 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 	tenantID := types.GetTenantID(attrib)
 	//cloudEnvFileName := types.GetCloudEnvFileName(attrib)
 	// attributes for workload identity
-	workloadIdentityClientID := ""
+	workloadIdentityClientID := types.GetClientID(attrib)
 	//saTokens := types.GetServiceAccountTokens(attrib)
 
 	if keyvaultName == "" {
@@ -134,20 +135,17 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 				// This is the object id the user sees in the SecretProviderClassPodStatus
 				objectUID := resolvedKvObject.GetObjectUID()
 				file := types.SecretFile{
-					Path:    resolvedKvObject.GetFileName() + r.fileNameSuffix,
 					Content: objectContent,
 					UID:     objectUID,
 					Version: r.version,
 				}
-				// the validity of file permission is already checked in the validate function above
-				file.FileMode = 777
 
 				files = append(files, file)
 				//klog.V(5).InfoS("added file to the gRPC response", "file", file.Path, "pod", klog.ObjectRef{Namespace: podNamespace, Name: podName})
 			}
 		}
 	}
-	return nil, nil
+	return files, nil
 }
 
 // formatKeyVaultObject formats the fields in KeyVaultObject
@@ -206,7 +204,7 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoin
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(KeyVaultEndpoint, "/")
 
-	err := kvClient.AddToUserAgent("ratify-beta.2")
+	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to add user agent to keyvault client")
 	}
@@ -369,6 +367,27 @@ func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL strin
 	var pemData []byte
 	pemData = append(pemData, pem.EncodeToMemory(certBlock)...)
 	return []keyvaultObject{{content: string(pemData), version: version}}, nil
+}
+
+// ParsePEMCertificates parses PEM/DER encoded certificates from
+// the given PEM data.
+func ParsePEMCertificates(pemData []byte) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+	for {
+		var der *pem.Block
+		der, pemData = pem.Decode(pemData)
+		if der == nil {
+			break
+		}
+		if der.Type == "CERTIFICATE" {
+			dcerts, err := x509.ParseCertificates(der.Bytes)
+			if err != nil {
+				return nil, err
+			}
+			certs = append(certs, dcerts...)
+		}
+	}
+	return certs, nil
 }
 
 func wrapObjectTypeError(err error, objectType, objectName, objectVersion string) error {

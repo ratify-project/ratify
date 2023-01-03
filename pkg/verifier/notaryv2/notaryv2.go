@@ -23,10 +23,9 @@ import (
 	paths "path/filepath"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/certProvider"
-
 	ratifyconfig "github.com/deislabs/ratify/config"
 
+	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -85,7 +84,7 @@ func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Ty
 	// sample entry point to initialize them,
 	// if this is azurekv, fetch azureCert
 	// certProvider should also have methods for Update and delete scenarios..
-	_, _ = certProvider.GetAkvCertProvider(ctx)
+	_, _ = certificateprovider.GetCert(ctx)
 
 	//TODO: Notary should decide to call the keyvault provider or local path
 	// How does keyvault certs integration with trust store?
@@ -93,7 +92,7 @@ func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Ty
 	//todo this is actually an array, we need a foreach
 	// if CertStore, get from keyvault provider
 
-	_ = certProvider.CertList[certStoreName]
+	_ = certificateprovider.CertList[certStoreName]
 
 	certs := make([]*x509.Certificate, 0)
 	for _, path := range s.certPaths {

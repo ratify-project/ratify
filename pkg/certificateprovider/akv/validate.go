@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/certProvider/akv/types"
+	"github.com/deislabs/ratify/pkg/certificateprovider/akv/types"
 )
 
 // validate is a helper function to validate the given object

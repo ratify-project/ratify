@@ -88,7 +88,9 @@ func GetObjects(parameters map[string]string) string {
 // GetObjectsArray returns the key vault objects array
 func GetObjectsArray(objects string) (StringArray, error) {
 	var a StringArray
+	//var b string // Susan to Fix this
 	err := yaml.Unmarshal([]byte(objects), &a)
+
 	return a, err
 }
 

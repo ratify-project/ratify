@@ -63,23 +63,19 @@ func getAuthorizerForWorkloadIdentity(ctx context.Context, clientID, signedAsser
 		return nil, fmt.Errorf("failed to parse expires_on: %w", err)
 	}
 
-	oauthConfig, err := adal.NewOAuthConfig(aadEndpoint, tenantID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create OAuth config: %w", err)
-	}
-	spt, err := adal.NewServicePrincipalTokenFromManualToken(*oauthConfig, clientID, resource, token, nil)
-	if err != nil {
-		return nil, err
-	}
-	return autorest.NewBearerAuthorizer(spt), nil
+	//question, what is token for?
 
-	/*
-		return autorest.NewBearerAuthorizer(authResult{
-			accessToken:    result.AccessToken,
-			expiresOn:      result.ExpiresOn,
-			grantedScopes:  result.GrantedScopes,
-			declinedScopes: result.DeclinedScopes,
-		}), nil*/
+	return autorest.NewBearerAuthorizer(authResult{
+		accessToken:    result.AccessToken,
+		expiresOn:      result.ExpiresOn,
+		grantedScopes:  result.GrantedScopes,
+		declinedScopes: result.DeclinedScopes,
+	}), nil
+}
+
+// OAuthToken implements the OAuthTokenProvider interface.  It returns the current access token.
+func (ar authResult) OAuthToken() string {
+	return ar.accessToken
 }
 
 // Vendored from https://github.com/Azure/go-autorest/blob/def88ef859fb980eff240c755a70597bc9b490d0/autorest/adal/token.go
@@ -111,18 +107,22 @@ func getAADAccessToken(ctx context.Context, tenantID string, scope string) (conf
 	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
 	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
-	clientID := os.Getenv("AZURE_CLIENT_ID")
+	/*clientID := os.Getenv("AZURE_CLIENT_ID")
 	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
 	authority := os.Getenv("AZURE_AUTHORITY_HOST")
+
 	if clientID == "" || tokenFilePath == "" || authority == "" {
 		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_CLIENT_ID: %s, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", clientID, tokenFilePath, authority)
 	}
 
 	// read the service account token from the filesystem
-	signedAssertion, err := readJWTFromFS(tokenFilePath)
+	/*signedAssertion, err := readJWTFromFS(tokenFilePath)
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
-	}
+	}*/
+	clientID := "1c7ac023-5bf6-4916-83f2-96dd203e35a3"
+	signedAssertion := ""
+	authority := "https://login.microsoftonline.com/"
 	cred, err := confidential.NewCredFromAssertion(signedAssertion)
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential creds")

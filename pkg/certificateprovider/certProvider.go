@@ -1,28 +1,28 @@
-package certProvider
+package certificateprovider
 
 import (
 	"context"
+
+	"github.com/deislabs/ratify/pkg/certificateprovider/akv/types"
 )
-
-type CertProvider interface {
-
-	// Fetch returns AuthConfig for registry.
-	FetchCert(ctx context.Context, artifact string) (string, error)
-}
 
 var (
 	// a map to track active stores
 	CertList = map[string]string{}
 )
 
-func GetAkvCertProvider(ctx context.Context) (CertProvider, error) {
+func GetCert(ctx context.Context) ([]types.SecretFile, error) {
 
 	//(ctx context.Context, attrib map[string]string, defaultFilePermission os.FileMode)
-	//attrib := map[string]string{}
-	//attrib["abc"] = "bcd"
+	// TODO: populate the map with keyvault info
+	attrib := map[string]string{}
+	attrib["keyvaultName"] = "notarycerts"
+	attrib["clientID"] = "1c7ac023-5bf6-4916-83f2-96dd203e35a3"
+	attrib["cloudName"] = "AzurePublicCloud"
+	attrib["tenantID"] = "72f988bf-86f1-41af-91ab-2d7cd011db47"
 
-	// probably initialize and save in
-	//akv.GetSecretsStoreObjectContent(ctx, attrib)
+	attrib["objects"] = "array:\n- |\n  objectName: wabbit-networks-io	\n  objectAlias: \"\"\n  ObjectVersion: 97a1545d893344079ce57699c8810590 \n  objectVersionHistory: 0\n  objectType: cert\n  objectFormat: \"\"\n  objectEncoding: \"\"\n  filePermission: \"\"\n"
+
 	return nil, nil
 }
 
