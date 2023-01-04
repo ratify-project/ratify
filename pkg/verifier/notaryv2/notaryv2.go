@@ -86,14 +86,6 @@ func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Ty
 	// certProvider should also have methods for Update and delete scenarios..
 	_, _ = certificateprovider.GetCert(ctx)
 
-	//TODO: Notary should decide to call the keyvault provider or local path
-	// How does keyvault certs integration with trust store?
-	certStoreName := "notaryCerts"
-	//todo this is actually an array, we need a foreach
-	// if CertStore, get from keyvault provider
-
-	_ = certificateprovider.CertList[certStoreName]
-
 	certs := make([]*x509.Certificate, 0)
 	for _, path := range s.certPaths {
 		bundledCerts, err := utils.GetCertificatesFromPath(path)

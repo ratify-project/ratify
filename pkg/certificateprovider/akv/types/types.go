@@ -3,10 +3,6 @@ package types
 import "time"
 
 const (
-	// VaultObjectTypeSecret secret vault object type
-	VaultObjectTypeSecret = "secret"
-	// VaultObjectTypeKey key vault object type
-	VaultObjectTypeKey = "key"
 	// VaultObjectTypeCertificate certificate vault object type
 	VaultObjectTypeCertificate = "cert"
 
@@ -33,18 +29,10 @@ const (
 	KeyVaultNameParameter = "keyvaultName"
 	// CloudNameParameter is the name of the cloud name parameter
 	CloudNameParameter = "cloudName"
-	// UsePodIdentityParameter is the name of the use pod identity parameter
-	UsePodIdentityParameter = "usePodIdentity"
-	// UseVMManagedIdentityParameter is the name of the use VM managed identity parameter
-	UseVMManagedIdentityParameter = "useVMManagedIdentity"
-	// UserAssignedIdentityIDParameter is the name of the user assigned identity ID parameter
-	UserAssignedIdentityIDParameter = "userAssignedIdentityID"
 	// TenantIDParameter is the name of the tenant ID parameter
 	// TODO(aramase): change this from tenantId to tenantID after v1.2 release
 	// ref: https://github.com/Azure/secrets-store-csi-driver-provider-azure/issues/857
 	TenantIDParameter = "tenantId"
-	// CloudEnvFileNameParameter is the name of the cloud env file name parameter
-	CloudEnvFileNameParameter = "cloudEnvFileName"
 	// ClientIDParameter is the name of the client ID parameter
 	// This clientID is used for workload identity
 	ClientIDParameter = "clientID"
@@ -52,36 +40,23 @@ const (
 	ObjectsParameter = "objects"
 )
 
-// KeyVaultObject holds keyvault object related config
-type KeyVaultObject struct {
+// KeyVaultCertificate holds keyvault object related config
+type KeyVaultCertificate struct {
 	// the name of the Azure Key Vault objects
-	ObjectName string `json:"objectName" yaml:"objectName"`
+	CertificateName string `json:"certificateName" yaml:"certificateName"`
 	// the filename the object will be written to
-	ObjectAlias string `json:"objectAlias" yaml:"objectAlias"`
+	CertificateAlias string `json:"certificateAlias" yaml:"certificateAlias"`
 	// the version of the Azure Key Vault objects
-	ObjectVersion string `json:"objectVersion" yaml:"objectVersion"`
+	CertificateVersion string `json:"certificateVersion" yaml:"certificateVersion"`
 	// The number of versions to load for this secret starting at the latest version
-	ObjectVersionHistory int32 `json:"objectVersionHistory" yaml:"objectVersionHistory"`
-	// the type of the Azure Key Vault objects
-	ObjectType string `json:"objectType" yaml:"objectType"`
-	// the format of the Azure Key Vault objects
-	// supported formats are PEM, PFX
-	ObjectFormat string `json:"objectFormat" yaml:"objectFormat"`
-	// The encoding of the object in KeyVault
-	// Supported encodings are Base64, Hex, Utf-8
-	ObjectEncoding string `json:"objectEncoding" yaml:"objectEncoding"`
-	// FilePermission is the file permissions
-	FilePermission string `json:"filePermission" yaml:"filePermission"`
+	CertificateVersionHistory int32 `json:"certificateVersionHistory" yaml:"certificateVersionHistory"`
 }
 
-// SecretFile holds content and metadata of a secret file that is sent
-// back to the driver
+// SecretFile holds content and metadata of a keyvault secret file
 type SecretFile struct {
-	Content  []byte
-	Path     string
-	FileMode int32
-	UID      string
-	Version  string
+	Content []byte
+	Path    string
+	Version string
 }
 
 // StringArray holds a list of strings

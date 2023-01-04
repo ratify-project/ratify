@@ -1,10 +1,6 @@
 package types
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-	"strconv"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -21,29 +17,6 @@ func GetCloudName(parameters map[string]string) string {
 	return strings.TrimSpace(parameters[CloudNameParameter])
 }
 
-// GetUsePodIdentity returns if pod identity is enabled
-func GetUsePodIdentity(parameters map[string]string) (bool, error) {
-	str := strings.TrimSpace(parameters[UsePodIdentityParameter])
-	if str == "" {
-		return false, nil
-	}
-	return strconv.ParseBool(str)
-}
-
-// GetUseVMManagedIdentity returns if VM managed identity is enabled
-func GetUseVMManagedIdentity(parameters map[string]string) (bool, error) {
-	str := strings.TrimSpace(parameters[UseVMManagedIdentityParameter])
-	if str == "" {
-		return false, nil
-	}
-	return strconv.ParseBool(str)
-}
-
-// GetUserAssignedIdentityID returns the user assigned identity ID
-func GetUserAssignedIdentityID(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[UserAssignedIdentityIDParameter])
-}
-
 // GetTenantID returns the tenant ID
 func GetTenantID(parameters map[string]string) string {
 	// ref: https://github.com/Azure/secrets-store-csi-driver-provider-azure/issues/857
@@ -53,11 +26,6 @@ func GetTenantID(parameters map[string]string) string {
 	}
 	klog.V(3).Info("tenantId is deprecated and will be removed in a future release. Use 'tenantID' instead")
 	return strings.TrimSpace(parameters[TenantIDParameter])
-}
-
-// GetCloudEnvFileName returns the cloud env file name
-func GetCloudEnvFileName(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[CloudEnvFileNameParameter])
 }
 
 // GetPodName returns the pod name
@@ -96,41 +64,16 @@ func GetObjectsArray(objects string) (StringArray, error) {
 
 // IsSyncingSingleVersion returns true if the object is configured
 // to only sync a single specific version of the secret
-func (kv KeyVaultObject) IsSyncingSingleVersion() bool {
-	return kv.ObjectVersionHistory <= 1
-}
-
-// GetObjectUID returns UID for the object with the format:
-// <object type>/<object name> if syncing a single version
-// <object type/<object name>/<version index> if syncing multiple versions
-func (kv KeyVaultObject) GetObjectUID() string {
-	if kv.IsSyncingSingleVersion() {
-		return fmt.Sprintf("%s/%s", kv.ObjectType, kv.ObjectName)
-	}
-
-	parts := strings.Split(kv.ObjectAlias, string(filepath.Separator))
-	versionIndex := parts[len(parts)-1]
-	return fmt.Sprintf("%s/%s/%s", kv.ObjectType, kv.ObjectName, versionIndex)
+func (kv KeyVaultCertificate) IsSyncingSingleVersion() bool {
+	return kv.CertificateVersionHistory <= 1
 }
 
 // GetFileName returns the file name for the secret
 // 1. If the object alias is specified, it will be used
 // 2. If the object alias is not specified, the object name will be used
-func (kv KeyVaultObject) GetFileName() string {
-	if kv.ObjectAlias != "" {
-		return kv.ObjectAlias
+func (kv KeyVaultCertificate) GetFileName() string {
+	if kv.CertificateAlias != "" {
+		return kv.CertificateAlias
 	}
-	return kv.ObjectName
-}
-
-// GetFilePermission returns the file permission and error if any
-func (kv KeyVaultObject) GetFilePermission(defaultFilePermission os.FileMode) (int32, error) {
-	if kv.FilePermission == "" {
-		return int32(defaultFilePermission), nil
-	}
-	permission, err := strconv.ParseInt(kv.FilePermission, 8, 32)
-	if err != nil {
-		return 0, fmt.Errorf("file permission must be a valid octal number: %w", err)
-	}
-	return int32(permission), nil
+	return kv.CertificateName
 }

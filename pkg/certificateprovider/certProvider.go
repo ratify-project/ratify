@@ -3,17 +3,23 @@ package certificateprovider
 import (
 	"context"
 
+	"github.com/deislabs/ratify/pkg/certificateprovider/akv"
 	"github.com/deislabs/ratify/pkg/certificateprovider/akv/types"
+	"github.com/sirupsen/logrus"
 )
 
-var (
-	// a map to track active stores
-	CertList = map[string]string{}
-)
+type CertificateProvider interface {
+	GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
+}
 
+// CRD manager call this method fetch certificate in memory
+func SetCert(ctx context.Context, attrib map[string]string) {
+	// To implement
+}
+
+// Verifier call this method to get validation certificate
 func GetCert(ctx context.Context) ([]types.SecretFile, error) {
-
-	//(ctx context.Context, attrib map[string]string, defaultFilePermission os.FileMode)
+	// TO implement
 	// TODO: populate the map with keyvault info
 	attrib := map[string]string{}
 	attrib["keyvaultName"] = "notarycerts"
@@ -21,21 +27,8 @@ func GetCert(ctx context.Context) ([]types.SecretFile, error) {
 	attrib["cloudName"] = "AzurePublicCloud"
 	attrib["tenantID"] = "72f988bf-86f1-41af-91ab-2d7cd011db47"
 
-	attrib["objects"] = "array:\n- |\n  objectName: wabbit-networks-io	\n  objectAlias: \"\"\n  ObjectVersion: 97a1545d893344079ce57699c8810590 \n  objectVersionHistory: 0\n  objectType: cert\n  objectFormat: \"\"\n  objectEncoding: \"\"\n  filePermission: \"\"\n"
-
+	attrib["objects"] = "array:\n- |\n  certificateName: wabbit-networks-io	\n  certificateAlias: \"testCert\"\n  certificateVersion: 97a1545d893344079ce57699c8810590 \n  certificateVersionHistory: 0\n"
+	files, _ := akv.GetSecretsStoreObjectContent(ctx, attrib)
+	logrus.Infof(string(files[0].Content))
 	return nil, nil
 }
-
-/*
-// returns the list of certificates from the cert cache for the given certStore
-// this doesn't not call the keyvault
-func () GetCertForCertStore(string certStoreName) {
-
-}
-
-func () initializeKvClient(ctx context.Context) {
-}
-
-// CRD tells provider how to fetch the certs, and this method fetch and stores the certs in a map
-//  periodically as well, maybe a loop if versions are not pinned ( note crd may also change)
-func () GetCerts(keyvaultname string, certStorename string, authProvider string) {*/
