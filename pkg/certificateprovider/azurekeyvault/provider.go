@@ -1,4 +1,4 @@
-package akv
+package azurekeyvault
 
 import (
 	"context"
@@ -16,21 +16,19 @@ import (
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
-	"github.com/deislabs/ratify/pkg/certificateprovider/akv/types"
+	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
-	"k8s.io/klog/v2"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 )
 
 type keyvaultObject struct {
-	content        string
-	fileNameSuffix string
-	version        string
+	content string
+	version string
 }
 
-func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string) ([]types.SecretFile, error) {
+func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]types.CertificateFile, error) {
 
 	keyvaultName := types.GetKeyVaultName(attrib)
 	cloudName := types.GetCloudName(attrib)
@@ -57,14 +55,13 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 	if objectsStrings == "" {
 		return nil, fmt.Errorf("objects is not set")
 	}
-	klog.V(2).InfoS("objects string defined in secret provider class", "objects", objectsStrings)
 	logrus.Infof("objects string defined in secret provider class, objects %v", objectsStrings)
 
 	objects, err := types.GetObjectsArray(objectsStrings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
 	}
-	//klog.V(2).InfoS("unmarshaled objects yaml array", "objectsArray", objects.Array, "pod", klog.ObjectRef{Namespace: podNamespace, Name: podName})
+	logrus.Infof("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
 	keyVaultCerts := []types.KeyVaultCertificate{}
 	for i, object := range objects.Array {
@@ -74,7 +71,7 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
 		}
 		// remove whitespace from all fields in keyVaultObject
-		formatKeyVaultObject(&keyVaultCert)
+		formatKeyVaultCertificate(&keyVaultCert)
 		if err = validate(keyVaultCert); err != nil {
 			return nil, wrapObjectTypeError(err, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion)
 		}
@@ -82,7 +79,7 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
 	}
 
-	//klog.V(5).InfoS("unmarshaled key vault objects", "keyVaultObjects", keyVaultObjects, "count", len(keyVaultObjects), "pod", klog.ObjectRef{Namespace: podNamespace, Name: podName})
+	logrus.Infof("unmarshaled key vault objects, keyVaultObjects %v , count %v", keyVaultCerts, len(keyVaultCerts))
 
 	if len(keyVaultCerts) == 0 {
 		return nil, nil
@@ -94,7 +91,7 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get vault")
 	}
-	//klog.V(2).InfoS("vault url", "vaultName", keyvaultName, "vaultURL", *vaultURL, "pod", klog.ObjectRef{Namespace: podNamespace, Name: podName})
+	logrus.Infof("vaultName %v, vaultURL %v", keyvaultName, *vaultURL)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, azureCloudEnv.ActiveDirectoryEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
@@ -102,18 +99,18 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 	}
 
 	// 3. for each object , get content bytes
-	files := []types.SecretFile{}
-	for _, keyVaultObject := range keyVaultCerts {
-		//klog.V(5).InfoS("fetching object from key vault", "objectName", keyVaultObject.ObjectName, "objectType", keyVaultObject.ObjectType, "keyvault", keyvaultName, "pod", klog.ObjectRef{Namespace: podNamespace, Name: podName})
+	files := []types.CertificateFile{}
+	for _, keyVaultCert := range keyVaultCerts {
+		logrus.Infof("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultName)
 
-		resolvedKvObjects, err := resolveCertificateVersions(ctx, kvClient, keyVaultObject, *vaultURL)
+		resolvedKvCerts, err := resolveCertificateVersions(ctx, kvClient, keyVaultCert, *vaultURL)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, resolvedKvObject := range resolvedKvObjects {
+		for _, resolvedKvCert := range resolvedKvCerts {
 			// fetch the object from Key Vault
-			result, err := getCertificate(ctx, kvClient, *vaultURL, resolvedKvObject)
+			result, err := getCertificate(ctx, kvClient, *vaultURL, resolvedKvCert)
 			if err != nil {
 				return nil, err
 			}
@@ -122,21 +119,22 @@ func GetSecretsStoreObjectContent(ctx context.Context, attrib map[string]string)
 				r := result[idx]
 				objectContent := []byte(r.content)
 
-				file := types.SecretFile{
+				file := types.CertificateFile{
+					Path:    resolvedKvCert.GetFileName(),
 					Content: objectContent,
 					Version: r.version,
 				}
 
 				files = append(files, file)
-				//klog.V(5).InfoS("added file to the gRPC response", "file", file.Path, "pod", klog.ObjectRef{Namespace: podNamespace, Name: podName})
+				logrus.Infof("added file %v to response file", file.Path)
 			}
 		}
 	}
 	return files, nil
 }
 
-// formatKeyVaultObject formats the fields in KeyVaultObject
-func formatKeyVaultObject(object *types.KeyVaultCertificate) {
+// formatKeyVaultCertificate formats the fields in KeyVaultCertificate
+func formatKeyVaultCertificate(object *types.KeyVaultCertificate) {
 	if object == nil {
 		return
 	}
@@ -191,7 +189,7 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoin
 		return nil, errors.Wrapf(err, "failed to add user agent to keyvault client")
 	}
 
-	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, clientId, kvEndpoint, aadEndpoint, tenantId)
+	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantId, clientId, kvEndpoint, aadEndpoint)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get authorizer for keyvault client")

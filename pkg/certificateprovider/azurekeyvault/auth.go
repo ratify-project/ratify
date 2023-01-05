@@ -1,4 +1,4 @@
-package akv
+package azurekeyvault
 
 import (
 	"context"
@@ -41,14 +41,14 @@ type authResult struct {
 	declinedScopes []string
 }
 
-func getAuthorizerForWorkloadIdentity(ctx context.Context, clientID, signedAssertion, resource, aadEndpoint, tenantID string) (autorest.Authorizer, error) {
+func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, resource, aadEndpoin string) (autorest.Authorizer, error) {
 
 	scope := resource
 	// .default needs to be added to the scope
 	if !strings.Contains(resource, ".default") {
 		scope = fmt.Sprintf("%s/.default", resource)
 	}
-	result, err := getAADAccessToken(ctx, tenantID, scope)
+	result, err := getAADAccessToken(ctx, tenantID, clientID, scope)
 	if err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %w", err)
 	}
@@ -100,7 +100,7 @@ func parseExpiresOn(s string) (json.Number, error) {
 }
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
-func getAADAccessToken(ctx context.Context, tenantID string, scope string) (confidential.AuthResult, error) {
+func getAADAccessToken(ctx context.Context, tenantID string, clientID string, scope string) (confidential.AuthResult, error) {
 	// Azure AD Workload Identity webhook will inject the following env vars:
 	// 	AZURE_CLIENT_ID with the clientID set in the service account annotation
 	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
@@ -120,8 +120,8 @@ func getAADAccessToken(ctx context.Context, tenantID string, scope string) (conf
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
 	}*/
-	clientID := "1c7ac023-5bf6-4916-83f2-96dd203e35a3"
-	signedAssertion := ""
+	clientID = "1c7ac023-5bf6-4916-83f2-96dd203e35a3"
+	signedAssertion := "eyJhbGciOiJSUzI1NiIsImtpZCI6ImVoeVRBY1RYYkk4TjhfUmtPcjF3RmItRDRqcjYzbDBPXzRjb29YLWVwbXcifQ.eyJhdWQiOlsiYXBpOi8vQXp1cmVBRFRva2VuRXhjaGFuZ2UiXSwiZXhwIjoxNjcyOTQ0ODIxLCJpYXQiOjE2NzI5NDEyMjEsImlzcyI6Imh0dHBzOi8vb2lkYy5wcm9kLWFrcy5henVyZS5jb20vYmVlMTUzMjgtMmZhYS00YWY5LTk5NmEtOTU2NDQ1N2EyZjA3LyIsImt1YmVybmV0ZXMuaW8iOnsibmFtZXNwYWNlIjoiZGVmYXVsdCIsInBvZCI6eyJuYW1lIjoicmF0aWZ5LWM1NjRkNmRmNS1iZGxjdyIsInVpZCI6Ijk3NjY2MTUyLWQ5YjMtNGZhZS1iMzEzLTgzMzdjM2MwNjcwZSJ9LCJzZXJ2aWNlYWNjb3VudCI6eyJuYW1lIjoid2xpZHNhIiwidWlkIjoiODIxMmQ1NjQtNjkyNy00MWJiLTllY2MtNTBlM2IzNzBhOWFhIn19LCJuYmYiOjE2NzI5NDEyMjEsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OndsaWRzYSJ9.jQ3T1b_wBtDrYm0q91ES-5ggJIGwiXk0S8fzG-llTQaipsqNrxfOrgxHdei-EWoz0LkV0Y7iI3Qed6IcpjSYiE0Mognila-n6E5KKhCvvQixwSLMQzE-94syRj6nwBwhDXYAkV53wuYZBKVt2GhQYFPw--EhBw7dpeH1N6Il9t6hFauqqsX-swhOaHqDGiZ3FoU7Y9D9bPxGSmchty7ZH58Z9j1gFDozJAKcQyCB_u5EahFBVSuu56yeC_hBVnBZZvSfViRAcDyPjK7t1V50yLlSqR7xPTKQH_YUpznKQKcb_57Xe_SxseYjhSaifSvWvaLF8LJ4pqv3rjSvaa970ENEZ2YvKRvj2Afd-OlpW2WmBjmP9kOE0MP27qZ_j8B4DDj4mwD0NzvrfeQ_-kezGpslivWt4VOFrXyzhfYofAyiPTAOznYooGqa7eiZEqXRQDbiHAG50kZEh5QdYJbuaRHWMNdCOp9zOk8P74VCbgZe3l6HD406gHmepL095lIm0QI8MMllDVT0Rc1D7oDt8pA_hhBTkDBAJv0dCLGXYlrgLqqlMyxlrV-YG3RBQEEOQmTSJuHoBanz4ZIYyANQai_j3woQJtvP1k5skTnWU1qfJFfailEgNys_URhLUNHv589HL-TBOpzaK1jadefOIBCPbpqWS220kbK9whvz9jY"
 	authority := "https://login.microsoftonline.com/"
 	cred, err := confidential.NewCredFromAssertion(signedAssertion)
 	if err != nil {

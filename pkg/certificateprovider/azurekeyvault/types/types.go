@@ -52,10 +52,10 @@ type KeyVaultCertificate struct {
 	CertificateVersionHistory int32 `json:"certificateVersionHistory" yaml:"certificateVersionHistory"`
 }
 
-// SecretFile holds content and metadata of a keyvault secret file
-type SecretFile struct {
+// CertificateFile holds content and metadata of a keyvault secret file
+type CertificateFile struct {
 	Content []byte
-	Path    string
+	Path    string //we are not writing the certificate to disk ,but we might need to path of the cert since notary trust policy allows for named trust store,
 	Version string
 }
 
