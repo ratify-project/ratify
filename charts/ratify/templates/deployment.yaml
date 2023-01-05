@@ -86,6 +86,10 @@ spec:
             {{- end }}
             {{- end }}
           env:
+          {{- if .Values.logLevel }}
+            - name: RATIFY_LOG_LEVEL
+              value: {{ .Values.logLevel }}
+          {{- end }}
           {{- if $dockerAuthMode }}
             - name: DOCKER_CONFIG
               value: "/usr/local/docker"
