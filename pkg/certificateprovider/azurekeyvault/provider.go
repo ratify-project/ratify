@@ -1,5 +1,7 @@
 package azurekeyvault
 
+// This class is based on implementation from  azure secret store csi provider
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
 import (
 	"context"
 	"crypto/x509"
@@ -70,7 +72,7 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 		if err != nil {
 			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
 		}
-		// remove whitespace from all fields in keyVaultObject
+		// remove whitespace from all fields in keyVaultCert
 		formatKeyVaultCertificate(&keyVaultCert)
 		if err = validate(keyVaultCert); err != nil {
 			return nil, wrapObjectTypeError(err, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion)

@@ -1,5 +1,7 @@
 package types
 
+// This class is based on implementation from azure secret store csi provider
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
 import (
 	"strings"
 

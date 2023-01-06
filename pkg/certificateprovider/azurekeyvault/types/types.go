@@ -2,6 +2,8 @@ package types
 
 import "time"
 
+// This class is based on implementation from  azure secret store csi provider
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
 const (
 	// VaultObjectTypeCertificate certificate vault object type
 	VaultObjectTypeCertificate = "cert"

@@ -25,7 +25,6 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 
-	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -80,11 +79,6 @@ func init() {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-
-	// sample entry point to initialize them,
-	// if this is azurekv, fetch azureCert
-	// certProvider should also have methods for Update and delete scenarios..
-	_, _ = certificateprovider.GetCert(ctx)
 
 	certs := make([]*x509.Certificate, 0)
 	for _, path := range s.certPaths {

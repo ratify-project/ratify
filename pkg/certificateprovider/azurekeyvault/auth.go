@@ -1,5 +1,7 @@
 package azurekeyvault
 
+// This class is based on implementation from  azure secret store csi provider
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
 import (
 	"context"
 	"encoding/json"
@@ -16,11 +18,6 @@ import (
 )
 
 const (
-	// Pod Identity podNameHeader
-	podNameHeader = "podname"
-	// Pod Identity podNamespaceHeader
-	podNamespaceHeader = "podns"
-
 	// the format for expires_on in UTC with AM/PM
 	expiresOnDateFormatPM = "1/2/2006 15:04:05 PM +00:00"
 	// the format for expires_on in UTC without AM/PM
@@ -62,8 +59,6 @@ func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, r
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse expires_on: %w", err)
 	}
-
-	//question, what is token for?
 
 	return autorest.NewBearerAuthorizer(authResult{
 		accessToken:    result.AccessToken,
@@ -107,7 +102,7 @@ func getAADAccessToken(ctx context.Context, tenantID string, clientID string, sc
 	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
 	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
-	/*clientID := os.Getenv("AZURE_CLIENT_ID")
+
 	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
 	authority := os.Getenv("AZURE_AUTHORITY_HOST")
 
@@ -116,13 +111,11 @@ func getAADAccessToken(ctx context.Context, tenantID string, clientID string, sc
 	}
 
 	// read the service account token from the filesystem
-	/*signedAssertion, err := readJWTFromFS(tokenFilePath)
+	signedAssertion, err := readJWTFromFS(tokenFilePath)
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
-	}*/
-	clientID = "1c7ac023-5bf6-4916-83f2-96dd203e35a3"
-	signedAssertion := "eyJhbGciOiJSUzI1NiIsImtpZCI6ImVoeVRBY1RYYkk4TjhfUmtPcjF3RmItRDRqcjYzbDBPXzRjb29YLWVwbXcifQ.eyJhdWQiOlsiYXBpOi8vQXp1cmVBRFRva2VuRXhjaGFuZ2UiXSwiZXhwIjoxNjcyOTQ0ODIxLCJpYXQiOjE2NzI5NDEyMjEsImlzcyI6Imh0dHBzOi8vb2lkYy5wcm9kLWFrcy5henVyZS5jb20vYmVlMTUzMjgtMmZhYS00YWY5LTk5NmEtOTU2NDQ1N2EyZjA3LyIsImt1YmVybmV0ZXMuaW8iOnsibmFtZXNwYWNlIjoiZGVmYXVsdCIsInBvZCI6eyJuYW1lIjoicmF0aWZ5LWM1NjRkNmRmNS1iZGxjdyIsInVpZCI6Ijk3NjY2MTUyLWQ5YjMtNGZhZS1iMzEzLTgzMzdjM2MwNjcwZSJ9LCJzZXJ2aWNlYWNjb3VudCI6eyJuYW1lIjoid2xpZHNhIiwidWlkIjoiODIxMmQ1NjQtNjkyNy00MWJiLTllY2MtNTBlM2IzNzBhOWFhIn19LCJuYmYiOjE2NzI5NDEyMjEsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OndsaWRzYSJ9.jQ3T1b_wBtDrYm0q91ES-5ggJIGwiXk0S8fzG-llTQaipsqNrxfOrgxHdei-EWoz0LkV0Y7iI3Qed6IcpjSYiE0Mognila-n6E5KKhCvvQixwSLMQzE-94syRj6nwBwhDXYAkV53wuYZBKVt2GhQYFPw--EhBw7dpeH1N6Il9t6hFauqqsX-swhOaHqDGiZ3FoU7Y9D9bPxGSmchty7ZH58Z9j1gFDozJAKcQyCB_u5EahFBVSuu56yeC_hBVnBZZvSfViRAcDyPjK7t1V50yLlSqR7xPTKQH_YUpznKQKcb_57Xe_SxseYjhSaifSvWvaLF8LJ4pqv3rjSvaa970ENEZ2YvKRvj2Afd-OlpW2WmBjmP9kOE0MP27qZ_j8B4DDj4mwD0NzvrfeQ_-kezGpslivWt4VOFrXyzhfYofAyiPTAOznYooGqa7eiZEqXRQDbiHAG50kZEh5QdYJbuaRHWMNdCOp9zOk8P74VCbgZe3l6HD406gHmepL095lIm0QI8MMllDVT0Rc1D7oDt8pA_hhBTkDBAJv0dCLGXYlrgLqqlMyxlrV-YG3RBQEEOQmTSJuHoBanz4ZIYyANQai_j3woQJtvP1k5skTnWU1qfJFfailEgNys_URhLUNHv589HL-TBOpzaK1jadefOIBCPbpqWS220kbK9whvz9jY"
-	authority := "https://login.microsoftonline.com/"
+	}
+
 	cred, err := confidential.NewCredFromAssertion(signedAssertion)
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential creds")
