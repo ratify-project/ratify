@@ -80,6 +80,9 @@ func init() {
 // will be loaded for each signature verification.
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 
+	// have crd reference or not , get keyvault reference
+	//GetCertificate（ctx, "notarycertkv1")
+
 	certs := make([]*x509.Certificate, 0)
 	for _, path := range s.certPaths {
 		bundledCerts, err := utils.GetCertificatesFromPath(path)

@@ -41,7 +41,7 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 		return nil, fmt.Errorf("keyvaultName is not set")
 	}
 	if tenantID == "" {
-		return nil, fmt.Errorf("tenantId is not set")
+		return nil, fmt.Errorf("tenantID is not set")
 	}
 	if workloadIdentityClientID == "" {
 		return nil, fmt.Errorf("clientId is not set")
@@ -182,7 +182,7 @@ func getVaultURL(keyvaultName string, KeyVaultDNSSuffix string) (vaultURL *strin
 	return &vaultURI, nil
 }
 
-func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoint string, tenantId string, clientId string) (*kv.BaseClient, error) {
+func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoint string, tenantID string, clientId string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(KeyVaultEndpoint, "/")
 
@@ -191,7 +191,7 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoin
 		return nil, errors.Wrapf(err, "failed to add user agent to keyvault client")
 	}
 
-	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantId, clientId, kvEndpoint, aadEndpoint)
+	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientId, kvEndpoint, aadEndpoint)
 
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get authorizer for keyvault client")

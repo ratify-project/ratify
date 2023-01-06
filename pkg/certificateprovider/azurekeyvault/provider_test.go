@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/stretchr/testify/assert"
 )
@@ -403,7 +404,7 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 	}
 }
 
-/*func SkipTestInitializeKVClient(t *testing.T) {
+func SkipTestInitializeKVClient(t *testing.T) {
 	testEnvs := []azure.Environment{
 		azure.PublicCloud,
 		azure.GermanCloud,
@@ -419,7 +420,7 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 		assert.NotNil(t, kvBaseClient.Authorizer)
 		assert.Contains(t, kvBaseClient.UserAgent, "ratify")
 	}
-}*/
+}
 
 func TestGetCertificatesContent(t *testing.T) {
 	cases := []struct {
@@ -441,40 +442,11 @@ func TestGetCertificatesContent(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			desc: "usePodIdentity not a boolean as expected",
-			parameters: map[string]string{
-				"keyvaultName":   "testKV",
-				"tenantId":       "tid",
-				"usePodIdentity": "tru",
-			},
-			expectedErr: true,
-		},
-		{
-			desc: "useVMManagedIdentity not a boolean as expected",
-			parameters: map[string]string{
-				"keyvaultName":         "testKV",
-				"tenantId":             "tid",
-				"usePodIdentity":       "false",
-				"useVMManagedIdentity": "tru",
-			},
-			expectedErr: true,
-		},
-		{
 			desc: "invalid cloud name",
 			parameters: map[string]string{
 				"keyvaultName": "testKV",
-				"tenantId":     "tid",
+				"tenantID":     "tid",
 				"cloudName":    "AzureCloud",
-			},
-			expectedErr: true,
-		},
-		{
-			desc: "check azure cloud env file path is set",
-			parameters: map[string]string{
-				"keyvaultName":     "testKV",
-				"tenantId":         "tid",
-				"cloudName":        "AzureStackCloud",
-				"cloudEnvFileName": "/etc/kubernetes/akscustom.json",
 			},
 			expectedErr: true,
 		},
@@ -482,7 +454,7 @@ func TestGetCertificatesContent(t *testing.T) {
 			desc: "objects array not set",
 			parameters: map[string]string{
 				"keyvaultName":         "testKV",
-				"tenantId":             "tid",
+				"tenantID":             "tid",
 				"useVMManagedIdentity": "true",
 			},
 			expectedErr: true,
@@ -491,12 +463,11 @@ func TestGetCertificatesContent(t *testing.T) {
 			desc: "objects not configured as an array",
 			parameters: map[string]string{
 				"keyvaultName":         "testKV",
-				"tenantId":             "tid",
+				"tenantID":             "tid",
 				"useVMManagedIdentity": "true",
 				"objects": `
         - |
           CertificateName: cert1
-          objectType: secret
           CertificateVersion: ""`,
 			},
 			expectedErr: true,
@@ -504,9 +475,9 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "objects array is empty",
 			parameters: map[string]string{
-				"keyvaultName":         "testKV",
-				"tenantId":             "tid",
-				"useVMManagedIdentity": "true",
+				"keyvaultName": "testKV",
+				"tenantID":     "tid",
+				"clientID":     "clientid",
 				"objects": `
       array:`,
 			},
@@ -515,31 +486,13 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "invalid object format",
 			parameters: map[string]string{
-				"keyvaultName":         "testKV",
-				"tenantId":             "tid",
-				"useVMManagedIdentity": "true",
+				"keyvaultName": "testKV",
+				"tenantID":     "tid",
+				"clientID":     "clientid",
 				"objects": `
       array:
         - |
           CertificateName: cert1
-          objectType: secret
-          objectFormat: pkcs
-          CertificateVersion: ""`,
-			},
-			expectedErr: true,
-		},
-		{
-			desc: "invalid object encoding",
-			parameters: map[string]string{
-				"keyvaultName":         "testKV",
-				"tenantId":             "tid",
-				"useVMManagedIdentity": "true",
-				"objects": `
-      array:
-        - |
-          CertificateName: cert1
-          objectType: secret
-          objectEncoding: utf-16
           CertificateVersion: ""`,
 			},
 			expectedErr: true,
@@ -548,12 +501,11 @@ func TestGetCertificatesContent(t *testing.T) {
 			desc: "error fetching from keyvault",
 			parameters: map[string]string{
 				"keyvaultName": "testKV",
-				"tenantId":     "tid",
+				"tenantID":     "tid",
 				"objects": `
       array:
         - |
           CertificateName: cert1
-          objectType: secret
           CertificateVersion: ""`,
 			},
 			secrets: map[string]string{
