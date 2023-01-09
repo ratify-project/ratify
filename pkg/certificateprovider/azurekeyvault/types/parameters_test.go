@@ -225,21 +225,21 @@ func TestGetObjects(t *testing.T) {
 		{
 			name: "empty",
 			parameters: map[string]string{
-				ObjectsParameter: "",
+				CertificatesParameter: "",
 			},
 			expected: "",
 		},
 		{
 			name: "not empty",
 			parameters: map[string]string{
-				ObjectsParameter: "test",
+				CertificatesParameter: "test",
 			},
 			expected: "test",
 		},
 		{
 			name: "trim spaces",
 			parameters: map[string]string{
-				ObjectsParameter: " test ",
+				CertificatesParameter: " test ",
 			},
 			expected: "test",
 		},
@@ -247,7 +247,7 @@ func TestGetObjects(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := GetObjects(test.parameters)
+			actual := GetCertificates(test.parameters)
 			if actual != test.expected {
 				t.Errorf("GetObjects() = %v, expected %v", actual, test.expected)
 			}
@@ -280,7 +280,7 @@ func TestGetObjectsArray(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual, err := GetObjectsArray(test.objects)
+			actual, err := GetCertificatesArray(test.objects)
 			if err != nil {
 				t.Errorf("GetObjectsArray() error = %v", err)
 			}
@@ -293,7 +293,7 @@ func TestGetObjectsArray(t *testing.T) {
 
 func TestGetObjectsArrayError(t *testing.T) {
 	objects := "invalid"
-	if _, err := GetObjectsArray(objects); err == nil {
+	if _, err := GetCertificatesArray(objects); err == nil {
 		t.Errorf("GetObjectsArray() error is nil, expected error")
 	}
 }

@@ -53,13 +53,13 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 	}
 
 	// 1. cleaning up keyvault objects definition
-	objectsStrings := types.GetObjects(attrib)
+	objectsStrings := types.GetCertificates(attrib)
 	if objectsStrings == "" {
 		return nil, fmt.Errorf("objects is not set")
 	}
 	logrus.Infof("objects string defined in secret provider class, objects %v", objectsStrings)
 
-	objects, err := types.GetObjectsArray(objectsStrings)
+	objects, err := types.GetCertificatesArray(objectsStrings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
 	}

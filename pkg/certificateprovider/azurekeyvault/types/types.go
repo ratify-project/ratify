@@ -38,8 +38,8 @@ const (
 	// ClientIDParameter is the name of the client ID parameter
 	// This clientID is used for workload identity
 	ClientIDParameter = "clientID"
-	// ObjectsParameter is the name of the objects parameter
-	ObjectsParameter = "objects"
+	// CertificatesParameter is the name of the objects parameter
+	CertificatesParameter = "certificates"
 )
 
 // KeyVaultCertificate holds keyvault object related config

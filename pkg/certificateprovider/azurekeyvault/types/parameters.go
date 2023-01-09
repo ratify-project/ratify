@@ -50,13 +50,13 @@ func GetServiceAccountTokens(parameters map[string]string) string {
 	return strings.TrimSpace(parameters[CSIAttributeServiceAccountTokens])
 }
 
-// GetObjects returns the key vault objects
-func GetObjects(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[ObjectsParameter])
+// GetCertificates returns the key vault objects
+func GetCertificates(parameters map[string]string) string {
+	return strings.TrimSpace(parameters[CertificatesParameter])
 }
 
-// GetObjectsArray returns the key vault objects array
-func GetObjectsArray(objects string) (StringArray, error) {
+// GetCertificatesArray returns the key vault objects array
+func GetCertificatesArray(objects string) (StringArray, error) {
 	var a StringArray
 	//var b string // Susan to Fix this
 	err := yaml.Unmarshal([]byte(objects), &a)
