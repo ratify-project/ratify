@@ -17,7 +17,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-containerregistry v0.12.1
 	github.com/gorilla/mux v1.8.0
-	github.com/hashicorp/go-retryablehttp v0.7.1
+	github.com/hashicorp/go-retryablehttp v0.7.2
 	github.com/notaryproject/notation-core-go v1.0.0-rc.1
 	github.com/notaryproject/notation-go v1.0.0-rc.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
