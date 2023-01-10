@@ -93,7 +93,8 @@ deploy-gatekeeper:
 	    --name-template=gatekeeper \
 	    --namespace gatekeeper-system --create-namespace \
 	    --set enableExternalData=true \
-	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
+		--version=3.10.0
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
@@ -141,7 +142,8 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7 \
-    --set auditInterval=0
+    --set auditInterval=0 \
+	--version=3.10.0
 
 e2e-deploy-ratify:
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
