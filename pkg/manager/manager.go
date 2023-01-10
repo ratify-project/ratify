@@ -55,7 +55,7 @@ import (
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = logrus.WithField("name", "setup")
 
 	configStores    []referrerstore.ReferrerStore
 	configVerifiers []verifier.ReferenceVerifier

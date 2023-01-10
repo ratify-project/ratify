@@ -28,6 +28,23 @@
         ":6001"
       ],
     },
+    {
+      // This requires your kubeconfig to be pointed at a cluster with Ratify CRDs installed
+      "name": "Serve w/ CRD manager",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/ratify",
+      "env": {
+        "RATIFY_LOG_LEVEL": "debug"
+      },
+      "args": [
+        "serve",
+        "--enable-crd-manager",
+        "--http",
+        ":6001"
+      ],
+    },
   ],
   "inputs": [
     {

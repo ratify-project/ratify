@@ -140,7 +140,6 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			ReferrerStores: []referrerstore.ReferrerStore{store},
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 			Config: &exconfig.ExecutorConfig{
-				ExecutionMode:  "",
 				RequestTimeout: nil,
 			},
 		}

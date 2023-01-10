@@ -26,11 +26,11 @@ import (
 	vc "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 // VerifierReconciler reconciles a Verifier object
@@ -41,8 +41,7 @@ type VerifierReconciler struct {
 
 var (
 	// a map to track of active verifiers
-	VerifierMap    = map[string]vr.ReferenceVerifier{}
-	verifierLogger = log.Log
+	VerifierMap = map[string]vr.ReferenceVerifier{}
 )
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=verifiers,verbs=get;list;watch;create;update;patch;delete
@@ -59,17 +58,16 @@ var (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
-	verifierLogger = log.FromContext(ctx)
+	verifierLogger := logrus.WithContext(ctx)
 
 	var verifier configv1alpha1.Verifier
 	var resource = req.Name
-	storeLogger.Info(fmt.Sprintf("reconciling verifier '%v'", resource))
+	verifierLogger.Infof("reconciling verifier '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
 
 		if apierrors.IsNotFound(err) {
-			verifierLogger.Info(fmt.Sprintf("delete event detected, removing verifier %v", resource))
+			verifierLogger.Infof("delete event detected, removing verifier %v", resource)
 			verifierRemove(resource)
 		} else {
 			verifierLogger.Error(err, "unable to fetch verifier")
@@ -93,7 +91,7 @@ func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) e
 	verifierConfig, err := specToVerifierConfig(spec)
 
 	if err != nil {
-		verifierLogger.Error(err, "unable to convert crd specification to verifier config")
+		logrus.Error(err, "unable to convert crd specification to verifier config")
 		return fmt.Errorf("unable to convert crd specification to verifier config, err: %q", err)
 	}
 
@@ -102,16 +100,16 @@ func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) e
 	verifierConfigVersion := "1.0.0" // TODO: move default values to defaulting webhook in the future #413
 	if spec.Address == "" {
 		spec.Address = config.GetDefaultPluginPath()
-		verifierLogger.Info(fmt.Sprintf("Address was empty, setting to default path: %v", spec.Address))
+		logrus.Infof("Address was empty, setting to default path: %v", spec.Address)
 	}
 	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address})
 
 	if err != nil || verifierReference == nil {
-		verifierLogger.Error(err, "unable to create verifier from verifier config")
+		logrus.Error(err, "unable to create verifier from verifier config")
 		return err
 	}
 	VerifierMap[objectName] = verifierReference
-	verifierLogger.Info(fmt.Sprintf("verifier '%v' added to verifier map", verifierReference.Name()))
+	logrus.Infof("verifier '%v' added to verifier map", verifierReference.Name())
 
 	return nil
 }
@@ -128,7 +126,7 @@ func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (vc.Verifier
 
 	if string(verifierSpec.Parameters.Raw) != "" {
 		if err := json.Unmarshal(verifierSpec.Parameters.Raw, &verifierConfig); err != nil {
-			verifierLogger.Error(err, "unable to decode verifier parameters", "Parameters.Raw", verifierSpec.Parameters.Raw)
+			logrus.Error(err, "unable to decode verifier parameters", "Parameters.Raw", verifierSpec.Parameters.Raw)
 			return vc.VerifierConfig{}, err
 		}
 	}
