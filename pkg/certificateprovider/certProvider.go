@@ -11,13 +11,15 @@ type CertificateProvider interface {
 }
 
 // CRD manager call this method to fetch certificate in memory
-func SetCertificate(ctx context.Context, certStoreName string, attrib map[string]string) {
-	// To implement
+func SetCertificate(ctx context.Context, certStoreName string, attrib map[string]string) error {
+	// Not yet implemented
+	return nil
 }
 
 // CRD manager call this method to remove certificate from map
-func DeleteCertificate(ctx context.Context, certStoreName string) {
-	// To implement
+func DeleteCertificate(ctx context.Context, certStoreName string) error {
+	// Not yet implemented
+	return nil
 }
 
 // Verifier call this method to get validation certificate

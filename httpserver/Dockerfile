@@ -1,6 +1,6 @@
 ARG BUILDPLATFORM="linux/amd64"
 ARG BUILDERIMAGE="golang:1.18"
-ARG BASEIMAGE="gcr.io/distroless/static:debug"
+ARG BASEIMAGE="gcr.io/distroless/static:nonroot"
 
 FROM --platform=$BUILDPLATFORM $BUILDERIMAGE as builder
 
@@ -44,4 +44,3 @@ EXPOSE 6001
 USER 65532:65532
 
 ENTRYPOINT ["/app/ratify", "serve", "--http", ":6001"]
-

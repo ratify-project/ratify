@@ -24,7 +24,6 @@ import (
 	"strings"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
-
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -34,6 +33,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
+
 	_ "github.com/notaryproject/notation-core-go/signature/cose"
 	_ "github.com/notaryproject/notation-core-go/signature/jws"
 	"github.com/notaryproject/notation-go"
@@ -55,7 +55,7 @@ type NotaryV2VerifierConfig struct {
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-	CertStore         []string `json:"certStore"`
+
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
@@ -79,10 +79,6 @@ func init() {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-
-	// have crd reference or not , get keyvault reference
-	//GetCertificate（ctx, "notarycertkv1")
-
 	certs := make([]*x509.Certificate, 0)
 	for _, path := range s.certPaths {
 		bundledCerts, err := utils.GetCertificatesFromPath(path)
