@@ -67,21 +67,22 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		return nil, fmt.Errorf("error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor)
 	}
 
-	blob := referenceManifest.Blobs[0]
-	refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
-	if err != nil {
-		return nil, fmt.Errorf("error fetching blob for subject:[%s] digest:[%s]", subjectReference, blob.Digest)
-	}
+	for _, blobDesc := range referenceManifest.Blobs {
+		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
+		if err != nil {
+			return nil, fmt.Errorf("error fetching blob for subject:[%s] digest:[%s]", subjectReference, blobDesc.Digest)
+		}
 
-	err = processMediaType(schemaMap, blob.MediaType, refBlob)
-	if err != nil {
-		return nil, fmt.Errorf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blob.Digest, blob.MediaType, err.Error())
+		err = processMediaType(schemaMap, blobDesc.MediaType, refBlob)
+		if err != nil {
+			return nil, fmt.Errorf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blobDesc.Digest, blobDesc.MediaType, err.Error())
+		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: true,
-		Message:   fmt.Sprintf("schema validation passed for configured media type:[%s]", blob.MediaType),
+		Message:   "schema validation passed for configured media types",
 	}, nil
 }
 

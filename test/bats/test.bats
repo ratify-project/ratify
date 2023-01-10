@@ -93,6 +93,9 @@ SLEEP_TIME=1
 
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
     sleep 5
+    # TODO 
+    # It's best to use an image with individual artifact types vs an all-in-one so any failures can be isolated.
+    # Replace this image reference once we have a local private registry for Ratify.
     run kubectl run schemavalidator --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_success
 
