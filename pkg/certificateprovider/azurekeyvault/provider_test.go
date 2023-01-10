@@ -451,7 +451,7 @@ func TestGetCertificatesContent(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			desc: "objects array not set",
+			desc: "certificates array not set",
 			parameters: map[string]string{
 				"keyvaultName":         "testKV",
 				"tenantID":             "tid",
@@ -460,12 +460,12 @@ func TestGetCertificatesContent(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			desc: "objects not configured as an array",
+			desc: "certificates not configured as an array",
 			parameters: map[string]string{
 				"keyvaultName":         "testKV",
 				"tenantID":             "tid",
 				"useVMManagedIdentity": "true",
-				"objects": `
+				"certificates": `
         - |
           CertificateName: cert1
           CertificateVersion: ""`,
@@ -473,12 +473,12 @@ func TestGetCertificatesContent(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			desc: "objects array is empty",
+			desc: "certificates array is empty",
 			parameters: map[string]string{
 				"keyvaultName": "testKV",
 				"tenantID":     "tid",
 				"clientID":     "clientid",
-				"objects": `
+				"certificates": `
       array:`,
 			},
 			expectedErr: false,
@@ -489,7 +489,7 @@ func TestGetCertificatesContent(t *testing.T) {
 				"keyvaultName": "testKV",
 				"tenantID":     "tid",
 				"clientID":     "clientid",
-				"objects": `
+				"certificates": `
       array:
         - |
           CertificateName: cert1
@@ -502,15 +502,11 @@ func TestGetCertificatesContent(t *testing.T) {
 			parameters: map[string]string{
 				"keyvaultName": "testKV",
 				"tenantID":     "tid",
-				"objects": `
+				"certificates": `
       array:
         - |
           CertificateName: cert1
           CertificateVersion: ""`,
-			},
-			secrets: map[string]string{
-				"clientid":     "AADClientID",
-				"clientsecret": "AADClientSecret",
 			},
 			expectedErr: true,
 		},

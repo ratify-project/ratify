@@ -1,7 +1,7 @@
 image:
-  repository: huishratifyimage.azurecr.io/deislabs/ratify
-  crdRepository: huishratifyimage.azurecr.io/deislabs/ratify-crds
-  tag: v12221
+  repository: ghcr.io/deislabs/ratify
+  crdRepository: ghcr.io/deislabs/ratify-crds
+  tag: v1.0.0-beta.2
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -44,13 +44,13 @@ resources:
      memory: 512Mi
 serviceAccount:
   create: true
-  name: wlidsa
+  name: ratify-admin
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
 # Key Vault -> akvCertConfig.enabled
 azureWorkloadIdentity:
-  clientId: 1c7ac023-5bf6-4916-83f2-96dd203e35a3
+  clientId:
 
 azureManagedIdentity:
   clientId:
@@ -65,7 +65,7 @@ akvCertConfig:
 
 oras:
   authProviders:
-    azureWorkloadIdentityEnabled: true
+    azureWorkloadIdentityEnabled: false
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
