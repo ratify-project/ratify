@@ -1,7 +1,131 @@
-## Nov 29 2022
+## No meeting Dec 27, happy holidays!
+
+--------
+## Dec 21 2022
 
 ### Attendees:
+- Raymond Nassar [MSFT]
+- Matt Luker [MSFT]
+- Joshua Phelps [MSFT]
+- Rajasa Savant [MSFT]
+- Noel Bundick [MSFT]
+- Akash Singhal [MSFT]
+- Susan Shi [MSFT]
+- Toddy Mladenov [MSFT]
+
+### Actionable Agenda Items:
+- [Joshua] - [Refactor Nested References PR](https://github.com/deislabs/ratify/pull/518)
+
+Executor updates in the configmap will require pod start , we should follow up with Cara on if we are moving executor properties to the orchestration CRD so any changes will be detected by CRD controller.
+
+Need to evalute if this change should be in included ratify RC release.
+[Joshua] what should be the default, should ratify always search for nested artifacts? 
+
+[Akash] we need to consider the perf impact, searching for nested artifact requires an addtional call.
+
+[Toddy] Should we limit number of nested levels? how do we prevent DOS attacks.
+
+### Presentation/Discussion Agenda Items:
+- [Noel] - [Plugins as OCI artifacts draft PR](https://github.com/deislabs/ratify/pull/519)
+
+Need to evalute if this change should be in included ratify RC release.
+
+[Susan] if we built in plugins are downloaded from registry, do we need to maintain version compatability or should ratify/plugin have the same release cycle.
+
+- [Matt] What is the process to update Ratify test images?
+Tracking issue created, https://github.com/deislabs/ratify/issues/521
+
+### Notes:
+https://youtu.be/8-YjdsGj-YY
+
+--------
+## Dec 13 2022
+
+### Attendees:
+- Susan Shi
+- Sajay ANtony
+- Noel Bundick 
+- Anish Ramasekar
+- Akash Singhal
+- Luis Dieguez
+- Binbin Li
+- Samir Kakkar
+- Xinhe Li
+- Toddy SM
 - _add yourself_
+
+### Actionable Agenda Items:
+- PRS blocked on "Build and run e2e Test (1.24.6) Expected — Waiting for status to be reported"
+- [add e2e tests on ACR and AKS](https://github.com/deislabs/ratify/pull/481)
+- [Enhancement - added custom endpoint resolver - issue 480](https://github.com/deislabs/ratify/pull/485)
+
+
+### Presentation/Discussion Agenda Items:
+- [Binbin] [Investigate into executor cache](https://hackmd.io/@H7a8_rG4SuaKwzu4NLT-9Q/SyA5pKr_i/edit)
+
+  [Sajay] Lets explore having request cache in the front, starting with 1min TTL. The scenario in mind is that customer start with a unsigned image, first verification fails, then customer signs the image and deploys again.
+  
+
+- [Noel] To explore pulling plugin from registry
+
+### Notes:
+
+recording: https://youtu.be/gfayVT0P1UY
+
+--------
+## Dec 7 2022
+
+### Attendees:
+- Jimmy Ray
+- Susan Shi
+- Luis Dieguez
+- Sajay Antony
+- Akash Singhal
+- Matt Luker
+- Cara Maclaughlin
+- Raymond
+- Matt 
+
+### Actionable Agenda Items:
+- [Update signature artifactType for notation rc1](https://github.com/deislabs/ratify/pull/469/files)
+[Sajay/Susan] how does sigstore plan to use the referrers api, what is the artifact type for signatures?
+
+Followed up with Sigstore on lack:
+
+
+Dan Lorenc:
+iiuc we're planning to continue to target the OCI image manifest rather than the artifact manifest, so we won't be setting the artifactType in the first pass
+
+Cosign tracking item: https://github.com/sigstore/cosign/issues/1397
+### Presentation/Discussion Agenda Items:
+- Cutting Beta.2 release Dec 7
+- release Branch for RC, are we doing dual checkin? todo: still need to formalize plan
+- Removing dependency on secretStoreCsi driver by implementing Ratify keyvault cert retrieval logic. https://hackmd.io/@susanshi/Skg7vvCDi
+- [Jimmy] [Concerns About Notation Plugin Tight Coupling](https://github.com/deislabs/ratify/issues/468)
+
+    [Sajay]  another option is to explore pulling plugin from registries
+
+- [Matt/Cara] ExecutorMode: Passthrough - is it still working as intended? If so, should it be kept?
+[Susan/Akash] Passthrough mode is used for integration with internal addon experience. if Passthrough mode does not change the code path at all, it makes sense to review and remove.
+
+
+### Notes:
+
+Recording: https://youtu.be/ZAfNdX37rx4
+
+--------
+## Nov 29
+
+### Attendees:
+- Josh Phelps
+- Noel Bundick
+- Akash Singhal
+- Binbin Li
+- Matt Luker
+- Eric Trexel
+- Toddy Mladenov
+- Samir Kakkar
+- Sajay Antony
 
 ### Actionable Agenda Items:
 - PR: feat: move trustpolicy to verifier config https://github.com/deislabs/ratify/pull/446
