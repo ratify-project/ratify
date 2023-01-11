@@ -12,6 +12,11 @@ spec:
     authProvider:
       name: azureWorkloadIdentity
     {{- end }}
+    {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
+    authProvider:
+      name: azureManagedIdentity
+      clientID: {{ .Values.azureManagedIdentity.clientId }}
+    {{- end }}
     {{- if .Values.oras.authProviders.k8secretsEnabled }}
     authProvider:
       name: k8Secrets
