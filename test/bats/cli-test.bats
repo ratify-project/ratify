@@ -36,6 +36,9 @@ load helpers
 }
 
 @test "schemavalidator verifier test" {   
+    # TODO 
+    # It's best to use an image with individual artifact types vs an all-in-one so any failures can be isolated.
+    # Replace this image reference once we have a local private registry for Ratify.
     run bin/ratify verify -c $RATIFY_DIR/config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_cmd_verify_success
 }
