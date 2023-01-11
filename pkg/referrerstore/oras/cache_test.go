@@ -26,7 +26,7 @@ var (
 		"cacheEnabled": true,
 		"ttl":          ttl,
 	}
-	cacheConf = &OrasCacheConf{
+	cacheConf = &CacheConf{
 		Enabled: true,
 		Ttl:     ttl,
 	}
@@ -85,17 +85,15 @@ func (m *mockBase) GetSubjectDescriptor(ctx context.Context, subjectReference co
 	return testDesc, nil
 }
 
-func TestCreate(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	_, err := f.Create(base, cacheConf)
+func TestCreateCachedStore(t *testing.T) {
+	_, err := createCachedStore(base, cacheConf)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
 }
 
 func TestName(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	store, _ := f.Create(base, cacheConf)
+	store, _ := createCachedStore(base, cacheConf)
 
 	name := store.Name()
 	if name != testName {
@@ -104,8 +102,7 @@ func TestName(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	store, _ := f.Create(base, cacheConf)
+	store, _ := createCachedStore(base, cacheConf)
 
 	conf := store.GetConfig()
 	if !reflect.DeepEqual(conf, testStoreConfig) {
@@ -114,8 +111,7 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestGetBlobContent(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	store, _ := f.Create(base, cacheConf)
+	store, _ := createCachedStore(base, cacheConf)
 
 	blob, err := store.GetBlobContent(context.Background(), testReference, testDigest)
 
@@ -128,8 +124,7 @@ func TestGetBlobContent(t *testing.T) {
 }
 
 func TestGetSubjectDescriptor(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	store, _ := f.Create(base, cacheConf)
+	store, _ := createCachedStore(base, cacheConf)
 
 	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
 
@@ -142,8 +137,7 @@ func TestGetSubjectDescriptor(t *testing.T) {
 }
 
 func TestListReferrers_CacheHit(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	store, _ := f.Create(base, cacheConf)
+	store, _ := createCachedStore(base, cacheConf)
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
@@ -157,8 +151,7 @@ func TestListReferrers_CacheHit(t *testing.T) {
 }
 
 func TestListReferrers_CacheMiss(t *testing.T) {
-	f := &orasStoreFactoryWithCache{}
-	store, _ := f.Create(base, cacheConf)
+	store, _ := createCachedStore(base, cacheConf)
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 

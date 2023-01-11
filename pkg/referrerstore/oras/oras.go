@@ -110,8 +110,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 		return storeBase, nil
 	}
 
-	factoryWithCache := &orasStoreFactoryWithCache{}
-	return factoryWithCache.Create(storeBase, cacheConf)
+	return createCachedStore(storeBase, cacheConf)
 }
 
 func createBaseStore(version string, storeConfig config.StorePluginConfig) (*orasStore, error) {
