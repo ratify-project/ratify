@@ -30,24 +30,9 @@ func GetTenantID(parameters map[string]string) string {
 	return strings.TrimSpace(parameters[TenantIDParameter])
 }
 
-// GetPodName returns the pod name
-func GetPodName(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[CSIAttributePodName])
-}
-
-// GetPodNamespace returns the pod namespace
-func GetPodNamespace(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[CSIAttributePodNamespace])
-}
-
 // GetClientID returns the client ID
 func GetClientID(parameters map[string]string) string {
 	return strings.TrimSpace(parameters[ClientIDParameter])
-}
-
-// GetServiceAccountTokens returns the service account tokens
-func GetServiceAccountTokens(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[CSIAttributeServiceAccountTokens])
 }
 
 // GetCertificates returns the key vault objects

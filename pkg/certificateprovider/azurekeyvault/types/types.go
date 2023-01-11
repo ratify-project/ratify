@@ -5,28 +5,6 @@ import "time"
 // This class is based on implementation from  azure secret store csi provider
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
 const (
-	// VaultObjectTypeCertificate certificate vault object type
-	VaultObjectTypeCertificate = "cert"
-
-	CertTypePem = "application/x-pem-file"
-	CertTypePfx = "application/x-pkcs12"
-
-	CertificateType = "CERTIFICATE"
-
-	ObjectFormatPEM = "pem"
-	ObjectFormatPFX = "pfx"
-
-	ObjectEncodingHex    = "hex"
-	ObjectEncodingBase64 = "base64"
-	ObjectEncodingUtf8   = "utf-8"
-
-	// pod identity NMI port
-	PodIdentityNMIPort = "2579"
-
-	CSIAttributePodName              = "csi.storage.k8s.io/pod.name"
-	CSIAttributePodNamespace         = "csi.storage.k8s.io/pod.namespace"
-	CSIAttributeServiceAccountTokens = "csi.storage.k8s.io/serviceAccount.tokens" // nolint
-
 	// KeyVaultNameParameter is the name of the key vault name parameter
 	KeyVaultNameParameter = "keyvaultName"
 	// CloudNameParameter is the name of the cloud name parameter
@@ -40,6 +18,8 @@ const (
 	ClientIDParameter = "clientID"
 	// CertificatesParameter is the name of the objects parameter
 	CertificatesParameter = "certificates"
+
+	CertificateType = "CERTIFICATE"
 )
 
 // KeyVaultCertificate holds keyvault object related config
@@ -57,7 +37,7 @@ type KeyVaultCertificate struct {
 // CertificateFile holds content and metadata of a keyvault secret file
 type CertificateFile struct {
 	Content []byte
-	Path    string //we are not writing the certificate to disk ,but we might need to path of the cert since notary trust policy allows for named trust store,
+	Path    string // This field is not necessary but useful to have for debugging to keep track of which certs have loaded
 	Version string
 }
 

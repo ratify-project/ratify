@@ -177,45 +177,6 @@ func TestGetClientID(t *testing.T) {
 	}
 }
 
-func TestGetServiceAccountTokens(t *testing.T) {
-	tests := []struct {
-		name       string
-		parameters map[string]string
-		expected   string
-	}{
-		{
-			name: "empty",
-			parameters: map[string]string{
-				CSIAttributeServiceAccountTokens: "",
-			},
-			expected: "",
-		},
-		{
-			name: "not empty",
-			parameters: map[string]string{
-				CSIAttributeServiceAccountTokens: "test",
-			},
-			expected: "test",
-		},
-		{
-			name: "trim spaces",
-			parameters: map[string]string{
-				CSIAttributeServiceAccountTokens: " test ",
-			},
-			expected: "test",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := GetServiceAccountTokens(test.parameters)
-			if actual != test.expected {
-				t.Errorf("GetServiceAccountTokens() = %v, expected %v", actual, test.expected)
-			}
-		})
-	}
-}
-
 func TestGetObjects(t *testing.T) {
 	tests := []struct {
 		name       string
