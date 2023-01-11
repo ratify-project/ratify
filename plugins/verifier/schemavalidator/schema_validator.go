@@ -75,7 +75,11 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		err = processMediaType(schemaMap, blobDesc.MediaType, refBlob)
 		if err != nil {
-			return nil, fmt.Errorf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blobDesc.Digest, blobDesc.MediaType, err.Error())
+			return &verifier.VerifierResult{
+				Name:      input.Name,
+				IsSuccess: false,
+				Message:   fmt.Sprintf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blobDesc.Digest, blobDesc.MediaType, err.Error()),
+			}, nil
 		}
 	}
 
