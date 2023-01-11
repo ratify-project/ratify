@@ -3,7 +3,7 @@ kind: CertificateStore
 metadata:
   name: certStore-akv
 spec:
-  provider: azure
+  provider: azurekeyvault
   parameters:
     keyvaultName: sampleKeyVault
     certificates:  |
