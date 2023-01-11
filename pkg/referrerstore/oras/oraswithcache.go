@@ -63,7 +63,7 @@ func (s *orasStoreFactoryWithCache) Create(storeBase referrerstore.ReferrerStore
 		KeyToHash:   keyToHash,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("could not create cache for referrers, err: %v", err)
+		return nil, fmt.Errorf("could not create cache for referrers, err: %w", err)
 	}
 	return &orasStoreWithInMemoryCache{
 		base:      storeBase,
@@ -117,12 +117,12 @@ func (store *orasStoreWithInMemoryCache) GetSubjectDescriptor(ctx context.Contex
 func toCacheConfig(storePluginConfig map[string]interface{}) (*OrasCacheConf, error) {
 	bytes, err := json.Marshal(storePluginConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed marshalling store plugin config: %+v to bytes, err: %v", storePluginConfig, err)
+		return nil, fmt.Errorf("failed marshalling store plugin config: %+v to bytes, err: %w", storePluginConfig, err)
 	}
 
 	cacheConf := &OrasCacheConf{}
 	if err := json.Unmarshal(bytes, &cacheConf); err != nil {
-		return nil, fmt.Errorf("failed unmarshalling to Oras cache config, err: %v", err)
+		return nil, fmt.Errorf("failed unmarshalling to Oras cache config, err: %w", err)
 	}
 
 	return cacheConf, nil

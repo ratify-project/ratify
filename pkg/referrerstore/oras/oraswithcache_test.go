@@ -20,11 +20,11 @@ const (
 )
 
 var (
-	ttl = 10
-	base      = &mockBase{}
+	ttl          = 10
+	base         = &mockBase{}
 	pluginConfig = map[string]interface{}{
 		"cacheEnabled": true,
-		"ttl": ttl,
+		"ttl":          ttl,
 	}
 	cacheConf = &OrasCacheConf{
 		Enabled: true,
@@ -147,7 +147,7 @@ func TestListReferrers_CacheHit(t *testing.T) {
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
-	time.Sleep(time.Duration(ttl - 5) * time.Second)
+	time.Sleep(time.Duration(ttl-5) * time.Second)
 
 	cachedResult, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
 
@@ -162,7 +162,7 @@ func TestListReferrers_CacheMiss(t *testing.T) {
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
-	time.Sleep(time.Duration(ttl + 5) * time.Second)
+	time.Sleep(time.Duration(ttl+5) * time.Second)
 
 	cachedResult, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
 
@@ -173,7 +173,7 @@ func TestListReferrers_CacheMiss(t *testing.T) {
 
 func TestToCacheConfig(t *testing.T) {
 	conf, err := toCacheConfig(pluginConfig)
-	
+
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
