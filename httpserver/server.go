@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"net/url"
 	"path/filepath"
 
 	"github.com/deislabs/ratify/config"
@@ -63,9 +64,9 @@ func NewServer(context context.Context, address string, getExecutor config.GetEx
 		CaCertFile:        caCertFile,
 		MutationStoreName: defaultMutationReferrerStoreName,
 	}
-	server.registerHandlers()
+	err := server.registerHandlers()
 
-	return server, nil
+	return server, err
 }
 
 func (server *Server) Run() error {
@@ -121,9 +122,20 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 	})
 }
 
-func (server *Server) registerHandlers() {
-	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
-	server.register("POST", ServerRootURL+"/mutate", processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
+func (server *Server) registerHandlers() error {
+	verifyPath, err := url.JoinPath(ServerRootURL, "verify")
+	if err != nil {
+		return err
+	}
+	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
+
+	mutatePath, err := url.JoinPath(ServerRootURL, "mutate")
+	if err != nil {
+		return err
+	}
+	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
+
+	return nil
 }
 
 type ServerAddrNotFoundError struct{}

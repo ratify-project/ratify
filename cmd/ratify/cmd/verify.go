@@ -81,7 +81,7 @@ func verify(opts verifyCmdOptions) error {
 	}
 
 	if subRef.Digest == "" {
-		fmt.Println("Warning: Tagged references should NOT be used. The resolved digest may not point to the same signed artifact, since tags are mutable.")
+		fmt.Println(taggedReferenceWarning)
 	}
 
 	cf, err := config.Load(opts.configFilePath)

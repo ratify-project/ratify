@@ -54,7 +54,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 	results := make([]externaldata.Item, 0)
 	wg := sync.WaitGroup{}
-	mu := sync.RWMutex{}
+	mu := sync.Mutex{}
 
 	// iterate over all keys
 	for _, subject := range providerRequest.Request.Keys {
@@ -63,7 +63,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			defer wg.Done()
 			routineStartTime := time.Now()
 			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
-			logrus.Infof("subject for request %v %v is %v", sanitizedMethod, sanitizedURL, subject)
+			logrus.Infof("verifying subject %v", subject)
 			returnItem := externaldata.Item{
 				Key: subject,
 			}
@@ -115,24 +115,32 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 
 	results := make([]externaldata.Item, 0)
 	wg := sync.WaitGroup{}
-	mu := sync.RWMutex{}
+	mu := sync.Mutex{}
 
 	for _, image := range providerRequest.Request.Keys {
 		wg.Add(1)
 		go func(image string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
-			logrus.Infof("image for request %v %v is %v", sanitizedMethod, sanitizedURL, image)
+			logrus.Infof("mutating image %v", image)
 			returnItem := externaldata.Item{
 				Key:   image,
 				Value: image,
 			}
+			defer func() {
+				mu.Lock()
+				results = append(results, returnItem)
+				mu.Unlock()
+			}()
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
 				errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
 				logrus.Error(errMessage)
 				returnItem.Error = errMessage
-			} else if parsedReference.Digest == "" {
+				return
+			}
+
+			if parsedReference.Digest == "" {
 				var selectedStore referrerstore.ReferrerStore
 				for _, store := range server.GetExecutor().ReferrerStores {
 					if store.Name() == server.MutationStoreName {
@@ -144,20 +152,17 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store: %v", image, err)
 					logrus.Error(errMessage)
 					returnItem.Error = errMessage
-				} else {
-					descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
-					if err != nil {
-						errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
-						logrus.Error(errMessage)
-						returnItem.Error = errMessage
-					} else {
-						returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
-					}
+					return
 				}
+				descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
+				if err != nil {
+					errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+					logrus.Error(errMessage)
+					returnItem.Error = errMessage
+					return
+				}
+				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 			}
-			mu.Lock()
-			defer mu.Unlock()
-			results = append(results, returnItem)
 			logrus.Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(image))
 	}

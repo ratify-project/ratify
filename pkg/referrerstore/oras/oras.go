@@ -315,23 +315,24 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 	var desc oci.Descriptor
 	if cachedDesc, ok := store.subjectDescriptorCache.Load(subjectReference.Digest); ok && subjectReference.Digest != "" {
 		desc = cachedDesc.(oci.Descriptor)
-	} else {
-		logrus.Info("no digest provided. attempting to resolve...")
-		repository, expiry, err := store.createRepository(ctx, subjectReference)
-		if err != nil {
-			return nil, err
-		}
-
-		desc, err = repository.Resolve(ctx, subjectReference.Original)
-		if err != nil {
-			store.evictAuthCache(subjectReference.Original, err)
-			return nil, err
-		}
-		// add the subject descriptor to cache
-		store.subjectDescriptorCache.Store(desc.Digest, desc)
-		// add the repository client to the auth cache if all repository operations successful
-		store.addAuthCache(subjectReference.Original, repository, expiry)
+		return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 	}
+
+	logrus.Debugf("no digest provided for reference %s. attempting to resolve...", subjectReference.Original)
+	repository, expiry, err := store.createRepository(ctx, subjectReference)
+	if err != nil {
+		return nil, err
+	}
+
+	desc, err = repository.Resolve(ctx, subjectReference.Original)
+	if err != nil {
+		store.evictAuthCache(subjectReference.Original, err)
+		return nil, err
+	}
+	// add the subject descriptor to cache
+	store.subjectDescriptorCache.Store(desc.Digest, desc)
+	// add the repository client to the auth cache if all repository operations successful
+	store.addAuthCache(subjectReference.Original, repository, expiry)
 
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }

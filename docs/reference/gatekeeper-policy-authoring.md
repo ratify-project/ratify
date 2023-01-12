@@ -26,7 +26,7 @@ package ratify
 # You would use the below when running the rego using external_data
 remote_data := response {
   images := [img | img = input.review.object.spec.containers[_].image]
-  response := external_data({"provider": "ratify-verification-provider", "keys": images})
+  response := external_data({"provider": "ratify-provider", "keys": images})
 }
 # Use this to mimic the behavior of external_data within rego playground
 remote_data := response {
@@ -67,7 +67,7 @@ package ratify
 # Get data from Ratify
 remote_data := response {
   images := [img | img = input.review.object.spec.containers[_].image]
-  response := external_data({"provider": "ratify-verification-provider", "keys": images})
+  response := external_data({"provider": "ratify-provider", "keys": images})
 }
 ```
 
@@ -185,7 +185,7 @@ package notaryv2issuervalidation
 # Get data from Ratify
 remote_data := response {
   images := [img | img = input.review.object.spec.containers[_].image]
-  response := external_data({"provider": "ratify-verification-provider", "keys": images})
+  response := external_data({"provider": "ratify-provider", "keys": images})
 }
 
 # Base Gatekeeper violation
