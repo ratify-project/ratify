@@ -41,13 +41,11 @@ mv sbom-tool /usr/local/bin/
 
 ### Ratify
 
-> Note: The Ratify commands used below will not work until the RC1 release.
-
-Install Ratify v1.0.0-beta.2 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-beta.2).
+Install Ratify v1.0.0-rc.1 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-rc.1).
 
 ```bash
 # Download the Ratify binary
-RATIFY_VERSION=1.0.0-beta.2
+RATIFY_VERSION=1.0.0-rc.1
 curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v${RATIFY_VERSION}/ratify_${RATIFY_VERSION}_Linux_amd64.tar.gz
 # Extract it from the binary and copy it to the bin directory
 tar xvzf ratify.tar.gz -C /usr/local/bin ratify
