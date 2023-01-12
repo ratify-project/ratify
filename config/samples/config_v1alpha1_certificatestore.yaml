@@ -1,0 +1,6 @@
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: CertificateStore
+metadata:
+  name: certificatestore-sample
+spec:
+  # TODO(user): Add fields here
