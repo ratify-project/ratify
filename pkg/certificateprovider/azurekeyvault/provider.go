@@ -16,27 +16,25 @@ limitations under the License.
 package azurekeyvault
 
 // This class is based on implementation from  azure secret store csi provider
-// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"path/filepath"
 	"reflect"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
+
+	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/date"
-	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
-	"github.com/sirupsen/logrus"
-
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -62,19 +60,19 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 		return nil, fmt.Errorf("clientId is not set")
 	}
 
-	azureCloudEnv, err := ParseAzureEnvironment(cloudName)
+	azureCloudEnv, err := parseAzureEnvironment(cloudName)
 	if err != nil {
 		return nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
 	}
 
 	// 1. cleaning up keyvault objects definition
-	objectsStrings := types.GetCertificates(attrib)
-	if objectsStrings == "" {
-		return nil, fmt.Errorf("objects is not set")
+	certificatesStrings := types.GetCertificates(attrib)
+	if certificatesStrings == "" {
+		return nil, fmt.Errorf("certificates is not set")
 	}
-	logrus.Infof("objects string defined in secret provider class, objects %v", objectsStrings)
+	logrus.Infof("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
 
-	objects, err := types.GetCertificatesArray(objectsStrings)
+	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
 	}
@@ -89,9 +87,6 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 		}
 		// remove whitespace from all fields in keyVaultCert
 		formatKeyVaultCertificate(&keyVaultCert)
-		if err = validate(keyVaultCert); err != nil {
-			return nil, wrapObjectTypeError(err, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion)
-		}
 
 		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
 	}
@@ -99,7 +94,7 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 	logrus.Infof("unmarshaled key vault objects, keyVaultObjects %v , count %v", keyVaultCerts, len(keyVaultCerts))
 
 	if len(keyVaultCerts) == 0 {
-		return nil, nil
+		return nil, errors.Wrap(err, "no keyvault certificate configured")
 	}
 
 	// 2. initialize keyvault client
@@ -110,7 +105,7 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 	}
 	logrus.Infof("vaultName %v, vaultURL %v", keyvaultName, *vaultURL)
 
-	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, azureCloudEnv.ActiveDirectoryEndpoint, tenantID, workloadIdentityClientID)
+	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get keyvault client")
 	}
@@ -169,8 +164,8 @@ func formatKeyVaultCertificate(object *types.KeyVaultCertificate) {
 	}
 }
 
-// ParseAzureEnvironment returns azure environment by name
-func ParseAzureEnvironment(cloudName string) (*azure.Environment, error) {
+// parseAzureEnvironment returns azure environment by name
+func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	var env azure.Environment
 	var err error
 	if cloudName == "" {
@@ -197,7 +192,7 @@ func getVaultURL(keyvaultName string, KeyVaultDNSSuffix string) (vaultURL *strin
 	return &vaultURI, nil
 }
 
-func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoint string, tenantID string, clientId string) (*kv.BaseClient, error) {
+func initializeKvClient(ctx context.Context, KeyVaultEndpoint, tenantID, clientId string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(KeyVaultEndpoint, "/")
 
@@ -206,8 +201,7 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint string, aadEndpoin
 		return nil, errors.Wrapf(err, "failed to add user agent to keyvault client")
 	}
 
-	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientId, kvEndpoint, aadEndpoint)
-
+	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientId, kvEndpoint)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get authorizer for keyvault client")
 	}
@@ -222,7 +216,7 @@ The alias is determine by the index of the version starting with 0 at the specif
 latest if no version is specified).
 */
 func getLatestNKeyVaultObjects(kvCert types.KeyVaultCertificate, kvObjectVersions types.KeyVaultObjectVersionList) []types.KeyVaultCertificate {
-	baseFileName := kvCert.GetFileName()
+
 	objects := []types.KeyVaultCertificate{}
 
 	sort.Sort(kvObjectVersions)
@@ -237,7 +231,6 @@ func getLatestNKeyVaultObjects(kvCert types.KeyVaultCertificate, kvObjectVersion
 			length := len(objects)
 			newObject := kvCert
 
-			newObject.CertificateAlias = filepath.Join(baseFileName, strconv.Itoa(length))
 			newObject.CertificateVersion = objectVersion.Version
 
 			objects = append(objects, newObject)
@@ -310,7 +303,6 @@ func getCertificateVersions(ctx context.Context, kvClient *kv.BaseClient, vaultU
 
 // getCertificate retrieves the certificate from the vault
 func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) ([]keyvaultObject, error) {
-	// for object type "cert" the certificate is written to the file in PEM format
 	certbundle, err := kvClient.GetCertificate(ctx, vaultURL, kvObject.CertificateName, kvObject.CertificateVersion)
 	if err != nil {
 		return nil, wrapObjectTypeError(err, kvObject.CertificateName, kvObject.CertificateVersion)

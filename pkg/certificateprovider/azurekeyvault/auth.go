@@ -16,7 +16,7 @@ limitations under the License.
 package azurekeyvault
 
 // This class is based on implementation from  azure secret store csi provider
-// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/auth
 import (
 	"context"
 	"encoding/json"
@@ -53,8 +53,7 @@ type authResult struct {
 	declinedScopes []string
 }
 
-func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, resource, aadEndpoin string) (autorest.Authorizer, error) {
-
+func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, resource string) (autorest.Authorizer, error) {
 	scope := resource
 	// .default needs to be added to the scope
 	if !strings.Contains(resource, ".default") {
@@ -111,8 +110,7 @@ func parseExpiresOn(s string) (json.Number, error) {
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
 func getAADAccessToken(ctx context.Context, tenantID string, clientID string, scope string) (confidential.AuthResult, error) {
-	// Azure AD Workload Identity webhook will inject the following env vars:
-	// 	AZURE_CLIENT_ID with the clientID set in the service account annotation
+	//  Azure AD Workload Identity webhook will inject the following env vars:
 	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
 	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
@@ -121,8 +119,8 @@ func getAADAccessToken(ctx context.Context, tenantID string, clientID string, sc
 	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
 	authority := os.Getenv("AZURE_AUTHORITY_HOST")
 
-	if clientID == "" || tokenFilePath == "" || authority == "" {
-		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_CLIENT_ID: %s, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", clientID, tokenFilePath, authority)
+	if tokenFilePath == "" || authority == "" {
+		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", tokenFilePath, authority)
 	}
 
 	// read the service account token from the filesystem

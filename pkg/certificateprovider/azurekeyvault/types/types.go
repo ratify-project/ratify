@@ -17,7 +17,7 @@ package types
 import "time"
 
 // This class is based on implementation from  azure secret store csi provider
-// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 const (
 	// KeyVaultNameParameter is the name of the key vault name parameter
 	KeyVaultNameParameter = "keyvaultName"
@@ -40,18 +40,16 @@ const (
 type KeyVaultCertificate struct {
 	// the name of the Azure Key Vault objects
 	CertificateName string `json:"certificateName" yaml:"certificateName"`
-	// the filename the object will be written to
-	CertificateAlias string `json:"certificateAlias" yaml:"certificateAlias"`
 	// the version of the Azure Key Vault objects
 	CertificateVersion string `json:"certificateVersion" yaml:"certificateVersion"`
 	// The number of versions to load for this secret starting at the latest version
 	CertificateVersionHistory int32 `json:"certificateVersionHistory" yaml:"certificateVersionHistory"`
 }
 
-// CertificateFile holds content and metadata of a keyvault secret file
+// CertificateFile holds content and metadata of a keyvault certificate file
 type CertificateFile struct {
 	Content []byte
-	Path    string // This field is not necessary but useful to have for debugging to keep track of which certs have loaded
+	Path    string //This field is not necessary but useful to have for debugging to keep track of which certs have loaded
 	Version string
 }
 

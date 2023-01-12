@@ -16,10 +16,9 @@ limitations under the License.
 package azurekeyvault
 
 // This class is based on implementation from  azure secret store csi provider
-// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"context"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -64,7 +63,7 @@ func TestGetVaultURL(t *testing.T) {
 	for i, tc := range cases {
 		t.Log(i, tc.desc)
 		for idx := range testEnvs {
-			azCloudEnv, err := ParseAzureEnvironment(testEnvs[idx])
+			azCloudEnv, err := parseAzureEnvironment(testEnvs[idx])
 			if err != nil {
 				t.Fatalf("Error parsing cloud environment %v", err)
 			}
@@ -84,7 +83,7 @@ func TestGetVaultURL(t *testing.T) {
 func TestParseAzureEnvironment(t *testing.T) {
 	envNamesArray := []string{"AZURECHINACLOUD", "AZUREGERMANCLOUD", "AZUREPUBLICCLOUD", "AZUREUSGOVERNMENTCLOUD", ""}
 	for _, envName := range envNamesArray {
-		azureEnv, err := ParseAzureEnvironment(envName)
+		azureEnv, err := parseAzureEnvironment(envName)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -96,7 +95,7 @@ func TestParseAzureEnvironment(t *testing.T) {
 	}
 
 	wrongEnvName := "AZUREWRONGCLOUD"
-	_, err := ParseAzureEnvironment(wrongEnvName)
+	_, err := parseAzureEnvironment(wrongEnvName)
 	if err == nil {
 		t.Fatalf("expected error for wrong azure environment name")
 	}
@@ -143,31 +142,26 @@ func TestGetLatestNKeyVaultObjects(t *testing.T) {
 			expectedObjects: []types.KeyVaultCertificate{
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "0"),
 					CertificateVersion:        "a",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "1"),
 					CertificateVersion:        "b",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "2"),
 					CertificateVersion:        "c",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "3"),
 					CertificateVersion:        "d",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "4"),
 					CertificateVersion:        "e",
 					CertificateVersionHistory: 5,
 				},
@@ -205,31 +199,26 @@ func TestGetLatestNKeyVaultObjects(t *testing.T) {
 			expectedObjects: []types.KeyVaultCertificate{
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "0"),
 					CertificateVersion:        "a",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "1"),
 					CertificateVersion:        "b",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "2"),
 					CertificateVersion:        "c",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "3"),
 					CertificateVersion:        "d",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "4"),
 					CertificateVersion:        "e",
 					CertificateVersionHistory: 5,
 				},
@@ -254,13 +243,11 @@ func TestGetLatestNKeyVaultObjects(t *testing.T) {
 			expectedObjects: []types.KeyVaultCertificate{
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "0"),
 					CertificateVersion:        "a",
 					CertificateVersionHistory: 2,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "1"),
 					CertificateVersion:        "b",
 					CertificateVersionHistory: 2,
 				},
@@ -285,13 +272,11 @@ func TestGetLatestNKeyVaultObjects(t *testing.T) {
 			expectedObjects: []types.KeyVaultCertificate{
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "0"),
 					CertificateVersion:        "a",
 					CertificateVersionHistory: 200,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "1"),
 					CertificateVersion:        "b",
 					CertificateVersionHistory: 200,
 				},
@@ -329,19 +314,16 @@ func TestGetLatestNKeyVaultObjects(t *testing.T) {
 			expectedObjects: []types.KeyVaultCertificate{
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "0"),
 					CertificateVersion:        "c",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "1"),
 					CertificateVersion:        "d",
 					CertificateVersionHistory: 5,
 				},
 				{
 					CertificateName:           "cert1",
-					CertificateAlias:          filepath.Join("cert1", "2"),
 					CertificateVersion:        "e",
 					CertificateVersionHistory: 5,
 				},
@@ -371,12 +353,10 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 			keyVaultObject: types.KeyVaultCertificate{
 				CertificateName:    "cert1     ",
 				CertificateVersion: "",
-				CertificateAlias:   "",
 			},
 			expectedKeyVaultObject: types.KeyVaultCertificate{
 				CertificateName:    "cert1",
 				CertificateVersion: "",
-				CertificateAlias:   "",
 			},
 		},
 		{
@@ -384,12 +364,10 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 			keyVaultObject: types.KeyVaultCertificate{
 				CertificateName:    "cert1",
 				CertificateVersion: "version1",
-				CertificateAlias:   "alias",
 			},
 			expectedKeyVaultObject: types.KeyVaultCertificate{
 				CertificateName:    "cert1",
 				CertificateVersion: "version1",
-				CertificateAlias:   "alias",
 			},
 		},
 		{
@@ -397,13 +375,11 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 			keyVaultObject: types.KeyVaultCertificate{
 				CertificateName:           "cert1",
 				CertificateVersion:        "latest",
-				CertificateAlias:          "alias",
 				CertificateVersionHistory: 12,
 			},
 			expectedKeyVaultObject: types.KeyVaultCertificate{
 				CertificateName:           "cert1",
 				CertificateVersion:        "latest",
-				CertificateAlias:          "alias",
 				CertificateVersionHistory: 12,
 			},
 		},
@@ -429,7 +405,7 @@ func SkipTestInitializeKVClient(t *testing.T) {
 
 	for i := range testEnvs {
 
-		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, testEnvs[i].ActiveDirectoryEndpoint, "", "")
+		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
 		assert.NoError(t, err)
 		assert.NotNil(t, kvBaseClient)
 		assert.NotNil(t, kvBaseClient.Authorizer)

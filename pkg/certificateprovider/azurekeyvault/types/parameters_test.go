@@ -15,7 +15,7 @@ limitations under the License.
 package types
 
 // This class is based on implementation from azure secret store csi provider
-// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"reflect"
 	"testing"
@@ -312,46 +312,6 @@ func TestIsSyncingSingleVersion(t *testing.T) {
 			actual := test.object.IsSyncingSingleVersion()
 			if actual != test.expected {
 				t.Errorf("IsSyncingSingleVersion() = %v, expected %v", actual, test.expected)
-			}
-		})
-	}
-}
-
-func TestGetFileName(t *testing.T) {
-	tests := []struct {
-		name     string
-		object   KeyVaultCertificate
-		expected string
-	}{
-		{
-			name: "empty",
-			object: KeyVaultCertificate{
-				CertificateName: "",
-			},
-			expected: "",
-		},
-		{
-			name: "object alias and object name",
-			object: KeyVaultCertificate{
-				CertificateName:  "test",
-				CertificateAlias: "alias",
-			},
-			expected: "alias",
-		},
-		{
-			name: "object name only",
-			object: KeyVaultCertificate{
-				CertificateName: "test",
-			},
-			expected: "test",
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := test.object.GetFileName()
-			if actual != test.expected {
-				t.Errorf("GetFileName() = %v, expected %v", actual, test.expected)
 			}
 		})
 	}

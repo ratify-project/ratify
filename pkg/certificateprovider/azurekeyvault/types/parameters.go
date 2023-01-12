@@ -16,12 +16,11 @@ limitations under the License.
 package types
 
 // This class is based on implementation from azure secret store csi provider
-// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/blob/master/pkg/provider/
+// Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"strings"
 
 	"gopkg.in/yaml.v3"
-	"k8s.io/klog/v2"
 )
 
 // GetKeyVaultName returns the key vault name
@@ -41,7 +40,7 @@ func GetTenantID(parameters map[string]string) string {
 	if tenantID != "" {
 		return tenantID
 	}
-	klog.V(3).Info("tenantId is deprecated and will be removed in a future release. Use 'tenantID' instead")
+
 	return strings.TrimSpace(parameters[TenantIDParameter])
 }
 
@@ -58,7 +57,6 @@ func GetCertificates(parameters map[string]string) string {
 // GetCertificatesArray returns the key vault objects array
 func GetCertificatesArray(objects string) (StringArray, error) {
 	var a StringArray
-	//var b string // Susan to Fix this
 	err := yaml.Unmarshal([]byte(objects), &a)
 
 	return a, err
@@ -74,8 +72,5 @@ func (kv KeyVaultCertificate) IsSyncingSingleVersion() bool {
 // 1. If the object alias is specified, it will be used
 // 2. If the object alias is not specified, the object name will be used
 func (kv KeyVaultCertificate) GetFileName() string {
-	if kv.CertificateAlias != "" {
-		return kv.CertificateAlias
-	}
 	return kv.CertificateName
 }
