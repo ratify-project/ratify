@@ -29,6 +29,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/pkg/errors"
 )
 
@@ -124,7 +125,7 @@ func getAADAccessToken(ctx context.Context, tenantID string, clientID string, sc
 	}
 
 	// read the service account token from the filesystem
-	signedAssertion, err := readJWTFromFS(tokenFilePath)
+	signedAssertion, err := utils.ReadJWTFromFS(tokenFilePath)
 	if err != nil {
 		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
 	}
@@ -149,14 +150,4 @@ func getAADAccessToken(ctx context.Context, tenantID string, clientID string, sc
 	}
 
 	return result, nil
-}
-
-// readJWTFromFS reads the jwt from file system
-// Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L88
-func readJWTFromFS(tokenFilePath string) (string, error) {
-	token, err := os.ReadFile(tokenFilePath)
-	if err != nil {
-		return "", err
-	}
-	return string(token), nil
 }
