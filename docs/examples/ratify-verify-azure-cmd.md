@@ -213,7 +213,7 @@ Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main
 
 ### Discover & Verify SBOMs and Signature using Ratify
 
-1. Extract the SBOM plugin from the Ratify binary and copy it to the default plugins directory
+1. Extract the SBOM plugin from the Ratify tarball and copy it to the default plugins directory
 
     ```bash
     tar xvf ratify.tar.gz -C ~/.ratify/plugins/ sbom
