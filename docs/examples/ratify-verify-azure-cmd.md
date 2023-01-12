@@ -215,9 +215,9 @@ Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main
 
 1. Build the SBOM plugin
 
-    Ensure you have cloned the Ratify repo and are in the ratify directory from step 1 in the previous section.
-
     ```bash
+    git clone https://github.com/deislabs/ratify.git
+    cd ratify
     go build ./plugins/verifier/sbom/
     mv sbom ~/.ratify/plugins/
     ```
