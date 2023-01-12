@@ -31,7 +31,7 @@ mv oras-install/oras /usr/local/bin/
 
 ### SBOM Tool
 
-The SBOM tool will be used to create an SPDX 2.2 compatible SBOM. you can refer to the [SBOM README](https://github.com/microsoft/sbom-tool) for more details.
+The SBOM tool will be used to create an SPDX 2.2 compatible SBOM. you can refer to the [SBOM Tool README](https://github.com/microsoft/sbom-tool) for more details on installation and usage.
 
 ```bash
 curl -Lo sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 
@@ -41,18 +41,22 @@ mv sbom-tool /usr/local/bin/
 
 ### Ratify
 
+> Note: The Ratify commands used below will not work until the RC1 release.
+
 Install Ratify v1.0.0-beta.2 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-beta.2).
 
 ```bash
 # Download the Ratify binary
-curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v1.0.0-beta.2/ratify_1.0.0-beta.2_Linux_amd64.tar.gz
+RATIFY_VERSION=1.0.0-beta.2
+curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v${RATIFY_VERSION}/ratify_${RATIFY_VERSION}_Linux_amd64.tar.gz
 # Extract it from the binary and copy it to the bin directory
-tar xvzf ratify.tar.gz -C ~/bin ratify
+tar xvzf ratify.tar.gz -C /usr/local/bin ratify
 ```
 
 ## Presets
 
 ### Set up ACR and Auth information
+
 ```bash
 export ACR_NAME=<YOUR_ACR_NAME>
 export REGISTRY=$ACR_NAME.azurecr.io
@@ -80,7 +84,7 @@ docker login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 oras login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 ```
 
-## Demo 1 :  Discover & Verify Signatures using Ratify
+## Demo 1: Discover & Verify Signatures using Ratify
 
 ### Sign the image using ```notation```
 
@@ -125,189 +129,198 @@ oras login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 
 ### Discover & Verify using Ratify
 
-- Create a Ratify config with ORAS as the signature store and notary v2 as the signature verifier.
+1. Create a Ratify config with ORAS as the signature store and notary v2 as the signature verifier.
 Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy
 
-```bash
-cat <<EOF > ~/.ratify/config.json 
-{ 
-    "store": { 
-        "version": "1.0.0", 
-        "plugins": [ 
-            { 
-                "name": "oras"
-            }
-        ]
-    },
-    "policy": {
-        "version": "1.0.0",
-        "plugin": {
-            "name": "configPolicy",
-            "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.signature": "any"
-            }
-        }
-    },
-    "verifier": {
-        "version": "1.0.0",
-        "plugins": [
-            {
-                "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.signature",
-                "verificationCerts": [
-                    "~/.config/notation/truststore/x509/ca/wabbit-networks.io/wabbit-networks.io.crt"
-                ],
-                "trustPolicyDoc": {
-                    "version": "1.0",
-                    "trustPolicies": [
-                        {
-                            "name": "default",
-                            "registryScopes": [ "*" ],
-                            "signatureVerification": {
-                                "level" : "strict" 
-                            },
-                            "trustStores": ["ca:certs"],
-                            "trustedIdentities": ["*"]
-                        }
-                    ]
+    ```bash
+    cat <<EOF > ~/.ratify/config.json 
+    { 
+        "store": { 
+            "version": "1.0.0", 
+            "plugins": [ 
+                { 
+                    "name": "oras"
+                }
+            ]
+        },
+        "policy": {
+            "version": "1.0.0",
+            "plugin": {
+                "name": "configPolicy",
+                "artifactVerificationPolicies": {
+                    "application/vnd.cncf.notary.signature": "any"
                 }
             }
-        ]
-    }
-}
-EOF
-```
-
-- Discover the signatures
-
-```bash
-# Query for the signatures
-export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
-ratify discover -s $IMAGE_DIGEST_REF
-```
-
-- Verify all signatures for the image
-
-```bash
-# Verify signatures
-ratify verify -s $IMAGE_DIGEST_REF
-```
-
-## Demo 2 : Discover & Verify SBoMs, scan results using Ratify
-
-### Generate, Sign, Push SBoMs, Scan results
-
-- Build the SBoM plugin
-
-```bash
-git clone https://github.com/deislabs/ratify.git
-cd ratify
-go build ./plugins/verifier/sbom/
-mv sbom ~/.ratify/plugins/
-```
-
-- Generate an SBoM
-
-```bash
-# As a sample, the Ratify repo will be used
-# Ensure you are in the ratify directory from the pervious step
-sbom-tool generate -b . -bc . -pn ratify -pv 1.0 -ps ratify-test -nsb https://github.com/deislabs -V
-```
-
-- Push the SBoM
- 
-```bash
-oras attach $IMAGE \
-  --artifact-type org.example.sbom.v0 \
-  -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-  ./_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
-```
-
-- Sign the SBoM
-
-```bash
-# Capture the digest, to sign it
-SBOM_DIGEST=$(oras discover -o json \
-                --artifact-type org.example.sbom.v0 \
-                -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-                $IMAGE | jq -r ".manifests[0].digest")
-
-notation sign $REPO@$SBOM_DIGEST
-```
-
-### Discover & Verify using Ratify
-
-- Create a Ratify config with ORAS as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBoM and scan results in the config.
-
-```bash
-cat <<EOF > ~/.ratify/config.json 
-{ 
-    "store": { 
-        "version": "1.0.0", 
-        "plugins": [ 
-            { 
-                "name": "oras"
-            }
-        ]
-    },
-    "policy": {
-        "version": "1.0.0",
-        "plugin": {
-            "name": "configPolicy",
-            "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.signature": "all"
-            }
-        }
-    },
-    "verifier": {
-        "version": "1.0.0",
-        "plugins": [
-            {
-                "name":"notaryv2",
-                "artifactTypes" : "application/vnd.cncf.notary.signature",
-                "verificationCerts": [
-                    "~/.config/notation/localkeys/wabbit-networks.io.crt"
-                ],
-                "trustPolicyDoc": {
-                    "version": "1.0",
-                    "trustPolicies": [
-                        {
-                        "name": "default",
-                        "registryScopes": [
-                            "*"
-                        ],
-                        "signatureVerification": {
-                            "level": "strict"
-                        },
-                        "trustStores": [
-                            "ca:certs"
-                        ],
-                        "trustedIdentities": [
-                            "*"
+        },
+        "verifier": {
+            "version": "1.0.0",
+            "plugins": [
+                {
+                    "name":"notaryv2",
+                    "artifactTypes" : "application/vnd.cncf.notary.signature",
+                    "verificationCerts": [
+                        "~/.config/notation/truststore/x509/ca/wabbit-networks.io/wabbit-networks.io.crt"
+                    ],
+                    "trustPolicyDoc": {
+                        "version": "1.0",
+                        "trustPolicies": [
+                            {
+                                "name": "default",
+                                "registryScopes": [ "*" ],
+                                "signatureVerification": {
+                                    "level" : "strict" 
+                                },
+                                "trustStores": ["ca:certs"],
+                                "trustedIdentities": ["*"]
+                            }
                         ]
-                    }]
+                    }
                 }
-            },
-            {
-                "name":"sbom",
-                "artifactTypes" : "org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
-            }
-        ]
+            ]
+        }
     }
-}
-EOF
-```
+    EOF
+    ```
 
-- Discover the signatures
+2. Discover the signatures
 
-```bash
-# Discover full graph of supply chain content
-ratify discover -s $IMAGE_DIGEST_REF
-``` 
-- Verify the full graph of supply chain content
+    ```bash
+    # Query for the signatures
+    export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
+    ratify discover -s $IMAGE_DIGEST_REF
+    ```
 
-```bash
-# Verify full graph
-ratify verify -s $IMAGE_DIGEST_REF
-```
+3. Verify all signatures for the image
+
+    ```bash
+    # Verify signatures
+    ratify verify -s $IMAGE_DIGEST_REF
+    ```
+
+## Demo 2: Discover & Verify SBOMs, scan results using Ratify
+
+### Generate, Sign, Push SBOMs, Scan results
+
+1. Clone the Ratify Repo. As a sample, it will be used to generate the SBOM.
+
+    ```bash
+    git clone https://github.com/deislabs/ratify.git
+    cd ratify
+    ```
+
+2. Generate an SBOM
+
+    See [sbom-generation](https://github.com/microsoft/sbom-tool#sbom-generation) for more information on how to generate an SBOM.
+
+    ```bash
+    # Ensure you are in the ratify directory from the previous step
+    sbom-tool generate -b . -bc . -pn ratify -pv 1.0 -ps ratify-test -nsb https://github.com/deislabs -V
+    ```
+
+3. Push the SBOM
+
+    ```bash
+    oras attach $IMAGE \
+        --artifact-type org.example.sbom.v0 \
+        -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
+        ./_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+    ```
+
+4. Sign the SBOM
+
+    ```bash
+    # Capture the digest, to sign it
+    SBOM_DIGEST=$(oras discover -o json \
+                    --artifact-type org.example.sbom.v0 \
+                    -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
+                    $IMAGE | jq -r ".manifests[0].digest")
+
+    notation sign $REPO@$SBOM_DIGEST
+    ```
+
+### Discover & Verify SBOMs and Signature using Ratify
+
+1. Build the SBOM plugin
+
+    Ensure you have cloned the Ratify repo and are in the ratify directory from step 1 in the previous section.
+
+    ```bash
+    go build ./plugins/verifier/sbom/
+    mv sbom ~/.ratify/plugins/
+    ```
+
+2. Create a Ratify config with ORAS as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBOM and scan results in the config.
+
+    ```bash
+    cat <<EOF > ~/.ratify/config.json 
+    { 
+        "store": { 
+            "version": "1.0.0", 
+            "plugins": [ 
+                { 
+                    "name": "oras"
+                }
+            ]
+        },
+        "policy": {
+            "version": "1.0.0",
+            "plugin": {
+                "name": "configPolicy",
+                "artifactVerificationPolicies": {
+                    "application/vnd.cncf.notary.signature": "all"
+                }
+            }
+        },
+        "verifier": {
+            "version": "1.0.0",
+            "plugins": [
+                {
+                    "name":"notaryv2",
+                    "artifactTypes" : "application/vnd.cncf.notary.signature",
+                    "verificationCerts": [
+                        "~/.config/notation/localkeys/wabbit-networks.io.crt"
+                    ],
+                    "trustPolicyDoc": {
+                        "version": "1.0",
+                        "trustPolicies": [
+                            {
+                            "name": "default",
+                            "registryScopes": [
+                                "*"
+                            ],
+                            "signatureVerification": {
+                                "level": "strict"
+                            },
+                            "trustStores": [
+                                "ca:certs"
+                            ],
+                            "trustedIdentities": [
+                                "*"
+                            ]
+                        }]
+                    }
+                },
+                {
+                    "name":"sbom",
+                    "artifactTypes" : "org.example.sbom.v0",
+                    "nestedReferences": "application/vnd.cncf.notary.signature"
+                }
+            ]
+        }
+    }
+    EOF
+    ```
+
+3. Discover the signatures
+
+    ```bash
+    # Discover full graph of supply chain content
+    ratify discover -s $IMAGE_DIGEST_REF
+    ```
+
+4. Verify the full graph of supply chain content
+
+    ```bash
+    # Verify full graph
+    ratify verify -s $IMAGE_DIGEST_REF
+    ```
