@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 )
 
 // Verifies that Enabled checks if tenantID is empty or AAD token is empty
