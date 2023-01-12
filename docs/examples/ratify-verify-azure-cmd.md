@@ -19,9 +19,9 @@ Install ORAS 0.16.0 on a Linux machine. You can refer to the [ORAS installation 
 
 ```bash
 # Download the ORAS binary
-curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
+curl -Lo oras.tar.gz https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
 # Extract it from the binary and copy it to the bin directory
-tar -zxf oras_0.16.0_*.tar.gz -C /usr/local/bin oras
+tar xvzf oras.tar.gz -C /usr/local/bin oras
 ```
 
 ### Ratify
@@ -95,7 +95,7 @@ oras login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
     notation cert generate-test --default "wabbit-networks.io"
     ```
 
-4. Sign the image[Notation Sign command only works in the next rc.1 release version]
+4. Sign the image
 
     ```bash
     notation sign $IMAGE
@@ -213,13 +213,10 @@ Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main
 
 ### Discover & Verify SBOMs and Signature using Ratify
 
-1. Build the SBOM plugin
+1. Extract the SBOM plugin from the Ratify binary and copy it to the default plugins directory
 
     ```bash
-    git clone https://github.com/deislabs/ratify.git
-    cd ratify
-    go build ./plugins/verifier/sbom/
-    mv sbom ~/.ratify/plugins/
+    tar xvf ratify.tar.gz -C ~/.ratify/plugins/ sbom
     ```
 
 2. Create a Ratify config with ORAS as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBOM and scan results in the config.
