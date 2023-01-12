@@ -9,10 +9,8 @@ Install Notation v1.0.0-rc.1 with plugin support from [Notation GitHub Release](
 ```bash
 # Download the Notation binary
 curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v1.0.0-rc.1/notation_1.0.0-rc.1_linux_amd64.tar.gz
-# Extract it from the binary
-tar xvzf notation.tar.gz
-# Copy the Notation CLI to your bin directory
-mkdir -p ~/bin && cp ./notation ~/bin
+# Extract it from the binary and copy it to the bin directory
+tar xvzf notation.tar.gz -C  /usr/local/bin notation
 ```
 
 ### ORAS
@@ -22,21 +20,8 @@ Install ORAS 0.16.0 on a Linux machine. You can refer to the [ORAS installation 
 ```bash
 # Download the ORAS binary
 curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
-# Create a folder to extract the ORAS binary
-mkdir -p oras-install/
-tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
-# Copy the Notation CLI to your bin directory
-mv oras-install/oras /usr/local/bin/
-```
-
-### SBOM Tool
-
-The SBOM tool will be used to create an SPDX 2.2 compatible SBOM. you can refer to the [SBOM Tool README](https://github.com/microsoft/sbom-tool) for more details on installation and usage.
-
-```bash
-curl -Lo sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 
-chmod +x sbom-tool 
-mv sbom-tool /usr/local/bin/
+# Extract it from the binary and copy it to the bin directory
+tar -zxf oras_0.16.0_*.tar.gz -C /usr/local/bin oras
 ```
 
 ### Ratify
@@ -157,7 +142,7 @@ Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main
                     "name":"notaryv2",
                     "artifactTypes" : "application/vnd.cncf.notary.signature",
                     "verificationCerts": [
-                        "~/.config/notation/truststore/x509/ca/wabbit-networks.io/wabbit-networks.io.crt"
+                        "~/.config/notation/truststore"
                     ],
                     "trustPolicyDoc": {
                         "version": "1.0",
@@ -199,32 +184,22 @@ Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main
 
 ### Generate, Sign, Push SBOMs, Scan results
 
-1. Clone the Ratify Repo. As a sample, it will be used to generate the SBOM.
+1. Generate a sample SBOM
 
     ```bash
-    git clone https://github.com/deislabs/ratify.git
-    cd ratify
+    echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
     ```
 
-2. Generate an SBOM
-
-    See [sbom-generation](https://github.com/microsoft/sbom-tool#sbom-generation) for more information on how to generate an SBOM.
-
-    ```bash
-    # Ensure you are in the ratify directory from the previous step
-    sbom-tool generate -b . -bc . -pn ratify -pv 1.0 -ps ratify-test -nsb https://github.com/deislabs -V
-    ```
-
-3. Push the SBOM
+2. Push the SBOM
 
     ```bash
     oras attach $IMAGE \
         --artifact-type org.example.sbom.v0 \
         -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-        ./_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+        sbom.json:application/json
     ```
 
-4. Sign the SBOM
+3. Sign the SBOM
 
     ```bash
     # Capture the digest, to sign it
@@ -276,7 +251,7 @@ Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main
                     "name":"notaryv2",
                     "artifactTypes" : "application/vnd.cncf.notary.signature",
                     "verificationCerts": [
-                        "~/.config/notation/localkeys/wabbit-networks.io.crt"
+                        "~/.config/notation/truststore"
                     ],
                     "trustPolicyDoc": {
                         "version": "1.0",
