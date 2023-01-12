@@ -4,11 +4,11 @@
 
 ### Notation
 
-Install Notation v0.11.0-alpha.4 with plugin support from [Notation GitHub Release](https://github.com/notaryproject/notation/releases/tag/v0.11.0-alpha.4).
+Install Notation v1.0.0-rc.1 with plugin support from [Notation GitHub Release](https://github.com/notaryproject/notation/releases/tag/v1.0.0-rc.1).
 
 ```bash
 # Download the Notation binary
-curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v0.11.0-alpha.4/notation_0.11.0-alpha.4_linux_amd64.tar.gz
+curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v1.0.0-rc.1/notation_1.0.0-rc.1_linux_amd64.tar.gz
 # Extract it from the binary
 tar xvzf notation.tar.gz
 # Copy the Notation CLI to your bin directory
@@ -29,13 +29,23 @@ tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
 mv oras-install/oras /usr/local/bin/
 ```
 
+### SBOM Tool
+
+The SBOM tool will be used to create an SPDX 2.2 compatible SBOM. you can refer to the [SBOM README](https://github.com/microsoft/sbom-tool) for more details.
+
+```bash
+curl -Lo sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 
+chmod +x sbom-tool 
+mv sbom-tool /usr/local/bin/
+```
+
 ### Ratify
 
-Install Ratify v1.0.0-alpha.3 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-alpha.3).
+Install Ratify v1.0.0-beta.2 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-beta.2).
 
 ```bash
 # Download the Ratify binary
-curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v1.0.0-alpha.3/ratify_1.0.0-alpha.3_Linux_amd64.tar.gz
+curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v1.0.0-beta.2/ratify_1.0.0-beta.2_Linux_amd64.tar.gz
 # Extract it from the binary and copy it to the bin directory
 tar xvzf ratify.tar.gz -C ~/bin ratify
 ```
@@ -44,22 +54,24 @@ tar xvzf ratify.tar.gz -C ~/bin ratify
 
 ### Set up ACR and Auth information
 ```bash
-export ACR_NAME=wabbitnetworks
-export REGISTRY=$ACR_NAME.azurecr-test.io
+export ACR_NAME=<YOUR_ACR_NAME>
+export REGISTRY=$ACR_NAME.azurecr.io
 export REPO=${REGISTRY}/net-monitor
 export IMAGE=${REPO}:v1
-
+export RESOURCE_GROUP=$ACR_NAME-acr
+export LOCATION=westus3
 
 # Create an ACR
 # Premium to use tokens
-az acr create -n $ACR_NAME -g $ACR_NAME-acr --sku Premium
+az group create -n $RESOURCE_GROUP -l $LOCATION
+az acr create -n $ACR_NAME -g $RESOURCE_GROUP --sku Premium
 az configure --default acr=$ACR_NAME
 az acr update --anonymous-pull-enabled true
 
 # Using ACR Auth with Tokens
 export NOTATION_USERNAME='wabbitnetworks-token'
 export NOTATION_PASSWORD=$(az acr token create -n $NOTATION_USERNAME \
-                    -r wabbitnetworks \
+                    -r $ACR_NAME \
                     --scope-map _repositories_admin \
                     --only-show-errors \
                     -o json | jq -r ".credentials.passwords[0].value")
@@ -67,44 +79,55 @@ export NOTATION_PASSWORD=$(az acr token create -n $NOTATION_USERNAME \
 docker login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 oras login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
 ```
+
 ## Demo 1 :  Discover & Verify Signatures using Ratify
 
 ### Sign the image using ```notation```
 
 1. We will build, push, sign the image in ACR
-```bash
-# Build, push, sign the image in ACR
-echo $IMAGE
-```
-2.  Build and push the image
-```bash
-# build the image
-docker build -t $IMAGE https://github.com/wabbit-networks/net-monitor.git#main
 
-# push the image
-docker push $IMAGE
-```
-3.  Generate a test certificate
-```bash
-# Generate a test certificate
-notation cert generate-test --default "wabbit-networks.io"
-```
+    ```bash
+    # Build, push, sign the image in ACR
+    echo $IMAGE
+    ```
+
+2. Build and push the image
+
+    ```bash
+    # build the image
+    docker build -t $IMAGE https://github.com/wabbit-networks/net-monitor.git#main
+
+    # push the image
+    docker push $IMAGE
+    ```
+
+3. Generate a test certificate
+
+    ```bash
+    # Generate a test certificate
+    notation cert generate-test --default "wabbit-networks.io"
+    ```
 
 4. Sign the image[Notation Sign command only works in the next rc.1 release version]
-```bash
-notation sign $IMAGE
-```
-5.  List the signatures with notation
-```bash
-# List the signatures
-notation list $IMAGE
-```
-> You can repeat step 4-5 to create multiple signatures to the image.
+
+    ```bash
+    notation sign $IMAGE
+    ```
+
+5. List the signatures with notation
+
+    ```bash
+    # List the signatures
+    notation list $IMAGE
+    ```
+
+    > You can repeat step 4-5 to create multiple signatures to the image.
 
 ### Discover & Verify using Ratify
 
 - Create a Ratify config with ORAS as the signature store and notary v2 as the signature verifier.
 Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy
+
 ```bash
 cat <<EOF > ~/.ratify/config.json 
 { 
@@ -154,13 +177,15 @@ cat <<EOF > ~/.ratify/config.json
 }
 EOF
 ```
+
 - Discover the signatures
 
 ```bash
 # Query for the signatures
 export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
 ratify discover -s $IMAGE_DIGEST_REF
-``` 
+```
+
 - Verify all signatures for the image
 
 ```bash
@@ -172,23 +197,38 @@ ratify verify -s $IMAGE_DIGEST_REF
 
 ### Generate, Sign, Push SBoMs, Scan results
 
-- Push an SBoM
+- Build the SBoM plugin
+
+```bash
+git clone https://github.com/deislabs/ratify.git
+cd ratify
+go build ./plugins/verifier/sbom/
+mv sbom ~/.ratify/plugins/
+```
+
+- Generate an SBoM
+
+```bash
+# As a sample, the Ratify repo will be used
+# Ensure you are in the ratify directory from the pervious step
+sbom-tool generate -b . -bc . -pn ratify -pv 1.0 -ps ratify-test -nsb https://github.com/deislabs -V
+```
+
+- Push the SBoM
  
 ```bash
-# Create, Push
-echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
-
 oras attach $IMAGE \
-  --artifact-type sbom/example \
+  --artifact-type org.example.sbom.v0 \
   -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-  sbom.json:application/json
+  ./_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 ```
 
 - Sign the SBoM
+
 ```bash
 # Capture the digest, to sign it
 SBOM_DIGEST=$(oras discover -o json \
-                --artifact-type sbom/example \
+                --artifact-type org.example.sbom.v0 \
                 -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
                 $IMAGE | jq -r ".manifests[0].digest")
 
@@ -215,8 +255,7 @@ cat <<EOF > ~/.ratify/config.json
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.signature": "any",
-                "sbom/example": "all"
+                "application/vnd.cncf.notary.signature": "all"
             }
         }
     },
@@ -228,11 +267,30 @@ cat <<EOF > ~/.ratify/config.json
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/localkeys/wabbit-networks.io.crt"
-                  ]
+                ],
+                "trustPolicyDoc": {
+                    "version": "1.0",
+                    "trustPolicies": [
+                        {
+                        "name": "default",
+                        "registryScopes": [
+                            "*"
+                        ],
+                        "signatureVerification": {
+                            "level": "strict"
+                        },
+                        "trustStores": [
+                            "ca:certs"
+                        ],
+                        "trustedIdentities": [
+                            "*"
+                        ]
+                    }]
+                }
             },
             {
                 "name":"sbom",
-                "artifactTypes" : "sbom/example",
+                "artifactTypes" : "org.example.sbom.v0",
                 "nestedReferences": "application/vnd.cncf.notary.signature"
             }
         ]
