@@ -35,6 +35,7 @@ type AzureWIProviderFactory struct{}
 type azureWIAuthProvider struct {
 	aadToken confidential.AuthResult
 	tenantID string
+	clientID string
 }
 
 type azureWIAuthProviderConf struct {
@@ -63,11 +64,18 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
+
 	if tenant == "" {
 		return nil, fmt.Errorf("azure tenant id environment variable is empty")
 	}
+
+	client := os.Getenv("AZURE_CLIENT_ID")
+	if client == "" {
+		return nil, fmt.Errorf("azure client id environment variable is empty")
+	}
+
 	// retrieve an AAD Access token
-	token, err := getAADAccessToken(context.Background(), tenant)
+	token, err := utils.GetAADAccessToken(context.Background(), tenant, client, AADResource)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +83,13 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	return &azureWIAuthProvider{
 		aadToken: token,
 		tenantID: tenant,
+		clientID: client,
 	}, nil
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
 func (d *azureWIAuthProvider) Enabled(ctx context.Context) bool {
-	if d.tenantID == "" {
+	if d.tenantID == "" || d.clientID == "" {
 		return false
 	}
 
@@ -106,7 +115,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 
 	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
-		newToken, err := getAADAccessToken(ctx, d.tenantID)
+		newToken, err := utils.GetAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
 		}
@@ -132,50 +141,4 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	}
 
 	return authConfig, nil
-}
-
-// Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
-func getAADAccessToken(ctx context.Context, tenantID string) (confidential.AuthResult, error) {
-	// Azure AD Workload Identity webhook will inject the following env vars:
-	// 	AZURE_CLIENT_ID with the clientID set in the service account annotation
-	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
-	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
-	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
-	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
-	clientID := os.Getenv("AZURE_CLIENT_ID")
-
-	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
-
-	authority := os.Getenv("AZURE_AUTHORITY_HOST")
-
-	if clientID == "" || tokenFilePath == "" || authority == "" {
-		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_CLIENT_ID: %s, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", clientID, tokenFilePath, authority)
-	}
-
-	// read the service account token from the filesystem
-	signedAssertion, err := utils.ReadJWTFromFS(tokenFilePath)
-
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
-	}
-	cred, err := confidential.NewCredFromAssertion(signedAssertion)
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential creds")
-	}
-
-	// create the confidential client to request an AAD token
-	confidentialClientApp, err := confidential.New(
-		clientID,
-		cred,
-		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authority, tenantID)))
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential client app")
-	}
-
-	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{AADResource})
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire AAD token")
-	}
-
-	return result, nil
 }

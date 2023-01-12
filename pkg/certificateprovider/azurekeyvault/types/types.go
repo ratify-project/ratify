@@ -38,19 +38,19 @@ const (
 
 // KeyVaultCertificate holds keyvault object related config
 type KeyVaultCertificate struct {
-	// the name of the Azure Key Vault objects
+	// the name of the Azure Key Vault certificate
 	CertificateName string `json:"certificateName" yaml:"certificateName"`
-	// the version of the Azure Key Vault objects
+	// the version of the Azure Key Vault certificate
 	CertificateVersion string `json:"certificateVersion" yaml:"certificateVersion"`
-	// The number of versions to load for this secret starting at the latest version
+	// The number of versions to load for this certificate starting at the latest version
 	CertificateVersionHistory int32 `json:"certificateVersionHistory" yaml:"certificateVersionHistory"`
 }
 
-// CertificateFile holds content and metadata of a keyvault certificate file
-type CertificateFile struct {
-	Content []byte
-	Path    string //This field is not necessary but useful to have for debugging to keep track of which certs have loaded
-	Version string
+// Certificate holds content and metadata of a keyvault certificate file
+type Certificate struct {
+	Content         []byte
+	CertificateName string //This field is not necessary but useful to have for debugging to keep track of which certs have loaded
+	Version         string
 }
 
 // StringArray holds a list of strings

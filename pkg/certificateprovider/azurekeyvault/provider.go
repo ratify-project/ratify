@@ -19,7 +19,6 @@ package azurekeyvault
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"context"
-	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"reflect"
@@ -43,7 +42,7 @@ type keyvaultObject struct {
 	version string
 }
 
-func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]types.CertificateFile, error) {
+func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Certificate, error) {
 
 	keyvaultName := types.GetKeyVaultName(attrib)
 	cloudName := types.GetCloudName(attrib)
@@ -111,7 +110,7 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 	}
 
 	// 3. for each object , get content bytes
-	files := []types.CertificateFile{}
+	files := []types.Certificate{}
 	for _, keyVaultCert := range keyVaultCerts {
 		logrus.Infof("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultName)
 
@@ -131,14 +130,14 @@ func GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]ty
 				r := result[idx]
 				objectContent := []byte(r.content)
 
-				file := types.CertificateFile{
-					Path:    resolvedKvCert.GetFileName(),
-					Content: objectContent,
-					Version: r.version,
+				file := types.Certificate{
+					CertificateName: resolvedKvCert.GetFileName(),
+					Content:         objectContent,
+					Version:         r.version,
 				}
 
 				files = append(files, file)
-				logrus.Infof("added file %v to response file", file.Path)
+				logrus.Infof("added file %v to response file", file.CertificateName)
 			}
 		}
 	}
@@ -322,27 +321,6 @@ func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL strin
 	var pemData []byte
 	pemData = append(pemData, pem.EncodeToMemory(certBlock)...)
 	return []keyvaultObject{{content: string(pemData), version: version}}, nil
-}
-
-// ParsePEMCertificates parses PEM/DER encoded certificates from
-// the given PEM data.
-func ParsePEMCertificates(pemData []byte) ([]*x509.Certificate, error) {
-	var certs []*x509.Certificate
-	for {
-		var der *pem.Block
-		der, pemData = pem.Decode(pemData)
-		if der == nil {
-			break
-		}
-		if der.Type == "CERTIFICATE" {
-			dcerts, err := x509.ParseCertificates(der.Bytes)
-			if err != nil {
-				return nil, err
-			}
-			certs = append(certs, dcerts...)
-		}
-	}
-	return certs, nil
 }
 
 func wrapObjectTypeError(err error, objectName, objectVersion string) error {

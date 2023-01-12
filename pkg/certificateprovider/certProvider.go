@@ -22,7 +22,7 @@ import (
 )
 
 type CertificateProvider interface {
-	GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]types.CertificateFile, error)
+	GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Certificate, error)
 }
 
 // CRD manager call this method to fetch certificate in memory
@@ -38,7 +38,7 @@ func DeleteCertificate(ctx context.Context, certStoreName string) error {
 }
 
 // Verifier call this method to get validation certificate
-func GetCertificate(ctx context.Context, certStoreName string) ([]types.CertificateFile, error) {
+func GetCertificate(ctx context.Context, certStoreName string) ([]types.Certificate, error) {
 	// TO implement
 	return nil, nil
 }

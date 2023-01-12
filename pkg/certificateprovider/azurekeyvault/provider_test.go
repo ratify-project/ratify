@@ -506,7 +506,7 @@ func TestGetCertificatesContent(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 
-			_, err := GetCertificatesContent(context.TODO(), tc.parameters)
+			_, err := GetCertificates(context.TODO(), tc.parameters)
 			if tc.expectedErr {
 				assert.NotNil(t, err)
 			} else {

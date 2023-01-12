@@ -21,16 +21,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	"github.com/deislabs/ratify/pkg/utils"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -60,7 +57,8 @@ func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, r
 	if !strings.Contains(resource, ".default") {
 		scope = fmt.Sprintf("%s/.default", resource)
 	}
-	result, err := getAADAccessToken(ctx, tenantID, clientID, scope)
+
+	result, err := utils.GetAADAccessToken(ctx, tenantID, clientID, scope)
 	if err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %w", err)
 	}
@@ -107,47 +105,4 @@ func parseExpiresOn(s string) (json.Number, error) {
 		// unknown format
 		return json.Number(""), err
 	}
-}
-
-// Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
-func getAADAccessToken(ctx context.Context, tenantID string, clientID string, scope string) (confidential.AuthResult, error) {
-	//  Azure AD Workload Identity webhook will inject the following env vars:
-	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
-	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
-	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
-	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
-
-	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
-	authority := os.Getenv("AZURE_AUTHORITY_HOST")
-
-	if tokenFilePath == "" || authority == "" {
-		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", tokenFilePath, authority)
-	}
-
-	// read the service account token from the filesystem
-	signedAssertion, err := utils.ReadJWTFromFS(tokenFilePath)
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
-	}
-
-	cred, err := confidential.NewCredFromAssertion(signedAssertion)
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential creds")
-	}
-
-	// create the confidential client to request an AAD token
-	confidentialClientApp, err := confidential.New(
-		clientID,
-		cred,
-		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authority, tenantID)))
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential client app")
-	}
-
-	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{scope})
-	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire AAD token")
-	}
-
-	return result, nil
 }
