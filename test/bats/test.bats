@@ -221,7 +221,7 @@ SLEEP_TIME=1
     # }
 
     # enable dynamic plugins
-    # helm upgrade --atomic --namespace ratify-service --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
+    helm upgrade --atomic --namespace ratify-service --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
     sleep 5
     latestpod=$(kubectl -n ratify-service get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
