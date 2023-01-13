@@ -48,7 +48,7 @@ jobs:
 
   build_test_e2e:
     name: "Build and run e2e Test"
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
