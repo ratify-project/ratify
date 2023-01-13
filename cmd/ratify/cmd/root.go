@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -30,6 +31,8 @@ var Root = New(use, shortDesc)
 
 func New(use, short string) *cobra.Command {
 	common.SetLoggingLevelFromEnv(logrus.StandardLogger())
+	featureflag.InitFeatureFlagsFromEnv()
+
 	root := &cobra.Command{
 		Use:   use,
 		Short: short,

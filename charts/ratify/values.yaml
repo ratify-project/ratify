@@ -103,3 +103,7 @@ crds:
     runAsGroup: 65532
     runAsNonRoot: true
     runAsUser: 65532
+
+# See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
+featureFlags:
+  # RATIFY_FEATURE_NAME: true
