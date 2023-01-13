@@ -63,7 +63,7 @@ func NewCmdVerify(argv ...string) *cobra.Command {
 }
 
 func TestVerify(subject string) {
-	verify((verifyCmdOptions{
+	_ = verify((verifyCmdOptions{
 		subject: subject,
 	}))
 }
