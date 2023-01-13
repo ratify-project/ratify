@@ -106,12 +106,10 @@ func watchForConfigurationChange(configFilePath string) error {
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		errors.Wrap(err, "new file watcher on configuration file failed ")
+		return errors.Wrap(err, "new file watcher on configuration file failed ")
 	}
 
-	err = watcher.Add(configFilePath)
-
-	if err != nil {
+	if err = watcher.Add(configFilePath); err != nil {
 		logrus.Errorf("adding configuration file watcher failed, err: %v", err)
 		return err
 	}
