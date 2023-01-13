@@ -22,7 +22,7 @@ linters:
     # - staticcheck
     # - typecheck
     # - unconvert
-    # - unused
-    # - whitespace
+    - unused
+    - whitespace
   # Run with --fast=false for more extensive checks
   fast: true
