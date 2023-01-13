@@ -35,7 +35,7 @@ type VerifierSpec struct {
 	Address string `json:"address,omitempty"`
 
 	// OCI Artifact source to download the plugin from, optional
-	Source string `json:"source,omitempty"`
+	Source *PluginSource `json:"source,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this verifier

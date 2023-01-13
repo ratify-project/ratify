@@ -133,7 +133,9 @@ func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (vc.Verifier
 
 	verifierConfig[types.Name] = verifierSpec.Name
 	verifierConfig[types.ArtifactTypes] = verifierSpec.ArtifactTypes
-	verifierConfig[types.Source] = verifierSpec.Source
+	if verifierSpec.Source != nil {
+		verifierConfig[types.Source] = verifierSpec.Source
+	}
 
 	return verifierConfig, nil
 }

@@ -22,7 +22,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path"
 	"time"
 
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
@@ -32,16 +31,37 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
-func DownloadPlugin(name string, source string, pluginBinDir string) error {
+type PluginSource struct {
+	Artifact     string                          `json:"artifact"`
+	AuthProvider authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
+}
+
+func ParsePluginSource(source interface{}) (PluginSource, error) {
+	var pluginSource PluginSource
+
+	// parse to/from json
+	sourceBytes, err := json.Marshal(source)
+	if err != nil {
+		return pluginSource, err
+	}
+
+	err = json.Unmarshal(sourceBytes, &pluginSource)
+	if err != nil {
+		return pluginSource, err
+	}
+
+	return pluginSource, nil
+}
+
+func DownloadPlugin(source PluginSource, targetPath string) error {
 	ctx := context.TODO()
 
 	// Initialize a repository
-	repository, err := remote.NewRepository(source)
+	repository, err := remote.NewRepository(source.Artifact)
 	if err != nil {
 		return err
 	}
 
-	// TODO: move the ORAS auth code into a separate package that's not referrerstore-specific
 	repository.Client = &auth.Client{
 		Client: &http.Client{Timeout: 10 * time.Second, Transport: http.DefaultTransport.(*http.Transport).Clone()},
 		Header: http.Header{
@@ -49,12 +69,12 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 		},
 		Cache: auth.NewCache(),
 		Credential: func(ctx context.Context, registry string) (auth.Credential, error) {
-			authProvider, err := authprovider.CreateAuthProviderFromConfig(nil)
+			authProvider, err := authprovider.CreateAuthProviderFromConfig(source.AuthProvider)
 			if err != nil {
 				return auth.EmptyCredential, err
 			}
 
-			authConfig, err := authProvider.Provide(ctx, source)
+			authConfig, err := authProvider.Provide(ctx, registry)
 			if err != nil {
 				return auth.EmptyCredential, err
 			}
@@ -71,8 +91,7 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	}
 
 	// read the reference manifest
-	logrus.Infof("Downloading plugin %s from %s", name, source)
-	referenceManifestDescriptor, err := repository.Resolve(ctx, source)
+	referenceManifestDescriptor, err := repository.Resolve(ctx, source.Artifact)
 	if err != nil {
 		return err
 	}
@@ -102,9 +121,8 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 		return err
 	}
 
-	pluginPath := path.Join(pluginBinDir, name)
-	logrus.Infof("Downloading plugin %s to %s", name, pluginPath)
-	pluginFile, err := os.Create(pluginPath)
+	logrus.Debugf("writing plugin bytes to %s", targetPath)
+	pluginFile, err := os.Create(targetPath)
 	if err != nil {
 		return err
 	}
@@ -116,8 +134,8 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	}
 
 	// Mark the plugin as executable
-	logrus.Debugf("Marking plugin %s as executable", pluginPath)
-	err = os.Chmod(pluginPath, 0700)
+	logrus.Debugf("marking %s as executable", targetPath)
+	err = os.Chmod(targetPath, 0700)
 	if err != nil {
 		return err
 	}
