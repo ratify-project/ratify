@@ -108,11 +108,11 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 }
 
 func ProcessSpdxJsonMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
-	if ok, err := parser2v2.Load2_2(refBlob); ok != nil {
+	if doc, err := parser2v2.Load2_2(refBlob); doc != nil {
 		return &verifier.VerifierResult{
 			Name:       name,
 			IsSuccess:  true,
-			Extensions: ok.CreationInfo,
+			Extensions: doc.CreationInfo,
 			Message:    "SBOM verification success. The schema is good.",
 		}, err
 	} else {
