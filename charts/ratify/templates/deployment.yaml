@@ -101,6 +101,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          {{- range $k, $v := .Values.featureFlags }}
+            - name: {{ $k }}
+              value: {{ $v | ternary 1 0 | quote }}
+          {{- end}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
