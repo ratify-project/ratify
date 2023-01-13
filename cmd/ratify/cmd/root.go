@@ -36,8 +36,8 @@ func New(use, short string) *cobra.Command {
 	root := &cobra.Command{
 		Use:   use,
 		Short: short,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Usage()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Usage()
 		},
 		SilenceUsage:      true,
 		DisableAutoGenTag: true,
