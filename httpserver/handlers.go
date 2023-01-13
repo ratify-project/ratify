@@ -177,10 +177,8 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 		Kind:       "ProviderResponse",
 	}
 
-	// only mutation webhook requires idempotency
-	if isMutation {
-		response.Response.Idempotent = true
-	}
+	// only mutation webhook can be invoked multiple times and thus must be idempotent
+	response.Response.Idempotent = isMutation
 
 	if results != nil {
 		response.Response.Items = *results
