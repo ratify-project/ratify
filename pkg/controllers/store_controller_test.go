@@ -29,7 +29,9 @@ func TestStoreAdd_EmptyParameter(t *testing.T) {
 		Name: "oras",
 	}
 
-	storeAddOrReplace(testStoreSpec, "oras")
+	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
+		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
+	}
 	if len(StoreMap) != 1 {
 		t.Fatalf("Store map expected size 1, actual %v", len(StoreMap))
 	}
@@ -43,7 +45,9 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 
 	var testStoreSpec = getOrasStoreSpec()
 
-	storeAddOrReplace(testStoreSpec, "testObject")
+	if err := storeAddOrReplace(testStoreSpec, "testObject"); err != nil {
+		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
+	}
 	if len(StoreMap) != 1 {
 		t.Fatalf("Store map expected size 1, actual %v", len(StoreMap))
 	}
@@ -57,8 +61,9 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 
 	var testStoreSpec = getOrasStoreSpec()
 
-	storeAddOrReplace(testStoreSpec, resource)
-
+	if err := storeAddOrReplace(testStoreSpec, resource); err != nil {
+		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
+	}
 	if len(StoreMap) != 1 {
 		t.Fatalf("Store map expected size 1, actual %v", len(StoreMap))
 	}
@@ -68,7 +73,9 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 		Name: "oras",
 	}
 
-	storeAddOrReplace(updatedSpec, resource)
+	if err := storeAddOrReplace(updatedSpec, resource); err != nil {
+		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
+	}
 
 	// validate no Store has been added
 	if len(StoreMap) != 1 {
