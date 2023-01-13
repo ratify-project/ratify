@@ -22,7 +22,7 @@ import (
 	"os"
 	"time"
 
-	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
