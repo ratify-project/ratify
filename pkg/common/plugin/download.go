@@ -1,3 +1,18 @@
+/*
+Copyright The Ratify Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package plugin
 
 import (
@@ -10,8 +25,8 @@ import (
 	"path"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
 	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -67,7 +82,7 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	manifestBytes, err := io.ReadAll(manifestReader)
 	if err != nil {
 		return err
@@ -86,7 +101,7 @@ func DownloadPlugin(name string, source string, pluginBinDir string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	pluginPath := path.Join(pluginBinDir, name)
 	logrus.Infof("Downloading plugin %s to %s", name, pluginPath)
 	pluginFile, err := os.Create(pluginPath)

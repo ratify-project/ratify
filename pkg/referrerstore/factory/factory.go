@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
@@ -61,12 +62,16 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 
 	// if source is specified, download the plugin
 	if source, ok := storeConfig[types.Source]; ok && source != "" {
-		sourceStr := fmt.Sprintf("%s", source)
-		err := pluginCommon.DownloadPlugin(storeNameStr, sourceStr, pluginBinDir[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to download plugin: %v", err)
+		if featureflag.DynamicPlugins.Enabled {
+			sourceStr := fmt.Sprintf("%s", source)
+			err := pluginCommon.DownloadPlugin(storeNameStr, sourceStr, pluginBinDir[0])
+			if err != nil {
+				return nil, fmt.Errorf("failed to download plugin: %v", err)
+			}
+			logrus.Infof("downloaded store plugin %s from %s to %s", storeNameStr, sourceStr, pluginBinDir[0])
+		} else {
+			logrus.Warnf("%s was specified for store plugin %s, but dynamic plugins are currently disabled", types.Source, storeNameStr)
 		}
-		logrus.Infof("downloaded store plugin %s from %s to %s", storeNameStr, sourceStr, pluginBinDir[0])
 	}
 
 	storeFactory, ok := builtInStores[storeNameStr]

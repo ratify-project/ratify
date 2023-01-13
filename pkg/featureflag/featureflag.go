@@ -52,7 +52,7 @@ type FeatureFlag struct {
 
 func new(name string, defaultValue bool) *FeatureFlag {
 	flag := &FeatureFlag{
-		Name: name,
+		Name:    name,
 		Enabled: defaultValue,
 	}
 	flags[name] = flag

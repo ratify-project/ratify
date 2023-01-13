@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/plugin"
@@ -62,12 +63,16 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 
 	// if source is specified, download the plugin
 	if source, ok := verifierConfig[types.Source]; ok && source != "" {
-		sourceStr := fmt.Sprintf("%s", source)
-		err := pluginCommon.DownloadPlugin(verifierNameStr, sourceStr, pluginBinDir[0])
-		if err != nil {
-			return nil, fmt.Errorf("failed to download plugin: %v", err)
+		if featureflag.DynamicPlugins.Enabled {
+			sourceStr := fmt.Sprintf("%s", source)
+			err := pluginCommon.DownloadPlugin(verifierNameStr, sourceStr, pluginBinDir[0])
+			if err != nil {
+				return nil, fmt.Errorf("failed to download plugin: %v", err)
+			}
+			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierNameStr, sourceStr, pluginBinDir[0])
+		} else {
+			logrus.Warnf("%s was specified for verifier plugin %s, but dynamic plugins are currently disabled", types.Source, verifierNameStr)
 		}
-		logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierNameStr, sourceStr, pluginBinDir[0])
 	}
 
 	verifierFactory, ok := builtInVerifiers[verifierNameStr]

@@ -28,7 +28,7 @@ const (
 	Name             string = "name"
 	ArtifactTypes    string = "artifactTypes"
 	NestedReferences string = "nestedReferences"
-	Source					 string = "source"
+	Source           string = "source"
 )
 
 const (
