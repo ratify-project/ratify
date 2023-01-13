@@ -13,10 +13,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package config
+package schemavalidation
 
-// ExecutorConfig represents the configuration for the executor
-type ExecutorConfig struct {
-	RequestTimeout *int `json:"requestTimeout"`
-	// TODO Add cache config
+import (
+	"errors"
+	"fmt"
+
+	"github.com/xeipuuv/gojsonschema"
+)
+
+func Validate(schema string, content []byte) error {
+	sl := gojsonschema.NewReferenceLoader(schema)
+	dl := gojsonschema.NewBytesLoader(content)
+
+	result, err := gojsonschema.Validate(sl, dl)
+
+	if err != nil {
+		return err
+	}
+
+	if result.Valid() {
+		return nil
+	} else {
+		var e string = ""
+		for _, desc := range result.Errors() {
+			e += fmt.Sprintf("%s:", desc.Description())
+		}
+		return errors.New(e)
+	}
 }

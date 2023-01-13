@@ -22,7 +22,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
-	provider "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
+	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"os"
