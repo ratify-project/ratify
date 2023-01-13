@@ -288,7 +288,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 
 		// push fetched manifest to local ORAS cache
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
-		store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return ocispecs.ReferenceManifest{}, err
 		}

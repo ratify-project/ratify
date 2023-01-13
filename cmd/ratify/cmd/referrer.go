@@ -47,8 +47,8 @@ func NewCmdReferrer(argv ...string) *cobra.Command {
 		Use:   referrerUse,
 		Short: "Discover referrers for a subject",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Usage()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Usage()
 		},
 	}
 

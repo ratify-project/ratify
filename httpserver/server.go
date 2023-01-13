@@ -108,7 +108,11 @@ func (server *Server) Run() error {
 			svr.TLSConfig = config
 			logrus.Info(fmt.Sprintf("%s: [%s:%s] ", "loaded client CA certificate for mTLS", "CaFIle", server.CaCertFile))
 		}
-		return svr.ServeTLS(lsnr, certFile, keyFile)
+		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil {
+			logrus.Errorf("failed to start server: %v", err)
+			return err
+		}
+		return nil
 	} else {
 		logrus.Info("starting server without TLS")
 		return svr.Serve(lsnr)

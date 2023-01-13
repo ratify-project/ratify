@@ -82,7 +82,7 @@ type listResult struct {
 }
 
 func Test(subject string) {
-	discover((discoverCmdOptions{
+	_ = discover((discoverCmdOptions{
 		subject:       subject,
 		artifactTypes: []string{""},
 	}))

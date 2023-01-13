@@ -44,7 +44,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
-		json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageName}))
+		_ = json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageName}))
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
 		logrus.Infof("policies successfully created. %s", body.Bytes())
 
@@ -106,7 +106,9 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 	t.Run("server_multiple_subjects_success", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
-		json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames))
+		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames)); err != nil {
+			t.Fatalf("failed to encode request body: %v", err)
+		}
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
 		logrus.Infof("policies successfully created. %s", body.Bytes())
 
@@ -162,7 +164,9 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 		handler.ServeHTTP(responseRecorder, request)
 		var respBody externaldata.ProviderResponse
-		json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody)
+		if err := json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody); err != nil {
+			t.Fatalf("failed to decode response body: %v", err)
+		}
 		retFirstKey := respBody.Response.Items[0].Key
 		if retFirstKey != testImageNames[1] {
 			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[1], retFirstKey)
