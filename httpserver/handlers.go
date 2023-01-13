@@ -108,8 +108,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 
 	// parse request body
 	var providerRequest externaldata.ProviderRequest
-	err = json.Unmarshal(body, &providerRequest)
-	if err != nil {
+	if err = json.Unmarshal(body, &providerRequest); err != nil {
 		return fmt.Errorf("unable to unmarshal request body: %v", err)
 	}
 
@@ -149,7 +148,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 					}
 				}
 				if selectedStore == nil {
-					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store: %v", image, err)
+					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)
 					logrus.Error(errMessage)
 					returnItem.Error = errMessage
 					return

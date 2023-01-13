@@ -182,7 +182,9 @@ func TestServer_Mutation_Success(t *testing.T) {
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
-		json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageNameTagged}))
+		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageNameTagged})); err != nil {
+			t.Fatalf("failed to encode request body: %v", err)
+		}
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/mutate", bytes.NewReader(body.Bytes()))
 		logrus.Infof("policies successfully created. %s", body.Bytes())
 
@@ -237,7 +239,9 @@ func TestServer_Mutation_Success(t *testing.T) {
 		}
 
 		var respBody externaldata.ProviderResponse
-		json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody)
+		if err := json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody); err != nil {
+			t.Fatalf("failed to decode response body: %v", err)
+		}
 		retFirstValue := respBody.Response.Items[0].Value
 		if retFirstValue != testImageNameDigested {
 			t.Fatalf("Expected mutation response to be %s but got %s", testImageNameDigested, retFirstValue)
