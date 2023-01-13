@@ -165,11 +165,9 @@ func (ex Executor) addNestedVerifierResult(ctx context.Context, referenceDesc oc
 		ReferenceTypes: []string{"*"},
 	}
 
-	// error is never returned from ex.VerifySubject, if an err occurs, the result contains the error message
 	nestedVerifyResult, err := ex.VerifySubject(ctx, verifyParameters)
-
 	if err != nil {
-		logrus.Errorf("Error verifying subject %s@%s: %v", subjectRef.Path, referenceDesc.Digest, err)
+		nestedVerifyResult = ex.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
 
 	for _, report := range nestedVerifyResult.VerifierReports {
