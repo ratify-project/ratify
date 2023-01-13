@@ -52,9 +52,17 @@ NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify oper
 - Deploy ratify and a `demo` constraint on gatekeeper in the default namespace.
 
 ```bash
+export RATIFY_NAMESPACE=default
+export CERT_DIR=path/to/your/certificate/directory # the directory will be created by generate-certs
+
+make generate-certs RATIFY_NAMESPACE=$RATIFY_NAMESPACE CERT_DIR=$CERT_DIR
+
 helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
-    ratify/ratify --atomic
+    ratify/ratify --atomic \
+    --set-file provider.tls.crt=${CERT_DIR}/server.crt \
+    --set-file provider.tls.key=${CERT_DIR}/server.key \
+    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
 
 kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml

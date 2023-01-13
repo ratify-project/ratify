@@ -45,6 +45,8 @@ resources:
 serviceAccount:
   create: true
   name: ratify-admin
+gatekeeper:
+  version: "3.11.0"
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
@@ -71,12 +73,10 @@ oras:
     awsEcrBasicEnabled: false
 
 provider:
-  auth: ""                  # tls, mtls
   tls:
-    skipVerify: true        # skip TLS verification
-    crt: ""                 # crt used by ratify (httpserver)
-    key: ""                 # key used by ratify (httpserver)
-    cabundle: ""            # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+    crt: # crt used by ratify (httpserver), please provide your own crt
+    key: # key used by ratify (httpserver), please provide your own key
+    cabundle: # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
 
 podAnnotations: {}
 podLabels: {}
