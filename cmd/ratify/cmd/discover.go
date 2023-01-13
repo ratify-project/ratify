@@ -115,8 +115,7 @@ func discover(opts discoverCmdOptions) error {
 		subRef.Digest = desc.Digest
 	}
 
-	var results []listResult
-
+	results := []listResult{}
 	for _, referrerStore := range stores {
 		storeNode := rootImage.AddBranch(referrerStore.Name())
 		result, err := listReferrersForStore(subRef, opts.artifactTypes, referrerStore, storeNode)

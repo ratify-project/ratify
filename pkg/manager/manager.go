@@ -62,9 +62,13 @@ func init() {
 }
 
 func StartServer(httpServerAddress string, configFilePath string, certDirectory string, caCertFile string) {
-	logrus.Infof("initializing executor with config file at default config path")
+	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
+	if err != nil {
+		logrus.Warnf("error loading config %v", err)
+		os.Exit(1)
+	}
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
 
