@@ -1,0 +1,57 @@
+{
+    "store": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "cosignEnabled": true
+            }
+        ]
+    },
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy"
+        }
+    },
+    "verifier": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "dynamic",
+                "artifactTypes": "sbom/example",
+                "nestedReferences": "application/vnd.cncf.notary.signature",
+                "source": {
+                    "artifact": "index.docker.io/acanthamoeba/sample-plugin:v1"
+                }
+            },
+            {
+                "name": "notaryv2",
+                "artifactTypes": "application/vnd.cncf.notary.signature",
+                "verificationCerts": [
+                    "~/.ratify/ratify-certs/notary/wabbit-networks.io.crt"
+                ],
+                "trustPolicyDoc": {
+                    "version": "1.0",
+                    "trustPolicies": [
+                        {
+                            "name": "default",
+                            "registryScopes": [
+                                "*"
+                            ],
+                            "signatureVerification": {
+                                "level": "strict"
+                            },
+                            "trustStores": [
+                                "ca:certs"
+                            ],
+                            "trustedIdentities": [
+                                "*"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

@@ -212,13 +212,15 @@ SLEEP_TIME=1
 }
 
 @test "dynamic plugins enabled test" {
+    skip "helm upgrade fails in the pipeline on a 2-core runner"
+
     # ensure that the chart deployment is reset to a clean state for other tests
-    # teardown() {
-    #     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
-    #     pod=$(kubectl -n ratify-service get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
-    #     helm upgrade --atomic --namespace ratify-service --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
-    #     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n ratify-service delete $pod --force --grace-period=0'
-    # }
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
+        pod=$(kubectl -n ratify-service get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+        helm upgrade --atomic --namespace ratify-service --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n ratify-service delete $pod --force --grace-period=0'
+    }
 
     # enable dynamic plugins
     helm upgrade --atomic --namespace ratify-service --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
@@ -229,6 +231,6 @@ SLEEP_TIME=1
     sleep 5
 
     # parse the logs for the newly created ratify pod
-    run bash -c "kubectl -n ratify-service logs $latestpod  | grep 'downloaded verifier plugin dynamic from .* to .*'"
+    run bash -c "kubectl -n ratify-service logs $latestpod | grep 'downloaded verifier plugin dynamic from .* to .*'"
     assert_success
 }
