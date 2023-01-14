@@ -328,3 +328,117 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	}
 
 }
+
+// TestGetVerifyRequestTimeout_ExpectedResults tests the verification request timeout returned
+func TestGetVerifyRequestTimeout_ExpectedResults(t *testing.T) {
+	testcases := []struct {
+		setTimeout      int
+		ex              Executor
+		expectedTimeout int
+	}{
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config:         nil,
+			},
+			expectedTimeout: 2900,
+		},
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     nil,
+				},
+			},
+			expectedTimeout: 2900,
+		},
+		{
+			setTimeout: 5000,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: new(int),
+					MutationRequestTimeout:     nil,
+				},
+			},
+			expectedTimeout: 5000,
+		},
+	}
+
+	for _, testcase := range testcases {
+		if testcase.setTimeout >= 0 {
+			*testcase.ex.Config.VerificationRequestTimeout = testcase.setTimeout
+		}
+		expected := time.Millisecond * time.Duration(testcase.expectedTimeout)
+		actual := testcase.ex.GetVerifyRequestTimeout()
+		if actual != expected {
+			t.Fatalf("verification request timeout returned expected %dms but got %dms", expected.Milliseconds(), actual.Milliseconds())
+		}
+	}
+}
+
+// TestGetMutationRequestTimeout_ExpectedResults tests the mutation request timeout returned
+func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
+	testcases := []struct {
+		setTimeout      int
+		ex              Executor
+		expectedTimeout int
+	}{
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config:         nil,
+			},
+			expectedTimeout: 950,
+		},
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     nil,
+				},
+			},
+			expectedTimeout: 950,
+		},
+		{
+			setTimeout: 2400,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     new(int),
+				},
+			},
+			expectedTimeout: 2400,
+		},
+	}
+
+	for _, testcase := range testcases {
+		if testcase.setTimeout >= 0 {
+			*testcase.ex.Config.MutationRequestTimeout = testcase.setTimeout
+		}
+		expected := time.Millisecond * time.Duration(testcase.expectedTimeout)
+		actual := testcase.ex.GetMutationRequestTimeout()
+		if actual != expected {
+			t.Fatalf("mutation request timeout returned expected %dms but got %dms", expected.Milliseconds(), actual.Milliseconds())
+		}
+	}
+}
