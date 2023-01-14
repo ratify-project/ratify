@@ -88,7 +88,9 @@ func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 	createCertFile(t, testFile1)
 
 	symlink := absTestDirPath + "symlink"
-	os.Symlink(testFile1, symlink)
+	if err := os.Symlink(testFile1, symlink); err != nil {
+		t.Fatalf("error creating symlink %v", err)
+	}
 	files, err := GetCertificatesFromPath(symlink)
 
 	// Teardown
@@ -113,8 +115,12 @@ func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
 
 	symlink := absTestDirPath + "symlink"
 	twoLevelSymlink := absTestDirPath + "symlink2"
-	os.Symlink(testFile1, symlink)
-	os.Symlink(symlink, twoLevelSymlink)
+	if err := os.Symlink(testFile1, symlink); err != nil {
+		t.Fatalf("error creating symlink %v", err)
+	}
+	if err := os.Symlink(symlink, twoLevelSymlink); err != nil {
+		t.Fatalf("error creating symlink %v", err)
+	}
 	files, err := GetCertificatesFromPath(twoLevelSymlink)
 
 	// Teardown
