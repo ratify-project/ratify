@@ -104,6 +104,7 @@ deploy-gatekeeper:
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
 	helm delete gatekeeper --namespace gatekeeper-system
+	kubectl delete crd -l gatekeeper.sh/system=yes
 
 .PHONY: test-e2e
 test-e2e:
@@ -176,6 +177,9 @@ e2e-deploy-ratify:
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+
+e2e-aks:
+	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${TENANT_ID}
 
 ##@ Development
 
