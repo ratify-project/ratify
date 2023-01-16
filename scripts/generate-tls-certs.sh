@@ -4,10 +4,9 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-ns=${1-default}
+ns=${2:-default}
+CERT_DIR=$1
 
-REPO_ROOT=$(dirname "${BASH_SOURCE[0]}")/..
-cd "${REPO_ROOT}" || exit 1
 generate() {
     # generate CA key and certificate
     echo "Generating CA key and certificate for ratify..."
@@ -16,12 +15,13 @@ generate() {
 
     # generate server key and certificate
     echo "Generating server key and certificate for ratify..."
-    openssl genrsa -out tls.key 2048
-    openssl req -newkey rsa:2048 -nodes -keyout tls.key -subj "/CN=ratify.${ns}" -out server.csr
-    openssl x509 -req -extfile <(printf "subjectAltName=DNS:ratify.${ns}") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out tls.crt
+    openssl genrsa -out server.key 2048
+    openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=ratify.${ns}" -out server.csr
+    openssl x509 -req -extfile <(printf "subjectAltName=DNS:ratify.${ns}") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 }
 
-mkdir -p "${REPO_ROOT}/certs"
-pushd "${REPO_ROOT}/certs"
+rm -r ${CERT_DIR} || true
+mkdir -p ${CERT_DIR}
+pushd "${CERT_DIR}"
 generate
 popd

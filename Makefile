@@ -24,7 +24,7 @@ BATS_VERSION ?= 1.7.0
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
-RATIFY_NAMESPACE = ratify-service
+RATIFY_NAMESPACE ?= ratify-service
 RATIFY_NAME = ratify
 
 all: build test
@@ -116,13 +116,7 @@ test-e2e-cli:
 
 .PHONY: generate-certs
 generate-certs:
-	mkdir -p ${CERT_DIR}
-	cd ${CERT_DIR} && openssl genrsa -out ca.key 2048 && \
-	openssl req -new -x509 -days 365 -key ca.key -subj "/O=My Org/CN=External Data Provider CA" -out ca.crt && \
-	openssl genrsa -out server.key 2048 && \
-	openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=${RATIFY_NAME}.${RATIFY_NAMESPACE}" -out server.csr && \
-	printf "subjectAltName=DNS:${RATIFY_NAME}.${RATIFY_NAMESPACE}" > server.ext && \
-	openssl x509 -req -extfile server.ext -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+	./scripts/generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
 
 install-bats:
 	# Download and install bats
@@ -179,7 +173,7 @@ e2e-deploy-ratify:
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
 
 e2e-aks:
-	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${TENANT_ID}
+	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${RATIFY_NAMESPACE} ${CERT_DIR}
 
 ##@ Development
 
