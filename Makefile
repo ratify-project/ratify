@@ -1,5 +1,6 @@
 BINARY_NAME		= ratify
 INSTALL_DIR		= ~/.ratify
+CERT_DIR        = ${GITHUB_WORKSPACE}/tls/certs
 
 GO_PKG			= github.com/deislabs/ratify
 GIT_COMMIT_HASH = $(shell git rev-parse HEAD)
@@ -13,6 +14,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.25.4
+GATEKEEPER_VERSION ?= 3.11.0
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -21,6 +23,9 @@ BATS_VERSION ?= 1.7.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
+
+RATIFY_NAMESPACE = ratify-service
+RATIFY_NAME = ratify
 
 all: build test
 
@@ -38,6 +43,7 @@ build-plugins:
 	go build -o ./bin/plugins/ ./plugins/verifier/licensechecker
 	go build -o ./bin/plugins/ ./plugins/verifier/sample
 	go build -o ./bin/plugins/ ./plugins/verifier/sbom
+	go build -o ./bin/plugins/ ./plugins/verifier/schemavalidator
 
 .PHONY: install
 install:
@@ -89,11 +95,11 @@ delete-demo-constraints:
 deploy-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm install gatekeeper/gatekeeper  \
-		--version 3.10.0 \
+		--version ${GATEKEEPER_VERSION} \
 	    --name-template=gatekeeper \
 	    --namespace gatekeeper-system --create-namespace \
 	    --set enableExternalData=true \
-	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
@@ -107,6 +113,16 @@ test-e2e:
 .PHONY: test-e2e-cli
 test-e2e-cli:
 	RATIFY_DIR=${INSTALL_DIR} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+
+.PHONY: generate-certs
+generate-certs:
+	mkdir -p ${CERT_DIR}
+	cd ${CERT_DIR} && openssl genrsa -out ca.key 2048 && \
+	openssl req -new -x509 -days 365 -key ca.key -subj "/O=My Org/CN=External Data Provider CA" -out ca.crt && \
+	openssl genrsa -out server.key 2048 && \
+	openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=${RATIFY_NAME}.${RATIFY_NAMESPACE}" -out server.csr && \
+	printf "subjectAltName=DNS:${RATIFY_NAME}.${RATIFY_NAMESPACE}" > server.ext && \
+	openssl x509 -req -extfile server.ext -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 
 install-bats:
 	# Download and install bats
@@ -138,12 +154,12 @@ e2e-helm-install:
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
-	--version 3.10.0 \
+	--version ${GATEKEEPER_VERSION} \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7 \
-    --set auditInterval=0
+    --set auditInterval=0 \
 
 e2e-deploy-ratify:
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
@@ -152,8 +168,15 @@ e2e-deploy-ratify:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
-	./.staging/helm/linux-amd64/helm install ratify \
-	./charts/ratify --atomic --namespace ratify-service --create-namespace --set image.repository=localbuild --set image.crdRepository=localbuildcrd --set image.tag=test
+	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
+    ./charts/ratify --atomic --namespace ${RATIFY_NAMESPACE} --create-namespace \
+	--set image.repository=localbuild \
+	--set image.crdRepository=localbuildcrd \
+	--set image.tag=test \
+	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
+	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
 
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${TENANT_ID}

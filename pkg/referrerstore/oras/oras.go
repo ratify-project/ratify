@@ -37,14 +37,14 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
+	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/aws"
+	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider"
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/aws"
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras/authprovider/azure"
 	"github.com/deislabs/ratify/pkg/referrerstore/utils"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/opencontainers/go-digest"
@@ -287,7 +287,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 
 		// push fetched manifest to local ORAS cache
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
-		store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
+		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return ocispecs.ReferenceManifest{}, err
 		}

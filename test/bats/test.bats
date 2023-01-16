@@ -99,10 +99,41 @@ SLEEP_TIME=1
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod sbom --namespace default"
 }
 
-@test "sbom/notary/cosign/licensechecker verifiers test" {
+@test "schemavalidator verifier test" {
+    echo "cleaning up"
+    run kubectl delete pod schemavalidator --namespace default
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default
+
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
+    sleep 5
+    # TODO
+    # It's best to use an image with individual artifact types vs an all-in-one so any failures can be isolated.
+    # Replace this image reference once we have a local private registry for Ratify.
+    run kubectl run schemavalidator --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
+    assert_success
+
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator_bad.yaml
+    sleep 5
+    run kubectl run schemavalidator2 --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod schemavalidator --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default
+}
+
+@test "sbom/notary/cosign/licensechecker/schemavalidator verifiers test" {
     echo "cleaning up"
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default
     run kubectl delete pod all-in-one --namespace default
 
     run kubectl apply -f ./library/default/template.yaml
@@ -116,6 +147,8 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
     sleep 5
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
+    sleep 5
 
     run kubectl run all-in-one --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_success
@@ -123,6 +156,7 @@ SLEEP_TIME=1
     echo "cleaning up"
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default"
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default"
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl delete pod all-in-one --namespace default"
 }
 
