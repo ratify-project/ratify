@@ -31,6 +31,7 @@ alias k="kubectl"
 ```bash
 export RATIFY_NAMESPACE=ratify-service
 export KUBERNETES_VERSION=1.25.4
+export GATEKEEPER_VERSION=3.10.0
 export IMAGE_PULL_POLICY=IfNotPresent
 export RATIFY_LOG_LEVEL=INFO
 ```
@@ -95,9 +96,9 @@ helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
+    --version=${GATEKEEPER_VERSION} \
     --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=7 \
-    --debug
+    --set validatingWebhookTimeoutSeconds=7    
 ```
 
 ## Ratify
@@ -123,7 +124,6 @@ Notes:
 helm install ratify ./charts/ratify \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
     --atomic \
-    --set provider.auth="tls" \
     --set provider.tls.skipVerify=false \
     --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
     --set provider.tls.key="$(cat certs/tls.key)" \
@@ -132,18 +132,15 @@ helm install ratify ./charts/ratify \
     --set image.crdRepository=localbuildcrd \
     --set image.tag=test \
     --set image.pullPolicy=${IMAGE_PULL_POLICY} \
-    --set logLevel=info \
-    --debug    
+    --set logLevel=info      
 ```
 
 ### Upgrade
 
 ```bash
-helm upgrade -i ratify \
-    ./charts/ratify \
+helm upgrade -i ratify ./charts/ratify \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
     --atomic \
-    --set provider.auth="tls" \
     --set provider.tls.skipVerify=false \
     --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
     --set provider.tls.key="$(cat certs/tls.key)" \
@@ -152,8 +149,7 @@ helm upgrade -i ratify \
     --set image.crdRepository=localbuildcrd \
     --set image.tag=test \
     --set image.pullPolicy=${IMAGE_PULL_POLICY} \
-    --set logLevel=info \
-    --debug    
+    --set logLevel=info    
 ```
 
 ### Uninstall
