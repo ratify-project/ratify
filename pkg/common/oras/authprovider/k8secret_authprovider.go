@@ -65,7 +65,6 @@ func init() {
 // Create returns a k8AuthProvider instance after parsing auth config and resolving
 // named K8 secrets
 func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
-
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {

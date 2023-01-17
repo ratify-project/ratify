@@ -89,7 +89,6 @@ func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
 }
 
 func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
-
 	testcases := []struct {
 		configPolicyConfig map[string]interface{}
 		verifierReports    []interface{}

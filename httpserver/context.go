@@ -17,7 +17,6 @@ package httpserver
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/deislabs/ratify/utils"
@@ -50,17 +49,4 @@ func (ch *contextHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			logrus.Errorf("request %s %s failed to send with error  %v", sanitizedMethod, sanitizedURL, serveErr)
 		}
 	}
-}
-
-func serveErrorJSON(w http.ResponseWriter, err error) error {
-	w.WriteHeader(http.StatusInternalServerError)
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	errObj := Error{
-		Code:    "UNKNOWN",
-		Message: err.Error(),
-	}
-	if err := json.NewEncoder(w).Encode(errObj); err != nil {
-		return err
-	}
-	return nil
 }

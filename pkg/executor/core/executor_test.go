@@ -321,5 +321,4 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	if result.VerifierReports[0].(verifier.VerifierResult).ArtifactType != "test-type2" {
 		t.Fatalf("verification expected to return second artifact verifier report first")
 	}
-
 }

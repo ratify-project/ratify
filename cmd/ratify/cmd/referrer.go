@@ -36,10 +36,8 @@ const (
 type referrerCmdOptions struct {
 	configFilePath string
 	subject        string
-	artifactTypes  []string
 	digest         string
 	storeName      string
-	flatOutput     bool
 }
 
 func NewCmdReferrer(argv ...string) *cobra.Command {
@@ -47,8 +45,8 @@ func NewCmdReferrer(argv ...string) *cobra.Command {
 		Use:   referrerUse,
 		Short: "Discover referrers for a subject",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Usage()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Usage()
 		},
 	}
 
@@ -221,7 +219,6 @@ func showRefManifest(opts referrerCmdOptions) error {
 				return fmt.Errorf("failed to fetch manifest for reference %s: %v", subRef.Original, err)
 			}
 			return PrintJSON(manifest)
-
 		}
 	}
 
