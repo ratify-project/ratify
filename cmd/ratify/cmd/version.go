@@ -14,7 +14,6 @@ const (
 )
 
 func NewCmdVersion(argv ...string) *cobra.Command {
-
 	eg := `  Example - print version:
 ratify version`
 

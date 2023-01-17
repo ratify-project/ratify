@@ -41,13 +41,10 @@ type discoverCmdOptions struct {
 	configFilePath string
 	subject        string
 	artifactTypes  []string
-	digest         string
-	storeName      string
 	flatOutput     bool
 }
 
 func NewCmdDiscover(argv ...string) *cobra.Command {
-
 	if len(argv) == 0 {
 		argv = []string{os.Args[0]}
 	}
@@ -89,7 +86,6 @@ func Test(subject string) {
 }
 
 func discover(opts discoverCmdOptions) error {
-
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
 	}
@@ -111,14 +107,8 @@ func discover(opts discoverCmdOptions) error {
 	rootImage := treeprint.NewWithRoot(subRef.String())
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
 	if err != nil {
 		return err
-	}
-
-	type Result struct {
-		Name       string
-		References []ocispecs.ReferenceDescriptor
 	}
 
 	if subRef.Digest == "" {
@@ -175,7 +165,6 @@ func listReferrersForStore(subRef common.Reference, artifactTypes []string, stor
 				return nil, err
 			}
 			result.References = append(result.References, subResult.References...)
-
 		}
 		result.References = append(result.References, lr.Referrers...)
 		if continuationToken == "" {

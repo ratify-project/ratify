@@ -60,7 +60,6 @@ func MergeDuplicateEnviron(env []string) []string {
 
 // ParseInputArgs parses the given string into an array of key=value formatted strings.
 func ParseInputArgs(args string) ([][2]string, error) {
-
 	if args == "" {
 		return nil, nil
 	}

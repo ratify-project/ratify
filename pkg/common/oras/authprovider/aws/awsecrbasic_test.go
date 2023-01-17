@@ -18,11 +18,12 @@ package aws
 import (
 	"context"
 	"encoding/base64"
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 )
 
 const (
@@ -46,7 +47,6 @@ func mockAuthData() types.AuthorizationData {
 }
 
 func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
-
 	authProvider := awsEcrBasicAuthProvider{
 		ecrAuthToken: EcrAuthToken{mockAuthData()},
 		providerName: awsEcrAuthProviderName,

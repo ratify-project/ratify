@@ -94,7 +94,6 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	store referrerstore.ReferrerStore,
 	executor e.Executor) (verifier.VerifierResult, error) {
-
 	var nestedResults []verifier.VerifierResult
 	if len(vp.nestedReferences) > 0 {
 		verifyParameters := e.VerifyParameters{

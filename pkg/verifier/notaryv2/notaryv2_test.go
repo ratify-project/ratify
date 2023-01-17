@@ -21,7 +21,6 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
-	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -52,19 +51,7 @@ var (
 	testRefBlob  = []byte("test")
 	testRefBlob2 = []byte("test2")
 	testDesc1    = ocispec.Descriptor{}
-	validPolicy  = &trustpolicy.Document{
-		Version: "1.0",
-		TrustPolicies: []trustpolicy.TrustPolicy{
-			{
-				Name:                  "default",
-				RegistryScopes:        []string{"*"},
-				SignatureVerification: trustpolicy.SignatureVerification{VerificationLevel: "strict"},
-				TrustStores:           []string{"ca:certs"},
-				TrustedIdentities:     []string{"*"},
-			},
-		},
-	}
-	validRef = common.Reference{
+	validRef     = common.Reference{
 		Original: "testRegistry/repo:v1",
 		Digest:   testDigest,
 	}
