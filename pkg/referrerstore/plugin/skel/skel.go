@@ -165,7 +165,6 @@ func (c *pcontext) cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plug
 	}
 
 	return nil
-
 }
 
 func (c *pcontext) cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugin.Error {

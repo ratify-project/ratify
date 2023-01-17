@@ -23,7 +23,6 @@ import (
 )
 
 func TestHomepathReplacement(t *testing.T) {
-
 	sampleFoldername := "test"
 	testPath := homedir.GetShortcutString() + string(os.PathSeparator) + sampleFoldername
 
@@ -37,7 +36,6 @@ func TestHomepathReplacement(t *testing.T) {
 }
 
 func TestReadCertificatesFromPath_InvalidPath(t *testing.T) {
-
 	files, err := GetCertificatesFromPath("/invalid/path")
 
 	expectedFileCount := 0
@@ -77,7 +75,6 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 }
 
 func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
-
 	// Setup
 	currPath, _ := os.Getwd()
 	testDirName := "TestDirectory"
@@ -88,7 +85,9 @@ func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 	createCertFile(t, testFile1)
 
 	symlink := absTestDirPath + "symlink"
-	os.Symlink(testFile1, symlink)
+	if err := os.Symlink(testFile1, symlink); err != nil {
+		t.Fatalf("error creating symlink %v", err)
+	}
 	files, err := GetCertificatesFromPath(symlink)
 
 	// Teardown
@@ -101,7 +100,6 @@ func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 }
 
 func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
-
 	// Setup
 	currPath, _ := os.Getwd()
 	testDirName := "TestDirectory"
@@ -113,8 +111,12 @@ func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
 
 	symlink := absTestDirPath + "symlink"
 	twoLevelSymlink := absTestDirPath + "symlink2"
-	os.Symlink(testFile1, symlink)
-	os.Symlink(symlink, twoLevelSymlink)
+	if err := os.Symlink(testFile1, symlink); err != nil {
+		t.Fatalf("error creating symlink %v", err)
+	}
+	if err := os.Symlink(symlink, twoLevelSymlink); err != nil {
+		t.Fatalf("error creating symlink %v", err)
+	}
 	files, err := GetCertificatesFromPath(twoLevelSymlink)
 
 	// Teardown
@@ -144,7 +146,6 @@ func TestReadFilesFromPath_SingleFile(t *testing.T) {
 	if len(files) != 1 || err != nil {
 		t.Fatalf("response length expected to be 1, actual %v, error %v", len(files), err)
 	}
-
 }
 
 func createFile(t *testing.T, path string) {
@@ -155,7 +156,6 @@ func createFile(t *testing.T, path string) {
 }
 
 func createCertFile(t *testing.T, path string) {
-
 	// open cert file
 	content, err := ioutil.ReadFile("testCert1.crt")
 
@@ -167,14 +167,12 @@ func createCertFile(t *testing.T, path string) {
 
 	if err != nil {
 		t.Fatalf("creating new file '%s' failed with error '%v'", path, err)
-
 	}
 
 	_, err = file.Write(content)
 	if err != nil {
 		t.Fatalf("write file '%s' failed with error '%v'", path, err)
 	}
-
 }
 
 func setupDirectoryForTesting(t *testing.T, path string) {
