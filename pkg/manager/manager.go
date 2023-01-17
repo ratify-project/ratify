@@ -35,8 +35,6 @@ import (
 	"github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/deislabs/ratify/pkg/verifier"
-
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -47,7 +45,6 @@ import (
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	//+kubebuilder:scaffold:imports
@@ -56,10 +53,6 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = logrus.WithField("name", "setup")
-
-	configStores    []referrerstore.ReferrerStore
-	configVerifiers []verifier.ReferenceVerifier
-	policy          policyprovider.PolicyProvider
 )
 
 func init() {
@@ -69,7 +62,6 @@ func init() {
 }
 
 func StartServer(httpServerAddress string, configFilePath string, certDirectory string, caCertFile string) {
-
 	logrus.Infof("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -83,7 +75,6 @@ func StartServer(httpServerAddress string, configFilePath string, certDirectory 
 
 	// initialize server
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
-
 		var activeVerifiers []vr.ReferenceVerifier
 		var activeStores []referrerstore.ReferrerStore
 

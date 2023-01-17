@@ -91,7 +91,6 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 				} else if strings.Contains(env, SubjectEnvKey) && strings.Contains(env, "localhost") {
 					subjectCheck = true
 				}
-
 			}
 
 			if !commandCheck {
@@ -208,7 +207,6 @@ func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
 				} else if strings.Contains(env, SubjectEnvKey) && strings.Contains(env, "localhost") {
 					subjectCheck = true
 				}
-
 			}
 
 			if !commandCheck {
