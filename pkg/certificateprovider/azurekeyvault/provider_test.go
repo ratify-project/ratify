@@ -22,63 +22,11 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestGetVaultURL(t *testing.T) {
-	testEnvs := []string{"", "AZUREPUBLICCLOUD", "AZURECHINACLOUD", "AZUREGERMANCLOUD", "AZUREUSGOVERNMENTCLOUD"}
-	vaultDNSSuffix := []string{"vault.azure.net", "vault.azure.net", "vault.azure.cn", "vault.microsoftazure.de", "vault.usgovcloudapi.net"}
-
-	cases := []struct {
-		desc        string
-		vaultName   string
-		expectedErr bool
-	}{
-		{
-			desc:        "vault name > 24",
-			vaultName:   "longkeyvaultnamewhichisnotvalid",
-			expectedErr: true,
-		},
-		{
-			desc:        "vault name < 3",
-			vaultName:   "kv",
-			expectedErr: true,
-		},
-		{
-			desc:        "vault name contains non alpha-numeric chars",
-			vaultName:   "kv_test",
-			expectedErr: true,
-		},
-		{
-			desc:        "valid vault name in public cloud",
-			vaultName:   "testkv",
-			expectedErr: false,
-		},
-	}
-
-	for i, tc := range cases {
-		t.Log(i, tc.desc)
-		for idx := range testEnvs {
-			azCloudEnv, err := parseAzureEnvironment(testEnvs[idx])
-			if err != nil {
-				t.Fatalf("Error parsing cloud environment %v", err)
-			}
-
-			vaultURL, err := getVaultURL(tc.vaultName, azCloudEnv.KeyVaultDNSSuffix)
-			if tc.expectedErr && err == nil || !tc.expectedErr && err != nil {
-				t.Fatalf("expected error: %v, got error: %v", tc.expectedErr, err)
-			}
-			expectedURL := "https://" + tc.vaultName + "." + vaultDNSSuffix[idx] + "/"
-			if !tc.expectedErr && expectedURL != *vaultURL {
-				t.Fatalf("expected vault url: %s, got: %s", expectedURL, *vaultURL)
-			}
-		}
-	}
-}
 
 func TestParseAzureEnvironment(t *testing.T) {
 	envNamesArray := []string{"AZURECHINACLOUD", "AZUREGERMANCLOUD", "AZUREPUBLICCLOUD", "AZUREUSGOVERNMENTCLOUD", ""}
@@ -98,247 +46,6 @@ func TestParseAzureEnvironment(t *testing.T) {
 	_, err := parseAzureEnvironment(wrongEnvName)
 	if err == nil {
 		t.Fatalf("expected error for wrong azure environment name")
-	}
-}
-
-func TestGetLatestNKeyVaultObjects(t *testing.T) {
-	now := time.Now()
-
-	cases := []struct {
-		desc            string
-		kvObject        types.KeyVaultCertificate
-		versions        types.KeyVaultObjectVersionList
-		expectedObjects []types.KeyVaultCertificate
-	}{
-		{
-			desc: "filename is name/index when no alias provided",
-			kvObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersion:        "latest",
-				CertificateVersionHistory: 5,
-			},
-			versions: types.KeyVaultObjectVersionList{
-				types.KeyVaultObjectVersion{
-					Version: "a",
-					Created: now.Add(time.Hour * 10),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "b",
-					Created: now.Add(time.Hour * 9),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "c",
-					Created: now.Add(time.Hour * 8),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "d",
-					Created: now.Add(time.Hour * 7),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "e",
-					Created: now.Add(time.Hour * 6),
-				},
-			},
-			expectedObjects: []types.KeyVaultCertificate{
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "a",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "b",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "c",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "d",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "e",
-					CertificateVersionHistory: 5,
-				},
-			},
-		},
-		{
-			desc: "sorts versions by descending created date",
-			kvObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersion:        "latest",
-				CertificateVersionHistory: 5,
-			},
-			versions: types.KeyVaultObjectVersionList{
-				types.KeyVaultObjectVersion{
-					Version: "c",
-					Created: now.Add(time.Hour * 8),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "e",
-					Created: now.Add(time.Hour * 6),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "b",
-					Created: now.Add(time.Hour * 9),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "a",
-					Created: now.Add(time.Hour * 10),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "d",
-					Created: now.Add(time.Hour * 7),
-				},
-			},
-			expectedObjects: []types.KeyVaultCertificate{
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "a",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "b",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "c",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "d",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "e",
-					CertificateVersionHistory: 5,
-				},
-			},
-		},
-		{
-			desc: "starts with latest version when no version specified",
-			kvObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersionHistory: 2,
-			},
-			versions: types.KeyVaultObjectVersionList{
-				types.KeyVaultObjectVersion{
-					Version: "a",
-					Created: now.Add(time.Hour * 10),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "b",
-					Created: now.Add(time.Hour * 9),
-				},
-			},
-			expectedObjects: []types.KeyVaultCertificate{
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "a",
-					CertificateVersionHistory: 2,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "b",
-					CertificateVersionHistory: 2,
-				},
-			},
-		},
-		{
-			desc: "fewer than CertificateVersionHistory results returns all versions",
-			kvObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersionHistory: 200,
-			},
-			versions: types.KeyVaultObjectVersionList{
-				types.KeyVaultObjectVersion{
-					Version: "a",
-					Created: now.Add(time.Hour * 10),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "b",
-					Created: now.Add(time.Hour * 9),
-				},
-			},
-			expectedObjects: []types.KeyVaultCertificate{
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "a",
-					CertificateVersionHistory: 200,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "b",
-					CertificateVersionHistory: 200,
-				},
-			},
-		},
-		{
-			desc: "starts at CertificateVersion when specified",
-			kvObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersion:        "c",
-				CertificateVersionHistory: 5,
-			},
-			versions: types.KeyVaultObjectVersionList{
-				types.KeyVaultObjectVersion{
-					Version: "c",
-					Created: now.Add(time.Hour * 8),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "e",
-					Created: now.Add(time.Hour * 6),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "b",
-					Created: now.Add(time.Hour * 9),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "a",
-					Created: now.Add(time.Hour * 10),
-				},
-				types.KeyVaultObjectVersion{
-					Version: "d",
-					Created: now.Add(time.Hour * 7),
-				},
-			},
-			expectedObjects: []types.KeyVaultCertificate{
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "c",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "d",
-					CertificateVersionHistory: 5,
-				},
-				{
-					CertificateName:           "cert1",
-					CertificateVersion:        "e",
-					CertificateVersionHistory: 5,
-				},
-			},
-		},
-	}
-
-	for _, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
-			actualObjects := getLatestNKeyVaultObjects(tc.kvObject, tc.versions)
-
-			if !reflect.DeepEqual(actualObjects, tc.expectedObjects) {
-				t.Fatalf("expected: %+v, but got: %+v", tc.expectedObjects, actualObjects)
-			}
-		})
 	}
 }
 
@@ -368,19 +75,6 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 			expectedKeyVaultObject: types.KeyVaultCertificate{
 				CertificateName:    "cert1",
 				CertificateVersion: "version1",
-			},
-		},
-		{
-			desc: "no data loss for int properties",
-			keyVaultObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersion:        "latest",
-				CertificateVersionHistory: 12,
-			},
-			expectedKeyVaultObject: types.KeyVaultCertificate{
-				CertificateName:           "cert1",
-				CertificateVersion:        "latest",
-				CertificateVersionHistory: 12,
 			},
 		},
 	}
@@ -428,23 +122,23 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "tenantID not provided",
 			parameters: map[string]string{
-				"keyvaultName": "testKV",
+				"vaultUri": "https://testkv.vault.azure.net/",
 			},
 			expectedErr: true,
 		},
 		{
 			desc: "invalid cloud name",
 			parameters: map[string]string{
-				"keyvaultName": "testKV",
-				"tenantID":     "tid",
-				"cloudName":    "AzureCloud",
+				"vaultUri":  "https://testkv.vault.azure.net/",
+				"tenantID":  "tid",
+				"cloudName": "AzureCloud",
 			},
 			expectedErr: true,
 		},
 		{
 			desc: "certificates array not set",
 			parameters: map[string]string{
-				"keyvaultName":         "testKV",
+				"vaultUri":             "https://testkv.vault.azure.net/",
 				"tenantID":             "tid",
 				"useVMManagedIdentity": "true",
 			},
@@ -453,7 +147,7 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "certificates not configured as an array",
 			parameters: map[string]string{
-				"keyvaultName":         "testKV",
+				"vaultUri":             "https://testkv.vault.azure.net/",
 				"tenantID":             "tid",
 				"useVMManagedIdentity": "true",
 				"certificates": `
@@ -466,9 +160,9 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "certificates array is empty",
 			parameters: map[string]string{
-				"keyvaultName": "testKV",
-				"tenantID":     "tid",
-				"clientID":     "clientid",
+				"vaultUri": "https://testkv.vault.azure.net/",
+				"tenantID": "tid",
+				"clientID": "clientid",
 				"certificates": `
       array:`,
 			},
@@ -477,9 +171,9 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "invalid object format",
 			parameters: map[string]string{
-				"keyvaultName": "testKV",
-				"tenantID":     "tid",
-				"clientID":     "clientid",
+				"vaultUri": "https://testkv.vault.azure.net/",
+				"tenantID": "tid",
+				"clientID": "clientid",
 				"certificates": `
       array:
         - |
@@ -491,8 +185,8 @@ func TestGetCertificatesContent(t *testing.T) {
 		{
 			desc: "error fetching from keyvault",
 			parameters: map[string]string{
-				"keyvaultName": "testKV",
-				"tenantID":     "tid",
+				"vaultUri": "https://testkv.vault.azure.net/",
+				"tenantID": "tid",
 				"certificates": `
       array:
         - |

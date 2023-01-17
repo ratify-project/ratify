@@ -21,7 +21,7 @@ import (
 	"testing"
 )
 
-func TestGetKeyVaultName(t *testing.T) {
+func TestGetKeyVaultUri(t *testing.T) {
 	tests := []struct {
 		name       string
 		parameters map[string]string
@@ -30,31 +30,31 @@ func TestGetKeyVaultName(t *testing.T) {
 		{
 			name: "empty",
 			parameters: map[string]string{
-				KeyVaultNameParameter: "",
+				KeyVaultUriParameter: "",
 			},
 			expected: "",
 		},
 		{
 			name: "not empty",
 			parameters: map[string]string{
-				KeyVaultNameParameter: "test",
+				KeyVaultUriParameter: "https://test.vault.azure.net/",
 			},
-			expected: "test",
+			expected: "https://test.vault.azure.net/",
 		},
 		{
 			name: "trim spaces",
 			parameters: map[string]string{
-				KeyVaultNameParameter: " test ",
+				KeyVaultUriParameter: " https://test.vault.azure.net/ ",
 			},
-			expected: "test",
+			expected: "https://test.vault.azure.net/",
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := GetKeyVaultName(test.parameters)
+			actual := GetKeyVaultUri(test.parameters)
 			if actual != test.expected {
-				t.Errorf("GetKeyVaultName() = %v, expected %v", actual, test.expected)
+				t.Errorf("GetKeyVaultUri() = %v, expected %v", actual, test.expected)
 			}
 		})
 	}
@@ -270,49 +270,5 @@ func TestGetObjectsArrayError(t *testing.T) {
 	objects := "invalid"
 	if _, err := GetCertificatesArray(objects); err == nil {
 		t.Errorf("GetObjectsArray() error is nil, expected error")
-	}
-}
-
-func TestIsSyncingSingleVersion(t *testing.T) {
-	tests := []struct {
-		name     string
-		object   KeyVaultCertificate
-		expected bool
-	}{
-		{
-			name:     "object version history uninitialized",
-			object:   KeyVaultCertificate{},
-			expected: true,
-		},
-		{
-			name: "object version history set to 0",
-			object: KeyVaultCertificate{
-				CertificateVersionHistory: 0,
-			},
-			expected: true,
-		},
-		{
-			name: "object version history set to 1",
-			object: KeyVaultCertificate{
-				CertificateVersionHistory: 1,
-			},
-			expected: true,
-		},
-		{
-			name: "object version history set higher than 1",
-			object: KeyVaultCertificate{
-				CertificateVersionHistory: 4,
-			},
-			expected: false,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := test.object.IsSyncingSingleVersion()
-			if actual != test.expected {
-				t.Errorf("IsSyncingSingleVersion() = %v, expected %v", actual, test.expected)
-			}
-		})
 	}
 }

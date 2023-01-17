@@ -22,16 +22,12 @@ import (
 	"encoding/pem"
 	"fmt"
 	"reflect"
-	"regexp"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/Azure/go-autorest/autorest/date"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -42,15 +38,15 @@ type keyvaultObject struct {
 	version string
 }
 
+// returns an array of certificates based on certificate properties defined in attrib map
 func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Certificate, error) {
-
-	keyvaultName := types.GetKeyVaultName(attrib)
+	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
 	workloadIdentityClientID := types.GetClientID(attrib)
 
-	if keyvaultName == "" {
-		return nil, fmt.Errorf("keyvaultName is not set")
+	if keyvaultUri == "" {
+		return nil, fmt.Errorf("vaultUri is not set")
 	}
 	if tenantID == "" {
 		return nil, fmt.Errorf("tenantID is not set")
@@ -80,8 +76,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 	keyVaultCerts := []types.KeyVaultCertificate{}
 	for i, object := range objects.Array {
 		var keyVaultCert types.KeyVaultCertificate
-		err = yaml.Unmarshal([]byte(object), &keyVaultCert)
-		if err != nil {
+		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
 			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
 		}
 		// remove whitespace from all fields in keyVaultCert
@@ -90,7 +85,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
 	}
 
-	logrus.Infof("unmarshaled key vault objects, keyVaultObjects %v , count %v", keyVaultCerts, len(keyVaultCerts))
+	logrus.Infof("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 
 	if len(keyVaultCerts) == 0 {
 		return nil, errors.Wrap(err, "no keyvault certificate configured")
@@ -98,11 +93,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 
 	// 2. initialize keyvault client
 
-	vaultURL, err := getVaultURL(keyvaultName, azureCloudEnv.KeyVaultDNSSuffix)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get vault")
-	}
-	logrus.Infof("vaultName %v, vaultURL %v", keyvaultName, *vaultURL)
+	logrus.Infof("vaultName %v, vaultURL %v", keyvaultUri, keyvaultUri)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
@@ -112,34 +103,28 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 	// 3. for each object , get content bytes
 	files := []types.Certificate{}
 	for _, keyVaultCert := range keyVaultCerts {
-		logrus.Infof("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultName)
+		logrus.Infof("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
-		resolvedKvCerts, err := resolveCertificateVersions(ctx, kvClient, keyVaultCert, *vaultURL)
+		// fetch the object from Key Vault
+		result, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, resolvedKvCert := range resolvedKvCerts {
-			// fetch the object from Key Vault
-			result, err := getCertificate(ctx, kvClient, *vaultURL, resolvedKvCert)
-			if err != nil {
-				return nil, err
+		for idx := range result {
+			r := result[idx]
+			objectContent := []byte(r.content)
+
+			file := types.Certificate{
+				CertificateName: keyVaultCert.GetFileName(),
+				Content:         objectContent,
+				Version:         r.version,
 			}
 
-			for idx := range result {
-				r := result[idx]
-				objectContent := []byte(r.content)
-
-				file := types.Certificate{
-					CertificateName: resolvedKvCert.GetFileName(),
-					Content:         objectContent,
-					Version:         r.version,
-				}
-
-				files = append(files, file)
-				logrus.Infof("added file %v to response file", file.CertificateName)
-			}
+			files = append(files, file)
+			logrus.Infof("added file %v to response file", file.CertificateName)
 		}
+
 	}
 	return files, nil
 }
@@ -175,22 +160,6 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func getVaultURL(keyvaultName string, KeyVaultDNSSuffix string) (vaultURL *string, err error) {
-	// Key Vault name must be a 3-24 character string
-	if len(keyvaultName) < 3 || len(keyvaultName) > 24 {
-		return nil, errors.Errorf("Invalid vault name: %q, must be between 3 and 24 chars", keyvaultName)
-	}
-	// See docs for validation spec: https://docs.microsoft.com/en-us/azure/key-vault/about-keys-secrets-and-certificates#objects-identifiers-and-versioning
-	isValid := regexp.MustCompile(`^[-A-Za-z0-9]+$`).MatchString
-	if !isValid(keyvaultName) {
-		return nil, errors.Errorf("Invalid vault name: %q, must match [-a-zA-Z0-9]{3,24}", keyvaultName)
-	}
-
-	vaultDNSSuffixValue := KeyVaultDNSSuffix
-	vaultURI := "https://" + keyvaultName + "." + vaultDNSSuffixValue + "/"
-	return &vaultURI, nil
-}
-
 func initializeKvClient(ctx context.Context, KeyVaultEndpoint, tenantID, clientId string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(KeyVaultEndpoint, "/")
@@ -205,99 +174,6 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint, tenantID, clientI
 		return nil, errors.Wrapf(err, "failed to get authorizer for keyvault client")
 	}
 	return &kvClient, nil
-}
-
-/*
-Given a base key vault object and a list of object versions and their created dates, find
-the latest kvObject.ObjectVersionHistory versions and return key vault objects with the
-appropriate alias and version.
-The alias is determine by the index of the version starting with 0 at the specified version (or
-latest if no version is specified).
-*/
-func getLatestNKeyVaultObjects(kvCert types.KeyVaultCertificate, kvObjectVersions types.KeyVaultObjectVersionList) []types.KeyVaultCertificate {
-
-	objects := []types.KeyVaultCertificate{}
-
-	sort.Sort(kvObjectVersions)
-
-	// if we're being asked for the latest, then there's no need to skip any versions
-	foundFirst := kvCert.CertificateVersion == "" || kvCert.CertificateVersion == "latest"
-
-	for _, objectVersion := range kvObjectVersions {
-		foundFirst = foundFirst || objectVersion.Version == kvCert.CertificateVersion
-
-		if foundFirst {
-			length := len(objects)
-			newObject := kvCert
-
-			newObject.CertificateVersion = objectVersion.Version
-
-			objects = append(objects, newObject)
-
-			if length+1 > int(kvCert.CertificateVersionHistory) {
-				break
-			}
-		}
-	}
-
-	return objects
-}
-
-func getKeyVaultCertificateVersions(ctx context.Context, kvClient *kv.BaseClient, kvObject types.KeyVaultCertificate, vaultURL string) (versions types.KeyVaultObjectVersionList, err error) {
-
-	return getCertificateVersions(ctx, kvClient, vaultURL, kvObject)
-
-}
-
-func resolveCertificateVersions(ctx context.Context, kvClient *kv.BaseClient, kvObject types.KeyVaultCertificate, vaultURL string) (versions []types.KeyVaultCertificate, err error) {
-	if kvObject.IsSyncingSingleVersion() {
-		// version history less than or equal to 1 means only sync the latest and
-		// don't add anything to the file name
-		return []types.KeyVaultCertificate{kvObject}, nil
-	}
-
-	kvObjectVersions, err := getCertificateVersions(ctx, kvClient, vaultURL, kvObject)
-	if err != nil {
-		return nil, err
-	}
-
-	return getLatestNKeyVaultObjects(kvObject, kvObjectVersions), nil
-}
-
-func getCertificateVersions(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) ([]types.KeyVaultObjectVersion, error) {
-	kvVersionsList, err := kvClient.GetCertificateVersions(ctx, vaultURL, kvObject.CertificateName, nil)
-	if err != nil {
-		return nil, wrapObjectTypeError(err, kvObject.CertificateName, kvObject.CertificateVersion)
-	}
-
-	certVersions := types.KeyVaultObjectVersionList{}
-
-	for notDone := true; notDone; notDone = kvVersionsList.NotDone() {
-		for _, cert := range kvVersionsList.Values() {
-			if cert.Attributes != nil {
-				objectVersion := getObjectVersion(*cert.ID)
-				created := date.UnixEpoch()
-
-				if cert.Attributes.Created != nil {
-					created = time.Time(*cert.Attributes.Created)
-				}
-
-				if cert.Attributes.Enabled != nil && *cert.Attributes.Enabled {
-					certVersions = append(certVersions, types.KeyVaultObjectVersion{
-						Version: objectVersion,
-						Created: created,
-					})
-				}
-			}
-		}
-
-		err = kvVersionsList.NextWithContext(ctx)
-		if err != nil {
-			return nil, wrapObjectTypeError(err, kvObject.CertificateName, kvObject.CertificateVersion)
-		}
-	}
-
-	return certVersions, nil
 }
 
 // getCertificate retrieves the certificate from the vault

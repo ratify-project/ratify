@@ -23,9 +23,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// GetKeyVaultName returns the key vault name
-func GetKeyVaultName(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[KeyVaultNameParameter])
+// GetKeyVaultUri returns the key vault name
+func GetKeyVaultUri(parameters map[string]string) string {
+	return strings.TrimSpace(parameters[KeyVaultUriParameter])
 }
 
 // GetCloudName returns the cloud name
@@ -60,12 +60,6 @@ func GetCertificatesArray(objects string) (StringArray, error) {
 	err := yaml.Unmarshal([]byte(objects), &a)
 
 	return a, err
-}
-
-// IsSyncingSingleVersion returns true if the object is configured
-// to only sync a single specific version of the secret
-func (kv KeyVaultCertificate) IsSyncingSingleVersion() bool {
-	return kv.CertificateVersionHistory <= 1
 }
 
 // GetFileName returns the file name for the secret
