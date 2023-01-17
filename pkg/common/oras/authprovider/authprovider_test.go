@@ -17,7 +17,6 @@ package authprovider
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -39,7 +38,7 @@ func (ap *TestAuthProvider) Provide(ctx context.Context, artifact string) (AuthC
 // Checks for correct credential resolution when external docker config
 // path is provided
 func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
-	tmpHome, err := ioutil.TempDir("", "config-test")
+	tmpHome, err := os.MkdirTemp("", "config-test")
 	if err != nil {
 		t.Fatalf("unexpected error when creating temporary directory: %v", err)
 	}
@@ -54,7 +53,7 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 		}
 	}`
 
-	err = ioutil.WriteFile(fn, []byte(js), 0600)
+	err = os.WriteFile(fn, []byte(js), 0600)
 	if err != nil {
 		t.Fatalf("unexpected error when writing config file: %v", err)
 	}
@@ -74,7 +73,7 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 }
 
 func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *testing.T) {
-	tmpHome, err := ioutil.TempDir("", "config-test")
+	tmpHome, err := os.MkdirTemp("", "config-test")
 	if err != nil {
 		t.Fatalf("unexpected error when creating temporary directory: %v", err)
 	}
@@ -90,7 +89,7 @@ func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *te
 		}
 	}`
 
-	err = ioutil.WriteFile(fn, []byte(js), 0600)
+	err = os.WriteFile(fn, []byte(js), 0600)
 	if err != nil {
 		t.Fatalf("unexpected error when writing config file: %v", err)
 	}

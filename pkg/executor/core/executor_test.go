@@ -173,11 +173,7 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 			return true
 		},
 		VerifyResult: func(artifactType string) bool {
-			if artifactType == "test-type1" {
-				return false
-			}
-
-			return true
+			return artifactType != "test-type1"
 		},
 	}
 

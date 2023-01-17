@@ -15,7 +15,6 @@ limitations under the License.
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -157,20 +156,17 @@ func createFile(t *testing.T, path string) {
 
 func createCertFile(t *testing.T, path string) {
 	// open cert file
-	content, err := ioutil.ReadFile("testCert1.crt")
-
+	content, err := os.ReadFile("testCert1.crt")
 	if err != nil {
 		t.Fatalf("open cert file '%s' failed with error '%v'", path, err)
 	}
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
 	if err != nil {
 		t.Fatalf("creating new file '%s' failed with error '%v'", path, err)
 	}
 
-	_, err = file.Write(content)
-	if err != nil {
+	if _, err = file.Write(content); err != nil {
 		t.Fatalf("write file '%s' failed with error '%v'", path, err)
 	}
 }
