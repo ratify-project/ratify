@@ -61,10 +61,3 @@ func GetCertificatesArray(objects string) (StringArray, error) {
 
 	return a, err
 }
-
-// GetFileName returns the file name for the secret
-// 1. If the object alias is specified, it will be used
-// 2. If the object alias is not specified, the object name will be used
-func (kv KeyVaultCertificate) GetFileName() string {
-	return kv.CertificateName
-}

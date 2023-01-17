@@ -116,7 +116,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 			objectContent := []byte(r.content)
 
 			file := types.Certificate{
-				CertificateName: keyVaultCert.GetFileName(),
+				CertificateName: keyVaultCert.CertificateName,
 				Content:         objectContent,
 				Version:         r.version,
 			}

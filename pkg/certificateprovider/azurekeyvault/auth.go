@@ -86,20 +86,29 @@ func (ar authResult) OAuthToken() string {
 	return ar.accessToken
 }
 
-// Vendored from https://github.com/Azure/go-autorest/blob/def88ef859fb980eff240c755a70597bc9b490d0/autorest/adal/token.go
+// Vendored from https://github.com/Azure/go-autorest/blob/79575dd7ba2e88e7ce7ab84e167ec6653dcb70c1/autorest/adal/token.go
 // converts expires_on to the number of seconds
-func parseExpiresOn(s string) (json.Number, error) {
-	// convert the expiration date to the number of seconds from now
-	timeToDuration := func(t time.Time) json.Number {
-		dur := t.Sub(time.Now().UTC())
-		return json.Number(strconv.FormatInt(int64(dur.Round(time.Second).Seconds()), 10))
+func parseExpiresOn(s interface{}) (json.Number, error) {
+	// the JSON unmarshaler treats JSON numbers unmarshaled into an interface{} as float64
+	asFloat64, ok := s.(float64)
+	if ok {
+		// this is the number of seconds as int case
+		return json.Number(strconv.FormatInt(int64(asFloat64), 10)), nil
 	}
-	if _, err := strconv.ParseInt(s, 10, 64); err == nil {
+	asStr, ok := s.(string)
+	if !ok {
+		return "", fmt.Errorf("unexpected expires_on type %T", s)
+	}
+	// convert the expiration date to the number of seconds from the unix epoch
+	timeToDuration := func(t time.Time) json.Number {
+		return json.Number(strconv.FormatInt(t.UTC().Unix(), 10))
+	}
+	if _, err := json.Number(asStr).Int64(); err == nil {
 		// this is the number of seconds case, no conversion required
-		return json.Number(s), nil
-	} else if eo, err := time.Parse(expiresOnDateFormatPM, s); err == nil {
+		return json.Number(asStr), nil
+	} else if eo, err := time.Parse(expiresOnDateFormatPM, asStr); err == nil {
 		return timeToDuration(eo), nil
-	} else if eo, err := time.Parse(expiresOnDateFormat, s); err == nil {
+	} else if eo, err := time.Parse(expiresOnDateFormat, asStr); err == nil {
 		return timeToDuration(eo), nil
 	} else {
 		// unknown format

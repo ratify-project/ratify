@@ -21,7 +21,6 @@ import (
 	"os"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"github.com/pkg/errors"
 )
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
@@ -43,11 +42,11 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 	signedAssertion, err := readJWTFromFS(tokenFilePath)
 
 	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to read service account token")
+		return confidential.AuthResult{}, fmt.Errorf("failed to read service account token: %w", err)
 	}
 	cred, err := confidential.NewCredFromAssertion(signedAssertion)
 	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential creds")
+		return confidential.AuthResult{}, fmt.Errorf("failed to create confidential creds: %w", err)
 	}
 
 	// create the confidential client to request an AAD token
@@ -56,12 +55,12 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 		cred,
 		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authority, tenantID)))
 	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to create confidential client app")
+		return confidential.AuthResult{}, fmt.Errorf("failed to create confidential client app: %w", err)
 	}
 
 	result, err := confidentialClientApp.AcquireTokenByCredential(ctx, []string{scope})
 	if err != nil {
-		return confidential.AuthResult{}, errors.Wrap(err, "failed to acquire AAD token")
+		return confidential.AuthResult{}, fmt.Errorf("failed to acquire AAD token: %w", err)
 	}
 
 	return result, nil
