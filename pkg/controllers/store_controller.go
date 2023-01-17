@@ -62,7 +62,6 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	storeLogger.Infof("reconciling store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
-
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
 			storeRemove(resource)
@@ -120,7 +119,6 @@ func storeRemove(resourceName string) {
 
 // Returns a store reference from spec
 func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig, error) {
-
 	storeConfig := rc.StorePluginConfig{}
 
 	if string(storeSpec.Parameters.Raw) != "" {

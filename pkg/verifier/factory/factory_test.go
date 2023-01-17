@@ -85,7 +85,6 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 }
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
-
 	var verifierConfig config.VerifierConfig
 	verifierConfig = map[string]interface{}{
 		"name": "plugin-verifier",
