@@ -16,14 +16,13 @@ limitations under the License.
 package config
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestLoad_FromDefaultPath(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-config")
+	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
@@ -36,7 +35,7 @@ func TestLoad_FromDefaultPath(t *testing.T) {
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`{"store":  { "version": "1.0.0" }}`)
-	err = ioutil.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -57,7 +56,7 @@ func TestLoad_FromDefaultPath(t *testing.T) {
 }
 
 func TestLoad_FromGivenPath(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-config")
+	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
@@ -66,7 +65,7 @@ func TestLoad_FromGivenPath(t *testing.T) {
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`{"store":  { "version": "1.0.0" }}`)
-	err = ioutil.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -86,7 +85,7 @@ func TestLoad_FromGivenPath(t *testing.T) {
 }
 
 func TestLoad_NonExistentConfigFile(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-config")
+	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
@@ -101,7 +100,7 @@ func TestLoad_NonExistentConfigFile(t *testing.T) {
 }
 
 func TestLoad_EmptyConfigSucceeds(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-config")
+	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
@@ -110,7 +109,7 @@ func TestLoad_EmptyConfigSucceeds(t *testing.T) {
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte("{}")
-	err = ioutil.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -126,7 +125,7 @@ func TestLoad_EmptyConfigSucceeds(t *testing.T) {
 }
 
 func TestLoad_InvalidConfigFile(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-config")
+	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
@@ -135,7 +134,7 @@ func TestLoad_InvalidConfigFile(t *testing.T) {
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`"store":  { "version": "1.0.0" }}`)
-	err = ioutil.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -147,7 +146,7 @@ func TestLoad_InvalidConfigFile(t *testing.T) {
 }
 
 func TestLoad_ComputeHash(t *testing.T) {
-	tmpDir, err := ioutil.TempDir("", "test-config")
+	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
@@ -156,7 +155,7 @@ func TestLoad_ComputeHash(t *testing.T) {
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`{"store":  { "version": "1.0.0" }}`)
-	err = ioutil.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0644)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}

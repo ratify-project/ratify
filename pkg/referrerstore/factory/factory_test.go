@@ -35,8 +35,7 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 		"testStore": &TestStoreFactory{},
 	}
 
-	var storeConfig config.StorePluginConfig
-	storeConfig = map[string]interface{}{
+	storeConfig := map[string]interface{}{
 		"name": "testStore",
 	}
 	storesConfig := config.StoresConfig{
@@ -63,8 +62,7 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 }
 
 func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
-	var storeConfig config.StorePluginConfig
-	storeConfig = map[string]interface{}{
+	storeConfig := map[string]interface{}{
 		"name": "plugin-store",
 	}
 	storesConfig := config.StoresConfig{

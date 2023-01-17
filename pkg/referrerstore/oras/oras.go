@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	paths "path/filepath"
 	"sync"
@@ -201,7 +200,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	store.addAuthCache(subjectReference.Original, repository, expiry)
 
 	// convert artifact descriptors to oci descriptor with artifact type
-	var referrers []ocispecs.ReferenceDescriptor
+	referrers := []ocispecs.ReferenceDescriptor{}
 	for _, referrer := range referrerDescriptors {
 		referrers = append(referrers, OciDescriptorToReferenceDescriptor(referrer))
 	}
@@ -393,7 +392,7 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 		return nil, err
 	}
 
-	buf, err := ioutil.ReadAll(reader)
+	buf, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

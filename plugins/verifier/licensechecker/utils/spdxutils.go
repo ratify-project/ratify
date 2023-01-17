@@ -29,7 +29,7 @@ func BlobToSPDX(bytes []byte) (*spdx.Document2_2, error) {
 }
 
 func GetPackageLicenses(doc spdx.Document2_2) []PackageLicense {
-	var output []PackageLicense
+	output := []PackageLicense{}
 	for _, p := range doc.Packages {
 		output = append(output, PackageLicense{
 			PackageName:    p.PackageName,

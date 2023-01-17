@@ -16,7 +16,6 @@ limitations under the License.
 package plugin
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -25,7 +24,7 @@ import (
 
 func TestFindInPaths_FindsPluginInPaths(t *testing.T) {
 	// Create a temp directory
-	tempDir, err := ioutil.TempDir("", "plugin-find")
+	tempDir, err := os.MkdirTemp("", "plugin-find")
 	if err != nil {
 		t.Fatalf("temp directory creation failed %v", err)
 	}
@@ -34,7 +33,7 @@ func TestFindInPaths_FindsPluginInPaths(t *testing.T) {
 		os.RemoveAll(tempDir)
 	}()
 
-	plugin1, err := ioutil.TempFile(tempDir, "test-plugin1")
+	plugin1, err := os.CreateTemp(tempDir, "test-plugin1")
 
 	if err != nil {
 		t.Fatalf("test plugin1 creation failed %v", err)
@@ -74,7 +73,7 @@ func TestFindInPaths_FindsPluginInPaths(t *testing.T) {
 
 func TestFindInPaths_ExpectedErrors(t *testing.T) {
 	// Create a temp directory
-	tempDir, err := ioutil.TempDir("", "plugin-empty")
+	tempDir, err := os.MkdirTemp("", "plugin-empty")
 	if err != nil {
 		t.Fatalf("temp directory creation failed %v", err)
 	}
