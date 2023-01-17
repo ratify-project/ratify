@@ -48,7 +48,6 @@ func Register(name string, factory VerifierFactory) {
 
 // returns a single verifier from a verifierConfig
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string) (verifier.ReferenceVerifier, error) {
-
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
 		return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
@@ -107,5 +106,4 @@ func validateVerifiersConfig(verifiersConfig *config.VerifiersConfig) error {
 	// TODO check for existence of plugin dirs
 	// TODO check if version is supported
 	return nil
-
 }
