@@ -18,9 +18,10 @@ package aws
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 )
 
 // EcrAuthToken provides helper functions for ECR auth token data

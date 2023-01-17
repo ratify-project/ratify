@@ -20,7 +20,7 @@ import (
 	"crypto"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/deislabs/ratify/pkg/common"
@@ -135,7 +135,7 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 
 func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verifier, err error) {
 	keyPath := filepath.Clean(utils.ReplaceHomeShortcut(keyRef))
-	raw, err := ioutil.ReadFile(keyPath)
+	raw, err := os.ReadFile(keyPath)
 	if err != nil {
 		return nil, err
 	}

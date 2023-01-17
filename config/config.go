@@ -20,7 +20,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -113,7 +112,7 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 func Load(configFilePath string) (Config, error) {
 	config := Config{}
 
-	body, readErr := ioutil.ReadFile(getConfigurationFile(configFilePath))
+	body, readErr := os.ReadFile(getConfigurationFile(configFilePath))
 	if readErr != nil {
 		return config, fmt.Errorf("unable to read config file at path %s", readErr)
 	}
