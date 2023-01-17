@@ -34,7 +34,6 @@ var (
 
 // Create a executor from configurationFile and setup config file watcher
 func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
-
 	configFilePath = getConfigurationFile(configFilePath)
 	cf, err := Load(configFilePath)
 
@@ -69,7 +68,6 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 }
 
 func reloadExecutor(configFilePath string) {
-
 	cf, err := Load(configFilePath)
 
 	if err != nil {
@@ -103,7 +101,6 @@ func reloadExecutor(configFilePath string) {
 
 // Setup a watcher on file at configFilePath, reload executor on file change
 func watchForConfigurationChange(configFilePath string) error {
-
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return errors.Wrap(err, "new file watcher on configuration file failed ")
@@ -118,7 +115,6 @@ func watchForConfigurationChange(configFilePath string) error {
 
 	// setup for loop to listen for events
 	go func() {
-
 		for {
 			select {
 			case event, ok := <-watcher.Events:
@@ -159,7 +155,6 @@ func watchForConfigurationChange(configFilePath string) error {
 					}
 
 					logrus.Infof("watcher added on configuration directory %v", configFilePath)
-
 				}
 
 				// In a local scenario, the configuration will be updated through a write event

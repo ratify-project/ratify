@@ -100,5 +100,4 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		IsSuccess: true,
 		Message:   "SBOM verification success. The contents is good.",
 	}, nil
-
 }
