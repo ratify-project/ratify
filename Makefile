@@ -24,7 +24,7 @@ BATS_VERSION ?= 1.7.0
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
-RATIFY_NAMESPACE = ratify-service
+GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
 all: build test
@@ -97,13 +97,13 @@ deploy-gatekeeper:
 	helm install gatekeeper/gatekeeper  \
 		--version ${GATEKEEPER_VERSION} \
 	    --name-template=gatekeeper \
-	    --namespace gatekeeper-system --create-namespace \
+	    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
 	    --set enableExternalData=true \
 	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
-	helm delete gatekeeper --namespace gatekeeper-system
+	helm delete gatekeeper --namespace ${GATEKEEPER_NAMESPACE}
 
 .PHONY: test-e2e
 test-e2e:
@@ -119,8 +119,8 @@ generate-certs:
 	cd ${CERT_DIR} && openssl genrsa -out ca.key 2048 && \
 	openssl req -new -x509 -days 365 -key ca.key -subj "/O=My Org/CN=External Data Provider CA" -out ca.crt && \
 	openssl genrsa -out server.key 2048 && \
-	openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=${RATIFY_NAME}.${RATIFY_NAMESPACE}" -out server.csr && \
-	printf "subjectAltName=DNS:${RATIFY_NAME}.${RATIFY_NAMESPACE}" > server.ext && \
+	openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=${RATIFY_NAME}.${GATEKEEPER_NAMESPACE}" -out server.csr && \
+	printf "subjectAltName=DNS:${RATIFY_NAME}.${GATEKEEPER_NAMESPACE}" > server.ext && \
 	openssl x509 -req -extfile server.ext -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 
 install-bats:
@@ -155,7 +155,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
 	--version ${GATEKEEPER_VERSION} \
     --name-template=gatekeeper \
-    --namespace gatekeeper-system --create-namespace \
+    --namespace ${GATEKEEPER_NAMESPACE}-system --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7 \
     --set auditInterval=0 \
@@ -168,7 +168,7 @@ e2e-deploy-ratify:
 	kind load docker-image --name kind localbuildcrd:test
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
-    ./charts/ratify --atomic --namespace ${RATIFY_NAMESPACE} --create-namespace \
+    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
 	--set image.repository=localbuild \
 	--set image.crdRepository=localbuildcrd \
 	--set image.tag=test \
