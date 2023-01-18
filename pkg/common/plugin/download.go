@@ -56,7 +56,7 @@ func ParsePluginSource(source interface{}) (PluginSource, error) {
 func DownloadPlugin(source PluginSource, targetPath string) error {
 	ctx := context.TODO()
 
-	// Initialize a repository
+	// initialize a repository
 	repository, err := remote.NewRepository(source.Artifact)
 	if err != nil {
 		return err
@@ -112,8 +112,7 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 		return err
 	}
 
-	// Download the contents of the first blob as the named plugin. This matches `oras push registry.example.com/sample-plugin:v1 ./sample`
-	// TODO: should this be "first/only blob of media type `application/vnd.ratify.plugin`"?
+	// download the first blob to the target path
 	blobReference := fmt.Sprintf("%s@%s", source, referenceManifest.Blobs[0].Digest)
 	logrus.Debugf("Downloading blob %s", blobReference)
 	_, blobReader, err := repository.Blobs().FetchReference(ctx, blobReference)
@@ -133,7 +132,7 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 		return err
 	}
 
-	// Mark the plugin as executable
+	// mark the plugin as executable
 	logrus.Debugf("marking %s as executable", targetPath)
 	err = os.Chmod(targetPath, 0700)
 	if err != nil {
