@@ -8,12 +8,9 @@ import (
 	paths "path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
-	e "github.com/deislabs/ratify/pkg/executor"
-	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -133,16 +130,6 @@ func (s mockStore) GetSubjectDescriptor(ctx context.Context, subjectReference co
 	return &ocispecs.SubjectDescriptor{
 		Descriptor: ocispec.Descriptor{},
 	}, nil
-}
-
-type mockExecutor struct{}
-
-func (e mockExecutor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	return types.VerifyResult{}, nil
-}
-
-func (e mockExecutor) GetVerifyRequestTimeout() time.Duration {
-	return time.Hour
 }
 
 func TestName(t *testing.T) {
