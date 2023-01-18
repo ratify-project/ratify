@@ -88,7 +88,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 	logrus.Infof("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 
 	if len(keyVaultCerts) == 0 {
-		return nil, errors.Wrap(err, "no keyvault certificate configured")
+		return nil, fmt.Errorf("no keyvault certificate configured")
 	}
 
 	// 2. initialize keyvault client
@@ -97,7 +97,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get keyvault client")
+		return nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
 	}
 
 	// 3. for each object , get content bytes
@@ -124,7 +124,6 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 			files = append(files, file)
 			logrus.Infof("added file %v to response file", file.CertificateName)
 		}
-
 	}
 	return files, nil
 }
@@ -166,12 +165,12 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint, tenantID, clientI
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to add user agent to keyvault client")
+		return nil, fmt.Errorf("failed to add user agent to keyvault client, error: %w", err)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientId, kvEndpoint)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get authorizer for keyvault client")
+		return nil, fmt.Errorf("failed to get authorizer for keyvault client, error: %w", err)
 	}
 	return &kvClient, nil
 }
@@ -180,7 +179,7 @@ func initializeKvClient(ctx context.Context, KeyVaultEndpoint, tenantID, clientI
 func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) ([]keyvaultObject, error) {
 	certbundle, err := kvClient.GetCertificate(ctx, vaultURL, kvObject.CertificateName, kvObject.CertificateVersion)
 	if err != nil {
-		return nil, wrapObjectTypeError(err, kvObject.CertificateName, kvObject.CertificateVersion)
+		return nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", kvObject.CertificateName, kvObject.CertificateVersion, err)
 	}
 	if certbundle.Cer == nil {
 		return nil, errors.Errorf("certificate value is nil")
@@ -197,10 +196,6 @@ func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL strin
 	var pemData []byte
 	pemData = append(pemData, pem.EncodeToMemory(certBlock)...)
 	return []keyvaultObject{{content: string(pemData), version: version}}, nil
-}
-
-func wrapObjectTypeError(err error, objectName, objectVersion string) error {
-	return errors.Wrapf(err, "failed to get certificate objectName:%s, objectVersion:%s", objectName, objectVersion)
 }
 
 // getObjectVersion parses the id to retrieve the version

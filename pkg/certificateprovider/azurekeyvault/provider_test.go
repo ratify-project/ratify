@@ -98,7 +98,6 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-
 		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
 		assert.NoError(t, err)
 		assert.NotNil(t, kvBaseClient)
@@ -115,7 +114,7 @@ func TestGetCertificatesContent(t *testing.T) {
 		expectedErr bool
 	}{
 		{
-			desc:        "keyvault name not provided",
+			desc:        "keyvault uri not provided",
 			parameters:  map[string]string{},
 			expectedErr: true,
 		},
@@ -166,7 +165,7 @@ func TestGetCertificatesContent(t *testing.T) {
 				"certificates": `
       array:`,
 			},
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			desc: "invalid object format",
@@ -199,7 +198,6 @@ func TestGetCertificatesContent(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-
 			_, err := GetCertificates(context.TODO(), tc.parameters)
 			if tc.expectedErr {
 				assert.NotNil(t, err)
