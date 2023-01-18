@@ -77,7 +77,7 @@ func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	out := fmt.Sprintf("%s", stdout)
+	out := stdout.String()
 	if !strings.Contains(out, `"isSuccess":true`) {
 		t.Fatalf("plugin execution failed. expected %v actual %v", "isSuccess: true", out)
 	}
@@ -114,7 +114,7 @@ func TestPluginMain_VerifyReference_CanUseBuiltinStores(t *testing.T) {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	out := fmt.Sprintf("%s", stdout)
+	out := stdout.String()
 	if !strings.Contains(out, `"isSuccess":true`) {
 		t.Fatalf("plugin execution failed. expected %v actual %v", "isSuccess: true", out)
 	}

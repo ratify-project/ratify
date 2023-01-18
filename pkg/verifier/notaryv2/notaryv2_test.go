@@ -215,7 +215,7 @@ func TestParseVerifierConfig(t *testing.T) {
 			expect:    nil,
 		},
 		{
-			name: "sucessfully parsed with default cert directory",
+			name: "successfully parsed with default cert directory",
 			configMap: map[string]interface{}{
 				"name": test,
 			},

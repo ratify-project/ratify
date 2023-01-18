@@ -17,10 +17,16 @@ package authprovider
 
 import (
 	"context"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
+)
+
+const (
+	testUserName                 = "joejoe"
+	testPassword                 = "hello"
+	dockerTokenLoginUsernameGUID = "00000000-0000-0000-0000-000000000000"
+	identityTokenOpaque          = "OPAQUE_TOKEN" // #nosec
 )
 
 type TestAuthProvider struct{}
@@ -39,7 +45,7 @@ func (ap *TestAuthProvider) Provide(ctx context.Context, artifact string) (AuthC
 // Checks for correct credential resolution when external docker config
 // path is provided
 func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
-	tmpHome, err := ioutil.TempDir("", "config-test")
+	tmpHome, err := os.MkdirTemp("", "config-test")
 	if err != nil {
 		t.Fatalf("unexpected error when creating temporary directory: %v", err)
 	}
@@ -54,7 +60,7 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 		}
 	}`
 
-	err = ioutil.WriteFile(fn, []byte(js), 0600)
+	err = os.WriteFile(fn, []byte(js), 0600)
 	if err != nil {
 		t.Fatalf("unexpected error when writing config file: %v", err)
 	}
@@ -68,13 +74,13 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 		t.Fatalf("unexpected error in Provide: %v", err)
 	}
 
-	if authConfig.Username != "joejoe" || authConfig.Password != "hello" {
+	if authConfig.Username != testUserName || authConfig.Password != testPassword {
 		t.Fatalf("incorrect username %v or password %v returned", authConfig.Username, authConfig.Password)
 	}
 }
 
 func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *testing.T) {
-	tmpHome, err := ioutil.TempDir("", "config-test")
+	tmpHome, err := os.MkdirTemp("", "config-test")
 	if err != nil {
 		t.Fatalf("unexpected error when creating temporary directory: %v", err)
 	}
@@ -90,7 +96,7 @@ func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *te
 		}
 	}`
 
-	err = ioutil.WriteFile(fn, []byte(js), 0600)
+	err = os.WriteFile(fn, []byte(js), 0600)
 	if err != nil {
 		t.Fatalf("unexpected error when writing config file: %v", err)
 	}
@@ -104,7 +110,7 @@ func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *te
 		t.Fatalf("unexpected error in Provide: %v", err)
 	}
 
-	if authConfig.Username != "00000000-0000-0000-0000-000000000000" || authConfig.IdentityToken != "OPAQUE_TOKEN" {
+	if authConfig.Username != dockerTokenLoginUsernameGUID || authConfig.IdentityToken != identityTokenOpaque {
 		t.Fatalf("incorrect username %v or identitytoken %v returned", authConfig.Username, authConfig.IdentityToken)
 	}
 }

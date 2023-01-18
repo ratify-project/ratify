@@ -80,7 +80,7 @@ func (s *defaultProviderFactory) Create(authProviderConfig AuthProviderConfig) (
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
 	}
 
 	return &defaultAuthProvider{
@@ -99,22 +99,20 @@ func (d *defaultAuthProvider) Provide(ctx context.Context, artifact string) (Aut
 	var cfg *configfile.ConfigFile
 	if d.configPath == "" {
 		var err error
-		cfg, err = config.Load(config.Dir())
-		if err != nil {
-			return AuthConfig{}, nil
+		if cfg, err = config.Load(config.Dir()); err != nil {
+			return AuthConfig{}, err
 		}
 	} else {
 		cfg = configfile.New(d.configPath)
-		if _, err := os.Stat(d.configPath); err == nil {
-			file, err := os.Open(d.configPath)
-			if err != nil {
-				return AuthConfig{}, err
-			}
-			defer file.Close()
-			if err := cfg.LoadFromReader(file); err != nil {
-				return AuthConfig{}, err
-			}
-		} else {
+		if _, err := os.Stat(d.configPath); err != nil {
+			return AuthConfig{}, err
+		}
+		file, err := os.Open(d.configPath)
+		if err != nil {
+			return AuthConfig{}, err
+		}
+		defer file.Close()
+		if err := cfg.LoadFromReader(file); err != nil {
 			return AuthConfig{}, err
 		}
 	}

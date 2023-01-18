@@ -49,7 +49,7 @@ func runVersion() error {
 		items = append(items, []string{"Git tree", version.GitTreeState})
 	}
 
-	// Get max string lenght of first column
+	// Get max string length of first column
 	var size = 0
 	for _, item := range items {
 		if size < len(item[0]) {

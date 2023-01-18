@@ -65,7 +65,7 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 
 	policyProvider, err := policyFactory.Create(policyConfig.PolicyPlugin)
 	if err != nil {
-		return nil, fmt.Errorf("failed to Create policy provider: %v", err)
+		return nil, fmt.Errorf("failed to Create policy provider: %w", err)
 	}
 
 	logrus.Infof("selected policy provider: %s", providerNameStr)
