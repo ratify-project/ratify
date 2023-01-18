@@ -66,13 +66,13 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 		if featureflag.DynamicPlugins.Enabled {
 			source, err := pluginCommon.ParsePluginSource(source)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse plugin source: %v", err)
+				return nil, fmt.Errorf("failed to parse plugin source: %w", err)
 			}
 
 			targetPath := path.Join(pluginBinDir[0], verifierNameStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to download plugin: %v", err)
+				return nil, fmt.Errorf("failed to download plugin: %w", err)
 			}
 			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierNameStr, source.Artifact, targetPath)
 		} else {

@@ -66,13 +66,13 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 		if featureflag.DynamicPlugins.Enabled {
 			source, err := pluginCommon.ParsePluginSource(source)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse plugin source: %v", err)
+				return nil, fmt.Errorf("failed to parse plugin source: %w", err)
 			}
 
 			targetPath := path.Join(pluginBinDir[0], storeNameStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to download plugin: %v", err)
+				return nil, fmt.Errorf("failed to download plugin: %w", err)
 			}
 			logrus.Infof("downloaded store plugin %s from %s to %s", storeNameStr, source.Artifact, targetPath)
 		} else {
