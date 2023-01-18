@@ -20,7 +20,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -69,7 +68,6 @@ func InitDefaultPaths() {
 	configDir = os.Getenv("RATIFY_CONFIG")
 	if configDir == "" {
 		configDir = filepath.Join(getHomeDir(), ConfigFileDir)
-
 	}
 	defaultPluginsPath = filepath.Join(configDir, PluginsFolder)
 	defaultConfigFilePath = filepath.Join(configDir, ConfigFileName)
@@ -112,11 +110,9 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 
 // Load the config from file path provided, read from default path if configFilePath is empty
 func Load(configFilePath string) (Config, error) {
-
 	config := Config{}
 
-	body, readErr := ioutil.ReadFile(getConfigurationFile(configFilePath))
-
+	body, readErr := os.ReadFile(getConfigurationFile(configFilePath))
 	if readErr != nil {
 		return config, fmt.Errorf("unable to read config file at path %s", readErr)
 	}

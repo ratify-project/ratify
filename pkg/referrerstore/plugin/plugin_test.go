@@ -24,7 +24,6 @@ import (
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/opencontainers/go-digest"
 )
 
@@ -94,8 +93,7 @@ func TestPluginMain_GetBlobContent_InvokeExpected(t *testing.T) {
 		},
 	}
 
-	var rawConfig config.StorePluginConfig
-	rawConfig = map[string]interface{}{
+	rawConfig := map[string]interface{}{
 		testPlugin: StorePlugin{
 			name: testPlugin,
 		},
@@ -175,8 +173,7 @@ func TestPluginMain_GetReferenceManifest_InvokeExpected(t *testing.T) {
 		},
 	}
 
-	var rawConfig config.StorePluginConfig
-	rawConfig = map[string]interface{}{
+	rawConfig := map[string]interface{}{
 		testPlugin: StorePlugin{
 			name: testPlugin,
 		},
@@ -259,8 +256,7 @@ func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 		},
 	}
 
-	var rawConfig config.StorePluginConfig
-	rawConfig = map[string]interface{}{
+	rawConfig := map[string]interface{}{
 		testPlugin: StorePlugin{
 			name: testPlugin,
 		},
@@ -335,8 +331,7 @@ func TestPluginMain_GetSubjectDescriptor_InvokeExpected(t *testing.T) {
 		},
 	}
 
-	var rawConfig config.StorePluginConfig
-	rawConfig = map[string]interface{}{
+	rawConfig := map[string]interface{}{
 		testPlugin: StorePlugin{
 			name: testPlugin,
 		},

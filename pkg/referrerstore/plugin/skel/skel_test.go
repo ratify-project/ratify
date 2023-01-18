@@ -56,7 +56,7 @@ func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	out := fmt.Sprintf("%s", stdout)
+	out := stdout.String()
 	if !strings.Contains(out, "sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb") {
 		t.Fatalf("plugin execution failed. expected %v actual %v", "sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb", out)
 	}
@@ -91,7 +91,7 @@ func TestPluginMain_GetReferenceManifest_ReturnsExpected(t *testing.T) {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	out := fmt.Sprintf("%s", stdout)
+	out := stdout.String()
 	if !strings.Contains(out, "test-type") {
 		t.Fatalf("plugin execution failed. expected %v actual %v", "test-type", out)
 	}
@@ -131,7 +131,7 @@ func TestPluginMain_ListReferrers_ReturnsExpected(t *testing.T) {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	out := fmt.Sprintf("%s", stdout)
+	out := stdout.String()
 	if !strings.Contains(out, "test-type") || !strings.Contains(out, "next-token") {
 		t.Fatalf("plugin execution failed. expected %v actual %v", "test-type, next-token", out)
 	}
@@ -164,7 +164,7 @@ func TestPluginMain_GetSubjectDesc_ReturnsExpected(t *testing.T) {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	out := fmt.Sprintf("%s", stdout)
+	out := stdout.String()
 	if !strings.Contains(out, testDigest.String()) {
 		t.Fatalf("plugin execution failed. expected %v actual %v", testDigest.String(), out)
 	}

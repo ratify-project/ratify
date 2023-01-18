@@ -62,7 +62,6 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	storeLogger.Infof("reconciling store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
-
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
 			storeRemove(resource)
@@ -92,7 +91,9 @@ func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // Creates a store reference from CRD spec and add store to map
 func storeAddOrReplace(spec configv1alpha1.StoreSpec, fullname string) error {
 	storeConfig, err := specToStoreConfig(spec)
-
+	if err != nil {
+		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
+	}
 	// factory only support a single version of configuration today
 	// when we support multi version store CRD, we will also pass in the corresponding config version so factory can create different version of the object
 	storeConfigVersion := "1.0.0"
@@ -104,7 +105,7 @@ func storeAddOrReplace(spec configv1alpha1.StoreSpec, fullname string) error {
 
 	if err != nil || storeReference == nil {
 		logrus.Error(err, "store factory failed to create store from store config")
-		return fmt.Errorf("store factory failed to create store from store config, err: %q", err)
+		return fmt.Errorf("store factory failed to create store from store config, err: %w", err)
 	}
 
 	StoreMap[fullname] = storeReference
@@ -120,7 +121,6 @@ func storeRemove(resourceName string) {
 
 // Returns a store reference from spec
 func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig, error) {
-
 	storeConfig := rc.StorePluginConfig{}
 
 	if string(storeSpec.Parameters.Raw) != "" {

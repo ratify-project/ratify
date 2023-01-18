@@ -38,7 +38,6 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 	path = ReplaceHomeShortcut(path)
 
 	err := filepath.Walk(path, func(file string, info os.FileInfo, err error) error {
-
 		targetFileInfo := info
 		targetFilePath := file
 

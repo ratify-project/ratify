@@ -173,11 +173,7 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 			return true
 		},
 		VerifyResult: func(artifactType string) bool {
-			if artifactType == "test-type1" {
-				return false
-			}
-
-			return true
+			return artifactType != "test-type1"
 		},
 	}
 
@@ -321,5 +317,4 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	if result.VerifierReports[0].(verifier.VerifierResult).ArtifactType != "test-type2" {
 		t.Fatalf("verification expected to return second artifact verifier report first")
 	}
-
 }
