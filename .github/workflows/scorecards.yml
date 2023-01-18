@@ -5,9 +5,7 @@ on:
     # Weekly on Saturdays.
     - cron: '30 1 * * 6'
   push:
-    branches: 
-      - main
-      - 1.0.0*
+    branches: [ main ]
   workflow_dispatch:
 
 permissions: read-all
@@ -29,7 +27,7 @@ jobs:
           persist-credentials: false
 
       - name: "Run analysis"
-        uses: ossf/scorecard-action@e38b1902ae4f44df626f11ba0734b14fb91f8f86 # tag=v2.0.4
+        uses: ossf/scorecard-action@e363bfca00e752f91de7b7d2a77340e2e523cb18 # tag=v2.0.4
         with:
           results_file: results.sarif
           results_format: sarif
@@ -44,6 +42,6 @@ jobs:
           retention-days: 5
       
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@515828d97454b8354517688ddc5b48402b723750 # tag=v2.1.38
+        uses: github/codeql-action/upload-sarif@807578363a7869ca324a79039e6db9c843e0e100 # tag=v2.1.27
         with:
           sarif_file: results.sarif
