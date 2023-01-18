@@ -9,7 +9,6 @@ Ratify includes an optional dynamic plugins feature to simplify plugin distribut
 Upload your plugin to a registry that supports OCI artifacts. Here we're using the sample plugin located at `plugins/verifier/sample`. Replace the registry values with your own.
 
 ```shell
-cd plugins/verifier/sample
 CGO_ENABLED=0 go build -o=./sample ./plugins/verifier/sample
 oras push myregistry.azurecr.io/sample-plugin:v1 ./sample
 ```
