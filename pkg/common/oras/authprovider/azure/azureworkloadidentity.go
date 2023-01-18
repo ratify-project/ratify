@@ -110,7 +110,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
 		}
 		d.aadToken = newToken
-		logrus.Info("sucessfully refreshed AAD token")
+		logrus.Info("successfully refreshed AAD token")
 	}
 
 	// add protocol to generate complete URI

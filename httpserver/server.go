@@ -20,9 +20,9 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/deislabs/ratify/config"
@@ -88,7 +88,7 @@ func (server *Server) Run() error {
 		logrus.Info(fmt.Sprintf("%s: [%s:%s] [%s:%s]", "starting server using TLS", "certFile", certFile, "keyFile", keyFile))
 
 		if server.CaCertFile != "" {
-			caCert, err := ioutil.ReadFile(server.CaCertFile)
+			caCert, err := os.ReadFile(server.CaCertFile)
 			if err != nil {
 				panic(err)
 			}

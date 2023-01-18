@@ -9,3 +9,6 @@ certs/
 
 # symlink to ~/.ratify folder
 /.ratify
+
+# IDE files
+.vscode/settings.json

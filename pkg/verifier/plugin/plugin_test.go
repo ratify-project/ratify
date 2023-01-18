@@ -23,7 +23,6 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	sm "github.com/deislabs/ratify/pkg/referrerstore/mocks"
-	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/mocks"
 )
 
@@ -41,8 +40,7 @@ func (e *TestExecutor) FindInPaths(plugin string, paths []string) (string, error
 }
 
 func TestNewVerifier_Expected(t *testing.T) {
-	var verifierConfig config.VerifierConfig
-	verifierConfig = map[string]interface{}{
+	verifierConfig := map[string]interface{}{
 		"name":             "test-verifier",
 		"artifactTypes":    "test1,test2",
 		"nestedReferences": "ref1,ref2",
@@ -110,8 +108,7 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 		},
 	}
 
-	var verifierConfig config.VerifierConfig
-	verifierConfig = map[string]interface{}{
+	verifierConfig := map[string]interface{}{
 		"name": testPlugin,
 	}
 	verifierPlugin := &VerifierPlugin{
@@ -143,8 +140,7 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 func TestVerify_NestedReferences_Verify_Failed(t *testing.T) {
 	testPlugin := "test-plugin"
 
-	var verifierConfig config.VerifierConfig
-	verifierConfig = map[string]interface{}{
+	verifierConfig := map[string]interface{}{
 		"name": testPlugin,
 	}
 	verifierPlugin := &VerifierPlugin{
@@ -225,8 +221,8 @@ func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
 			return []byte(verifierResult), nil
 		},
 	}
-	var verifierConfig config.VerifierConfig
-	verifierConfig = map[string]interface{}{
+
+	verifierConfig := map[string]interface{}{
 		"name": testPlugin,
 	}
 	verifierPlugin := &VerifierPlugin{

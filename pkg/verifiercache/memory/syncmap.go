@@ -104,7 +104,6 @@ func (sm *SyncMap) SetEntry(key string, entry interface{}) {
 	}
 
 	(*sm.mapObj)[key] = entry
-	return
 }
 
 // DeleteEntry delete an entry
@@ -113,7 +112,6 @@ func (sm *SyncMap) DeleteEntry(key string) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 	delete(*sm.mapObj, key)
-	return
 }
 
 // SetMapObj sets the whole mapping object directly
@@ -121,7 +119,6 @@ func (sm *SyncMap) SetMapObj(newMap *map[string]interface{}) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 	sm.mapObj = newMap
-	return
 }
 
 // GetLength get the number of items in the map
@@ -143,7 +140,6 @@ func (sm *SyncMap) SetEvictionPercentage(newPercentage int) {
 	sm.lock.Lock()
 	defer sm.lock.Unlock()
 	sm.evictionPercentage = newPercentage
-	return
 }
 
 // MakeSyncMap create a new SyncMap
