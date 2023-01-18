@@ -124,7 +124,6 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	store referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
-
 	extensions := make(map[string]string)
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)

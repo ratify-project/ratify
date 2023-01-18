@@ -60,7 +60,6 @@ func (s *memoryTestStore) GetConfig() *config.StoreConfig {
 }
 
 func (store *memoryTestStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-
 	if item, ok := store.Subjects[subjectReference.Digest]; ok {
 		return item, nil
 	}

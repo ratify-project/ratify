@@ -62,7 +62,6 @@ var (
 	invalidRef = common.Reference{
 		Original: "invalid",
 	}
-	testExecutor                         = &mockExecutor{}
 	testNotaryVerifier notation.Verifier = mockNotaryVerifier{}
 	validBlobDesc                        = ocispec.Descriptor{
 		Digest: testDigest,

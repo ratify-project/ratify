@@ -398,7 +398,6 @@ func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 			}
 		}
 	}
-
 }
 
 // TestVerifySubject__NoNestedReferences_Expected tests verifier config can specify no nested references
@@ -468,5 +467,4 @@ func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
 			t.Fatalf("expected reports to have zero nested results")
 		}
 	}
-
 }
