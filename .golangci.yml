@@ -5,12 +5,12 @@ linters:
   disable-all: true
   enable:
     - errcheck
-    # - errorlint
-    # - goconst
+    - errorlint
+    - goconst
     - gocyclo
     - gofmt
     - goimports
-    # - gosec
+    - gosec
     - gosimple
     - govet
     - ineffassign

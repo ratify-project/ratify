@@ -26,6 +26,11 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/mocks"
 )
 
+const (
+	testPlugin = "test-plugin"
+	testPath   = "test-path"
+)
+
 type TestExecutor struct {
 	find    func(plugin string, paths []string) (string, error)
 	execute func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error)
@@ -61,14 +66,13 @@ func TestNewVerifier_Expected(t *testing.T) {
 }
 
 func TestVerify_NoNestedReferences_Expected(t *testing.T) {
-	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
-			return "testpath", nil
+			return testPath, nil
 		},
 		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
-			if pluginPath != "testpath" {
-				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			if pluginPath != testPath {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
 			if cmdArgs != nil {
 				t.Fatal("cmdArgs is expected to be nil")
@@ -138,8 +142,6 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 }
 
 func TestVerify_NestedReferences_Verify_Failed(t *testing.T) {
-	testPlugin := "test-plugin"
-
 	verifierConfig := map[string]interface{}{
 		"name": testPlugin,
 	}
@@ -175,14 +177,13 @@ func TestVerify_NestedReferences_Verify_Failed(t *testing.T) {
 }
 
 func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
-	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
-			return "testpath", nil
+			return testPath, nil
 		},
 		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
-			if pluginPath != "testpath" {
-				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			if pluginPath != testPath {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
 			if cmdArgs != nil {
 				t.Fatal("cmdArgs is expected to be nil")

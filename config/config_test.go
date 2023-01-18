@@ -21,21 +21,23 @@ import (
 	"testing"
 )
 
+const (
+	testVersion = "1.0.0"
+)
+
 func TestLoad_FromDefaultPath(t *testing.T) {
 	tmpDir, err := os.MkdirTemp("", "test-config")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
-
 	defer os.RemoveAll(tmpDir)
 
 	os.Setenv("RATIFY_CONFIG", tmpDir)
-
 	defer os.Unsetenv("RATIFY_CONFIG")
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`{"store":  { "version": "1.0.0" }}`)
-	err = os.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0600)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -45,8 +47,8 @@ func TestLoad_FromDefaultPath(t *testing.T) {
 		t.Fatalf("loading config failed %v", err)
 	}
 
-	if config.StoresConfig.Version != "1.0.0" {
-		t.Fatalf("mismatch of the loaded config expected version %s actual %s", "1.0.0", config.StoresConfig.Version)
+	if config.StoresConfig.Version != testVersion {
+		t.Fatalf("mismatch of the loaded config expected version %s actual %s", testVersion, config.StoresConfig.Version)
 	}
 
 	pluginPath := filepath.Join(tmpDir, PluginsFolder)
@@ -60,12 +62,11 @@ func TestLoad_FromGivenPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
-
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`{"store":  { "version": "1.0.0" }}`)
-	err = os.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0600)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -75,8 +76,8 @@ func TestLoad_FromGivenPath(t *testing.T) {
 		t.Fatalf("loading config failed %v", err)
 	}
 
-	if config.StoresConfig.Version != "1.0.0" {
-		t.Fatalf("mismatch of the loaded config expected version %s actual %s", "1.0.0", config.StoresConfig.Version)
+	if config.StoresConfig.Version != testVersion {
+		t.Fatalf("mismatch of the loaded config expected version %s actual %s", testVersion, config.StoresConfig.Version)
 	}
 
 	if GetDefaultPluginPath() == "" {
@@ -104,12 +105,11 @@ func TestLoad_EmptyConfigSucceeds(t *testing.T) {
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
-
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte("{}")
-	err = os.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0600)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -129,18 +129,16 @@ func TestLoad_InvalidConfigFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
-
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`"store":  { "version": "1.0.0" }}`)
-	err = os.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0600)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
 
-	_, err = Load(fileName)
-	if err == nil {
+	if _, err = Load(fileName); err == nil {
 		t.Fatalf("loading config is expected to failed")
 	}
 }
@@ -150,12 +148,11 @@ func TestLoad_ComputeHash(t *testing.T) {
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
 	}
-
 	defer os.RemoveAll(tmpDir)
 
 	fileName := filepath.Join(tmpDir, ConfigFileName)
 	content := []byte(`{"store":  { "version": "1.0.0" }}`)
-	err = os.WriteFile(fileName, content, 0644)
+	err = os.WriteFile(fileName, content, 0600)
 	if err != nil {
 		t.Fatalf("config file creation failed %v", err)
 	}
@@ -165,8 +162,8 @@ func TestLoad_ComputeHash(t *testing.T) {
 		t.Fatalf("loading config failed %v", err)
 	}
 
-	if config.StoresConfig.Version != "1.0.0" {
-		t.Fatalf("mismatch of the loaded config expected version %s actual %s", "1.0.0", config.StoresConfig.Version)
+	if config.StoresConfig.Version != testVersion {
+		t.Fatalf("mismatch of the loaded config expected version %s actual %s", testVersion, config.StoresConfig.Version)
 	}
 
 	expectedHash := "97660cbbd5c340a844fd5093a7afbccb68673fa2e418cd74528078cf018b60cb"
