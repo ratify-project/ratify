@@ -27,6 +27,11 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+const (
+	testPlugin = "test-plugin"
+	testPath   = "test-path"
+)
+
 type TestExecutor struct {
 	find    func(plugin string, paths []string) (string, error)
 	execute func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error)
@@ -40,14 +45,13 @@ func (e *TestExecutor) FindInPaths(plugin string, paths []string) (string, error
 	return e.find(plugin, paths)
 }
 func TestPluginMain_GetBlobContent_InvokeExpected(t *testing.T) {
-	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
-			return "testpath", nil
+			return testPath, nil
 		},
 		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
-			if pluginPath != "testpath" {
-				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			if pluginPath != testPath {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
 			if cmdArgs != nil {
 				t.Fatal("cmdArgs is expected to be nil")
@@ -119,14 +123,13 @@ func TestPluginMain_GetBlobContent_InvokeExpected(t *testing.T) {
 }
 
 func TestPluginMain_GetReferenceManifest_InvokeExpected(t *testing.T) {
-	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
-			return "testpath", nil
+			return testPath, nil
 		},
 		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
-			if pluginPath != "testpath" {
-				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			if pluginPath != testPath {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
 			if cmdArgs != nil {
 				t.Fatal("cmdArgs is expected to be nil")
@@ -205,11 +208,11 @@ func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
-			return "testpath", nil
+			return testPath, nil
 		},
 		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
-			if pluginPath != "testpath" {
-				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			if pluginPath != testPath {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
 			if cmdArgs != nil {
 				t.Fatal("cmdArgs is expected to be nil")
@@ -287,11 +290,11 @@ func TestPluginMain_GetSubjectDescriptor_InvokeExpected(t *testing.T) {
 	testDigest := digest.FromString("test")
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
-			return "testpath", nil
+			return testPath, nil
 		},
 		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
-			if pluginPath != "testpath" {
-				t.Fatalf("mismatch in plugin path expected %s actual %s", "testpath", pluginPath)
+			if pluginPath != testPath {
+				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
 			if cmdArgs != nil {
 				t.Fatal("cmdArgs is expected to be nil")

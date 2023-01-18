@@ -61,9 +61,8 @@ func main() {
 
 func parseInput(stdin []byte) (*PluginInputConfig, error) {
 	conf := PluginInputConfig{}
-
 	if err := json.Unmarshal(stdin, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse stdin for the input: %v", err)
+		return nil, fmt.Errorf("failed to parse stdin for the input: %w", err)
 	}
 
 	return &conf, nil

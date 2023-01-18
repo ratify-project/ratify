@@ -90,7 +90,7 @@ func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) e
 
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return fmt.Errorf("unable to convert crd specification to verifier config, err: %q", err)
+		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
 	}
 
 	// verifier factory only support a single version of configuration today
