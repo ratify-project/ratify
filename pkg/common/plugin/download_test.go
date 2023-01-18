@@ -59,7 +59,7 @@ func TestParsePluginSource_HandlesCRD(t *testing.T) {
 	verifierConfig := v1alpha1.VerifierSpec{
 		Name:          "dynamic",
 		ArtifactTypes: "sbom/example",
-		Source:        &v1alpha1.PluginSource{
+		Source: &v1alpha1.PluginSource{
 			Artifact: "wabbitnetworks.azurecr.io/test/sample-plugin:v1",
 		},
 	}
