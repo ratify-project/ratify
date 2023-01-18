@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -14,6 +15,9 @@ import (
 	"github.com/dgraph-io/ristretto/z"
 	"github.com/sirupsen/logrus"
 )
+
+var memoryCache *ristretto.Cache
+var once sync.Once
 
 // operation defines the API operations of ReferrerStore.
 type operation int
@@ -27,15 +31,22 @@ const (
 	operationGetSubjectDescriptor
 )
 
+const (
+	defaultTtl       = 10
+	defaultCapacity  = 100 * 1024 * 1024 // 100 Megabytes
+	defaultKeyNumber = 10000
+)
+
 type orasStoreWithInMemoryCache struct {
 	referrerstore.ReferrerStore
-	cache     *ristretto.Cache
-	cacheConf *CacheConf
+	cacheConf *cacheConf
 }
 
-type CacheConf struct {
-	Enabled bool `json:"cacheEnabled"`
-	Ttl     int  `json:"ttl"`
+type cacheConf struct {
+	Enabled   bool `json:"cacheEnabled"`
+	Ttl       int  `json:"ttl"`
+	Capacity  int  `json:"capacity"`
+	KeyNumber int  `json:"keyNumber"`
 }
 
 func keyToHash(key interface{}) (uint64, uint64) {
@@ -52,25 +63,28 @@ func keyToHash(key interface{}) (uint64, uint64) {
 
 // createCachedStore creates a new oras store decorated with in-memory cache to cache
 // results of ListReferrers API.
-func createCachedStore(storeBase referrerstore.ReferrerStore, cacheConf *CacheConf) (referrerstore.ReferrerStore, error) {
-	memoryCache, err := ristretto.NewCache(&ristretto.Config{
-		NumCounters: 1e5,
-		MaxCost:     1 << 30,
-		BufferItems: 64,
-		KeyToHash:   keyToHash,
+func createCachedStore(storeBase referrerstore.ReferrerStore, cacheConf *cacheConf) (referrerstore.ReferrerStore, error) {
+	once.Do(func() {
+		var err error
+		memoryCache, err = ristretto.NewCache(&ristretto.Config{
+			NumCounters: int64(cacheConf.KeyNumber) * 10,         // number of keys to track frequency. Recommended to 10x the number of total item count in the cache.
+			MaxCost:     int64(cacheConf.Capacity) * 1024 * 1024, // Max size in Megabytes.
+			BufferItems: 64,                                      // number of keys per Get buffer. 64 is recommended by the ristretto library.
+			KeyToHash:   keyToHash,
+		})
+		if err != nil {
+			logrus.Errorf("could not create cache for referrers, err: %v", err)
+		}
 	})
-	if err != nil {
-		return nil, fmt.Errorf("could not create cache for referrers, err: %w", err)
-	}
+
 	return &orasStoreWithInMemoryCache{
 		ReferrerStore: storeBase,
-		cache:         memoryCache,
 		cacheConf:     cacheConf,
 	}, nil
 }
 
 func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
-	val, found := store.cache.Get(getCacheKey(operationListReferrers, subjectReference))
+	val, found := memoryCache.Get(getCacheKey(operationListReferrers, subjectReference))
 	if found {
 		if result, ok := val.(referrerstore.ListReferrersResult); ok {
 			return result, nil
@@ -78,9 +92,9 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 	}
 
 	result, err := store.ReferrerStore.ListReferrers(ctx, subjectReference, artifactTypes, nextToken, subjectDesc)
-	
+
 	if err == nil {
-		if added := store.cache.SetWithTTL(getCacheKey(operationListReferrers, subjectReference), result, 1, time.Duration(store.cacheConf.Ttl)*time.Second); !added {
+		if added := memoryCache.SetWithTTL(getCacheKey(operationListReferrers, subjectReference), result, 1, time.Duration(store.cacheConf.Ttl)*time.Second); !added {
 			logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", subjectReference, result)
 		}
 	}
@@ -88,15 +102,25 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 	return result, err
 }
 
-func toCacheConfig(storePluginConfig map[string]interface{}) (*CacheConf, error) {
+func toCacheConfig(storePluginConfig map[string]interface{}) (*cacheConf, error) {
 	bytes, err := json.Marshal(storePluginConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed marshalling store plugin config: %+v to bytes, err: %w", storePluginConfig, err)
 	}
 
-	cacheConf := &CacheConf{}
-	if err := json.Unmarshal(bytes, &cacheConf); err != nil {
+	cacheConf := &cacheConf{}
+	if err := json.Unmarshal(bytes, cacheConf); err != nil {
 		return nil, fmt.Errorf("failed unmarshalling to Oras cache config, err: %w", err)
+	}
+
+	if cacheConf.Ttl == 0 {
+		cacheConf.Ttl = defaultTtl
+	}
+	if cacheConf.Capacity == 0 {
+		cacheConf.Capacity = defaultCapacity
+	}
+	if cacheConf.KeyNumber == 0 {
+		cacheConf.KeyNumber = defaultKeyNumber
 	}
 
 	return cacheConf, nil

@@ -74,6 +74,8 @@ oras:
   cache:
     enabled: true
     ttl: 10  # in seconds
+    capacity: 100 # Megabytes
+    keyNumber: 10000 # maximum key number
 
 provider:
   tls:

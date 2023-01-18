@@ -29,4 +29,6 @@ spec:
     {{- if .Values.oras.cache.enabled }}
     cacheEnabled: true
     ttl: {{ .Values.oras.cache.ttl }}
+    capacity: {{ .Values.oras.cache.capacity }}
+    keyNumber: {{ .Values.oras.cache.keyNumber }}
     {{- end }}

@@ -26,9 +26,11 @@ var (
 		"cacheEnabled": true,
 		"ttl":          ttl,
 	}
-	cacheConf = &CacheConf{
-		Enabled: true,
-		Ttl:     ttl,
+	conf = &cacheConf{
+		Enabled:   true,
+		Ttl:       ttl,
+		Capacity:  100 * 1024 * 1024,
+		KeyNumber: 10000,
 	}
 	testStoreConfig = &config.StoreConfig{}
 	testBlob        = make([]byte, 0)
@@ -86,14 +88,14 @@ func (m *mockBase) GetSubjectDescriptor(ctx context.Context, subjectReference co
 }
 
 func TestCreateCachedStore(t *testing.T) {
-	_, err := createCachedStore(base, cacheConf)
+	_, err := createCachedStore(base, conf)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
 }
 
 func TestName(t *testing.T) {
-	store, _ := createCachedStore(base, cacheConf)
+	store, _ := createCachedStore(base, conf)
 
 	name := store.Name()
 	if name != testName {
@@ -102,7 +104,7 @@ func TestName(t *testing.T) {
 }
 
 func TestGetConfig(t *testing.T) {
-	store, _ := createCachedStore(base, cacheConf)
+	store, _ := createCachedStore(base, conf)
 
 	conf := store.GetConfig()
 	if !reflect.DeepEqual(conf, testStoreConfig) {
@@ -111,7 +113,7 @@ func TestGetConfig(t *testing.T) {
 }
 
 func TestGetBlobContent(t *testing.T) {
-	store, _ := createCachedStore(base, cacheConf)
+	store, _ := createCachedStore(base, conf)
 
 	blob, err := store.GetBlobContent(context.Background(), testReference, testDigest)
 
@@ -124,7 +126,7 @@ func TestGetBlobContent(t *testing.T) {
 }
 
 func TestGetSubjectDescriptor(t *testing.T) {
-	store, _ := createCachedStore(base, cacheConf)
+	store, _ := createCachedStore(base, conf)
 
 	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
 
@@ -137,7 +139,7 @@ func TestGetSubjectDescriptor(t *testing.T) {
 }
 
 func TestListReferrers_CacheHit(t *testing.T) {
-	store, _ := createCachedStore(base, cacheConf)
+	store, _ := createCachedStore(base, conf)
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
@@ -151,7 +153,7 @@ func TestListReferrers_CacheHit(t *testing.T) {
 }
 
 func TestListReferrers_CacheMiss(t *testing.T) {
-	store, _ := createCachedStore(base, cacheConf)
+	store, _ := createCachedStore(base, conf)
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
@@ -170,7 +172,7 @@ func TestToCacheConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
-	if !reflect.DeepEqual(conf, cacheConf) {
-		t.Fatalf("expect %v, got %v", cacheConf, conf)
+	if !reflect.DeepEqual(conf, conf) {
+		t.Fatalf("expect %v, got %v", conf, conf)
 	}
 }
