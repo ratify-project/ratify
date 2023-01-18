@@ -69,7 +69,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse azure managed identity auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse azure managed identity auth provider configuration: %w", err)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
@@ -136,7 +136,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh azure managed identity token")
 		}
 		d.identityToken = newToken
-		logrus.Info("sucessfully refreshed azure managed identity token")
+		logrus.Info("successfully refreshed azure managed identity token")
 	}
 	// add protocol to generate complete URI
 	serverUrl := "https://" + artifactHostName

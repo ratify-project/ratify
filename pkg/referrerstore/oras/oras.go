@@ -23,7 +23,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	paths "path/filepath"
 	"sync"
@@ -106,12 +105,12 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	}
 
 	if err := json.Unmarshal(storeConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse oras store configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse oras store configuration: %w", err)
 	}
 
 	authenticationProvider, err := authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create auth provider from configuration: %v", err)
+		return nil, fmt.Errorf("failed to create auth provider from configuration: %w", err)
 	}
 
 	// Set up the local cache where content will land when we pull
@@ -121,7 +120,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 
 	localRegistry, err := ocitarget.New(conf.LocalCachePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not create local oras cache at path %s: %s", conf.LocalCachePath, err)
+		return nil, fmt.Errorf("could not create local oras cache at path %s: %w", conf.LocalCachePath, err)
 	}
 
 	// define the http client for TLS enabled
@@ -148,6 +147,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	insecureTransport.MaxIdleConns = HttpMaxIdleConns
 	insecureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
 	insecureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
+	// #nosec G402
 	insecureTransport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
@@ -201,7 +201,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	store.addAuthCache(subjectReference.Original, repository, expiry)
 
 	// convert artifact descriptors to oci descriptor with artifact type
-	var referrers []ocispecs.ReferenceDescriptor
+	referrers := []ocispecs.ReferenceDescriptor{}
 	for _, referrer := range referrerDescriptors {
 		referrers = append(referrers, OciDescriptorToReferenceDescriptor(referrer))
 	}
@@ -393,7 +393,7 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 		return nil, err
 	}
 
-	buf, err := ioutil.ReadAll(reader)
+	buf, err := io.ReadAll(reader)
 	if err != nil {
 		return nil, err
 	}

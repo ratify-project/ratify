@@ -5,23 +5,23 @@ linters:
   disable-all: true
   enable:
     - errcheck
-    # - errorlint
-    # - goconst
-    # - gocyclo
-    # - gofmt
-    # - goimports
-    # - gosec
-    # - gosimple
-    # - govet
-    # - ineffassign
-    # - misspell
-    # - nakedret
-    # - nilerr
-    # - prealloc
+    - errorlint
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - gosec
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nilerr
+    - prealloc
     # - revive
-    # - staticcheck
-    # - typecheck
-    # - unconvert
+    - staticcheck
+    - typecheck
+    - unconvert
     - unused
     - whitespace
   # Run with --fast=false for more extensive checks

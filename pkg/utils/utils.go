@@ -29,7 +29,7 @@ import (
 func ParseDigest(digestStr string) (digest.Digest, error) {
 	digest, err := digest.Parse(digestStr)
 	if err != nil {
-		return "", fmt.Errorf("The digest of the subject is invalid %s %v", digestStr, err)
+		return "", fmt.Errorf("The digest of the subject is invalid %s: %w", digestStr, err)
 	}
 
 	return digest, nil
@@ -39,11 +39,10 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 func ParseSubjectReference(subRef string) (common.Reference, error) {
 	parseResult, err := reference.Parse(subRef)
 	if err != nil {
-		return common.Reference{}, fmt.Errorf("failed to parse subject reference %v", err)
+		return common.Reference{}, fmt.Errorf("failed to parse subject reference: %w", err)
 	}
 
 	var subjectRef common.Reference
-
 	if named, ok := parseResult.(reference.Named); ok {
 		subjectRef.Path = named.Name()
 	} else {

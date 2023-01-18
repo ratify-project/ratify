@@ -15,11 +15,14 @@ limitations under the License.
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/homedir"
+)
+
+const (
+	testDir = "TestDirectory"
 )
 
 func TestHomepathReplacement(t *testing.T) {
@@ -46,7 +49,6 @@ func TestReadCertificatesFromPath_InvalidPath(t *testing.T) {
 
 func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 	// Setup to create nested directory structure
-	testDir := "TestDirectory"
 	nestedDir := ".nestedFolder"
 	testFile1 := testDir + string(os.PathSeparator) + "file1.txt"
 	testFile2 := testDir + string(os.PathSeparator) + nestedDir + string(os.PathSeparator) + ".file2.crt"
@@ -77,11 +79,10 @@ func TestReadCertificatesFromPath_NestedDirectory(t *testing.T) {
 func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 	// Setup
 	currPath, _ := os.Getwd()
-	testDirName := "TestDirectory"
-	absTestDirPath := currPath + string(os.PathSeparator) + testDirName + string(os.PathSeparator)
+	absTestDirPath := currPath + string(os.PathSeparator) + testDir + string(os.PathSeparator)
 	testFile1 := absTestDirPath + "file1.Crt"
 
-	setupDirectoryForTesting(t, testDirName)
+	setupDirectoryForTesting(t, testDir)
 	createCertFile(t, testFile1)
 
 	symlink := absTestDirPath + "symlink"
@@ -102,11 +103,10 @@ func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
 	// Setup
 	currPath, _ := os.Getwd()
-	testDirName := "TestDirectory"
-	absTestDirPath := currPath + string(os.PathSeparator) + testDirName + string(os.PathSeparator)
+	absTestDirPath := currPath + string(os.PathSeparator) + testDir + string(os.PathSeparator)
 	testFile1 := absTestDirPath + "file1.Crt"
 
-	setupDirectoryForTesting(t, testDirName)
+	setupDirectoryForTesting(t, testDir)
 	createCertFile(t, testFile1)
 
 	symlink := absTestDirPath + "symlink"
@@ -130,7 +130,6 @@ func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
 
 func TestReadFilesFromPath_SingleFile(t *testing.T) {
 	// Setup
-	testDir := "TestDirectory"
 	testFile1 := testDir + string(os.PathSeparator) + "file1.Crt"
 
 	setupDirectoryForTesting(t, testDir)
@@ -149,35 +148,30 @@ func TestReadFilesFromPath_SingleFile(t *testing.T) {
 }
 
 func createFile(t *testing.T, path string) {
-	_, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
+	if _, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err != nil {
 		t.Fatalf("write file '%s' failed with error '%v'", path, err)
 	}
 }
 
 func createCertFile(t *testing.T, path string) {
 	// open cert file
-	content, err := ioutil.ReadFile("testCert1.crt")
-
+	content, err := os.ReadFile("testCert1.crt")
 	if err != nil {
 		t.Fatalf("open cert file '%s' failed with error '%v'", path, err)
 	}
 
 	file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-
 	if err != nil {
 		t.Fatalf("creating new file '%s' failed with error '%v'", path, err)
 	}
 
-	_, err = file.Write(content)
-	if err != nil {
+	if _, err = file.Write(content); err != nil {
 		t.Fatalf("write file '%s' failed with error '%v'", path, err)
 	}
 }
 
 func setupDirectoryForTesting(t *testing.T, path string) {
-	err := os.Mkdir(path, 0755)
-	if err != nil {
+	if err := os.Mkdir(path, 0755); err != nil {
 		t.Fatalf("Creating directory '%s' failed with '%v'", path, err)
 	}
 }

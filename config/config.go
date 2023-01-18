@@ -20,7 +20,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -112,20 +111,19 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 // Load the config from file path provided, read from default path if configFilePath is empty
 func Load(configFilePath string) (Config, error) {
 	config := Config{}
+	var err error
 
-	body, readErr := ioutil.ReadFile(getConfigurationFile(configFilePath))
-	if readErr != nil {
-		return config, fmt.Errorf("unable to read config file at path %s", readErr)
+	body, err := os.ReadFile(getConfigurationFile(configFilePath))
+	if err != nil {
+		return config, fmt.Errorf("unable to read config file at path %s: %w", configFilePath, err)
 	}
 
-	err := json.Unmarshal(body, &config)
-	if err != nil {
-		return config, fmt.Errorf("unable to unmarshal config body: %v", err)
+	if err = json.Unmarshal(body, &config); err != nil {
+		return config, fmt.Errorf("unable to unmarshal config body: %w", err)
 	}
 
-	config.fileHash, err = getFileHash(body)
-	if err != nil {
-		return config, fmt.Errorf("error getting configuration file hash error %v", err)
+	if config.fileHash, err = getFileHash(body); err != nil {
+		return config, fmt.Errorf("error getting configuration file hash error: %w", err)
 	}
 
 	return config, nil
@@ -155,7 +153,7 @@ func getFileHash(file []byte) (fileHash string, err error) {
 
 	length, err := hash.Write(file)
 	if err != nil || length == 0 {
-		return "", fmt.Errorf("unable to generate hash for configuration file, err '%v', hash length %v", err, length)
+		return "", fmt.Errorf("unable to generate hash for configuration file, err '%w', hash length %v", err, length)
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
