@@ -39,14 +39,14 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("unable to read request body: %v", err)
+		return fmt.Errorf("unable to read request body: %w", err)
 	}
 
 	// parse request body
 	var providerRequest externaldata.ProviderRequest
 	err = json.Unmarshal(body, &providerRequest)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal request body: %v", err)
+		return fmt.Errorf("unable to unmarshal request body: %w", err)
 	}
 
 	results := make([]externaldata.Item, 0)

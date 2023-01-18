@@ -69,7 +69,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse azure managed identity auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse azure managed identity auth provider configuration: %w", err)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
