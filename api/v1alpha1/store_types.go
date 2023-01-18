@@ -25,7 +25,7 @@ import (
 type StoreSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the verifier
+	// Name of the store
 	Name string `json:"name,omitempty"`
 	// Plugin path, optional
 	Address string `json:"address,omitempty"`

@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -25,16 +26,18 @@ import (
 
 // CertificateStoreSpec defines the desired state of CertificateStore
 type CertificateStoreSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of CertificateStore. Edit certificatestore_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// Name of the of the certificate store provider
+	Provider string `json:"provider,omitempty"`
+
+	// +kubebuilder:pruning:PreserveUnknownFields
+	// Parameters of the store
+	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
 // CertificateStoreStatus defines the observed state of CertificateStore
 type CertificateStoreStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 

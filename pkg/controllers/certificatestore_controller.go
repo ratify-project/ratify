@@ -19,12 +19,14 @@ package controllers
 import (
 	"context"
 
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/sirupsen/logrus"
 )
 
 // CertificateStoreReconciler reconciles a CertificateStore object
@@ -32,6 +34,11 @@ type CertificateStoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
+
+var (
+	// a map to from cert store metadata name to certificate contents
+	CertificatesMap = map[string]referrerstore.ReferrerStore{}
+)
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/status,verbs=get;update;patch
@@ -47,10 +54,37 @@ type CertificateStoreReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
 func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	logger := logrus.WithContext(ctx)
 
-	// TODO(user): your logic here
+	var resource = req.Name
+	var certStore configv1alpha1.CertificateStore
 
+	logger.Infof("reconciling certificate store '%v'", resource)
+
+	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
+		if apierrors.IsNotFound(err) {
+			logger.Infof("deletion detected, removing store %v", req.Name)
+			storeRemove(resource)
+		} else {
+			logger.Error(err, "unable to fetch certificate store")
+		}
+
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	logger.Infof("meta data of the certStore %s", certStore.Name)
+	logger.Infof("name of provider %s", certStore.Spec.Provider)
+
+	// this can a new fetch or an update
+	switch certStore.Spec.Provider {
+	case "azurekeyvault":
+		//var result = azurekeyvault.GetCertificates(storeSpec.Parameters)
+		//CertificatesMap[name] = result
+	default:
+		logger.Errorf("Unknown cert provider %s", certStore.Spec.Provider)
+	}
+
+	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
 }
 

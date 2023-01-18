@@ -80,6 +80,10 @@ func init() {
 // will be loaded for each signature verification.
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
+
+	// if reference to cert store defined
+	//controllers.CertificatesMap["test"]
+
 	for _, path := range s.certPaths {
 		bundledCerts, err := utils.GetCertificatesFromPath(path)
 		if err != nil {
