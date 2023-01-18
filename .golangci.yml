@@ -7,22 +7,22 @@ linters:
     - errcheck
     # - errorlint
     # - goconst
-    # - gocyclo
-    # - gofmt
-    # - goimports
+    - gocyclo
+    - gofmt
+    - goimports
     # - gosec
-    # - gosimple
-    # - govet
-    # - ineffassign
-    # - misspell
-    # - nakedret
-    # - nilerr
-    # - prealloc
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nilerr
+    - prealloc
     # - revive
-    # - staticcheck
-    # - typecheck
-    # - unconvert
-    # - unused
-    # - whitespace
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
   # Run with --fast=false for more extensive checks
   fast: true

@@ -39,7 +39,6 @@ type resolveCmdOptions struct {
 }
 
 func NewCmdResolve(argv ...string) *cobra.Command {
-
 	if len(argv) == 0 {
 		argv = []string{os.Args[0]}
 	}
@@ -67,7 +66,6 @@ func NewCmdResolve(argv ...string) *cobra.Command {
 }
 
 func resolve(opts resolveCmdOptions) error {
-
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
 	}

@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -165,7 +164,6 @@ func (c *pcontext) cmdGetBlob(cmdArgs *CmdArgs, pluginFunc GetBlobContent) *plug
 	}
 
 	return nil
-
 }
 
 func (c *pcontext) cmdGetRefManifest(cmdArgs *CmdArgs, pluginFunc GetReferenceManifest) *plugin.Error {
@@ -255,7 +253,7 @@ func (c *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 		return "", nil, plugin.NewError(types.ErrMissingEnvironmentVariables, fmt.Sprintf("missing env variables [%s]", joined), "")
 	}
 
-	stdinData, err := ioutil.ReadAll(c.Stdin)
+	stdinData, err := io.ReadAll(c.Stdin)
 	if err != nil {
 		return "", nil, plugin.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
 	}

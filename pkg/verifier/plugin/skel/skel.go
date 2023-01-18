@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -147,7 +146,7 @@ func (pc *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
 		return "", nil, plugin.NewError(types.ErrMissingEnvironmentVariables, fmt.Sprintf("missing env variables [%s]", joined), "")
 	}
 
-	stdinData, err := ioutil.ReadAll(pc.Stdin)
+	stdinData, err := io.ReadAll(pc.Stdin)
 	if err != nil {
 		return "", nil, plugin.NewError(types.ErrIOFailure, fmt.Sprintf("error reading from stdin: %v", err), "")
 	}
