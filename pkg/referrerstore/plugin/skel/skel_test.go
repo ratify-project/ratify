@@ -30,6 +30,10 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+const (
+	testStdinData = `{ "name":"skel-test-case", "some": "config" }`
+)
+
 func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
 	getBlobContent := func(args *CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 		return []byte(digest.String()), nil
@@ -41,7 +45,7 @@ func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -76,7 +80,7 @@ func TestPluginMain_GetReferenceManifest_ReturnsExpected(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -116,7 +120,7 @@ func TestPluginMain_ListReferrers_ReturnsExpected(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -149,7 +153,7 @@ func TestPluginMain_GetSubjectDesc_ReturnsExpected(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -180,7 +184,7 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -227,7 +231,7 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 	}
 
 	environment[plugin.CommandEnvKey] = "unknown"
-	stdinData = ` {"name":"skel-test-case", "some": "config" }`
+	stdinData = testStdinData
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, nil, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrUnknownCommand {
@@ -235,7 +239,7 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 	}
 
 	environment[plugin.CommandEnvKey] = plugin.GetBlobContentCommand
-	stdinData = ` {"name":"skel-test-case", "some": "config" }`
+	stdinData = testStdinData
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, nil, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrPluginCmdFailure {
@@ -254,7 +258,7 @@ func TestPluginMain_GetBlobContent_ErrorCases(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -269,7 +273,7 @@ func TestPluginMain_GetBlobContent_ErrorCases(t *testing.T) {
 		t.Fatalf("plugin execution expected to fail with error code %d for invalid arg", types.ErrArgsParsingFailure)
 	}
 
-	stdinData = ` {"name":"skel-test-case", "some": "config" }`
+	stdinData = testStdinData
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	environment[plugin.ArgsEnvKey] = "digest=sha256a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb"
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, nil, []string{"1.0.0"})
@@ -297,7 +301,7 @@ func TestPluginMain_ListReferrers_ErrorCases(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "name":"skel-test-case", "some": "config" }`
+	stdinData := testStdinData
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{

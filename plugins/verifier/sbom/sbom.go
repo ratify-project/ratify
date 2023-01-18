@@ -56,7 +56,7 @@ func parseInput(stdin []byte) (*PluginConfig, error) {
 	conf := PluginInputConfig{}
 
 	if err := json.Unmarshal(stdin, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse stdin for the input: %v", err)
+		return nil, fmt.Errorf("failed to parse stdin for the input: %w", err)
 	}
 
 	return &conf.Config, nil
@@ -83,7 +83,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		var sbomBlob SbomContents
 		if err := json.Unmarshal(refBlob, &sbomBlob); err != nil {
-			return nil, fmt.Errorf("failed to parse sbom: %v", err)
+			return nil, fmt.Errorf("failed to parse sbom: %w", err)
 		}
 
 		if sbomBlob.Contents == "bad" {

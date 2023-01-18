@@ -43,7 +43,7 @@ func (e EcrAuthToken) ProxyEndpoint() string {
 func (e EcrAuthToken) BasicAuthCreds() ([]string, error) {
 	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData.AuthorizationToken)
 	if err != nil {
-		return nil, fmt.Errorf("could not decode ECR auth token: %v", err)
+		return nil, fmt.Errorf("could not decode ECR auth token: %w", err)
 	}
 
 	decodedAuthCreds := strings.Split(string(rawDecodedToken), ":")

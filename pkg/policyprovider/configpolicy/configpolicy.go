@@ -56,11 +56,11 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 	conf := configPolicyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal policy config: %v", err)
+		return nil, fmt.Errorf("failed to marshal policy config: %w", err)
 	}
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse policy provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse policy provider configuration: %w", err)
 	}
 
 	if conf.ArtifactVerificationPolicies == nil {
