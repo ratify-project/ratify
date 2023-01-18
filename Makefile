@@ -155,7 +155,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
 	--version ${GATEKEEPER_VERSION} \
     --name-template=gatekeeper \
-    --namespace ${GATEKEEPER_NAMESPACE}-system --create-namespace \
+    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7 \
     --set auditInterval=0 \
