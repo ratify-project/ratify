@@ -30,7 +30,7 @@ helm install ratify \
     --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true
 
 # Option 2: to enable on a previously-installed release
-helm install ratify \
+helm upgrade ratify \
   ratify/ratify --atomic \
   --reuse-values \
   --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true
