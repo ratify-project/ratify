@@ -182,10 +182,10 @@ SLEEP_TIME=1
     run kubectl run demo2 --image=wabbitnetworks.azurecr.io/test/net-monitor:signed
     assert_success
 
-    run kubectl get configmaps ratify-configuration --namespace=ratify-service -o yaml >currentConfig.yaml
+    run kubectl get configmaps ratify-configuration --namespace=gatekeeper-system -o yaml >currentConfig.yaml
     run kubectl delete -f ./library/default/samples/constraint.yaml
 
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=gatekeeper-system -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
     echo "Waiting for 150 second for configuration update"
     sleep 150
 
@@ -195,5 +195,5 @@ SLEEP_TIME=1
     echo "Current time after validate : $(date +"%T")"
     assert_failure
 
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=ratify-service -f currentConfig.yaml"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=gatekeeper-system -f currentConfig.yaml"
 }
