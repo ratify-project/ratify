@@ -58,7 +58,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
@@ -110,7 +110,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
 		}
 		d.aadToken = newToken
-		logrus.Info("sucessfully refreshed AAD token")
+		logrus.Info("successfully refreshed AAD token")
 	}
 
 	// add protocol to generate complete URI

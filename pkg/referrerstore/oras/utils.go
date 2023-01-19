@@ -56,7 +56,7 @@ func OciDescriptorToReferenceDescriptor(ociDescriptor oci.Descriptor) ocispecs.R
 }
 
 func ArtifactManifestToReferenceManifest(artifactManifest artifactspec.Manifest) ocispecs.ReferenceManifest {
-	var blobs []oci.Descriptor
+	blobs := []oci.Descriptor{}
 	for _, blob := range artifactManifest.Blobs {
 		ociBlob := oci.Descriptor{
 			MediaType:   blob.MediaType,

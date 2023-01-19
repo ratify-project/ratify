@@ -57,8 +57,7 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		"test-verifier": &TestVerifierFactory{},
 	}
 
-	var verifierConfig config.VerifierConfig
-	verifierConfig = map[string]interface{}{
+	verifierConfig := map[string]interface{}{
 		"name": "test-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
@@ -85,8 +84,7 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 }
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
-	var verifierConfig config.VerifierConfig
-	verifierConfig = map[string]interface{}{
+	verifierConfig := map[string]interface{}{
 		"name": "plugin-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{

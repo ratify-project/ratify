@@ -20,10 +20,11 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/deislabs/ratify/config"
 	"github.com/gorilla/mux"
@@ -31,9 +32,10 @@ import (
 )
 
 const (
-	ServerRootURL = "/ratify/gatekeeper/v1"
-	certName      = "tls.crt"
-	keyName       = "tls.key"
+	ServerRootURL     = "/ratify/gatekeeper/v1"
+	certName          = "tls.crt"
+	keyName           = "tls.key"
+	readHeaderTimeout = 5 * time.Second
 )
 
 type (
@@ -77,8 +79,9 @@ func (server *Server) Run() error {
 	}
 
 	svr := &http.Server{
-		Addr:    server.Address,
-		Handler: server.Router,
+		Addr:              server.Address,
+		Handler:           server.Router,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	if server.CertDirectory != "" {
@@ -88,7 +91,7 @@ func (server *Server) Run() error {
 		logrus.Info(fmt.Sprintf("%s: [%s:%s] [%s:%s]", "starting server using TLS", "certFile", certFile, "keyFile", keyFile))
 
 		if server.CaCertFile != "" {
-			caCert, err := ioutil.ReadFile(server.CaCertFile)
+			caCert, err := os.ReadFile(server.CaCertFile)
 			if err != nil {
 				panic(err)
 			}
