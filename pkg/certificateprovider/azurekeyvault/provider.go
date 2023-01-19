@@ -91,7 +91,6 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 		return nil, fmt.Errorf("no keyvault certificate configured")
 	}
 
-	// 2. initialize keyvault client
 
 	logrus.Infof("vaultName %v, vaultURL %v", keyvaultUri, keyvaultUri)
 
