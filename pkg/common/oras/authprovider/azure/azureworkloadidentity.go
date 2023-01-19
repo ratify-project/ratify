@@ -69,7 +69,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		return nil, fmt.Errorf("azure tenant id environment variable is empty")
 	}
 
-	client := os.Getenv("AZURE_CLIENT_ID")
+	clientID := os.Getenv("AZURE_CLIENT_ID")
 	if client == "" {
 		return nil, fmt.Errorf("azure client id environment variable is empty")
 	}

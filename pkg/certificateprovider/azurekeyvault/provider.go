@@ -92,15 +92,14 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 	}
 
 
-	logrus.Infof("vaultName %v, vaultURL %v", keyvaultUri, keyvaultUri)
+	logrus.Infof("vaultURL %s", keyvaultUri)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
 	}
 
-	// 3. for each object , get content bytes
-	files := []types.Certificate{}
+	certs := []types.Certificate{}
 	for _, keyVaultCert := range keyVaultCerts {
 		logrus.Infof("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
@@ -158,7 +157,7 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(ctx context.Context, KeyVaultEndpoint, tenantID, clientId string) (*kv.BaseClient, error) {
+func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientId string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(KeyVaultEndpoint, "/")
 

@@ -26,8 +26,6 @@ import (
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
 func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (confidential.AuthResult, error) {
 	// Azure AD Workload Identity webhook will inject the following env vars:
-	// 	AZURE_TENANT_ID with the tenantID set in the service account annotation. If not defined, then
-	// 	the tenantID provided via azure-wi-webhook-config for the webhook will be used.
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
 	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
 
