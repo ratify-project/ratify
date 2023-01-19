@@ -40,7 +40,6 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 
 	// read the service account token from the filesystem
 	signedAssertion, err := readJWTFromFS(tokenFilePath)
-
 	if err != nil {
 		return confidential.AuthResult{}, fmt.Errorf("failed to read service account token: %w", err)
 	}
