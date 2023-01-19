@@ -24,10 +24,12 @@ import (
 	"sync"
 	"time"
 
-	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	pkgUtils "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/utils"
+
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
 )
@@ -44,11 +46,11 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	if err != nil {
 		return fmt.Errorf("unable to read request body: %w", err)
 	}
+	defer r.Body.Close()
 
 	// parse request body
 	var providerRequest externaldata.ProviderRequest
-	err = json.Unmarshal(body, &providerRequest)
-	if err != nil {
+	if err = json.Unmarshal(body, &providerRequest); err != nil {
 		return fmt.Errorf("unable to unmarshal request body: %w", err)
 	}
 
@@ -62,25 +64,36 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 		go func(subject string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
-			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
+
+			unlock := server.keyMutex.Lock(subject)
+			defer unlock()
+
 			logrus.Infof("verifying subject %v", subject)
-			returnItem := externaldata.Item{
-				Key: subject,
+			var result types.VerifyResult
+			res := server.cache.get(subject)
+			if res != nil {
+				logrus.Debugf("cache hit for subject %v", subject)
+				result = *res
+			} else {
+				logrus.Debugf("cache miss for subject %v", subject)
+				returnItem := externaldata.Item{
+					Key: subject,
+				}
+
+				verifyParameters := executor.VerifyParameters{
+					Subject: subject,
+				}
+
+				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
+					returnItem.Error = err.Error()
+				}
+				server.cache.set(subject, &result)
+
+				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
+					fmt.Println(string(res))
+				}
 			}
 
-			verifyParameters := e.VerifyParameters{
-				Subject: subject,
-			}
-
-			result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
-			if err != nil {
-				returnItem.Error = err.Error()
-			}
-
-			res, err := json.MarshalIndent(result, "", "  ")
-			if err == nil {
-				fmt.Println(string(res))
-			}
 			mu.Lock()
 			defer mu.Unlock()
 			results = append(results, externaldata.Item{

@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"time"
 
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
@@ -35,6 +36,8 @@ type serveCmdOptions struct {
 	certDirectory     string
 	caCertFile        string
 	enableCrdManager  bool
+	cacheSize         int
+	cacheTTL          time.Duration
 }
 
 func NewCmdServe(argv ...string) *cobra.Command {
@@ -57,6 +60,8 @@ func NewCmdServe(argv ...string) *cobra.Command {
 	flags.StringVar(&opts.certDirectory, "cert-dir", "", "Path to ratify certs")
 	flags.StringVar(&opts.caCertFile, "ca-cert-file", "", "Path to CA cert file")
 	flags.BoolVar(&opts.enableCrdManager, "enable-crd-manager", false, "Start crd manager if enabled")
+	flags.IntVar(&opts.cacheSize, "cache-size", httpserver.DefaultCacheMaxSize, "Cache size for the verifier http server")
+	flags.DurationVar(&opts.cacheTTL, "cache-ttl", httpserver.DefaultCacheTTL, "Cache TTL for the verifier http server")
 	return cmd
 }
 
@@ -65,7 +70,7 @@ func serve(opts serveCmdOptions) error {
 	if opts.enableCrdManager {
 		logrus.Infof("starting crd manager")
 		go manager.StartManager()
-		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile)
+		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL)
 
 		return nil
 	}
@@ -76,7 +81,7 @@ func serve(opts serveCmdOptions) error {
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL)
 		if err != nil {
 			return err
 		}
