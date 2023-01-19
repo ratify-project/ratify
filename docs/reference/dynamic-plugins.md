@@ -58,7 +58,7 @@ spec:
 You can check the Ratify logs for more details on which plugin(s) were downloaded. Your specific commands may vary slightly based on the values you provided during chart installation.
 
 ```shell
-kubectl logs -n ratify-service deployment/ratify
+kubectl logs -n gatekeeper-system deployment/ratify
 ```
 
 This will generate output similar to below, which can be used for confirmation of a successful plugin download or to aid in troubleshooting.
