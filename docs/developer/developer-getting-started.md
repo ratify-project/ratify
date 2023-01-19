@@ -29,7 +29,7 @@ alias k="kubectl"
 ## Export variables
 
 ```bash
-export RATIFY_NAMESPACE=ratify-service
+export RATIFY_NAMESPACE=gatekeeper-system
 export KUBERNETES_VERSION=1.25.4
 export GATEKEEPER_VERSION=3.11.0
 export IMAGE_PULL_POLICY=IfNotPresent
