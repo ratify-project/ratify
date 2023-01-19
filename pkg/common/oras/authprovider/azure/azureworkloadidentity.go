@@ -60,7 +60,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")

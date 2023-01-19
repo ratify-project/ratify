@@ -16,6 +16,7 @@ limitations under the License.
 package authprovider
 
 import (
+	"errors"
 	"testing"
 
 	core "k8s.io/api/core/v1"
@@ -43,7 +44,7 @@ func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
 
-	if authConfig.Username != "joejoe" || authConfig.Password != "hello" {
+	if authConfig.Username != testUserName || authConfig.Password != testPassword {
 		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
 	}
 }
@@ -69,7 +70,7 @@ func TestProvide_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected(t *te
 		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
 
-	if authConfig.Username != "00000000-0000-0000-0000-000000000000" || authConfig.IdentityToken != "OPAQUE_TOKEN" {
+	if authConfig.Username != dockerTokenLoginUsernameGUID || authConfig.IdentityToken != identityTokenOpaque {
 		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, identitytoken: %s)", authConfig.Username, authConfig.IdentityToken)
 	}
 }
@@ -94,7 +95,7 @@ func TestProvide_K8SecretDockerCfg_ReturnsExpected(t *testing.T) {
 		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
 
-	if authConfig.Username != "joejoe" || authConfig.Password != "hello" {
+	if authConfig.Username != testUserName || authConfig.Password != testPassword {
 		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
 	}
 }
@@ -118,7 +119,7 @@ func TestProvide_K8SecretDockerCfgWithIdentityToken_ReturnsExpected(t *testing.T
 		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
 
-	if authConfig.Username != "00000000-0000-0000-0000-000000000000" || authConfig.IdentityToken != "OPAQUE_TOKEN" {
+	if authConfig.Username != dockerTokenLoginUsernameGUID || authConfig.IdentityToken != identityTokenOpaque {
 		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, identitytoken: %s)", authConfig.Username, authConfig.IdentityToken)
 	}
 }
@@ -137,8 +138,7 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 
 	var k8secretprovider k8SecretAuthProvider
 
-	_, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret)
-	if err != ErrorNoMatchingCredential {
+	if _, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret); !errors.Is(err, ErrorNoMatchingCredential) {
 		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ErrorNoMatchingCredential, err)
 	}
 }

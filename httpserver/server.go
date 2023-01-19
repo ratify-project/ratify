@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/deislabs/ratify/config"
 	"github.com/gorilla/mux"
@@ -31,9 +32,10 @@ import (
 )
 
 const (
-	ServerRootURL = "/ratify/gatekeeper/v1"
-	certName      = "tls.crt"
-	keyName       = "tls.key"
+	ServerRootURL     = "/ratify/gatekeeper/v1"
+	certName          = "tls.crt"
+	keyName           = "tls.key"
+	readHeaderTimeout = 5 * time.Second
 )
 
 type (
@@ -77,8 +79,9 @@ func (server *Server) Run() error {
 	}
 
 	svr := &http.Server{
-		Addr:    server.Address,
-		Handler: server.Router,
+		Addr:              server.Address,
+		Handler:           server.Router,
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	if server.CertDirectory != "" {
