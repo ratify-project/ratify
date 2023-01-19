@@ -28,6 +28,7 @@ import (
 
 const (
 	testUsername = "AWS"
+	// #nosec G101 (Ref: https://github.com/securego/gosec/issues/295)
 	testPassword = "eyJwYXlsb2FkIjoiOThPNTFqemhaUmZWVG"
 	testProxy    = "PROXY_ENDPOINT"
 )

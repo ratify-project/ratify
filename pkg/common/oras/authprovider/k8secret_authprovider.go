@@ -68,21 +68,21 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal authentication provider config: %v", err)
+		return nil, fmt.Errorf("failed to marshal authentication provider config: %w", err)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse authentication provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse authentication provider configuration: %w", err)
 	}
 
 	clusterConfig, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate cluster configuration: %v", err)
+		return nil, fmt.Errorf("failed to generate cluster configuration: %w", err)
 	}
 
 	clientSet, err := kubernetes.NewForConfig(clusterConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kubernetes client set from config: %v", err)
+		return nil, fmt.Errorf("failed to create kubernetes client set from config: %w", err)
 	}
 
 	if conf.ServiceAccountName == "" {
@@ -132,13 +132,13 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 
 		secret, err := d.clusterClientSet.CoreV1().Secrets(k8secret.Namespace).Get(ctx, k8secret.SecretName, meta.GetOptions{})
 		if err != nil {
-			return AuthConfig{}, fmt.Errorf("failed to pull secret %s from cluster: %v", k8secret.SecretName, err)
+			return AuthConfig{}, fmt.Errorf("failed to pull secret %s from cluster: %w", k8secret.SecretName, err)
 		}
 
 		// only dockercfg or docker config json secret type allowed
 		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
-			if err != nil && err != ErrorNoMatchingCredential {
+			if err != nil && !errors.Is(err, ErrorNoMatchingCredential) {
 				return AuthConfig{}, err
 			}
 			// if a resolved AuthConfig is returned
@@ -166,7 +166,7 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 		// only dockercfg or docker config json secret type allowed
 		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
-			if err != nil && err != ErrorNoMatchingCredential {
+			if err != nil && !errors.Is(err, ErrorNoMatchingCredential) {
 				return AuthConfig{}, err
 			}
 			// if a resolved AuthConfig is returned

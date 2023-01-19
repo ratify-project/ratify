@@ -4,6 +4,10 @@ on:
   pull_request:
     branches:
       - main
+      - 1.0.0*
+  push:
+    branches:
+      - 1.0.0*
   workflow_dispatch:
 
 permissions: read-all
@@ -80,8 +84,8 @@ jobs:
         run: |
           kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 > logs-externaldata-controller.json
           kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 > logs-externaldata-audit.json
-          kubectl logs -n ratify-service -l app=ratify --tail=-1 > logs-ratify-preinstall.json
-          kubectl logs -n ratify-service -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify.json
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify.json
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         if: ${{ always() }}

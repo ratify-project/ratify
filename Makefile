@@ -24,7 +24,7 @@ BATS_VERSION ?= 1.7.0
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
 
-RATIFY_NAMESPACE ?= ratify-service
+GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
 all: build test
@@ -97,14 +97,13 @@ deploy-gatekeeper:
 	helm install gatekeeper/gatekeeper  \
 		--version ${GATEKEEPER_VERSION} \
 	    --name-template=gatekeeper \
-	    --namespace gatekeeper-system --create-namespace \
+	    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
 	    --set enableExternalData=true \
 	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
-	helm delete gatekeeper --namespace gatekeeper-system
-	kubectl delete crd -l gatekeeper.sh/system=yes
+	helm delete gatekeeper --namespace ${GATEKEEPER_NAMESPACE}
 
 .PHONY: test-e2e
 test-e2e:
@@ -116,7 +115,7 @@ test-e2e-cli:
 
 .PHONY: generate-certs
 generate-certs:
-	./scripts/generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
+	./scripts/generate-tls-certs.sh ${CERT_DIR} ${GATEKEEPER_NAMESPACE}
 
 install-bats:
 	# Download and install bats
@@ -150,7 +149,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
 	--version ${GATEKEEPER_VERSION} \
     --name-template=gatekeeper \
-    --namespace gatekeeper-system --create-namespace \
+    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=7 \
     --set auditInterval=0 \
@@ -163,7 +162,7 @@ e2e-deploy-ratify:
 	kind load docker-image --name kind localbuildcrd:test
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
-    ./charts/ratify --atomic --namespace ${RATIFY_NAMESPACE} --create-namespace \
+    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
 	--set image.repository=localbuild \
 	--set image.crdRepository=localbuildcrd \
 	--set image.tag=test \
@@ -173,7 +172,7 @@ e2e-deploy-ratify:
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
 
 e2e-aks:
-	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${RATIFY_NAMESPACE} ${CERT_DIR}
+	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 
 ##@ Development
 
