@@ -70,12 +70,12 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	clientID := os.Getenv("AZURE_CLIENT_ID")
-	if client == "" {
+	if clientID == "" {
 		return nil, fmt.Errorf("azure client id environment variable is empty")
 	}
 
 	// retrieve an AAD Access token
-	token, err := utils.GetAADAccessToken(context.Background(), tenant, client, AADResource)
+	token, err := utils.GetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	return &azureWIAuthProvider{
 		aadToken: token,
 		tenantID: tenant,
-		clientID: client,
+		clientID: clientID,
 	}, nil
 }
 

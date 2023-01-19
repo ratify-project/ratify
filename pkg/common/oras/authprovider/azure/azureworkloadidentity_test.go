@@ -86,6 +86,9 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatal("failed to set env variable AZURE_CLIENT_ID")
 	}
 
+	defer os.Unsetenv("AZURE_CLIENT_ID")
+	defer os.Unsetenv("AZURE_TENANT_ID")
+
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
 	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")

@@ -25,11 +25,11 @@ import (
 	"strings"
 
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/deislabs/ratify/pkg/common"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -65,13 +65,14 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 	if certificatesStrings == "" {
 		return nil, fmt.Errorf("certificates is not set")
 	}
-	logrus.Infof("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
+
+	common.LogDebug("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
 
 	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
 		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
 	}
-	logrus.Infof("unmarshaled objects yaml, objectsArray %v", objects.Array)
+	common.LogDebug("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
 	keyVaultCerts := []types.KeyVaultCertificate{}
 	for i, object := range objects.Array {
@@ -85,14 +86,13 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
 	}
 
-	logrus.Infof("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
+	common.LogDebug("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 
 	if len(keyVaultCerts) == 0 {
 		return nil, fmt.Errorf("no keyvault certificate configured")
 	}
 
-
-	logrus.Infof("vaultURL %s", keyvaultUri)
+	common.LogDebug("vaultURI %s", keyvaultUri)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
@@ -101,7 +101,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 
 	certs := []types.Certificate{}
 	for _, keyVaultCert := range keyVaultCerts {
-		logrus.Infof("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
+		common.LogDebug("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
 		// fetch the object from Key Vault
 		result, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
@@ -113,17 +113,17 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 			r := result[idx]
 			objectContent := []byte(r.content)
 
-			file := types.Certificate{
+			cert := types.Certificate{
 				CertificateName: keyVaultCert.CertificateName,
 				Content:         objectContent,
 				Version:         r.version,
 			}
 
-			files = append(files, file)
-			logrus.Infof("added file %v to response file", file.CertificateName)
+			certs = append(certs, cert)
+			common.LogDebug("added certificates %v to response", cert.CertificateName)
 		}
 	}
-	return files, nil
+	return certs, nil
 }
 
 // formatKeyVaultCertificate formats the fields in KeyVaultCertificate
@@ -159,7 +159,7 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 
 func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientId string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
-	kvEndpoint := strings.TrimSuffix(KeyVaultEndpoint, "/")
+	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {

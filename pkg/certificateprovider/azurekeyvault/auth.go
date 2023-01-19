@@ -25,9 +25,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/utils"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/deislabs/ratify/pkg/utils"
 )
 
 const (
