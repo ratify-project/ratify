@@ -101,7 +101,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	sanitizedURL := utils.SanitizeURL(*r.URL)
 	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
 
-	body, err := ioutil.ReadAll(r.Body)
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return fmt.Errorf("unable to read request body: %v", err)
 	}
