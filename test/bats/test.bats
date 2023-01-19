@@ -18,7 +18,6 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-
     run kubectl run demo --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
     assert_success
     run kubectl run demo1 --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:unsigned
@@ -37,10 +36,8 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-
     run kubectl run cosign-demo --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed
     assert_success
-
     run kubectl run cosign-demo2 --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:unsigned
     assert_failure
 }
@@ -113,7 +110,7 @@ SLEEP_TIME=1
 
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
     sleep 5
-    # TODO
+    # TODO 
     # It's best to use an image with individual artifact types vs an all-in-one so any failures can be isolated.
     # Replace this image reference once we have a local private registry for Ratify.
     run kubectl run schemavalidator --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed

@@ -1,14 +1,32 @@
 #!/usr/bin/env bash
+##--------------------------------------------------------------------
+#
+# Copyright The Ratify Authors.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+##--------------------------------------------------------------------
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-export GROUP_NAME="${GROUP_NAME:-ratify-e2e-$(openssl rand -hex 2)}"
-export ACR_NAME="${ACR_NAME:-ratifyacr$(openssl rand -hex 2)}"
-export AKS_NAME="${AKS_NAME:-ratify-aks-$(openssl rand -hex 2)}"
+SUFFIX=$(openssl rand -hex 2)
+export GROUP_NAME="${GROUP_NAME:-ratify-e2e-${SUFFIX}}"
+export ACR_NAME="${ACR_NAME:-ratifyacr${SUFFIX}}"
+export AKS_NAME="${AKS_NAME:-ratify-aks-${SUFFIX}}"
 export LOCATION="eastus"
-KUBERNETES_VERSION=${1:-1.24.6}
+export KUBERNETES_VERSION=${1:-1.24.6}
+TAG="test${SUFFIX}"
 GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
 RATIFY_NAMESPACE=${4:-default}
@@ -16,11 +34,11 @@ CERT_DIR=${5:-"~/ratify/certs"}
 
 build_push_to_acr() {
   echo "Building and pushing images to ACR"
-  docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuild:test" .
-  docker push "${ACR_NAME}.azurecr.io/test/localbuild:test"
+  docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuild:${TAG}" .
+  docker push "${ACR_NAME}.azurecr.io/test/localbuild:${TAG}"
 
-  docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuildcrd:test" ./charts/ratify/crds
-  docker push "${ACR_NAME}.azurecr.io/test/localbuildcrd:test"
+  docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuildcrd:${TAG}" ./charts/ratify/crds
+  docker push "${ACR_NAME}.azurecr.io/test/localbuildcrd:${TAG}"
 }
 
 deploy_gatekeeper() {
@@ -46,7 +64,7 @@ deploy_ratify() {
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
     --set image.repository=${ACR_NAME}.azurecr.io/test/localbuild \
     --set image.crdRepository=${ACR_NAME}.azurecr.io/test/localbuildcrd \
-    --set image.tag=test \
+    --set image.tag=${TAG} \
     --set azureManagedIdentity.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureManagedIdentityEnabled=true \
     --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \

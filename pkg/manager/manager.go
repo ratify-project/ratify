@@ -71,6 +71,7 @@ func StartServer(httpServerAddress string, configFilePath string, certDirectory 
 	}
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
+
 	if err != nil {
 		logrus.Warnf("error initializing from config %v", err)
 		os.Exit(1)
