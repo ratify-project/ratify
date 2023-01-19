@@ -46,7 +46,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 	workloadIdentityClientID := types.GetClientID(attrib)
 
 	if keyvaultUri == "" {
-		return nil, fmt.Errorf("vaultUri is not set")
+		return nil, fmt.Errorf("keyvaultUri is not set")
 	}
 	if tenantID == "" {
 		return nil, fmt.Errorf("tenantID is not set")
