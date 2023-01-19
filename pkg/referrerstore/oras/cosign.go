@@ -16,6 +16,7 @@ limitations under the License.
 package oras
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -46,10 +47,11 @@ func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.Referen
 	signatureTag := attachedImageTag(ref.Context(), hash, CosignSignatureTagSuffix)
 
 	desc, err := remote.Get(signatureTag)
-	if terr, ok := err.(*transport.Error); ok && terr.StatusCode == http.StatusNotFound {
-		return &references, nil
-	}
+	var terr *transport.Error
 	if err != nil {
+		if errors.As(err, &terr) && terr.StatusCode == http.StatusNotFound {
+			return &references, nil
+		}
 		return &references, err
 	}
 	descDig, err := digest.Parse(desc.Digest.String())

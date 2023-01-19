@@ -339,10 +339,8 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 
 	desc, err = repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
-		logrus.Error(err)
 		var ec errcode.Error
 		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			logrus.Info("shouldn't have evicted")
 			store.evictAuthCache(subjectReference.Original, err)
 		}
 		return nil, err

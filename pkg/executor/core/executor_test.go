@@ -17,6 +17,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -30,6 +31,11 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/opencontainers/go-digest"
+)
+
+const (
+	testArtifactType1 = "test-type1"
+	testArtifactType2 = "test-type2"
 )
 
 func TestVerifySubject_ResolveSubjectDescriptor_Failed(t *testing.T) {
@@ -63,9 +69,7 @@ func TestVerifySubject_ResolveSubjectDescriptor_Success(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	_, err := executor.verifySubjectInternal(context.Background(), verifyParameters)
-
-	if err != ErrReferrersNotFound {
+	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
@@ -91,9 +95,7 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	_, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
-
-	if err != ErrReferrersNotFound {
+	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
@@ -102,11 +104,11 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			"test-type1": types.AnyVerifySuccess,
+			testArtifactType1: types.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
-			ArtifactType: "test-type1",
+			ArtifactType: testArtifactType1,
 		},
 		{
 			ArtifactType: "test-type2",
@@ -117,7 +119,7 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 	}
 	ver := &TestVerifier{
 		CanVerifyFunc: func(at string) bool {
-			return at == "test-type1"
+			return at == testArtifactType1
 		},
 		VerifyResult: func(artifactType string) bool {
 			return true
@@ -155,13 +157,14 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 
 func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
+	testArtifactType := "test-type1"
 	configPolicy := config.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			"test-type1": types.AnyVerifySuccess,
+			testArtifactType: types.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
-			ArtifactType: "test-type1",
+			ArtifactType: testArtifactType,
 		},
 		{
 			ArtifactType: "test-type2",
@@ -175,11 +178,7 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 			return true
 		},
 		VerifyResult: func(artifactType string) bool {
-			if artifactType == "test-type1" {
-				return false
-			}
-
-			return true
+			return artifactType != testArtifactType
 		},
 	}
 
@@ -212,15 +211,15 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			"test-type1": types.AnyVerifySuccess,
-			"test-type2": types.AnyVerifySuccess,
+			testArtifactType1: types.AnyVerifySuccess,
+			testArtifactType2: types.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
-			ArtifactType: "test-type1",
+			ArtifactType: testArtifactType1,
 		},
 		{
-			ArtifactType: "test-type2",
+			ArtifactType: testArtifactType2,
 		}},
 		ResolveMap: map[string]digest.Digest{
 			"v1": testDigest,
@@ -269,15 +268,15 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := config.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			"test-type1": types.AnyVerifySuccess,
-			"test-type2": types.AnyVerifySuccess,
+			testArtifactType1: types.AnyVerifySuccess,
+			testArtifactType2: types.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
-			ArtifactType: "test-type1",
+			ArtifactType: testArtifactType1,
 		},
 		{
-			ArtifactType: "test-type2",
+			ArtifactType: testArtifactType2,
 		}},
 		ResolveMap: map[string]digest.Digest{
 			"v1": testDigest,
@@ -288,7 +287,7 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 			return true
 		},
 		VerifyResult: func(artifactType string) bool {
-			if artifactType == "test-type1" {
+			if artifactType == testArtifactType1 {
 				time.Sleep(2 * time.Second)
 			}
 			return true

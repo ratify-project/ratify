@@ -86,7 +86,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	desc, err := su.ResolveSubjectDescriptor(ctx, &executor.ReferrerStores, subjectReference)
 
 	if err != nil {
-		return types.VerifyResult{}, fmt.Errorf("resolving descriptor for the subject failed with error %v", err)
+		return types.VerifyResult{}, fmt.Errorf("resolving descriptor for the subject failed with error: %w", err)
 	}
 
 	logrus.Infof("Resolve of the image completed successfully the digest is %s", desc.Digest)

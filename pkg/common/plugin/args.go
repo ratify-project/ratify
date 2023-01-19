@@ -64,8 +64,7 @@ func ParseInputArgs(args string) ([][2]string, error) {
 		return nil, nil
 	}
 
-	var pluginArgs [][2]string
-
+	pluginArgs := [][2]string{}
 	pairs := strings.Split(args, ";")
 	for _, pair := range pairs {
 		kv := strings.Split(pair, "=")

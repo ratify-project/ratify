@@ -3,7 +3,9 @@ on:
   push:
     branches:
       - main
+      - 1.0.0*
   pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
