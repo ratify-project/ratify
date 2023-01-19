@@ -38,6 +38,8 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+const testArtifactType string = "test-type1"
+
 func TestServer_Timeout_Failed(t *testing.T) {
 	timeoutDuration := 6
 	testImageName := "localhost:5000/net-monitor:v1"
@@ -53,11 +55,11 @@ func TestServer_Timeout_Failed(t *testing.T) {
 		testDigest := digest.FromString("test")
 		configPolicy := config.PolicyEnforcer{
 			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-				"test-type1": types.AnyVerifySuccess,
+				testArtifactType: types.AnyVerifySuccess,
 			}}
 		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 			{
-				ArtifactType: "test-type1",
+				ArtifactType: testArtifactType,
 			}},
 			ResolveMap: map[string]digest.Digest{
 				"v1": testDigest,
@@ -65,7 +67,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 		}
 		ver := &core.TestVerifier{
 			CanVerifyFunc: func(at string) bool {
-				return at == "test-type1"
+				return at == testArtifactType
 			},
 			VerifyResult: func(artifactType string) bool {
 				time.Sleep(time.Duration(timeoutDuration) * time.Second)
@@ -117,11 +119,11 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 		testDigest := digest.FromString("test")
 		configPolicy := config.PolicyEnforcer{
 			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-				"test-type1": types.AnyVerifySuccess,
+				testArtifactType: types.AnyVerifySuccess,
 			}}
 		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 			{
-				ArtifactType: "test-type1",
+				ArtifactType: testArtifactType,
 			}},
 			ResolveMap: map[string]digest.Digest{
 				"v1": testDigest,
@@ -131,7 +133,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 		}
 		ver := &core.TestVerifier{
 			CanVerifyFunc: func(at string) bool {
-				return at == "test-type1"
+				return at == testArtifactType
 			},
 			VerifyResult: func(artifactType string) bool {
 				return true
@@ -192,11 +194,11 @@ func TestServer_Mutation_Success(t *testing.T) {
 
 		configPolicy := config.PolicyEnforcer{
 			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-				"test-type1": types.AnyVerifySuccess,
+				testArtifactType: types.AnyVerifySuccess,
 			}}
 		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 			{
-				ArtifactType: "test-type1",
+				ArtifactType: testArtifactType,
 			}},
 			ResolveMap: map[string]digest.Digest{
 				"v1": testDigest,
@@ -204,7 +206,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 		}
 		ver := &core.TestVerifier{
 			CanVerifyFunc: func(at string) bool {
-				return at == "test-type1"
+				return at == testArtifactType
 			},
 			VerifyResult: func(artifactType string) bool {
 				time.Sleep(time.Duration(timeoutDuration) * time.Second)
