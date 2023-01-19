@@ -52,7 +52,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 		return nil, fmt.Errorf("tenantID is not set")
 	}
 	if workloadIdentityClientID == "" {
-		return nil, fmt.Errorf("clientId is not set")
+		return nil, fmt.Errorf("clientID is not set")
 	}
 
 	azureCloudEnv, err := parseAzureEnvironment(cloudName)
