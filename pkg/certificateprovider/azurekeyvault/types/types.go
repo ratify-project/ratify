@@ -43,7 +43,7 @@ type KeyVaultCertificate struct {
 // Certificate holds content and metadata of a keyvault certificate file
 type Certificate struct {
 	Content         []byte
-	CertificateName string //This field is not necessary but useful to have for debugging to keep track of which certs have loaded
+	CertificateName string
 	Version         string
 }
 
