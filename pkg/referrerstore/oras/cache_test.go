@@ -28,7 +28,7 @@ var (
 	}
 	conf = &cacheConf{
 		Enabled:   true,
-		Ttl:       ttl,
+		TTL:       ttl,
 		Capacity:  100 * 1024 * 1024,
 		KeyNumber: 10000,
 	}
@@ -88,8 +88,7 @@ func (m *mockBase) GetSubjectDescriptor(ctx context.Context, subjectReference co
 }
 
 func TestCreateCachedStore(t *testing.T) {
-	_, err := createCachedStore(base, conf)
-	if err != nil {
+	if _, err := createCachedStore(base, conf); err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
 }
@@ -116,7 +115,6 @@ func TestGetBlobContent(t *testing.T) {
 	store, _ := createCachedStore(base, conf)
 
 	blob, err := store.GetBlobContent(context.Background(), testReference, testDigest)
-
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
@@ -129,7 +127,6 @@ func TestGetSubjectDescriptor(t *testing.T) {
 	store, _ := createCachedStore(base, conf)
 
 	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
-
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
@@ -145,8 +142,10 @@ func TestListReferrers_CacheHit(t *testing.T) {
 
 	time.Sleep(time.Duration(ttl-5) * time.Second)
 
-	cachedResult, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
-
+	cachedResult, err := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
 	if !reflect.DeepEqual(result, cachedResult) {
 		t.Fatalf("cached result: %+v is different from result: %+v", cachedResult, result)
 	}
@@ -159,8 +158,10 @@ func TestListReferrers_CacheMiss(t *testing.T) {
 
 	time.Sleep(time.Duration(ttl+5) * time.Second)
 
-	cachedResult, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
-
+	cachedResult, err := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
 	if reflect.DeepEqual(result, cachedResult) {
 		t.Fatalf("cached result: %+v should be different from result: %+v", cachedResult, result)
 	}
@@ -168,7 +169,6 @@ func TestListReferrers_CacheMiss(t *testing.T) {
 
 func TestToCacheConfig(t *testing.T) {
 	conf, err := toCacheConfig(pluginConfig)
-
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
