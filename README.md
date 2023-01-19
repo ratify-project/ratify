@@ -60,6 +60,7 @@ make generate-certs RATIFY_NAMESPACE=$RATIFY_NAMESPACE CERT_DIR=$CERT_DIR
 helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
     ratify/ratify --atomic \
+    --namespace gatekeeper-system \
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
     --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"

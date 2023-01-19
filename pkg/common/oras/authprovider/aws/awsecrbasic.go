@@ -95,7 +95,7 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 	ecrClient := ecr.NewFromConfig(cfg)
 	authOutput, err := ecrClient.GetAuthorizationToken(ctx, nil)
 	if err != nil {
-		return EcrAuthToken{}, fmt.Errorf("could not reteive ECR auth token collection: %v", err)
+		return EcrAuthToken{}, fmt.Errorf("could not retrieve ECR auth token collection: %w", err)
 	}
 
 	return EcrAuthToken{AuthData: authOutput.AuthorizationData[0]}, nil
@@ -110,13 +110,13 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %v", err)
+		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
 	}
 
 	// Build auth provider from AWS IRSA and ECR auth token
 	authData, err := getEcrAuthToken()
 	if err != nil {
-		return nil, fmt.Errorf("failed to get ECR auth data: %v", err)
+		return nil, fmt.Errorf("failed to get ECR auth data: %w", err)
 	}
 
 	return &awsEcrBasicAuthProvider{

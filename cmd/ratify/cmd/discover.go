@@ -143,7 +143,7 @@ func listReferrersForStore(subRef common.Reference, artifactTypes []string, stor
 		// subject descriptor has not been resolved thus nil passed in to ListReferrers
 		lr, err := store.ListReferrers(context.Background(), subRef, artifactTypes, continuationToken, nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get referrers list from subject %s: %v", subRef.Original, err)
+			return nil, fmt.Errorf("failed to get referrers list from subject %s: %w", subRef.Original, err)
 		}
 
 		continuationToken = lr.NextToken
