@@ -4,7 +4,7 @@ metadata:
   name: ratify-provider
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
-  timeout: 7
+  timeout: {{ required "You must provide .Values.provider.timeout.validationTimeoutSeconds" .Values.provider.timeout.validationTimeoutSeconds }}
   caBundle: {{ required "You must provide .Values.provider.tls.cabundle" .Values.provider.tls.cabundle }}
 ---
 {{ include "ratify.providerGKVersion" . }}
@@ -13,5 +13,5 @@ metadata:
   name: ratify-mutation-provider
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/mutate
-  timeout: 1
+  timeout: {{ required "You must provide .Values.provider.timeout.mutationTimeoutSeconds" .Values.provider.timeout.mutationTimeoutSeconds }}
   caBundle: {{ required "You must provide .Values.provider.tls.cabundle" .Values.provider.tls.cabundle }}

@@ -6,7 +6,8 @@ data:
   config.json: |
     {
       "executor": {
-        "verificationRequestTimeout": 6800
+        "verificationRequestTimeout": {{ .Values.provider.timeout.validationTimeoutSeconds | int | mul 1000 | add -100 }},
+        "mutationRequestTimeout": {{ .Values.provider.timeout.mutationTimeoutSeconds | int | mul 1000 | add -50 }}
       },
       "store": {
         "version": "1.0.0",
