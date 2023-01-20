@@ -89,7 +89,7 @@ func getEcrAuthToken() (EcrAuthToken, error) {
 		}))
 
 	if err != nil {
-		return EcrAuthToken{}, fmt.Errorf("failed to load default AWS basic auth config: %v", err)
+		return EcrAuthToken{}, fmt.Errorf("failed to load default AWS basic auth config: %w", err)
 	}
 
 	ecrClient := ecr.NewFromConfig(cfg)
