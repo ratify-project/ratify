@@ -182,8 +182,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	if subjectDesc != nil {
 		resolvedSubjectDesc = subjectDesc
 	} else {
-		resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference)
-		if err != nil {
+		if resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference); err != nil {
 			var ec errcode.Error
 			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
 				store.evictAuthCache(subjectReference.Original, err)

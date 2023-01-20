@@ -26,7 +26,6 @@ spec:
     assign:
       externalData:
         provider: ratify-mutation-provider
-
 ---
 {{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
 apiVersion: mutations.gatekeeper.sh/v1
@@ -56,7 +55,6 @@ spec:
     assign:
       externalData:
         provider: ratify-mutation-provider
-
 ---
 {{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
 apiVersion: mutations.gatekeeper.sh/v1
@@ -85,5 +83,4 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
-        
+        provider: ratify-mutation-provider       

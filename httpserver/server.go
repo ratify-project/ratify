@@ -66,9 +66,8 @@ func NewServer(context context.Context, address string, getExecutor config.GetEx
 		CaCertFile:        caCertFile,
 		MutationStoreName: defaultMutationReferrerStoreName,
 	}
-	err := server.registerHandlers()
 
-	return server, err
+	return server, server.registerHandlers()
 }
 
 func (server *Server) Run() error {

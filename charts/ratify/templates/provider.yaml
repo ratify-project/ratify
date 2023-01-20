@@ -10,7 +10,6 @@ spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
   timeout: 7
   caBundle: {{ required "You must provide .Values.provider.tls.cabundle" .Values.provider.tls.cabundle }}
-
 ---
 {{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
 apiVersion: externaldata.gatekeeper.sh/v1beta1

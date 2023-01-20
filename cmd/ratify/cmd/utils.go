@@ -20,7 +20,7 @@ import (
 	"os"
 )
 
-const taggedReferenceWarning string = "Warning: Tagged references should NOT be used. The resolved digest may not point to the same signed artifact, since tags are mutable."
+const taggedReferenceWarning = "Warning: Digest should be used instead of tagged reference. The resolved digest may not point to the same signed artifact, since tags are mutable."
 
 func PrintJSON(object interface{}) error {
 	encoder := json.NewEncoder(os.Stdout)

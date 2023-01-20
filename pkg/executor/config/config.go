@@ -17,7 +17,9 @@ package config
 
 // ExecutorConfig represents the configuration for the executor
 type ExecutorConfig struct {
+	// Gatekeeper default verification webhook timeout is 3 seconds. 100ms network buffer added
 	VerificationRequestTimeout *int `json:"verificationRequestTimeout"`
-	MutationRequestTimeout     *int `json:"mutationRequestTimeout"`
+	// Gatekeeper default mutation webhook timeout is 1 seconds. 50ms network buffer added
+	MutationRequestTimeout *int `json:"mutationRequestTimeout"`
 	// TODO Add cache config
 }
