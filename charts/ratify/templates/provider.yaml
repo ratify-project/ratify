@@ -1,8 +1,4 @@
-{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
-apiVersion: externaldata.gatekeeper.sh/v1beta1
-{{- else }}
-apiVersion: externaldata.gatekeeper.sh/v1alpha1
-{{- end }}
+{{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
   name: ratify-provider
@@ -11,11 +7,7 @@ spec:
   timeout: 7
   caBundle: {{ required "You must provide .Values.provider.tls.cabundle" .Values.provider.tls.cabundle }}
 ---
-{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
-apiVersion: externaldata.gatekeeper.sh/v1beta1
-{{- else }}
-apiVersion: externaldata.gatekeeper.sh/v1alpha1
-{{- end }}
+{{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
   name: ratify-mutation-provider

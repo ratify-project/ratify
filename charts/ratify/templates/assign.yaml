@@ -1,8 +1,4 @@
-{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
-apiVersion: mutations.gatekeeper.sh/v1
-{{- else }}
-apiVersion: mutations.gatekeeper.sh/v1beta1
-{{- end }}
+{{ include "ratify.assignGKVersion" . }}
 kind: Assign
 metadata:
   name: mutate-pod-image
@@ -27,11 +23,7 @@ spec:
       externalData:
         provider: ratify-mutation-provider
 ---
-{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
-apiVersion: mutations.gatekeeper.sh/v1
-{{- else }}
-apiVersion: mutations.gatekeeper.sh/v1beta1
-{{- end }}
+{{ include "ratify.assignGKVersion" . }}
 kind: Assign
 metadata:
   name: mutate-workload-image
@@ -56,11 +48,7 @@ spec:
       externalData:
         provider: ratify-mutation-provider
 ---
-{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
-apiVersion: mutations.gatekeeper.sh/v1
-{{- else }}
-apiVersion: mutations.gatekeeper.sh/v1beta1
-{{- end }}
+{{ include "ratify.assignGKVersion" . }}
 kind: Assign
 metadata:
   name: mutate-cronjob-image
