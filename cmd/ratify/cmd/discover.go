@@ -41,13 +41,10 @@ type discoverCmdOptions struct {
 	configFilePath string
 	subject        string
 	artifactTypes  []string
-	digest         string
-	storeName      string
 	flatOutput     bool
 }
 
 func NewCmdDiscover(argv ...string) *cobra.Command {
-
 	if len(argv) == 0 {
 		argv = []string{os.Args[0]}
 	}
@@ -82,14 +79,13 @@ type listResult struct {
 }
 
 func Test(subject string) {
-	discover((discoverCmdOptions{
+	_ = discover((discoverCmdOptions{
 		subject:       subject,
 		artifactTypes: []string{""},
 	}))
 }
 
 func discover(opts discoverCmdOptions) error {
-
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
 	}
@@ -107,14 +103,8 @@ func discover(opts discoverCmdOptions) error {
 	rootImage := treeprint.NewWithRoot(subRef.String())
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
 	if err != nil {
 		return err
-	}
-
-	type Result struct {
-		Name       string
-		References []ocispecs.ReferenceDescriptor
 	}
 
 	if subRef.Digest == "" {
@@ -125,8 +115,7 @@ func discover(opts discoverCmdOptions) error {
 		subRef.Digest = desc.Digest
 	}
 
-	var results []listResult
-
+	results := []listResult{}
 	for _, referrerStore := range stores {
 		storeNode := rootImage.AddBranch(referrerStore.Name())
 		result, err := listReferrersForStore(subRef, opts.artifactTypes, referrerStore, storeNode)
@@ -154,7 +143,7 @@ func listReferrersForStore(subRef common.Reference, artifactTypes []string, stor
 		// subject descriptor has not been resolved thus nil passed in to ListReferrers
 		lr, err := store.ListReferrers(context.Background(), subRef, artifactTypes, continuationToken, nil)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get referrers list from subject %s: %v", subRef.Original, err)
+			return nil, fmt.Errorf("failed to get referrers list from subject %s: %w", subRef.Original, err)
 		}
 
 		continuationToken = lr.NextToken
@@ -171,7 +160,6 @@ func listReferrersForStore(subRef common.Reference, artifactTypes []string, stor
 				return nil, err
 			}
 			result.References = append(result.References, subResult.References...)
-
 		}
 		result.References = append(result.References, lr.Referrers...)
 		if continuationToken == "" {

@@ -126,23 +126,22 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	store referrerstore.ReferrerStore,
 	executor executor.Executor) (verifier.VerifierResult, error) {
-
 	extensions := make(map[string]string)
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to resolve subject: %+v, err: %v", subjectReference, err)
+		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to resolve subject: %+v, err: %w", subjectReference, err)
 	}
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get reference manifest for reference: %s, err: %v", subjectReference.Original, err)
+		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get reference manifest for reference: %s, err: %w", subjectReference.Original, err)
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get blob content of digest: %s, err: %v", blobDesc.Digest, err)
+			return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get blob content of digest: %s, err: %w", blobDesc.Digest, err)
 		}
 
 		// TODO: notary verify API only accepts digested reference now.
@@ -150,7 +149,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, fmt.Errorf("failed to verify signature, err: %v", err)
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, fmt.Errorf("failed to verify signature, err: %w", err)
 		}
 
 		// Note: notary verifier already validates certificate chain is not empty.
@@ -193,7 +192,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to notaryV2VerifierConfig from： %+v, err: %v", verifierConfig, err)
+		return nil, fmt.Errorf("failed to unmarshal to notaryV2VerifierConfig from： %+v, err: %w", verifierConfig, err)
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)

@@ -18,9 +18,10 @@ package aws
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	"strings"
 	"time"
+
+	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 )
 
 // EcrAuthToken provides helper functions for ECR auth token data
@@ -42,7 +43,7 @@ func (e EcrAuthToken) ProxyEndpoint() string {
 func (e EcrAuthToken) BasicAuthCreds() ([]string, error) {
 	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData.AuthorizationToken)
 	if err != nil {
-		return nil, fmt.Errorf("could not decode ECR auth token: %v", err)
+		return nil, fmt.Errorf("could not decode ECR auth token: %w", err)
 	}
 
 	decodedAuthCreds := strings.Split(string(rawDecodedToken), ":")

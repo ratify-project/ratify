@@ -104,5 +104,4 @@ func validateStoresConfig(storesConfig *config.StoresConfig) error {
 	// TODO check for existence of plugin dirs
 	// TODO check if version is supported
 	return nil
-
 }

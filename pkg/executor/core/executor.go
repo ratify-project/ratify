@@ -48,7 +48,6 @@ type Executor struct {
 
 // TODO Logging within executor
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -76,7 +75,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	desc, err := su.ResolveSubjectDescriptor(ctx, &executor.ReferrerStores, subjectReference)
 
 	if err != nil {
-		return types.VerifyResult{}, fmt.Errorf("resolving descriptor for the subject failed with error %v", err)
+		return types.VerifyResult{}, fmt.Errorf("resolving descriptor for the subject failed with error: %w", err)
 	}
 
 	logrus.Infof("Resolve of the image completed successfully the digest is %s", desc.Digest)
@@ -136,7 +135,6 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	var isSuccess = true
 
 	for _, verifier := range ex.Verifiers {
-
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
 			verifyResult.Subject = subjectRef.String()

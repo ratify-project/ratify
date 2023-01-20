@@ -38,7 +38,6 @@ type serveCmdOptions struct {
 }
 
 func NewCmdServe(argv ...string) *cobra.Command {
-
 	var opts serveCmdOptions
 
 	cmd := &cobra.Command{
@@ -62,7 +61,6 @@ func NewCmdServe(argv ...string) *cobra.Command {
 }
 
 func serve(opts serveCmdOptions) error {
-
 	// in crd mode, the manager gets latest store/verifier from crd and pass on to the http server
 	if opts.enableCrdManager {
 		logrus.Infof("starting crd manager")

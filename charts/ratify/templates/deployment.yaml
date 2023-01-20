@@ -44,11 +44,8 @@ spec:
             - "-c"
             - "/usr/local/ratify/config.json"
             - "--enable-crd-manager"
-            {{- if eq .Values.provider.auth "tls" }}
             - --cert-dir=/usr/local/tls
-            {{- end }}
-            {{- if eq .Values.provider.auth "mtls" }}
-            - --cert-dir=/usr/local/tls
+            {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
             - --ca-cert-file=usr/local/tls/client-ca/ca.crt
             {{- end }}
           ports:
@@ -74,15 +71,13 @@ spec:
               name: dockerconfig
               readOnly: true
               {{- end }}
-            {{- if and (.Values.provider.tls.cabundle) (or (eq .Values.provider.auth "tls") (eq .Values.provider.auth "mtls")) }}
             - mountPath: /usr/local/tls
               name: tls
               readOnly: true
-            {{- if eq .Values.provider.auth "mtls" }}
+            {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
             - mountPath: /usr/local/tls/client-ca
               name: client-ca-cert
               readOnly: true
-            {{- end }}
             {{- end }}
           env:
           {{- if .Values.logLevel }}
@@ -97,10 +92,24 @@ spec:
             - name: AZURE_TENANT_ID
               value: {{ .Values.azureManagedIdentity.tenantId }}
           {{- end }}
+          {{- if and .Values.oras.authProviders.awsEcrBasicEnabled .Values.oras.authProviders.awsApiOverride.enabled }}
+            {{- if and .Values.oras.authProviders.awsApiOverride.endpoint .Values.oras.authProviders.awsApiOverride.partition .Values.oras.authProviders.awsApiOverride.region }}
+            - name: AWS_API_OVERRIDE_ENDPOINT
+              value: {{ .Values.oras.authProviders.awsApiOverride.endpoint }}
+            - name: AWS_API_OVERRIDE_PARTITION
+              value: {{ .Values.oras.authProviders.awsApiOverride.partition }}
+            - name: AWS_API_OVERRIDE_REGION
+              value: {{ .Values.oras.authProviders.awsApiOverride.region }}
+            {{- end }}
+          {{- end }}
             - name: RATIFY_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+          {{- range $k, $v := .Values.featureFlags }}
+            - name: {{ $k }}
+              value: {{ $v | ternary 1 0 | quote }}
+          {{- end}}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
@@ -135,7 +144,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
-        {{- if and (.Values.provider.tls.cabundle) (or (eq .Values.provider.auth "tls") (eq .Values.provider.auth "mtls")) }}
         - name: tls
           secret:
             {{- if and .Values.provider.tls.crt .Values.provider.tls.key }}
@@ -148,12 +156,11 @@ spec:
                 path: tls.key
               - key: tls.crt
                 path: tls.crt
-        {{- if eq .Values.provider.auth "mtls" }}
+        {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
         - name: client-ca-cert
           secret:
             secretName: gatekeeper-webhook-server-cert
             items:
               - key: ca.crt
                 path: ca.crt
-        {{- end }}
         {{- end }}

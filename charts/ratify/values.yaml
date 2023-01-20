@@ -45,6 +45,8 @@ resources:
 serviceAccount:
   create: true
   name: ratify-admin
+gatekeeper:
+  version: "3.11.0"
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
@@ -69,14 +71,17 @@ oras:
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
+    awsApiOverride:
+      enabled: false
+      endpoint: ""
+      partition: "" # defaults to aws
+      region: ""
 
 provider:
-  auth: ""                  # tls, mtls
   tls:
-    skipVerify: true        # skip TLS verification
-    crt: ""                 # crt used by ratify (httpserver)
-    key: ""                 # key used by ratify (httpserver)
-    cabundle: ""            # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+    crt: # crt used by ratify (httpserver), please provide your own crt
+    key: # key used by ratify (httpserver), please provide your own key
+    cabundle: # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
 
 podAnnotations: {}
 podLabels: {}
@@ -103,3 +108,8 @@ crds:
     runAsGroup: 65532
     runAsNonRoot: true
     runAsUser: 65532
+
+# See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
+featureFlags:
+  # RATIFY_FEATURE_NAME: true
+

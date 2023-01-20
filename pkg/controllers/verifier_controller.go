@@ -65,7 +65,6 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	verifierLogger.Infof("reconciling verifier '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
-
 		if apierrors.IsNotFound(err) {
 			verifierLogger.Infof("delete event detected, removing verifier %v", resource)
 			verifierRemove(resource)
@@ -87,12 +86,11 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) error {
-
 	verifierConfig, err := specToVerifierConfig(spec)
 
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return fmt.Errorf("unable to convert crd specification to verifier config, err: %q", err)
+		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
 	}
 
 	// verifier factory only support a single version of configuration today
@@ -121,7 +119,6 @@ func verifierRemove(objectName string) {
 
 // returns a verifier reference from spec
 func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (vc.VerifierConfig, error) {
-
 	verifierConfig := vc.VerifierConfig{}
 
 	if string(verifierSpec.Parameters.Raw) != "" {

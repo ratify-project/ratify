@@ -36,10 +36,8 @@ const (
 type referrerCmdOptions struct {
 	configFilePath string
 	subject        string
-	artifactTypes  []string
 	digest         string
 	storeName      string
-	flatOutput     bool
 }
 
 func NewCmdReferrer(argv ...string) *cobra.Command {
@@ -47,8 +45,8 @@ func NewCmdReferrer(argv ...string) *cobra.Command {
 		Use:   referrerUse,
 		Short: "Discover referrers for a subject",
 		Args:  cobra.NoArgs,
-		Run: func(cmd *cobra.Command, args []string) {
-			cmd.Usage()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Usage()
 		},
 	}
 
@@ -209,7 +207,7 @@ func showRefManifest(opts referrerCmdOptions) error {
 		if referrerStore.Name() == opts.storeName {
 			manifestDesc, err := referrerStore.GetSubjectDescriptor(ctx, manifestRef)
 			if err != nil {
-				return fmt.Errorf("failed to resolve subject descriptor from store: %v", err)
+				return fmt.Errorf("failed to resolve subject descriptor from store: %w", err)
 			}
 
 			manifestReferenceDesc := ocispecs.ReferenceDescriptor{
@@ -218,10 +216,9 @@ func showRefManifest(opts referrerCmdOptions) error {
 
 			manifest, err := referrerStore.GetReferenceManifest(ctx, subRef, manifestReferenceDesc)
 			if err != nil {
-				return fmt.Errorf("failed to fetch manifest for reference %s: %v", subRef.Original, err)
+				return fmt.Errorf("failed to fetch manifest for reference %s: %w", subRef.Original, err)
 			}
 			return PrintJSON(manifest)
-
 		}
 	}
 

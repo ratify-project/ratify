@@ -39,7 +39,9 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	}
 	var resource = "notaryv2"
 
-	verifierAddOrReplace(testVerifierSpec, resource)
+	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
+	}
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
 	}
@@ -53,7 +55,9 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
-	verifierAddOrReplace(testVerifierSpec, "testObject")
+	if err := verifierAddOrReplace(testVerifierSpec, "testObject"); err != nil {
+		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
+	}
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
 	}
@@ -66,7 +70,9 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
 	// add a verifier
-	verifierAddOrReplace(testVerifierSpec, resource)
+	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
+	}
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
 	}
@@ -74,7 +80,9 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	// modify the verifier
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"GNU\"]}"
 	testVerifierSpec = getLicenseCheckerFromParam(parametersString)
-	verifierAddOrReplace(testVerifierSpec, resource)
+	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
+	}
 
 	// validate no verifier has been added
 	if len(VerifierMap) != 1 {
