@@ -71,6 +71,11 @@ oras:
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
+    awsApiOverride:
+      enabled: false
+      endpoint: ""
+      partition: "" # defaults to aws
+      region: ""
 
 provider:
   tls:
@@ -107,3 +112,4 @@ crds:
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
+
