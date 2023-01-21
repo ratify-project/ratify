@@ -6,7 +6,7 @@ spec:
   name: notaryv2
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
-    verificationCertStore:
+    verificationCertStores:
       certs:
           - certStore-akv
           - certStore-akv1

@@ -75,6 +75,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	logger.Infof("meta data of the certStore %s", certStore.Name)
 	logger.Infof("name of provider %s", certStore.Spec.Provider)
 
+	// TODO convert Parameters into a map of attributes
 	// this can a new fetch or an update
 	switch certStore.Spec.Provider {
 	case "azurekeyvault":

@@ -55,7 +55,8 @@ type NotaryV2VerifierConfig struct {
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-
+	// VerificationCerts is map defining which keyvault certificates belong to which trust store
+	VerificationCertStores map[string][]string `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
@@ -66,7 +67,8 @@ type notaryV2Verifier struct {
 }
 
 type trustStore struct {
-	certPaths []string
+	certPaths          []string
+	keyvaultreferences []string
 }
 
 type notaryv2VerifierFactory struct{}
@@ -81,7 +83,10 @@ func init() {
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
-	// if reference to cert store defined
+	// keyvault mapping over laps
+	if len(s.keyvaultreferences) > 0 {
+
+	}
 	//controllers.CertificatesMap["test"]
 
 	for _, path := range s.certPaths {
@@ -171,8 +176,17 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 }
 
 func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
+
+	// flatten the cert store array as we currently don't support named store
+	// certificates from all keyvaults will be valid for validation
+	keyvaultCerts := []string{}
+	for _, vaults := range conf.VerificationCertStores {
+		keyvaultCerts = append(keyvaultCerts, vaults...)
+	}
+
 	store := &trustStore{
-		certPaths: conf.VerificationCerts,
+		certPaths:          conf.VerificationCerts,
+		keyvaultreferences: keyvaultCerts,
 	}
 
 	return notaryVerifier.New(&conf.TrustPolicyDoc, store, nil)
@@ -201,6 +215,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
-
+	//conf.VerificationCertStores =
+	// TODO need to add the cert store property here
 	return conf, nil
 }

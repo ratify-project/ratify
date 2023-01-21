@@ -237,8 +237,29 @@ func TestParseVerifierConfig(t *testing.T) {
 				VerificationCerts: []string{testPath, defaultCertDir},
 			},
 		},
+		{
+			name: "successfully parsed with specified cert stores",
+			configMap: map[string]interface{}{
+				"name":              test,
+				"verificationCerts": []string{testPath},
+				"verificationCertStores": map[string][]string{
+					"certstore1": []string{"akv1", "akv2"},
+					"certstore2": []string{"akv3", "akv4"},
+				},
+			},
+			expectErr: false,
+			expect: &NotaryV2VerifierConfig{
+				Name:              test,
+				VerificationCerts: []string{testPath, defaultCertDir},
+				VerificationCertStores: map[string][]string{
+					"certstore1": []string{"akv1", "akv2"},
+					"certstore2": []string{"akv3", "akv4"},
+				},
+			},
+		},
 	}
 
+	//TODO add new test for parseVerifierConfig
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notaryConfig, err := parseVerifierConfig(tt.configMap)

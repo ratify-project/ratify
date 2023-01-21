@@ -1,7 +1,7 @@
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: CertificateStore
 metadata:
-  name: certStore-akv
+  name: certstore-akv
 spec:
   provider: azurekeyvault
   parameters:
@@ -11,5 +11,5 @@ spec:
         - |
           certificateName: wabbit-networks-io
           certificateVersion: 97a1545d893344079ce57699c8810590
-    tenantId:
+    tenantID:
     clientID: 
