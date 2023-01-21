@@ -51,6 +51,7 @@ NOTE: ORAS will attempt to use anonymous access if the authentication provider f
 
 1. Docker Config file
 1. Azure Workload Identity
+1. Azure Managed Identity
 1. Kubernetes Secrets
 1. AWS IAM Roles for Service Accounts (IRSA)
 
@@ -285,7 +286,7 @@ The official steps for setting up IAM Roles for Service Accounts with Amazon EKS
 
 ```shell
 eksctl create iamserviceaccount \
-    --name ratify \
+    --name ratify-admin \
     --namespace ratify \
     --cluster ratify \
     --attach-policy-arn arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly \
@@ -293,7 +294,7 @@ eksctl create iamserviceaccount \
     --override-existing-serviceaccounts
 ```
 
-1. Verify that the Service Account was successfully created and annotated with a newly created role.
+6. Verify that the Service Account was successfully created and annotated with a newly created role.
 
 ```shell
 kubectl -n ratify get sa ratify -oyaml
@@ -304,7 +305,7 @@ metadata:
     eks.amazonaws.com/role-arn: <IAM_ROLE_ARN>
   labels:
     app.kubernetes.io/managed-by: eksctl
-  name: ratify
+  name: ratify-admin
   namespace: ratify
 secrets:
 - name: ratify-token-...
@@ -317,7 +318,7 @@ ___Note__: The creation of the role was done in the background by `eksctl` and a
 ```yaml
 serviceAccount:
   create: false
-  name: ratify
+  name: ratify-admin
 ```
 
 8. Specify the _AWS ECR Basic Auth_ provider in the Ratify helm chart [values](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) file.
@@ -326,11 +327,42 @@ serviceAccount:
 oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
+    azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: true
+    awsApiOverride:
+      enabled: false
+      endpoint: ""
+      partition: "" # defaults to aws
+      region: ""
 ```
 
-9. [Install Ratify](https://github.com/deislabs/ratify#quick-start)
+9. If your AWS environment requires you to use a custom AWS endpoint resolver then you need to enable this feature in the helm chart [values](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) file.
+
+```yaml
+oras:
+  authProviders:
+    azureWorkloadIdentityEnabled: false
+    azureManagedIdentityEnabled: false
+    k8secretsEnabled: false
+    awsEcrBasicEnabled: true
+    awsApiOverride:
+      enabled: true
+      endpoint: <AWS_ENDPOINT>
+      partition: <AWS_PARTITION> # defaults to aws
+      region: <AWS_REGION>
+```
+
+Once ratify is started, if an AWS custom endpoint resolver is successfully enabled, you will see the following log entries in the ratify pod logs, with no following errors:
+
+```bash
+AWS ECR basic auth using custom endpoint resolver...
+AWS ECR basic auth API override endpoint: <AWS_ENDPOINT>
+AWS ECR basic auth API override partition: <AWS_PARTITION>
+AWS ECR basic auth API override region: <AWS_REGION>
+```
+
+10. [Install Ratify](https://github.com/deislabs/ratify#quick-start)
 
 ```shell
 helm install ratify \
@@ -338,17 +370,17 @@ helm install ratify \
     --namespace ratify --values values.yaml
 ```
 
-10. After install, verify that the Service Account is referenced by the `ratify` pod(s).
+11. After install, verify that the Service Account is referenced by the `ratify` pod(s).
 
 ```shell
 kubectl -n ratify get pod ratify-... -oyaml | grep serviceAccount
-  serviceAccount: ratify
-  serviceAccountName: ratify
+  serviceAccount: ratify-admin
+  serviceAccountName: ratify-admin
       - serviceAccountToken:
       - serviceAccountToken:
 ```
 
-11. Verify that the [Amazon EKS Pod Identity Webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
+12. Verify that the [Amazon EKS Pod Identity Webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) created the environment variables, projected volumes, and volume mounts for the Ratify pod(s). 
 
 ```shell
 kubectl -n ratify get po ratify-... -oyaml
@@ -382,7 +414,7 @@ kubectl -n ratify get po ratify-... -oyaml
 ...
 ```
 
-12. Verify the _AWS ECR Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
+13. Verify the _AWS ECR Basic Auth_ provider is configured in the `ratify-configuration` ConfigMap.
 
 ```shell
 kubectl -n ratify get cm ratify-configuration -oyaml
