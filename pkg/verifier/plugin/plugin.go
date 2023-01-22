@@ -92,7 +92,6 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	store referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
-
 	referrerStoreConfig := store.GetConfig()
 	vr, err := vp.verifyReference(ctx, subjectReference, referenceDescriptor, referrerStoreConfig)
 	if err != nil {
