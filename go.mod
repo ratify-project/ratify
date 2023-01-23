@@ -34,8 +34,8 @@ require (
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
-	k8s.io/api v0.24.9
-	k8s.io/apimachinery v0.24.9
+	k8s.io/api v0.24.10
+	k8s.io/apimachinery v0.24.10
 	k8s.io/client-go v0.24.9
 	oras.land/oras-go/v2 v2.0.0-rc.6
 )
@@ -245,7 +245,7 @@ require (
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/controller-runtime v0.12.3
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 
