@@ -19,15 +19,15 @@ import (
 	"context"
 
 	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/verifier"
 )
 
 type TestVerifier struct {
-	CanVerifyFunc func(artifactType string) bool
-	VerifyResult  func(artifactType string) bool
+	CanVerifyFunc    func(artifactType string) bool
+	VerifyResult     func(artifactType string) bool
+	nestedReferences []string
 }
 
 func (s *TestVerifier) Name() string {
@@ -41,9 +41,12 @@ func (s *TestVerifier) CanVerify(ctx context.Context, referenceDescriptor ocispe
 func (s *TestVerifier) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStore referrerstore.ReferrerStore,
-	executor executor.Executor) (verifier.VerifierResult, error) {
+	referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	return verifier.VerifierResult{
 		IsSuccess: s.VerifyResult(referenceDescriptor.ArtifactType),
 	}, nil
+}
+
+func (s *TestVerifier) GetNestedReferences() []string {
+	return s.nestedReferences
 }
