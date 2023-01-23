@@ -84,8 +84,8 @@ provider:
     cabundle: # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
   timeout:
     # timeout values must match gatekeeper webhook timeouts
-    validationTimeoutSeconds: 7
-    mutationTimeoutSeconds: 1
+    validationTimeoutSeconds: 5
+    mutationTimeoutSeconds: 2
 
 podAnnotations: {}
 podLabels: {}
