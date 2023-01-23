@@ -5,6 +5,12 @@
             {
                 "name": "oras",
                 "cosignEnabled": true
+            },
+            {
+                "name": "dynamicstore",
+                "source": {
+                    "artifact": "index.docker.io/acanthamoeba/sample-store-plugin:v1"
+                }
             }
         ]
     },
