@@ -214,7 +214,10 @@ SLEEP_TIME=1
 }
 
 @test "dynamic plugins enabled test" {
-    skip "helm upgrade fails in the pipeline on a 2-core runner"
+    # only run this test against a live cluster
+    if [[ -z "${AKS_NAME}" ]]; then
+        skip "helm upgrade fails in the pipeline on a 2-core runner"
+    fi
 
     # ensure that the chart deployment is reset to a clean state for other tests
     teardown() {
