@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 
@@ -43,9 +42,12 @@ func (s *TestVerifier) CanVerify(ctx context.Context, referenceDescriptor ocispe
 func (s *TestVerifier) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStore referrerstore.ReferrerStore,
-	executor executor.Executor) (verifier.VerifierResult, error) {
+	referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	return verifier.VerifierResult{IsSuccess: false}, nil
+}
+
+func (s *TestVerifier) GetNestedReferences() []string {
+	return []string{}
 }
 
 func (f *TestVerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {

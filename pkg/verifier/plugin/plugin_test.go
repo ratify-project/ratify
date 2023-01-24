@@ -23,7 +23,6 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	sm "github.com/deislabs/ratify/pkg/referrerstore/mocks"
-	"github.com/deislabs/ratify/pkg/verifier/mocks"
 )
 
 const (
@@ -65,7 +64,8 @@ func TestNewVerifier_Expected(t *testing.T) {
 	}
 }
 
-func TestVerify_NoNestedReferences_Expected(t *testing.T) {
+func TestVerify_IsSuccessTrue_Expected(t *testing.T) {
+	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
 			return testPath, nil
@@ -130,7 +130,7 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 		ArtifactType: "test-type",
 	}
 
-	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{}, &mocks.TestExecutor{})
+	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{})
 
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
@@ -141,42 +141,8 @@ func TestVerify_NoNestedReferences_Expected(t *testing.T) {
 	}
 }
 
-func TestVerify_NestedReferences_Verify_Failed(t *testing.T) {
-	verifierConfig := map[string]interface{}{
-		"name": testPlugin,
-	}
-	verifierPlugin := &VerifierPlugin{
-		name:             testPlugin,
-		artifactTypes:    []string{"test-type"},
-		nestedReferences: []string{"type1"},
-		version:          "1.0.0",
-		executor:         &TestExecutor{},
-		rawConfig:        verifierConfig,
-	}
-
-	subject := common.Reference{
-		Original: "localhost",
-	}
-	ref := ocispecs.ReferenceDescriptor{
-		ArtifactType: "test-type",
-	}
-
-	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{}, &mocks.TestExecutor{VerifySuccess: false})
-
-	if err != nil {
-		t.Fatalf("plugin execution failed %v", err)
-	}
-
-	if result.IsSuccess {
-		t.Fatal("plugin expected to return isSuccess as false but got as true")
-	}
-
-	if len(result.NestedResults) != 1 {
-		t.Fatalf("plugin expected to return single nested result but returned count is %d", len(result.NestedResults))
-	}
-}
-
-func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
+func TestVerify_IsSuccessFalse_Expected(t *testing.T) {
+	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
 		find: func(plugin string, paths []string) (string, error) {
 			return testPath, nil
@@ -218,7 +184,7 @@ func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
 				t.Fatalf("missing subject env")
 			}
 
-			verifierResult := ` {"isSuccess":true}`
+			verifierResult := ` {"isSuccess":false}`
 			return []byte(verifierResult), nil
 		},
 	}
@@ -227,12 +193,11 @@ func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
 		"name": testPlugin,
 	}
 	verifierPlugin := &VerifierPlugin{
-		name:             testPlugin,
-		artifactTypes:    []string{"test-type"},
-		nestedReferences: []string{"type1"},
-		version:          "1.0.0",
-		executor:         testExecutor,
-		rawConfig:        verifierConfig,
+		name:          testPlugin,
+		artifactTypes: []string{"test-type"},
+		version:       "1.0.0",
+		executor:      testExecutor,
+		rawConfig:     verifierConfig,
 	}
 
 	subject := common.Reference{
@@ -242,21 +207,13 @@ func TestVerify_NestedReferences_Verify_Success(t *testing.T) {
 		ArtifactType: "test-type",
 	}
 
-	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{}, &mocks.TestExecutor{VerifySuccess: true})
+	result, err := verifierPlugin.Verify(context.Background(), subject, ref, &sm.TestStore{})
 
 	if err != nil {
 		t.Fatalf("plugin execution failed %v", err)
 	}
 
-	if !result.IsSuccess {
-		t.Fatal("plugin expected to return isSuccess as true but got as false")
-	}
-
-	if len(result.NestedResults) != 1 {
-		t.Fatalf("plugin expected to return single nested result but returned count is %d", len(result.NestedResults))
-	}
-
-	if !result.NestedResults[0].IsSuccess {
-		t.Fatal("plugin expected to return isSuccess as true for nested result but got as false")
+	if result.IsSuccess {
+		t.Fatal("plugin expected to return isSuccess as false but got as true")
 	}
 }
