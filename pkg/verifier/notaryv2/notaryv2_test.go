@@ -8,12 +8,9 @@ import (
 	paths "path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
-	e "github.com/deislabs/ratify/pkg/executor"
-	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -62,7 +59,6 @@ var (
 	invalidRef = common.Reference{
 		Original: "invalid",
 	}
-	testExecutor                         = &mockExecutor{}
 	testNotaryVerifier notation.Verifier = mockNotaryVerifier{}
 	validBlobDesc                        = ocispec.Descriptor{
 		Digest: testDigest,
@@ -134,16 +130,6 @@ func (s mockStore) GetSubjectDescriptor(ctx context.Context, subjectReference co
 	return &ocispecs.SubjectDescriptor{
 		Descriptor: ocispec.Descriptor{},
 	}, nil
-}
-
-type mockExecutor struct{}
-
-func (e mockExecutor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	return types.VerifyResult{}, nil
-}
-
-func (e mockExecutor) GetVerifyRequestTimeout() time.Duration {
-	return time.Hour
 }
 
 func TestName(t *testing.T) {
@@ -361,7 +347,7 @@ func TestVerify(t *testing.T) {
 				manifest: tt.manifest,
 			}
 
-			result, err := v.Verify(context.Background(), tt.ref, ocispecs.ReferenceDescriptor{}, store, testExecutor)
+			result, err := v.Verify(context.Background(), tt.ref, ocispecs.ReferenceDescriptor{}, store)
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("error = %v, expectErr = %v", err, tt.expectErr)
