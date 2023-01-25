@@ -24,7 +24,6 @@ import (
 
 	"github.com/deislabs/ratify/pkg/common"
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
-	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -92,44 +91,12 @@ func (vp *VerifierPlugin) Name() string {
 func (vp *VerifierPlugin) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	store referrerstore.ReferrerStore,
-	executor e.Executor) (verifier.VerifierResult, error) {
-	var nestedResults []verifier.VerifierResult
-	if len(vp.nestedReferences) > 0 {
-		verifyParameters := e.VerifyParameters{
-			Subject:        fmt.Sprintf("%s@%s", subjectReference.Path, referenceDescriptor.Digest),
-			ReferenceTypes: vp.nestedReferences,
-		}
-		nestedVerifyResult, err := executor.VerifySubject(ctx, verifyParameters)
-
-		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, err
-		}
-
-		for _, vr := range nestedVerifyResult.VerifierReports {
-			if result, ok := vr.(verifier.VerifierResult); ok {
-				nestedResults = append(nestedResults, result)
-			}
-		}
-
-		if !nestedVerifyResult.IsSuccess {
-			return verifier.VerifierResult{
-				Subject:       subjectReference.Original,
-				IsSuccess:     false,
-				Name:          vp.name,
-				Message:       "nested verification failed",
-				NestedResults: nestedResults,
-			}, nil
-		}
-	}
-
+	store referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	referrerStoreConfig := store.GetConfig()
 	vr, err := vp.verifyReference(ctx, subjectReference, referenceDescriptor, referrerStoreConfig)
 	if err != nil {
 		return verifier.VerifierResult{IsSuccess: false}, err
 	}
-
-	vr.NestedResults = nestedResults
 
 	return *vr, nil
 }
@@ -172,4 +139,8 @@ func (vp *VerifierPlugin) verifyReference(
 	}
 
 	return result, nil
+}
+
+func (vp *VerifierPlugin) GetNestedReferences() []string {
+	return vp.nestedReferences
 }
