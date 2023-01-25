@@ -95,7 +95,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		switch mediaType {
 		case SpdxJsonMediaType:
-			return ProcessSpdxJsonMediaType(input.Name, refBlob)
+			return processSpdxJsonMediaType(input.Name, refBlob)
 		default:
 		}
 	}
