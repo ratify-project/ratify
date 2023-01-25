@@ -19,7 +19,6 @@ import (
 	"context"
 
 	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 )
@@ -47,6 +46,7 @@ type ReferenceVerifier interface {
 	Verify(ctx context.Context,
 		subjectReference common.Reference,
 		referenceDescriptor ocispecs.ReferenceDescriptor,
-		referrerStore referrerstore.ReferrerStore,
-		executor executor.Executor) (VerifierResult, error)
+		referrerStore referrerstore.ReferrerStore) (VerifierResult, error)
+
+	GetNestedReferences() []string
 }
