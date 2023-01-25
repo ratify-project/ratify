@@ -99,6 +99,23 @@ func init() {
 }
 
 func (s *orasStoreFactory) Create(version string, storeConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error) {
+	storeBase, err := createBaseStore(version, storeConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	cacheConf, err := toCacheConfig(storeBase.GetConfig().Store)
+	if err != nil {
+		return nil, err
+	}
+	if !cacheConf.Enabled {
+		return storeBase, nil
+	}
+
+	return createCachedStore(storeBase, cacheConf)
+}
+
+func createBaseStore(version string, storeConfig config.StorePluginConfig) (*orasStore, error) {
 	conf := OrasStoreConf{}
 
 	storeConfigBytes, err := json.Marshal(storeConfig)
