@@ -40,7 +40,7 @@ spec:
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               provider:
-                description: Name of the of the certificate store provider
+                description: Name of the certificate store provider
                 type: string
             type: object
           status:
@@ -49,5 +49,3 @@ spec:
         type: object
     served: true
     storage: true
-    subresources:
-      status: {}

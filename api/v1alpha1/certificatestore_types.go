@@ -21,18 +21,17 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // CertificateStoreSpec defines the desired state of CertificateStore
 type CertificateStoreSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the of the certificate store provider
+	// Name of the certificate store provider
 	Provider string `json:"provider,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// Parameters of the store
+	// Parameters of the certificate store
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
