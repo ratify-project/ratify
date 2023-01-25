@@ -25,6 +25,7 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -67,8 +68,8 @@ type notaryV2Verifier struct {
 }
 
 type trustStore struct {
-	certPaths          []string
-	keyvaultreferences []string
+	certPaths  []string
+	certStores map[string][]string
 }
 
 type notaryv2VerifierFactory struct{}
@@ -81,21 +82,33 @@ func init() {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	return s.getCertificatesInternal(ctx, storeType, namedStore, controllers.GetCertificatesMap())
+}
+
+func (s trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
-	// keyvault mapping over laps
-	if len(s.keyvaultreferences) > 0 {
+	// Certs configured for this namedStore overrides cert path
+	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
+		for _, certStore := range certGroup {
 
-	}
-	//controllers.CertificatesMap["test"]
-
-	for _, path := range s.certPaths {
-		bundledCerts, err := utils.GetCertificatesFromPath(path)
-		if err != nil {
-			return nil, err
+			// TODO: add test for empty , and do not exists
+			tempCerts := certificatesMap[certStore]
+			if len(tempCerts) == 0 {
+				return certs, fmt.Errorf("unable to fetch certificates for certStore: %+v", certStore)
+			}
+			certs = append(certs, tempCerts...)
 		}
-		certs = append(certs, bundledCerts...)
+	} else {
+		for _, path := range s.certPaths {
+			bundledCerts, err := utils.GetCertificatesFromPath(path)
+			if err != nil {
+				return nil, err
+			}
+			certs = append(certs, bundledCerts...)
+		}
 	}
+
 	return certs, nil
 }
 
@@ -176,17 +189,9 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 }
 
 func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
-
-	// flatten the cert store array as we currently don't support named store
-	// certificates from all keyvaults will be valid for validation
-	keyvaultCerts := []string{}
-	for _, vaults := range conf.VerificationCertStores {
-		keyvaultCerts = append(keyvaultCerts, vaults...)
-	}
-
 	store := &trustStore{
-		certPaths:          conf.VerificationCerts,
-		keyvaultreferences: keyvaultCerts,
+		certPaths:  conf.VerificationCerts,
+		certStores: conf.VerificationCertStores,
 	}
 
 	return notaryVerifier.New(&conf.TrustPolicyDoc, store, nil)

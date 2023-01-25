@@ -254,3 +254,49 @@ policy:
       ]
     }
 ```
+### Section 6: Built in verifiers
+
+#### NotaryV2
+NotaryV2 is a built in verifier to Ratify. The verifier uses configured verificationCerts to verify the validity of signatures.
+There are two ways to configure verification certificates:
+
+1. verificationCerts:  
+notary verifier will load all certificates from path specified in this array  
+
+2. verificationCertStores:  
+
+cert store is a mapping from certificate group to certStores. A certificate store defines the list of certificate to fetch from the provider,
+here is an example of fetching azure keyvault certificates using workload identity. CertStore is only available in K8 scenario, customer can used nameStore filters.
+When verificationCertStores exist, verification certs is ignored.
+
+A sample notary verifier with verificationCertStores defined
+```json=
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: Verifier
+metadata:
+  name: verifier-notary
+spec:
+  name: notaryv2
+  artifactTypes: application/vnd.cncf.notary.signature
+  parameters:
+    verificationCertStores:
+      certs:
+          - certStore-akv
+          - certStore-akv1
+      certs1:
+          - certStore-akv2
+          - certStore-akv3
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: default
+          registryScopes:
+            - "*"
+          signatureVerification:
+            level: strict
+          trustStores:
+            - ca:certs
+          trustedIdentities:
+            - "*"
+
+```

@@ -5,11 +5,11 @@ metadata:
 spec:
   provider: azurekeyvault
   parameters:
-    keyvaultName: sampleKeyVault
+    keyvaultName: sample
     certificates:  |
       array:
         - |
-          certificateName: wabbit-networks-io
-          certificateVersion: 97a1545d893344079ce57699c8810590
+          certificateName: yourCertName
+          certificateVersion: yourCertVersion
     tenantID:
     clientID: 
