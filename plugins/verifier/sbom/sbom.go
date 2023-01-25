@@ -107,7 +107,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}, nil
 }
 
-func ProcessSpdxJsonMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
+func processSpdxJsonMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
 	if doc, err := parser2v2.Load2_2(refBlob); doc != nil {
 		return &verifier.VerifierResult{
 			Name:       name,
