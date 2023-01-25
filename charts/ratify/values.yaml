@@ -77,10 +77,11 @@ oras:
       partition: "" # defaults to aws
       region: ""
   cache:
-    enabled: true
+    # Please tune your cache parameters to get better performance on the Oras Store performance.
+    enabled: true  # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
     ttl: 10  # in seconds
-    capacity: 100 # Megabytes
-    keyNumber: 10000 # maximum key number
+    capacity: 100 # capacity is the max size in megabytes of the full cache.
+    keyNumber: 10000 # keyNumber is the number of items you expect to keep in the cache when full. It makes a difference to the cache performance, please set it close to the item count.
 
 
 provider:
