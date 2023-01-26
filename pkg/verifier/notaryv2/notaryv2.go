@@ -25,10 +25,9 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/homedir"
 
 	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/executor"
-	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/utils"
