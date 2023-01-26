@@ -19,7 +19,7 @@
         "plugins": [
             {
                 "name": "sbom",
-                "artifactTypes": "sbom/example",
+                "artifactTypes": "org.example.sbom.v0",
                 "nestedReferences": "application/vnd.cncf.notary.signature"
             },
             {
