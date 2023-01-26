@@ -231,8 +231,8 @@ func TestParseVerifierConfig(t *testing.T) {
 				"name":              test,
 				"verificationCerts": []string{testPath},
 				"verificationCertStores": map[string][]string{
-					"certstore1": []string{"akv1", "akv2"},
-					"certstore2": []string{"akv3", "akv4"},
+					"certstore1": {"akv1", "akv2"},
+					"certstore2": {"akv3", "akv4"},
 				},
 			},
 			expectErr: false,
@@ -240,8 +240,8 @@ func TestParseVerifierConfig(t *testing.T) {
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: map[string][]string{
-					"certstore1": []string{"akv1", "akv2"},
-					"certstore2": []string{"akv3", "akv4"},
+					"certstore1": {"akv1", "akv2"},
+					"certstore2": {"akv3", "akv4"},
 				},
 			},
 		},
@@ -427,9 +427,8 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	}
 }
 
-// converst string to a x509 certificate
+// convert string to a x509 certificate
 func getCert(certString string) *x509.Certificate {
-
 	block, _ := pem.Decode([]byte(certString))
 	if block == nil {
 		panic("failed to parse certificate PEM")

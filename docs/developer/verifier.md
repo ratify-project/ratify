@@ -265,8 +265,8 @@ notary verifier will load all certificates from path specified in this array
 
 2. verificationCertStores:  
 
-cert store is a mapping from certificate group to certStores. A certificate store defines the list of certificate to fetch from the provider,
-here is an example of fetching azure keyvault certificates using workload identity. CertStore is only available in K8 scenario, customer can used nameStore filters.
+Cert store is a mapping from certificate group to certStores. A certificate store resource defines the list of certificate to fetch from the provider,
+here is an example of fetching azure keyvault certificates using workload identity. Note, version is optional, the latest version is fetched. It is recommended to pin to a version, if you create a new version of the certificate , please update the Cert store CR so the latest version. CertStore is only available in K8 scenario, customer can used nameStore filters.
 When verificationCertStores exist, verification certs is ignored.
 
 A sample notary verifier with verificationCertStores defined

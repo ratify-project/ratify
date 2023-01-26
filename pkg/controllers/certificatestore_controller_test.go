@@ -17,6 +17,10 @@ package controllers
 
 import (
 	"testing"
+
+	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestByteToCerts_ByteArrayToCertificates(t *testing.T) {
@@ -26,9 +30,9 @@ func TestByteToCerts_ByteArrayToCertificates(t *testing.T) {
 	c1 := []byte(certString1)
 	c2 := []byte(certString2)
 
-	certificates := [][]byte{}
-	certificates = append(certificates, c1)
-	certificates = append(certificates, c2)
+	certificates := []types.Certificate{}
+	certificates = append(certificates, types.Certificate{Content: c1})
+	certificates = append(certificates, types.Certificate{Content: c2})
 
 	r, err := byteToCerts(certificates)
 	if err != nil {
@@ -62,8 +66,8 @@ func TestByteToCerts_FailedToDecode(t *testing.T) {
 
 	c1 := []byte(certString)
 
-	certificates := [][]byte{}
-	certificates = append(certificates, c1)
+	certificates := []types.Certificate{}
+	certificates = append(certificates, types.Certificate{Content: c1})
 
 	_, err := byteToCerts(certificates)
 	if err == nil {
@@ -81,8 +85,8 @@ func TestByteToCerts_FailedX509ParseError(t *testing.T) {
 
 	c1 := []byte(certString)
 
-	certificates := [][]byte{}
-	certificates = append(certificates, c1)
+	certificates := []types.Certificate{}
+	certificates = append(certificates, types.Certificate{Content: c1})
 
 	_, err := byteToCerts(certificates)
 	if err == nil {
@@ -96,7 +100,7 @@ func TestByteToCerts_FailedX509ParseError(t *testing.T) {
 }
 
 func TestGetCertStoreConfig_ValidConfig(t *testing.T) {
-	/*var parametersString = "TBD"
+	var parametersString = "{\"certificates\":\"array:\\n  - |\\n    certificateName: wabbit-networks-io\\n    certificateVersion: 97a1545d893344079ce57699c8810590\\n\",\"clientID\":\"sampleClientID\",\"keyvaultName\":\"sampleKeyVault\",\"tenantID\":\"sampleTenantID\"}"
 	var certStoreParameters = []byte(parametersString)
 
 	spec := configv1alpha1.CertificateStoreSpec{
@@ -106,12 +110,38 @@ func TestGetCertStoreConfig_ValidConfig(t *testing.T) {
 		},
 	}
 
-		result, err := getCertStoreConfig(spec)
-		if err != nil {
-			t.Fatalf("unexpected error %v", err)
-		}
+	result, err := getCertStoreConfig(spec)
+	if err != nil {
+		t.Fatalf("unexpected error %v", err)
+	}
 
-		if result["test"] != "test" {
+	if len(result) != 4 ||
+		result["clientID"] != "sampleClientID" ||
+		result["tenantID"] != "sampleTenantID" ||
+		result["keyvaultName"] != "sampleKeyVault" ||
+		result["certificates"] != "array:\n  - |\n    certificateName: wabbit-networks-io\n    certificateVersion: 97a1545d893344079ce57699c8810590\n" {
+		t.Fatalf("unexpected value")
+	}
+}
 
-		}*/
+func TestGetCertStoreConfig_EmptyStringError(t *testing.T) {
+	var parametersString = ""
+	var certStoreParameters = []byte(parametersString)
+
+	spec := configv1alpha1.CertificateStoreSpec{
+		Provider: "azurekeyvault",
+		Parameters: runtime.RawExtension{
+			Raw: certStoreParameters,
+		},
+	}
+
+	_, err := getCertStoreConfig(spec)
+	if err == nil {
+		t.Fatalf("Expected error")
+	}
+
+	expectedError := "Received empty parameters"
+	if err.Error() != expectedError {
+		t.Fatalf("Unexpected error, expected %+v, got %+v", expectedError, err.Error())
+	}
 }

@@ -23,13 +23,16 @@ import (
 	"encoding/pem"
 	"fmt"
 
+	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
+	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/deislabs/ratify/pkg/common"
+
+	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
-	"github.com/sirupsen/logrus"
 )
 
 // CertificateStoreReconciler reconciles a CertificateStore object
@@ -37,9 +40,6 @@ type CertificateStoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-// This is a map containing Cert store configuration including name, tenantID, and cert object information
-type CertStoreConfig map[string]interface{}
 
 var (
 	// a map between CertificateStore name to array of x509 certificates
@@ -52,7 +52,6 @@ var (
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
 // the CertificateStore object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
@@ -69,8 +68,8 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Infof("deletion detected, removing store %v", req.Name)
-			//storeRemove(resource)
+			logger.Infof("deletion detected, removing certificate store %v", req.Name)
+			delete(certificatesMap, resource)
 		} else {
 			logger.Error(err, "unable to fetch certificate store")
 		}
@@ -78,36 +77,46 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	logger.Infof("meta data of the certStore %s", certStore.Name)
-	logger.Infof("name of provider %s", certStore.Spec.Provider)
-
-	// get the attribute map
+	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
 
-	// this can a new fetch or an update
+	// fetch certificates based on the provider
 	switch certStore.Spec.Provider {
 	case "azurekeyvault":
-		logrus.Infof("len %v", len(attributes))
-		//var result = azurekeyvault.GetCertificates(attributes) returns
-		//CertificatesMap[resource] = byteToCerts([][]bytes)
-		//CertificatesMap[name] = result
+		contents, err := azurekeyvault.GetCertificates(ctx, attributes)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with azure key vault provider, error: %v", resource, err)
+		}
+
+		certificates, err := byteToCerts(contents)
+		if err != nil {
+			logrus.Error(err)
+			return ctrl.Result{}, fmt.Errorf("Failed to parse x509 certificate for certificate store %v, error: %v", resource, err)
+		}
+		certificatesMap[resource] = certificates
+		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 	default:
-		logger.Errorf("Unknown cert provider %s", certStore.Spec.Provider)
-		//TODO: return a error
+		//logger.Errorf("Unknown cert provider %s", certStore.Spec.Provider)
+		return ctrl.Result{}, fmt.Errorf("Unknown provider defined in certificate store %v", resource)
 	}
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
 }
 
+// returns the internal certificate map
+func GetCertificatesMap() map[string][]*x509.Certificate {
+	return certificatesMap
+}
+
 // converts array of cert content to x509 certificate
-func byteToCerts(certificates [][]byte) ([]*x509.Certificate, error) {
+func byteToCerts(certificates []types.Certificate) ([]*x509.Certificate, error) {
 	r := []*x509.Certificate{}
 	for _, c := range certificates {
-		block, _ := pem.Decode(c)
+		block, _ := pem.Decode(c.Content)
 		if block == nil {
 			return nil, fmt.Errorf("Failed to decode certificate")
 		}
@@ -116,7 +125,7 @@ func byteToCerts(certificates [][]byte) ([]*x509.Certificate, error) {
 		if err != nil {
 			return nil, err
 		}
-
+		common.LogDebug("cert '%v' added", c.CertificateName)
 		r = append(r, cert)
 	}
 
@@ -130,18 +139,17 @@ func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func getCertStoreConfig(spec configv1alpha1.CertificateStoreSpec) (CertStoreConfig, error) {
-	attributes := CertStoreConfig{}
+func getCertStoreConfig(spec configv1alpha1.CertificateStoreSpec) (map[string]string, error) {
+	attributes := map[string]string{}
 
-	if string(spec.Parameters.Raw) != "" {
-		if err := json.Unmarshal(spec.Parameters.Raw, &attributes); err != nil {
-			logrus.Error(err, "unable to decode cert store parameters", "Parameters.Raw", spec.Parameters.Raw)
-			return attributes, err
-		}
+	if string(spec.Parameters.Raw) == "" {
+		return nil, fmt.Errorf("Received empty parameters")
 	}
-	return attributes, nil
-}
 
-func GetCertificatesMap() map[string][]*x509.Certificate {
-	return certificatesMap
+	if err := json.Unmarshal(spec.Parameters.Raw, &attributes); err != nil {
+		logrus.Error(err, "unable to decode cert store parameters", "Parameters.Raw", spec.Parameters.Raw)
+		return attributes, err
+	}
+
+	return attributes, nil
 }

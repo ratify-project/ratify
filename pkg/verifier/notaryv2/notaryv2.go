@@ -88,11 +88,9 @@ func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Ty
 func (s trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
-	// Certs configured for this namedStore overrides cert path
+	// certs configured for this namedStore overrides cert path
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
-
-			// TODO: add test for empty , and do not exists
 			tempCerts := certificatesMap[certStore]
 			if len(tempCerts) == 0 {
 				return certs, fmt.Errorf("unable to fetch certificates for certStore: %+v", certStore)
@@ -219,8 +217,6 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
-	//conf.VerificationCertStores =
-	// TODO need to add the cert store property here
 	return conf, nil
 }
 
