@@ -109,19 +109,17 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 			return nil, err
 		}
 
-		for idx := range result {
-			r := result[idx]
-			objectContent := []byte(r.content)
+		objectContent := []byte(result.content)
 
-			cert := types.Certificate{
-				CertificateName: keyVaultCert.CertificateName,
-				Content:         objectContent,
-				Version:         r.version,
-			}
-
-			certs = append(certs, cert)
-			common.LogDebug("added certificates %v to response", cert.CertificateName)
+		cert := types.Certificate{
+			CertificateName: keyVaultCert.CertificateName,
+			Content:         objectContent,
+			Version:         result.version,
 		}
+
+		certs = append(certs, cert)
+		common.LogDebug("added certificates %v to response", cert.CertificateName)
+
 	}
 	return certs, nil
 }
@@ -174,16 +172,16 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 }
 
 // getCertificate retrieves the certificate from the vault
-func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) ([]keyvaultObject, error) {
+func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) (keyvaultObject, error) {
 	certbundle, err := kvClient.GetCertificate(ctx, vaultURL, kvObject.CertificateName, kvObject.CertificateVersion)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", kvObject.CertificateName, kvObject.CertificateVersion, err)
+		return keyvaultObject{}, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", kvObject.CertificateName, kvObject.CertificateVersion, err)
 	}
 	if certbundle.Cer == nil {
-		return nil, errors.Errorf("certificate value is nil")
+		return keyvaultObject{}, errors.Errorf("certificate value is nil")
 	}
 	if certbundle.ID == nil {
-		return nil, errors.Errorf("certificate id is nil")
+		return keyvaultObject{}, errors.Errorf("certificate id is nil")
 	}
 	version := getObjectVersion(*certbundle.ID)
 
@@ -193,7 +191,7 @@ func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL strin
 	}
 	var pemData []byte
 	pemData = append(pemData, pem.EncodeToMemory(certBlock)...)
-	return []keyvaultObject{{content: string(pemData), version: version}}, nil
+	return keyvaultObject{content: string(pemData), version: version}, nil
 }
 
 // getObjectVersion parses the id to retrieve the version

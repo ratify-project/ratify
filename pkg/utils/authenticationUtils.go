@@ -36,15 +36,10 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", tokenFilePath, authority)
 	}
 
-	// read the service account token from the filesystem
-	signedAssertion, err := readJWTFromFS(tokenFilePath)
-	if err != nil {
-		return confidential.AuthResult{}, fmt.Errorf("failed to read service account token: %w", err)
-	}
-	cred, err := confidential.NewCredFromAssertion(signedAssertion)
-	if err != nil {
-		return confidential.AuthResult{}, fmt.Errorf("failed to create confidential creds: %w", err)
-	}
+	cred := confidential.NewCredFromAssertionCallback(func(context.Context, confidential.AssertionRequestOptions) (string, error) {
+		// read the service account token from the filesystem
+		return readJWTFromFS(tokenFilePath)
+	})
 
 	// create the confidential client to request an AAD token
 	confidentialClientApp, err := confidential.New(

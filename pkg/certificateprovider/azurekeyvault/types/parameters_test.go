@@ -243,11 +243,11 @@ func TestGetObjectsArray(t *testing.T) {
 		},
 		{
 			name:    "valid yaml",
-			objects: "array:\n- |\n  filePermission: \"\"\n  objectAlias: \"\"\n  objectEncoding: \"\"\n  objectFormat: \"\"\n  objectName: secret1\n  objectType: cert\n  objectVersion: \"\"\n- |\n  filePermission: \"\"\n  objectAlias: \"\"\n  objectEncoding: \"\"\n  objectFormat: \"\"\n  objectName: secret2\n  objectType: cert\n  objectVersion: \"\"\n",
+			objects: "array:\n- |\n certificateName: secret1\n certificateVersion: \"\"\n- |\n certificateName: secret2\n certificateVersion: \"\"\n",
 			expected: StringArray{
 				Array: []string{
-					"filePermission: \"\"\nobjectAlias: \"\"\nobjectEncoding: \"\"\nobjectFormat: \"\"\nobjectName: secret1\nobjectType: cert\nobjectVersion: \"\"\n",
-					"filePermission: \"\"\nobjectAlias: \"\"\nobjectEncoding: \"\"\nobjectFormat: \"\"\nobjectName: secret2\nobjectType: cert\nobjectVersion: \"\"\n",
+					"certificateName: secret1\ncertificateVersion: \"\"\n",
+					"certificateName: secret2\ncertificateVersion: \"\"\n",
 				},
 			},
 		},
@@ -257,18 +257,18 @@ func TestGetObjectsArray(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			actual, err := GetCertificatesArray(test.objects)
 			if err != nil {
-				t.Errorf("GetObjectsArray() error = %v", err)
+				t.Errorf("GetCertificatesArray() error = %v", err)
 			}
 			if !reflect.DeepEqual(actual, test.expected) {
-				t.Errorf("GetObjectsArray() = %v, expected %v", actual, test.expected)
+				t.Errorf("GetCertificatesArray() = %v, expected %v", actual, test.expected)
 			}
 		})
 	}
 }
 
-func TestGetObjectsArrayError(t *testing.T) {
+func TestGetCertificatesArrayError(t *testing.T) {
 	objects := "invalid"
 	if _, err := GetCertificatesArray(objects); err == nil {
-		t.Errorf("GetObjectsArray() error is nil, expected error")
+		t.Errorf("GetCertificatesArray() error is nil, expected error")
 	}
 }
