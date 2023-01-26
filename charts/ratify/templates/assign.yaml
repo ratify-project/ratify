@@ -10,7 +10,8 @@ spec:
       kinds: ["Pod"]
     excludedNamespaces:
       - "gatekeeper-system"
-      {{- if ne .Release.Namespace "gatekeeper-system"}}
+      - "kube-system"
+      {{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
       - {{ .Release.Namespace }}
       {{- end }}
   applyTo:
@@ -35,7 +36,8 @@ spec:
       kinds: ["Deployment", "ReplicaSet", "StatefulSet", "DaemonSet", "Job"]
     excludedNamespaces:
       - "gatekeeper-system"
-      {{- if ne .Release.Namespace "gatekeeper-system"}}
+      - "kube-system"
+      {{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
       - {{ .Release.Namespace }}
       {{- end }}
   applyTo:
@@ -60,7 +62,8 @@ spec:
       kinds: ["CronJob"]
     excludedNamespaces:
       - "gatekeeper-system"
-      {{- if ne .Release.Namespace "gatekeeper-system"}}
+      - "kube-system"
+      {{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
       - {{ .Release.Namespace }}
       {{- end }}
   applyTo:
@@ -71,4 +74,5 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider       
+        provider: ratify-mutation-provider
+ 

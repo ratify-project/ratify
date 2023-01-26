@@ -48,7 +48,7 @@ helm install gatekeeper/gatekeeper  \
     --set mutatingWebhookTimeoutSeconds=2
 ```
 
-NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify operations complete in complex scenarios. See [discussion here](https://github.com/deislabs/ratify/issues/269) to remove this requirement. Kubernetes v1.20 or higher is REQUIRED to increase timeout.  
+NOTE: `validatingWebhookTimeoutSeconds` and `mutationWebhookTimeoutSeconds` increased from 3 to 5 and 1 to 2 respectively, so all Ratify operations complete in complex scenarios. See [discussion here](https://github.com/deislabs/ratify/issues/269) to remove this requirement. Kubernetes v1.20 or higher is REQUIRED to increase timeout. Timeout is configurable in helm chart under `provider.timeout` section.   
 
 - Deploy ratify and a `demo` constraint on gatekeeper in the default namespace.
 
