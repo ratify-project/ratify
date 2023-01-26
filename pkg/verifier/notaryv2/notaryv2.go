@@ -26,6 +26,7 @@ import (
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
+	"github.com/sirupsen/logrus"
 
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -91,11 +92,14 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, storeType trust
 	// certs configured for this namedStore overrides cert path
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
-			tempCerts := certificatesMap[certStore]
-			if len(tempCerts) == 0 {
-				return certs, fmt.Errorf("unable to fetch certificates for certStore: %+v", certStore)
+			result := certificatesMap[certStore]
+			if len(result) == 0 {
+				logrus.Warnf("no certificate fetched for certStore %+v", certStore)
 			}
-			certs = append(certs, tempCerts...)
+			certs = append(certs, result...)
+		}
+		if len(certs) == 0 {
+			return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
 		}
 	} else {
 		for _, path := range s.certPaths {

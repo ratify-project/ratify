@@ -5,7 +5,7 @@ metadata:
 spec:
   provider: azurekeyvault
   parameters:
-    keyvaultName: sample
+    vaultURI: https://yourkeyvault.vault.azure.net/
     certificates:  |
       array:
         - |
