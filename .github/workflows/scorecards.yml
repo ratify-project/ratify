@@ -5,7 +5,10 @@ on:
     # Weekly on Saturdays.
     - cron: '30 1 * * 6'
   push:
-    branches: [ ossf/test ]
+    branches: [ main ]
+  pull_request:
+    branches: 
+      - ossf/test
   workflow_dispatch:
 
 permissions: read-all
