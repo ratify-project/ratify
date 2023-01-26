@@ -119,7 +119,6 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 
 		certs = append(certs, cert)
 		common.LogDebug("added certificates %v to response", cert.CertificateName)
-
 	}
 	return certs, nil
 }
