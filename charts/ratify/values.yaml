@@ -71,6 +71,18 @@ oras:
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
+    awsApiOverride:
+      enabled: false
+      endpoint: ""
+      partition: "" # defaults to aws
+      region: ""
+  cache:
+    # Please tune your cache parameters to get better performance on the Oras Store performance.
+    enabled: true  # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
+    ttl: 10  # in seconds
+    capacity: 100 # capacity is the max size in megabytes of the full cache.
+    keyNumber: 10000 # keyNumber is the number of items you expect to keep in the cache when full. It makes a difference to the cache performance, please set it close to the item count.
+
 
 provider:
   tls:
@@ -107,3 +119,4 @@ crds:
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
+

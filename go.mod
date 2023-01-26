@@ -6,12 +6,14 @@ require (
 	github.com/Azure/azure-sdk-for-go v67.3.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.4
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0
-	github.com/AzureAD/microsoft-authentication-library-for-go v0.5.3
+	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0
 	github.com/aws/aws-sdk-go-v2 v1.17.3
 	github.com/aws/aws-sdk-go-v2/config v1.18.8
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.8
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
-	github.com/docker/cli v20.10.22+incompatible
+	github.com/cespare/xxhash/v2 v2.1.2
+	github.com/dgraph-io/ristretto v0.1.1
+	github.com/docker/cli v20.10.23+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/golang/protobuf v1.5.2
@@ -30,20 +32,22 @@ require (
 	github.com/sigstore/cosign v1.12.1
 	github.com/sigstore/sigstore v1.4.6
 	github.com/sirupsen/logrus v1.9.0
-	github.com/spdx/tools-golang v0.2.0
+	github.com/spdx/tools-golang v0.3.0
 	github.com/spf13/cobra v1.6.1
 	github.com/xlab/treeprint v1.1.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
-	k8s.io/api v0.24.9
-	k8s.io/apimachinery v0.24.9
-	k8s.io/client-go v0.24.9
-	oras.land/oras-go/v2 v2.0.0-rc.6
+	k8s.io/api v0.24.10
+	k8s.io/apimachinery v0.24.10
+	k8s.io/client-go v0.24.10
+	oras.land/oras-go/v2 v2.0.0
 )
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
+	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
+	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
@@ -53,8 +57,10 @@ require (
 )
 
 require (
+
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go/compute v1.12.1 // indirect
+	cloud.google.com/go/compute/metadata v0.2.1 // indirect
 	github.com/Azure/azure-sdk-for-go/sdk/internal v1.0.0 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
@@ -62,6 +68,7 @@ require (
 	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/Azure/go-ntlmssp v0.0.0-20220621081337-cb9428e4ac1e // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20210307081110-f21760c49a8d // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.12.21 // indirect
@@ -79,7 +86,6 @@ require (
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
-	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cncf/udpa/go v0.0.0-20210930031921-04548b0d99d4 // indirect
 	github.com/cncf/xds/go v0.0.0-20211130200136-a8f946100490 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.12.1 // indirect
@@ -98,7 +104,9 @@ require (
 	github.com/fullstorydev/grpcurl v1.8.7 // indirect
 	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
+	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-logr/zapr v1.2.0 // indirect
@@ -134,6 +142,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.11.2 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/in-toto/in-toto-golang v0.3.4-0.20220709202702-fa494aaa0add // indirect
@@ -249,7 +258,7 @@ require (
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9 // indirect
 	sigs.k8s.io/controller-runtime v0.12.3
 	sigs.k8s.io/json v0.0.0-20211208200746-9f7c6b3444d2 // indirect
-	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
+	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
 

@@ -92,6 +92,16 @@ spec:
             - name: AZURE_TENANT_ID
               value: {{ .Values.azureManagedIdentity.tenantId }}
           {{- end }}
+          {{- if and .Values.oras.authProviders.awsEcrBasicEnabled .Values.oras.authProviders.awsApiOverride.enabled }}
+            {{- if and .Values.oras.authProviders.awsApiOverride.endpoint .Values.oras.authProviders.awsApiOverride.partition .Values.oras.authProviders.awsApiOverride.region }}
+            - name: AWS_API_OVERRIDE_ENDPOINT
+              value: {{ .Values.oras.authProviders.awsApiOverride.endpoint }}
+            - name: AWS_API_OVERRIDE_PARTITION
+              value: {{ .Values.oras.authProviders.awsApiOverride.partition }}
+            - name: AWS_API_OVERRIDE_REGION
+              value: {{ .Values.oras.authProviders.awsApiOverride.region }}
+            {{- end }}
+          {{- end }}
             - name: RATIFY_NAMESPACE
               valueFrom:
                 fieldRef:
