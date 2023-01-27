@@ -26,7 +26,6 @@ import (
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
-	"github.com/deislabs/ratify/pkg/common"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -88,19 +87,18 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	case "azurekeyvault":
 		contents, err := azurekeyvault.GetCertificates(ctx, attributes)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with azure key vault provider, error: %v", resource, err)
+			return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with azure key vault provider, error: %w", resource, err)
 		}
 
 		certificates, err := byteToCerts(contents)
 		if err != nil {
-			logrus.Error(err)
-			return ctrl.Result{}, fmt.Errorf("Failed to parse x509 certificate for certificate store %v, error: %v", resource, err)
+			return ctrl.Result{}, fmt.Errorf("Failed to parse x509 certificate for certificate store %v, error: %w", resource, err)
 		}
 		certificatesMap[resource] = certificates
 		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 	default:
-		//logger.Errorf("Unknown cert provider %s", certStore.Spec.Provider)
-		return ctrl.Result{}, fmt.Errorf("Unknown provider defined in certificate store %v", resource)
+
+		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
@@ -125,7 +123,7 @@ func byteToCerts(certificates []types.Certificate) ([]*x509.Certificate, error) 
 		if err != nil {
 			return nil, err
 		}
-		common.LogDebug("cert '%v' added", c.CertificateName)
+		logrus.Debugf("cert '%v', version '%v' added", c.CertificateName, c.Version)
 		r = append(r, cert)
 	}
 

@@ -5,12 +5,6 @@ Expand the name of the chart.
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{/*
-Define secret provider class name.
-*/}}
-{{- define "ratify.akv.secretProviderClassName" -}}
-{{ include "ratify.fullname" . }}-akv-secret-provider
-{{- end }}
 
 {{- define "ratify.podLabels" -}}
 {{- if .Values.podLabels }}

@@ -51,13 +51,11 @@ spec:
           ports:
             - containerPort: 6001
           volumeMounts:
-            - mountPath: "/usr/local/ratify-certs/notary/truststore"
-            {{- if .Values.akvCertConfig.enabled }}
-              name: cert-from-akv
-            {{- else }}
+            {{- if eq .Values.akvCertConfig.enabled false }}      
+            - mountPath: "/usr/local/ratify-certs/notary/truststore"                    
               name: notary-certs
-            {{- end }}
               readOnly: true
+            {{- end }}              
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
               name: cosign-certs
@@ -132,15 +130,7 @@ spec:
             items:
               - key: .dockerconfigjson
                 path: config.json
-        {{- end }}
-        {{- if .Values.akvCertConfig.enabled }}
-        - name: cert-from-akv
-          csi:
-            driver: secrets-store.csi.k8s.io
-            readOnly: true
-            volumeAttributes:
-              secretProviderClass: "{{ include "ratify.akv.secretProviderClassName" . }}"
-        {{- end }}
+        {{- end }}        
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration

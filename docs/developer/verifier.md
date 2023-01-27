@@ -257,7 +257,7 @@ policy:
 ### Section 6: Built in verifiers
 
 #### NotaryV2
-NotaryV2 is a built in verifier to Ratify. The verifier uses configured verificationCerts to verify the validity of signatures.
+NotaryV2 is a built in verifier to Ratify. Notary v2 currently supports X.509 based PKI and identities, and uses a trust store and trust policy to determine if a signed artifact is considered authentic.
 There are two ways to configure verification certificates:
 
 1. verificationCerts:  
@@ -265,11 +265,14 @@ notary verifier will load all certificates from path specified in this array
 
 2. verificationCertStores:  
 
-Cert store is a mapping from certificate group to certStores. A certificate store resource defines the list of certificate to fetch from the provider,
-here is an example of fetching azure keyvault certificates using workload identity. Note, version is optional, the latest version is fetched. It is recommended to pin to a version, if you create a new version of the certificate , please update the Cert store CR so the latest version. CertStore is only available in K8 scenario, customer can used nameStore filters.
-When verificationCertStores exist, verification certs is ignored.
+A [certificate store](../../config/samples/config_v1alpha1_certstore_akv.yaml) resource defines the list of certificate to fetch from a provider. It is recommended to pin to a specific certificate version, on certificate rotation, customer should update the custom resource to specify the latest version.
 
-A sample notary verifier with verificationCertStores defined
+ `CertificateStore` is only available in K8 runtime, VerificationCertStores supersedes verificationCerts.
+In the following example, the verifier's configuration references 4 `CertificateStore`, certStore-akv, certStore-akv1, certStore-akv2 and certStore-akv3.
+
+verificationCertStores property defines a collection of cert store objects. [Trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md) is a policy language that indicates which identities are trusted to produce artifacts. The following example shows a generic and permissive policy. Here, ca:certs is the only trust store specified and the certs suffix corresponds to the certs certification collection listed in the verificationCertStores section.   
+
+A sample notary verifier with verificationCertStores defined:
 ```json=
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: Verifier

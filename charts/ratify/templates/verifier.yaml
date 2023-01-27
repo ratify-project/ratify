@@ -6,8 +6,14 @@ spec:
   name: notaryv2
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
+    {{- if .Values.akvCertConfig.enabled }}
+    verificationCertStores:
+      certs:
+        - certstore-akv
+    {{- else }}
     verificationCerts:
-    - /usr/local/ratify-certs/notary/truststore
+      - /usr/local/ratify-certs/notary/truststore
+    {{- end }}    
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
