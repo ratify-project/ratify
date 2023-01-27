@@ -148,6 +148,10 @@ func (e mockExecutor) GetVerifyRequestTimeout() time.Duration {
 	return time.Hour
 }
 
+func (e mockExecutor) GetMutationRequestTimeout() time.Duration {
+	return time.Hour
+}
+
 func TestName(t *testing.T) {
 	v := &notaryV2Verifier{}
 	name := v.Name()
