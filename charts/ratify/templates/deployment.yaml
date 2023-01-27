@@ -48,6 +48,8 @@ spec:
             {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
             - --ca-cert-file=usr/local/tls/client-ca/ca.crt
             {{- end }}
+            - --cache-size={{ .Values.provider.cache.size }}
+            - --cache-ttl={{ .Values.provider.cache.ttl }}
           ports:
             - containerPort: 6001
           volumeMounts:
@@ -113,11 +115,11 @@ spec:
       volumes:
         - name: notary-certs
           secret:
-            secretName: {{ include "ratify.fullname" . }}-notary-certificate         
+            secretName: {{ include "ratify.fullname" . }}-notary-certificate
         {{- if .Values.cosign.enabled }}
         - name: cosign-certs
           secret:
-            secretName: {{ include "ratify.fullname" . }}-cosign-certificate         
+            secretName: {{ include "ratify.fullname" . }}-cosign-certificate
         {{- end }}
         {{- if $dockerAuthMode }}
         - name: dockerconfig

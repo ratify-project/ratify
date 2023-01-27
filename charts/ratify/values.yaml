@@ -95,6 +95,9 @@ provider:
     # timeout values must match gatekeeper webhook timeouts
     validationTimeoutSeconds: 5
     mutationTimeoutSeconds: 2
+  cache:
+    ttl: 10s  # cache ttl duration
+    size: 100 # number of items to be kept in cache. Set to 0 to disable cache.
 
 podAnnotations: {}
 podLabels: {}
@@ -102,7 +105,7 @@ enableRuntimeDefaultSeccompProfile: true
 
 rbac:
   create: true
-  
+
 upgradeCRDs:
   enabled: true
   extraRules: []
@@ -125,4 +128,3 @@ crds:
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
-

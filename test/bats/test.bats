@@ -63,7 +63,8 @@ SLEEP_TIME=1
     assert_failure
 
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
-    sleep 5
+    # wait for the httpserver cache to be invalidated
+    sleep 15
     run kubectl run license-checker2 --namespace default --image=wabbitnetworks.azurecr.io/test/license-checker-image:v1
     assert_success
 }
@@ -88,6 +89,8 @@ SLEEP_TIME=1
 
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom
     assert_success
+    # wait for the httpserver cache to be invalidated
+    sleep 15
     run kubectl run sbom2 --namespace default --image=wabbitnetworks.azurecr.io/test/sbom-image:signed
     assert_failure
 }
@@ -110,14 +113,16 @@ SLEEP_TIME=1
 
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
     sleep 5
-    # TODO 
+    # TODO
     # It's best to use an image with individual artifact types vs an all-in-one so any failures can be isolated.
     # Replace this image reference once we have a local private registry for Ratify.
     run kubectl run schemavalidator --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_success
 
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator_bad.yaml
-    sleep 5
+    assert_success
+    # wait for the httpserver cache to be invalidated
+    sleep 15
     run kubectl run schemavalidator2 --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_failure
 }
@@ -145,6 +150,8 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
     sleep 5
 
+    # wait for the httpserver cache to be invalidated
+    sleep 15
     run kubectl run all-in-one --namespace default --image=wabbitnetworks.azurecr.io/test/all-in-one-image:signed
     assert_success
 }
@@ -160,6 +167,8 @@ SLEEP_TIME=1
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
     assert_success
+    # wait for the httpserver cache to be invalidated
+    sleep 15
     run kubectl run crdtest --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
     assert_failure
 
@@ -167,6 +176,8 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
     assert_success
 
+    # wait for the httpserver cache to be invalidated
+    sleep 15
     run kubectl run crdtest --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
     assert_success
 }
