@@ -43,10 +43,3 @@ func SetLoggingLevel(level string, logger *logrus.Logger) {
 	logger.Infof("Setting log level to %s", logrusLevel)
 	logger.SetLevel(logrusLevel)
 }
-
-// logDebug only if log level is set to debug
-func LogDebug(format string, args ...interface{}) {
-	if logrus.IsLevelEnabled(logrus.DebugLevel) {
-		logrus.Debugf(format, args...)
-	}
-}

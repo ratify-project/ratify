@@ -1,0 +1,22 @@
+{{- if .Values.akvCertConfig.enabled }}
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: CertificateStore
+metadata:
+  name: certstore-akv
+spec:
+  provider: azurekeyvault
+  parameters:
+    vaultURI: {{ required "vaultName must be provided when AKV cert config is enabled" .Values.akvCertConfig.vaultURI  }}
+    certificates:  |
+      array:
+        - |
+          certificateName: {{ required "cert1Name must be provided when AKV cert config is enabled" .Values.akvCertConfig.cert1Name  }}
+          certificateVersion: {{ .Values.akvCertConfig.cert1Version  }}       
+        {{- if .Values.akvCertConfig.cert2Name }}
+        - |
+          certificateName: {{ .Values.akvCertConfig.cert2Name  }}
+          certificateVersion: {{ .Values.akvCertConfig.cert2Version  }}        
+        {{ end }}
+    tenantID: {{ required "tenantID must be provided when AKV cert config is enabled" .Values.akvCertConfig.tenantId  }}    
+    clientID: {{ required "clientID must be provided when use workload identity in akv" .Values.azureWorkloadIdentity.clientId  }}
+{{ end }}

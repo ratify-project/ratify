@@ -27,6 +27,9 @@ import (
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
+	"github.com/sirupsen/logrus"
+
+	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -55,7 +58,8 @@ type NotaryV2VerifierConfig struct {
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-
+	// VerificationCerts is map defining which keyvault certificates belong to which trust store
+	VerificationCertStores map[string][]string `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
@@ -66,7 +70,8 @@ type notaryV2Verifier struct {
 }
 
 type trustStore struct {
-	certPaths []string
+	certPaths  []string
+	certStores map[string][]string
 }
 
 type notaryv2VerifierFactory struct{}
@@ -79,14 +84,34 @@ func init() {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	return s.getCertificatesInternal(ctx, storeType, namedStore, controllers.GetCertificatesMap())
+}
+
+func (s trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
-	for _, path := range s.certPaths {
-		bundledCerts, err := utils.GetCertificatesFromPath(path)
-		if err != nil {
-			return nil, err
+
+	// certs configured for this namedStore overrides cert path
+	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
+		for _, certStore := range certGroup {
+			result := certificatesMap[certStore]
+			if len(result) == 0 {
+				logrus.Warnf("no certificate fetched for certStore %+v", certStore)
+			}
+			certs = append(certs, result...)
 		}
-		certs = append(certs, bundledCerts...)
+		if len(certs) == 0 {
+			return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
+		}
+	} else {
+		for _, path := range s.certPaths {
+			bundledCerts, err := utils.GetCertificatesFromPath(path)
+			if err != nil {
+				return nil, err
+			}
+			certs = append(certs, bundledCerts...)
+		}
 	}
+
 	return certs, nil
 }
 
@@ -168,7 +193,8 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 
 func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
 	store := &trustStore{
-		certPaths: conf.VerificationCerts,
+		certPaths:  conf.VerificationCerts,
+		certStores: conf.VerificationCertStores,
 	}
 
 	return notaryVerifier.New(&conf.TrustPolicyDoc, store, nil)
@@ -197,6 +223,5 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
-
 	return conf, nil
 }
