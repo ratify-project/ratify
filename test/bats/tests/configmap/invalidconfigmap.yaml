@@ -6,7 +6,7 @@ data:
   config.json: |
     {
       "executor": {
-        "requestTimeout": 6800
+        "verificationRequestTimeout": 6800
       },
       "store": {
         "version": "1.0.0",

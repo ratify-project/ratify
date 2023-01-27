@@ -67,3 +67,25 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Choose the Gatekeeper api version for Assign
+*/}}
+{{- define "ratify.assignGKVersion" -}}
+{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
+apiVersion: mutations.gatekeeper.sh/v1
+{{- else }}
+apiVersion: mutations.gatekeeper.sh/v1beta1
+{{- end }}
+{{- end }}
+
+{{/*
+Choose the Gatekeeper api version for External Data Provider
+*/}}
+{{- define "ratify.providerGKVersion" -}}
+{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
+apiVersion: externaldata.gatekeeper.sh/v1beta1
+{{- else }}
+apiVersion: externaldata.gatekeeper.sh/v1alpha1
+{{- end }}
+{{- end }}
