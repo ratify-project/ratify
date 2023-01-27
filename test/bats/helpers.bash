@@ -38,6 +38,17 @@ assert_cmd_verify_failure() {
   fi
 }
 
+assert_mutate_success() {
+  if [[ "$status" != 0 ]]; then
+    echo $result
+    return 1
+  fi
+  if [[ "$output" == "" ]]; then
+    echo "expected digest to be present in image"
+    return 1
+  fi
+}
+
 wait_for_process() {
   wait_time="$1"
   sleep_time="$2"
