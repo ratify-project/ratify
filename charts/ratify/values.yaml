@@ -61,6 +61,7 @@ azureManagedIdentity:
 akvCertConfig:
   enabled: false
   vaultName:
+  cert1Name:
   cert1Version:
   cert2Name:
   cert2Version:  
