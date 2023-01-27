@@ -238,6 +238,8 @@ SLEEP_TIME=1
     # parse the logs for the newly created ratify pod
     run bash -c "kubectl -n gatekeeper-system logs $latestpod | grep 'downloaded verifier plugin dynamic from .* to .*'"
     assert_success
+}
+
 @test "validate mutation tag to digest" {
     run kubectl apply -f ./library/default/template.yaml
     assert_success
