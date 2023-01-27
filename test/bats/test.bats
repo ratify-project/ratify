@@ -238,4 +238,18 @@ SLEEP_TIME=1
     # parse the logs for the newly created ratify pod
     run bash -c "kubectl -n gatekeeper-system logs $latestpod | grep 'downloaded verifier plugin dynamic from .* to .*'"
     assert_success
+@test "validate mutation tag to digest" {
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl run mutate-demo --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
+    assert_success
+    result=$(kubectl get pod mutate-demo --namespace default -o json | jq -r ".spec.containers[0].image" | grep @sha)
+    assert_mutate_success
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod mutate-demo --namespace default
 }

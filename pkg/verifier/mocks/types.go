@@ -38,3 +38,7 @@ func (s *TestExecutor) VerifySubject(ctx context.Context, verifyParameters execu
 func (s *TestExecutor) GetVerifyRequestTimeout() time.Duration {
 	return 3 * time.Second
 }
+
+func (s *TestExecutor) GetMutationRequestTimeout() time.Duration {
+	return 1 * time.Second
+}

@@ -62,7 +62,9 @@ akvCertConfig:
   enabled: false
   vaultName:
   cert1Name:
+  cert1Version:
   cert2Name:
+  cert2Version:  
   tenantId:
 
 oras:
@@ -89,6 +91,10 @@ provider:
     crt: # crt used by ratify (httpserver), please provide your own crt
     key: # key used by ratify (httpserver), please provide your own key
     cabundle: # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+  timeout:
+    # timeout values must match gatekeeper webhook timeouts
+    validationTimeoutSeconds: 5
+    mutationTimeoutSeconds: 2
 
 podAnnotations: {}
 podLabels: {}
