@@ -10,6 +10,7 @@ spec:
       array:
         - |
           certificateName: yourCertName
-          certificateVersion: yourCertVersion
+          #Optional, fetch latest version if empty 
+          certificateVersion: yourCertVersion 
     tenantID:
     clientID: 
