@@ -35,4 +35,7 @@ type Executor interface {
 
 	// GetVerifyRequestTimeout returns the timeout for the verification request configured with the executor
 	GetVerifyRequestTimeout() time.Duration
+
+	// GetMutationRequestTimeout returns the timeout for the mutation request configured with the executor
+	GetMutationRequestTimeout() time.Duration
 }

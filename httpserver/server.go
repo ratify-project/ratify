@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"time"
@@ -32,20 +33,22 @@ import (
 )
 
 const (
-	ServerRootURL     = "/ratify/gatekeeper/v1"
-	certName          = "tls.crt"
-	keyName           = "tls.key"
-	readHeaderTimeout = 5 * time.Second
+	ServerRootURL                    = "/ratify/gatekeeper/v1"
+	certName                         = "tls.crt"
+	keyName                          = "tls.key"
+	readHeaderTimeout                = 5 * time.Second
+	defaultMutationReferrerStoreName = "oras"
 )
 
 type (
 	Server struct {
-		Address       string
-		Router        *mux.Router
-		GetExecutor   config.GetExecutor
-		Context       context.Context
-		CertDirectory string
-		CaCertFile    string
+		Address           string
+		Router            *mux.Router
+		GetExecutor       config.GetExecutor
+		Context           context.Context
+		CertDirectory     string
+		CaCertFile        string
+		MutationStoreName string
 	}
 )
 
@@ -55,16 +58,16 @@ func NewServer(context context.Context, address string, getExecutor config.GetEx
 	}
 
 	server := &Server{
-		Address:       address,
-		GetExecutor:   getExecutor,
-		Router:        mux.NewRouter(),
-		Context:       context,
-		CertDirectory: certDir,
-		CaCertFile:    caCertFile,
+		Address:           address,
+		GetExecutor:       getExecutor,
+		Router:            mux.NewRouter(),
+		Context:           context,
+		CertDirectory:     certDir,
+		CaCertFile:        caCertFile,
+		MutationStoreName: defaultMutationReferrerStoreName,
 	}
-	server.registerHandlers()
 
-	return server, nil
+	return server, server.registerHandlers()
 }
 
 func (server *Server) Run() error {
@@ -125,8 +128,20 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 	})
 }
 
-func (server *Server) registerHandlers() {
-	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()))
+func (server *Server) registerHandlers() error {
+	verifyPath, err := url.JoinPath(ServerRootURL, "verify")
+	if err != nil {
+		return err
+	}
+	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
+
+	mutatePath, err := url.JoinPath(ServerRootURL, "mutate")
+	if err != nil {
+		return err
+	}
+	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
+
+	return nil
 }
 
 type ServerAddrNotFoundError struct{}
