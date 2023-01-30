@@ -147,6 +147,7 @@ KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
 e2e-create-local-registry:
 	if [ "$$(docker inspect -f '{{.State.Running}}' "registry" 2>/dev/null || true)" ]; then docker stop registry && docker rm registry; fi
+	docker pull ${LOCAL_REGISTRY_IMAGE}
 	docker run -d -p 5000:5000 --restart=always --name registry ${LOCAL_REGISTRY_IMAGE}
 
 	rm -rf .staging
