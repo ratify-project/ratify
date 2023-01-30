@@ -100,7 +100,7 @@ main() {
   deploy_gatekeeper
   deploy_ratify
 
-  bats -t ./test/bats/test.bats
+  bats -t ./test/bats/azure-test.bats
 
   save_logs
 }

@@ -231,7 +231,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	}
 
 	if store.config.CosignEnabled {
-		cosignReferences, err := getCosignReferences(subjectReference)
+		cosignReferences, err := getCosignReferences(subjectReference, store.config)
 		if err != nil {
 			return referrerstore.ListReferrersResult{}, err
 		}

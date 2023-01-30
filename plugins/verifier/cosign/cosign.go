@@ -18,8 +18,10 @@ package main
 import (
 	"context"
 	"crypto"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
@@ -50,9 +52,13 @@ type StoreConfig struct {
 	AuthProvider string `json:"auth-provider,omitempty"`
 }
 
+type StoreWrapperConfig struct {
+	StoreConfig StoreConfig `json:"store"`
+}
+
 type PluginInputConfig struct {
-	Config      PluginConfig `json:"config"`
-	StoreConfig StoreConfig  `json:"storeConfig"`
+	Config             PluginConfig       `json:"config"`
+	StoreWrapperConfig StoreWrapperConfig `json:"storeConfig"`
 }
 
 func main() {
@@ -97,9 +103,13 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 }
 
 func signatures(ctx context.Context, img string, keyRef string, config *PluginInputConfig) (checkedSignatures []oci.Signature, bundleVerified bool, err error) {
+	registryClientOptions := []remote.Option{
+		remote.WithAuthFromKeychain(authn.DefaultKeychain),
+	}
 	var options []name.Option
-	if config.StoreConfig.UseHttp {
+	if config.StoreWrapperConfig.StoreConfig.UseHttp {
 		options = append(options, name.Insecure)
+		registryClientOptions = append(registryClientOptions, remote.WithTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}))
 	}
 
 	ref, err := name.ParseReference(img, options...)
@@ -112,12 +122,8 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 		return nil, false, err
 	}
 
-	if config.StoreConfig.AuthProvider != "" {
-		return nil, false, fmt.Errorf("auth provider %s is not supported", config.StoreConfig.AuthProvider)
-	}
-
-	registryClientOptions := []remote.Option{
-		remote.WithAuthFromKeychain(authn.DefaultKeychain),
+	if config.StoreWrapperConfig.StoreConfig.AuthProvider != "" {
+		return nil, false, fmt.Errorf("auth provider %s is not supported", config.StoreWrapperConfig.StoreConfig.AuthProvider)
 	}
 
 	registryClientOptionsWrapper := []ociremote.Option{

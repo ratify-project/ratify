@@ -16,6 +16,7 @@ limitations under the License.
 package oras
 
 import (
+	"crypto/tls"
 	"errors"
 	"net/http"
 	"strings"
@@ -33,9 +34,15 @@ import (
 const CosignArtifactType = "org.sigstore.cosign.v1"
 const CosignSignatureTagSuffix = ".sig"
 
-func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.ReferenceDescriptor, error) {
+func getCosignReferences(subjectReference common.Reference, config *OrasStoreConf) (*[]ocispecs.ReferenceDescriptor, error) {
 	var references []ocispecs.ReferenceDescriptor
-	ref, err := name.ParseReference(subjectReference.Original)
+	var opts []name.Option
+	var remoteOptions []remote.Option
+	if isInsecureRegistry(subjectReference.Original, config) {
+		opts = append(opts, name.Insecure)
+		remoteOptions = append(remoteOptions, remote.WithTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}))
+	}
+	ref, err := name.ParseReference(subjectReference.Original, opts...)
 	if err != nil {
 		return &references, err
 	}
@@ -46,7 +53,7 @@ func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.Referen
 
 	signatureTag := attachedImageTag(ref.Context(), hash, CosignSignatureTagSuffix)
 
-	desc, err := remote.Get(signatureTag)
+	desc, err := remote.Get(signatureTag, remoteOptions...)
 	var terr *transport.Error
 	if err != nil {
 		if errors.As(err, &terr) && terr.StatusCode == http.StatusNotFound {
