@@ -40,6 +40,7 @@ func getCosignReferences(subjectReference common.Reference, config *OrasStoreCon
 	var remoteOptions []remote.Option
 	if isInsecureRegistry(subjectReference.Original, config) {
 		opts = append(opts, name.Insecure)
+		// #nosec G402
 		remoteOptions = append(remoteOptions, remote.WithTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}))
 	}
 	ref, err := name.ParseReference(subjectReference.Original, opts...)

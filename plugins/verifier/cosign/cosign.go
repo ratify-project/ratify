@@ -109,6 +109,7 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 	var options []name.Option
 	if config.StoreWrapperConfig.StoreConfig.UseHttp {
 		options = append(options, name.Insecure)
+		// #nosec G402
 		registryClientOptions = append(registryClientOptions, remote.WithTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}))
 	}
 

@@ -209,7 +209,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl run mutate-demo --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
+    run kubectl run mutate-demo --namespace default --image=registry:5000/notation:signed
     assert_success
     result=$(kubectl get pod mutate-demo --namespace default -o json | jq -r ".spec.containers[0].image" | grep @sha)
     assert_mutate_success
