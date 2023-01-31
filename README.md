@@ -59,7 +59,7 @@ export RATIFY_NAMESPACE=gatekeeper-system
 export CERT_DIR=./tls/certs # the directory will be created by generate-certs
 
 curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/scripts/generate-tls-certs.sh 
-generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
+bash generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
 
 helm repo add ratify https://deislabs.github.io/ratify
 helm install ratify \
