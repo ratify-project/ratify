@@ -19,6 +19,7 @@ import (
 	"context"
 	"flag"
 	"os"
+	"time"
 
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
@@ -61,7 +62,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress string, configFilePath string, certDirectory string, caCertFile string) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -71,7 +72,6 @@ func StartServer(httpServerAddress string, configFilePath string, certDirectory 
 	}
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
-
 	if err != nil {
 		logrus.Warnf("error initializing from config %v", err)
 		os.Exit(1)
@@ -110,7 +110,7 @@ func StartServer(httpServerAddress string, configFilePath string, certDirectory 
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile)
+	}, certDirectory, caCertFile, cacheSize, cacheTTL)
 
 	if err != nil {
 		os.Exit(1)
