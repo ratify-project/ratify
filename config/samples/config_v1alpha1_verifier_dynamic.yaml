@@ -6,4 +6,4 @@ spec:
   name: dynamic
   artifactTypes: application/vnd.ratify.spdx.v0
   source:
-    artifact: index.docker.io/acanthamoeba/sample-plugin:v1
+    artifact: wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1
