@@ -33,9 +33,11 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 
 Try out ratify in Kubernetes through Gatekeeper as the admission controller.
 
-Prerequisite: Kubernetes v1.20 or higher
+Prerequisites:
+- Kubernetes v1.20 or higher
+- OPA Gatekeeper v3.10 or higher
 
-- Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
+Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
 
 ```bash
 helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -44,7 +46,7 @@ helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=5
+    --set validatingWebhookTimeoutSeconds=5 \
     --set mutatingWebhookTimeoutSeconds=2
 ```
 
@@ -52,7 +54,7 @@ NOTE: `validatingWebhookTimeoutSeconds` and `mutationWebhookTimeoutSeconds` incr
 
 - Deploy ratify on gatekeeper in the default namespace.
 
-Note: if the crt/key/cabundle are not set under `provider.tls` in values.yaml, helm would generate a CA certificate and server key/certificate for you.
+Note: if the crt/key/cabundle are NOT set under `provider.tls` in values.yaml, helm would generate a CA certificate and server key/certificate for you.
 
 ```bash
 helm repo add ratify https://deislabs.github.io/ratify
