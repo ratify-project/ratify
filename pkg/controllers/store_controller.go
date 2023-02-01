@@ -130,6 +130,9 @@ func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig
 		}
 	}
 	storeConfig[types.Name] = storeSpec.Name
+	if storeSpec.Source != nil {
+		storeConfig[types.Source] = storeSpec.Source
+	}
 
 	return storeConfig, nil
 }

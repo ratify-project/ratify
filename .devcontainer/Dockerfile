@@ -31,6 +31,10 @@ RUN curl -Lo oras.tar.gz https://github.com/oras-project/oras/releases/download/
   && mv oras-install/oras /usr/local/bin/ \
   && rm -rf ./oras-install oras.tar.gz
 
+ARG KUBEBUILDER_VERSION="3.8.0"
+RUN curl -L https://github.com/kubernetes-sigs/kubebuilder/releases/download/v${KUBEBUILDER_VERSION}/kubebuilder_linux_amd64 -o /usr/local/bin/kubebuilder \
+  && chmod +x /usr/local/bin/kubebuilder
+
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
   && apt-get -y install --no-install-recommends protobuf-compiler libprotobuf-dev
