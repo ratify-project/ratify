@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.0.0-beta.2
+  tag: v1.0.0-rc.1
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -60,7 +60,7 @@ azureManagedIdentity:
 
 akvCertConfig:
   enabled: false
-  vaultName:
+  vaultURI:
   cert1Name:
   cert1Version:
   cert2Name:
@@ -89,9 +89,9 @@ oras:
 
 provider:
   tls:
-    crt: # crt used by ratify (httpserver), please provide your own crt
-    key: # key used by ratify (httpserver), please provide your own key
-    cabundle: # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+    crt: "" # crt used by ratify (httpserver), please provide your own crt
+    key: "" # key used by ratify (httpserver), please provide your own key
+    cabundle: "" # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
   timeout:
     # timeout values must match gatekeeper webhook timeouts
     validationTimeoutSeconds: 5

@@ -34,6 +34,9 @@ type VerifierSpec struct {
 	// # Optional. URL/file path
 	Address string `json:"address,omitempty"`
 
+	// OCI Artifact source to download the plugin from, optional
+	Source *PluginSource `json:"source,omitempty"`
+
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this verifier
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
