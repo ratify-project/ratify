@@ -28,7 +28,7 @@ GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
 # Local Registry Setup
-LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.0-rc1
+LOCAL_REGISTRY_IMAGE ?= ghcr.io/oras-project/registry:v1.0.0-rc.4
 LOCAL_UNSIGNED_IMAGE = hello-world:latest
 LOCAL_TEST_REGISTRY = localhost:5000
 
@@ -142,9 +142,6 @@ e2e-dependencies:
 	tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
 	mv oras-install/oras ${GITHUB_WORKSPACE}/bin
 	rm -rf oras_0.16.0_*.tar.gz oras-install/
-	# Download and install podman
-	sudo apt-get update
-	sudo apt-get install podman
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
@@ -156,9 +153,8 @@ e2e-create-local-registry:
 	rm -rf .staging
 	mkdir .staging
 	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
-	podman build -t ${LOCAL_TEST_REGISTRY}/all:v0 .staging
-	sleep 2
-	podman push --tls-verify=false ${LOCAL_TEST_REGISTRY}/all:v0
+	docker build -t ${LOCAL_TEST_REGISTRY}/all:v0 .staging
+	docker push ${LOCAL_TEST_REGISTRY}/all:v0
 
 e2e-bootstrap: e2e-dependencies e2e-create-local-registry
 	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
