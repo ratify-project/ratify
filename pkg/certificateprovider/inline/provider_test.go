@@ -30,8 +30,8 @@ func TestGetCertificatesContent(t *testing.T) {
 		expectedCerts int
 	}{
 		{
-			desc: "value not provided",
-			parameters: map[string]string{},
+			desc:        "value not provided",
+			parameters:  map[string]string{},
 			expectedErr: true,
 		},
 		{
