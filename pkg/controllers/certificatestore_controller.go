@@ -26,6 +26,7 @@ import (
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -93,6 +94,13 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		certificates, err := byteToCerts(contents)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("Failed to parse x509 certificate for certificate store %v, error: %w", resource, err)
+		}
+		certificatesMap[resource] = certificates
+		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
+	case "inline":
+		certificates, err := inline.GetCertificates(ctx, attributes)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("Error fetching certificate in store %v with inline provider, error: %w", resource, err)
 		}
 		certificatesMap[resource] = certificates
 		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
