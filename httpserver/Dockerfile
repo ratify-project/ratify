@@ -35,7 +35,7 @@ ARG RATIFY_FOLDER=$HOME/.ratify/
 WORKDIR /
 
 COPY --from=builder /app/out/ratify /app/
-COPY --from=builder /app/out/plugins ${RATIFY_FOLDER}/plugins
+COPY --from=builder --chown=65532:65532 /app/out/plugins ${RATIFY_FOLDER}/plugins
 COPY --from=builder /app/config/config.json ${RATIFY_FOLDER}
 
 ENV RATIFY_CONFIG=${RATIFY_FOLDER}

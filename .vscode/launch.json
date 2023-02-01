@@ -10,6 +10,9 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/ratify",
+      "env": {
+        "RATIFY_DYNAMIC_PLUGINS": "1"
+      },
       "args": [
         "verify",
         "-s",
@@ -22,6 +25,9 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/ratify",
+      "env": {
+        "RATIFY_DYNAMIC_PLUGINS": "1"
+      },
       "args": [
         "serve",
         "--http",
@@ -36,7 +42,8 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
-        "RATIFY_LOG_LEVEL": "debug"
+        "RATIFY_LOG_LEVEL": "debug",
+        "RATIFY_DYNAMIC_PLUGINS": "1"
       },
       "args": [
         "serve",
