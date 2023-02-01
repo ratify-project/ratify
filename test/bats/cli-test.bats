@@ -47,11 +47,11 @@ load helpers
 
 @test "dynamic plugin verifier test" {
     # dynamic plugins disabled by default
-    run bash -c "bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed 2>&1 >/dev/null | grep 'dynamic plugins are currently disabled'"
+    run bash -c "bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s  $LOCAL_TEST_REGISTRY/all:v0 2>&1 >/dev/null | grep 'dynamic plugins are currently disabled'"
     assert_success
 
     # dynamic plugins enabled with feature flag
-    run bash -c "RATIFY_DYNAMIC_PLUGINS=1 bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed 2>&1 >/dev/null | grep 'downloaded verifier plugin dynamic from .* to .*'"
+    run bash -c "RATIFY_DYNAMIC_PLUGINS=1 bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s  $LOCAL_TEST_REGISTRY/all:v0 2>&1 >/dev/null | grep 'downloaded verifier plugin dynamic from .* to .*'"
     assert_success
 
     # ensure the plugin is downloaded and marked executable
@@ -61,11 +61,11 @@ load helpers
 
 @test "dynamic plugin store test" {
     # dynamic plugins disabled by default
-    run bash -c "bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed 2>&1 >/dev/null | grep 'dynamic plugins are currently disabled'"
+    run bash -c "bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s  $LOCAL_TEST_REGISTRY/all:v0 2>&1 >/dev/null | grep 'dynamic plugins are currently disabled'"
     assert_success
 
     # dynamic plugins enabled with feature flag
-    run bash -c "RATIFY_DYNAMIC_PLUGINS=1 bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s wabbitnetworks.azurecr.io/test/all-in-one-image:signed 2>&1 >/dev/null | grep 'downloaded store plugin dynamicstore from .* to .*'"
+    run bash -c "RATIFY_DYNAMIC_PLUGINS=1 bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s  $LOCAL_TEST_REGISTRY/all:v0 2>&1 >/dev/null | grep 'downloaded store plugin dynamicstore from .* to .*'"
     assert_success
 
     # ensure the plugin is downloaded and marked executable

@@ -205,3 +205,58 @@ SLEEP_TIME=1
 
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=gatekeeper-system -f currentConfig.yaml"
 }
+
+@test "dynamic plugins disabled test" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
+    }
+
+    start=$(date --iso-8601=seconds)
+    latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_dynamic.yaml
+    sleep 5
+
+    run bash -c "kubectl -n gatekeeper-system logs $latestpod --since-time=$start | grep 'dynamic plugins are currently disabled'"
+    assert_success
+}
+
+@test "dynamic plugins enabled test" {
+    # only run this test against a live cluster 
+
+    # ensure that the chart deployment is reset to a clean state for other tests
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
+        pod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n gatekeeper-system delete $pod --force --grace-period=0'
+    }
+
+    # enable dynamic plugins
+    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
+    sleep 5
+    latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_dynamic.yaml
+    sleep 5
+
+    # parse the logs for the newly created ratify pod
+    run bash -c "kubectl -n gatekeeper-system logs $latestpod | grep 'downloaded verifier plugin dynamic from .* to .*'"
+    assert_success
+}
+
+@test "validate mutation tag to digest" {
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl run mutate-demo --namespace default --image=wabbitnetworks.azurecr.io/test/notary-image:signed
+    assert_success
+    result=$(kubectl get pod mutate-demo --namespace default -o json | jq -r ".spec.containers[0].image" | grep @sha)
+    assert_mutate_success
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod mutate-demo --namespace default
+}
