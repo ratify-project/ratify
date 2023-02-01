@@ -11,9 +11,7 @@ data:
       },
       "store": {
         "version": "1.0.0",
-        {{- if .Values.oras.useHttp }}
-        "useHttp": true,
-        {{- end }}
+        "useHttp": {{ .Values.oras.useHttp }},
         "plugins": [
             {
                 "name": "oras"

@@ -207,9 +207,11 @@ e2e-cosign-setup:
 	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${LOCAL_TEST_REGISTRY}/cosign:unsigned
 	docker push ${LOCAL_TEST_REGISTRY}/cosign:unsigned
 
-	export COSIGN_PASSWORD="test" && cd .staging/cosign && ./cosign-linux-amd64 generate-key-pair
-	export COSIGN_PASSWORD="test" && .staging/cosign/cosign-linux-amd64 sign --key .staging/cosign/cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/cosign:signed | jq -r .[0].RepoDigests[0]`
-	export COSIGN_PASSWORD="test" && .staging/cosign/cosign-linux-amd64 sign --key .staging/cosign/cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+	export COSIGN_PASSWORD="test" && \
+	cd .staging/cosign && \
+	./cosign-linux-amd64 generate-key-pair && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/cosign:signed | jq -r .[0].RepoDigests[0]` && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
 e2e-licensechecker-setup:
 	rm -rf .staging/licensechecker
