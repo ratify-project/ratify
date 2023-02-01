@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/referrerstore"
 )
 
 // VerifyParameters describes the subject verification parameters
@@ -32,6 +33,9 @@ type VerifyParameters struct {
 type Executor interface {
 	// VerifySubject returns the result of verifying a subject
 	VerifySubject(ctx context.Context, verifyParameters VerifyParameters) (types.VerifyResult, error)
+
+	// GetReferrerStores returns the list of referrer stores configured in executor.
+	GetReferrerStores() []referrerstore.ReferrerStore
 
 	// GetVerifyRequestTimeout returns the timeout for the verification request configured with the executor
 	GetVerifyRequestTimeout() time.Duration

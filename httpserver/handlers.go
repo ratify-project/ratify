@@ -154,7 +154,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 
 			if parsedReference.Digest == "" {
 				var selectedStore referrerstore.ReferrerStore
-				for _, store := range server.GetExecutor().ReferrerStores {
+				for _, store := range server.GetExecutor().GetReferrerStores() {
 					if store.Name() == server.MutationStoreName {
 						selectedStore = store
 						break

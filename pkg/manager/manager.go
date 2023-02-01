@@ -45,6 +45,7 @@ import (
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/controllers"
+	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	vr "github.com/deislabs/ratify/pkg/verifier"
@@ -78,7 +79,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	}
 
 	// initialize server
-	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
+	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() e.Executor {
 		var activeVerifiers []vr.ReferenceVerifier
 		var activeStores []referrerstore.ReferrerStore
 
@@ -103,13 +104,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		}
 
 		// return executor with latest configuration
-		executor := ef.Executor{
-			Verifiers:      activeVerifiers,
-			ReferrerStores: activeStores,
-			PolicyEnforcer: policy,
-			Config:         &cf.ExecutorConfig,
-		}
-		return &executor
+		return ef.NewExecutor(activeVerifiers, activeStores, policy, &cf.ExecutorConfig)
 	}, certDirectory, caCertFile, cacheSize, cacheTTL)
 
 	if err != nil {

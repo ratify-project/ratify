@@ -15,11 +15,20 @@ limitations under the License.
 
 package config
 
+// CacheConfig represents the configuration of the executor cache.
+type CacheConfig struct {
+	// TTL is default to 10 seconds.
+	TTL int `json:"ttl"`
+	// MaxSize is the maximum entries allowed in the cache. The default maxSize is 100.
+	MaxSize int `json:"maxSize"`
+}
+
 // ExecutorConfig represents the configuration for the executor
 type ExecutorConfig struct {
 	// Gatekeeper default verification webhook timeout is 3 seconds. 100ms network buffer added
 	VerificationRequestTimeout *int `json:"verificationRequestTimeout"`
 	// Gatekeeper default mutation webhook timeout is 1 seconds. 50ms network buffer added
 	MutationRequestTimeout *int `json:"mutationRequestTimeout"`
-	// TODO Add cache config
+	// CacheConfig is the configuration of the cache.
+	CacheConfig CacheConfig `json:"cacheConfig"`
 }

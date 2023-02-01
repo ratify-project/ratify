@@ -20,15 +20,40 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/verifiercache"
+	"github.com/deislabs/ratify/pkg/verifiercache/memory"
+)
+
+const (
+	defaultCacheMaxSize = 100
+	defaultCacheTTL     = 10 * time.Second
 )
 
 // ExecutorWithCache wraps the executor with a verifier cache
 type ExecutorWithCache struct {
-	base                   executor.Executor
+	executor.Executor
 	verifierCache          verifiercache.VerifierCache
 	verfierCacheItemExpiry time.Duration
+}
+
+func newExecutorWithCache(executor executor.Executor, config config.CacheConfig) *ExecutorWithCache {
+	maxSize := defaultCacheMaxSize
+	if config.MaxSize != 0 {
+		maxSize = config.MaxSize
+	}
+	ttl := defaultCacheTTL
+	if config.TTL != 0 {
+		ttl = time.Duration(config.TTL) * time.Second
+	}
+
+	cache := memory.NewMemoryCache(maxSize)
+	return &ExecutorWithCache{
+		Executor:               executor,
+		verifierCache:          cache,
+		verfierCacheItemExpiry: ttl,
+	}
 }
 
 func (executor ExecutorWithCache) VerifySubject(ctx context.Context, verifyParameters executor.VerifyParameters) (types.VerifyResult, error) {
@@ -39,7 +64,7 @@ func (executor ExecutorWithCache) VerifySubject(ctx context.Context, verifyParam
 		return cachedResult, nil
 	}
 
-	result, err := executor.base.VerifySubject(ctx, verifyParameters)
+	result, err := executor.Executor.VerifySubject(ctx, verifyParameters)
 
 	if err == nil {
 		executor.verifierCache.SetVerifyResult(ctx, verifyParameters.Subject, result, executor.verfierCacheItemExpiry)

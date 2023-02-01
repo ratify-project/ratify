@@ -19,17 +19,18 @@ import (
 	"os"
 	"time"
 
+	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
-type GetExecutor func() *ef.Executor
+type GetExecutor func() e.Executor
 
 var (
 	configHash string
-	executor   ef.Executor
+	executor   e.Executor
 )
 
 // Create a executor from configurationFile and setup config file watcher
@@ -38,7 +39,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	cf, err := Load(configFilePath)
 
 	if err != nil {
-		return func() *ef.Executor { return &ef.Executor{} }, err
+		return func() e.Executor { return &ef.Executor{} }, err
 	}
 
 	configHash = cf.fileHash
@@ -46,25 +47,20 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
 	if err != nil {
-		return func() *ef.Executor { return &ef.Executor{} }, err
+		return func() e.Executor { return &ef.Executor{} }, err
 	}
 
-	executor = ef.Executor{
-		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
-		Config:         &cf.ExecutorConfig,
-	}
+	executor = ef.NewExecutor(verifiers, stores, policyEnforcer, &cf.ExecutorConfig)
 
 	err = watchForConfigurationChange(configFilePath)
 
 	if err != nil {
-		return func() *ef.Executor { return &ef.Executor{} }, err
+		return func() e.Executor { return &ef.Executor{} }, err
 	}
 
 	logrus.Info("configuration successfully loaded.")
 
-	return func() *ef.Executor { return &executor }, nil
+	return func() e.Executor { return executor }, nil
 }
 
 func reloadExecutor(configFilePath string) {
@@ -78,12 +74,7 @@ func reloadExecutor(configFilePath string) {
 	if configHash != cf.fileHash {
 		stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
-		newExecutor := ef.Executor{
-			Verifiers:      verifiers,
-			ReferrerStores: stores,
-			PolicyEnforcer: policyEnforcer,
-			Config:         &cf.ExecutorConfig,
-		}
+		newExecutor := ef.NewExecutor(verifiers, stores, policyEnforcer, &cf.ExecutorConfig)
 
 		if err != nil {
 			logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)

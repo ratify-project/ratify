@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	e "github.com/deislabs/ratify/pkg/executor"
 	exconfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -81,7 +82,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func() e.Executor {
 			return ex
 		}
 
@@ -153,7 +154,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func() e.Executor {
 			return ex
 		}
 
@@ -226,7 +227,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func() e.Executor {
 			return ex
 		}
 
@@ -307,7 +308,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func() e.Executor {
 			return ex
 		}
 

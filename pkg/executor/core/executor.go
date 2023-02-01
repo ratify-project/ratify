@@ -30,6 +30,7 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/deislabs/ratify/pkg/verifier"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
@@ -49,6 +50,18 @@ type Executor struct {
 	Config         *config.ExecutorConfig
 }
 
+// NewExecutor returns a new Executor with the given configuration.
+func NewExecutor(verifiers []verifier.ReferenceVerifier, stores []referrerstore.ReferrerStore, policyEnforcer policyprovider.PolicyProvider, config *config.ExecutorConfig) e.Executor {
+	baseExecutor := Executor{
+		Verifiers:      verifiers,
+		ReferrerStores: stores,
+		PolicyEnforcer: policyEnforcer,
+		Config:         config,
+	}
+
+	return newExecutorWithCache(baseExecutor, config.CacheConfig)
+}
+
 // TODO Logging within executor
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
@@ -59,6 +72,10 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 	}
 
 	return result, nil
+}
+
+func (executor Executor) GetReferrerStores() []referrerstore.ReferrerStore {
+	return executor.ReferrerStores
 }
 
 func (executor Executor) GetVerifyRequestTimeout() time.Duration {

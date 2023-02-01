@@ -27,6 +27,13 @@ type MemoryCache struct {
 	syncMap *SyncMapWithExpiration
 }
 
+func NewMemoryCache(maxEntries int) *MemoryCache {
+	syncMap := NewSyncMapWithExpiration(maxEntries)
+	return &MemoryCache{
+		syncMap: syncMap,
+	}
+}
+
 func (memoryCache MemoryCache) GetVerifyResult(ctx context.Context, subjectRefString string) (et.VerifyResult, bool) {
 	item, ok := memoryCache.syncMap.GetEntry(subjectRefString)
 	if !ok {
