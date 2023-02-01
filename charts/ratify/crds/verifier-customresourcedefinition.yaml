@@ -42,6 +42,18 @@ spec:
                 description: Parameters of this verifier
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              source:
+                description: OCI Artifact source to download the plugin from, optional
+                properties:
+                  artifact:
+                    description: OCI Artifact source to download the plugin from
+                    type: string
+                  authProvider:
+                    description: AuthProvider to use to authenticate to the OCI Artifact
+                      source, optional
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                type: object
             type: object
           status:
             description: VerifierStatus defines the observed state of Verifier
