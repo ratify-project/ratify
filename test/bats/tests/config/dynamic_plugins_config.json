@@ -4,7 +4,8 @@
         "plugins": [
             {
                 "name": "oras",
-                "cosignEnabled": true
+                "cosignEnabled": true,
+                "useHttp": true
             },
             {
                 "name": "dynamicstore",
@@ -35,7 +36,7 @@
                 "name": "notaryv2",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "~/.ratify/ratify-certs/notary/wabbit-networks.io.crt"
+                    "~/.config/notation/localkeys/ratify-bats-test.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
