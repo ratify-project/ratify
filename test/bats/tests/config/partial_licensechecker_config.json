@@ -3,7 +3,8 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "oras"
+                "name": "oras",
+                "useHttp": true
             }
         ]
     },

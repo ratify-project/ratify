@@ -5,6 +5,9 @@ metadata:
 spec:
   name: oras
   parameters:
+    {{- if .Values.oras.useHttp }}
+    useHttp: true
+    {{- end }}
     {{- if .Values.cosign.enabled }}
     cosignEnabled: true
     {{- end }}
