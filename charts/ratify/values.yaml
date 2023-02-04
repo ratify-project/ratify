@@ -68,6 +68,7 @@ akvCertConfig:
   tenantId:
 
 oras:
+  useHttp: false
   authProviders:
     azureWorkloadIdentityEnabled: false
     azureManagedIdentityEnabled: false

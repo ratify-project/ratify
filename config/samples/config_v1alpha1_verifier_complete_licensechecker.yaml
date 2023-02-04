@@ -14,3 +14,6 @@ spec:
     - Zlib
     - MPL-2.0 AND MIT
     - ISC
+    - Apache-2.0
+    - MIT AND BSD-2-Clause AND GPL-2.0-or-later
+    - NONE
