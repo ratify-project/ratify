@@ -29,13 +29,13 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl run cosign-demo --namespace default --image=registry:5000/cosign:signed
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed
     assert_success
-    run kubectl run cosign-demo2 --namespace default --image=registry:5000/cosign:unsigned
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
     assert_failure
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod cosign-demo --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod cosign-demo-key cosign-demo-unsigned --namespace default
 }
 
 @test "licensechecker test" {

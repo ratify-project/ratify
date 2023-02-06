@@ -15,6 +15,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.25.4
 GATEKEEPER_VERSION ?= 3.11.0
+COSIGN_VERSION ?= 1.13.1
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -66,7 +67,7 @@ ratify-config:
 .PHONY: test
 test:
 	go test -v -coverprofile=coverage.txt -covermode=atomic ./...
-	
+
 .PHONY: clean
 clean:
 	go clean
@@ -101,10 +102,8 @@ deploy-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm install gatekeeper/gatekeeper  \
 		--version ${GATEKEEPER_VERSION} \
-	    --name-template=gatekeeper \
-	    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
-	    --set enableExternalData=true \
-	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
+		--name-template=gatekeeper \
+		--namespace ${GATEKEEPER_NAMESPACE} --create-namespace
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
@@ -190,12 +189,12 @@ e2e-notaryv2-setup:
 	rm -rf ~/.config/notation
 	.staging/notaryv2/notation/bin/notation cert generate-test --default "ratify-bats-test"
 	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
-	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`  
+	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
 	mkdir -p .staging/cosign
-	wget https://github.com/sigstore/cosign/releases/download/v1.13.1/cosign-linux-amd64 
+	curl -sSLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
 	mv cosign-linux-amd64 .staging/cosign
 	chmod +x .staging/cosign/cosign-linux-amd64
 
@@ -269,10 +268,10 @@ e2e-sbom-setup:
 		--plain-http \
 		 ${LOCAL_TEST_REGISTRY}/all:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
-	
+
 	# Push Signature to sbom
 	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"`
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
@@ -311,7 +310,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
 e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
-	
+
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
