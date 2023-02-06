@@ -27,6 +27,11 @@ ENVTEST_K8S_VERSION = 1.24.2
 GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
+# Local Registry Setup
+LOCAL_REGISTRY_IMAGE ?= ghcr.io/oras-project/registry:v1.0.0-rc.4
+LOCAL_UNSIGNED_IMAGE = hello-world:latest
+LOCAL_TEST_REGISTRY = localhost:5000
+
 all: build test
 
 .PHONY: build
@@ -60,7 +65,7 @@ ratify-config:
 
 .PHONY: test
 test:
-	go test -v ./...
+	go test -v -coverprofile=coverage.txt -covermode=atomic ./...
 	
 .PHONY: clean
 clean:
@@ -110,8 +115,9 @@ test-e2e:
 	bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-test-e2e-cli:
-	RATIFY_DIR=${INSTALL_DIR} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+
+test-e2e-cli:e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+	RATIFY_DIR=${INSTALL_DIR} LOCAL_TEST_REGISTRY=${LOCAL_TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 
 .PHONY: generate-certs
 generate-certs:
@@ -130,14 +136,35 @@ e2e-dependencies:
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
 	# Download and install jq
 	curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 --output ${GITHUB_WORKSPACE}/bin/jq && chmod +x ${GITHUB_WORKSPACE}/bin/jq
+	# Install ORAS
+	curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
+	mkdir -p oras-install/
+	tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
+	mv oras-install/oras ${GITHUB_WORKSPACE}/bin
+	rm -rf oras_0.16.0_*.tar.gz oras-install/
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
-e2e-bootstrap: e2e-dependencies
+e2e-create-local-registry:
+	if [ "$$(docker inspect -f '{{.State.Running}}' "registry" 2>/dev/null || true)" ]; then docker stop registry && docker rm registry; fi
+	docker pull ${LOCAL_REGISTRY_IMAGE}
+	docker run -d -p 5000:5000 --restart=always --name registry ${LOCAL_REGISTRY_IMAGE}
+
+	rm -rf .staging
+	mkdir .staging
+	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/all:v0 .staging
+	docker push ${LOCAL_TEST_REGISTRY}/all:v0
+
+e2e-bootstrap: e2e-dependencies e2e-create-local-registry
+	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
+
 	# Check for existing kind cluster
 	if [ $$(${GITHUB_WORKSPACE}/bin/kind get clusters) ]; then ${GITHUB_WORKSPACE}/bin/kind delete cluster; fi
 	# Create a new kind cluster
-	TERM=dumb ${GITHUB_WORKSPACE}/bin/kind create cluster --image $(KIND_NODE_VERSION) --wait 5m
+	TERM=dumb ${GITHUB_WORKSPACE}/bin/kind create cluster --image $(KIND_NODE_VERSION) --wait 5m --config=kind_config.yaml
+	if [ "$$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "registry")" = 'null' ]; then docker network connect "kind" "registry"; fi
+	rm kind_config.yaml
 
 e2e-helm-install:
 	rm -rf .staging/helm
@@ -145,6 +172,131 @@ e2e-helm-install:
 	curl https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz --output .staging/helm/helmbin.tar.gz
 	cd .staging/helm && tar -xvf helmbin.tar.gz
 	./.staging/helm/linux-amd64/helm version --client
+
+e2e-notaryv2-setup:
+	rm -rf .staging/notaryv2
+	mkdir -p .staging/notaryv2
+	cd .staging/notaryv2 && git clone https://github.com/notaryproject/notation
+	cd .staging/notaryv2/notation && make build
+
+	echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/notation:signed .staging/notaryv2
+	docker push ${LOCAL_TEST_REGISTRY}/notation:signed
+
+	docker pull ${LOCAL_UNSIGNED_IMAGE}
+	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${LOCAL_TEST_REGISTRY}/notation:unsigned
+	docker push ${LOCAL_TEST_REGISTRY}/notation:unsigned
+
+	rm -rf ~/.config/notation
+	.staging/notaryv2/notation/bin/notation cert generate-test --default "ratify-bats-test"
+	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`  
+
+e2e-cosign-setup:
+	rm -rf .staging/cosign
+	mkdir -p .staging/cosign
+	wget https://github.com/sigstore/cosign/releases/download/v1.13.1/cosign-linux-amd64 
+	mv cosign-linux-amd64 .staging/cosign
+	chmod +x .staging/cosign/cosign-linux-amd64
+
+	echo 'FROM alpine\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/cosign:signed .staging/cosign
+	docker push ${LOCAL_TEST_REGISTRY}/cosign:signed
+
+	docker pull ${LOCAL_UNSIGNED_IMAGE}
+	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${LOCAL_TEST_REGISTRY}/cosign:unsigned
+	docker push ${LOCAL_TEST_REGISTRY}/cosign:unsigned
+
+	export COSIGN_PASSWORD="test" && \
+	cd .staging/cosign && \
+	./cosign-linux-amd64 generate-key-pair && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/cosign:signed | jq -r .[0].RepoDigests[0]` && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+
+e2e-licensechecker-setup:
+	rm -rf .staging/licensechecker
+	mkdir -p .staging/licensechecker
+
+	# Install Syft
+	curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .staging/licensechecker
+
+	# Build/Push Image
+	echo 'FROM alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
+	docker push ${LOCAL_TEST_REGISTRY}/licensechecker:v0
+
+	# Create/Attach SPDX
+	.staging/licensechecker/syft -o spdx --file .staging/licensechecker/sbom.spdx ${LOCAL_TEST_REGISTRY}/licensechecker:v0
+	oras attach ${LOCAL_TEST_REGISTRY}/licensechecker:v0 \
+  		--artifact-type application/vnd.ratify.spdx.v0 \
+  		--plain-http \
+  		.staging/licensechecker/sbom.spdx:application/text
+	oras attach ${LOCAL_TEST_REGISTRY}/all:v0 \
+  		--artifact-type application/vnd.ratify.spdx.v0 \
+  		--plain-http \
+  		.staging/licensechecker/sbom.spdx:application/text
+
+e2e-sbom-setup:
+	rm -rf .staging/sbom
+	mkdir -p .staging/sbom
+
+	# Install sbom-tool
+	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+	cd .staging/sbom && git clone https://github.com/deislabs/ratify
+
+	# Build/Push Images
+	echo 'FROM alpine\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/sbom:v0 .staging/sbom
+	docker push ${LOCAL_TEST_REGISTRY}/sbom:v0
+	echo 'FROM alpine\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/sbom:unsigned .staging/sbom
+	docker push ${LOCAL_TEST_REGISTRY}/sbom:unsigned
+
+	# Generate/Attach sbom
+	.staging/sbom/sbom-tool generate -b .staging/sbom -bc .staging/sbom/ratify -pn ratify -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
+	oras attach \
+		--artifact-type org.example.sbom.v0 \
+		--plain-http \
+		 ${LOCAL_TEST_REGISTRY}/sbom:v0 \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	oras attach \
+		--artifact-type org.example.sbom.v0 \
+		--plain-http \
+		 ${LOCAL_TEST_REGISTRY}/sbom:unsigned \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	oras attach \
+		--artifact-type org.example.sbom.v0 \
+		--plain-http \
+		 ${LOCAL_TEST_REGISTRY}/all:v0 \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	
+	# Push Signature to sbom
+	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+
+e2e-schemavalidator-setup:
+	rm -rf .staging/schemavalidator
+	mkdir -p .staging/schemavalidator
+
+	# Install Trivy
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
+	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
+
+	# Build/Push Images
+	echo 'FROM alpine\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
+	docker push ${LOCAL_TEST_REGISTRY}/schemavalidator:v0
+
+	# Create/Attach Scan Results
+	.staging/schemavalidator/trivy image --format sarif --output .staging/schemavalidator/trivy-scan.sarif ${LOCAL_TEST_REGISTRY}/schemavalidator:v0
+	oras attach \
+		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		${LOCAL_TEST_REGISTRY}/schemavalidator:v0 \
+		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
+	oras attach \
+		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		${LOCAL_TEST_REGISTRY}/all:v0 \
+		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -156,7 +308,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set validatingWebhookTimeoutSeconds=7 \
     --set auditInterval=0 \
 
-e2e-deploy-ratify:
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 	
@@ -171,7 +323,10 @@ e2e-deploy-ratify:
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
-	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+	--set ratifyTestCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+	--set oras.useHttp=true
 
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
