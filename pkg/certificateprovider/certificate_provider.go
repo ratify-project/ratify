@@ -13,7 +13,7 @@ type CertStoreConfig map[string]string
 // CertificateProvider is an interface that defines methods to be implemented by a each certificate provider
 type CertificateProvider interface {
 	// Returns an array of certificates based on certificate properties defined in attrib map
-	GetCertificatesContent(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error)
+	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error)
 }
 
 // Decode PEM-encoded bytes into an x509.Certificate chain.
