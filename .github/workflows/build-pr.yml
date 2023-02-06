@@ -30,6 +30,8 @@ jobs:
         run: make
       - name: Check build
         run: bin/ratify version
+      - name: Upload coverage to codecov.io
+        uses: codecov/codecov-action@v3
   
   build_test_cli:
     name: "Build and run tests for CLI"
