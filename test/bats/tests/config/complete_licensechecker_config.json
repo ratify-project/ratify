@@ -3,7 +3,8 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "oras"
+                "name": "oras",
+                "useHttp": true
             }
         ]
     },
@@ -29,7 +30,10 @@
                     "BSD-2-Clause AND BSD-3-Clause",
                     "Zlib",
                     "MPL-2.0 AND MIT",
-                    "ISC"
+                    "ISC",
+                    "Apache-2.0",
+                    "MIT AND BSD-2-Clause AND GPL-2.0-or-later",
+                    "NONE"
                 ]
             }
         ]

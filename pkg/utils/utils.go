@@ -25,11 +25,13 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+const defaultRegistryPrefix = "docker.io/library/"
+
 // ParseDigest parses the given string and returns a validated Digest object.
 func ParseDigest(digestStr string) (digest.Digest, error) {
 	digest, err := digest.Parse(digestStr)
 	if err != nil {
-		return "", fmt.Errorf("The digest of the subject is invalid %s: %w", digestStr, err)
+		return "", fmt.Errorf("the digest of the subject is invalid %s: %w", digestStr, err)
 	}
 
 	return digest, nil
@@ -45,6 +47,10 @@ func ParseSubjectReference(subRef string) (common.Reference, error) {
 	var subjectRef common.Reference
 	if named, ok := parseResult.(reference.Named); ok {
 		subjectRef.Path = named.Name()
+		if reference.Domain(named) == "" {
+			subRef = fmt.Sprint(defaultRegistryPrefix, subRef)
+			subjectRef.Path = fmt.Sprint(defaultRegistryPrefix, subjectRef.Path)
+		}
 	} else {
 		return common.Reference{}, fmt.Errorf("failed to parse subject reference Path")
 	}
