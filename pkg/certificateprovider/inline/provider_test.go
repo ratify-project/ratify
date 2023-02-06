@@ -22,7 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetCertificatesContent(t *testing.T) {
+func TestGetCertificates(t *testing.T) {
 	cases := []struct {
 		desc          string
 		parameters    map[string]string
