@@ -28,6 +28,7 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
+    sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
     run kubectl run cosign-demo --namespace default --image=registry:5000/cosign:signed
