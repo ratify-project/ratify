@@ -23,12 +23,6 @@ SLEEP_TIME=1
 }
 
 @test "cosign test" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
-        run kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
-    }
-
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -43,6 +37,7 @@ SLEEP_TIME=1
 
     echo "cleaning up"
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod cosign-demo --namespace default
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
 }
 
 @test "licensechecker test" {
@@ -113,7 +108,9 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-
+    
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
     sleep 5
     run kubectl run schemavalidator --namespace default --image=registry:5000/schemavalidator:v0
@@ -133,6 +130,7 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod all-in-one --namespace default --force --ignore-not-found=true'
     }
 
@@ -143,6 +141,8 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_sbom.yaml
+    sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_sbom.yaml
     sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml

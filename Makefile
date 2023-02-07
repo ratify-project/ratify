@@ -325,13 +325,11 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set ratifyTestCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
-	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosign.enabled=true \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true
 
-	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
-
-
+	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign 
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 
