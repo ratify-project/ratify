@@ -30,6 +30,8 @@ jobs:
         run: make
       - name: Check build
         run: bin/ratify version
+      - name: Upload coverage to codecov.io
+        uses: codecov/codecov-action@v3
   
   build_test_cli:
     name: "Build and run tests for CLI"
@@ -127,11 +129,11 @@ jobs:
           tenant-id: ${{ env.AZURE_TENANT_ID }}
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Bootstrap e2e
+      - name: Dependencies e2e
         run: |
           mkdir -p $GITHUB_WORKSPACE/bin
           echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-          make e2e-bootstrap KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }}
+          make e2e-dependencies
 
       - name: Run e2e on ACR
         run: |
