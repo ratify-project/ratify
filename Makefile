@@ -1,6 +1,6 @@
 BINARY_NAME		= ratify
 INSTALL_DIR		= ~/.ratify
-CERT_DIR        = ${GITHUB_WORKSPACE}/tls/certs
+CERT_DIR        = ./tls/certs
 
 GO_PKG			= github.com/deislabs/ratify
 GIT_COMMIT_HASH = $(shell git rev-parse HEAD)
@@ -13,7 +13,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
-KUBERNETES_VERSION ?= 1.25.4
+KUBERNETES_VERSION ?= 1.24.6
 GATEKEEPER_VERSION ?= 3.11.0
 
 HELM_VERSION ?= 3.9.2
@@ -31,6 +31,8 @@ RATIFY_NAME = ratify
 LOCAL_REGISTRY_IMAGE ?= ghcr.io/oras-project/registry:v1.0.0-rc.4
 LOCAL_UNSIGNED_IMAGE = hello-world:latest
 LOCAL_TEST_REGISTRY = localhost:5000
+LOCAL_TEST_REGISTRY_USERNAME = test_user
+LOCAL_TEST_REGISTRY_PASSWORD = test_pw
 
 all: build test
 
@@ -146,17 +148,35 @@ e2e-dependencies:
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
 e2e-create-local-registry:
+	rm -rf ~/auth
+	mkdir ~/auth
+	docker run --entrypoint htpasswd httpd@sha256:dd993a2108430ec8fdc4942f791ccf9b0c7a6df196907a80e7e8a5f8f1bbf678 -Bbn ${LOCAL_TEST_REGISTRY_USERNAME} ${LOCAL_TEST_REGISTRY_PASSWORD}> ~/auth/htpasswd
+
 	if [ "$$(docker inspect -f '{{.State.Running}}' "registry" 2>/dev/null || true)" ]; then docker stop registry && docker rm registry; fi
 	docker pull ${LOCAL_REGISTRY_IMAGE}
-	docker run -d -p 5000:5000 --restart=always --name registry ${LOCAL_REGISTRY_IMAGE}
+	docker run -d \
+		-p 5000:5000 \
+		--restart=always \
+		--name registry \
+		-v ${HOME}/auth:/auth \
+		-e "REGISTRY_AUTH=htpasswd" \
+		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+		${LOCAL_REGISTRY_IMAGE} 
 
+	docker login -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY}
+	oras login \
+		-u ${LOCAL_TEST_REGISTRY_USERNAME} \
+		-p ${LOCAL_TEST_REGISTRY_PASSWORD} \
+		${LOCAL_TEST_REGISTRY}
+	
 	rm -rf .staging
 	mkdir .staging
 	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
 	docker build -t ${LOCAL_TEST_REGISTRY}/all:v0 .staging
 	docker push ${LOCAL_TEST_REGISTRY}/all:v0
 
-e2e-bootstrap: e2e-dependencies e2e-create-local-registry
+e2e-bootstrap: e2e-create-local-registry
 	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
 
 	# Check for existing kind cluster
@@ -189,8 +209,8 @@ e2e-notaryv2-setup:
 
 	rm -rf ~/.config/notation
 	.staging/notaryv2/notation/bin/notation cert generate-test --default "ratify-bats-test"
-	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
-	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`  
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`  
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
@@ -209,6 +229,7 @@ e2e-cosign-setup:
 
 	export COSIGN_PASSWORD="test" && \
 	cd .staging/cosign && \
+	./cosign-linux-amd64 login -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY} && \
 	./cosign-linux-amd64 generate-key-pair && \
 	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/cosign:signed | jq -r .[0].RepoDigests[0]` && \
 	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
@@ -271,8 +292,14 @@ e2e-sbom-setup:
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 	
 	# Push Signature to sbom
-	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notaryv2/notation/bin/notation sign  ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	.staging/notaryv2/notation/bin/notation sign \
+		-u ${LOCAL_TEST_REGISTRY_USERNAME} \
+		-p ${LOCAL_TEST_REGISTRY_PASSWORD} \
+		${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation/bin/notation sign \
+		-u ${LOCAL_TEST_REGISTRY_USERNAME} \
+		-p ${LOCAL_TEST_REGISTRY_PASSWORD} \
+		${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
@@ -309,10 +336,10 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set auditInterval=0 \
 
 e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
-	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
+	# docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 	
-	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
+	# docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
@@ -326,7 +353,8 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set ratifyTestCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
-	--set oras.useHttp=true
+	--set oras.useHttp=true \
+	--set-file dockerConfig="${HOME}/.docker/config.json"
 
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
