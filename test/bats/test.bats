@@ -55,7 +55,6 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_partial_licensechecker.yaml
     sleep 5
     run kubectl run license-checker --namespace default --image=registry:5000/licensechecker:v0
