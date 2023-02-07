@@ -171,7 +171,11 @@ e2e-deploy-ratify:
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
-	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+	--set cosign.enabled=true \
+	--set cosign.key="$(shell cat ./test/testdata/verificationCert/cosign.key)"
+
+	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
