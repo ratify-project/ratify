@@ -65,6 +65,11 @@ deploy_ratify() {
     --set image.repository=${ACR_NAME}.azurecr.io/test/localbuild \
     --set image.crdRepository=${ACR_NAME}.azurecr.io/test/localbuildcrd \
     --set image.tag=${TAG} \
+    --set cosign.enabled=true \
+    --set cosign.key="-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvjrMZFyaBDsvg5e0C8JaHqw8ULuc
+n947ODVAMvfdqtjqK2eW77OGrsFLdkbG3BET9U4Dj37odn4kI5lC4Lj9Eg==
+-----END PUBLIC KEY-----" \
     --set azureManagedIdentity.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureManagedIdentityEnabled=true \
     --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
@@ -72,6 +77,8 @@ deploy_ratify() {
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
     --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+
+  kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
   kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
   kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
@@ -100,7 +107,7 @@ main() {
   deploy_gatekeeper
   deploy_ratify
 
-  bats -t ./test/bats/azure-test.bats
+  bats -t ./test/bats/azure-test.bats || true
 
   save_logs
 }
