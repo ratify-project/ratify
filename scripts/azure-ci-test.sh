@@ -65,6 +65,7 @@ deploy_ratify() {
     --set image.repository=${ACR_NAME}.azurecr.io/test/localbuild \
     --set image.crdRepository=${ACR_NAME}.azurecr.io/test/localbuildcrd \
     --set image.tag=${TAG} \
+    --set cosign.enabled=true \
     --set azureManagedIdentity.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureManagedIdentityEnabled=true \
     --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
