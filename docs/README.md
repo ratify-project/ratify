@@ -21,6 +21,8 @@ These documents can be found generally useful to understand using or implementin
 - [oras-auth-provider](reference/oras-auth-provider.md) - Explanation of various authentication mechanisms available for use with ratify.
 - [creating-plugins](reference/creating-plugins.md) - Details on creating your own plugins for use with ratify.
 
+- [CRD references](reference/crds/) -
+Describes the required and optional properties ratify crds
 ## developer
 
 The documents in this directory are for developers who want to contribute to Ratify or want to understand the internals of Ratify.

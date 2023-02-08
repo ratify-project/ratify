@@ -26,7 +26,7 @@ kubectl get certificatestores.config.ratify.deislabs.io --namespace default
 
 ### Update Crds
 You can choose to add / remove / update crds. 
-For example , to remove a verifier or add a new verifier, here is the sample command.
+Here are some sample command to add or remove verifiers
 
 toAdd:
 kubectl apply -f .../ratify/config/samples/config_v1alpha1_verifier_cosign.yaml ( TODO switch to something else)
