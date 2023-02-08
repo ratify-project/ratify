@@ -31,10 +31,10 @@ func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
 				return nil, fmt.Errorf("error parsing x509 certificate: %w", err)
 			}
 			certs = append(certs, cert)
-			block, rest = pem.Decode(rest)
-			if block == nil && len(rest) > 0 {
-				return nil, fmt.Errorf("failed to decode pem block")
-			}
+		}
+		block, rest = pem.Decode(rest)
+		if block == nil && len(rest) > 0 {
+			return nil, fmt.Errorf("failed to decode pem block")
 		}
 	}
 
