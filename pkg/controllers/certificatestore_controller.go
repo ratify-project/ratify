@@ -20,12 +20,11 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
-	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -85,14 +84,16 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	// fetch certificates based on the provider
 	switch certStore.Spec.Provider {
 	case "azurekeyvault":
-		contents, err := azurekeyvault.GetCertificates(ctx, attributes)
+		certificates, err := azurekeyvault.GetCertificates(ctx, attributes)
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with azure key vault provider, error: %w", resource, err)
 		}
-
-		certificates, err := byteToCerts(contents)
+		certificatesMap[resource] = certificates
+		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
+	case "inline":
+		certificates, err := inline.GetCertificates(ctx, attributes)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Failed to parse x509 certificate for certificate store %v, error: %w", resource, err)
+			return ctrl.Result{}, fmt.Errorf("Error fetching certificate in store %v with inline provider, error: %w", resource, err)
 		}
 		certificatesMap[resource] = certificates
 		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
@@ -108,26 +109,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 // returns the internal certificate map
 func GetCertificatesMap() map[string][]*x509.Certificate {
 	return certificatesMap
-}
-
-// converts array of cert content to x509 certificate
-func byteToCerts(certificates []types.Certificate) ([]*x509.Certificate, error) {
-	r := []*x509.Certificate{}
-	for _, c := range certificates {
-		block, _ := pem.Decode(c.Content)
-		if block == nil {
-			return nil, fmt.Errorf("Failed to decode certificate")
-		}
-
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			return nil, err
-		}
-		logrus.Debugf("cert '%v', version '%v' added", c.CertificateName, c.Version)
-		r = append(r, cert)
-	}
-
-	return r, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
