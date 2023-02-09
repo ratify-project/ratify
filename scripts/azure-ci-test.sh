@@ -66,10 +66,7 @@ deploy_ratify() {
     --set image.crdRepository=${ACR_NAME}.azurecr.io/test/localbuildcrd \
     --set image.tag=${TAG} \
     --set cosign.enabled=true \
-    --set cosign.key="-----BEGIN PUBLIC KEY-----
-MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvjrMZFyaBDsvg5e0C8JaHqw8ULuc
-n947ODVAMvfdqtjqK2eW77OGrsFLdkbG3BET9U4Dj37odn4kI5lC4Lj9Eg==
------END PUBLIC KEY-----" \
+    --set-file cosign.key="./test/testdata/cosign.pub" \
     --set azureManagedIdentity.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureManagedIdentityEnabled=true \
     --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
@@ -88,11 +85,13 @@ save_logs() {
   echo "Saving logs"
   kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 >logs-externaldata-controller-aks.json
   kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 >logs-externaldata-audit-aks.json
-  kubectl logs -n ratify-service -l app=ratify --tail=-1 >logs-ratify-preinstall-aks.json
-  kubectl logs -n ratify-service -l app.kubernetes.io/name=ratify --tail=-1 >logs-ratify-aks.json
+  kubectl logs -n ${RATIFY_NAMESPACE} -l app=ratify --tail=-1 >logs-ratify-preinstall-aks.json
+  kubectl logs -n ${RATIFY_NAMESPACE} -l app.kubernetes.io/name=ratify --tail=-1 >logs-ratify-aks.json
 }
 
 cleanup() {
+  save_logs
+
   echo "Deleting group"
   az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
@@ -107,9 +106,7 @@ main() {
   deploy_gatekeeper
   deploy_ratify
 
-  bats -t ./test/bats/azure-test.bats || true
-
-  save_logs
+  bats -t ./test/bats/azure-test.bats
 }
 
 main
