@@ -75,66 +75,19 @@ func TestProvide_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected(t *te
 	}
 }
 
-// Checks K8 DockerCfg Secret is properly extracted and
-// credentials returned when Provide is called
-func TestProvide_K8SecretDockerCfg_ReturnsExpected(t *testing.T) {
-	var testSecret core.Secret
-	js := `{
-		"index.docker.io": {
-			"auth": "am9lam9lOmhlbGxv"
-		}
-	}`
-	testSecret.Data = make(map[string][]byte)
-	testSecret.Data[core.DockerConfigKey] = []byte(js)
-	testSecret.Type = core.SecretTypeDockercfg
-
-	var k8secretprovider k8SecretAuthProvider
-
-	authConfig, err := k8secretprovider.resolveCredentialFromSecret("index.docker.io", &testSecret)
-	if err != nil {
-		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
-	}
-
-	if authConfig.Username != testUserName || authConfig.Password != testPassword {
-		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, password: %s)", authConfig.Username, authConfig.Password)
-	}
-}
-
-func TestProvide_K8SecretDockerCfgWithIdentityToken_ReturnsExpected(t *testing.T) {
-	var testSecret core.Secret
-	js := `{
-		"index.docker.io": {
-			"auth": "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwOg==",
-			"identitytoken": "OPAQUE_TOKEN"
-		}
-	}`
-	testSecret.Data = make(map[string][]byte)
-	testSecret.Data[core.DockerConfigKey] = []byte(js)
-	testSecret.Type = core.SecretTypeDockercfg
-
-	var k8secretprovider k8SecretAuthProvider
-
-	authConfig, err := k8secretprovider.resolveCredentialFromSecret("index.docker.io", &testSecret)
-	if err != nil {
-		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
-	}
-
-	if authConfig.Username != dockerTokenLoginUsernameGUID || authConfig.IdentityToken != identityTokenOpaque {
-		t.Fatalf("resolveCredentialFromSecret returned incorrect credentials (username: %s, identitytoken: %s)", authConfig.Username, authConfig.IdentityToken)
-	}
-}
-
 // Checks an error is returned for non-existent registry credential
 func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
 	js := `{
-		"index.docker.io": {
-			"auth": "am9lam9lOmhlbGxv"
+		"auths": {
+			"index.docker.io": {
+				"auth": "am9lam9lOmhlbGxv"
+			}
 		}
 	}`
 	testSecret.Data = make(map[string][]byte)
-	testSecret.Data[core.DockerConfigKey] = []byte(js)
-	testSecret.Type = core.SecretTypeDockercfg
+	testSecret.Data[core.DockerConfigJsonKey] = []byte(js)
+	testSecret.Type = core.SecretTypeDockerConfigJson
 
 	var k8secretprovider k8SecretAuthProvider
 
