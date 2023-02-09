@@ -26,15 +26,8 @@ import (
 // credentials returned when Provide is called
 func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
-	js := `{
-		"auths": {
-			"index.docker.io": {
-				"auth": "am9lam9lOmhlbGxv"
-			}
-		}
-	}`
 	testSecret.Data = make(map[string][]byte)
-	testSecret.Data[core.DockerConfigJsonKey] = []byte(js)
+	testSecret.Data[core.DockerConfigJsonKey] = []byte(secretContent)
 	testSecret.Type = core.SecretTypeDockerConfigJson
 
 	var k8secretprovider k8SecretAuthProvider
@@ -51,16 +44,8 @@ func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 
 func TestProvide_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
-	js := `{
-		"auths": {
-			"index.docker.io": {
-				"auth": "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwOg==",
-				"identitytoken": "OPAQUE_TOKEN"
-			}
-		}
-	}`
 	testSecret.Data = make(map[string][]byte)
-	testSecret.Data[core.DockerConfigJsonKey] = []byte(js)
+	testSecret.Data[core.DockerConfigJsonKey] = []byte(secretContentIdentityToken)
 	testSecret.Type = core.SecretTypeDockerConfigJson
 
 	var k8secretprovider k8SecretAuthProvider
@@ -78,15 +63,8 @@ func TestProvide_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected(t *te
 // Checks an error is returned for non-existent registry credential
 func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
-	js := `{
-		"auths": {
-			"index.docker.io": {
-				"auth": "am9lam9lOmhlbGxv"
-			}
-		}
-	}`
 	testSecret.Data = make(map[string][]byte)
-	testSecret.Data[core.DockerConfigJsonKey] = []byte(js)
+	testSecret.Data[core.DockerConfigJsonKey] = []byte(secretContent)
 	testSecret.Type = core.SecretTypeDockerConfigJson
 
 	var k8secretprovider k8SecretAuthProvider

@@ -27,6 +27,21 @@ const (
 	testPassword                 = "hello"
 	dockerTokenLoginUsernameGUID = "00000000-0000-0000-0000-000000000000"
 	identityTokenOpaque          = "OPAQUE_TOKEN" // #nosec
+	secretContent                = `{
+		"auths": {
+			"index.docker.io": {
+				"auth": "am9lam9lOmhlbGxv"
+			}
+		}
+	}`
+	secretContentIdentityToken = `{
+		"auths": {
+			"index.docker.io": {
+				"auth": "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwOg==",
+				"identitytoken": "OPAQUE_TOKEN"
+			}
+		}
+	}`
 )
 
 type TestAuthProvider struct{}
@@ -52,15 +67,8 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 	defer os.RemoveAll(tmpHome)
 
 	fn := filepath.Join(tmpHome, "config.json")
-	js := `{
-		"auths": {
-			"index.docker.io": {
-				"auth": "am9lam9lOmhlbGxv"
-			}
-		}
-	}`
 
-	err = os.WriteFile(fn, []byte(js), 0600)
+	err = os.WriteFile(fn, []byte(secretContent), 0600)
 	if err != nil {
 		t.Fatalf("unexpected error when writing config file: %v", err)
 	}
@@ -87,16 +95,8 @@ func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *te
 	defer os.RemoveAll(tmpHome)
 
 	fn := filepath.Join(tmpHome, "config.json")
-	js := `{
-		"auths": {
-			"index.docker.io": {
-				"auth": "MDAwMDAwMDAtMDAwMC0wMDAwLTAwMDAtMDAwMDAwMDAwMDAwOg==",
-				"identitytoken": "OPAQUE_TOKEN"
-			}
-		}
-	}`
 
-	err = os.WriteFile(fn, []byte(js), 0600)
+	err = os.WriteFile(fn, []byte(secretContentIdentityToken), 0600)
 	if err != nil {
 		t.Fatalf("unexpected error when writing config file: %v", err)
 	}
