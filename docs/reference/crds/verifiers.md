@@ -1,13 +1,12 @@
-Ratify supports many verifiers to validate different artifact types. View more CRD samples [here](../../../config/samples/). Common properties:
+Ratify supports many verifiers to validate different artifact types. View more CRD samples [here](../../../config/samples/). Each verifier must specify the name of the verifier and the artifact type this verifier handles. Common properties:
 
 ```yml
-name: Name of the verifier, required
-artifactType: The type of artifact this verifier handles, required
-address: Plugin path, optional, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
-parameters: Parameters specific to this verifier, optional
+name: required, name of the verifier
+artifactType: required, the type of artifact this verifier handles
+address: optional. Plugin path, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
+parameters: optional. Parameters specific to this verifier
 ```
-
-Each verifier populates the parameters.
+ 
 
 ## Notary
 
