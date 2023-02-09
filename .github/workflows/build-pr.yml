@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - 1.0.0*
+      - main
   workflow_dispatch:
 
 permissions: read-all
@@ -105,7 +106,7 @@ jobs:
       AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
     runs-on: ubuntu-latest
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     timeout-minutes: 30
     permissions:
       id-token: write
