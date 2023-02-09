@@ -10,7 +10,7 @@ parameters: optional. Parameters specific to this verifier
 
 ## Notary
 
-Sample Notary yaml spec.  :
+Sample Notary yaml spec:
 ```yml
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: Verifier
@@ -20,11 +20,11 @@ spec:
   name: notaryv2
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
-    verificationCertStores:  #certificates for validating signatures
+    verificationCertStores:  # certificates for validating signatures
       certs: # name of the trustStore
-          - certstore-akv # name of the certificate store CRD to include in this trustStore
-          - certstore-akv1 
-    trustPolicyDoc: # A policy language that indicates which identities are trusted to produce artifacts
+        - certstore-akv # name of the certificate store CRD to include in this trustStore
+        - certstore-akv1 
+    trustPolicyDoc: # policy language that indicates which identities are trusted to produce artifacts
       version: "1.0"
       trustPolicies:
         - name: default

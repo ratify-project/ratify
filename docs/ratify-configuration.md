@@ -4,7 +4,7 @@ Ratify's configuration consist of [Store](store.md), [Verifier](verifier.md), [P
 When Ratify runs in cli serve mode, configuration file can be dynamically updated while the server is running, subsequent verification will be based on the updated configuration.
 
 ## CRDs
-Ratify also support configuration through K8 [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/),configuration can be updated using natively supported kubectl commands.
+Ratify also supports configuration through K8 [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/), configuration can be updated using natively supported kubectl commands.
 
 When running Ratify in a pod, configMap will be mounted to the pod at the default configuration file path. Ratify will initialize with specifications from the configuration file, CRDs will override store and verifier defined in the configuration file if they exist at runtime. Our team is in process converting configuration components into Ratify CRDS to support a more native k8s experience. Please review ratify CRDs samples [here](../config/samples/).
 
@@ -15,7 +15,7 @@ Currently supported components through CRDs are:
 - [Certificate Stores](../docs/reference/crds/certificate-stores.md)
 
 ### Get Crds
-Our helms are charts are wired up to initialize CRs based on chart values. 
+Our helms charts are wired up to initialize CRs based on chart values. 
 After Ratify installation, you can use the kubectl command to review currently active configuration.
 
 Sample command:
@@ -32,6 +32,5 @@ kubectl apply -f .../ratify/config/samples/config_v1alpha1_verifier_schemavalida
 ```
 Sample command to remove a verifier:
 ```bash
-
 kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary 
 ```
