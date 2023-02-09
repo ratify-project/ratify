@@ -336,7 +336,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-	--set ratifyTestCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosign.enabled=true \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true
