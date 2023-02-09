@@ -21,9 +21,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/featureflag"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
+	"github.com/go-logr/logr"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -136,7 +138,12 @@ func StartManager() {
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	if featureflag.UnifiedLogging.Enabled {
+		logrusSink := controllers.NewLogrusSink(logrus.StandardLogger())
+		ctrl.SetLogger(logr.New(logrusSink))
+	} else {
+		ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
