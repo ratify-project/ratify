@@ -5,8 +5,9 @@ local_oras_cache/
 __debug_bin
 coverage.txt
 
-# generated certificate directory
+# generated directories
 certs/
+.staging
 
 # symlink to ~/.ratify folder
 /.ratify
