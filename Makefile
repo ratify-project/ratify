@@ -119,8 +119,8 @@ test-e2e:
 
 .PHONY: test-e2e-cli
 
-test-e2e-cli:e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
-	RATIFY_DIR=${INSTALL_DIR} LOCAL_TEST_REGISTRY=${LOCAL_TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-create-local-registry-auth e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+	RATIFY_DIR=${INSTALL_DIR} LOCAL_TEST_REGISTRY=${LOCAL_TEST_REGISTRY} LOCAL_TEST_REGISTRY_AUTH=${LOCAL_TEST_REGISTRY_AUTH} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 
 .PHONY: generate-certs
 generate-certs:
