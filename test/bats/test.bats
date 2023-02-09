@@ -237,3 +237,51 @@ SLEEP_TIME=1
     echo "cleaning up"
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod mutate-demo --namespace default
 }
+
+@test "validate docker ORAS auth provider" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    # apply store CRD with cosign disabled
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_dockerauth.yaml
+    assert_success
+    sleep 5
+    run kubectl run demo --namespace default --image=registry-auth:5000/notation:signed
+    assert_success
+    run kubectl run demo1 --namespace default --image=registry-auth:5000/notation:unsigned
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
+}
+
+@test "validate k8 secrets ORAS auth provider" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    # apply store CRD with cosign disabled and k8 secret auth provier enabled
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_k8secretAuth.yaml
+    assert_success
+    sleep 5
+    run kubectl run demo --namespace default --image=registry-auth:5000/notation:signed
+    assert_success
+    run kubectl run demo1 --namespace default --image=registry-auth:5000/notation:unsigned
+    assert_failure
+
+    echo "cleaning up"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
+}
