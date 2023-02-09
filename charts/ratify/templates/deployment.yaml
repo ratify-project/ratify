@@ -116,9 +116,11 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
+        {{- if .Values.notaryCert }}
         - name: notary-certs
           secret:
             secretName: {{ include "ratify.fullname" . }}-notary-certificate
+        {{- end }}
         {{- if .Values.cosign.enabled }}
         - name: cosign-certs
           secret:
