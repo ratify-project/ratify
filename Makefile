@@ -338,6 +338,18 @@ e2e-schemavalidator-setup:
 		${LOCAL_TEST_REGISTRY}/all:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
 
+e2e-inlinecert-setup:
+	rm -rf .staging/inlinecert
+	mkdir -p .staging/inlinecert
+
+	# build and sign an image with an alternate certificate
+	echo 'FROM alpine\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
+	docker build -t ${LOCAL_TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
+	docker push ${LOCAL_TEST_REGISTRY}/notation:signed-alternate
+
+	.staging/notaryv2/notation/bin/notation cert generate-test "alternate-cert"
+	.staging/notaryv2/notation/bin/notation sign --key "alternate-cert" `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
+
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
@@ -349,7 +361,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
 	--set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
-e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 	
