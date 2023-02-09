@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
+        {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
+        azure.workload.identity/use: "true"
+        {{- end }}
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
