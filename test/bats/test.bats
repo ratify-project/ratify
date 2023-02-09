@@ -31,13 +31,22 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
-    run kubectl run cosign-demo --namespace default --image=registry:5000/cosign:signed
+
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
     assert_success
-    run kubectl run cosign-demo2 --namespace default --image=registry:5000/cosign:unsigned
+
+    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
+    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    sleep 5
+    run kubectl run cosign-demo-keyless --namespace default --image=registry:5000/cosign:signed-keyless
+    assert_success
+
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
     assert_failure
 
     echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default'
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key cosign-demo-keyless cosign-demo-unsigned --namespace default --ignore-not-found=true'
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
 }
 

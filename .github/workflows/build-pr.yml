@@ -13,8 +13,6 @@ on:
       - main
   workflow_dispatch:
 
-permissions: read-all
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,6 +35,9 @@ jobs:
   build_test_cli:
     name: "Build and run tests for CLI"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # used for cosign keyless signing
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -61,6 +62,7 @@ jobs:
     timeout-minutes: 15
     permissions:
       contents: read
+      id-token: write # used for cosign keyless signing
     strategy:
       matrix:
         KUBERNETES_VERSION: ["1.24.6"]

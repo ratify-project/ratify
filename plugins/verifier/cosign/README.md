@@ -5,6 +5,8 @@ This README outlines how this validation framework can be used to verify signatu
 ## Fallback in OCIRegistry store
 A configuration flag called `cosignEnabled` is introduced to the plugin configuration. If this flag is enabled, the `ListReferrers` API will attempt to query for the cosign signatures for a subject in addition to the references queried using `referrers API`. All the cosign signatures are returned as the reference artifacts with the artifact type `org.sigstore.cosign.v1` This option will enable to verify cosign signatures against any registry including the onces that don't support the [notaryproject](https://github.com/notaryproject)'s `referrers` API.
 
+IMPORTANT NOTE: Cosign signatures cannot be verified from private registries. `cosignEnabled` flag should not be enabled for any private registry scenario even for non-cosign signature verifications.
+
 # Signing
 Please refer cosign documentation on how to sign an image using cosign using [key-pair based signatures]((https://github.com/sigstore/cosign/blob/main/USAGE.md) and [keyless signatures](https://github.com/sigstore/cosign/blob/main/KEYLESS.md).
 
