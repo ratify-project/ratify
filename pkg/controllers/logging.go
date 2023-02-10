@@ -24,8 +24,8 @@ import (
 
 // LogrusSink is an adapter to allow the use of logrus with logr, as required by k8s controller-runtime.
 type LogrusSink struct {
-	logger *logrus.Logger
-	names []string
+	logger        *logrus.Logger
+	names         []string
 	keysAndValues []interface{}
 }
 
@@ -59,11 +59,11 @@ func (sink *LogrusSink) Enabled(level int) bool {
 // details.
 func (sink *LogrusSink) Info(level int, msg string, keysAndValues ...interface{}) {
 	entry := sink.logger.WithField("name", sink.names)
-	
+
 	if keysAndValues != nil {
 		entry.WithField("values", keysAndValues)
 	}
-	
+
 	entry.Info(msg, keysAndValues)
 }
 
@@ -80,7 +80,7 @@ func (sink *LogrusSink) Error(err error, msg string, keysAndValues ...interface{
 		stacktrace := string(debug.Stack())
 		entry = entry.WithField("stacktrace", stacktrace)
 	}
-	
+
 	entry.Error(msg, keysAndValues)
 }
 
@@ -88,8 +88,8 @@ func (sink *LogrusSink) Error(err error, msg string, keysAndValues ...interface{
 // Logger.WithValues for more details.
 func (sink *LogrusSink) WithValues(keysAndValues ...interface{}) logr.LogSink {
 	newSink := &LogrusSink{
-		logger: sink.logger,
-		names: sink.names,
+		logger:        sink.logger,
+		names:         sink.names,
 		keysAndValues: append(sink.keysAndValues, keysAndValues...),
 	}
 	return newSink
@@ -99,8 +99,8 @@ func (sink *LogrusSink) WithValues(keysAndValues ...interface{}) logr.LogSink {
 // Logger.WithName for more details.
 func (sink *LogrusSink) WithName(name string) logr.LogSink {
 	newSink := &LogrusSink{
-		logger: sink.logger,
-		names: append(sink.names, name),
+		logger:        sink.logger,
+		names:         append(sink.names, name),
 		keysAndValues: sink.keysAndValues,
 	}
 	return newSink
