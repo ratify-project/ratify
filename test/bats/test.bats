@@ -35,13 +35,6 @@ SLEEP_TIME=1
     run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
     assert_success
 
-    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
-    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
-    sleep 5
-    run kubectl run cosign-demo-keyless --namespace default --image=registry:5000/cosign:signed-keyless
-    assert_success
-
     run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
     assert_failure
 
@@ -77,7 +70,7 @@ SLEEP_TIME=1
 }
 
 @test "sbom verifier test" {
-     teardown() {
+    teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
     }
@@ -160,6 +153,15 @@ SLEEP_TIME=1
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run all-in-one --namespace default --image=registry:5000/all:v0
+    assert_success
+}
+
+@test "cosign keyless test" {
+    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
+    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    sleep 5
+    run kubectl run cosign-demo-keyless --namespace default --image=docker.io/sozercan/hello-world:latest
     assert_success
 }
 
