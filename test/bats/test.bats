@@ -237,3 +237,68 @@ SLEEP_TIME=1
     echo "cleaning up"
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod mutate-demo --namespace default
 }
+
+@test "validate inline cert provider" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
+
+        # restore the original notary verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml'
+    }
+
+    # configure the default template/constraint
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+
+    # verify that the image cannot be run due to an invalid cert
+    run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
+    assert_failure
+
+    # add the alternate certificate as an inline certificate store
+    cat <<EOF | kubectl apply -f -
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: CertificateStore
+metadata:
+  name: certstore-inline
+spec:
+  provider: inline
+  parameters:
+    value: |
+$(cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g')
+EOF
+
+    # configure the notary verifier to use the inline certificate store
+    cat <<EOF | kubectl apply -f -
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: Verifier
+metadata:
+  name: verifier-notary
+spec:
+  name: notaryv2
+  artifactTypes: application/vnd.cncf.notary.signature
+  parameters:
+    verificationCertStores:
+      certs:
+        - certstore-inline
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: default
+          registryScopes:
+            - "*"
+          signatureVerification:
+            level: strict
+          trustStores:
+            - ca:certs
+          trustedIdentities:
+            - "*"
+EOF
+    sleep 10
+
+    # verify that the image can now be run
+    run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
+    assert_success
+}
