@@ -16,6 +16,8 @@ limitations under the License.
 package controllers
 
 import (
+	"runtime/debug"
+
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
 )
@@ -71,7 +73,12 @@ func (sink *LogrusSink) Error(err error, msg string, keysAndValues ...interface{
 	entry := sink.logger.WithField("name", sink.names).WithError(err)
 
 	if keysAndValues != nil {
-		entry.WithField("values", keysAndValues)
+		entry = entry.WithField("values", keysAndValues)
+	}
+
+	if sink.logger.IsLevelEnabled(logrus.DebugLevel) {
+		stacktrace := string(debug.Stack())
+		entry = entry.WithField("stacktrace", stacktrace)
 	}
 	
 	entry.Error(msg, keysAndValues)
