@@ -27,13 +27,15 @@ const (
 	testPassword                 = "hello"
 	dockerTokenLoginUsernameGUID = "00000000-0000-0000-0000-000000000000"
 	identityTokenOpaque          = "OPAQUE_TOKEN" // #nosec
-	secretContent                = `{
+	// #nosec G101
+	secretContent = `{
 		"auths": {
 			"index.docker.io": {
 				"auth": "am9lam9lOmhlbGxv"
 			}
 		}
 	}`
+	// #nosec G101
 	secretContentIdentityToken = `{
 		"auths": {
 			"index.docker.io": {
