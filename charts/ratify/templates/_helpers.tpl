@@ -97,7 +97,7 @@ Set the namespace exclusions for Assign
 {{- $gkNamespace := default "gatekeeper-system" .Values.gatekeeper.namespace -}}
 - {{ $gkNamespace | quote}}
 - "kube-system"
-{{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
+{{- if and (ne .Release.Namespace $gkNamespace) (ne .Release.Namespace "kube-system") }}
 - {{ .Release.Namespace | quote}}
 {{- end }}
 {{- end }}
