@@ -43,7 +43,7 @@
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
         "RATIFY_LOG_LEVEL": "debug",
-        "RATIFY_DYNAMIC_PLUGINS": "1",
+        "RATIFY_DYNAMIC_PLUGINS": "1"
       },
       "args": [
         "serve",

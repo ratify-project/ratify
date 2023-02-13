@@ -16,7 +16,9 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"runtime/debug"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/sirupsen/logrus"
@@ -58,30 +60,21 @@ func (sink *LogrusSink) Enabled(level int) bool {
 // only be called when Enabled(level) is true. See Logger.Info for more
 // details.
 func (sink *LogrusSink) Info(level int, msg string, keysAndValues ...interface{}) {
-	entry := sink.logger.WithField("name", sink.names)
-
-	if keysAndValues != nil {
-		entry.WithField("values", keysAndValues)
-	}
-
-	entry.Info(msg, keysAndValues)
+	entry := sink.createEntry(keysAndValues...)
+	entry.Info(msg)
 }
 
 // Error logs an error, with the given message and key/value pairs as
 // context.  See Logger.Error for more details.
 func (sink *LogrusSink) Error(err error, msg string, keysAndValues ...interface{}) {
-	entry := sink.logger.WithField("name", sink.names).WithError(err)
-
-	if keysAndValues != nil {
-		entry = entry.WithField("values", keysAndValues)
-	}
+	entry := sink.createEntry(keysAndValues...)
 
 	if sink.logger.IsLevelEnabled(logrus.DebugLevel) {
 		stacktrace := string(debug.Stack())
 		entry = entry.WithField("stacktrace", stacktrace)
 	}
 
-	entry.Error(msg, keysAndValues)
+	entry.WithError(err).Error(msg)
 }
 
 // WithValues returns a new LogSink with additional key/value pairs.  See
@@ -104,4 +97,26 @@ func (sink *LogrusSink) WithName(name string) logr.LogSink {
 		keysAndValues: sink.keysAndValues,
 	}
 	return newSink
+}
+
+func (sink *LogrusSink) createEntry(keysAndValues ...interface{}) *logrus.Entry {
+	entry := logrus.NewEntry(sink.logger)
+
+	if sink.names != nil {
+		entry = entry.WithField("name", strings.Join(sink.names, "."))
+	}
+
+	if sink.keysAndValues != nil {
+		for i := 0; i < len(sink.keysAndValues); i += 2 {
+			entry = entry.WithField(fmt.Sprintf("%v", sink.keysAndValues[i]), sink.keysAndValues[i+1])
+		}
+	}
+
+	if keysAndValues != nil {
+		for i := 0; i < len(keysAndValues); i += 2 {
+			entry = entry.WithField(fmt.Sprintf("%v", keysAndValues[i]), keysAndValues[i+1])
+		}
+	}
+
+	return entry
 }
