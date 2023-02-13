@@ -121,8 +121,7 @@ func TestWithName(t *testing.T) {
 
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.InfoLevel, hook.LastEntry().Level)
-	assert.Equal(t, "test", hook.LastEntry().Message)
-	assert.Equal(t, "myname.subname", hook.LastEntry().Data["name"])
+	assert.Equal(t, "[myname.subname] test", hook.LastEntry().Message)
 }
 
 func TestError_WithName(t *testing.T) {
@@ -134,8 +133,7 @@ func TestError_WithName(t *testing.T) {
 
 	assert.Equal(t, 1, len(hook.Entries))
 	assert.Equal(t, logrus.ErrorLevel, hook.LastEntry().Level)
-	assert.Equal(t, "test", hook.LastEntry().Message)
-	assert.Equal(t, "myname.subname", hook.LastEntry().Data["name"])
+	assert.Equal(t, "[myname.subname] test", hook.LastEntry().Message)
 }
 
 func TestError_WithValues(t *testing.T) {

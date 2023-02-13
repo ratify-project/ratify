@@ -39,7 +39,7 @@ func NewLogrusSink(logger *logrus.Logger) *LogrusSink {
 
 // Init receives optional information about the logr library for LogSink
 // implementations that need it.
-func (sink *LogrusSink) Init(info logr.RuntimeInfo) {
+func (s *LogrusSink) Init(info logr.RuntimeInfo) {
 }
 
 // Enabled tests whether this LogSink is enabled at the specified V-level.
@@ -61,7 +61,7 @@ func (sink *LogrusSink) Enabled(level int) bool {
 // details.
 func (sink *LogrusSink) Info(level int, msg string, keysAndValues ...interface{}) {
 	entry := sink.createEntry(keysAndValues...)
-	entry.Info(msg)
+	entry.Info(sink.formatMessage(msg))
 }
 
 // Error logs an error, with the given message and key/value pairs as
@@ -74,7 +74,7 @@ func (sink *LogrusSink) Error(err error, msg string, keysAndValues ...interface{
 		entry = entry.WithField("stacktrace", stacktrace)
 	}
 
-	entry.WithError(err).Error(msg)
+	entry.WithError(err).Error(sink.formatMessage(msg))
 }
 
 // WithValues returns a new LogSink with additional key/value pairs.  See
@@ -119,4 +119,12 @@ func (sink *LogrusSink) createEntry(keysAndValues ...interface{}) *logrus.Entry 
 	}
 
 	return entry
+}
+
+func (sink *LogrusSink) formatMessage(msg string) string {
+	if sink.names == nil || len(sink.names) == 0 {
+		return msg
+	}
+
+	return fmt.Sprintf("[%s] %s", strings.Join(sink.names, "."), msg)
 }
