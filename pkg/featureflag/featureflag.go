@@ -26,7 +26,6 @@ import (
 // Remember to capture changes in the usage guide and release notes.
 var (
 	DynamicPlugins = new("DYNAMIC_PLUGINS", false)
-	UnifiedLogging = new("UNIFIED_LOGGING", false)
 )
 
 var flags = make(map[string]*FeatureFlag)

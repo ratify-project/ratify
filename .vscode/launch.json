@@ -44,7 +44,6 @@
       "env": {
         "RATIFY_LOG_LEVEL": "debug",
         "RATIFY_DYNAMIC_PLUGINS": "1",
-        "RATIFY_UNIFIED_LOGGING": "1"
       },
       "args": [
         "serve",
