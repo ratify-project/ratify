@@ -62,6 +62,7 @@ curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/scripts/genera
 bash generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
 
 helm repo add ratify https://deislabs.github.io/ratify
+# download the notary verification certificate
 curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
 helm install ratify \
     ratify/ratify --atomic \
@@ -69,7 +70,7 @@ helm install ratify \
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
     --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-    --set-file notaryCert="notary.crt"
+    --set-file notaryCert=./notary.crt
 
 kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
