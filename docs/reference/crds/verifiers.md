@@ -1,4 +1,4 @@
-Ratify supports many verifiers to validate different artifact types. View more CRD samples [here](../../../config/samples/). Each verifier must specify the name of the verifier and the artifact type this verifier handles. Common properties:
+Ratify supports many verifiers to validate different artifact types. View more CRD samples [here](../../../config/samples/). Each verifier must specify the `name` of the verifier and the `artifactType` this verifier handles. Common properties:
 
 ```yml
 name: required, name of the verifier
@@ -41,7 +41,7 @@ spec:
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
 | verificationCerts      | no    |      An array of string. Notary verifier will load all certificates from path specified in this array        |   ""            |
-| verificationCertStores      | no    |    verificationCertStores property defines a collection of cert store objects. This property supersedes path defined in verificationCerts      |       ""        |
+| verificationCertStores      | no    |    Defines a collection of cert store objects. This property supersedes the path defined in `verificationCerts`      |       ""        |
 | trustPolicyDoc   | yes     |   [Trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md) is a policy language that indicates which identities are trusted to produce artifacts.          |     ""    |
 
 ## Cosign
