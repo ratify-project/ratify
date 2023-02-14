@@ -5,6 +5,7 @@ metadata:
 spec:
   name: oras  
   parameters:
+    # NOTE: docker auth provider selected by default if none specified
     cacheEnabled: true
     capacity: 100
     cosignEnabled: false
