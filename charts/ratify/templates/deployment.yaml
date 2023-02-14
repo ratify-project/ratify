@@ -55,12 +55,7 @@ spec:
             - --cache-ttl={{ .Values.provider.cache.ttl }}
           ports:
             - containerPort: 6001
-          volumeMounts:
-            {{- if .Values.notaryCert }}  
-            - mountPath: "/usr/local/ratify-certs/notary/truststore"                    
-              name: notary-certs
-              readOnly: true
-            {{- end }}              
+          volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
               name: cosign-certs
@@ -116,11 +111,6 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        {{- if .Values.notaryCert }}
-        - name: notary-certs
-          secret:
-            secretName: {{ include "ratify.fullname" . }}-notary-certificate
-        {{- end }}
         {{- if .Values.cosign.enabled }}
         - name: cosign-certs
           secret:
