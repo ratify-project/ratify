@@ -22,13 +22,15 @@ import (
 
 var schema_url = "https://json.schemastore.org/sarif-2.1.0-rtm.5.json"
 var schema_file_bytes []byte
+var schema_file_mismatch_bytes []byte
 var schema_file_bad_bytes []byte
 var trivy_scan_report []byte
 
 func init() {
 	trivy_scan_report, _ = os.ReadFile("./testdata/trivy_scan_report.json")
 	schema_file_bytes, _ = os.ReadFile("./schemas/sarif-2.1.0-rtm.5.json")
-	schema_file_bad_bytes, _ = os.ReadFile("./testdata/bad.json")
+	schema_file_mismatch_bytes, _ = os.ReadFile("./testdata/mismatch_schema.json")
+	schema_file_bad_bytes, _ = os.ReadFile("./testdata/bad_schema.json")
 }
 
 func TestProperSchemaValidates(t *testing.T) {
@@ -61,7 +63,17 @@ func TestProperSchemaValidatesFromFile(t *testing.T) {
 	}
 }
 
-func TestInvalidSchemaValidatesFromFile(t *testing.T) {
+func TestSchemaMismatchFromFile(t *testing.T) {
+	expected := false
+	result := ValidateAgainstOfflineSchema(schema_file_mismatch_bytes, trivy_scan_report) == nil
+
+	if expected != result {
+		t.Logf("expected: %v, got: %v", expected, result)
+		t.FailNow()
+	}
+}
+
+func TestBadSchemaValidatesFromFile(t *testing.T) {
 	expected := false
 	result := ValidateAgainstOfflineSchema(schema_file_bad_bytes, trivy_scan_report) == nil
 
