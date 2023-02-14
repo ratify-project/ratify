@@ -6,5 +6,5 @@ metadata:
 spec:
   provider: inline
   parameters:
-    value: {{ required "You must provide .Values.notaryCert" .Values.notaryCert | b64enc | quote }}
+    value: {{ required "You must provide .Values.notaryCert" .Values.notaryCert }}
 {{- end }}
