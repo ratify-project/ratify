@@ -21,12 +21,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"time"
 
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/cli/cli/config/configfile"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -135,8 +133,8 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 			return AuthConfig{}, fmt.Errorf("failed to pull secret %s from cluster: %w", k8secret.SecretName, err)
 		}
 
-		// only dockercfg or docker config json secret type allowed
-		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
+		// only docker config json secret type allowed
+		if secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
 			if err != nil && !errors.Is(err, ErrorNoMatchingCredential) {
 				return AuthConfig{}, err
@@ -180,24 +178,12 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 }
 
 func (d *k8SecretAuthProvider) resolveCredentialFromSecret(hostName string, secret *core.Secret) (AuthConfig, error) {
-	var secretDataKey string
-	var configFileFn func(io.Reader) (*configfile.ConfigFile, error)
-	if secret.Type == core.SecretTypeDockercfg {
-		// if secret is a legacy docker config type
-		secretDataKey = core.DockerConfigKey
-		configFileFn = config.LegacyLoadFromReader
-	} else {
-		// if secret is a docker config json type
-		secretDataKey = core.DockerConfigJsonKey
-		configFileFn = config.LoadFromReader
-	}
-
-	dockercfg, exists := secret.Data[secretDataKey]
+	dockercfg, exists := secret.Data[core.DockerConfigJsonKey]
 	if !exists {
 		return AuthConfig{}, fmt.Errorf("could not extract auth configs from docker config")
 	}
 
-	configFile, err := configFileFn(bytes.NewReader(dockercfg))
+	configFile, err := config.LoadFromReader(bytes.NewReader(dockercfg))
 	if err != nil {
 		return AuthConfig{}, err
 	}
