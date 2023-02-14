@@ -358,7 +358,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
     --set enableExternalData=true \
     --set validatingWebhookTimeoutSeconds=5 \
-	--set mutatingWebhookTimeoutSeconds=2 \
+    --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
 e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
