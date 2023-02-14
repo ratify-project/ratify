@@ -24,6 +24,7 @@ import (
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
+	"github.com/go-logr/logr"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -41,7 +42,6 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/controllers"
@@ -130,13 +130,10 @@ func StartManager() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	logrusSink := controllers.NewLogrusSink(logrus.StandardLogger())
+	ctrl.SetLogger(logr.New(logrusSink))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
