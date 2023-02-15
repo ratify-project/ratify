@@ -32,6 +32,7 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 ## Quick Start
 
 Try out ratify in Kubernetes through Gatekeeper as the admission controller.
+For quick start steps compatible with the last released version of Ratify, follow steps [here](https://github.com/deislabs/ratify/blob/1.0.0-rc.1/README.md#quick-start).
 
 Prerequisites:
 - Kubernetes v1.20 or higher
