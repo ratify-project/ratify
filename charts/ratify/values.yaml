@@ -32,12 +32,12 @@ cosign:
   enabled: false
   key: ""
 resources:
-   limits:
-     cpu: 1000m
-     memory: 512Mi
-   requests:
-     cpu: 600m
-     memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 600m
+    memory: 512Mi
 serviceAccount:
   create: true
   name: ratify-admin
@@ -48,25 +48,25 @@ gatekeeper:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
 # Key Vault -> akvCertConfig.enabled
 azureWorkloadIdentity:
-  clientId:
+  clientId: "ec7809f6-d034-41bc-ac28-1c1a5e414785"
 
 azureManagedIdentity:
   clientId:
   tenantId:
 
 akvCertConfig:
-  enabled: false
-  vaultURI:
-  cert1Name:
+  enabled: true
+  vaultURI: "https://ratify-e2e-akv1.vault.azure.net/"
+  cert1Name: "wabbitnetworks"
   cert1Version:
   cert2Name:
-  cert2Version:  
-  tenantId:
+  cert2Version:
+  tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
 
 oras:
   useHttp: false
   authProviders:
-    azureWorkloadIdentityEnabled: false
+    azureWorkloadIdentityEnabled: true
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
@@ -77,11 +77,10 @@ oras:
       region: ""
   cache:
     # Please tune your cache parameters to get better performance on the Oras Store performance.
-    enabled: true  # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
-    ttl: 10  # in seconds
+    enabled: true # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
+    ttl: 10 # in seconds
     capacity: 100 # capacity is the max size in megabytes of the full cache.
     keyNumber: 10000 # keyNumber is the number of items you expect to keep in the cache when full. It makes a difference to the cache performance, please set it close to the item count.
-
 
 provider:
   tls:
@@ -93,7 +92,7 @@ provider:
     validationTimeoutSeconds: 5
     mutationTimeoutSeconds: 2
   cache:
-    ttl: 10s  # cache ttl duration
+    ttl: 10s # cache ttl duration
     size: 100 # number of items to be kept in cache. Set to 0 to disable cache.
 
 podAnnotations: {}
@@ -110,13 +109,13 @@ upgradeCRDs:
 crds:
   affinity: {}
   tolerations: []
-  nodeSelector: {kubernetes.io/os: linux}
+  nodeSelector: { kubernetes.io/os: linux }
   resources: {}
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-      - ALL
+        - ALL
     readOnlyRootFilesystem: true
     runAsGroup: 65532
     runAsNonRoot: true

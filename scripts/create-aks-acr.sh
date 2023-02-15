@@ -27,6 +27,67 @@ register_feature() {
   az provider register --namespace Microsoft.ContainerService
 }
 
+create_user_managed_identity() {
+  export SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
+
+  az identity create --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --location "${LOCATION}" --subscription "${SUBSCRIPTION_ID}"
+
+  export USER_ASSIGNED_IDENTITY_OBJECT_ID="$(az identity show --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --query 'principalId' -otsv)"
+}
+
+create_acr() {
+  az acr create --name "${ACR_NAME}" \
+    --resource-group "${GROUP_NAME}" \
+    --sku Standard >/dev/null
+  az acr login -n ${ACR_NAME}
+  echo "ACR '${ACR_NAME}' is created"
+
+  # Enable acrpull role to the user-managed identity.
+  az role assignment create \
+    --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --role acrpull \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
+}
+
+create_aks() {
+  az aks create \
+    --resource-group "${GROUP_NAME}" \
+    --name "${AKS_NAME}" \
+    --node-vm-size Standard_DS3_v2 \
+    --kubernetes-version "${KUBERNETES_VERSION}" \
+    --node-count 1 \
+    --generate-ssh-keys \
+    --enable-workload-identity \
+    --attach-acr ${ACR_NAME} \
+    --enable-oidc-issuer >/dev/null
+  echo "AKS '${AKS_NAME}' is created"
+
+  az aks get-credentials --resource-group ${GROUP_NAME} --name ${AKS_NAME}
+  echo "Connected to AKS cluster"
+
+  # Establish federated identity credential between the managed identity, the
+  # service account issuer and the subject.
+  export AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
+  az identity federated-credential create --name ratify-federated-credential --identity-name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --issuer "${AKS_OIDC_ISSUER}" --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
+
+  # It takes a while for the federated identity credentials to be propagated
+  # after being initially added.
+  sleep 1m
+}
+
+create_akv() {
+  az keyvault create --resource-group ${GROUP_NAME} \
+    --location "${LOCATION}" \
+    --name ${KEYVAULT_NAME}
+  az keyvault certificate import --vault-name ${KEYVAULT_NAME} \
+    -n ${NOTARY_PEM_NAME} \
+    -f ./test/testdata/notary.pem
+  echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
+
+  # Grant permissions to access the certificate.
+  az keyvault set-policy --name ${KEYVAULT_NAME} --certificate-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
+}
+
 main() {
   export -f register_feature
   # might take around 20 minutes to register
@@ -34,26 +95,10 @@ main() {
 
   az group create --name "${GROUP_NAME}" --location "${LOCATION}" >/dev/null
 
-  az acr create --name "${ACR_NAME}" \
-    --resource-group "${GROUP_NAME}" \
-    --sku Standard >/dev/null
-  az acr login -n ${ACR_NAME}
-  echo "ACR '${ACR_NAME}' is created"
-
-  az aks create \
-    --resource-group "${GROUP_NAME}" \
-    --name "${AKS_NAME}" \
-    --node-vm-size Standard_DS3_v2 \
-    --enable-managed-identity \
-    --kubernetes-version "${KUBERNETES_VERSION}" \
-    --node-count 1 \
-    --generate-ssh-keys \
-    --attach-acr "${ACR_NAME}" \
-    --enable-oidc-issuer >/dev/null
-  echo "AKS '${AKS_NAME}' is created and attached to ACR"
-
-  az aks get-credentials --resource-group ${GROUP_NAME} --name ${AKS_NAME}
-  echo "Connected to AKS cluster"
+  create_user_managed_identity
+  create_akv
+  create_acr
+  create_aks
 }
 
 main

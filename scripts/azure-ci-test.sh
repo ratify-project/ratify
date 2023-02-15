@@ -24,12 +24,15 @@ SUFFIX=$(openssl rand -hex 2)
 export GROUP_NAME="${GROUP_NAME:-ratify-e2e-${SUFFIX}}"
 export ACR_NAME="${ACR_NAME:-ratifyacr${SUFFIX}}"
 export AKS_NAME="${AKS_NAME:-ratify-aks-${SUFFIX}}"
+export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
+export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.24.6}
 TAG="test${SUFFIX}"
 GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
-RATIFY_NAMESPACE=${4:-default}
+export RATIFY_NAMESPACE=${4:-default}
+export NOTARY_PEM_NAME="notary"
 CERT_DIR=${5:-"~/ratify/certs"}
 
 build_push_to_acr() {
@@ -58,7 +61,8 @@ deploy_ratify() {
   ./scripts/generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
 
   echo "deploying ratify"
-  local IDENTITY_CLIENT_ID=$(az aks show -g ${GROUP_NAME} -n ${AKS_NAME} --query "identityProfile.kubeletidentity.clientId")
+  local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
+  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
   helm install ratify \
     ./charts/ratify --atomic \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
@@ -67,13 +71,16 @@ deploy_ratify() {
     --set image.tag=${TAG} \
     --set cosign.enabled=true \
     --set-file cosign.key="./test/testdata/cosign.pub" \
-    --set azureManagedIdentity.tenantId=${TENANT_ID} \
-    --set oras.authProviders.azureManagedIdentityEnabled=true \
-    --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
-    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+    --set akvCertConfig.enabled=true \
+    --set akvCertConfig.vaultURI=${VAULT_URI} \
+    --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+    --set akvCertConfig.tenantId=${TENANT_ID} \
+    --set oras.authProviders.azureWorkloadIdentityEnabled=true \
+    --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID}
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
@@ -90,10 +97,8 @@ save_logs() {
 }
 
 cleanup() {
-  save_logs
-
   echo "Deleting group"
-  az group delete --name "${GROUP_NAME}" --yes --no-wait || true
+  # az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
 
 trap cleanup EXIT
@@ -107,6 +112,7 @@ main() {
   deploy_ratify
 
   bats -t ./test/bats/azure-test.bats
+  save_logs
 }
 
 main
