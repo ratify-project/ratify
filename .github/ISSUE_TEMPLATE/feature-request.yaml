@@ -21,10 +21,6 @@ body:
     id: preface
     attributes:
       value: "Thank you for submitting new features for Ratify."
-  - type: input
-    id: version
-    attributes:
-      label: "What versions of Kubernetes and Ratify are you running?"      
   - type: textarea
     id: description
     attributes:

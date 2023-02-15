@@ -32,6 +32,14 @@ body:
     id: expect
     attributes:
       label: "What did you expect to happen?"
+  - type: input
+    id: version
+    attributes:
+      label: "What version of Kubernetes are you running?"  
+  - type: input
+    id: version
+    attributes:
+      label: "What version Ratify are you running?"         
   - type: textarea
     id: solution
     attributes:
@@ -42,7 +50,7 @@ body:
   - type: checkboxes
     id: idea
     attributes:
-      label: "Are you willing to submit PRs to contribute to this feature?"
+      label: "Are you willing to submit PRs to contribute to this bug fix?"
       description: "This is absolutely not required, but we are happy to guide you in the contribution process
         especially when you already have a good proposal or understanding of how to implement it. Join us at https://slack.cncf.io/ and choose #ratify channel."
       options:
