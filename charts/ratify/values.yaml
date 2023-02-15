@@ -23,6 +23,7 @@ serviceAccount:
   name: ratify-admin
 gatekeeper:
   version: "3.11.0"
+  namespace: # default is gatekeeper-system
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
