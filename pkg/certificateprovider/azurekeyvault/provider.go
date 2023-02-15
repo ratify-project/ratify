@@ -19,11 +19,13 @@ package azurekeyvault
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"context"
+	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"reflect"
 	"strings"
 
+	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
 
@@ -39,7 +41,7 @@ type keyvaultObject struct {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Certificate, error) {
+func GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
 	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
@@ -99,7 +101,7 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 		return nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
 	}
 
-	certs := []types.Certificate{}
+	certs := []*x509.Certificate{}
 	for _, keyVaultCert := range keyVaultCerts {
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
@@ -117,9 +119,17 @@ func GetCertificates(ctx context.Context, attrib map[string]string) ([]types.Cer
 			Version:         result.version,
 		}
 
-		certs = append(certs, cert)
-		logrus.Debugf("added certificates %v to response", cert.CertificateName)
+		logrus.Debugf("retreived certificate %v from keyvault", cert.CertificateName)
+
+		// convert bytes to x509
+		decodedCerts, err := certificateprovider.DecodeCertificates(cert.Content)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode certificate %s, error: %w", cert.CertificateName, err)
+		}
+		certs = append(certs, decodedCerts...)
+		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
 	}
+
 	return certs, nil
 }
 
