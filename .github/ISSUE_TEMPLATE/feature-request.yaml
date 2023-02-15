@@ -33,7 +33,7 @@ body:
       label: "Anything else you would like to add?"
       description: "Miscellaneous information that will assist in solving the issue."
     validations:
-      required: true
+      required: false
   - type: checkboxes
     id: idea
     attributes:

@@ -27,7 +27,7 @@ body:
       required: true
     attributes:
       label: What happened in your environment? 
-      description: "install ratify with debug logs by adding --set logLevel=debug to helm install command"
+      description: "install ratify with debug logs by adding --set logLevel=debug to helm install command or set RATIFY_LOG_LEVEL=debug as an environment variable"
   - type: textarea
     id: expect
     attributes:
@@ -46,7 +46,7 @@ body:
       label: "Anything else you would like to add?"
       description: "Miscellaneous information that will assist in solving the issue."
     validations:
-      required: true
+      required: false
   - type: checkboxes
     id: idea
     attributes:
