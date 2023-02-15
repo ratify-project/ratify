@@ -67,6 +67,7 @@ deploy_ratify() {
     --set image.tag=${TAG} \
     --set cosign.enabled=true \
     --set-file cosign.key="./test/testdata/cosign.pub" \
+    --set-file notaryCert="./test/testdata/notary.crt" \
     --set azureManagedIdentity.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureManagedIdentityEnabled=true \
     --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
