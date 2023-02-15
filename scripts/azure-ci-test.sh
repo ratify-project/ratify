@@ -28,11 +28,11 @@ export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
 export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.24.6}
+export RATIFY_NAMESPACE=${4:-default}
+export NOTARY_PEM_NAME="notary"
 TAG="test${SUFFIX}"
 GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
-export RATIFY_NAMESPACE=${4:-default}
-export NOTARY_PEM_NAME="notary"
 CERT_DIR=${5:-"~/ratify/certs"}
 
 build_push_to_acr() {
@@ -98,7 +98,7 @@ save_logs() {
 
 cleanup() {
   echo "Deleting group"
-  # az group delete --name "${GROUP_NAME}" --yes --no-wait || true
+  az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
 
 trap cleanup EXIT

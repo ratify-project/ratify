@@ -24,6 +24,8 @@ set -o pipefail
 : "${ACR_NAME:?ACR_NAME environment variable empty or not defined.}"
 
 register_feature() {
+  az extension add --name aks-preview
+  az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
   az provider register --namespace Microsoft.ContainerService
 }
 

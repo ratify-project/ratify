@@ -48,25 +48,25 @@ gatekeeper:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
 # Key Vault -> akvCertConfig.enabled
 azureWorkloadIdentity:
-  clientId: "ec7809f6-d034-41bc-ac28-1c1a5e414785"
+  clientId:
 
 azureManagedIdentity:
   clientId:
   tenantId:
 
 akvCertConfig:
-  enabled: true
-  vaultURI: "https://ratify-e2e-akv1.vault.azure.net/"
-  cert1Name: "wabbitnetworks"
+  enabled: false
+  vaultURI:
+  cert1Name:
   cert1Version:
   cert2Name:
   cert2Version:
-  tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47"
+  tenantId:
 
 oras:
   useHttp: false
   authProviders:
-    azureWorkloadIdentityEnabled: true
+    azureWorkloadIdentityEnabled: false
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
