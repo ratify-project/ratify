@@ -13,7 +13,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/cespare/xxhash/v2 v2.1.2
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/docker/cli v23.0.0+incompatible
+	github.com/docker/cli v23.0.1+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/golang/protobuf v1.5.2
