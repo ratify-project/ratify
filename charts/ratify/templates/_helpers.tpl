@@ -89,3 +89,15 @@ apiVersion: externaldata.gatekeeper.sh/v1beta1
 apiVersion: externaldata.gatekeeper.sh/v1alpha1
 {{- end }}
 {{- end }}
+
+{{/*
+Set the namespace exclusions for Assign
+*/}}
+{{- define "ratify.assignExcludedNamespaces" -}}
+{{- $gkNamespace := default "gatekeeper-system" .Values.gatekeeper.namespace -}}
+- {{ $gkNamespace | quote}}
+- "kube-system"
+{{- if and (ne .Release.Namespace $gkNamespace) (ne .Release.Namespace "kube-system") }}
+- {{ .Release.Namespace | quote}}
+{{- end }}
+{{- end }}
