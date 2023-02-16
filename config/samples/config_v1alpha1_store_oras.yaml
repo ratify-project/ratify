@@ -10,3 +10,4 @@ spec:
     cosignEnabled: false
     keyNumber: 10000
     ttl: 10
+    useHttp: true
