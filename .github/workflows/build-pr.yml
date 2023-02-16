@@ -33,6 +33,8 @@ jobs:
         run: bin/ratify version
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v3
+      - name: Run helm lint
+        run: helm lint charts/ratify
   
   build_test_cli:
     name: "Build and run tests for CLI"
