@@ -9,11 +9,7 @@ spec:
     - apiGroups: ["*"]
       kinds: ["Pod"]
     excludedNamespaces:
-      - "gatekeeper-system"
-      - "kube-system"
-      {{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
-      - {{ .Release.Namespace }}
-      {{- end }}
+      {{ include "ratify.assignExcludedNamespaces" . | nindent 6 }}
   applyTo:
   - groups: [""]
     kinds: ["Pod"]
@@ -35,11 +31,7 @@ spec:
     - apiGroups: ["apps", "batch"]
       kinds: ["Deployment", "ReplicaSet", "StatefulSet", "DaemonSet", "Job"]
     excludedNamespaces:
-      - "gatekeeper-system"
-      - "kube-system"
-      {{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
-      - {{ .Release.Namespace }}
-      {{- end }}
+      {{ include "ratify.assignExcludedNamespaces" . | nindent 6 }}
   applyTo:
   - groups: ["apps", "batch"]
     kinds: ["Deployment", "ReplicaSet", "StatefulSet", "DaemonSet", "Job", "ReplicationController"]
@@ -61,11 +53,7 @@ spec:
     - apiGroups: ["batch"]
       kinds: ["CronJob"]
     excludedNamespaces:
-      - "gatekeeper-system"
-      - "kube-system"
-      {{- if and (ne .Release.Namespace "gatekeeper-system") (ne .Release.Namespace "kube-system") }}
-      - {{ .Release.Namespace }}
-      {{- end }}
+      {{ include "ratify.assignExcludedNamespaces" . | nindent 6 }}
   applyTo:
   - groups: ["batch"]
     kinds: ["CronJob"]

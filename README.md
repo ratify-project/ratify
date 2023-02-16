@@ -32,6 +32,7 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 ## Quick Start
 
 Try out ratify in Kubernetes through Gatekeeper as the admission controller.
+For quick start steps compatible with the last released version of Ratify, follow steps [here](https://github.com/deislabs/ratify/blob/1.0.0-rc.1/README.md#quick-start).
 
 Prerequisites:
 - Kubernetes v1.20 or higher
@@ -62,12 +63,15 @@ curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/scripts/genera
 bash generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
 
 helm repo add ratify https://deislabs.github.io/ratify
+# download the notary verification certificate
+curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
-    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+    --set-file notaryCert=./notary.crt
 
 kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
