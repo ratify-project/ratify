@@ -81,58 +81,100 @@ Both the above modes uses a k8s secret of type ```dockerconfigjson``` that is de
 
 ### 2. Azure Workload Identity
 
-Ratify pulls artifacts from a private Azure Container Registry using Workload Federated Identity in an Azure Kubernetes Service cluster. For an overview on how workload identity operates in Azure, refer to the [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation). 
+Ratify pulls artifacts from a private Azure Container Registry using Workload Federated Identity in an Azure Kubernetes Service cluster. For an overview on how workload identity operates in Azure, refer to the [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation). You can use workload identity federation to configure an Azure AD app registration or user-assgined managed identity. The following workflow will include steps of both.
 
-#### User steps to set up Workload Identity with AKS and ACR:
+#### User steps to set up Workload Identity with AKS, ACR and AKV:
 
 The official steps for setting up Workload Identity on AKS can be found [here](https://azure.github.io/azure-workload-identity/docs/quick-start.html).  
 
-1. Create ACR
-2. Create OIDC enabled AKS cluster by following steps [here](https://learn.microsoft.com/en-us/azure/aks/cluster-configuration#oidc-issuer)
-3. Connect to cluster using kubectl by following steps [here](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-deploy-cluster?tabs=azure-cli#connect-to-cluster-using-kubectl)
-4. Save the cluster's SERVICE_ACCOUNT_ISSUER (OIDC url):
-
+1. Configure environment variables.
 ```shell
-export SERVICE_ACCOUNT_ISSUER="$(az aks show --resource-group <resource_group> --name <cluster_name> --query "oidcIssuerProfile.issuerUrl" -otsv)"
+export IDENTITY_NAME=<Identity Name>
+export GROUP_NAME=<Azure Resource Group Name>
+export SUBSCRIPTION_ID=<Azure Subscription ID>
+export TENANT_ID=<Azure Tenant ID>
+export ACR_NAME=<Azure Container Registry Name>
+export AKS_NAME=<Azure Kubernetes Service Name>
+export KEYVAULT_NAME=<Azure Key Vault Name>
+export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
+export CERT_DIR=<Directory storing TLS certs>
+export NOTARY_PERM_NAME=<Name of cerficicate file uploaded to Key Vault>
 ```
 
-1. Install Mutating Admission Webhook onto AKS cluster by following steps [here](https://azure.github.io/azure-workload-identity/docs/installation/mutating-admission-webhook.html)
-1. As the guide linked above shows, it's possible to use the AZ workload identity CLI or the regular az CLI to perform remaining setup. Following steps follow the AZ CLI.
-1. Create ACR AAD application: 
+2. Create a Workload Federated Identity.
 
+Create ACR AAD application:
 ```shell
-az ad sp create-for-rbac --name "<APPLICATION_NAME>"
+az ad sp create-for-rbac --name ${IDENTITY_NAME}
 
-export APPLICATION_NAME=<APPLICATION_NAME>
-
-export APPLICATION_CLIENT_ID="$(az ad sp list --display-name "${APPLICATION_NAME}" --query '[0].appId' -otsv)"
+export IDENTITY_CLIENT_ID="$(az ad sp list --display-name "${IDENTITY_NAME}" --query '[0].appId' -otsv)"
+export IDENTITY_OBJECT_ID="$(az ad sp list --display-name "${IDENTITY_NAME}" --query '[0].appId' -otsv)"
 ```
 
-8. On Portal or AZ CLI, enable acrpull role to the AAD application for the ACR resource
-
+Or create user-assigned managed identity:
 ```shell
-// Sample AZ CLI command
-az role assignment create --assignee ${APPLICATION_CLIENT_ID} --role acrpull --scope subscriptions/<SUBSCRIPTION NAME>/resourceGroups/<RESOURCE GROUP>/providers/Microsoft.ContainerRegistry/registries/<REGISTRY NAME>
+az identity create --name "${IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --location "${LOCATION}" --subscription "${SUBSCRIPTION_ID}"
+
+export IDENTITY_OBJECT_ID="$(az identity show --name "${IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --query 'principalId' -otsv)"
+export IDENTITY_CLIENT_ID=$(az identity show --name ${IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
+```
+3. Create ACR and enable acrpull role to the workload identity.
+```shell
+az acr create --name "${ACR_NAME}" \
+  --resource-group "${GROUP_NAME}" \
+  --sku Standard
+
+# AAD application:
+az role assignment create \
+  --assignee ${IDENTITY_OBJECT_ID} \
+  --role acrpull \
+  --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
+
+# User-assigend managed identity:
+az role assignment create \
+  --assignee-object-id ${IDENTITY_OBJECT_ID} \
+  --role acrpull \
+  --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
 ```
 
-9. Update `serviceAccount` attribute in ./charts/ratify/values.yaml file to add service account to cluster: 
+4. Create OIDC enabled AKS cluster by following the [doc](https://learn.microsoft.com/en-us/azure/aks/cluster-configuration#oidc-issuer) or below steps:
+```shell
+# Install the aks-preview extension
+az extension add --name aks-preview
 
-```yaml
-serviceAccount:
-  create: true
-  name: <Service Account Name>
+# Register the 'EnableWorkloadIdentityPreview' feature flag
+az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
+az provider register --namespace Microsoft.ContainerService
+
+az aks create \
+    --resource-group "${GROUP_NAME}" \
+    --name "${AKS_NAME}" \
+    --node-vm-size Standard_DS3_v2 \
+    --node-count 1 \
+    --generate-ssh-keys \
+    --enable-workload-identity \
+    --attach-acr ${ACR_NAME} \
+    --enable-oidc-issuer
+
+# Connect to the AKS cluster:
+az aks get-credentials --resource-group ${GROUP_NAME} --name ${AKS_NAME}
+
+export AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
 ```
 
-10. On AZ CLI `<Service Account Namespace>` is where you deploy Ratify:
+5. [optional] Install Mutating Admission Webhook onto AKS cluster by following steps [here](https://azure.github.io/azure-workload-identity/docs/installation/mutating-admission-webhook.html) if you didn't add the `--enable-workload-identity` option while creating the AKS cluster.
 
+6. Establish federated identity credential. On AZ CLI `${RATIFY_NAMESPACE}` is where you deploy Ratify:
+
+Using AAD application:
 ```shell
-export APPLICATION_OBJECT_ID="$(az ad app show --id ${APPLICATION_CLIENT_ID} --query id -otsv)"
+export APPLICATION_OBJECT_ID="$(az ad app show --id ${IDENTITY_CLIENT_ID} --query id -otsv)"
 
 cat <<EOF > body.json
 {
   "name": "kubernetes-federated-credential",
-  "issuer": "${SERVICE_ACCOUNT_ISSUER}",
-  "subject": "system:serviceaccount:<Service Account Namespace>:<Service Account Name>",
+  "issuer": "${AKS_OIDC_ISSUER}",
+  "subject": "system:serviceaccount:${RATIFY_NAMESPACE}:ratify-admin",
   "description": "Kubernetes service account federated credential",
   "audiences": [
     "api://AzureADTokenExchange"
@@ -143,69 +185,70 @@ EOF
 az rest --method POST --uri "https://graph.microsoft.com/beta/applications/${APPLICATION_OBJECT_ID}/federatedIdentityCredentials" --body @body.json
 ```
 
-11. Update `azureWorkloadIdentity` and `oras` attributes in ./charts/ratify/values.yaml file:
-
-```yaml
-azureWorkloadIdentity:
-  clientId: <APPLICATION_CLIENT_ID>
-
-oras:
-  authProviders:
-    azureWorkloadIdentityEnabled: true
-    k8secretsEnabled: false
-    awsEcrBasicEnabled: false
-```
-
-12. Deploy from local helm chart:
-
+Using user-assigned managed identity:
 ```shell
-helm install ratify ./charts/ratify --atomic
+# Establish feerated identity credentials between the managed identity, the service account issuer and the subject.
+az identity federated-credential create \
+  --name ratify-federated-credential \
+  --identity-name "${IDENTITY_NAME}" \
+  --resource-group "${GROUP_NAME}" \
+  --issuer "${AKS_OIDC_ISSUER}" \
+  --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
 ```
-### 3. Azure Managed Identity
 
-Ratify pulls artifacts from a private Azure Container Registry using User-assigned Managed Identity in an Azure Kubernetes Service cluster.  
-Currently, it does not support cross tenants for MSI and ACR.
-
-#### User steps to set up Managed Identity with AKS and ACR:
-
-1. Create ACR
-2. Create AKS cluster
-3. Configure managed identity on the AKS managed VMSS.  
-   a. Directly using kubelet identity:
-      If your AKS cluster has already run `az aks update --attach-acr` to ensure access to the private ACR, kubelet identity will directly has the permission to pull artifacts.
-      ```shell
-      export IDENTITY_CLIENT_ID=$(az aks show -g ${AKS_CLUSTER_NAME} -n ${RESOURCE_GROUP} --query "identityProfile.kubeletidentity.clientId")
-      ```
-   b. Bring your own user-assigned managed identity:
-      ```shell
-      # Create one identity
-      az identity create --name ${IDENTITY_NAME} --resource-group ${RESOURCE_GROUP}
-      export IDENTITY_CLIENT_ID=$(az identity show --name myIdentity --resource-group ${RESOURCE_GROUP} --query 'clientId' -o tsv)
-      export IDENTITY_PRINCIPAL_ID=$(az identity show --name myIdentity --resource-group ${RESOURCE_GROUP} --query 'principalId' -o tsv)
-      export IDENTITY_RESOURCE_ID=$(az identity show --name myIdentity --resource-group ${RESOURCE_GROUP} --query 'id' -o tsv)
-
-      # Assign identity ACR pull permission to ACR
-      az role assignment create --assignee ${IDENTITY_PRINCIPAL_ID} --role "Acrpull" --scope "/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}"
-
-      # Configure MSI on all AKS agent pools
-      node_resource_group=$(az aks show -g ${AKS_CLUSTER_NAME} -n ${RESOURCE_GROUP} --query "nodeResourceGroup")
-      for vm in ${az vmss list -g $nodeResourceGroup --query "[].name" -o tsv}
-      do
-        az vmss identity assign -g $node_resource_group -n $vm --identities ${IDENTITY_RESOURCE_ID}
-      done
-      ```
-
-4. Deploy ratify helm chart
+7. Create an Azure Key Vault and set an access policy.
 ```shell
-export TENANT_ID={{ Tenant Id }}
-helm install ratify \
-    ratify/ratify --atomic \
-    --set oras.authProviders.azureManagedIdentityEnabled=true \
-    --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
-    --set azureManagedIdentity.tenantId=${TENANT_ID}
+az keyvault create \
+  --resource-group ${GROUP_NAME} \
+  --name ${KEYVAULT_NAME}
+
+export VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
+
+# Import your own private key and certificates. You can import it on the portal as well.
+az keyvault certificate import \
+  --vault-name ${KEYVAULT_NAME} \
+  -n <Certificate Name> \
+  -f /path/to/certificate
+
+# Grant permission to access the certificate.
+# AAD application:
+az keyvault set-policy --name "${KEYVAULT_NAME}" \
+  --certificate-permissions get \
+  --spn ${IDENTITY_NAME}
+
+# User-assigned managed identity:
+az keyvault set-policy --name ${KEYVAULT_NAME} \
+  --certificate-permissions get \
+  --object-id ${IDENTITY_OBJECT_ID}
 ```
 
-### 4. Kubernetes Secrets
+8. Deploy from local helm chart:
+```shell
+# Setup Gatekeeper first.
+helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+
+helm install gatekeeper/gatekeeper  \
+  --name-template=gatekeeper \
+  --namespace gatekeeper-system --create-namespace \
+  --set enableExternalData=true \
+  --set validatingWebhookTimeoutSeconds=5 \
+  --set mutatingWebhookTimeoutSeconds=2
+
+# Deploy Ratify
+helm install ratify ./charts/ratify --atomic \
+  --namespace ${RATIFY_NAMESPACE} \
+  --set-file provider.tls.crt=${CERT_DIR}/server.crt \
+  --set-file provider.tls.key=${CERT_DIR}/server.key \
+  --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+  --set oras.authProviders.azureWorkloadIdentityEnabled=true \
+  --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
+  --set akvCertConfig.enabled=true \
+  --set akvCertConfig.vaultURI=${VAULT_URI} \
+  --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+  --set akvCertConfig.tenantId=${TENANT_ID}
+```
+
+### 3. Kubernetes Secrets
 
 Ratify resolves registry credentials from [Docker Config Kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets) in the cluster. Ratify considers kubernetes secrets in two ways:
 
