@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
+        {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
+        azure.workload.identity/use: "true"
+        {{- end }}
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
@@ -52,12 +55,7 @@ spec:
             - --cache-ttl={{ .Values.provider.cache.ttl }}
           ports:
             - containerPort: 6001
-          volumeMounts:
-            {{- if eq .Values.akvCertConfig.enabled false }}      
-            - mountPath: "/usr/local/ratify-certs/notary/truststore"                    
-              name: notary-certs
-              readOnly: true
-            {{- end }}              
+          volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
               name: cosign-certs
@@ -113,9 +111,6 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: notary-certs
-          secret:
-            secretName: {{ include "ratify.fullname" . }}-notary-certificate
         {{- if .Values.cosign.enabled }}
         - name: cosign-certs
           secret:

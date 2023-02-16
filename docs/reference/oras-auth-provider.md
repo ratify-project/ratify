@@ -213,7 +213,7 @@ Ratify resolves registry credentials from [Docker Config Kubernetes secrets](htt
 
 2. Ratify considers the `imagePullSecrets` specified in the service account associated with Ratify. The `serviceAccountName` field specifies the service account associated with Ratify. Ratify MUST be assigned a role to read the service account and secrets in the Ratify namespace.
 
-Ratify only supports the kubernetes.io/dockerconfigjson secret type or the legacy kubernetes.io/dockercfg type.
+Ratify only supports the kubernetes.io/dockerconfigjson secret type.
 
 #### Sample Configuration
 

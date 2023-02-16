@@ -65,6 +65,9 @@ deploy_ratify() {
     --set image.repository=${ACR_NAME}.azurecr.io/test/localbuild \
     --set image.crdRepository=${ACR_NAME}.azurecr.io/test/localbuildcrd \
     --set image.tag=${TAG} \
+    --set cosign.enabled=true \
+    --set-file cosign.key="./test/testdata/cosign.pub" \
+    --set-file notaryCert="./test/testdata/notary.crt" \
     --set azureManagedIdentity.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureManagedIdentityEnabled=true \
     --set azureManagedIdentity.clientId=${IDENTITY_CLIENT_ID} \
@@ -72,6 +75,8 @@ deploy_ratify() {
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
     --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+
+  kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
   kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
   kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
@@ -81,11 +86,13 @@ save_logs() {
   echo "Saving logs"
   kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 >logs-externaldata-controller-aks.json
   kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 >logs-externaldata-audit-aks.json
-  kubectl logs -n ratify-service -l app=ratify --tail=-1 >logs-ratify-preinstall-aks.json
-  kubectl logs -n ratify-service -l app.kubernetes.io/name=ratify --tail=-1 >logs-ratify-aks.json
+  kubectl logs -n ${RATIFY_NAMESPACE} -l app=ratify --tail=-1 >logs-ratify-preinstall-aks.json
+  kubectl logs -n ${RATIFY_NAMESPACE} -l app.kubernetes.io/name=ratify --tail=-1 >logs-ratify-aks.json
 }
 
 cleanup() {
+  save_logs
+
   echo "Deleting group"
   az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
@@ -101,8 +108,6 @@ main() {
   deploy_ratify
 
   bats -t ./test/bats/azure-test.bats
-
-  save_logs
 }
 
 main
