@@ -41,7 +41,7 @@ load helpers
 }
 
 @test "schemavalidator verifier test" {
-    run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/schemavalidator:v0
+    run bin/ratify verify -c $RATIFY_DIR/schemavalidator_config.json -s $LOCAL_TEST_REGISTRY/schemavalidator:v0
     assert_cmd_verify_success
 }
 

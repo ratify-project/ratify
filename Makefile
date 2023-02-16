@@ -66,7 +66,8 @@ ratify-config:
 	cp ./test/bats/tests/config/* ${INSTALL_DIR}
 	cp ./test/bats/tests/certificates/wabbit-networks.io.crt ${INSTALL_DIR}/ratify-certs/notary/wabbit-networks.io.crt
 	cp ./test/bats/tests/certificates/cosign.pub ${INSTALL_DIR}/ratify-certs/cosign/cosign.pub
-
+	cp -r ./test/bats/tests/schemas/ ${INSTALL_DIR}
+	
 .PHONY: test
 test:
 	go test -v -coverprofile=coverage.txt -covermode=atomic ./...
