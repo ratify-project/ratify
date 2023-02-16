@@ -13,3 +13,5 @@ certs/
 
 # IDE files
 .vscode/settings.json
+
+.staging

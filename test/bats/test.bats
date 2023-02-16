@@ -161,7 +161,7 @@ SLEEP_TIME=1
     sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
-    run kubectl run cosign-demo-keyless --namespace default --image=docker.io/sozercan/hello-world:latest
+    run kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
     assert_success
 }
 

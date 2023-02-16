@@ -16,7 +16,7 @@ load helpers
 
     # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
     sed -i 's/.staging\/cosign\/cosign.pub//g' $RATIFY_DIR/config.json
-    run bin/ratify verify -c $RATIFY_DIR/config.json -s docker.io/sozercan/hello-world:latest
+    run bin/ratify verify -c $RATIFY_DIR/config.json -s wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
     assert_cmd_verify_success
 
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/cosign:unsigned
