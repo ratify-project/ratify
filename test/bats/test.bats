@@ -54,10 +54,20 @@ SLEEP_TIME=1
     }
     # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
     sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    cat ./config/samples/config_v1alpha1_verifier_cosign.yaml >&3
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
+
+    sed -i 's/useHttp: true/useHttp: false/' ./config/samples/config_v1alpha1_store_oras.yaml
+    cat ./config/samples/config_v1alpha1_store_oras.yaml >&3
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras.yaml
+    sleep 5
+
     run kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
     assert_success
+
+    sed -i 's/useHttp: false/useHttp: true/' ./config/samples/config_v1alpha1_store_oras.yaml
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras.yaml
 }
 
 @test "licensechecker test" {

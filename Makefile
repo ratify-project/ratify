@@ -106,7 +106,8 @@ deploy-gatekeeper:
 	helm install gatekeeper/gatekeeper  \
 		--version ${GATEKEEPER_VERSION} \
 		--name-template=gatekeeper \
-		--namespace ${GATEKEEPER_NAMESPACE} --create-namespace
+		--namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	    --set enableExternalData=true
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:

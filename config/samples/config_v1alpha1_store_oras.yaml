@@ -3,11 +3,10 @@ kind: Store
 metadata:
   name: store-oras
 spec:
-  name: oras  
+  name: oras
   parameters:
     cacheEnabled: true
     capacity: 100
     cosignEnabled: false
     keyNumber: 10000
     ttl: 10
-    
