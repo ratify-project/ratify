@@ -7,6 +7,11 @@ WAIT_TIME=60
 SLEEP_TIME=1
 
 @test "notary test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
+    }
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -17,12 +22,15 @@ SLEEP_TIME=1
     assert_success
     run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
     assert_failure
-
-    echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod demo --namespace default
 }
 
 @test "cosign test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo2 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
+    }
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -35,10 +43,6 @@ SLEEP_TIME=1
     assert_success
     run kubectl run cosign-demo2 --namespace default --image=registry:5000/cosign:unsigned
     assert_failure
-
-    echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default'
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
 }
 
 @test "licensechecker test" {
@@ -71,6 +75,7 @@ SLEEP_TIME=1
      teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
     }
 
     run kubectl apply -f ./library/default/template.yaml
@@ -101,6 +106,7 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator2 --namespace default --force --ignore-not-found=true'
     }
 
     run kubectl apply -f ./library/default/template.yaml
@@ -212,6 +218,7 @@ SLEEP_TIME=1
 
 @test "dynamic plugins disabled test" {
     teardown() {
+        echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
     }
 
@@ -226,6 +233,11 @@ SLEEP_TIME=1
 }
 
 @test "validate mutation tag to digest" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod mutate-demo --namespace default --ignore-not-found=true'
+    }
+    
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -236,9 +248,6 @@ SLEEP_TIME=1
     assert_success
     result=$(kubectl get pod mutate-demo --namespace default -o json | jq -r ".spec.containers[0].image" | grep @sha)
     assert_mutate_success
-
-    echo "cleaning up"
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod mutate-demo --namespace default
 }
 
 @test "validate inline cert provider" {
@@ -304,4 +313,50 @@ EOF
     # verify that the image can now be run
     run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
     assert_success
+}
+
+@test "validate docker ORAS auth provider" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    # apply store CRD with cosign disabled
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_dockerauth.yaml
+    assert_success
+    sleep 5
+    run kubectl run demo --namespace default --image=registry-auth:5000/notation:signed
+    assert_success
+    run kubectl run demo1 --namespace default --image=registry-auth:5000/notation:unsigned
+    assert_failure
+}
+
+@test "validate k8 secrets ORAS auth provider" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    # apply store CRD with cosign disabled and k8 secret auth provier enabled
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_k8secretAuth.yaml
+    assert_success
+    sleep 5
+    run kubectl run demo --namespace default --image=registry-auth:5000/notation:signed
+    assert_success
+    run kubectl run demo1 --namespace default --image=registry-auth:5000/notation:unsigned
+    assert_failure
 }

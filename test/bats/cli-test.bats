@@ -72,3 +72,11 @@ load helpers
     test -x $RATIFY_DIR/plugins/dynamicstore
     assert_success
 }
+
+@test "docker ORAS auth provider test" {
+    run bin/ratify verify -c $RATIFY_DIR/docker_auth_config.json -s $LOCAL_TEST_REGISTRY_AUTH/notation:signed
+    assert_cmd_verify_success
+
+    run bin/ratify verify -c $RATIFY_DIR/docker_auth_config.json -s $LOCAL_TEST_REGISTRY_AUTH/notation:unsigned
+    assert_cmd_verify_failure
+}

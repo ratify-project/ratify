@@ -89,3 +89,43 @@ apiVersion: externaldata.gatekeeper.sh/v1beta1
 apiVersion: externaldata.gatekeeper.sh/v1alpha1
 {{- end }}
 {{- end }}
+
+{{/*
+Choose the caBundle field for External Data Provider
+*/}}
+{{- define "ratify.providerCabundle" -}}
+{{- $top := index . 0 -}}
+{{- $ca := index . 1 -}}
+{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle }}
+caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
+{{- else }}
+caBundle: {{ $ca.Cert | b64enc | replace "\n" "" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Choose the certificate/key pair to enable TLS for HTTP server
+*/}}
+{{- define "ratify.tlsSecret" -}}
+{{- $top := index . 0 -}}
+{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle }}
+tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}  
+tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
+{{- else }}
+{{- $cert := index . 1 -}}
+tls.crt: {{ $cert.Cert | b64enc | quote }}
+tls.key: {{ $cert.Key | b64enc | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Set the namespace exclusions for Assign
+*/}}
+{{- define "ratify.assignExcludedNamespaces" -}}
+{{- $gkNamespace := default "gatekeeper-system" .Values.gatekeeper.namespace -}}
+- {{ $gkNamespace | quote}}
+- "kube-system"
+{{- if and (ne .Release.Namespace $gkNamespace) (ne .Release.Namespace "kube-system") }}
+- {{ .Release.Namespace | quote}}
+{{- end }}
+{{- end }}
