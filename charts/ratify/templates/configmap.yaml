@@ -60,9 +60,15 @@ data:
             {
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
-                "verificationCerts": [
-                  "/usr/local/ratify-certs/notary/truststore"
-                  ],
+                "verificationCertStores": {
+                  "certs":[
+                    {{- if .Values.akvCertConfig.enabled }}
+                    "certstore-akv"
+                    {{- else }}
+                    "{{ include "ratify.fullname" . }}-notary-inline-cert"
+                    {{- end }}
+                   ]
+                },
                 "trustPolicyDoc": {
                   "version": "1.0",
                   "trustPolicies": [

@@ -30,11 +30,11 @@ register_feature() {
 }
 
 create_user_managed_identity() {
-  export SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
+  SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
 
   az identity create --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --location "${LOCATION}" --subscription "${SUBSCRIPTION_ID}"
 
-  export USER_ASSIGNED_IDENTITY_OBJECT_ID="$(az identity show --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --query 'principalId' -otsv)"
+  USER_ASSIGNED_IDENTITY_OBJECT_ID="$(az identity show --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --query 'principalId' -otsv)"
 }
 
 create_acr() {
@@ -69,7 +69,7 @@ create_aks() {
 
   # Establish federated identity credential between the managed identity, the
   # service account issuer and the subject.
-  export AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
+  local AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
   az identity federated-credential create --name ratify-federated-credential --identity-name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --issuer "${AKS_OIDC_ISSUER}" --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
 
   # It takes a while for the federated identity credentials to be propagated

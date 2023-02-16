@@ -104,7 +104,7 @@ cleanup() {
 trap cleanup EXIT
 
 main() {
-  ./scripts/create-aks-acr.sh
+  ./scripts/create-azure-resources.sh
 
   build_push_to_acr
 
