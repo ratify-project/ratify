@@ -133,11 +133,7 @@ spec:
             name: {{ include "ratify.fullname" . }}-configuration
         - name: tls
           secret:
-            {{- if and .Values.provider.tls.crt .Values.provider.tls.key }}
             secretName: {{ include "ratify.fullname" . }}-tls
-            {{- else }}
-            secretName: ratify-cert-secret
-            {{- end }}
             items:
               - key: tls.key
                 path: tls.key

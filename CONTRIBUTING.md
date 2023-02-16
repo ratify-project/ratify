@@ -104,29 +104,22 @@ image:
 ### Deploy from local helm chart
 
 Deploy using one of the following deployments.
+Note: Ratify upgraded Gatekeeper to 3.11.0, server auth is required to be enabled.
 
 **Option 1**
-Client and server auth disabled
+Client auth disabled and server auth enabled using self signed certificate
 
 ```bash
 helm install ratify ./charts/ratify --atomic
 ```
 
 **Option 2**
-Client auth disabled and server auth enabled using self signed certificate
+Client auth disabled and server auth enabled using your own certificate
 
-1. Supply a certificate to use with Ratify (httpserver) or use the following script to create a self-signed certificate.
-
-    ```bash
-    ./scripts/generate-tls-cert.sh
-    ```
-
-2. Deploy using a certificate
+Deploy using a certificate
 
 ```bash
 helm install ratify ./charts/ratify \
-    --set provider.auth="tls" \
-    --set provider.tls.skipVerify=false \
     --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
     --set provider.tls.key="$(cat certs/tls.key)" \
     --set provider.tls.crt="$(cat certs/tls.crt)" \
@@ -134,32 +127,6 @@ helm install ratify ./charts/ratify \
 ```
 
 **Option 3**
-Client auth disabled and server auth enabled using a secret
-
->Note: There must be an existing secret in the 'default' namespace named 'ratify-cert-secret'.*
-
-```bash
-# Example secret schema
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ratify-cert-secret
-data:
-    tls.crt: <base64 crt value>
-    tls.key: <base64 key value>
-```
-
->Note: The 'provider.tls.cabundle' must be supplied. Update the path or send in a base64 encoded value.*
-
-```bash
-helm install ratify ./charts/ratify \
-    --set provider.auth="tls" \
-    --set provider.tls.skipVerify=false \
-    --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
-    --atomic
-```
-
-**Option 4**
 Client / Server auth enabled (mTLS)  
 
 >Note: Ratify and Gatekeeper must be installed in the same namespace which allows Ratify access to Gatekeepers CA certificate. The Ratify certificate must have a CN and subjectAltName name which matches the namespace of Gatekeeper and Ratify. For example, if installed to the namespace 'gatekeeper-system', the CN and subjectAltName should be 'ratify.gatekeeper-system'*
@@ -167,8 +134,6 @@ Client / Server auth enabled (mTLS)
 ```bash
 helm install ratify ./charts/ratify \
     --namespace gatekeeper-system \
-    --set provider.auth="mtls" \
-    --set provider.tls.skipVerify=false \
     --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
     --set provider.tls.key="$(cat certs/tls.key)" \
     --set provider.tls.crt="$(cat certs/tls.crt)" \
