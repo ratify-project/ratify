@@ -27,8 +27,7 @@ SLEEP_TIME=1
 @test "cosign test" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo2 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
     run kubectl apply -f ./library/default/template.yaml
@@ -39,10 +38,39 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
-    run kubectl run cosign-demo --namespace default --image=registry:5000/cosign:signed
+
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
     assert_success
-    run kubectl run cosign-demo2 --namespace default --image=registry:5000/cosign:unsigned
+
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
     assert_failure
+}
+
+@test "cosign keyless test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
+    }
+    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
+    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    cat ./config/samples/config_v1alpha1_verifier_cosign.yaml >&3
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    sleep 5
+
+    sed -i 's/useHttp: true/useHttp: false/' ./config/samples/config_v1alpha1_store_oras.yaml
+    sed -i 's/cosignEnabled: false/cosignEnabled: true/' ./config/samples/config_v1alpha1_store_oras.yaml
+    cat ./config/samples/config_v1alpha1_store_oras.yaml >&3
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras.yaml
+    sleep 5
+
+    run kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
+    assert_success
+
+    sed -i 's/useHttp: false/useHttp: true/' ./config/samples/config_v1alpha1_store_oras.yaml
+    sed -i 's/""/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    cat ./config/samples/config_v1alpha1_store_oras.yaml >&3
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras.yaml
 }
 
 @test "licensechecker test" {
@@ -72,7 +100,7 @@ SLEEP_TIME=1
 }
 
 @test "sbom verifier test" {
-     teardown() {
+    teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
@@ -237,7 +265,7 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod mutate-demo --namespace default --ignore-not-found=true'
     }
-    
+
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
