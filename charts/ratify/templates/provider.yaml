@@ -1,3 +1,10 @@
+{{- $subject := printf "/CN=ratify.%s" .Release.Namespace -}}
+{{- $dns := printf "ratify.%s" .Release.Namespace -}}
+{{- $ca := genCA "/O=Ratify/CN=Ratify Root CA" 365 -}}
+{{- $cert := genSignedCert $subject nil (list $dns) 365 $ca -}}
+
+---
+
 {{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
@@ -5,8 +12,10 @@ metadata:
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
   timeout: {{ required "You must provide .Values.provider.timeout.validationTimeoutSeconds" .Values.provider.timeout.validationTimeoutSeconds }}
-  caBundle: {{ required "You must provide .Values.provider.tls.cabundle" .Values.provider.tls.cabundle }}
+  {{ include "ratify.providerCabundle" (list . $ca) | nindent 2}}
+
 ---
+
 {{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
@@ -14,5 +23,13 @@ metadata:
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/mutate
   timeout: {{ required "You must provide .Values.provider.timeout.mutationTimeoutSeconds" .Values.provider.timeout.mutationTimeoutSeconds }}
-  caBundle: {{ required "You must provide .Values.provider.tls.cabundle" .Values.provider.tls.cabundle }}
-  
+  {{ include "ratify.providerCabundle" (list . $ca) | nindent 2}}
+
+---
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "ratify.fullname" . }}-tls
+data:
+  {{ include "ratify.tlsSecret" (list . $cert) | nindent 2}}

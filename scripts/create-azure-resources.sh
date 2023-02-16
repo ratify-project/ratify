@@ -32,7 +32,11 @@ register_feature() {
 create_user_managed_identity() {
   SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
 
-  az identity create --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --location "${LOCATION}" --subscription "${SUBSCRIPTION_ID}"
+  az identity create \
+    --name "${USER_ASSIGNED_IDENTITY_NAME}" \
+    --resource-group "${GROUP_NAME}" \
+    --location "${LOCATION}" \
+    --subscription "${SUBSCRIPTION_ID}"
 
   USER_ASSIGNED_IDENTITY_OBJECT_ID="$(az identity show --name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --query 'principalId' -otsv)"
 }
@@ -70,7 +74,12 @@ create_aks() {
   # Establish federated identity credential between the managed identity, the
   # service account issuer and the subject.
   local AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
-  az identity federated-credential create --name ratify-federated-credential --identity-name "${USER_ASSIGNED_IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --issuer "${AKS_OIDC_ISSUER}" --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
+  az identity federated-credential create \
+    --name ratify-federated-credential \
+    --identity-name "${USER_ASSIGNED_IDENTITY_NAME}" \
+    --resource-group "${GROUP_NAME}" \
+    --issuer "${AKS_OIDC_ISSUER}" \
+    --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
 
   # It takes a while for the federated identity credentials to be propagated
   # after being initially added.
@@ -78,10 +87,12 @@ create_aks() {
 }
 
 create_akv() {
-  az keyvault create --resource-group ${GROUP_NAME} \
+  az keyvault create \
+    --resource-group ${GROUP_NAME} \
     --location "${LOCATION}" \
     --name ${KEYVAULT_NAME}
-  az keyvault certificate import --vault-name ${KEYVAULT_NAME} \
+  az keyvault certificate import \
+    --vault-name ${KEYVAULT_NAME} \
     -n ${NOTARY_PEM_NAME} \
     -f ./test/testdata/notary.pem
   echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
