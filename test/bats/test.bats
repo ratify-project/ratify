@@ -59,6 +59,7 @@ SLEEP_TIME=1
     sleep 5
 
     sed -i 's/useHttp: true/useHttp: false/' ./config/samples/config_v1alpha1_store_oras.yaml
+    sed -i 's/cosignEnabled: false/cosignEnabled: true/' ./config/samples/config_v1alpha1_store_oras.yaml
     cat ./config/samples/config_v1alpha1_store_oras.yaml >&3
     run kubectl apply -f ./config/samples/config_v1alpha1_store_oras.yaml
     sleep 5
