@@ -15,6 +15,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.25.4
 GATEKEEPER_VERSION ?= 3.11.0
+COSIGN_VERSION ?= 1.13.1
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -70,7 +71,7 @@ ratify-config:
 .PHONY: test
 test:
 	go test -v -coverprofile=coverage.txt -covermode=atomic ./...
-	
+
 .PHONY: clean
 clean:
 	go clean
@@ -105,10 +106,9 @@ deploy-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm install gatekeeper/gatekeeper  \
 		--version ${GATEKEEPER_VERSION} \
-	    --name-template=gatekeeper \
-	    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
-	    --set enableExternalData=true \
-	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
+		--name-template=gatekeeper \
+		--namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	    --set enableExternalData=true
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
@@ -119,7 +119,6 @@ test-e2e:
 	bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-create-local-registry-auth e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 	RATIFY_DIR=${INSTALL_DIR} LOCAL_TEST_REGISTRY=${LOCAL_TEST_REGISTRY} LOCAL_TEST_REGISTRY_AUTH=${LOCAL_TEST_REGISTRY_AUTH} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 
@@ -156,8 +155,8 @@ e2e-create-local-registry:
 		-p 5000:5000 \
 		--restart=always \
 		--name registry \
-		${LOCAL_REGISTRY_IMAGE} 
-	
+		${LOCAL_REGISTRY_IMAGE}
+
 	rm -rf .staging
 	mkdir .staging
 	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
@@ -179,7 +178,7 @@ e2e-create-local-registry-auth:
 		-e "REGISTRY_AUTH=htpasswd" \
 		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
 		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
-		${LOCAL_REGISTRY_IMAGE} 
+		${LOCAL_REGISTRY_IMAGE}
 
 	docker login -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY_AUTH}
 	oras login \
@@ -236,13 +235,14 @@ e2e-notaryv2-setup:
 e2e-cosign-setup:
 	rm -rf .staging/cosign
 	mkdir -p .staging/cosign
-	wget https://github.com/sigstore/cosign/releases/download/v1.13.1/cosign-linux-amd64 
+	curl -sSLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
 	mv cosign-linux-amd64 .staging/cosign
 	chmod +x .staging/cosign/cosign-linux-amd64
 
+	# image signed with a key
 	echo 'FROM alpine\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
-	docker build -t ${LOCAL_TEST_REGISTRY}/cosign:signed .staging/cosign
-	docker push ${LOCAL_TEST_REGISTRY}/cosign:signed
+	docker build -t ${LOCAL_TEST_REGISTRY}/cosign:signed-key .staging/cosign
+	docker push ${LOCAL_TEST_REGISTRY}/cosign:signed-key
 
 	docker pull ${LOCAL_UNSIGNED_IMAGE}
 	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${LOCAL_TEST_REGISTRY}/cosign:unsigned
@@ -251,7 +251,7 @@ e2e-cosign-setup:
 	export COSIGN_PASSWORD="test" && \
 	cd .staging/cosign && \
 	./cosign-linux-amd64 generate-key-pair && \
-	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/cosign:signed | jq -r .[0].RepoDigests[0]` && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/cosign:signed-key | jq -r .[0].RepoDigests[0]` && \
 	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
 e2e-licensechecker-setup:
@@ -310,10 +310,10 @@ e2e-sbom-setup:
 		--plain-http \
 		 ${LOCAL_TEST_REGISTRY}/all:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
-	
+
 	# Push Signature to sbom
 	.staging/notaryv2/notation/bin/notation sign ${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notaryv2/notation/bin/notation sign ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	.staging/notaryv2/notation/bin/notation sign ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"`
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
@@ -365,7 +365,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
 e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
-	
+
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
@@ -387,7 +387,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	--set-file dockerConfig="mount_config.json"
 
 	rm mount_config.json
-	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign 
+	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 

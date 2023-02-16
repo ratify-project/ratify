@@ -35,10 +35,12 @@ jobs:
         uses: codecov/codecov-action@v3
       - name: Run helm lint
         run: helm lint charts/ratify
-  
+
   build_test_cli:
     name: "Build and run tests for CLI"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -99,8 +101,8 @@ jobs:
         with:
           name: e2e-logs
           path: |
-            logs-*.json        
-  
+            logs-*.json
+
   build_test_aks_e2e:
     name: "Build and run e2e Test on AKS"
     env:
@@ -148,4 +150,4 @@ jobs:
         with:
           name: e2e-logs
           path: |
-            logs-*.json       
+            logs-*.json

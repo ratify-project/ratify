@@ -94,7 +94,7 @@ func resetStoreMap() {
 }
 
 func getOrasStoreSpec() configv1alpha1.StoreSpec {
-	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosign-enabled\":false,\"useHttp\":false}"
+	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosignEnabled\":false,\"useHttp\":false}"
 	var storeParameters = []byte(parametersString)
 
 	return configv1alpha1.StoreSpec{
