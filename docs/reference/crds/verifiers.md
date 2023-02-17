@@ -4,6 +4,8 @@ Ratify supports many verifiers to validate different artifact types. View more C
 name: required, name of the verifier
 artifactType: required, the type of artifact this verifier handles
 address: optional. Plugin path, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
+source:  optional. Source location to download the plugin binary
+  artifact:  e.g. wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1
 parameters: optional. Parameters specific to this verifier
 ```
  
@@ -45,13 +47,54 @@ spec:
 | trustPolicyDoc   | yes     |   [Trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md) is a policy language that indicates which identities are trusted to produce artifacts.          |     ""    |
 
 ## Cosign
-Doc coming soon..
+Cosign verifier can be used to verify signatures generated using [cosign](https://github.com/sigstore/cosign/), learn more about the plugin [here](../../../plugins/verifier/cosign/README.md)
+```yml
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: Verifier
+metadata:
+  name: verifier-cosign
+spec:
+  name: cosign
+  artifactTypes: org.sigstore.cosign.v1
+  parameters:
+    key: /usr/local/ratify-certs/cosign/cosign.pub
+```
+| Name        | Required | Description | Default Value |
+| ----------- | -------- | ----------- | ------------- | 
+| key      | Yes    |     Path to the public key used for validating the signature    |   ""            |
 
 ## Sbom
-Doc coming soon..
+```yml
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: Verifier
+metadata:
+  name: verifier-sbom
+spec:
+  name: sbom
+  artifactTypes: org.example.sbom.v0
+  parameters: 
+    nestedReferences: application/vnd.cncf.notary.signature
+```
+| Name        | Required | Description | Default Value |
+| ----------- | -------- | ----------- | ------------- | 
+| nestedReferences      | Yes    |     Path to the public key used for validating the signature    |   ""            |
 
 ## Schemavalidator
-Doc coming soon..
 
-## Dynamic
-Doc coming soon..
+Validate Json artifacts against JSON schemas, learn more about the plugin [here](../../../plugins/verifier/schemavalidator/README.md)
+
+```yml
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: Verifier
+metadata:
+  name: verifier-schemavalidator
+spec:
+  name: schemavalidator
+  artifactTypes: vnd.aquasecurity.trivy.report.sarif.v1
+  parameters: 
+    schemas:
+      application/sarif+json: https://json.schemastore.org/sarif-2.1.0-rtm.5.json
+```
+| Name        | Required | Description | Default Value |
+| ----------- | -------- | ----------- | ------------- | 
+| schemas      | Yes    |     A mapping between the schema name to the schema path. The path can be either a URL or a canonical file path that start with file:// |   ""            |
