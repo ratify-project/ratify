@@ -77,7 +77,7 @@ spec:
 ```
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| nestedReferences      | Yes    |     Path to the public key used for validating the signature    |   ""            |
+| nestedReferences      | No    | If nestedReferences contains any string value, the nested artifact will also be verified. For example, customer might want to enforce notary signatures on all sboms.|   ""            |
 
 ## Schemavalidator
 
