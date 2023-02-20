@@ -87,15 +87,15 @@ create_aks() {
 }
 
 create_akv() {
-  az keyvault create \
-    --resource-group ${GROUP_NAME} \
-    --location "${LOCATION}" \
-    --name ${KEYVAULT_NAME}
-  az keyvault certificate import \
-    --vault-name ${KEYVAULT_NAME} \
-    -n ${NOTARY_PEM_NAME} \
-    -f ./test/testdata/notary.pem
-  echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
+  # az keyvault create \
+  #   --resource-group ${GROUP_NAME} \
+  #   --location "${LOCATION}" \
+  #   --name ${KEYVAULT_NAME}
+  # az keyvault certificate import \
+  #   --vault-name ${KEYVAULT_NAME} \
+  #   -n ${NOTARY_PEM_NAME} \
+  #   -f ./test/testdata/notary.pem
+  # echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
 
   # Grant permissions to access the certificate.
   az keyvault set-policy --name ${KEYVAULT_NAME} --certificate-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}

@@ -22,12 +22,35 @@ import (
 	"github.com/xeipuuv/gojsonschema"
 )
 
+// Validates content from a byte array against a URL schema or from a canonical file path
 func Validate(schema string, content []byte) error {
 	sl := gojsonschema.NewReferenceLoader(schema)
 	dl := gojsonschema.NewBytesLoader(content)
 
 	result, err := gojsonschema.Validate(sl, dl)
 
+	if err != nil {
+		return err
+	}
+
+	if result.Valid() {
+		return nil
+	} else {
+		var e string = ""
+		for _, desc := range result.Errors() {
+			e += fmt.Sprintf("%s:", desc.Description())
+		}
+		return errors.New(e)
+	}
+}
+
+// Validates content from a byte array against a schema from a byte array
+// This is useful for testing and restricted environments as it allows loading of schemas from files
+func ValidateAgainstOfflineSchema(schema []byte, content []byte) error {
+	sl := gojsonschema.NewBytesLoader(schema)
+	dl := gojsonschema.NewBytesLoader(content)
+
+	result, err := gojsonschema.Validate(sl, dl)
 	if err != nil {
 		return err
 	}
