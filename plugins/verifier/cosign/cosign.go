@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -35,6 +36,8 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/pkg/errors"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
+	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/oci"
 	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
@@ -42,14 +45,14 @@ import (
 )
 
 type PluginConfig struct {
-	Name   string `json:"name"`
-	KeyRef string `json:"key"`
+	Name     string `json:"name"`
+	KeyRef   string `json:"key"`
+	RekorURL string `json:"rekorURL"`
 	// config specific to the plugin
 }
 
 type StoreConfig struct {
-	UseHttp      bool   `json:"useHttp,omitempty"`
-	AuthProvider string `json:"auth-provider,omitempty"`
+	UseHttp bool `json:"useHttp,omitempty"`
 }
 
 type StoreWrapperConfig struct {
@@ -118,25 +121,41 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 		return nil, false, err
 	}
 
-	ecdsaVerifier, err := loadPublicKey(ctx, keyRef)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if config.StoreWrapperConfig.StoreConfig.AuthProvider != "" {
-		return nil, false, fmt.Errorf("auth provider %s is not supported", config.StoreWrapperConfig.StoreConfig.AuthProvider)
-	}
-
 	registryClientOptionsWrapper := []ociremote.Option{
 		ociremote.WithRemoteOptions(registryClientOptions...),
 	}
-
-	return cosign.VerifyImageSignatures(ctx, ref, &cosign.CheckOpts{
-		RootCerts:          nil, // TODO: TUF related metadata fulcio.Roots,
-		SigVerifier:        ecdsaVerifier,
+	cosignOpts := &cosign.CheckOpts{
 		ClaimVerifier:      cosign.SimpleClaimVerifier,
 		RegistryClientOpts: registryClientOptionsWrapper,
-	})
+	}
+
+	var ecdsaVerifier signature.Verifier
+	var roots *x509.CertPool
+	if keyRef != "" {
+		ecdsaVerifier, err = loadPublicKey(ctx, keyRef)
+		if err != nil {
+			return nil, false, err
+		}
+		cosignOpts.SigVerifier = ecdsaVerifier
+	} else {
+		roots, err = fulcio.GetRoots()
+		if err != nil {
+			return nil, false, err
+		}
+		cosignOpts.RootCerts = roots
+		if cosignOpts.RootCerts == nil {
+			return nil, false, fmt.Errorf("failed to initialize root certificates")
+		}
+	}
+
+	if config.Config.RekorURL != "" {
+		cosignOpts.RekorClient, err = rekor.NewClient(config.Config.RekorURL)
+		if err != nil {
+			return nil, false, fmt.Errorf("failed to create Rekor client from URL %s: %w", config.Config.RekorURL, err)
+		}
+	}
+
+	return cosign.VerifyImageSignatures(ctx, ref, cosignOpts)
 }
 
 func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verifier, err error) {

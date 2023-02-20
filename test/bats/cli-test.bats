@@ -11,7 +11,12 @@ load helpers
 }
 
 @test "cosign verifier test" {
-    run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/cosign:signed
+    run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/cosign:signed-key
+    assert_cmd_verify_success
+
+    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
+    jq '.store.plugins |= map(select(.name == "oras").useHttp = false) | .verifier.plugins |= map(del(.key))' $RATIFY_DIR/config.json >$RATIFY_DIR/cosign-keyless-config.json
+    run bin/ratify verify -c $RATIFY_DIR/cosign-keyless-config.json -s wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
     assert_cmd_verify_success
 
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/cosign:unsigned
@@ -35,8 +40,8 @@ load helpers
     assert_cmd_verify_failure
 }
 
-@test "schemavalidator verifier test" {   
-    run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/schemavalidator:v0
+@test "schemavalidator verifier test" {
+    run bin/ratify verify -c $RATIFY_DIR/schemavalidator_config.json -s $LOCAL_TEST_REGISTRY/schemavalidator:v0
     assert_cmd_verify_success
 }
 

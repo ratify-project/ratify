@@ -97,8 +97,7 @@ export ACR_NAME=<Azure Container Registry Name>
 export AKS_NAME=<Azure Kubernetes Service Name>
 export KEYVAULT_NAME=<Azure Key Vault Name>
 export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
-export CERT_DIR=<Directory storing TLS certs>
-export NOTARY_PERM_NAME=<Name of cerficicate file uploaded to Key Vault>
+export NOTARY_PEM_NAME=<Name of the certificate file uploaded to Azure Key Vault>
 ```
 
 2. Create a Workload Federated Identity.
@@ -108,7 +107,7 @@ Create ACR AAD application:
 az ad sp create-for-rbac --name ${IDENTITY_NAME}
 
 export IDENTITY_CLIENT_ID="$(az ad sp list --display-name "${IDENTITY_NAME}" --query '[0].appId' -otsv)"
-export IDENTITY_OBJECT_ID="$(az ad sp list --display-name "${IDENTITY_NAME}" --query '[0].appId' -otsv)"
+export IDENTITY_OBJECT_ID="$(az ad app show --id ${IDENTITY_CLIENT_ID} --query id -otsv)"
 ```
 
 Or create user-assigned managed identity:
@@ -126,7 +125,7 @@ az acr create --name "${ACR_NAME}" \
 
 # AAD application:
 az role assignment create \
-  --assignee ${IDENTITY_OBJECT_ID} \
+  --assignee ${IDENTITY_CLIENT_ID} \
   --role acrpull \
   --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
 
@@ -168,8 +167,6 @@ export AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "o
 
 Using AAD application:
 ```shell
-export APPLICATION_OBJECT_ID="$(az ad app show --id ${IDENTITY_CLIENT_ID} --query id -otsv)"
-
 cat <<EOF > body.json
 {
   "name": "kubernetes-federated-credential",
@@ -211,41 +208,20 @@ az keyvault certificate import \
   -f /path/to/certificate
 
 # Grant permission to access the certificate.
-# AAD application:
-az keyvault set-policy --name "${KEYVAULT_NAME}" \
-  --certificate-permissions get \
-  --spn ${IDENTITY_NAME}
-
-# User-assigned managed identity:
 az keyvault set-policy --name ${KEYVAULT_NAME} \
   --certificate-permissions get \
   --object-id ${IDENTITY_OBJECT_ID}
 ```
 
-8. Deploy from local helm chart:
+8. Deploy from local helm chart. Follow the [Quick Start](https://github.com/deislabs/ratify/blob/main/README.md#quick-start) to deploy Gatekeeper and Ratify.
+
+Notes: add below options while installing Ratify
 ```shell
-# Setup Gatekeeper first.
-helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
-
-helm install gatekeeper/gatekeeper  \
-  --name-template=gatekeeper \
-  --namespace gatekeeper-system --create-namespace \
-  --set enableExternalData=true \
-  --set validatingWebhookTimeoutSeconds=5 \
-  --set mutatingWebhookTimeoutSeconds=2
-
-# Deploy Ratify
-helm install ratify ./charts/ratify --atomic \
-  --namespace ${RATIFY_NAMESPACE} \
-  --set-file provider.tls.crt=${CERT_DIR}/server.crt \
-  --set-file provider.tls.key=${CERT_DIR}/server.key \
-  --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-  --set oras.authProviders.azureWorkloadIdentityEnabled=true \
-  --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
-  --set akvCertConfig.enabled=true \
-  --set akvCertConfig.vaultURI=${VAULT_URI} \
-  --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
-  --set akvCertConfig.tenantId=${TENANT_ID}
+--set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
+--set akvCertConfig.enabled=true \
+--set akvCertConfig.vaultURI=${VAULT_URI} \
+--set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+--set akvCertConfig.tenantId=${TENANT_ID}
 ```
 
 ### 3. Kubernetes Secrets
