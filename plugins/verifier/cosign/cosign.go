@@ -52,8 +52,7 @@ type PluginConfig struct {
 }
 
 type StoreConfig struct {
-	UseHttp      bool   `json:"useHttp,omitempty"`
-	AuthProvider string `json:"authProvider,omitempty"`
+	UseHttp bool `json:"useHttp,omitempty"`
 }
 
 type StoreWrapperConfig struct {
@@ -154,10 +153,6 @@ func signatures(ctx context.Context, img string, keyRef string, config *PluginIn
 		if err != nil {
 			return nil, false, fmt.Errorf("failed to create Rekor client from URL %s: %w", config.Config.RekorURL, err)
 		}
-	}
-
-	if config.StoreWrapperConfig.StoreConfig.AuthProvider != "" {
-		return nil, false, fmt.Errorf("auth provider %s is not supported", config.StoreWrapperConfig.StoreConfig.AuthProvider)
 	}
 
 	return cosign.VerifyImageSignatures(ctx, ref, cosignOpts)
