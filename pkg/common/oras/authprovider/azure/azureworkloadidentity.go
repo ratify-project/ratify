@@ -74,7 +74,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	if clientID == "" {
 		clientID = conf.ClientID
 		if clientID == "" {
-			return nil, fmt.Errorf("AZURE_CLIENT_ID environment variable is empty")
+			return nil, fmt.Errorf("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
 		}
 	}
 
