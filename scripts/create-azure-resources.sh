@@ -51,6 +51,7 @@ create_acr() {
   # Enable acrpull role to the user-managed identity.
   az role assignment create \
     --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
     --role acrpull \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
 }
@@ -87,16 +88,7 @@ create_aks() {
 }
 
 create_akv() {
-  # az keyvault create \
-  #   --resource-group ${GROUP_NAME} \
-  #   --location "${LOCATION}" \
-  #   --name ${KEYVAULT_NAME}
-  # az keyvault certificate import \
-  #   --vault-name ${KEYVAULT_NAME} \
-  #   -n ${NOTARY_PEM_NAME} \
-  #   -f ./test/testdata/notary.pem
-  # echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
-
+  # TODO: create a new Key Vault once it supports building/signing test images.
   # Grant permissions to access the certificate.
   az keyvault set-policy --name ${KEYVAULT_NAME} --certificate-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
 }

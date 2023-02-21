@@ -24,17 +24,16 @@ SUFFIX=$(openssl rand -hex 2)
 export GROUP_NAME="${GROUP_NAME:-ratify-e2e-${SUFFIX}}"
 export ACR_NAME="${ACR_NAME:-ratifyacr${SUFFIX}}"
 export AKS_NAME="${AKS_NAME:-ratify-aks-${SUFFIX}}"
-# export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
-export KEYVAULT_NAME="ratify-e2e-kv"
+export KEYVAULT_NAME="ratify-e2e-test-kv"
 export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.24.6}
-export RATIFY_NAMESPACE=${4:-default}
-export NOTARY_PEM_NAME="notary"
-TAG="test${SUFFIX}"
 GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
+export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
+export NOTARY_PEM_NAME="notary"
+TAG="test${SUFFIX}"
 
 build_push_to_acr() {
   echo "Building and pushing images to ACR"
@@ -63,7 +62,7 @@ deploy_ratify() {
 
   echo "deploying ratify"
   local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
-  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
+  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ratify-e2e --query "properties.vaultUri" -otsv)
   helm install ratify \
     ./charts/ratify --atomic \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
