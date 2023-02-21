@@ -39,7 +39,8 @@ type azureWIAuthProvider struct {
 }
 
 type azureWIAuthProviderConf struct {
-	Name string `json:"name"`
+	Name     string `json:"name"`
+	ClientID string `json:"clientID"`
 }
 
 const (
@@ -71,7 +72,10 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 
 	clientID := os.Getenv("AZURE_CLIENT_ID")
 	if clientID == "" {
-		return nil, fmt.Errorf("azure client id environment variable is empty")
+		clientID = conf.ClientID
+		if clientID == "" {
+			return nil, fmt.Errorf("AZURE_CLIENT_ID environment variable is empty")
+		}
 	}
 
 	// retrieve an AAD Access token
