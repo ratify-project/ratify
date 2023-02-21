@@ -84,14 +84,15 @@ deploy_ratify() {
 
 save_logs() {
   echo "Saving logs"
-  kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 >logs-externaldata-controller-aks.json
-  kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 >logs-externaldata-audit-aks.json
-  kubectl logs -n ${RATIFY_NAMESPACE} -l app=ratify --tail=-1 >logs-ratify-preinstall-aks.json
-  kubectl logs -n ${RATIFY_NAMESPACE} -l app.kubernetes.io/name=ratify --tail=-1 >logs-ratify-aks.json
+  local LOG_SUFFIX="${KUBERNETES_VERSION}-${GATEKEEPER_VERSION}"
+  kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 >logs-externaldata-controller-aks-${LOG_SUFFIX}.json
+  kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 >logs-externaldata-audit-aks-${LOG_SUFFIX}.json
+  kubectl logs -n ${RATIFY_NAMESPACE} -l app=ratify --tail=-1 >logs-ratify-preinstall-aks-${LOG_SUFFIX}.json
+  kubectl logs -n ${RATIFY_NAMESPACE} -l app.kubernetes.io/name=ratify --tail=-1 >logs-ratify-aks-${LOG_SUFFIX}.json
 }
 
 cleanup() {
-  save_logs
+  save_logs || true
 
   echo "Deleting group"
   az group delete --name "${GROUP_NAME}" --yes --no-wait || true
