@@ -40,7 +40,7 @@ type azureWIAuthProvider struct {
 
 type azureWIAuthProviderConf struct {
 	Name     string `json:"name"`
-	ClientID string `json:"clientID"`
+	ClientID string `json:"clientID,omitempty"`
 }
 
 const (
