@@ -74,7 +74,8 @@ deploy_ratify() {
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
-    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+    --set logLevel=debug
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
