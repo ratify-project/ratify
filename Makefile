@@ -384,7 +384,8 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	--set cosign.enabled=true \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
-	--set-file dockerConfig="mount_config.json"
+	--set-file dockerConfig="mount_config.json" \
+	--set logLevel=debug
 
 	rm mount_config.json
 	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
