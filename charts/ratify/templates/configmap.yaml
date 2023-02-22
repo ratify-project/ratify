@@ -23,7 +23,7 @@ data:
                 ,
                 "authProvider": {
                     "name": "azureWorkloadIdentity",
-                    "clientID": "{{ .Values.azureWorkloadIdentity.clientId }}"
+                    "clientID": {{ .Values.azureWorkloadIdentity.clientId | quote }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
