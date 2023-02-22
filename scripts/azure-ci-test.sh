@@ -80,7 +80,8 @@ deploy_ratify() {
     --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
-    --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID}
+    --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
+    --set logLevel=debug
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
