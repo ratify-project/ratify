@@ -93,6 +93,13 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 
+	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+
+	expectedErr = fmt.Errorf("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
+	}
+
 	err = os.Setenv("AZURE_CLIENT_ID", "client id")
 	if err != nil {
 		t.Fatal("failed to set env variable AZURE_CLIENT_ID")
