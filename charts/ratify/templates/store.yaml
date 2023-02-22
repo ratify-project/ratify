@@ -14,6 +14,7 @@ spec:
     {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
     authProvider:
       name: azureWorkloadIdentity
+      clientID: {{ .Values.azureWorkloadIdentity.clientId }}
     {{- end }}
     {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
     authProvider:
