@@ -22,14 +22,15 @@ data:
                 {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
                 ,
                 "authProvider": {
-                    "name": "azureWorkloadIdentity"
+                    "name": "azureWorkloadIdentity",
+                    "clientID": {{ .Values.azureWorkloadIdentity.clientId | quote }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
                 ,
                 "authProvider": {
                     "name": "azureManagedIdentity",
-                    "clientID": {{ .Values.azureManagedIdentity.clientId }}
+                    "clientID": {{ .Values.azureManagedIdentity.clientId | quote }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.k8secretsEnabled }}
