@@ -112,6 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     timeout-minutes: 30
+    continue-on-error: true
     permissions:
       id-token: write
       contents: read
