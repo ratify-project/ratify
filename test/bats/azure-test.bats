@@ -6,6 +6,30 @@ BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
 
+@test "dynamic plugins enabled test" {
+    # only run this test against a live cluster 
+
+    # ensure that the chart deployment is reset to a clean state for other tests
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
+        pod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n gatekeeper-system delete $pod --force --grace-period=0'
+    }
+
+    # enable dynamic plugins
+    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
+    sleep 5
+    latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_dynamic.yaml
+    sleep 5
+
+    # parse the logs for the newly created ratify pod
+    run bash -c "kubectl -n gatekeeper-system logs $latestpod | grep 'downloaded verifier plugin dynamic from .* to .*'"
+    assert_success
+}
+
 @test "notary test" {
     teardown() {
         echo "cleaning up"
@@ -28,7 +52,7 @@ SLEEP_TIME=1
 @test "cosign test" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace dSefault --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo2 --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
@@ -181,7 +205,7 @@ SLEEP_TIME=1
     assert_failure
 
     echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary_certstore.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -232,34 +256,10 @@ SLEEP_TIME=1
     assert_success
 }
 
-@test "dynamic plugins enabled test" {
-    # only run this test against a live cluster 
-
-    # ensure that the chart deployment is reset to a clean state for other tests
-    teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
-        pod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
-        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n gatekeeper-system delete $pod --force --grace-period=0'
-    }
-
-    # enable dynamic plugins
-    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
-    sleep 5
-    latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
-
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_dynamic.yaml
-    sleep 5
-
-    # parse the logs for the newly created ratify pod
-    run bash -c "kubectl -n gatekeeper-system logs $latestpod | grep 'downloaded verifier plugin dynamic from .* to .*'"
-    assert_success
-}
-
 @test "validate mutation tag to digest" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} kubectl delete pod mutate-demo --namespace default
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod mutate-demo --namespace default'
     }
     run kubectl apply -f ./library/default/template.yaml
     assert_success
