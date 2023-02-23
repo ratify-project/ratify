@@ -92,12 +92,14 @@ create_akv() {
     --resource-group ${GROUP_NAME} \
     --location "${LOCATION}" \
     --name ${KEYVAULT_NAME}
-  
-  
+
+  rm -f ./notary.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.key >> ./notary.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.crt >> ./notary.pem
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
     -n ${NOTARY_PEM_NAME} \
-    -f ./test/testdata/notary.pem
+    -f ./notary.pem
   echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
 
   # Grant permissions to access the certificate.

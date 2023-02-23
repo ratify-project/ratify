@@ -106,15 +106,15 @@ cleanup() {
   save_logs || true
 
   echo "Deleting group"
-  # az group delete --name "${GROUP_NAME}" --yes --no-wait || true
+  az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
 
 trap cleanup EXIT
 
 main() {
-  # ./scripts/create-azure-resources.sh
+  ./scripts/create-azure-resources.sh
 
-  # build_push_to_acr
+  build_push_to_acr
   make e2e-create-all-image TEST_REGISTRY="${ACR_NAME}.azurecr.io"
   make e2e-notaryv2-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
   make e2e-cosign-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"

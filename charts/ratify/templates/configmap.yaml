@@ -22,7 +22,8 @@ data:
                 {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
                 ,
                 "authProvider": {
-                    "name": "azureWorkloadIdentity"
+                    "name": "azureWorkloadIdentity",
+                    "clientID": {{ .Values.azureWorkloadIdentity.clientId | quote }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
