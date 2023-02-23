@@ -24,7 +24,11 @@ SUFFIX=$(openssl rand -hex 2)
 export GROUP_NAME="${GROUP_NAME:-ratify-e2e-${SUFFIX}}"
 export ACR_NAME="${ACR_NAME:-ratifyacr${SUFFIX}}"
 export AKS_NAME="${AKS_NAME:-ratify-aks-${SUFFIX}}"
-export KEYVAULT_NAME="ratify-e2e-test-kv"
+export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
+# export GROUP_NAME="ratify-e2e-032c"
+# export ACR_NAME="ratifyacr032c"
+# export AKS_NAME="ratify-aks-032c"
+# export KEYVAULT_NAME="ratify-e2e-test-kv"
 export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.24.6}
@@ -62,7 +66,7 @@ deploy_ratify() {
 
   echo "deploying ratify"
   local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
-  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ratify-e2e --query "properties.vaultUri" -otsv)
+  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
   helm install ratify \
     ./charts/ratify --atomic \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
@@ -102,20 +106,27 @@ cleanup() {
   save_logs || true
 
   echo "Deleting group"
-  az group delete --name "${GROUP_NAME}" --yes --no-wait || true
+  # az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
 
 trap cleanup EXIT
 
 main() {
-  ./scripts/create-azure-resources.sh
+  # ./scripts/create-azure-resources.sh
 
-  build_push_to_acr
+  # build_push_to_acr
+  make e2e-create-all-image TEST_REGISTRY="${ACR_NAME}.azurecr.io"
+  make e2e-notaryv2-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
+  make e2e-cosign-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
+  make e2e-licensechecker-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
+  make e2e-sbom-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
+  make e2e-schemavalidator-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
+  make e2e-inlinecert-setup TEST_REGISTRY="${ACR_NAME}.azurecr.io"
 
   deploy_gatekeeper
   deploy_ratify
 
-  bats -t ./test/bats/azure-test.bats
+  TEST_REGISTRY="${ACR_NAME}.azurecr.io" bats -t ./test/bats/azure-test.bats
 }
 
 main
