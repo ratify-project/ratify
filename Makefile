@@ -148,7 +148,9 @@ e2e-dependencies:
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
-e2e-create-local-registry:
+e2e-create-local-registry: e2e-run-local-registry e2e-create-all-image
+
+e2e-run-local-registry:
 	if [ "$$(docker inspect -f '{{.State.Running}}' "registry" 2>/dev/null || true)" ]; then docker stop registry && docker rm registry; fi
 	docker pull ${LOCAL_REGISTRY_IMAGE}
 	docker run -d \
@@ -157,17 +159,11 @@ e2e-create-local-registry:
 		--name registry \
 		${LOCAL_REGISTRY_IMAGE}
 
-	rm -rf .staging
-	mkdir .staging
-	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
-	docker build -t ${TEST_REGISTRY}/all:v0 .staging
-	docker push ${TEST_REGISTRY}/all:v0
-
 e2e-create-all-image:
 	rm -rf .staging
 	mkdir .staging
 	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
-	docker build -t ${TEST_REGISTRY}/all:v0 .staging
+	docker build --no-cache -t ${TEST_REGISTRY}/all:v0 .staging
 	docker push ${TEST_REGISTRY}/all:v0
 
 e2e-create-local-registry-auth:
@@ -214,6 +210,17 @@ e2e-helm-install:
 	cd .staging/helm && tar -xvf helmbin.tar.gz
 	./.staging/helm/linux-amd64/helm version --client
 
+e2e-docker-credential-store-setup:
+	rm -rf .staging/pass
+	mkdir -p .staging/pass
+	cd .staging/pass && git clone https://github.com/docker/docker-credential-helpers.git
+	cd .staging/pass/docker-credential-helpers && make pass
+	cp .staging/pass/docker-credential-helpers/bin/build/docker-credential-pass /usr/local/bin/
+	sed -i '0,/{/s/{/{\n\t"credsStore": "pass",/' ~/.docker/config.json
+
+	gpg --batch --passphrase '' --quick-gen-key ratify default default
+	pass init $$(gpg --list-keys ratify | sed -n 2p | tr -d " \t\n\r")
+
 e2e-notaryv2-setup:
 	rm -rf .staging/notaryv2
 	mkdir -p .staging/notaryv2
@@ -221,7 +228,7 @@ e2e-notaryv2-setup:
 	cd .staging/notaryv2/notation && make build
 
 	echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
-	docker build -t ${TEST_REGISTRY}/notation:signed .staging/notaryv2
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed .staging/notaryv2
 	docker push ${TEST_REGISTRY}/notation:signed
 
 	docker pull ${LOCAL_UNSIGNED_IMAGE}
@@ -233,12 +240,12 @@ e2e-notaryv2-setup:
 	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
 	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
-	if [[ "${REMOTE_REGISTRY}" == false ]]; then \
+	if [ "${USE_REMOTE_REGISTRY}" != "true" ]; then \
 		echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image auth enabled"]' > .staging/notaryv2/Dockerfile; \
-		docker build -t ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed .staging/notaryv2; \
+		docker build --no-cache -t ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed .staging/notaryv2; \
 		docker push ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed; \
 		docker image tag ${LOCAL_UNSIGNED_IMAGE} ${LOCAL_TEST_REGISTRY_AUTH}/notation:unsigned; \
-		docker push ${LOCAL_TEST_REGISTRY_AUTH}/notation:unsigne;d \
+		docker push ${LOCAL_TEST_REGISTRY_AUTH}/notation:unsigned; \
 		.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed | jq -r .[0].RepoDigests[0]`; \
 	fi
 
@@ -251,7 +258,7 @@ e2e-cosign-setup:
 
 	# image signed with a key
 	echo 'FROM alpine\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
-	docker build -t ${TEST_REGISTRY}/cosign:signed-key .staging/cosign
+	docker build --no-cache -t ${TEST_REGISTRY}/cosign:signed-key .staging/cosign
 	docker push ${TEST_REGISTRY}/cosign:signed-key
 
 	docker pull ${LOCAL_UNSIGNED_IMAGE}
@@ -273,7 +280,7 @@ e2e-licensechecker-setup:
 
 	# Build/Push Image
 	echo 'FROM alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
-	docker build -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
+	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
 	docker push ${TEST_REGISTRY}/licensechecker:v0
 
 	# Create/Attach SPDX
@@ -295,10 +302,10 @@ e2e-sbom-setup:
 
 	# Build/Push Images
 	echo 'FROM alpine\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
-	docker build -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
+	docker build --no-cache -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:v0
 	echo 'FROM alpine\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
-	docker build -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
+	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:unsigned
 
 	# Generate/Attach sbom
@@ -330,7 +337,7 @@ e2e-schemavalidator-setup:
 
 	# Build/Push Images
 	echo 'FROM alpine\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
-	docker build -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
+	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
 	docker push ${TEST_REGISTRY}/schemavalidator:v0
 
 	# Create/Attach Scan Results
@@ -350,11 +357,13 @@ e2e-inlinecert-setup:
 
 	# build and sign an image with an alternate certificate
 	echo 'FROM alpine\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
-	docker build -t ${TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
 	docker push ${TEST_REGISTRY}/notation:signed-alternate
 
 	.staging/notaryv2/notation/bin/notation cert generate-test "alternate-cert"
 	.staging/notaryv2/notation/bin/notation sign --key "alternate-cert" `docker image inspect ${TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
+
+e2e-azure-setup: e2e-create-all-image e2e-notaryv2-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts

@@ -19,7 +19,7 @@ spec:
     {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
     authProvider:
       name: azureManagedIdentity
-      clientID: {{ .Values.azureManagedIdentity.clientId | quote }}
+      clientID: {{ .Values.azureManagedIdentity.clientId }}
     {{- end }}
     {{- if .Values.oras.authProviders.k8secretsEnabled }}
     authProvider:

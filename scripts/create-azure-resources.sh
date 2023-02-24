@@ -93,14 +93,7 @@ create_akv() {
     --location "${LOCATION}" \
     --name ${KEYVAULT_NAME}
 
-  rm -f ./notary.pem
-  cat ~/.config/notation/localkeys/ratify-bats-test.key >> ./notary.pem
-  cat ~/.config/notation/localkeys/ratify-bats-test.crt >> ./notary.pem
-  az keyvault certificate import \
-    --vault-name ${KEYVAULT_NAME} \
-    -n ${NOTARY_PEM_NAME} \
-    -f ./notary.pem
-  echo "AKV '${KEYVAULT_NAME}' is created and cert is uploaded"
+  echo "AKV '${KEYVAULT_NAME}' is created"
 
   # Grant permissions to access the certificate.
   az keyvault set-policy --name ${KEYVAULT_NAME} --certificate-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}

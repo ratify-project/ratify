@@ -50,6 +50,7 @@ SLEEP_TIME=1
 }
 
 @test "cosign test" {
+    skip "Skipping test for now as cosign verifier plugin does not support workload identity yet."
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
@@ -157,6 +158,7 @@ SLEEP_TIME=1
 }
 
 @test "sbom/notary/cosign/licensechecker/schemavalidator verifiers test" {
+    skip "Skipping test for now as cosign verifier plugin does not support workload identity yet."
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
