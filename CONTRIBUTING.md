@@ -75,6 +75,64 @@ Sample curl request to invoke Ratify endpoint:
 curl -X POST http://127.0.0.1:6001/ratify/gatekeeper/v1/verify -H "Content-Type: application/json" -d '{"apiVersion":"externaldata.gatekeeper.sh/v1alpha1","kind":"ProviderRequest","request":{"keys":["localhost:5000/net-monitor:v1"]}}'
 ```
 
+#### Debug external plugins
+
+External plugin processes must be attached in a separate debug session. Certain environment variables and `stdin` must be configured
+
+Sample launch json for debugging a plugin:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "Debug Cosign Plugin",
+    "type": "go",
+    "request": "launch",
+    "mode": "auto",
+    "program": "${workspaceFolder}/plugins/verifier/cosign",
+    "env": {
+      "RATIFY_DYNAMIC_PLUGINS": "1",
+      "RATIFY_LOG_LEVEL": "debug",
+      "RATIFY_VERIFIER_COMMAND": "VERIFY",
+      "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",
+      "RATIFY_VERIFIER_VERSION": "1.0.0",
+    },
+    "console": "integratedTerminal"
+  }]
+}
+```
+Once session has started, paste the `json` formatted input config into the integrate terminal prompt.
+Note: You can extract the exact JSON for the image/config you are testing with Ratify by starting a regular Ratify debug session. Inspect the `stdinData` parameter of the `ExecutePlugin` function [here](pkg/common/plugin/exec.go)
+
+Sample JSON stdin 
+```json
+{
+  "config": {
+    "artifactTypes":"application/vnd.dev.cosign.artifact.sig.v1+json",
+    "key":"/home/akashsinghal/ratify/.staging/cosign/cosign.pub",
+    "name":"cosign"
+  },
+  "storeConfig": {
+    "version":"1.0.0",
+    "pluginBinDirs":null,
+    "store": {
+      "cosignEnabled":true,
+      "name":"oras",
+      "useHttp":true
+    }
+  },
+  "referenceDesc": {
+    "mediaType":"application/vnd.oci.image.manifest.v1+json",
+    "digest":"sha256:...",
+    "size":558,
+    "artifactType":"application/vnd.dev.cosign.artifact.sig.v1+json"
+  }
+}
+```
+
+Press `Ctrl+D` to send EOF character to terminate the stdin input. (Note: you may have to press `Ctrl+D` twice)
+
+View more plugin debugging information [here](https://github.com/deislabs/ratify-verifier-plugin#debugging-in-vs-code)
+
 ### Test local changes in the k8s cluster scenario
 
 There are some changes that should be validated in a cluster scenario.
@@ -104,29 +162,22 @@ image:
 ### Deploy from local helm chart
 
 Deploy using one of the following deployments.
+Note: Ratify upgraded Gatekeeper to 3.11.0, server auth is required to be enabled.
 
 **Option 1**
-Client and server auth disabled
+Client auth disabled and server auth enabled using self signed certificate
 
 ```bash
 helm install ratify ./charts/ratify --atomic
 ```
 
 **Option 2**
-Client auth disabled and server auth enabled using self signed certificate
+Client auth disabled and server auth enabled using your own certificate
 
-1. Supply a certificate to use with Ratify (httpserver) or use the following script to create a self-signed certificate.
-
-    ```bash
-    ./scripts/generate-tls-cert.sh
-    ```
-
-2. Deploy using a certificate
+Deploy using a certificate
 
 ```bash
 helm install ratify ./charts/ratify \
-    --set provider.auth="tls" \
-    --set provider.tls.skipVerify=false \
     --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
     --set provider.tls.key="$(cat certs/tls.key)" \
     --set provider.tls.crt="$(cat certs/tls.crt)" \
@@ -134,32 +185,6 @@ helm install ratify ./charts/ratify \
 ```
 
 **Option 3**
-Client auth disabled and server auth enabled using a secret
-
->Note: There must be an existing secret in the 'default' namespace named 'ratify-cert-secret'.*
-
-```bash
-# Example secret schema
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ratify-cert-secret
-data:
-    tls.crt: <base64 crt value>
-    tls.key: <base64 key value>
-```
-
->Note: The 'provider.tls.cabundle' must be supplied. Update the path or send in a base64 encoded value.*
-
-```bash
-helm install ratify ./charts/ratify \
-    --set provider.auth="tls" \
-    --set provider.tls.skipVerify=false \
-    --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
-    --atomic
-```
-
-**Option 4**
 Client / Server auth enabled (mTLS)  
 
 >Note: Ratify and Gatekeeper must be installed in the same namespace which allows Ratify access to Gatekeepers CA certificate. The Ratify certificate must have a CN and subjectAltName name which matches the namespace of Gatekeeper and Ratify. For example, if installed to the namespace 'gatekeeper-system', the CN and subjectAltName should be 'ratify.gatekeeper-system'*
@@ -167,8 +192,6 @@ Client / Server auth enabled (mTLS)
 ```bash
 helm install ratify ./charts/ratify \
     --namespace gatekeeper-system \
-    --set provider.auth="mtls" \
-    --set provider.tls.skipVerify=false \
     --set provider.tls.cabundle="$(cat certs/ca.crt | base64 | tr -d '\n\r')" \
     --set provider.tls.key="$(cat certs/tls.key)" \
     --set provider.tls.crt="$(cat certs/tls.crt)" \

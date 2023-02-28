@@ -6,7 +6,7 @@ metadata:
 spec:
   provider: azurekeyvault
   parameters:
-    vaultURI: {{ required "vaultName must be provided when AKV cert config is enabled" .Values.akvCertConfig.vaultURI  }}
+    vaultURI: {{ required "vaultURI must be provided when AKV cert config is enabled" .Values.akvCertConfig.vaultURI  }}
     certificates:  |
       array:
         - |

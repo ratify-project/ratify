@@ -18,38 +18,40 @@ package main
 import (
 	"context"
 	"crypto"
-	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
-	"github.com/google/go-containerregistry/pkg/authn"
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
+
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
+	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
 	"github.com/sigstore/cosign/pkg/oci"
-	ociremote "github.com/sigstore/cosign/pkg/oci/remote"
+	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
 type PluginConfig struct {
-	Name   string `json:"name"`
-	KeyRef string `json:"key"`
+	Name     string `json:"name"`
+	KeyRef   string `json:"key"`
+	RekorURL string `json:"rekorURL"`
 	// config specific to the plugin
 }
 
 type StoreConfig struct {
-	UseHttp      bool   `json:"useHttp,omitempty"`
-	AuthProvider string `json:"auth-provider,omitempty"`
+	UseHttp bool `json:"useHttp,omitempty"`
 }
 
 type StoreWrapperConfig struct {
@@ -75,19 +77,82 @@ func parseInput(stdin []byte) (*PluginInputConfig, error) {
 }
 
 func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
+	ctx := context.Background()
 	input, err := parseInput(args.StdinData)
 	if err != nil {
 		return nil, err
 	}
+	keyRef := input.Config.KeyRef
+	rekorURL := input.Config.RekorURL
+	cosignOpts := &cosign.CheckOpts{
+		ClaimVerifier: cosign.SimpleClaimVerifier,
+	}
 
-	payload, _, err := signatures(context.Background(), subjectReference.Original, input.Config.KeyRef, input)
+	var ecdsaVerifier signature.Verifier
+	var roots *x509.CertPool
+	if keyRef != "" {
+		ecdsaVerifier, err = loadPublicKey(ctx, keyRef)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to load public key: %w", err)), nil
+		}
+		cosignOpts.SigVerifier = ecdsaVerifier
+	} else {
+		roots, err = fulcio.GetRoots()
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get fulcio roots: %w", err)), nil
+		}
+		cosignOpts.RootCerts = roots
+		if cosignOpts.RootCerts == nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to initialize root certificates")), nil
+		}
+	}
+
+	if rekorURL != "" {
+		cosignOpts.RekorClient, err = rekor.NewClient(rekorURL)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to create Rekor client from URL %s: %w", rekorURL, err)), nil
+		}
+	}
+
+	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return &verifier.VerifierResult{
-			Name:      input.Config.Name,
-			IsSuccess: false,
-			Message:   fmt.Sprintf("cosign verification failed with error %v", err),
-		}, nil
-	} else if len(payload) > 0 {
+		return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get reference manifest: %w", err)), nil
+	}
+
+	// manifest must be an OCI Image
+	if referenceManifest.MediaType != imgspec.MediaTypeImageManifest {
+		return errorToVerifyResult(input.Config.Name, fmt.Errorf("reference manifest is not an image")), nil
+	}
+
+	subjectDesc, err := referrerStore.GetSubjectDescriptor(ctx, subjectReference)
+	if err != nil {
+		return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to create subject hash: %w", err)), nil
+	}
+	subjectDescHash := v1.Hash{
+		Algorithm: subjectDesc.Digest.Algorithm().String(),
+		Hex:       subjectDesc.Digest.Hex(),
+	}
+
+	signatures := []oci.Signature{}
+	for _, blob := range referenceManifest.Layers {
+		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get blob content: %w", err)), nil
+		}
+		sig, err := static.NewSignature(blobBytes, blob.Annotations[static.SignatureAnnotationKey], staticLayerOpts(blob)...)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to generate static signature: %w", err)), nil
+		}
+		// The verification will return an error if the signature is not valid.
+		// Currently the bundle verification result is ignored
+		_, err = cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to verify image signature: %w", err)), nil
+		}
+		signatures = append(signatures, sig)
+	}
+
+	if len(signatures) > 0 {
 		return &verifier.VerifierResult{
 			Name:      input.Config.Name,
 			IsSuccess: true,
@@ -95,48 +160,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}, nil
 	}
 
-	return &verifier.VerifierResult{
-		Name:      input.Config.Name,
-		IsSuccess: false,
-		Message:   "cosign verification failed. no valid signatures found",
-	}, nil
-}
-
-func signatures(ctx context.Context, img string, keyRef string, config *PluginInputConfig) (checkedSignatures []oci.Signature, bundleVerified bool, err error) {
-	registryClientOptions := []remote.Option{
-		remote.WithAuthFromKeychain(authn.DefaultKeychain),
-	}
-	var options []name.Option
-	if config.StoreWrapperConfig.StoreConfig.UseHttp {
-		options = append(options, name.Insecure)
-		// #nosec G402
-		registryClientOptions = append(registryClientOptions, remote.WithTransport(&http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}))
-	}
-
-	ref, err := name.ParseReference(img, options...)
-	if err != nil {
-		return nil, false, err
-	}
-
-	ecdsaVerifier, err := loadPublicKey(ctx, keyRef)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if config.StoreWrapperConfig.StoreConfig.AuthProvider != "" {
-		return nil, false, fmt.Errorf("auth provider %s is not supported", config.StoreWrapperConfig.StoreConfig.AuthProvider)
-	}
-
-	registryClientOptionsWrapper := []ociremote.Option{
-		ociremote.WithRemoteOptions(registryClientOptions...),
-	}
-
-	return cosign.VerifyImageSignatures(ctx, ref, &cosign.CheckOpts{
-		RootCerts:          nil, // TODO: TUF related metadata fulcio.Roots,
-		SigVerifier:        ecdsaVerifier,
-		ClaimVerifier:      cosign.SimpleClaimVerifier,
-		RegistryClientOpts: registryClientOptionsWrapper,
-	})
+	return errorToVerifyResult(input.Config.Name, fmt.Errorf("no valid signatures found")), nil
 }
 
 func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verifier, err error) {
@@ -152,4 +176,24 @@ func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verif
 		return nil, errors.Wrap(err, "pem to ecdsa")
 	}
 	return signature.LoadECDSAVerifier(ed, crypto.SHA256)
+}
+
+func staticLayerOpts(desc imgspec.Descriptor) []static.Option {
+	options := []static.Option{}
+	options = append(options, static.WithAnnotations(desc.Annotations))
+	cert := desc.Annotations[static.CertificateAnnotationKey]
+	chain := desc.Annotations[static.ChainAnnotationKey]
+	if cert != "" && chain != "" {
+		options = append(options, static.WithCertChain([]byte(cert), []byte(chain)))
+	}
+	// TODO: Add support for bundle parsing. Cosign verifier does not consider bundle verification today
+	return options
+}
+
+func errorToVerifyResult(name string, err error) *verifier.VerifierResult {
+	return &verifier.VerifierResult{
+		IsSuccess: false,
+		Name:      name,
+		Message:   errors.Wrap(err, "cosign verification failed").Error(),
+	}
 }

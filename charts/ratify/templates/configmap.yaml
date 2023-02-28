@@ -22,7 +22,8 @@ data:
                 {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
                 ,
                 "authProvider": {
-                    "name": "azureWorkloadIdentity"
+                    "name": "azureWorkloadIdentity",
+                    "clientID": {{ .Values.azureWorkloadIdentity.clientId | quote }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
@@ -60,9 +61,15 @@ data:
             {
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
-                "verificationCerts": [
-                  "/usr/local/ratify-certs/notary/truststore"
-                  ],
+                "verificationCertStores": {
+                  "certs":[
+                    {{- if .Values.akvCertConfig.enabled }}
+                    "certstore-akv"
+                    {{- else }}
+                    "{{ include "ratify.fullname" . }}-notary-inline-cert"
+                    {{- end }}
+                   ]
+                },
                 "trustPolicyDoc": {
                   "version": "1.0",
                   "trustPolicies": [
@@ -81,7 +88,7 @@ data:
             },
             {
                 "name": "cosign",
-                "artifactTypes": "org.sigstore.cosign.v1",
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
                 "key": "/usr/local/ratify-certs/cosign/cosign.pub"
             {{- end }}
             }

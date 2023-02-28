@@ -8,11 +8,11 @@ spec:
   parameters:
     verificationCertStores:
       certs:
-          - certstore-akv
-          - certstore-akv1
+        - certstore-akv
+        - certstore-akv1
       certs1:
-          - certstore-akv2
-          - certstore-akv3
+        - certstore-akv2
+        - certstore-akv3
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
