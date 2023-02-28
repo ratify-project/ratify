@@ -1,9 +1,9 @@
-A `Certificate store` resource defines the public certificates to fetch from a provider. 
+A `Certificate Store` resource defines an array of public certificates to fetch from a provider. 
 
-View more CRD samples [here](../../../config/samples/). Each provider must specify the `name` of the verifier and the `artifactType` this verifier handles. Common properties:
+View more CRD samples [here](../../../config/samples/). Each provider must specify the `name` of the certificate store.
 
 ```yml
-provider: required, name of the provider
+provider: required, name of the certificate store provider
 parameters: required, parameters specific to this certificate store provider
 ```
  
@@ -21,12 +21,19 @@ spec:
     certificates:  |
       array:
         - |
-          certificateName: yourCertName
-          #Optional, fetch latest version if empty 
+          certificateName: yourCertName #Optional, 
           certificateVersion: yourCertVersion 
     tenantID:
     clientID: 
 ```
+
+| Name        | Required | Description | Default Value |
+| ----------- | -------- | ----------- | ------------- | 
+| vaultURI      | yes    |      URI of the azure key vault        |   ""            |
+| certificateName      | yes    |    the name of the key vault object   |       ""        |
+| certificateVersion   | no     |   provider will fetch latest version if empty   |     ""    |
+| tenantID   | yes     |   tenantID of the workload identity that have read access to this key vault   |     ""    |
+| clientID   | yes     |   clientID of the workload identity that have read access to this key vault   |     ""    |
 
 ## Inline Certificate Provider
 ```
@@ -60,3 +67,7 @@ spec:
       -----END CERTIFICATE-----
 
 ```
+
+| Name        | Required | Description | Default Value |
+| ----------- | -------- | ----------- | ------------- | 
+| value      | yes    |      public certificate content       |   ""            |
