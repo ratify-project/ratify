@@ -21,7 +21,6 @@ import (
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	artifactspec "github.com/oras-project/artifacts-spec/specs-go/v1"
 )
 
 // Detect the loopback IP (127.0.0.1)
@@ -52,34 +51,5 @@ func OciDescriptorToReferenceDescriptor(ociDescriptor oci.Descriptor) ocispecs.R
 	return ocispecs.ReferenceDescriptor{
 		Descriptor:   ociDescriptor,
 		ArtifactType: ociDescriptor.ArtifactType,
-	}
-}
-
-func ArtifactManifestToReferenceManifest(artifactManifest artifactspec.Manifest) ocispecs.ReferenceManifest {
-	blobs := []oci.Descriptor{}
-	for _, blob := range artifactManifest.Blobs {
-		ociBlob := oci.Descriptor{
-			MediaType:   blob.MediaType,
-			Digest:      blob.Digest,
-			Size:        blob.Size,
-			URLs:        blob.URLs,
-			Annotations: blob.Annotations,
-		}
-		blobs = append(blobs, ociBlob)
-	}
-
-	subjects := []oci.Descriptor{{
-		MediaType:   artifactManifest.Subject.MediaType,
-		Digest:      artifactManifest.Subject.Digest,
-		Size:        artifactManifest.Subject.Size,
-		URLs:        artifactManifest.Subject.URLs,
-		Annotations: artifactManifest.Subject.Annotations,
-	}}
-
-	return ocispecs.ReferenceManifest{
-		MediaType:    ocispecs.MediaTypeArtifactManifest,
-		ArtifactType: artifactManifest.ArtifactType,
-		Blobs:        blobs,
-		Subjects:     subjects,
 	}
 }

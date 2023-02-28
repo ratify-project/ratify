@@ -7,7 +7,6 @@ spec:
   parameters:
     cacheEnabled: true
     capacity: 100
-    cosignEnabled: false
+    cosignEnabled: true
     keyNumber: 10000
     ttl: 10
-    useHttp: true

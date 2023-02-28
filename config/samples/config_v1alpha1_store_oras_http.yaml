@@ -3,12 +3,11 @@ kind: Store
 metadata:
   name: store-oras
 spec:
-  name: oras  
+  name: oras
   parameters:
-    # NOTE: docker auth provider selected by default if none specified
     cacheEnabled: true
     capacity: 100
-    cosignEnabled: false
+    cosignEnabled: true
     keyNumber: 10000
     ttl: 10
     useHttp: true

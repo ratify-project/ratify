@@ -88,7 +88,7 @@ data:
             },
             {
                 "name": "cosign",
-                "artifactTypes": "org.sigstore.cosign.v1",
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
                 "key": "/usr/local/ratify-certs/cosign/cosign.pub"
             {{- end }}
             }
