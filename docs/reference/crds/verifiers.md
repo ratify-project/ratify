@@ -61,7 +61,7 @@ spec:
 ```
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| key      | Yes    |     Path to the public key used for validating the signature    |   ""            |
+| key      | yes    |     Path to the public key used for validating the signature    |   ""            |
 
 ## Sbom
 ```yml
@@ -77,7 +77,7 @@ spec:
 ```
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| nestedReferences      | No    | If nestedReferences contains any string value, the nested artifact will also be verified. For example, customer might want to enforce notary signatures on all sboms.|   ""            |
+| nestedReferences      | no    | If nestedReferences contains any string value, the nested artifact will also be verified. For example, customer might want to enforce notary signatures on all sboms.|   ""            |
 
 ## Schemavalidator
 
@@ -97,4 +97,4 @@ spec:
 ```
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| schemas      | Yes    |     A mapping between the schema name to the schema path. The path can be either a URL or a canonical file path that start with file:// |   ""            |
+| schemas      | yes    |     A mapping between the schema name to the schema path. The path can be either a URL or a canonical file path that start with file:// |   ""            |

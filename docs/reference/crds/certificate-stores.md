@@ -21,7 +21,7 @@ spec:
     certificates:  |
       array:
         - |
-          certificateName: yourCertName #Optional, 
+          certificateName: yourCertName
           certificateVersion: yourCertVersion 
     tenantID:
     clientID: 
