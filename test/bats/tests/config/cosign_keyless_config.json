@@ -4,8 +4,7 @@
         "plugins": [
             {
                 "name": "oras",
-                "cosignEnabled": true,
-                "useHttp": true
+                "cosignEnabled": true
             }
         ]
     },
@@ -32,8 +31,7 @@
             },
             {
                 "name": "cosign",
-                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
-                "key": ".staging/cosign/cosign.pub"
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json"
             },
             {
                 "name": "notaryv2",

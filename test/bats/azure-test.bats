@@ -54,7 +54,6 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo2 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
 
     run kubectl apply -f ./library/default/template.yaml
@@ -62,8 +61,6 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-    sleep 5
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
 
     run kubectl run cosign-demo --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed

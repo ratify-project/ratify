@@ -9,7 +9,7 @@ fullnameOverride: ""
 logLevel: info
 notaryCert: ""
 cosign:
-  enabled: false
+  enabled: true
   key: ""
 resources:
   limits:
