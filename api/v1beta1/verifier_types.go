@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,8 +50,7 @@ type VerifierStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the eraser API has been deprecated. Please migrate to v1beta1."
-
+// +kubebuilder:storageversion
 // Verifier is the Schema for the verifiers API
 type Verifier struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -61,8 +60,8 @@ type Verifier struct {
 	Status VerifierStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // VerifierList contains a list of Verifier
 type VerifierList struct {
 	metav1.TypeMeta `json:",inline"`

@@ -42,6 +42,7 @@ type CertificateStoreStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:deprecatedversion:warning="v1alpha1 of the eraser API has been deprecated. Please migrate to v1beta1."
 
 // CertificateStore is the Schema for the certificatestores API
 type CertificateStore struct {

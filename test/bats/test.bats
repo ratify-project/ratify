@@ -299,7 +299,7 @@ SLEEP_TIME=1
 
     # add the alternate certificate as an inline certificate store
     cat <<EOF | kubectl apply -f -
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
 metadata:
   name: certstore-inline
@@ -312,7 +312,7 @@ EOF
 
     # configure the notary verifier to use the inline certificate store
     cat <<EOF | kubectl apply -f -
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-notary

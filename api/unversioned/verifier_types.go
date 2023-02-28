@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+// +kubebuilder:skip
+package unversioned
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,7 +38,6 @@ type VerifierSpec struct {
 	// OCI Artifact source to download the plugin from, optional
 	Source *PluginSource `json:"source,omitempty"`
 
-	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this verifier
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
@@ -48,10 +48,6 @@ type VerifierStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the eraser API has been deprecated. Please migrate to v1beta1."
-
 // Verifier is the Schema for the verifiers API
 type Verifier struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -61,15 +57,9 @@ type Verifier struct {
 	Status VerifierStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // VerifierList contains a list of Verifier
 type VerifierList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Verifier `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Verifier{}, &VerifierList{})
 }

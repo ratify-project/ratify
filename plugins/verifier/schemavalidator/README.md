@@ -17,7 +17,7 @@ Schemas can be configured in Ratify config.json or via CRD.
 ```
 
 ```yaml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-schemavalidator

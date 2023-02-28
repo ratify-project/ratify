@@ -18,7 +18,7 @@ package controllers
 import (
 	"testing"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -26,7 +26,7 @@ func TestGetCertStoreConfig_ValidConfig(t *testing.T) {
 	var parametersString = "{\"certificates\":\"array:\\n  - |\\n    certificateName: wabbit-networks-io\\n    certificateVersion: 97a1545d893344079ce57699c8810590\\n\",\"clientID\":\"sampleClientID\",\"keyvaultName\":\"sampleKeyVault\",\"tenantID\":\"sampleTenantID\"}"
 	var certStoreParameters = []byte(parametersString)
 
-	spec := configv1alpha1.CertificateStoreSpec{
+	spec := configv1beta1.CertificateStoreSpec{
 		Provider: "azurekeyvault",
 		Parameters: runtime.RawExtension{
 			Raw: certStoreParameters,
@@ -51,7 +51,7 @@ func TestGetCertStoreConfig_EmptyStringError(t *testing.T) {
 	var parametersString = ""
 	var certStoreParameters = []byte(parametersString)
 
-	spec := configv1alpha1.CertificateStoreSpec{
+	spec := configv1beta1.CertificateStoreSpec{
 		Provider: "azurekeyvault",
 		Parameters: runtime.RawExtension{
 			Raw: certStoreParameters,

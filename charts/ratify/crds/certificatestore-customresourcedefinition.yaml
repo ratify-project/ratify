@@ -14,7 +14,10 @@ spec:
     singular: certificatestore
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - deprecated: true
+    deprecationWarning: v1alpha1 of the eraser API has been deprecated. Please migrate
+      to v1beta1.
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: CertificateStore is the Schema for the certificatestores API
@@ -35,11 +38,47 @@ spec:
             description: CertificateStoreSpec defines the desired state of CertificateStore
             properties:
               parameters:
-                description: Parameters of the store
+                description: Parameters of the certificate store
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
               provider:
-                description: Name of the of the certificate store provider
+                description: Name of the certificate store provider
+                type: string
+            type: object
+          status:
+            description: CertificateStoreStatus defines the observed state of CertificateStore
+            type: object
+        type: object
+    served: true
+    storage: false
+    subresources:
+      status: {}
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: CertificateStore is the Schema for the certificatestores API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: CertificateStoreSpec defines the desired state of CertificateStore
+            properties:
+              parameters:
+                description: Parameters of the certificate store
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              provider:
+                description: Name of the certificate store provider
                 type: string
             type: object
           status:
@@ -48,3 +87,5 @@ spec:
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}
