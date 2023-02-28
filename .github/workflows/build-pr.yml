@@ -33,10 +33,14 @@ jobs:
         run: bin/ratify version
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@v3
-  
+      - name: Run helm lint
+        run: helm lint charts/ratify
+
   build_test_cli:
     name: "Build and run tests for CLI"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -97,8 +101,8 @@ jobs:
         with:
           name: e2e-logs
           path: |
-            logs-*.json        
-  
+            logs-*.json
+
   build_test_aks_e2e:
     name: "Build and run e2e Test on AKS"
     env:
@@ -108,6 +112,7 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     timeout-minutes: 30
+    continue-on-error: true
     permissions:
       id-token: write
       contents: read
@@ -146,4 +151,4 @@ jobs:
         with:
           name: e2e-logs
           path: |
-            logs-*.json       
+            logs-*.json

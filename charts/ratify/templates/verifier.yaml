@@ -6,14 +6,14 @@ spec:
   name: notaryv2
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
-    {{- if .Values.akvCertConfig.enabled }}
+    
     verificationCertStores:
       certs:
+        {{- if .Values.akvCertConfig.enabled }}
         - certstore-akv
-    {{- else }}
-    verificationCerts:
-      - /usr/local/ratify-certs/notary/truststore
-    {{- end }}    
+        {{- else }}
+        - {{ include "ratify.fullname" . }}-notary-inline-cert
+        {{- end }}
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
@@ -34,7 +34,7 @@ metadata:
   name: verifier-cosign
 spec:
   name: cosign
-  artifactTypes: org.sigstore.cosign.v1
+  artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
     key: /usr/local/ratify-certs/cosign/cosign.pub
 {{- end }}
