@@ -75,6 +75,64 @@ Sample curl request to invoke Ratify endpoint:
 curl -X POST http://127.0.0.1:6001/ratify/gatekeeper/v1/verify -H "Content-Type: application/json" -d '{"apiVersion":"externaldata.gatekeeper.sh/v1alpha1","kind":"ProviderRequest","request":{"keys":["localhost:5000/net-monitor:v1"]}}'
 ```
 
+#### Debug external plugins
+
+External plugin processes must be attached in a separate debug session. Certain environment variables and `stdin` must be configured
+
+Sample launch json for debugging a plugin:
+```json
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "Debug Cosign Plugin",
+    "type": "go",
+    "request": "launch",
+    "mode": "auto",
+    "program": "${workspaceFolder}/plugins/verifier/cosign",
+    "env": {
+      "RATIFY_DYNAMIC_PLUGINS": "1",
+      "RATIFY_LOG_LEVEL": "debug",
+      "RATIFY_VERIFIER_COMMAND": "VERIFY",
+      "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",
+      "RATIFY_VERIFIER_VERSION": "1.0.0",
+    },
+    "console": "integratedTerminal"
+  }]
+}
+```
+Once session has started, paste the `json` formatted input config into the integrate terminal prompt.
+Note: You can extract the exact JSON for the image/config you are testing with Ratify by starting a regular Ratify debug session. Inspect the `stdinData` parameter of the `ExecutePlugin` function [here](pkg/common/plugin/exec.go)
+
+Sample JSON stdin 
+```json
+{
+  "config": {
+    "artifactTypes":"application/vnd.dev.cosign.artifact.sig.v1+json",
+    "key":"/home/akashsinghal/ratify/.staging/cosign/cosign.pub",
+    "name":"cosign"
+  },
+  "storeConfig": {
+    "version":"1.0.0",
+    "pluginBinDirs":null,
+    "store": {
+      "cosignEnabled":true,
+      "name":"oras",
+      "useHttp":true
+    }
+  },
+  "referenceDesc": {
+    "mediaType":"application/vnd.oci.image.manifest.v1+json",
+    "digest":"sha256:...",
+    "size":558,
+    "artifactType":"application/vnd.dev.cosign.artifact.sig.v1+json"
+  }
+}
+```
+
+Press `Ctrl+D` to send EOF character to terminate the stdin input. (Note: you may have to press `Ctrl+D` twice)
+
+View more plugin debugging information [here](https://github.com/deislabs/ratify-verifier-plugin#debugging-in-vs-code)
+
 ### Test local changes in the k8s cluster scenario
 
 There are some changes that should be validated in a cluster scenario.

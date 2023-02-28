@@ -4,8 +4,6 @@ This guide will explain how to get up and running with Ratify on AWS using EKS a
 
 By the end of this guide you will have a public ECR repository, an EKS cluster with Gatekeeper and Ratify installed, and have validated that only images signed with a particular key can be deployed.
 
-> Note: The Cosign verifier with ratify today only supports images in a public (non-authenticated) registry.
-
 This guide assumes you are starting from scratch, but portions of the guide can be skipped if you have an existing EKS cluster or ECR repository.
 
 ## Table of Contents
@@ -132,7 +130,7 @@ but we can look at what will be generated below:
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "org.sigstore.cosign.v1": "any"
+                "application/vnd.dev.cosign.artifact.sig.v1+json": "any"
             }
         }
     },
@@ -141,7 +139,7 @@ but we can look at what will be generated below:
         "plugins": [        
           {
             "name": "cosign",
-            "artifactTypes": "org.sigstore.cosign.v1",
+            "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
             "key": "/usr/local/ratify-certs/cosign/cosign.pub"
           }
         ]        
@@ -178,17 +176,17 @@ helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst
+    --set validatingWebhookTimeoutSeconds=5 \
+    --set mutatingWebhookTimeoutSeconds=2
 ```
 
 Once Gatekeeper has been deployed into the cluster we can deploy Ratify using the provided helm chart:
 
 ```shell
-export COSIGN_PUBLIC_KEY=$(cat cosign.pub)
 
-helm install ratify charts/ratify \
-    --set cosign.enabled=true \
-    --set cosign.key=$COSIGN_PUBLIC_KEY
+helm install ratify ratify/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file cosign.key=cosign.pub
 
 kubectl apply -f ./library/default/template.yaml
 kubectl apply -f ./library/default/samples/constraint.yaml
