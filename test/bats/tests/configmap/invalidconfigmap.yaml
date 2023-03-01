@@ -21,7 +21,7 @@ data:
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "org.sigstore.cosign.v1": "any"
+                "application/vnd.dev.cosign.artifact.sig.v1+json": "any"
             }
         }
       },

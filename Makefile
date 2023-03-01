@@ -32,7 +32,6 @@ RATIFY_NAME = ratify
 LOCAL_REGISTRY_IMAGE ?= ghcr.io/oras-project/registry:v1.0.0-rc.4
 LOCAL_UNSIGNED_IMAGE = hello-world:latest
 TEST_REGISTRY = localhost:5000
-LOCAL_TEST_REGISTRY_AUTH = localhost:5001
 LOCAL_TEST_REGISTRY_USERNAME = test_user
 LOCAL_TEST_REGISTRY_PASSWORD = test_pw
 
@@ -119,8 +118,9 @@ test-e2e:
 	bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-create-local-registry-auth e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
-	RATIFY_DIR=${INSTALL_DIR} LOCAL_TEST_REGISTRY=${TEST_REGISTRY} LOCAL_TEST_REGISTRY_AUTH=${LOCAL_TEST_REGISTRY_AUTH} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+	RATIFY_DIR=${INSTALL_DIR} LOCAL_TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 
 .PHONY: generate-certs
 generate-certs:
@@ -151,13 +151,27 @@ KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 e2e-create-local-registry: e2e-run-local-registry e2e-create-all-image
 
 e2e-run-local-registry:
+	rm -rf ~/auth
+	mkdir ~/auth
+	docker run --entrypoint htpasswd httpd@sha256:dd993a2108430ec8fdc4942f791ccf9b0c7a6df196907a80e7e8a5f8f1bbf678 -Bbn ${LOCAL_TEST_REGISTRY_USERNAME} ${LOCAL_TEST_REGISTRY_PASSWORD}> ~/auth/htpasswd
+
 	if [ "$$(docker inspect -f '{{.State.Running}}' "registry" 2>/dev/null || true)" ]; then docker stop registry && docker rm registry; fi
 	docker pull ${LOCAL_REGISTRY_IMAGE}
 	docker run -d \
 		-p 5000:5000 \
 		--restart=always \
 		--name registry \
+		-v ${HOME}/auth:/auth \
+		-e "REGISTRY_AUTH=htpasswd" \
+		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
 		${LOCAL_REGISTRY_IMAGE}
+
+	docker login -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}
+	oras login \
+		-u ${LOCAL_TEST_REGISTRY_USERNAME} \
+		-p ${LOCAL_TEST_REGISTRY_PASSWORD} \
+		${TEST_REGISTRY}
 
 e2e-create-all-image:
 	rm -rf .staging
@@ -166,41 +180,14 @@ e2e-create-all-image:
 	docker build --no-cache -t ${TEST_REGISTRY}/all:v0 .staging
 	docker push ${TEST_REGISTRY}/all:v0
 
-e2e-create-local-registry-auth:
-	rm -rf ~/auth
-	mkdir ~/auth
-	docker run --entrypoint htpasswd httpd@sha256:dd993a2108430ec8fdc4942f791ccf9b0c7a6df196907a80e7e8a5f8f1bbf678 -Bbn ${LOCAL_TEST_REGISTRY_USERNAME} ${LOCAL_TEST_REGISTRY_PASSWORD}> ~/auth/htpasswd
-
-	if [ "$$(docker inspect -f '{{.State.Running}}' "registry-auth" 2>/dev/null || true)" ]; then docker stop registry-auth && docker rm registry-auth; fi
-	docker pull ${LOCAL_REGISTRY_IMAGE}
-	docker run -d \
-		-p 5001:5000 \
-		--restart=always \
-		--name registry-auth \
-		-v ${HOME}/auth:/auth \
-		-e "REGISTRY_AUTH=htpasswd" \
-		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
-		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
-		${LOCAL_REGISTRY_IMAGE}
-
-	docker login -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY_AUTH}
-	oras login \
-		-u ${LOCAL_TEST_REGISTRY_USERNAME} \
-		-p ${LOCAL_TEST_REGISTRY_PASSWORD} \
-		${LOCAL_TEST_REGISTRY_AUTH}
-
-	rm -rf .staging
-	mkdir .staging
-
-e2e-bootstrap: e2e-dependencies e2e-create-local-registry e2e-create-local-registry-auth
-	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5001"]\n    endpoint = ["http://registry-auth:5000"]' > kind_config.yaml
+e2e-bootstrap: e2e-dependencies e2e-create-local-registry
+	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
 
 	# Check for existing kind cluster
 	if [ $$(${GITHUB_WORKSPACE}/bin/kind get clusters) ]; then ${GITHUB_WORKSPACE}/bin/kind delete cluster; fi
 	# Create a new kind cluster
 	TERM=dumb ${GITHUB_WORKSPACE}/bin/kind create cluster --image $(KIND_NODE_VERSION) --wait 5m --config=kind_config.yaml
 	if [ "$$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "registry")" = 'null' ]; then docker network connect "kind" "registry"; fi
-	if [ "$$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "registry-auth")" = 'null' ]; then docker network connect "kind" "registry-auth"; fi
 	rm kind_config.yaml
 
 e2e-helm-install:
@@ -237,17 +224,8 @@ e2e-notaryv2-setup:
 
 	rm -rf ~/.config/notation
 	.staging/notaryv2/notation/bin/notation cert generate-test --default "ratify-bats-test"
-	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
-	.staging/notaryv2/notation/bin/notation sign `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
-
-	if [ "${USE_REMOTE_REGISTRY}" != "true" ]; then \
-		echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image auth enabled"]' > .staging/notaryv2/Dockerfile; \
-		docker build --no-cache -t ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed .staging/notaryv2; \
-		docker push ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed; \
-		docker image tag ${LOCAL_UNSIGNED_IMAGE} ${LOCAL_TEST_REGISTRY_AUTH}/notation:unsigned; \
-		docker push ${LOCAL_TEST_REGISTRY_AUTH}/notation:unsigned; \
-		.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY_AUTH}/notation:signed | jq -r .[0].RepoDigests[0]`; \
-	fi
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
@@ -267,6 +245,7 @@ e2e-cosign-setup:
 
 	export COSIGN_PASSWORD="test" && \
 	cd .staging/cosign && \
+	./cosign-linux-amd64 login ${TEST_REGISTRY} -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} && \
 	./cosign-linux-amd64 generate-key-pair && \
 	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${TEST_REGISTRY}/cosign:signed-key | jq -r .[0].RepoDigests[0]` && \
 	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
@@ -324,8 +303,8 @@ e2e-sbom-setup:
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 
 	# Push Signature to sbom
-	.staging/notaryv2/notation/bin/notation sign ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notaryv2/notation/bin/notation sign ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
@@ -361,9 +340,9 @@ e2e-inlinecert-setup:
 	docker push ${TEST_REGISTRY}/notation:signed-alternate
 
 	.staging/notaryv2/notation/bin/notation cert generate-test "alternate-cert"
-	.staging/notaryv2/notation/bin/notation sign --key "alternate-cert" `docker image inspect ${TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} --key "alternate-cert" `docker image inspect ${TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
 
-e2e-azure-setup: e2e-create-all-image e2e-notaryv2-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+e2e-azure-setup: e2e-create-all-image e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -383,7 +362,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
-	echo "{\n\t\"auths\": {\n\t\t\"registry-auth:5000\": {\n\t\t\t\"auth\": \"`echo "${LOCAL_TEST_REGISTRY_USERNAME}:${LOCAL_TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+	echo "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${LOCAL_TEST_REGISTRY_USERNAME}:${LOCAL_TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
     ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
@@ -395,14 +374,12 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup 
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
-	--set cosign.enabled=true \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logLevel=debug
 
 	rm mount_config.json
-	kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 

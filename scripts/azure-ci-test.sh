@@ -24,7 +24,7 @@ SUFFIX=$(openssl rand -hex 2)
 export GROUP_NAME="${GROUP_NAME:-ratify-e2e-${SUFFIX}}"
 export ACR_NAME="${ACR_NAME:-ratifyacr${SUFFIX}}"
 export AKS_NAME="${AKS_NAME:-ratify-aks-${SUFFIX}}"
-export KEYVAULT_NAME="${AKV_NAME:-ratify-akv-${SUFFIX}}"
+export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
 export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.24.6}
@@ -74,7 +74,10 @@ deploy_ratify() {
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
+    --set-file cosign.key=".staging/cosign/cosign.pub" \
     --set logLevel=debug
+
+  kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
   kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
   kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
@@ -111,10 +114,12 @@ trap cleanup EXIT
 
 main() {
   ./scripts/create-azure-resources.sh
+
+  local ACR_USER_NAME="00000000-0000-0000-0000-000000000000"
+  local ACR_PASSWORD=$(az acr login --name ${ACR_NAME} --expose-token --output tsv --query accessToken)
+  make e2e-azure-setup TEST_REGISTRY=$REGISTRY LOCAL_TEST_REGISTRY_USERNAME=${ACR_USER_NAME} LOCAL_TEST_REGISTRY_PASSWORD=${ACR_PASSWORD}
+
   build_push_to_acr
-
-  make e2e-azure-setup TEST_REGISTRY=$REGISTRY USE_REMOTE_REGISTRY=true
-
   upload_cert_to_akv
   deploy_gatekeeper
   deploy_ratify

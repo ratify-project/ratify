@@ -7,7 +7,7 @@ WAIT_TIME=60
 SLEEP_TIME=1
 
 @test "dynamic plugins enabled test" {
-    # only run this test against a live cluster 
+    # only run this test against a live cluster
 
     # ensure that the chart deployment is reset to a clean state for other tests
     teardown() {
@@ -50,12 +50,10 @@ SLEEP_TIME=1
 }
 
 @test "cosign test" {
-    skip "Skipping test for now as cosign verifier plugin does not support workload identity yet."
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo2 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
 
     run kubectl apply -f ./library/default/template.yaml
@@ -63,8 +61,6 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-    sleep 5
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
     sleep 5
 
     run kubectl run cosign-demo --namespace default --image=${TEST_REGISTRY}/cosign:signed-key
@@ -101,7 +97,7 @@ SLEEP_TIME=1
 }
 
 @test "sbom verifier test" {
-     teardown() {
+    teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
@@ -158,7 +154,6 @@ SLEEP_TIME=1
 }
 
 @test "sbom/notary/cosign/licensechecker/schemavalidator verifiers test" {
-    skip "Skipping test for now as cosign verifier plugin does not support workload identity yet."
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
