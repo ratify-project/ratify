@@ -231,11 +231,15 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 	}
 
 	if store.config.CosignEnabled {
-		cosignReferences, err := getCosignReferences(subjectReference, store.config)
+		// add cosign descriptor if exists
+		cosignReferences, err := getCosignReferences(ctx, subjectReference, store, repository)
 		if err != nil {
 			return referrerstore.ListReferrersResult{}, err
 		}
-		referrers = append(referrers, *cosignReferences...)
+
+		if cosignReferences != nil {
+			referrers = append(referrers, *cosignReferences...)
+		}
 	}
 
 	return referrerstore.ListReferrersResult{Referrers: referrers}, nil
@@ -331,8 +335,8 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 	}
 
-	// marshal manifest bytes into reference manifest descriptor
 	referenceManifest := ocispecs.ReferenceManifest{}
+	// marshal manifest bytes into reference manifest descriptor
 	if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
@@ -450,5 +454,4 @@ func (store *orasStore) addAuthCache(ref string, repository *remote.Repository, 
 
 func (store *orasStore) evictAuthCache(ref string, err error) {
 	store.authCache.Delete(ref)
-	// TODO: add reliable way to conditionally evict based on error code
 }

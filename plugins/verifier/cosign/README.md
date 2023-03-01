@@ -1,11 +1,9 @@
 # Cosign Verifier
 
-This README outlines how this validation framework can be used to verify signatures generated using [cosign](https://github.com/sigstore/cosign/). The verifier is added as a plugin to the framework that uses [cosign](https://github.com/sigstore/cosign/) packages to invoke the verification of an image. Currently cosign verifier works with remote registry that can provide cosign related artifacts linked as specially formatted tag to the subject artifact. It works only with [oras](../../pkg/referrerstore/oras) referrer store plugin that uses the OCI registry API to discover and fetch the artifacts.
+This README outlines how this validation framework can be used to verify signatures generated using [cosign](https://github.com/sigstore/cosign/). The verifier is added as a plugin to the framework that uses [cosign](https://github.com/sigstore/cosign/) packages to invoke the verification of an image. Cosign verifier works with remote registry that can provide cosign related artifacts linked as specially formatted tag to the subject artifact. It also is compatible with OCI 1.1 supported Cosign which pushes the signature OCI Image as a referrer to the subject image. (Note: this is currently experimental for cosign) It works only with [oras](../../pkg/referrerstore/oras) referrer store plugin that uses the OCI registry API to discover and fetch the artifacts.
 
 ## Fallback in OCIRegistry store
-A configuration flag called `cosignEnabled` is introduced to the plugin configuration. If this flag is enabled, the `ListReferrers` API will attempt to query for the cosign signatures for a subject in addition to the references queried using `referrers API`. All the cosign signatures are returned as the reference artifacts with the artifact type `org.sigstore.cosign.v1` This option will enable to verify cosign signatures against any registry including the onces that don't support the [notaryproject](https://github.com/notaryproject)'s `referrers` API.
-
-IMPORTANT NOTE: Cosign signatures cannot be verified from private registries. `cosignEnabled` flag should not be enabled for any private registry scenario even for non-cosign signature verifications.
+A configuration flag called `cosignEnabled` is introduced to the plugin configuration. If this flag is enabled, the `ListReferrers` API will attempt to query for the cosign signatures for a subject in addition to the references queried using `referrers API`. If `cosignEnabled` is `false`, then only OCI 1.1 compatible Cosign signatures will be considered. All the cosign signatures are returned as the reference artifacts with the artifact type `application/vnd.dev.cosign.artifact.sig.v1+json` This option will enable to verify cosign signatures against any registry including the ones that don't support the [notaryproject](https://github.com/notaryproject)'s `referrers` API.
 
 # Signing
 Please refer cosign documentation on how to sign an image using cosign using [key-pair based signatures]((https://github.com/sigstore/cosign/blob/main/USAGE.md) and [keyless signatures](https://github.com/sigstore/cosign/blob/main/KEYLESS.md).
@@ -35,7 +33,7 @@ Following is an example `ratify` config with cosign verifier. Please note the `k
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "org.sigstore.cosign.v1": "any"
+                "application/vnd.dev.cosign.artifact.sig.v1+json": "any"
             }
         }
     },
@@ -44,7 +42,7 @@ Following is an example `ratify` config with cosign verifier. Please note the `k
         "plugins": [
             {
                 "name":"cosign",
-                "artifactTypes": "org.sigstore.cosign.v1",
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
                 "key": "/path/to/cosign.pub"
             }
         ]
@@ -64,7 +62,7 @@ $ ratify verify --config ~/.ratify/config.json --subject myregistry.io/example/h
       "isSuccess": true,
       "name": "cosign",
       "message": "cosign verification success. valid signatures found",
-      "artifactType": "org.sigstore.cosign.v1"
+      "artifactType": "application/vnd.dev.cosign.artifact.sig.v1+json"
     }
   ]
 }
@@ -91,7 +89,7 @@ This section outlines how to use `ratify` to verify the signatures signed using 
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "org.sigstore.cosign.v1": "any"
+                "application/vnd.dev.cosign.artifact.sig.v1+json": "any"
             }
         }
     },
@@ -100,7 +98,7 @@ This section outlines how to use `ratify` to verify the signatures signed using 
         "plugins": [
             {
                 "name":"cosign",
-                "artifactTypes": "org.sigstore.cosign.v1",
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
             }
         ]
     }
@@ -118,7 +116,7 @@ Default Rekor transparency log URL is `https://rekor.sigstore.dev`. If using a c
         "plugins": [
             {
                 "name":"cosign",
-                "artifactTypes": "org.sigstore.cosign.v1",
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
                 "rekorURL": "https://rekor.sigstore.dev"
             }
         ]
@@ -137,7 +135,7 @@ $ ratify verify --config ~/.ratify/config.json --subject myregistry.io/example/h
       "isSuccess": true,
       "name": "cosign",
       "message": "cosign verification success. valid signatures found",
-      "artifactType": "org.sigstore.cosign.v1"
+      "artifactType": "application/vnd.dev.cosign.artifact.sig.v1+json"
     }
   ]
 }

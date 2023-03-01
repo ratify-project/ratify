@@ -2,6 +2,9 @@ module github.com/deislabs/ratify
 
 go 1.19
 
+// Accidentally published prior to 1.0.0 release
+retract v1.1.0-alpha.1
+
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.4
