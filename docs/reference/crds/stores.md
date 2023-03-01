@@ -35,7 +35,7 @@ spec:
 
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| cosignEnabled      | no    |   This must be `true` if cosign verifier is enabled. Read more about cosign verifier [here](https://github.com/deislabs/ratify/pull/646/files#diff-577b85db823f49417d505df5753df48656877e5e4af9a004150c5f058967c0fe).        |   `false`       |
+| cosignEnabled      | no    |   This must be `true` if cosign verifier is enabled. Read more about cosign verifier [here](https://github.com/deislabs/ratify/blob/main/plugins/verifier/cosign/README.md).        |   `false`       |
 | authProvider      | no    |      This is only required if pulling from a private repository. For all supported auth mode, please review [oras-auth-provider](https://github.com/deislabs/ratify/blob/main/docs/reference/oras-auth-provider.md) doc  |   dockerAuth            |
 | cacheEnabled      | no    |   Oras cache, cache for all referrers for a subject     |   `false`            |
 | capacity      | no    |   Max size of oras cache      |   100 Megabytes        |

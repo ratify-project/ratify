@@ -97,4 +97,4 @@ spec:
 ```
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| schemas      | yes    |     A mapping between the schema name to the schema path. The path can be either a URL or a canonical file path that start with file:// |   ""            |
+| schemas      | yes    |     A mapping between the schema name to the schema path. The path can be either a URL or a canonical file path that starts with `file://` |   ""            |
