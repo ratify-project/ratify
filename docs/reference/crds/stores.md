@@ -40,6 +40,6 @@ spec:
 | cacheEnabled      | no    |   Oras cache, cache for all referrers for a subject     |   `false`            |
 | capacity      | no    |   Max size of oras cache      |   100 Megabytes        |
 | keyNumber   | no     |  Number of 4-bit access counters to keep for oras cache admission and eviction.     |  10000       |
-| ttl      | no    |    Time to live for entries in oras cache        |   10            |
+| ttl      | no    |    Time to live for entries in oras cache        |   10 seconds            |
 | useHttp      | no    |  This needs to be set to `true` for  local insecure registries           |  `false`     |
 
