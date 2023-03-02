@@ -16,8 +16,8 @@ spec:
   scope: Namespaced
   versions:
   - deprecated: true
-    deprecationWarning: v1alpha1 of the eraser API has been deprecated. Please migrate
-      to v1beta1.
+    deprecationWarning: v1alpha1 of the CertificateStore API has been deprecated.
+      Please migrate to v1beta1.
     name: v1alpha1
     schema:
       openAPIV3Schema:

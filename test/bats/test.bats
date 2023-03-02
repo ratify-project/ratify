@@ -6,6 +6,22 @@ BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
 
+@test "crd version test" {
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    assert_success
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
+    assert_success
+    run bash -c "kubectl get verifiers.config.ratify.deislabs.io/verifier-notary -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
+    assert_success
+
+    run kubectl delete stores.config.ratify.deislabs.io/store-oras
+    assert_success
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras.yaml
+    assert_success
+    run bash -c "kubectl get stores.config.ratify.deislabs.io/store-oras -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
+    assert_success
+}
+
 @test "notary test" {
     teardown() {
         echo "cleaning up"
@@ -50,7 +66,7 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
-     # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
+    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
     sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1beta1_verifier_cosign.yaml
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_cosign.yaml
     sleep 5
