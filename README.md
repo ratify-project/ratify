@@ -69,7 +69,7 @@ helm install ratify \
 ```
 
 Option 2: Install ratify with charts from your local branch.
-Note: Weekly dev build coming soon. Please check back on issue [643](https://github.com/deislabs/ratify/issues/643)
+Note: Latest chart in main may not be compatible with the last released version of ratify image. Weekly dev build coming soon. Please check back on issue [643](https://github.com/deislabs/ratify/issues/643)
 ```bash
 helm install ratify \
     ./charts/ratify --atomic \
