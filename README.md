@@ -37,7 +37,7 @@ Prerequisites:
 - Kubernetes v1.20 or higher
 - OPA Gatekeeper v3.10 or higher  
 
-1. Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
+Step 1: Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
 
 ```bash
 helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -52,32 +52,32 @@ helm install gatekeeper/gatekeeper  \
 
 NOTE: `validatingWebhookTimeoutSeconds` and `mutationWebhookTimeoutSeconds` increased from 3 to 5 and 1 to 2 respectively, so all Ratify operations complete in complex scenarios. See [discussion here](https://github.com/deislabs/ratify/issues/269) to remove this requirement. Kubernetes v1.20 or higher is REQUIRED to increase timeout. Timeout is configurable in helm chart under `provider.timeout` section.   
 
-2. Deploy ratify on gatekeeper in the default namespace.
+Step 2: Deploy ratify on gatekeeper in the default namespace.
 
-    Option 1: Install the last released version of Ratify
+Option 1: Install the last released version of Ratify
 
-    Note: if the crt/key/cabundle are NOT set under `provider.tls` in values.yaml, helm would generate a CA certificate and server key/certificate for you.
+Note: if the crt/key/cabundle are NOT set under `provider.tls` in values.yaml, helm would generate a CA certificate and server key/certificate for you.
 
-    ```bash
-    helm repo add ratify https://deislabs.github.io/ratify
-    # download the notary verification certificate
-    curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
-    helm install ratify \
-        ratify/ratify --atomic \
-        --namespace gatekeeper-system \
-        --set-file notaryCert=./notary.crt
-    ```
+```bash
+helm repo add ratify https://deislabs.github.io/ratify
+# download the notary verification certificate
+curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
+helm install ratify \
+    ratify/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file notaryCert=./notary.crt
+```
 
-    Option 2: Install ratify with charts from your local branch.
-    Note: Weekly dev build coming soon. Please check back on issue [643](https://github.com/deislabs/ratify/issues/643)
-    ```bash
-    helm install ratify \
-        ./charts/ratify --atomic \
-        --namespace gatekeeper-system \
-        --set-file notaryCert=./test/testdata/notary.crt
-    ```
+Option 2: Install ratify with charts from your local branch.
+Note: Weekly dev build coming soon. Please check back on issue [643](https://github.com/deislabs/ratify/issues/643)
+```bash
+helm install ratify \
+    ./charts/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file notaryCert=./test/testdata/notary.crt
+```
 
-3. See Ratify in action
+Step 3: See Ratify in action
 
 - Deploy a `demo` constraint.
 ```
@@ -110,7 +110,7 @@ Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" deni
 
 You just validated the container images in your k8s cluster!
 
-4. Uninstall Ratify
+Step 4: Uninstall Ratify
 
 ```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
