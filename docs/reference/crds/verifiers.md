@@ -4,7 +4,7 @@ Ratify supports many verifiers to validate different artifact types. View more C
 name: required, name of the verifier
 artifactType: required, the type of artifact this verifier handles
 address: optional. Plugin path, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
-source:  optional. Source location to download the plugin binary
+source:  optional. Source location to download the plugin binary, learn more at docs/reference/dynamic-plugins.md
   artifact:  e.g. wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1
 parameters: optional. Parameters specific to this verifier
 ```

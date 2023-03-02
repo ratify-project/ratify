@@ -5,6 +5,7 @@ To see more sample store configuration, click [here](../../../config/samples/). 
 ```yml
 name: required, name of the store
 address: optional. Plugin path, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
+source:  optional. Source location to download the plugin binary, learn more at docs/reference/dynamic-plugins.md
 parameters: optional. Parameters specific to this store
 ```
 

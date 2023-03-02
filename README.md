@@ -37,7 +37,6 @@ Prerequisites:
 - Kubernetes v1.20 or higher
 - OPA Gatekeeper v3.10 or higher  
 
-
 1. Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
 
 ```bash
@@ -73,9 +72,9 @@ NOTE: `validatingWebhookTimeoutSeconds` and `mutationWebhookTimeoutSeconds` incr
     Note: Weekly dev build coming soon. Please check back on issue [643](https://github.com/deislabs/ratify/issues/643)
     ```bash
     helm install ratify \
-        ratify/ratify --atomic \
+        ./charts/ratify --atomic \
         --namespace gatekeeper-system \
-        --set-file notaryCert=test/testdata/notary.crt.crt
+        --set-file notaryCert=./test/testdata/notary.crt
     ```
 
 3. See Ratify in action
