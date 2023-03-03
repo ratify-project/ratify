@@ -16,6 +16,7 @@ KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.25.4
 GATEKEEPER_VERSION ?= 3.11.0
 COSIGN_VERSION ?= 1.13.1
+NOTATION_VERSION ?= 1.0.0-rc.2
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -197,8 +198,8 @@ e2e-helm-install:
 e2e-notaryv2-setup:
 	rm -rf .staging/notaryv2
 	mkdir -p .staging/notaryv2
-	cd .staging/notaryv2 && git clone https://github.com/notaryproject/notation
-	cd .staging/notaryv2/notation && make build
+	curl -L https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz --output ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz
+	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notaryv2
 
 	echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
 	docker build -t ${LOCAL_TEST_REGISTRY}/notation:signed .staging/notaryv2
@@ -209,9 +210,9 @@ e2e-notaryv2-setup:
 	docker push ${LOCAL_TEST_REGISTRY}/notation:unsigned
 
 	rm -rf ~/.config/notation
-	.staging/notaryv2/notation/bin/notation cert generate-test --default "ratify-bats-test"
-	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
-	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation cert generate-test --default "ratify-bats-test"
+	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
@@ -294,8 +295,8 @@ e2e-sbom-setup:
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 
 	# Push Signature to sbom
-	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${LOCAL_TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${LOCAL_TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
@@ -330,8 +331,8 @@ e2e-inlinecert-setup:
 	docker build -t ${LOCAL_TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
 	docker push ${LOCAL_TEST_REGISTRY}/notation:signed-alternate
 
-	.staging/notaryv2/notation/bin/notation cert generate-test "alternate-cert"
-	.staging/notaryv2/notation/bin/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} --key "alternate-cert" `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation cert generate-test "alternate-cert"
+	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} --key "alternate-cert" `docker image inspect ${LOCAL_TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts

@@ -99,7 +99,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 	default:
 
-		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+		return ctrl.Result{}, fmt.Errorf("unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
