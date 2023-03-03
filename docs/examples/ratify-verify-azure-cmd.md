@@ -16,7 +16,7 @@ In this article:
 * Validate a container image signature with Ratify and Gatekeeper
 * Deploy a signed image to AKS
 
-![e2e workflow diagram](./img/e2e-workflow-diagram.svg)
+![e2e workflow diagram](./img/e2e-workflow-diagram.png)
 
 
 ## Install Notation CLI and Notation AKV plugin
