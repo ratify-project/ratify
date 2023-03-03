@@ -336,9 +336,20 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	}
 
 	referenceManifest := ocispecs.ReferenceManifest{}
+
 	// marshal manifest bytes into reference manifest descriptor
-	if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
-		return ocispecs.ReferenceManifest{}, err
+	if referenceDesc.Descriptor.MediaType == oci.MediaTypeImageManifest {
+		var imageManifest oci.Manifest
+		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
+			return ocispecs.ReferenceManifest{}, err
+		}
+		referenceManifest = OciManifestToReferenceManifest(imageManifest)
+	} else if referenceDesc.Descriptor.MediaType == oci.MediaTypeArtifactManifest {
+		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
+			return ocispecs.ReferenceManifest{}, err
+		}
+	} else {
+		return ocispecs.ReferenceManifest{}, fmt.Errorf("unsupported manifest media type: %s", referenceDesc.Descriptor.MediaType)
 	}
 
 	return referenceManifest, nil
