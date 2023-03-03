@@ -1,8 +1,8 @@
-# Enforce only signed images are allowed to be deployed on AKS with Notation and Ratify
+# Ratify on Azure: Allow only signed images to be deployed on AKS with Notation and Ratify
 
-The Azure Key Vault (AKV) is used to store a signing key that can be utilized by Notation with the Notation AKV plugin (azure-kv) to sign and verify container images and other artifacts. The Azure Container Registry (ACR) allows you to store and distribute signed images with signatures.
+The Azure Key Vault (AKV) stores a signing key, Notation and the Notation AKV plugin (azure-kv) consumes this key to sign and verify container images and other artifacts. The Azure Container Registry (ACR) allows you to store and distribute signed images with signatures.
 
-The signed containers enable users to assure deployments are built from a trusted entity and verify artifact hasn't been tampered with since their creation. The signed artifact ensures integrity and authenticity before the user pulls an artifact into any environment and avoid attacks. 
+The signed container images enable users to assure deployments are built from a trusted entity and verify artifact hasn't been tampered with since their creation. The signed artifact ensures integrity and authenticity before the user pulls an artifact into any environment and avoid attacks. 
 
 This article walks you through an end-to-end workflow of validating and enforcing only signed images are allowed to be deployed on AKS with Notation and Ratify.
 
@@ -12,23 +12,27 @@ In this article:
 * Create and store a signing certificate in Azure Key Vault
 * Sign a container image with notation
 * Create an AKS cluster and ACR registry with Azure Workload Identity configured
-* Intall Ratify and Gatekeeper
+* Install Ratify and Gatekeeper
 * Validate a container image signature with Ratify and Gatekeeper
 * Deploy a signed image to AKS
 
-![](https://i.imgur.com/1f9dfV9.png)
+![e2e workflow diagram](./img/e2e-workflow-diagram.svg)
 
 
-## Install the Notation CLI and AKV plugin
+## Install Notation CLI and Notation AKV plugin
 
-1. Install Notation v1.0.0-rc.2 on a Linux environment. You can also download the package for other environments from the [release page](https://github.com/notaryproject/notation/releases/tag/v1.0.0-rc.2).
+1. Install Notation v1.0.0-rc.2 on a Linux environment. You can also refer to [Notation documentation](https://notaryproject.dev/docs/installation/) for other environments.
 
     ```bash
-    # Download, extract and install
-    curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v1.0.0-rc.2/notation_1.0.0-rc.2_linux_amd64.tar.gz
+    # Define environmental variables for Notation version and Notation AKV plugin
+    export NOTATION_VERSION=1.0.0-rc.2
+    export NOTATION_AKV_VERSION=0.5.0-rc.1
+
+    # Download, extract and install Notation
+    curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz
     tar xvzf notation.tar.gz
             
-    # Copy the notation cli to the desired bin directory in your PATH
+    # Copy the Notation cli to the desired bin directory in your PATH
     sudo cp ./notation /usr/local/bin
     ```
 
@@ -39,14 +43,14 @@ In this article:
     > Please read the [notation config article](https://github.com/notaryproject/notation/blob/main/specs/notation-config.md) for more information.
     
     ```bash
-    # Create a directory for the plugin
+    # Create a directory for the Notation AKV plugin
     mkdir -p ~/.config/notation/plugins/azure-kv
     
     # Download the plugin
     curl -Lo notation-azure-kv.tar.gz \
-        https://github.com/Azure/notation-azure-kv/releases/download/v0.5.0-rc.1/notation-azure-kv_0.5.0-rc.1_Linux_amd64.tar.gz
+        https://github.com/Azure/notation-azure-kv/releases/download/v${NOTATION_AKV_VERSION}/notation-azure-kv_${NOTATION_AKV_VERSION}_Linux_amd64.tar.gz
     
-    # Extract to the plugin directory
+    # Extract it to the plugin directory
     tar xvzf notation-azure-kv.tar.gz -C ~/.config/notation/plugins/azure-kv notation-azure-kv
     ```
 
@@ -78,7 +82,7 @@ In this article:
     ACR_NAME=<your-registry-name>
     # Existing full domain of the ACR
     REGISTRY=$ACR_NAME.azurecr.io
-    # Container name inside ACR where image will be stored
+    # Repository name inside ACR where image will be stored
     REPO=net-monitor
     TAG=v1
     IMAGE=$REGISTRY/${REPO}:$TAG
@@ -118,13 +122,13 @@ Otherwise create an x509 self-signed certificate storing it in AKV for remote si
     EOF
     ```
 
-1. Create the certificate.
+2. Create the certificate.
 
     ```azure-cli
     az keyvault certificate create -n $KEY_NAME --vault-name $AKV_NAME -p @my_policy.json
     ```
 
-1. Get the Key ID for the certificate.
+3. Get the Key ID for the certificate.
 
     ```bash
     KEY_ID=$(az keyvault certificate show -n $KEY_NAME --vault-name $AKV_NAME --query 'kid' -o tsv)
@@ -183,7 +187,7 @@ notation list $IMAGE
 Ratify pulls artifacts from a private Azure Container Registry using Workload Federated Identity in an Azure Kubernetes Service cluster. For an overview on how workload identity operates in Azure, refer to the [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation). You can use workload identity federation to configure an Azure AD app registration or user-assgined managed identity. The following workflow include Workload Identity configuration.
 
 ### Set up Workload Identity with AKS, ACR and AKV:
-The official steps for setting up Workload Identity on AKS can be found here.
+The official steps for setting up Workload Identity on AKS can be found [here](https://azure.github.io/azure-workload-identity/docs/quick-start.html).
 
 > Note: if you have identity authenticaton issue in your local machie, you can switch to use Azure Cloud Shell the complete this section.
 
@@ -210,7 +214,7 @@ export IDENTITY_OBJECT_ID="$(az identity show --name "${IDENTITY_NAME}" --resour
 export IDENTITY_CLIENT_ID=$(az identity show --name ${IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
 ```
 
-3. Create an ACR registry and enable `AcrPull` role to the workload identity.
+3. Create an ACR registry and enable `AcrPull` role to the workload identity. You can skip this step if you have an ACR registry.
 
 ```bash
 az acr create --name "${ACR_NAME}" \
@@ -218,7 +222,7 @@ az acr create --name "${ACR_NAME}" \
   --sku Standard
 ```
 
-4. Configure user-assigend managed identity
+4. Configure user-assigned managed identity.
 
 ```bash
 az role assignment create \
@@ -227,7 +231,7 @@ az role assignment create \
   --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
 ```
 
-5. Create an OIDC enabled AKS cluster by following the steps below:
+5. Create an OIDC enabled AKS cluster by following the steps below. You can skip this step if you have an AKS cluster.
 
 ```bash
 # Install the aks-preview extension
@@ -253,7 +257,16 @@ az aks get-credentials --resource-group ${GROUP_NAME} --name ${AKS_NAME}
 export AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
 ```
 
-6. Establish federated identity credential. On AZ CLI `${RATIFY_NAMESPACE}` is where you deploy Ratify:
+6. This step above may take around 10 minutes to complete. The registration status can be checked by running the following command:
+
+```bash
+az feature show --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview" -o table
+Name                                                      RegistrationState
+--------------------------------------------------------    -------------------
+Microsoft.ContainerService/EnableWorkloadIdentityPreview    Registered
+```
+
+7. Establish federated identity credential. On AZ CLI `${RATIFY_NAMESPACE}` is where you deploy Ratify:
 
 ```bash
 az identity federated-credential create \
@@ -264,7 +277,7 @@ az identity federated-credential create \
   --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"gatekeeper-system"
 ```
 
-7. Create an Azure Key Vault and set an access policy. If you have an AKV, you can skip this step.
+8. Create an Azure Key Vault and set an access policy. If you have an AKV, you can skip this step.
 
 ```bash
 az keyvault create \
@@ -272,13 +285,13 @@ az keyvault create \
   --name ${KEYVAULT_NAME}
 ```
 
-8. Set the environmental variable for Azure Key Vault URI.
+9. Set the environmental variable for Azure Key Vault URI.
 
 ```bash
 export VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
 ```
 
-9. Import your own private key and certificates. You can import it on the portal as well.
+10. Import your own private key and certificates. You can import it on the portal as well.
 
 ```bash
 az keyvault certificate import \
@@ -287,7 +300,7 @@ az keyvault certificate import \
   -f /path/to/certificate
 ```
  
-10. Configure policy for user-assigned managed identity:
+11. Configure policy for user-assigned managed identity:
     
 ```bash
 az keyvault set-policy --name ${KEYVAULT_NAME} \
@@ -310,22 +323,18 @@ helm install gatekeeper/gatekeeper  \
   --set mutatingWebhookTimeoutSeconds=2
 ```
 
-2. Deploy Ratify from helm chart:
+2. Install Ratify on AKS from helm chart:
 
 ```bash
-helm clone https://github.com/deislabs/ratify.git
-
-helm install ratify ./charts/ratify --atomic \
-  --namespace ${RATIFY_NAMESPACE} \
-  --set-file provider.tls.crt=${CERT_DIR}/server.crt \
-  --set-file provider.tls.key=${CERT_DIR}/server.key \
-  --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-  --set oras.authProviders.azureWorkloadIdentityEnabled=true \
-  --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
-  --set akvCertConfig.enabled=true \
-  --set akvCertConfig.vaultURI=${VAULT_URI} \
-  --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
-  --set akvCertConfig.tenantId=${TENANT_ID}
+# Add a Helm repo
+helm repo add ratify https://deislabs.github.io/ratify
+# Download the notary verification certificate
+curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
+# Install Ratify
+helm install ratify \
+    ratify/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file notaryCert=./notary.crt
 ```
 
 3. Enforce Gatekeeper policy to allow only signed images can be deployed:
@@ -335,25 +344,16 @@ kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 ```
 
-4. This step above may take around 10 minutes to complete and registration status can be checked by running the following command:
+## Deploy two sample image to AKS cluster
 
-```bash
-az feature show --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview" -o table
-Name                                                      RegistrationState
---------------------------------------------------------    -------------------
-Microsoft.ContainerService/EnableWorkloadIdentityPreview    Registered
-```
-
-## Deploy an signed image to AKS cluster
-
-1. Deploy an signed image to AKS cluster. It can be deployed to the AKS cluster.
+1. Run a Pod using an image that you have signed in the previous step. Ratify will verify if this image has a valid signature.
 
 ```bash
 $ kubectl run ratify-demo-signed --image=$IMAGE
 Pod ratify-demo-signed created
 ```
 
-2. Deploy an unsigned image to AKS cluster. The deployment has been denied since the image doesn't meet the deployment criteria. 
+2. Deploy an unsigned image to AKS cluster. The deployment has been denied since the image has not been signed and doesn't meet the deployment criteria. 
 
 ```bash
 $ kubectl run ratify-demo-unsigned --image=unsigned:v1
