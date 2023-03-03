@@ -161,6 +161,10 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get reference manifest for reference: %s, err: %w", subjectReference.Original, err)
 	}
 
+	if len(referenceManifest.Blobs) == 0 {
+		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String())
+	}
+
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {

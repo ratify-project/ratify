@@ -134,7 +134,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}
 
 	signatures := []oci.Signature{}
-	for _, blob := range referenceManifest.Layers {
+	for _, blob := range referenceManifest.Blobs {
 		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
 		if err != nil {
 			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get blob content: %w", err)), nil
