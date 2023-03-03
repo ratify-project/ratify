@@ -337,7 +337,7 @@ helm install ratify \
     --set-file notaryCert=./notary.crt
 ```
 
-3. Enforce Gatekeeper policy to allow only signed images can be deployed:
+3. Enforce Gatekeeper policy to allow only signed images can be deployed on AKS:
 
 ```bash
 kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
