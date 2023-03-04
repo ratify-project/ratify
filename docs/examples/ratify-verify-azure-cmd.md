@@ -206,7 +206,7 @@ Ratify pulls artifacts from a private Azure Container Registry using Workload Fe
     export IDENTITY_CLIENT_ID=$(az identity show --name ${IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
     ```
 
-> Note: If you have identity authentication issue in your local machine, you can switch to use Azure Cloud Shell the complete this section.
+> Note: If you have identity authentication issues on your local machine, you can use Azure Cloud Shell to complete this section.
 
 ## Configure workload identity for ACR
 
