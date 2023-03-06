@@ -23,8 +23,7 @@ import (
 	"fmt"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
-	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
-	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
+	"github.com/deislabs/ratify/pkg/certificateprovider"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -81,26 +80,18 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	// fetch certificates based on the provider
-	switch certStore.Spec.Provider {
-	case "azurekeyvault":
-		certificates, err := azurekeyvault.GetCertificates(ctx, attributes)
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with azure key vault provider, error: %w", resource, err)
-		}
-		certificatesMap[resource] = certificates
-		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
-	case "inline":
-		certificates, err := inline.GetCertificates(ctx, attributes)
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Error fetching certificate in store %v with inline provider, error: %w", resource, err)
-		}
-		certificatesMap[resource] = certificates
-		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
-	default:
-
+	providers := certificateprovider.GetCertificateProviders()
+	provider, registered := providers[certStore.Spec.Provider]
+	if registered {
 		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
+
+	certificates, err := provider.GetCertificates(ctx, attributes)
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
+	}
+	certificatesMap[resource] = certificates
+	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil

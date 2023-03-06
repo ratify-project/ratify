@@ -27,11 +27,11 @@ import (
 
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
-	"github.com/sirupsen/logrus"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,8 +40,28 @@ type keyvaultObject struct {
 	version string
 }
 
+const (
+	providerName string = "azureKeyVaultCertificateProvider"
+)
+
+type AKVCertProviderFactory struct{}
+type akvCertProvider struct {
+	name string
+}
+
+// init calls Register for our Azure Workload Identity provider
+func init() {
+	certificateprovider.Register(providerName, &AKVCertProviderFactory{})
+}
+
+func (s *AKVCertProviderFactory) Create() (certificateprovider.CertificateProvider, error) {
+	return &akvCertProvider{
+		name: providerName,
+	}, nil
+}
+
 // returns an array of certificates based on certificate properties defined in attrib map
-func GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
+func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
 	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)

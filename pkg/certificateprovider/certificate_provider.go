@@ -31,12 +31,6 @@ type CertificateProvider interface {
 	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error)
 }
 
-// init calls Register for our default provider, which simply reads the .dockercfg file.
-func init() {
-	// This can registry all providers..
-	//Register(DefaultAuthProviderName, &defaultProviderFactory{})
-}
-
 // Decode PEM-encoded bytes into an x509.Certificate chain.
 func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate

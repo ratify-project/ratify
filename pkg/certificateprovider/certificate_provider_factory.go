@@ -15,9 +15,11 @@ limitations under the License.
 
 package certificateprovider
 
-import "fmt"
+import (
+	"fmt"
+)
 
-var certificateProviders = make(map[string]CertProviderFactory)
+var certificateProviders = make(map[string]CertificateProvider)
 
 // AuthProviderFactory is an interface that defines methods to create an AuthProvider
 type CertProviderFactory interface {
@@ -34,5 +36,14 @@ func Register(name string, factory CertProviderFactory) {
 		panic(fmt.Sprintf("cert provider factory named %s already registered", name))
 	}
 
-	certificateProviders[name] = factory
+	provider, err := factory.Create()
+	if err != nil {
+		panic(fmt.Sprintf("cert provider factory creation failed %s already registered", err))
+	}
+	certificateProviders[name] = provider
+}
+
+// returns the internal certificate provider map
+func GetCertificateProviders() map[string]CertificateProvider {
+	return certificateProviders
 }
