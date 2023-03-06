@@ -67,6 +67,14 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, desc
 		return nil, err
 	}
 
+	if len(referenceManifest.Blobs) == 0 {
+		return &verifier.VerifierResult{
+			Name:      input.Name,
+			IsSuccess: false,
+			Message:   fmt.Sprintf("License Check FAILED: no blobs found for referrer %s@%s", subjectReference.Path, descriptor.Digest.String()),
+		}, nil
+	}
+
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
