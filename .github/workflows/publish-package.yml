@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - v*
+  schedule:
+    - cron: '30 8 * * 0'  # early morning (08:30 UTC) every Sunday
+  workflow_dispatch:
 
 permissions: read-all
 
@@ -20,13 +23,20 @@ jobs:
         id: prepare
         run: |
           VERSION=${GITHUB_REF#refs/*/}
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          DATE=$(date +'%Y%m%d')
+          REPOSITORY=ghcr.io/${{ github.repository }}
+          REPOSITORYCRD=ghcr.io/${{ github.repository }}-crds
           if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
             VERSION=$(git rev-parse --short HEAD)
           fi
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "schedule" ]]; then
+            VERSION=dev.${DATE}
+            REPOSITORY=${REPOSITORY}-dev
+            REPOSITORYCRD=${REPOSITORYCRD}-dev
+          fi
           echo ::set-output name=version::${VERSION}
-          echo ::set-output name=ref::ghcr.io/${{ github.repository }}:${VERSION}
-          echo ::set-output name=crdref::ghcr.io/${{ github.repository }}-crds:${VERSION}
+          echo ::set-output name=ref::${REPOSITORY}:${VERSION}
+          echo ::set-output name=crdref::${REPOSITORYCRD}:${VERSION}
       - name: docker build ratify
         run: |
           docker build -f ./httpserver/Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} .
