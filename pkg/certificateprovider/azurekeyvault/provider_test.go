@@ -196,7 +196,7 @@ func TestGetCertificates(t *testing.T) {
 		},
 	}
 
-	providerFactory := &AKVCertProviderFactory{}
+	providerFactory := &akvCertProviderFactory{}
 	provider, _ := providerFactory.Create()
 
 	for _, tc := range cases {

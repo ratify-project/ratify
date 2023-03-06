@@ -44,20 +44,18 @@ const (
 	providerName string = "azureKeyVaultCertificateProvider"
 )
 
-type AKVCertProviderFactory struct{}
-type akvCertProvider struct {
-	name string
-}
+type akvCertProviderFactory struct{}
+type akvCertProvider struct{}
 
-// init calls Register for our Azure Workload Identity provider
+// init calls to register the provider
 func init() {
-	certificateprovider.Register(providerName, &AKVCertProviderFactory{})
+	logrus.Infof("initializing azure keyvault cert provider")
+	certificateprovider.Register(providerName, &akvCertProviderFactory{})
 }
 
-func (s *AKVCertProviderFactory) Create() (certificateprovider.CertificateProvider, error) {
-	return &akvCertProvider{
-		name: providerName,
-	}, nil
+func (s *akvCertProviderFactory) Create() (certificateprovider.CertificateProvider, error) {
+	// returning a simple provider for now, overtime we will add metrics and other related properties
+	return &akvCertProvider{}, nil
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map

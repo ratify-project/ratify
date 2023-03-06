@@ -29,7 +29,7 @@ type CertProviderFactory interface {
 // Register adds the factory to the built in providers map
 func Register(name string, factory CertProviderFactory) {
 	if factory == nil {
-		panic("auth provider factory cannot be nil")
+		panic("cert provider factory cannot be nil")
 	}
 	_, registered := certificateProviders[name]
 	if registered {

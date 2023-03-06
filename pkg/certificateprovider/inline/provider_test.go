@@ -57,9 +57,12 @@ func TestGetCertificates(t *testing.T) {
 		},
 	}
 
+	providerFactory := &inlineCertProviderFactory{}
+	provider, _ := providerFactory.Create()
+
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			certs, err := GetCertificates(context.TODO(), tc.parameters)
+			certs, err := provider.GetCertificates(context.TODO(), tc.parameters)
 
 			assert.Equal(t, tc.expectedErr, err != nil)
 			assert.Equal(t, tc.expectedCerts, len(certs))

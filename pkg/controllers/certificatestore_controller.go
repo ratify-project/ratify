@@ -24,6 +24,8 @@ import (
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
+	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
+	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
