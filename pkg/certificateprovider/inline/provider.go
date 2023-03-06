@@ -27,7 +27,7 @@ import (
 const (
 	// ValueParameter is the name of the parameter that contains the certificate (chain) as a string in PEM format
 	ValueParameter        = "value"
-	providerName   string = "inlineCertificateProvider"
+	providerName   string = "inline"
 )
 
 type inlineCertProviderFactory struct{}

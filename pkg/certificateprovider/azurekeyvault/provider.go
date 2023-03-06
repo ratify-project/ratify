@@ -41,7 +41,7 @@ type keyvaultObject struct {
 }
 
 const (
-	providerName string = "azureKeyVaultCertificateProvider"
+	providerName string = "azurekeyvault"
 )
 
 type akvCertProviderFactory struct{}

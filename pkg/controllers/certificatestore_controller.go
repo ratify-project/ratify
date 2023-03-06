@@ -84,7 +84,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	providers := certificateprovider.GetCertificateProviders()
 	provider, registered := providers[certStore.Spec.Provider]
-	if registered {
+	if !registered {
 		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
 
