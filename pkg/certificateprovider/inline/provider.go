@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/deislabs/ratify/pkg/certificateprovider"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -35,7 +34,6 @@ type inlineCertProvider struct{}
 
 // init calls to register the provider
 func init() {
-	logrus.Infof("initializing inline cert provider")
 	certificateprovider.Register(providerName, &inlineCertProviderFactory{})
 }
 

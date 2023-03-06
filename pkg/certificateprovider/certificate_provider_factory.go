@@ -21,7 +21,7 @@ import (
 
 var certificateProviders = make(map[string]CertificateProvider)
 
-// AuthProviderFactory is an interface that defines methods to create an AuthProvider
+// CertProviderFactory is an interface that defines methods to create an CertificateProvider
 type CertProviderFactory interface {
 	Create() (CertificateProvider, error)
 }

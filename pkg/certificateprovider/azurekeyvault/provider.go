@@ -49,7 +49,6 @@ type akvCertProvider struct{}
 
 // init calls to register the provider
 func init() {
-	logrus.Infof("initializing azure keyvault cert provider")
 	certificateprovider.Register(providerName, &akvCertProviderFactory{})
 }
 
