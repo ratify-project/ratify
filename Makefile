@@ -17,6 +17,7 @@ KUBERNETES_VERSION ?= 1.25.4
 GATEKEEPER_VERSION ?= 3.11.0
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.2
+ORAS_VERSION ?= 1.0.0-rc.1
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -141,11 +142,11 @@ e2e-dependencies:
 	# Download and install jq
 	curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 --output ${GITHUB_WORKSPACE}/bin/jq && chmod +x ${GITHUB_WORKSPACE}/bin/jq
 	# Install ORAS
-	curl -LO https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
+	curl -LO https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz
 	mkdir -p oras-install/
-	tar -zxf oras_0.16.0_*.tar.gz -C oras-install/
+	tar -zxf oras*.tar.gz -C oras-install/
 	mv oras-install/oras ${GITHUB_WORKSPACE}/bin
-	rm -rf oras_0.16.0_*.tar.gz oras-install/
+	rm -rf oras*.tar.gz oras-install/
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
@@ -169,7 +170,7 @@ e2e-run-local-registry:
 		${LOCAL_REGISTRY_IMAGE}
 
 	docker login -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}
-	oras login \
+	${GITHUB_WORKSPACE}/bin/oras login \
 		-u ${LOCAL_TEST_REGISTRY_USERNAME} \
 		-p ${LOCAL_TEST_REGISTRY_PASSWORD} \
 		${TEST_REGISTRY}
@@ -218,6 +219,9 @@ e2e-notaryv2-setup:
 	echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed .staging/notaryv2
 	docker push ${TEST_REGISTRY}/notation:signed
+	echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image OCI Image"]' > .staging/notaryv2/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:signedImage .staging/notaryv2
+	docker push ${TEST_REGISTRY}/notation:signedImage
 
 	docker pull ${LOCAL_UNSIGNED_IMAGE}
 	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${TEST_REGISTRY}/notation:unsigned
@@ -226,6 +230,7 @@ e2e-notaryv2-setup:
 	rm -rf ~/.config/notation
 	.staging/notaryv2/notation cert generate-test --default "ratify-bats-test"
 	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation sign --signature-manifest image -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signedImage | jq -r .[0].RepoDigests[0]`
 	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
 e2e-cosign-setup:
@@ -263,12 +268,22 @@ e2e-licensechecker-setup:
 	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
 	docker push ${TEST_REGISTRY}/licensechecker:v0
 
+	# Build/Push OCI Image Signature 
+	echo 'FROM alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0\nCMD ["echo", "licensechecker image oci image"]' > .staging/licensechecker/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:ociimage .staging/licensechecker
+	docker push ${TEST_REGISTRY}/licensechecker:ociimage
+
 	# Create/Attach SPDX
 	.staging/licensechecker/syft -o spdx --file .staging/licensechecker/sbom.spdx ${TEST_REGISTRY}/licensechecker:v0
-	oras attach ${TEST_REGISTRY}/licensechecker:v0 \
+	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:v0 \
   		--artifact-type application/vnd.ratify.spdx.v0 \
   		.staging/licensechecker/sbom.spdx:application/text
-	oras attach ${TEST_REGISTRY}/all:v0 \
+	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:ociimage \
+  		--artifact-type application/vnd.ratify.spdx.v0 \
+  		--plain-http \
+		--image-spec v1.1-image \
+  		.staging/licensechecker/sbom.spdx:application/text
+	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/all:v0 \
   		--artifact-type application/vnd.ratify.spdx.v0 \
   		.staging/licensechecker/sbom.spdx:application/text
 
@@ -284,27 +299,36 @@ e2e-sbom-setup:
 	echo 'FROM alpine\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:v0
+	echo 'FROM alpine\nCMD ["echo", "sbom image oci image"]' > .staging/sbom/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/sbom:ociimage .staging/sbom
+	docker push ${TEST_REGISTRY}/sbom:ociimage
 	echo 'FROM alpine\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:unsigned
 
 	# Generate/Attach sbom
 	.staging/sbom/sbom-tool generate -b .staging/sbom -bc .staging/sbom/ratify -pn ratify -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
-	oras attach \
+	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type org.example.sbom.v0 \
 		 ${TEST_REGISTRY}/sbom:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
-	oras attach \
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type org.example.sbom.v0 \
+		--image-spec v1.1-image \
+		 ${TEST_REGISTRY}/sbom:ociimage \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type org.example.sbom.v0 \
 		 ${TEST_REGISTRY}/sbom:unsigned \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
-	oras attach \
+	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type org.example.sbom.v0 \
 		 ${TEST_REGISTRY}/all:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 
 	# Push Signature to sbom
 	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation sign --signature-manifest image -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:ociimage | jq -r ".manifests[0].digest"`
 	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
@@ -319,14 +343,22 @@ e2e-schemavalidator-setup:
 	echo 'FROM alpine\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
 	docker push ${TEST_REGISTRY}/schemavalidator:v0
+	echo 'FROM alpine\nCMD ["echo", "schemavalidator image oci image"]' > .staging/schemavalidator/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:ociimage .staging/schemavalidator
+	docker push ${TEST_REGISTRY}/schemavalidator:ociimage
 
 	# Create/Attach Scan Results
 	.staging/schemavalidator/trivy image --format sarif --output .staging/schemavalidator/trivy-scan.sarif ${TEST_REGISTRY}/schemavalidator:v0
-	oras attach \
+	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
 		${TEST_REGISTRY}/schemavalidator:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
-	oras attach \
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		${TEST_REGISTRY}/schemavalidator:ociimage \
+		--image-spec v1.1-image \
+		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
+	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
 		${TEST_REGISTRY}/all:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json

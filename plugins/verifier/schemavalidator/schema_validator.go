@@ -67,6 +67,14 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		return nil, fmt.Errorf("error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor)
 	}
 
+	if len(referenceManifest.Blobs) == 0 {
+		return &verifier.VerifierResult{
+			Name:      input.Name,
+			IsSuccess: false,
+			Message:   fmt.Sprintf("schema validation failed: no blobs found for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
+		}, nil
+	}
+
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {

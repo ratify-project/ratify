@@ -901,8 +901,6 @@ github.com/opencontainers/image-spec v1.1.0-rc2/go.mod h1:3OVijpioIKYWTqjiG0zfF6
 github.com/opentracing/opentracing-go v1.1.0/go.mod h1:UkNAQd3GIcIGf0SeVgPpRdFStlNbqXla1AfSYxPUl2o=
 github.com/opentracing/opentracing-go v1.2.0 h1:uEJPy/1a5RIPAJ0Ov+OIO8OxWu77jEv+1B0VhjKrZUs=
 github.com/opentracing/opentracing-go v1.2.0/go.mod h1:GxEUsuufX4nBwe+T+Wl9TAgYrxe9dPLANfrWvHYVTgc=
-github.com/oras-project/artifacts-spec v1.0.0-rc.2 h1:9SMCNSxkJEHqWGDiMCuy6TXHgvjgwXGdXZZGXLKQvVE=
-github.com/oras-project/artifacts-spec v1.0.0-rc.2/go.mod h1:Xch2aLzSwtkhbFFN6LUzTfLtukYvMMdXJ4oZ8O7BOdc=
 github.com/otiai10/copy v1.2.0/go.mod h1:rrF5dJ5F0t/EWSYODDu4j9/vEeYHMkc8jt0zJChqQWw=
 github.com/otiai10/curr v0.0.0-20150429015615-9b4961190c95/go.mod h1:9qAhocn7zKJG+0mI8eUu6xqkFDYS2kb2saOteoSB3cE=
 github.com/otiai10/curr v1.0.0/go.mod h1:LskTG5wDwr8Rs+nNQ+1LlxRjAtTZZjtJW4rMXl6j4vs=
@@ -1900,14 +1898,14 @@ honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 honnef.co/go/tools v0.0.1-2020.1.5/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
 k8s.io/api v0.22.5/go.mod h1:mEhXyLaSD1qTOf40rRiKXkc+2iCem09rWLlFwhCEiAs=
 k8s.io/api v0.24.2/go.mod h1:AHqbSkTm6YrQ0ObxjO3Pmp/ubFF/KuM7jU+3khoBsOg=
-k8s.io/api v0.24.10 h1:ikYsEPMxnTW5ZqOVU0dRZ/QXSOZxE393y+7pUZiRFXg=
-k8s.io/api v0.24.10/go.mod h1:H1RVF3JPcla30nosN0B/mjHVrF5jKvT9GaG+68wMRAo=
+k8s.io/api v0.24.11 h1:fyKC53FxEbRpd7sn4Z/T8HIBVChIN+7FgtiKMe3qmX8=
+k8s.io/api v0.24.11/go.mod h1:YH1vQls490acgEr/bfoQSsu1wqmAUif6TsJ2/JBsmXk=
 k8s.io/apiextensions-apiserver v0.24.2 h1:/4NEQHKlEz1MlaK/wHT5KMKC9UKYz6NZz6JE6ov4G6k=
 k8s.io/apiextensions-apiserver v0.24.2/go.mod h1:e5t2GMFVngUEHUd0wuCJzw8YDwZoqZfJiGOW6mm2hLQ=
 k8s.io/apimachinery v0.22.5/go.mod h1:xziclGKwuuJ2RM5/rSFQSYAj0zdbci3DH8kj+WvyN0U=
 k8s.io/apimachinery v0.24.2/go.mod h1:82Bi4sCzVBdpYjyI4jY6aHX+YCUchUIrZrXKedjd2UM=
-k8s.io/apimachinery v0.24.10 h1:1KWw24JyTsyi4LdAItmVclCv+H8jS9aiOuolIx1+28E=
-k8s.io/apimachinery v0.24.10/go.mod h1:WKP/nbpA6xR1TodchJym9COpVcn+V3cAaaNmXk6bwzA=
+k8s.io/apimachinery v0.24.11 h1:Iv6uO3O4wDCN93p/ehg2u3/Y6q1fti43zgJmAy9DVvs=
+k8s.io/apimachinery v0.24.11/go.mod h1:Yg8GIoNnVG9af59MrlKMm4Unsw3EBj+MfEBvfSid2/4=
 k8s.io/apiserver v0.22.5/go.mod h1:s2WbtgZAkTKt679sYtSudEQrTGWUSQAPe6MupLnlmaQ=
 k8s.io/client-go v0.22.5/go.mod h1:cs6yf/61q2T1SdQL5Rdcjg9J1ElXSwbjSrW2vFImM4Y=
 k8s.io/client-go v0.24.2/go.mod h1:zg4Xaoo+umDsfCWr4fCnmLEtQXyCNXCvJuSsglNcV30=

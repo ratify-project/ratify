@@ -32,7 +32,6 @@ type ReferenceManifest struct {
 	ArtifactType string            `json:"artifactType,omitempty"`
 	Blobs        []oci.Descriptor  `json:"blobs"`
 	Subject      *oci.Descriptor   `json:"subject,omitempty"`
-	Layers       []oci.Descriptor  `json:"layers"`
 	Annotations  map[string]string `json:"annotations,omitempty"`
 }
 

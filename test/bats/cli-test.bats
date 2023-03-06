@@ -6,6 +6,10 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/notation:signed
     assert_cmd_verify_success
 
+    # Test with OCI Image Manifest Signature
+    run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/notation:signedImage
+    assert_cmd_verify_success
+
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/notation:unsigned
     assert_cmd_verify_failure
 }
@@ -25,6 +29,10 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/complete_licensechecker_config.json -s $LOCAL_TEST_REGISTRY/licensechecker:v0
     assert_cmd_verify_success
 
+    # Test with OCI Image Manifest Signature
+    run bin/ratify verify -c $RATIFY_DIR/complete_licensechecker_config.json -s $LOCAL_TEST_REGISTRY/licensechecker:ociimage
+    assert_cmd_verify_success
+
     run bin/ratify verify -c $RATIFY_DIR/partial_licensechecker_config.json -s $LOCAL_TEST_REGISTRY/licensechecker:v0
     assert_cmd_verify_failure
 }
@@ -34,12 +42,20 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/sbom:v0
     assert_cmd_verify_success
 
+    # Test with OCI Image Manifest Signature
+    run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/sbom:ociimage
+    assert_cmd_verify_success
+
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $LOCAL_TEST_REGISTRY/sbom:unsigned
     assert_cmd_verify_failure
 }
 
 @test "schemavalidator verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/schemavalidator_config.json -s $LOCAL_TEST_REGISTRY/schemavalidator:v0
+    assert_cmd_verify_success
+
+    # Test with OCI Image Manifest Signature
+    run bin/ratify verify -c $RATIFY_DIR/schemavalidator_config.json -s $LOCAL_TEST_REGISTRY/schemavalidator:ociimage
     assert_cmd_verify_success
 }
 
