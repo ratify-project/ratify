@@ -71,6 +71,8 @@ helm install ratify \
 Option 2: Install ratify with charts from your local branch.  
 Note: Latest chart in main may not be compatible with the last released version of ratify image. Weekly dev build coming soon. Please check back on issue [643](https://github.com/deislabs/ratify/issues/643)
 ```bash
+git clone https://github.com/deislabs/ratify.git
+cd ratify
 helm install ratify \
     ./charts/ratify --atomic \
     --namespace gatekeeper-system \
@@ -115,7 +117,7 @@ Step 4: Uninstall Ratify
 ```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
-helm delete ratify
+helm delete ratify --namespace gatekeeper-system
 ```
 
 ### Notes
