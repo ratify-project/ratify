@@ -1909,8 +1909,8 @@ k8s.io/apimachinery v0.24.11/go.mod h1:Yg8GIoNnVG9af59MrlKMm4Unsw3EBj+MfEBvfSid2
 k8s.io/apiserver v0.22.5/go.mod h1:s2WbtgZAkTKt679sYtSudEQrTGWUSQAPe6MupLnlmaQ=
 k8s.io/client-go v0.22.5/go.mod h1:cs6yf/61q2T1SdQL5Rdcjg9J1ElXSwbjSrW2vFImM4Y=
 k8s.io/client-go v0.24.2/go.mod h1:zg4Xaoo+umDsfCWr4fCnmLEtQXyCNXCvJuSsglNcV30=
-k8s.io/client-go v0.24.10 h1:OES38LCaqmeJDpjy3lqDRAlAO4376dFXD3X/A0RSTTQ=
-k8s.io/client-go v0.24.10/go.mod h1:NqCCKuS48y1Hf9g7heYm4uns5l3NLmbv0AYLGrMG7n4=
+k8s.io/client-go v0.24.11 h1:Rzh2y3pAzquiKXOIw6Gb7JKQEIagkgt4/WJ4xhymOl4=
+k8s.io/client-go v0.24.11/go.mod h1:siv8qBAK/AOperwUM0E6poDMTfByCORycs5C+JmIMrA=
 k8s.io/code-generator v0.24.2/go.mod h1:dpVhs00hTuTdTY6jvVxvTFCk6gSMrtfRydbhZwHI15w=
 k8s.io/component-base v0.22.5/go.mod h1:VK3I+TjuF9eaa+Ln67dKxhGar5ynVbwnGrUiNF4MqCI=
 k8s.io/component-base v0.24.2 h1:kwpQdoSfbcH+8MPN4tALtajLDfSfYxBDYlXobNWI6OU=
