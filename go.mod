@@ -28,7 +28,6 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
-	github.com/oras-project/artifacts-spec v1.0.0-rc.2
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign v1.13.1
 	github.com/sigstore/sigstore v1.4.6
@@ -39,8 +38,8 @@ require (
 	golang.org/x/sync v0.1.0
 	google.golang.org/grpc v1.50.1
 	google.golang.org/protobuf v1.28.1
-	k8s.io/api v0.24.10
-	k8s.io/apimachinery v0.24.10
+	k8s.io/api v0.24.11
+	k8s.io/apimachinery v0.24.11
 	k8s.io/client-go v0.24.10
 	oras.land/oras-go/v2 v2.0.0
 )
