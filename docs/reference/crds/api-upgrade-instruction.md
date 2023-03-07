@@ -72,6 +72,34 @@ type Store struct {
 11. Run `make manifests generate` to generate CRD objects, DeepCopy methods and conversion methods. `zz_generated.conversion.go` and `zz_generated.deepcopy.go` 
 would be generated in each spoke version package.
 
+## Additional steps while incompatibilities introduced
+
+There is no real change between `v1alpha1` and `v1beta1`, which makes it easier 
+than making incompatible upgrade. If there is an incompatible change introduced 
+in a new version, we could follow the above 11 steps first and then follow the 
+below instruction. Let's take the example of adding a new `Test` field to `StoreSpec`.
+
+1. Add a string field `Test` to `StoreSpec` in both `unversioned` and new version(`v1beta1`) packages.
+
+2. After executing `make manifests generate`, we would get errors similar to:
+```
+E0308 02:20:37.752749 4053005 conversion.go:756] Warning: could not find nor generate a final Conversion function for github.com/deislabs/ratify/api/unversioned.StoreSpec -> github.com/binbin-li/ratify/api/v1alpha1.StoreSpec
+E0308 02:20:37.752867 4053005 conversion.go:757]   the following fields need manual conversion:
+E0308 02:20:37.752874 4053005 conversion.go:759]       - Test
+```
+It means that we need to manually implement the conversion method from `unversioned` 
+to `v1alpha1`.
+
+3. Check the generated `zz_generated.conversion.go` in `v1alpha1` package, we 
+could see errors indicating that `Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec()` 
+was not declared. Now we could create a new file `store_conversion.go` in `v1alpha1` 
+package, and implement this method manually there to resolve the error.
+
+## Upgrade existing objects to a new stored version
+It's safe to use both the old and new versions after upgraded. But if we really 
+want to migrate stored objects to the new version, please follow the instruction:
+[Upgrade existing objects to a new stored version](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#upgrade-existing-objects-to-a-new-stored-version)
+
 ## References
 [Kubebuilder tutorial on multi-version API](https://book.kubebuilder.io/multiversion-tutorial/api-changes.html)
 
