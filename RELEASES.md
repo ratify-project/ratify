@@ -22,10 +22,13 @@ Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc
 
 ## Pre Release Activity
 
- [Test.bats](test/bats/test.bats) provides limited end to end test coverage, while we are working on improving our coverage, please perform [manual validations](test/ManualValidation.md) to ensure release quality.
+Most e2e-scenarios for cli, K8, and Azure are covered by the ratify e2e tests. Please refer to this [document](test/validation.md) for the current supported and unsupported tests. 
 
- Validate that the format of the data returned for external data calls has not changed. If it has changed update the version in `httpserver/types.go` to reflect a change in the format and document the update.
+Please perform manual prerelease validations for the unsupported tests list [here](test/validation.md#unsupported-tests)
 
+Validate that the format of the data returned for external data calls has not changed. If it has changed update the version in `httpserver/types.go` to reflect a change in the format and document the update.
+
+Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` packages. Each dev image tag is prefixed with `dev` followed by the date of creation (e.g a build generated on March 2, 2023 would be tagged `dev.20230302`).
 ## Git Release Flow
 
 This section deals with the practical considerations of versioning in Git, this repo's version control system.  See the semantic versioning specification for the scope of changes allowed for each release type.
