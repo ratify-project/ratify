@@ -103,7 +103,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     --identity-name "${IDENTITY_NAME}" \
     --resource-group "${GROUP_NAME}" \
     --issuer "${AKS_OIDC_ISSUER}" \
-    --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"gatekeeper-system"
+    --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
     ```
 
 ## Configure access policy for AKV 
