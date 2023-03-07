@@ -196,7 +196,7 @@ SLEEP_TIME=1
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
-    run kubectl run crdtest --namespace default --image=${TEST_REGISTRY}/test/notary-image:signed
+    run kubectl run crdtest --namespace default --image=${TEST_REGISTRY}/notation:signed
     assert_failure
 
     echo "Add notary verifier and validate deployment succeeds"
@@ -217,7 +217,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl run demo2 --image=${TEST_REGISTRY}/test/net-monitor:signed
+    run kubectl run demo2 --image=${TEST_REGISTRY}/notation:signed
     assert_success
 
     run kubectl get configmaps ratify-configuration --namespace=gatekeeper-system -o yaml >currentConfig.yaml

@@ -280,7 +280,6 @@ e2e-licensechecker-setup:
   		.staging/licensechecker/sbom.spdx:application/text
 	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:ociimage \
   		--artifact-type application/vnd.ratify.spdx.v0 \
-  		--plain-http \
 		--image-spec v1.1-image \
   		.staging/licensechecker/sbom.spdx:application/text
 	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/all:v0 \
