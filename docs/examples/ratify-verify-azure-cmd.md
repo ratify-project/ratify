@@ -31,7 +31,7 @@ Ratify pulls artifacts from a private Azure Container Registry using Workload Fe
     export SUBSCRIPTION_ID=<Azure Subscription ID>
     export TENANT_ID=<Azure Tenant ID>
     export AKS_NAME=<Azure Kubernetes Service Name>
-    export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "ratify-admin">
+    export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
     ```
 
 2. Create a Workload Federated Identity.
