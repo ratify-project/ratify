@@ -29,6 +29,11 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 - Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).
 
+## Pull Request Review Series
+- We hold a weekly Ratify Pull Request Review Series on Mondays 5-6 pm PST.  
+- People are able to use this time to walk through any Pull Requests and seek feedback from others in the Community.  If there are no PR to review, the meeting will be cancelled during that week.
+- Reach out on Slack if you want to reserve a session for review or during our weekly community meetings.
+
 ## Quick Start
 
 Try out ratify in Kubernetes through Gatekeeper as the admission controller.
