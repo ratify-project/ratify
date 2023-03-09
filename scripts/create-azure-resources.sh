@@ -88,7 +88,13 @@ create_aks() {
 }
 
 create_akv() {
-  # TODO: create a new Key Vault once it supports building/signing test images.
+  az keyvault create \
+    --resource-group ${GROUP_NAME} \
+    --location "${LOCATION}" \
+    --name ${KEYVAULT_NAME}
+
+  echo "AKV '${KEYVAULT_NAME}' is created"
+
   # Grant permissions to access the certificate.
   az keyvault set-policy --name ${KEYVAULT_NAME} --certificate-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
 }
