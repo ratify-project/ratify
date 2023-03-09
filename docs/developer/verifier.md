@@ -274,7 +274,7 @@ verificationCertStores property defines a collection of cert store objects. [Tru
 
 A sample notary verifier with verificationCertStores defined:
 ```json=
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-notary

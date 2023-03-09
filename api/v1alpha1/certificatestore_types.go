@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright The Ratify Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -40,8 +40,9 @@ type CertificateStoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:deprecatedversion:warning="v1alpha1 of the CertificateStore API has been deprecated. Please migrate to v1beta1."
 
 // CertificateStore is the Schema for the certificatestores API
 type CertificateStore struct {

@@ -13,3 +13,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
+// +k8s:conversion-gen=github.com/deislabs/ratify/api/unversioned
+package v1alpha1

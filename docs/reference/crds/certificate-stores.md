@@ -7,8 +7,8 @@ provider: required, name of the certificate store provider
 parameters: required, parameters specific to this certificate store provider
 ```
  
-
 ## AzureKeyVault Certificate Provider
+See notary integration example [here](../../developer/verifier.md#section-6-built-in-verifiers)
 ```yml
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: CertificateStore

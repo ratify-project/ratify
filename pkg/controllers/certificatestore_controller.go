@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
 
@@ -60,7 +60,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	logger := logrus.WithContext(ctx)
 
 	var resource = req.Name
-	var certStore configv1alpha1.CertificateStore
+	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
 
@@ -99,7 +99,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 	default:
 
-		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+		return ctrl.Result{}, fmt.Errorf("unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
@@ -114,11 +114,11 @@ func GetCertificatesMap() map[string][]*x509.Certificate {
 // SetupWithManager sets up the controller with the Manager.
 func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1alpha1.CertificateStore{}).
+		For(&configv1beta1.CertificateStore{}).
 		Complete(r)
 }
 
-func getCertStoreConfig(spec configv1alpha1.CertificateStoreSpec) (map[string]string, error) {
+func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
 	attributes := map[string]string{}
 
 	if string(spec.Parameters.Raw) == "" {

@@ -14,56 +14,61 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// StoreSpec defines the desired state of Store
-type StoreSpec struct {
+// VerifierSpec defines the desired state of Verifier
+type VerifierSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the store
+	// Name of the verifier
 	Name string `json:"name,omitempty"`
-	// Plugin path, optional
+
+	// The type of artifact this verifier handles
+	ArtifactTypes string `json:"artifactTypes,omitempty"`
+
+	// # Optional. URL/file path
 	Address string `json:"address,omitempty"`
+
 	// OCI Artifact source to download the plugin from, optional
 	Source *PluginSource `json:"source,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// Parameters of the store
+	// Parameters for this verifier
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// StoreStatus defines the observed state of Store
-type StoreStatus struct {
+// VerifierStatus defines the observed state of Verifier
+type VerifierStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the Store API has been deprecated. Please migrate to v1beta1."
-
-// Store is the Schema for the stores API
-type Store struct {
+// +kubebuilder:storageversion
+// Verifier is the Schema for the verifiers API
+type Verifier struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   StoreSpec   `json:"spec,omitempty"`
-	Status StoreStatus `json:"status,omitempty"`
+	Spec   VerifierSpec   `json:"spec,omitempty"`
+	Status VerifierStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
-// StoreList contains a list of Store
-type StoreList struct {
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// VerifierList contains a list of Verifier
+type VerifierList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Store `json:"items"`
+	Items           []Verifier `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Store{}, &StoreList{})
+	SchemeBuilder.Register(&Verifier{}, &VerifierList{})
 }
