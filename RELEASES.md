@@ -54,3 +54,19 @@ When the release branch is ready, a tag should be pushed with a name matching th
 * The pre-release flag will be set for any release with a pre-release specifier.
 * The pre-built binaries are built from commit at the head of the release branch.
   * The files are named `ratify_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.
+
+### Weekly Dev Release
+
+Ratify is configured to generate and publish dev build images based on schedule [here](https://github.com/deislabs/ratify/blob/main/.github/workflows/publish-package.yml#L8).  
+1. The `ratify` image and `ratify-crds` image for dev builds exist as separate packages on Github [here](https://github.com/deislabs/ratify/pkgs/container/ratify-dev) and [here](https://github.com/deislabs/ratify/pkgs/container/ratify-crds-dev).
+2. the `repository` `crdRepository` and `tag` fields must be updated in the helm chart to point to dev build instead of last released build. Please set the tag to be latest tag found at the corresponding `-dev` suffixed package. An example install command:
+```
+helm install ratify \
+    ./charts/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set image.repository=ghcr.io/deislabs/ratify-dev
+    --set image.crdRepository=ghcr.io/deislabs/ratify-crds-dev
+    --set image.tag=dev.20230307
+    --set-file notaryCert=./test/testdata/notary.crt
+```
+NOTE: the tag field is the only value that will change when updating to newer dev build images
