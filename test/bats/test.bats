@@ -6,6 +6,22 @@ BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
 
+@test "crd version test" {
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    assert_success
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
+    assert_success
+    run bash -c "kubectl get verifiers.config.ratify.deislabs.io/verifier-notary -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
+    assert_success
+
+    run kubectl delete stores.config.ratify.deislabs.io/store-oras
+    assert_success
+    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_http.yaml
+    assert_success
+    run bash -c "kubectl get stores.config.ratify.deislabs.io/store-oras -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
+    assert_success
+}
+
 @test "notary test" {
     teardown() {
         echo "cleaning up"
@@ -54,20 +70,20 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
-     # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
-    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
+    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1beta1_verifier_cosign.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_cosign.yaml
     sleep 5
 
     # use imperative command to guarantee useHttp is updated
-    run kubectl replace -f ./config/samples/config_v1alpha1_store_oras.yaml
+    run kubectl replace -f ./config/samples/config_v1beta1_store_oras.yaml
     sleep 5
 
     run kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
     assert_success
 
-    sed -i 's/""/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/g' ./config/samples/config_v1alpha1_verifier_cosign.yaml
-    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_http.yaml
+    sed -i 's/""/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/g' ./config/samples/config_v1beta1_verifier_cosign.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_store_oras_http.yaml
 }
 
 @test "licensechecker test" {
@@ -85,12 +101,12 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_partial_licensechecker.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_partial_licensechecker.yaml
     sleep 5
     run kubectl run license-checker --namespace default --image=registry:5000/licensechecker:v0
     assert_failure
 
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run license-checker2 --namespace default --image=registry:5000/licensechecker:v0
@@ -115,7 +131,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_sbom.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_success
@@ -150,7 +166,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
     sleep 5
     run kubectl run schemavalidator --namespace default --image=registry:5000/schemavalidator:v0
     assert_success
@@ -158,7 +174,7 @@ SLEEP_TIME=1
     run kubectl run schemavalidator-oci-image --namespace default --image=registry:5000/schemavalidator:ociimage
     assert_success
 
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator_bad.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
@@ -183,15 +199,15 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_cosign.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_cosign.yaml
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_sbom.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
 
     # Skipping test for now until expected usage/configuration of this plugin can be verified
     # sleep 5
-    # run kubectl apply -f ./config/samples/config_v1alpha1_verifier_schemavalidator.yaml
+    # run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
     # sleep 5
 
     # wait for the httpserver cache to be invalidated
@@ -207,7 +223,7 @@ SLEEP_TIME=1
     }
 
     echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
     assert_success
@@ -217,7 +233,7 @@ SLEEP_TIME=1
     assert_failure
 
     echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -262,7 +278,7 @@ SLEEP_TIME=1
     start=$(date --iso-8601=seconds)
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_dynamic.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_dynamic.yaml
     sleep 5
 
     run bash -c "kubectl -n gatekeeper-system logs $latestpod --since-time=$start | grep 'dynamic plugins are currently disabled'"
@@ -293,7 +309,7 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
         # restore the original notary verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml'
     }
 
     # configure the default template/constraint
@@ -308,7 +324,7 @@ SLEEP_TIME=1
 
     # add the alternate certificate as an inline certificate store
     cat <<EOF | kubectl apply -f -
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
 metadata:
   name: certstore-inline
@@ -321,7 +337,7 @@ EOF
 
     # configure the notary verifier to use the inline certificate store
     cat <<EOF | kubectl apply -f -
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-notary
@@ -366,7 +382,7 @@ EOF
     assert_success
     sleep 5
     # apply store CRD with k8 secret auth provier enabled
-    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_k8secretAuth.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_store_oras_k8secretAuth.yaml
     assert_success
     sleep 5
     run kubectl run demo --namespace default --image=registry:5000/notation:signed

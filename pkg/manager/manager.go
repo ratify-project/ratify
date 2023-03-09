@@ -44,6 +44,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -59,6 +60,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(configv1alpha1.AddToScheme(scheme))
+	//+kubebuilder:scaffold:scheme
+	utilruntime.Must(configv1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 

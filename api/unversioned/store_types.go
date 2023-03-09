@@ -14,7 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+// +kubebuilder:skip
+package unversioned
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,6 @@ type StoreSpec struct {
 	// OCI Artifact source to download the plugin from, optional
 	Source *PluginSource `json:"source,omitempty"`
 
-	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters of the store
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
@@ -41,10 +41,6 @@ type StoreSpec struct {
 type StoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
-
-// +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the Store API has been deprecated. Please migrate to v1beta1."
 
 // Store is the Schema for the stores API
 type Store struct {
@@ -55,15 +51,9 @@ type Store struct {
 	Status StoreStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
 // StoreList contains a list of Store
 type StoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Store `json:"items"`
-}
-
-func init() {
-	SchemeBuilder.Register(&Store{}, &StoreList{})
 }
