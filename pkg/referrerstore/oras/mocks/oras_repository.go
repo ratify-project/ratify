@@ -17,7 +17,9 @@ package mocks
 
 import (
 	"context"
+	"io"
 
+	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
@@ -25,7 +27,20 @@ import (
 
 type TestRepository struct {
 	registry.Repository
-	ResolveMap map[string]oci.Descriptor
+	ResolveMap    map[string]oci.Descriptor
+	ReferrersList []oci.Descriptor
+	FetchMap      map[digest.Digest]io.ReadCloser
+	BlobStoreTest TestBlobStore
+}
+
+type TestBlobStore struct {
+	registry.BlobStore
+	BlobMap map[string]BlobPair
+}
+
+type BlobPair struct {
+	Descriptor oci.Descriptor
+	Reader     io.ReadCloser
 }
 
 func (r TestRepository) Resolve(ctx context.Context, reference string) (oci.Descriptor, error) {
@@ -33,4 +48,26 @@ func (r TestRepository) Resolve(ctx context.Context, reference string) (oci.Desc
 		return desc, nil
 	}
 	return oci.Descriptor{}, errdef.ErrNotFound
+}
+
+func (r TestRepository) Referrers(ctx context.Context, desc oci.Descriptor, artifactType string, fn func(referrers []oci.Descriptor) error) error {
+	return fn(r.ReferrersList)
+}
+
+func (r TestRepository) Fetch(ctx context.Context, target oci.Descriptor) (io.ReadCloser, error) {
+	if reader, ok := r.FetchMap[target.Digest]; ok {
+		return reader, nil
+	}
+	return nil, errdef.ErrNotFound
+}
+
+func (r TestRepository) Blobs() registry.BlobStore {
+	return r.BlobStoreTest
+}
+
+func (b TestBlobStore) FetchReference(ctx context.Context, reference string) (oci.Descriptor, io.ReadCloser, error) {
+	if pair, ok := b.BlobMap[reference]; ok {
+		return pair.Descriptor, pair.Reader, nil
+	}
+	return oci.Descriptor{}, nil, errdef.ErrNotFound
 }

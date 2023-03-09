@@ -20,8 +20,84 @@ import (
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+func TestIsInsecureRegistry(t *testing.T) {
+	testCases := []struct {
+		desc     string
+		registry string
+		config   OrasStoreConf
+		expected bool
+	}{
+		{
+			desc:     "secure registry with http disabled",
+			registry: "ghcr.io/test/registry:v0",
+			config: OrasStoreConf{
+				Name: "oras",
+			},
+			expected: false,
+		},
+		{
+			desc:     "insecure registry with http enabled",
+			registry: "registry:5000/test/registry:v0",
+			config: OrasStoreConf{
+				Name:    "oras",
+				UseHttp: true,
+			},
+			expected: true,
+		},
+		{
+			desc:     "localhost insecure registry with http not specified",
+			registry: "localhost:5000/test/registry:v0",
+			config: OrasStoreConf{
+				Name: "oras",
+			},
+			expected: true,
+		},
+		{
+			desc:     "loopback ipv4 insecure registry with http not specified",
+			registry: "127.0.0.1:5000/test/registry:v0",
+			config: OrasStoreConf{
+				Name: "oras",
+			},
+			expected: true,
+		},
+		{
+			desc:     "loopback ipv6 insecure registry with http not specified",
+			registry: "::1:5000/test/registry:v0",
+			config: OrasStoreConf{
+				Name: "oras",
+			},
+			expected: true,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.desc, func(t *testing.T) {
+			output := isInsecureRegistry(testCase.registry, &testCase.config)
+			if output != testCase.expected {
+				t.Fatalf("mismatch of insecure registry type: expected %v, actual %v", testCase.expected, output)
+			}
+		})
+	}
+}
+
+func TestOciDescriptorToReferenceDescriptor(t *testing.T) {
+	input := oci.Descriptor{
+		Digest:       digest.FromString("test"),
+		Size:         5,
+		ArtifactType: "test_type",
+	}
+	expected := ocispecs.ReferenceDescriptor{
+		Descriptor:   input,
+		ArtifactType: "test_type",
+	}
+	output := OciDescriptorToReferenceDescriptor(input)
+	if output.ArtifactType != expected.ArtifactType || output.Descriptor.Digest.String() != expected.Descriptor.Digest.String() {
+		t.Fatalf("mismatch of reference descriptor: expected %v, actual %v", expected, output)
+	}
+}
 
 func TestOciManifestToReferenceManifest(t *testing.T) {
 	type args struct {
