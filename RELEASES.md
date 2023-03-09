@@ -57,7 +57,21 @@ When the release branch is ready, a tag should be pushed with a name matching th
 
 ### Weekly Dev Release
 
-Ratify is configured to generate and publish dev build images based on schedule [here](https://github.com/deislabs/ratify/blob/main/.github/workflows/publish-package.yml#L8).  
+#### Publishing Guidelines
+- Ratify is configured to generate and publish dev build images based on the schedule [here](https://github.com/deislabs/ratify/blob/main/.github/workflows/publish-package.yml#L8). 
+- Contributors MUST select the `Helm Chart Change` option under the `Type of Change` section if there is ANY update to the helm chart that is required for proposed changes in PR.
+- Maintainers MUST manually trigger the "Publish Package" workflow after merging any PR that indicates `Helm Chart Change`
+  - Go to the `Actions` tab for the Ratify repository
+  - Select `publish-ghcr` option from list of workflows on left pane
+  - Select the `Run workflow` drop down on the right side above the list of action runs
+  - Choose `Branch: main`
+  - Select `Run workflow`
+- Process to Request an off-schedule dev build be published
+  - Submit a new feature request issue prefixed with `[Dev Build Request]`
+  - In the the `What this PR does / why we need it` section, briefly explain why an off schedule build is needed
+  - Once issue is created, post in the `#ratify` slack channel and tag the maintainers
+  - Maintainers should acknowledge request by approving/denying request as a follow up comment
+#### How to use a dev build
 1. The `ratify` image and `ratify-crds` image for dev builds exist as separate packages on Github [here](https://github.com/deislabs/ratify/pkgs/container/ratify-dev) and [here](https://github.com/deislabs/ratify/pkgs/container/ratify-crds-dev).
 2. the `repository` `crdRepository` and `tag` fields must be updated in the helm chart to point to dev build instead of last released build. Please set the tag to be latest tag found at the corresponding `-dev` suffixed package. An example install command:
 ```
