@@ -23,14 +23,16 @@ jobs:
         id: prepare
         run: |
           VERSION=${GITHUB_REF#refs/*/}
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
           DATE=$(date +'%Y%m%d')
+          COMMIT=${{ github.sha }}
           REPOSITORY=ghcr.io/${{ github.repository }}
           REPOSITORYCRD=ghcr.io/${{ github.repository }}-crds
           if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
             VERSION=$(git rev-parse --short HEAD)
           fi
           if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "schedule" ]]; then
-            VERSION=dev.${DATE}
+            VERSION=dev.${DATE}.${COMMIT:0:7}
             REPOSITORY=${REPOSITORY}-dev
             REPOSITORYCRD=${REPOSITORYCRD}-dev
           fi
