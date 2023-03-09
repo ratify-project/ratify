@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -44,8 +44,7 @@ type StoreStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the Store API has been deprecated. Please migrate to v1beta1."
-
+// +kubebuilder:storageversion
 // Store is the Schema for the stores API
 type Store struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -55,8 +54,8 @@ type Store struct {
 	Status StoreStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // StoreList contains a list of Store
 type StoreList struct {
 	metav1.TypeMeta `json:",inline"`

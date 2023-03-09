@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/api/v1beta1"
 )
 
 func TestParsePluginSource_HandlesJSON(t *testing.T) {
@@ -56,10 +56,10 @@ func TestParsePluginSource_HandlesJSON(t *testing.T) {
 }
 
 func TestParsePluginSource_HandlesCRD(t *testing.T) {
-	verifierConfig := v1alpha1.VerifierSpec{
+	verifierConfig := v1beta1.VerifierSpec{
 		Name:          "dynamic",
 		ArtifactTypes: "sbom/example",
-		Source: &v1alpha1.PluginSource{
+		Source: &v1beta1.PluginSource{
 			Artifact: "wabbitnetworks.azurecr.io/test/sample-plugin:v1",
 		},
 	}

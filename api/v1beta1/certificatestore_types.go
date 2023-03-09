@@ -14,56 +14,53 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// StoreSpec defines the desired state of Store
-type StoreSpec struct {
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
+
+// CertificateStoreSpec defines the desired state of CertificateStore
+type CertificateStoreSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the store
-	Name string `json:"name,omitempty"`
-	// Plugin path, optional
-	Address string `json:"address,omitempty"`
-	// OCI Artifact source to download the plugin from, optional
-	Source *PluginSource `json:"source,omitempty"`
+	// Name of the certificate store provider
+	Provider string `json:"provider,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// Parameters of the store
+	// Parameters of the certificate store
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// StoreStatus defines the observed state of Store
-type StoreStatus struct {
+// CertificateStoreStatus defines the observed state of CertificateStore
+type CertificateStoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the Store API has been deprecated. Please migrate to v1beta1."
-
-// Store is the Schema for the stores API
-type Store struct {
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+// CertificateStore is the Schema for the certificatestores API
+type CertificateStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   StoreSpec   `json:"spec,omitempty"`
-	Status StoreStatus `json:"status,omitempty"`
+	Spec   CertificateStoreSpec   `json:"spec,omitempty"`
+	Status CertificateStoreStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-
-// StoreList contains a list of Store
-type StoreList struct {
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// CertificateStoreList contains a list of CertificateStore
+type CertificateStoreList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Store `json:"items"`
+	Items           []CertificateStore `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Store{}, &StoreList{})
+	SchemeBuilder.Register(&CertificateStore{}, &CertificateStoreList{})
 }

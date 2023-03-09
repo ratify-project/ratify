@@ -14,7 +14,7 @@ parameters: optional. Parameters specific to this verifier
 
 Sample Notary yaml spec:
 ```yml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-notary
