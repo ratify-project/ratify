@@ -22,10 +22,12 @@ import (
 	"encoding/json"
 	"fmt"
 
+
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
+
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -61,7 +63,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	logger := logrus.WithContext(ctx)
 
 	var resource = req.Name
-	var certStore configv1alpha1.CertificateStore
+	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
 
@@ -107,11 +109,11 @@ func GetCertificatesMap() map[string][]*x509.Certificate {
 // SetupWithManager sets up the controller with the Manager.
 func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1alpha1.CertificateStore{}).
+		For(&configv1beta1.CertificateStore{}).
 		Complete(r)
 }
 
-func getCertStoreConfig(spec configv1alpha1.CertificateStoreSpec) (map[string]string, error) {
+func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
 	attributes := map[string]string{}
 
 	if string(spec.Parameters.Raw) == "" {

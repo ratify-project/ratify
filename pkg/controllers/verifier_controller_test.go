@@ -19,7 +19,7 @@ import (
 	"os"
 	"testing"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
-	var testVerifierSpec = configv1alpha1.VerifierSpec{
+	var testVerifierSpec = configv1beta1.VerifierSpec{
 		Name:          "notaryv2",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
 	}
@@ -100,10 +100,10 @@ func resetVerifierMap() {
 	VerifierMap = map[string]vr.ReferenceVerifier{}
 }
 
-func getLicenseCheckerFromParam(parametersString string) configv1alpha1.VerifierSpec {
+func getLicenseCheckerFromParam(parametersString string) configv1beta1.VerifierSpec {
 	var allowedLicenses = []byte(parametersString)
 
-	return configv1alpha1.VerifierSpec{
+	return configv1beta1.VerifierSpec{
 		Name:          "licensechecker",
 		ArtifactTypes: "application/vnd.ratify.spdx.v0",
 		Parameters: runtime.RawExtension{
@@ -112,7 +112,7 @@ func getLicenseCheckerFromParam(parametersString string) configv1alpha1.Verifier
 	}
 }
 
-func getDefaultLicenseCheckerSpec() configv1alpha1.VerifierSpec {
+func getDefaultLicenseCheckerSpec() configv1beta1.VerifierSpec {
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"Apache\"]}"
 	return getLicenseCheckerFromParam(parametersString)
 }

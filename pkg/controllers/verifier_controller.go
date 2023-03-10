@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/config"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	vc "github.com/deislabs/ratify/pkg/verifier/config"
@@ -60,7 +60,7 @@ var (
 func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	verifierLogger := logrus.WithContext(ctx)
 
-	var verifier configv1alpha1.Verifier
+	var verifier configv1beta1.Verifier
 	var resource = req.Name
 	verifierLogger.Infof("reconciling verifier '%v'", resource)
 
@@ -85,7 +85,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // creates a verifier reference from CRD spec and add store to map
-func verifierAddOrReplace(spec configv1alpha1.VerifierSpec, objectName string) error {
+func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
 	verifierConfig, err := specToVerifierConfig(spec)
 
 	if err != nil {
@@ -118,7 +118,7 @@ func verifierRemove(objectName string) {
 }
 
 // returns a verifier reference from spec
-func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (vc.VerifierConfig, error) {
+func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec) (vc.VerifierConfig, error) {
 	verifierConfig := vc.VerifierConfig{}
 
 	if string(verifierSpec.Parameters.Raw) != "" {
@@ -140,6 +140,6 @@ func specToVerifierConfig(verifierSpec configv1alpha1.VerifierSpec) (vc.Verifier
 // SetupWithManager sets up the controller with the Manager.
 func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1alpha1.Verifier{}).
+		For(&configv1beta1.Verifier{}).
 		Complete(r)
 }

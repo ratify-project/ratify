@@ -24,7 +24,7 @@ SUFFIX=$(openssl rand -hex 2)
 export GROUP_NAME="${GROUP_NAME:-ratify-e2e-${SUFFIX}}"
 export ACR_NAME="${ACR_NAME:-ratifyacr${SUFFIX}}"
 export AKS_NAME="${AKS_NAME:-ratify-aks-${SUFFIX}}"
-export KEYVAULT_NAME="ratify-e2e-test-kv"
+export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
 export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.24.6}
@@ -34,14 +34,15 @@ export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
 export NOTARY_PEM_NAME="notary"
 TAG="test${SUFFIX}"
+REGISTRY="${ACR_NAME}.azurecr.io"
 
 build_push_to_acr() {
   echo "Building and pushing images to ACR"
   docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuild:${TAG}" .
-  docker push "${ACR_NAME}.azurecr.io/test/localbuild:${TAG}"
+  docker push "${REGISTRY}/test/localbuild:${TAG}"
 
   docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuildcrd:${TAG}" ./charts/ratify/crds
-  docker push "${ACR_NAME}.azurecr.io/test/localbuildcrd:${TAG}"
+  docker push "${REGISTRY}/test/localbuildcrd:${TAG}"
 }
 
 deploy_gatekeeper() {
@@ -57,36 +58,40 @@ deploy_gatekeeper() {
 }
 
 deploy_ratify() {
-  echo "generating tls certs"
-  ./scripts/generate-tls-certs.sh ${CERT_DIR} ${RATIFY_NAMESPACE}
-
   echo "deploying ratify"
   local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
-  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ratify-e2e --query "properties.vaultUri" -otsv)
+  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
   helm install ratify \
     ./charts/ratify --atomic \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
-    --set image.repository=${ACR_NAME}.azurecr.io/test/localbuild \
-    --set image.crdRepository=${ACR_NAME}.azurecr.io/test/localbuildcrd \
+    --set image.repository=${REGISTRY}/test/localbuild \
+    --set image.crdRepository=${REGISTRY}/test/localbuildcrd \
     --set image.tag=${TAG} \
-    --set cosign.enabled=true \
-    --set-file cosign.key="./test/testdata/cosign.pub" \
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
-    --set-file provider.tls.crt=${CERT_DIR}/server.crt \
-    --set-file provider.tls.key=${CERT_DIR}/server.key \
-    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
     --set akvCertConfig.enabled=true \
     --set akvCertConfig.vaultURI=${VAULT_URI} \
     --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
+    --set-file cosign.key=".staging/cosign/cosign.pub" \
     --set logLevel=debug
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
   kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
   kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
+}
+
+upload_cert_to_akv() {
+  rm -f notary.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.key >>notary.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notary.pem
+
+  az keyvault certificate import \
+    --vault-name ${KEYVAULT_NAME} \
+    -n ${NOTARY_PEM_NAME} \
+    -f notary.pem
 }
 
 save_logs() {
@@ -110,12 +115,16 @@ trap cleanup EXIT
 main() {
   ./scripts/create-azure-resources.sh
 
-  build_push_to_acr
+  local ACR_USER_NAME="00000000-0000-0000-0000-000000000000"
+  local ACR_PASSWORD=$(az acr login --name ${ACR_NAME} --expose-token --output tsv --query accessToken)
+  make e2e-azure-setup TEST_REGISTRY=$REGISTRY LOCAL_TEST_REGISTRY_USERNAME=${ACR_USER_NAME} LOCAL_TEST_REGISTRY_PASSWORD=${ACR_PASSWORD}
 
+  build_push_to_acr
+  upload_cert_to_akv
   deploy_gatekeeper
   deploy_ratify
 
-  bats -t ./test/bats/azure-test.bats
+  TEST_REGISTRY=$REGISTRY bats -t ./test/bats/azure-test.bats
 }
 
 main
