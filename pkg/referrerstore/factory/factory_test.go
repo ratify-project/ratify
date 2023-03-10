@@ -16,8 +16,12 @@ limitations under the License.
 package factory
 
 import (
+	"errors"
+	"os"
+	"path"
 	"testing"
 
+	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
@@ -85,5 +89,43 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 
 	if _, ok := stores[0].(*plugin.StorePlugin); !ok {
 		t.Fatalf("type assertion failed expected a plugin store")
+	}
+}
+
+func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T) {
+	os.Setenv("RATIFY_DYNAMIC_PLUGINS", "1")
+	featureflag.InitFeatureFlagsFromEnv()
+	storeConfig := map[string]interface{}{
+		"name": "plugin-store",
+		"source": map[string]interface{}{
+			"artifact": "wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1",
+		},
+	}
+
+	storesConfig := config.StoresConfig{
+		Stores: []config.StorePluginConfig{storeConfig},
+	}
+
+	stores, err := CreateStoresFromConfig(storesConfig, "")
+
+	if err != nil {
+		t.Fatalf("create stores failed with err %v", err)
+	}
+
+	if len(stores) != 1 {
+		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
+	}
+
+	if stores[0].Name() != "plugin-store" {
+		t.Fatalf("expected to create plugin store")
+	}
+
+	if _, ok := stores[0].(*plugin.StorePlugin); !ok {
+		t.Fatalf("type assertion failed expected a plugin store")
+	}
+
+	pluginPath := path.Join(stores[0].GetConfig().PluginBinDirs[0], stores[0].Name())
+	if _, err := os.Stat(pluginPath); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("downloaded plugin not found in path")
 	}
 }
