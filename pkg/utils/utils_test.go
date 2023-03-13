@@ -130,7 +130,7 @@ func TestTrimSpaceAndToLower_ReturnsExpected(t *testing.T) {
 	for _, testcase := range testcases {
 		actual := TrimSpaceAndToLower(testcase.input)
 		if testcase.output != actual {
-			t.Fatalf("TrimSpaceAndToLower utput expected  %v actual %v", testcase.input, actual)
+			t.Fatalf("TrimSpaceAndToLower output expected %v actual %v", testcase.input, actual)
 		}
 	}
 }
