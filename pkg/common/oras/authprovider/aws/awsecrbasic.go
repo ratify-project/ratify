@@ -142,7 +142,6 @@ func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
 		logrus.Error("basic ECR providerName was empty")
 		return false
 	}
-
 	return true
 }
 
@@ -160,6 +159,7 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 
 	if *d.ecrAuthToken.AuthData[artifactHostName].AuthorizationToken == "" {
 		authToken, err := d.getEcrAuthToken(artifact)
+
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not retrieve ECR auth token")
 		}
