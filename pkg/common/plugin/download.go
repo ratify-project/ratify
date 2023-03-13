@@ -25,7 +25,9 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
+	commonutils "github.com/deislabs/ratify/pkg/common/utils"
 	"github.com/deislabs/ratify/pkg/ocispecs"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
@@ -108,8 +110,19 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 	}
 
 	referenceManifest := ocispecs.ReferenceManifest{}
-	if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
-		return err
+	// marshal manifest bytes into reference manifest descriptor
+	if referenceManifestDescriptor.MediaType == oci.MediaTypeImageManifest {
+		var imageManifest oci.Manifest
+		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
+			return err
+		}
+		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
+	} else if referenceManifestDescriptor.MediaType == oci.MediaTypeArtifactManifest {
+		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
+			return err
+		}
+	} else {
+		return fmt.Errorf("unsupported manifest media type: %s", referenceManifestDescriptor.MediaType)
 	}
 
 	// download the first blob to the target path

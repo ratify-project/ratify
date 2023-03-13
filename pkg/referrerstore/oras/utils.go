@@ -53,13 +53,3 @@ func OciDescriptorToReferenceDescriptor(ociDescriptor oci.Descriptor) ocispecs.R
 		ArtifactType: ociDescriptor.ArtifactType,
 	}
 }
-
-func OciManifestToReferenceManifest(ociManifest oci.Manifest) ocispecs.ReferenceManifest {
-	return ocispecs.ReferenceManifest{
-		MediaType:    ociManifest.MediaType,
-		ArtifactType: ociManifest.Config.MediaType,
-		Blobs:        ociManifest.Layers,
-		Subject:      ociManifest.Subject,
-		Annotations:  ociManifest.Annotations,
-	}
-}
