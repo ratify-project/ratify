@@ -233,6 +233,23 @@ e2e-notaryv2-setup:
 	.staging/notaryv2/notation sign --signature-manifest image -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signedImage | jq -r .[0].RepoDigests[0]`
 	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
+e2e-notation-leaf-cert-setup:
+	mkdir -p .staging/notaryv2/leaf-test
+	mkdir -p ~/.config/notation/truststore/x509/ca/leaf-test
+	mkdir -p ~/.config/notation/localkeys/leaf-test
+	./scripts/generate-tls-certs.sh .staging/notaryv2/leaf-test
+	mv .staging/notaryv2/leaf-test/server.crt .staging/notaryv2/leaf-test/leaf.crt
+	cp .staging/notaryv2/leaf-test/server.key .staging/notaryv2/leaf-test/leaf.key
+	cp .staging/notaryv2/leaf-test/leaf.crt ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt
+	cp .staging/notaryv2/leaf-test/ca.crt ~/.config/notation/truststore/x509/ca/leaf-test/root.crt
+	
+	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notaryv2/leaf-test/leaf.key","certPath":".staging/notaryv2/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
+
+	echo 'FROM alpine\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:leafSigned .staging/notaryv2
+	docker push ${TEST_REGISTRY}/notation:leafSigned
+	.staging/notaryv2/notation sign -u ${LOCAL_TEST_REGISTRY_USERNAME} -p ${LOCAL_TEST_REGISTRY_PASSWORD} --key "leaf-test" `docker image inspect ${TEST_REGISTRY}/notation:leafSigned | jq -r .[0].RepoDigests[0]`
+
 e2e-cosign-setup:
 	rm -rf .staging/cosign
 	mkdir -p .staging/cosign
@@ -387,7 +404,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
-e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 
