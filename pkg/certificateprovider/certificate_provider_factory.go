@@ -23,6 +23,7 @@ var certificateProviders = make(map[string]CertificateProvider)
 
 // CertProviderFactory is an interface that defines methods to create an CertificateProvider
 type CertProviderFactory interface {
+	// Create method returns the certificate provider specific to this factory
 	Create() (CertificateProvider, error)
 }
 
@@ -31,8 +32,8 @@ func Register(name string, factory CertProviderFactory) {
 	if factory == nil {
 		panic("cert provider factory cannot be nil")
 	}
-	_, registered := certificateProviders[name]
-	if registered {
+
+	if _, registered := certificateProviders[name]; registered {
 		panic(fmt.Sprintf("cert provider factory named %s already registered", name))
 	}
 

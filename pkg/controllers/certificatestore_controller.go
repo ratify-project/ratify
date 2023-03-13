@@ -26,6 +26,7 @@ import (
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
+	"github.com/deislabs/ratify/pkg/utils"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -83,6 +84,9 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	providers := certificateprovider.GetCertificateProviders()
+
+	certStore.Spec.Provider = utils.TrimSpaceAndToLower(certStore.Spec.Provider)
+
 	provider, registered := providers[certStore.Spec.Provider]
 	if !registered {
 		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
