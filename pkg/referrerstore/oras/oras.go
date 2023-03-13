@@ -42,6 +42,7 @@ import (
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/aws"
 	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure"
+	commonutils "github.com/deislabs/ratify/pkg/common/utils"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -347,7 +348,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
 			return ocispecs.ReferenceManifest{}, err
 		}
-		referenceManifest = OciManifestToReferenceManifest(imageManifest)
+		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
 	} else if referenceDesc.Descriptor.MediaType == oci.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
 			return ocispecs.ReferenceManifest{}, err
