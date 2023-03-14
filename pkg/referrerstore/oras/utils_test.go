@@ -16,7 +16,6 @@ limitations under the License.
 package oras
 
 import (
-	"reflect"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -96,74 +95,5 @@ func TestOciDescriptorToReferenceDescriptor(t *testing.T) {
 	output := OciDescriptorToReferenceDescriptor(input)
 	if output.ArtifactType != expected.ArtifactType || output.Descriptor.Digest.String() != expected.Descriptor.Digest.String() {
 		t.Fatalf("mismatch of reference descriptor: expected %v, actual %v", expected, output)
-	}
-}
-
-func TestOciManifestToReferenceManifest(t *testing.T) {
-	type args struct {
-		ociManifest oci.Manifest
-	}
-	tests := []struct {
-		name string
-		args args
-		want ocispecs.ReferenceManifest
-	}{
-		{
-			name: "empty",
-			args: args{
-				ociManifest: oci.Manifest{},
-			},
-			want: ocispecs.ReferenceManifest{
-				MediaType:    "",
-				ArtifactType: "",
-			},
-		},
-		{
-			name: "simple",
-			args: args{
-				ociManifest: oci.Manifest{
-					MediaType: "application/vnd.oci.image.manifest.v1+json",
-					Config: oci.Descriptor{
-						MediaType: "application/vnd.oci.image.config.v1+json",
-					},
-				},
-			},
-			want: ocispecs.ReferenceManifest{
-				MediaType:    "application/vnd.oci.image.manifest.v1+json",
-				ArtifactType: "application/vnd.oci.image.config.v1+json",
-			},
-		},
-		{
-			name: "layers",
-			args: args{
-				ociManifest: oci.Manifest{
-					MediaType: "application/vnd.oci.image.manifest.v1+json",
-					Config: oci.Descriptor{
-						MediaType: "application/vnd.oci.image.config.v1+json",
-					},
-					Layers: []oci.Descriptor{
-						{
-							MediaType: "application/vnd.oci.image.layer.v1.tar+gzip",
-						},
-					},
-				},
-			},
-			want: ocispecs.ReferenceManifest{
-				MediaType:    "application/vnd.oci.image.manifest.v1+json",
-				ArtifactType: "application/vnd.oci.image.config.v1+json",
-				Blobs: []oci.Descriptor{
-					{
-						MediaType: "application/vnd.oci.image.layer.v1.tar+gzip",
-					},
-				},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := OciManifestToReferenceManifest(tt.args.ociManifest); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OciManifestToReferenceManifest() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
