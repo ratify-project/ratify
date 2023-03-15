@@ -95,7 +95,17 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if err != nil {
 			return ctrl.Result{}, fmt.Errorf("Error fetching certificate in store %v with inline provider, error: %w", resource, err)
 		}
+
 		certificatesMap[resource] = certificates
+
+		// updating status
+		certStore.Status.IsSuccess = true
+		certStore.Status.ErrorMessage = "no error"
+		if err := r.Status().Update(ctx, &certStore); err != nil {
+			logger.Error(err, "unable to fetch certificate store")
+			return ctrl.Result{}, err
+		}
+
 		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 	default:
 

@@ -38,6 +38,10 @@ type CertificateStoreSpec struct {
 // CertificateStoreStatus defines the observed state of CertificateStore
 type CertificateStoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
+	// +optional
+	IsSuccess       bool         `json:"issuccess,omitempty"`
+	ErrorMessage    string       `json:"errormessage,omitempty"`
+	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
 }
 
 // CertificateStore is the Schema for the certificatestores API

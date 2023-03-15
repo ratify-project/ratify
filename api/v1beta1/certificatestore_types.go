@@ -38,6 +38,14 @@ type CertificateStoreSpec struct {
 // CertificateStoreStatus defines the observed state of CertificateStore
 type CertificateStoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Is successful in loading certificate files
+	// +optional
+	IsSuccess bool `json:"issuccess,omitempty"`
+	// Error message if operation was unsuccessful
+	ErrorMessage string `json:"errormessage,omitempty"`
+	// The time stamp of certificates cached
+	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
 }
 
 // +kubebuilder:object:root=true
