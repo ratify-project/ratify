@@ -40,7 +40,6 @@ func GetCertificateProviders() map[string]CertificateProvider {
 
 // Register adds the factory to the built in providers map
 func Register(name string, provider CertificateProvider) {
-
 	if _, registered := certificateProviders[name]; registered {
 		panic(fmt.Sprintf("cert provider named %s already registered", name))
 	}
