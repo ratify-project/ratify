@@ -58,6 +58,29 @@ jobs:
         run: |
           make install ratify-config install-bats
           make test-e2e-cli
+  
+  build_test_cli_oci_1_0:
+    name: "Build and run tests for CLI OCI 1.0"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: setup go environment
+        uses: actions/setup-go@v3
+        with:
+          go-version: "1.19"
+      - name: Run tidy
+        run: go mod tidy
+      - name: Build CLI
+        run: make
+      - name: Check build
+        run: bin/ratify version
+      - name: Test CLI
+        run: |
+          make install ratify-config install-bats
+          make test-e2e-cli IS_OCI_1_1=false LOCAL_REGISTRY_IMAGE=registry
 
   build_test_e2e:
     name: "Build and run e2e Test"
