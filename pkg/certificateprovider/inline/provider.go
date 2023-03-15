@@ -29,17 +29,16 @@ const (
 	providerName   string = "inline"
 )
 
-type inlineCertProviderFactory struct{}
 type inlineCertProvider struct{}
 
 // init calls to register the provider
 func init() {
-	certificateprovider.Register(providerName, &inlineCertProviderFactory{})
+	certificateprovider.Register(providerName, Create())
 }
 
-func (s *inlineCertProviderFactory) Create() (certificateprovider.CertificateProvider, error) {
+func Create() certificateprovider.CertificateProvider {
 	// returning a simple provider for now, overtime we will add metrics and other related properties
-	return &inlineCertProvider{}, nil
+	return &inlineCertProvider{}
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map

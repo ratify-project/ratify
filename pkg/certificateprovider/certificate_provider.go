@@ -31,6 +31,23 @@ type CertificateProvider interface {
 	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error)
 }
 
+var certificateProviders = make(map[string]CertificateProvider)
+
+// returns the internal certificate provider map
+func GetCertificateProviders() map[string]CertificateProvider {
+	return certificateProviders
+}
+
+// Register adds the factory to the built in providers map
+func Register(name string, provider CertificateProvider) {
+
+	if _, registered := certificateProviders[name]; registered {
+		panic(fmt.Sprintf("cert provider named %s already registered", name))
+	}
+
+	certificateProviders[name] = provider
+}
+
 // Decode PEM-encoded bytes into an x509.Certificate chain.
 func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate

@@ -44,17 +44,16 @@ const (
 	providerName string = "azurekeyvault"
 )
 
-type akvCertProviderFactory struct{}
 type akvCertProvider struct{}
 
 // init calls to register the provider
 func init() {
-	certificateprovider.Register(providerName, &akvCertProviderFactory{})
+	certificateprovider.Register(providerName, Create())
 }
 
-func (s *akvCertProviderFactory) Create() (certificateprovider.CertificateProvider, error) {
+func Create() certificateprovider.CertificateProvider {
 	// returning a simple provider for now, overtime we will add metrics and other related properties
-	return &akvCertProvider{}, nil
+	return &akvCertProvider{}
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
