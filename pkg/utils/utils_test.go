@@ -111,3 +111,26 @@ func TestParseSubjectReference_ReturnsExpected(t *testing.T) {
 		}
 	}
 }
+
+func TestTrimSpaceAndToLower_ReturnsExpected(t *testing.T) {
+	testcases := []struct {
+		input  string
+		output string
+	}{
+		{
+			input:  "Notary ",
+			output: "notary",
+		},
+		{
+			input:  " AzureKeyvault ",
+			output: "azurekeyvault",
+		},
+	}
+
+	for _, testcase := range testcases {
+		actual := TrimSpaceAndToLower(testcase.input)
+		if testcase.output != actual {
+			t.Fatalf("TrimSpaceAndToLower output expected %v actual %v", testcase.input, actual)
+		}
+	}
+}
