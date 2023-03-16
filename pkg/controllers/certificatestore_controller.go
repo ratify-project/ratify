@@ -23,11 +23,14 @@ import (
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
-	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
+	"github.com/deislabs/ratify/pkg/certificateprovider"
+	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
+	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
+	"github.com/deislabs/ratify/pkg/utils"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -81,36 +84,38 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	// fetch certificates based on the provider
-	switch certStore.Spec.Provider {
-	case "azurekeyvault":
-		certificates, err := azurekeyvault.GetCertificates(ctx, attributes)
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with azure key vault provider, error: %w", resource, err)
-		}
-		certificatesMap[resource] = certificates
-		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
-	case "inline":
-		certificates, err := inline.GetCertificates(ctx, attributes)
-		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("Error fetching certificate in store %v with inline provider, error: %w", resource, err)
-		}
+	providers := certificateprovider.GetCertificateProviders()
 
-		certificatesMap[resource] = certificates
+	certStore.Spec.Provider = utils.TrimSpaceAndToLower(certStore.Spec.Provider)
 
-		// updating status
-		certStore.Status.IsSuccess = true
-		certStore.Status.ErrorMessage = "no error"
-		if err := r.Status().Update(ctx, &certStore); err != nil {
-			logger.Error(err, "unable to fetch certificate store")
-			return ctrl.Result{}, err
-		}
-
-		logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
-	default:
-
-		return ctrl.Result{}, fmt.Errorf("unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+	provider, registered := providers[certStore.Spec.Provider]
+	if !registered {
+		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
+
+	certificates, err := provider.GetCertificates(ctx, attributes)
+	if err != nil {
+		certStore.Status.IsSuccess = false
+		certStore.Status.ErrorMessage = err.Error()
+
+		if err := r.Status().Update(ctx, &certStore); err != nil {
+			logger.Error(err, "unable to update certificate store status")
+		}
+
+		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
+	}
+
+	certificatesMap[resource] = certificates
+
+	var now = metav1.Now()
+	certStore.Status.LastFetchedTime = &now
+	certStore.Status.IsSuccess = true
+	if err := r.Status().Update(ctx, &certStore); err != nil {
+		logger.Error(err, "unable to update certificate store status")
+		return ctrl.Result{}, err
+	}
+
+	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil

@@ -1,3 +1,18 @@
+/*
+Copyright The Ratify Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package certificateprovider
 
 import (
@@ -14,6 +29,22 @@ type CertStoreConfig map[string]string
 type CertificateProvider interface {
 	// Returns an array of certificates based on certificate properties defined in attrib map
 	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error)
+}
+
+var certificateProviders = make(map[string]CertificateProvider)
+
+// returns the internal certificate provider map
+func GetCertificateProviders() map[string]CertificateProvider {
+	return certificateProviders
+}
+
+// Register adds the factory to the built in providers map
+func Register(name string, provider CertificateProvider) {
+	if _, registered := certificateProviders[name]; registered {
+		panic(fmt.Sprintf("cert provider named %s already registered", name))
+	}
+
+	certificateProviders[name] = provider
 }
 
 // Decode PEM-encoded bytes into an x509.Certificate chain.
