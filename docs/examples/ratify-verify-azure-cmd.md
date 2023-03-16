@@ -122,7 +122,8 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     -n ${KEY_NAME} \
     -f ${CERT_PATH}
     ```
- 
+   Please note Azure Key Vault integration currently only support self signed certificate, if you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider). 
+
 3. Configure policy for user-assigned managed identity:
     
     ```bash
