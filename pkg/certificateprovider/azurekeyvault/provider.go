@@ -27,11 +27,11 @@ import (
 
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
-	"github.com/sirupsen/logrus"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -40,8 +40,24 @@ type keyvaultObject struct {
 	version string
 }
 
+const (
+	providerName string = "azurekeyvault"
+)
+
+type akvCertProvider struct{}
+
+// init calls to register the provider
+func init() {
+	certificateprovider.Register(providerName, Create())
+}
+
+func Create() certificateprovider.CertificateProvider {
+	// returning a simple provider for now, overtime we will add metrics and other related properties
+	return &akvCertProvider{}
+}
+
 // returns an array of certificates based on certificate properties defined in attrib map
-func GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
+func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
 	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
