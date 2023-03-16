@@ -37,9 +37,11 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
-    # notation signature with OCI Image manifest format
-    run kubectl run demo-oci-image --namespace default --image=registry:5000/notation:signedImage
-    assert_success
+    # notation signature with OCI Artifact manifest format
+    if [[ $IS_OCI_1_1 == "true" ]]; then
+        run kubectl run demo-oci-image --namespace default --image=registry:5000/notation:ociartifact
+        assert_success
+    fi
     run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
     assert_failure
 }
@@ -111,9 +113,11 @@ SLEEP_TIME=1
     sleep 15
     run kubectl run license-checker2 --namespace default --image=registry:5000/licensechecker:v0
     assert_success
-    # licensechecker artifact with OCI Image manifest format
-    run kubectl run license-checker-oci-image --namespace default --image=registry:5000/licensechecker:ociimage
-    assert_success
+    # licensechecker artifact with OCI Artifact manifest format
+    if [[ $IS_OCI_1_1 == "true" ]]; then
+        run kubectl run license-checker-oci-image --namespace default --image=registry:5000/licensechecker:ociartifact
+        assert_success
+    fi
 }
 
 @test "sbom verifier test" {
@@ -135,9 +139,11 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_success
-    # sbom with OCI Image manifest format
-    run kubectl run sbom-oci-image --namespace default --image=registry:5000/sbom:ociimage
-    assert_success
+    # sbom with OCI Artifact manifest format
+    if [[ $IS_OCI_1_1 == "true" ]]; then
+        run kubectl run sbom-oci-image --namespace default --image=registry:5000/sbom:ociartifact
+        assert_success
+    fi
 
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom
     assert_success
@@ -170,9 +176,11 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run schemavalidator --namespace default --image=registry:5000/schemavalidator:v0
     assert_success
-    # schemavalidator with OCI Image manifest format
-    run kubectl run schemavalidator-oci-image --namespace default --image=registry:5000/schemavalidator:ociimage
-    assert_success
+    # schemavalidator with OCI Artifact manifest format
+    if [[ $IS_OCI_1_1 == "true" ]]; then
+        run kubectl run schemavalidator-oci-image --namespace default --image=registry:5000/schemavalidator:ociartifact
+        assert_success
+    fi
 
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
     assert_success
