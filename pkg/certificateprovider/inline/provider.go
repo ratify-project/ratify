@@ -25,11 +25,24 @@ import (
 
 const (
 	// ValueParameter is the name of the parameter that contains the certificate (chain) as a string in PEM format
-	ValueParameter = "value"
+	ValueParameter        = "value"
+	providerName   string = "inline"
 )
 
+type inlineCertProvider struct{}
+
+// init calls to register the provider
+func init() {
+	certificateprovider.Register(providerName, Create())
+}
+
+func Create() certificateprovider.CertificateProvider {
+	// returning a simple provider for now, overtime we will add metrics and other related properties
+	return &inlineCertProvider{}
+}
+
 // returns an array of certificates based on certificate properties defined in attrib map
-func GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
+func (s *inlineCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
 	value, ok := attrib[ValueParameter]
 	if !ok {
 		return nil, fmt.Errorf("value parameter is not set")
