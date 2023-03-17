@@ -17,6 +17,7 @@ package utils
 
 import (
 	"fmt"
+	"strings"
 
 	_ "crypto/sha256"
 
@@ -54,4 +55,9 @@ func ParseSubjectReference(subRef string) (common.Reference, error) {
 	subjectRef.Path = parseResult.Name()
 
 	return subjectRef, nil
+}
+
+// returns the string in lower case without leading and trailing space
+func TrimSpaceAndToLower(input string) string {
+	return strings.ToLower(strings.TrimSpace(input))
 }

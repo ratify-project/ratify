@@ -117,7 +117,7 @@ main() {
 
   local ACR_USER_NAME="00000000-0000-0000-0000-000000000000"
   local ACR_PASSWORD=$(az acr login --name ${ACR_NAME} --expose-token --output tsv --query accessToken)
-  make e2e-azure-setup TEST_REGISTRY=$REGISTRY LOCAL_TEST_REGISTRY_USERNAME=${ACR_USER_NAME} LOCAL_TEST_REGISTRY_PASSWORD=${ACR_PASSWORD}
+  make e2e-azure-setup TEST_REGISTRY=$REGISTRY TEST_REGISTRY_USERNAME=${ACR_USER_NAME} TEST_REGISTRY_PASSWORD=${ACR_PASSWORD}
 
   build_push_to_acr
   upload_cert_to_akv
