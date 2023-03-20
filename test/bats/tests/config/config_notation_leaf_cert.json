@@ -1,0 +1,50 @@
+{
+    "store": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "cosignEnabled": true,
+                "useHttp": true
+            }
+        ]
+    },
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy"
+        }
+    },
+    "verifier": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "notaryv2",
+                "artifactTypes": "application/vnd.cncf.notary.signature",
+                "verificationCerts": [
+                    "~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt"
+                ],
+                "trustPolicyDoc": {
+                    "version": "1.0",
+                    "trustPolicies": [
+                        {
+                            "name": "default",
+                            "registryScopes": [
+                                "*"
+                            ],
+                            "signatureVerification": {
+                                "level": "strict"
+                            },
+                            "trustStores": [
+                                "ca:certs"
+                            ],
+                            "trustedIdentities": [
+                                "*"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ]
+    }
+}

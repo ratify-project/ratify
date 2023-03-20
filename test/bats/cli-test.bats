@@ -16,6 +16,14 @@ load helpers
     assert_cmd_verify_failure
 }
 
+@test "notation verifier leaf cert test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_root_cert.json -s $TEST_REGISTRY/notation:leafSigned
+    assert_cmd_verify_success
+
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_leaf_cert.json -s $TEST_REGISTRY/notation:leafSigned
+    assert_cmd_verify_failure
+}
+
 @test "cosign verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/cosign:signed-key
     assert_cmd_verify_success
