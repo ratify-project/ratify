@@ -64,43 +64,48 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 		go func(subject string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
-
-			unlock := server.keyMutex.Lock(subject)
+			returnItem := externaldata.Item{
+				Key: subject,
+			}
+			defer func() {
+				mu.Lock()
+				results = append(results, returnItem)
+				mu.Unlock()
+			}()
+			subjectReference, err := pkgUtils.ParseSubjectReference(subject)
+			if err != nil {
+				returnItem.Error = err.Error()
+				return
+			}
+			resolvedSubjectReference := subjectReference.Original
+			unlock := server.keyMutex.Lock(resolvedSubjectReference)
 			defer unlock()
 
-			logrus.Infof("verifying subject %v", subject)
+			logrus.Infof("verifying subject %v", resolvedSubjectReference)
 			var result types.VerifyResult
-			res := server.cache.get(subject)
+			res := server.cache.get(resolvedSubjectReference)
 			if res != nil {
-				logrus.Debugf("cache hit for subject %v", subject)
+				logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
 				result = *res
 			} else {
-				logrus.Debugf("cache miss for subject %v", subject)
-				returnItem := externaldata.Item{
-					Key: subject,
-				}
-
+				logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
 				verifyParameters := executor.VerifyParameters{
-					Subject: subject,
+					Subject: resolvedSubjectReference,
 				}
 
 				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
 					returnItem.Error = err.Error()
+					return
 				}
-				server.cache.set(subject, &result)
+				server.cache.set(resolvedSubjectReference, &result)
 
 				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
 					fmt.Println(string(res))
 				}
 			}
 
-			mu.Lock()
-			defer mu.Unlock()
-			results = append(results, externaldata.Item{
-				Key:   subject,
-				Value: fromVerifyResult(result),
-			})
-			logrus.Debugf("verification: execution time for image %s: %dms", subject, time.Since(routineStartTime).Milliseconds())
+			returnItem.Value = fromVerifyResult(result)
+			logrus.Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(subject))
 	}
 	wg.Wait()
