@@ -54,6 +54,9 @@ type CertificateStoreStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // CertificateStore is the Schema for the certificatestores API
+// +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
+// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.error`
+// +kubebuilder:printcolumn:name="LastFetchedTime",type=date,JSONPath=`.status.lastfetchedtime`
 type CertificateStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

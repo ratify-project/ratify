@@ -66,7 +66,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
-	certStore.Status.IsSuccess = false // reset status
+	resetStatus(r, ctx, certStore, logger)
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 
 		if apierrors.IsNotFound(err) {
@@ -76,14 +76,14 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			logger.Error(err, "unable to fetch certificate store")
 		}
 
-		updateStatusWithErr(certStore.Status, err)
+		updateStatusWithErr(r, ctx, certStore, err, logger)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
 	if err != nil {
-		updateStatusWithErr(certStore.Status, err)
+		updateStatusWithErr(r, ctx, certStore, err, logger)
 		return ctrl.Result{}, err
 	}
 
@@ -98,25 +98,16 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	certificates, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
 		certStore.Status.IsSuccess = false
-		updateStatusWithErr(certStore.Status, err)
-
-		if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
-			logger.Error(err, "unable to update certificate store status")
-		}
+		updateStatusWithErr(r, ctx, certStore, err, logger)
 
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %v", resource, certStore.Spec.Provider, err)
 	}
 
-	setSuccessStatus(certStore.Status)
-	certificatesMap[resource] = certificates
-
-	if err := r.Status().Update(ctx, &certStore); err != nil {
-		logger.Error(err, "unable to update certificate store status")
+	if err := setSuccessStatus(r, ctx, certStore, logger); err != nil {
 		return ctrl.Result{}, err
 	}
-	certificatesMap[resource] = certificates
-	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
+	certificatesMap[resource] = certificates
 	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
@@ -150,24 +141,37 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 	return attributes, nil
 }
 
-func updateStatusWithErr(status configv1beta1.CertificateStoreStatus, err error) {
-	status.Error = err.Error()
-	status.IsSuccess = false
+func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, err error, logger *logrus.Entry) {
+	certStore.Status.Error = err.Error()
+	certStore.Status.IsSuccess = false
 	var now = metav1.Now()
-	status.LastFetchedTime = &now
+	certStore.Status.LastFetchedTime = &now
+
+	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
+		logger.Error(statusErr, "unable to update certificate store error status")
+	}
 }
 
-func setSuccessStatus(status configv1beta1.CertificateStoreStatus) {
-	status.IsSuccess = true
-	status.Error = ""
+func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
+	certStore.Status.IsSuccess = true
+	certStore.Status.Error = ""
 	var now = metav1.Now()
-	status.LastFetchedTime = &now
+	certStore.Status.LastFetchedTime = &now
+
+	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
+		logger.Error(statusErr, "unable to update certificate store success status")
+		return statusErr
+	}
+	return nil
 }
 
-func resetStatus(status configv1beta1.CertificateStoreStatus) {
-	status.Error = ""
-	status.IsSuccess = false
+func resetStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry) {
+	certStore.Status.Error = ""
+	certStore.Status.IsSuccess = false
 	//status.LastFetchedTime = &(metav1.Now()) , this did not compile, any insights?
 	var now = metav1.Now()
-	status.LastFetchedTime = &now
+	certStore.Status.LastFetchedTime = &now
+	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
+		logger.Error(statusErr, "unable to update certificate store success status")
+	}
 }
