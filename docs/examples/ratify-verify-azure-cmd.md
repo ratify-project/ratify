@@ -124,8 +124,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     -n ${KEY_NAME} \
     -f ${CERT_PATH}
     ```
-   Please note 
-
+   
 3. Configure policy for user-assigned managed identity:
     
     ```bash
