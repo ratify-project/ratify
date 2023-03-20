@@ -28,6 +28,8 @@ import (
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	"github.com/docker/distribution/reference"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/deislabs/ratify/pkg/policyprovider/types"
@@ -332,6 +334,64 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 		retFirstKey := respBody.Response.Items[0].Key
 		if retFirstKey != testImageNames[1] {
 			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[1], retFirstKey)
+		}
+	})
+}
+
+// TestServer_MultipleSubjects_Success tests multiple subjects are verified concurrently
+func TestServer_Verify_ParseReference_Failure(t *testing.T) {
+	testImageNames := []string{"&&"}
+	t.Run("server_verify_parsereference_failure", func(t *testing.T) {
+		body := new(bytes.Buffer)
+
+		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames)); err != nil {
+			t.Fatalf("failed to encode request body: %v", err)
+		}
+		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
+		responseRecorder := httptest.NewRecorder()
+
+		ex := &core.Executor{
+			PolicyEnforcer: config.PolicyEnforcer{},
+			ReferrerStores: []referrerstore.ReferrerStore{&mocks.TestStore{}},
+			Verifiers:      []verifier.ReferenceVerifier{&core.TestVerifier{}},
+			Config: &exconfig.ExecutorConfig{
+				VerificationRequestTimeout: nil,
+				MutationRequestTimeout:     nil,
+			},
+		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
+		server := &Server{
+			GetExecutor: getExecutor,
+			Context:     request.Context(),
+
+			keyMutex: keyMutex{},
+			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
+		}
+
+		handler := contextHandler{
+			context: server.Context,
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+		}
+
+		handler.ServeHTTP(responseRecorder, request)
+		var respBody externaldata.ProviderResponse
+		if err := json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody); err != nil {
+			t.Fatalf("failed to decode response body: %v", err)
+		}
+		retFirstKey := respBody.Response.Items[0].Key
+		retFirstErr := respBody.Response.Items[0].Error
+		if retFirstKey != testImageNames[0] {
+			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[0], retFirstKey)
+		}
+		expectedErr := errors.Wrap(reference.ErrReferenceInvalidFormat, "failed to parse subject reference")
+		if retFirstErr != expectedErr.Error() {
+			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr.Error(), retFirstErr)
 		}
 	})
 }
