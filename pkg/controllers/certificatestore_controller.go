@@ -90,7 +90,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	providers := certificateprovider.GetCertificateProviders()
 
 	certStore.Spec.Provider = utils.TrimSpaceAndToLower(certStore.Spec.Provider)
-
 	provider, registered := providers[certStore.Spec.Provider]
 	if !registered {
 		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
@@ -115,6 +114,8 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		logger.Error(err, "unable to update certificate store status")
 		return ctrl.Result{}, err
 	}
+	certificatesMap[resource] = certificates
+	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
 	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
