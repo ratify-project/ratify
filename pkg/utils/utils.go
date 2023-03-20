@@ -26,8 +26,6 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-const defaultRegistryPrefix = "docker.io/library/"
-
 // ParseDigest parses the given string and returns a validated Digest object.
 func ParseDigest(digestStr string) (digest.Digest, error) {
 	digest, err := digest.Parse(digestStr)
@@ -40,22 +38,12 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 
 // ParseSubjectReference parses the given subject and returns a valid reference
 func ParseSubjectReference(subRef string) (common.Reference, error) {
-	parseResult, err := reference.Parse(subRef)
+	parseResult, err := reference.ParseDockerRef(subRef)
 	if err != nil {
 		return common.Reference{}, fmt.Errorf("failed to parse subject reference: %w", err)
 	}
 
 	var subjectRef common.Reference
-	if named, ok := parseResult.(reference.Named); ok {
-		subjectRef.Path = named.Name()
-		if reference.Domain(named) == "" {
-			subRef = fmt.Sprint(defaultRegistryPrefix, subRef)
-			subjectRef.Path = fmt.Sprint(defaultRegistryPrefix, subjectRef.Path)
-		}
-	} else {
-		return common.Reference{}, fmt.Errorf("failed to parse subject reference Path")
-	}
-
 	if digested, ok := parseResult.(reference.Digested); ok {
 		subjectRef.Digest = digested.Digest()
 	}
@@ -63,8 +51,8 @@ func ParseSubjectReference(subRef string) (common.Reference, error) {
 	if tag, ok := parseResult.(reference.Tagged); ok {
 		subjectRef.Tag = tag.Tag()
 	}
-
-	subjectRef.Original = subRef
+	subjectRef.Original = parseResult.String()
+	subjectRef.Path = parseResult.Name()
 
 	return subjectRef, nil
 }
