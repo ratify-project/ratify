@@ -35,12 +35,17 @@ type CertificateStoreSpec struct {
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// CertificateStoreStatus defines the observed state of CertificateStore
 type CertificateStoreStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make manifests" to regenerate code after modifying this file
+
+	// Is successful in loading certificate files
 	// +optional
-	IsSuccess       bool         `json:"issuccess,omitempty"`
-	ErrorMessage    string       `json:"errormessage,omitempty"`
+	IsSuccess bool `json:"issuccess,omitempty"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
+	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
 }
 

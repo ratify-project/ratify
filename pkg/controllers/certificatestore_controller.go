@@ -66,8 +66,9 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
-
+	certStore.Status.IsSuccess = false // reset status
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
+
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", req.Name)
 			delete(certificatesMap, resource)
@@ -75,12 +76,14 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			logger.Error(err, "unable to fetch certificate store")
 		}
 
+		updateStatusWithErr(certStore.Status, err)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
 	if err != nil {
+		updateStatusWithErr(certStore.Status, err)
 		return ctrl.Result{}, err
 	}
 
@@ -96,20 +99,18 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	certificates, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
 		certStore.Status.IsSuccess = false
-		certStore.Status.ErrorMessage = err.Error()
+		updateStatusWithErr(certStore.Status, err)
 
-		if err := r.Status().Update(ctx, &certStore); err != nil {
+		if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
 			logger.Error(err, "unable to update certificate store status")
 		}
 
-		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
+		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %v", resource, certStore.Spec.Provider, err)
 	}
 
+	setSuccessStatus(certStore.Status)
 	certificatesMap[resource] = certificates
 
-	var now = metav1.Now()
-	certStore.Status.LastFetchedTime = &now
-	certStore.Status.IsSuccess = true
 	if err := r.Status().Update(ctx, &certStore); err != nil {
 		logger.Error(err, "unable to update certificate store status")
 		return ctrl.Result{}, err
@@ -146,4 +147,26 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 	}
 
 	return attributes, nil
+}
+
+func updateStatusWithErr(status configv1beta1.CertificateStoreStatus, err error) {
+	status.Error = err.Error()
+	status.IsSuccess = false
+	var now = metav1.Now()
+	status.LastFetchedTime = &now
+}
+
+func setSuccessStatus(status configv1beta1.CertificateStoreStatus) {
+	status.IsSuccess = true
+	status.Error = ""
+	var now = metav1.Now()
+	status.LastFetchedTime = &now
+}
+
+func resetStatus(status configv1beta1.CertificateStoreStatus) {
+	status.Error = ""
+	status.IsSuccess = false
+	//status.LastFetchedTime = &(metav1.Now()) , this did not compile, any insights?
+	var now = metav1.Now()
+	status.LastFetchedTime = &now
 }
