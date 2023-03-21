@@ -331,44 +331,14 @@ SLEEP_TIME=1
     assert_failure
 
     # add the alternate certificate as an inline certificate store
-    cat <<EOF | kubectl apply -f -
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
-metadata:
-  name: certstore-inline
-spec:
-  provider: inline
-  parameters:
-    value: |
-$(cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g')
-EOF
+    cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    assert_success
+    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
     # configure the notary verifier to use the inline certificate store
-    cat <<EOF | kubectl apply -f -
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: Verifier
-metadata:
-  name: verifier-notary
-spec:
-  name: notaryv2
-  artifactTypes: application/vnd.cncf.notary.signature
-  parameters:
-    verificationCertStores:
-      certs:
-        - certstore-inline
-    trustPolicyDoc:
-      version: "1.0"
-      trustPolicies:
-        - name: default
-          registryScopes:
-            - "*"
-          signatureVerification:
-            level: strict
-          trustStores:
-            - ca:certs
-          trustedIdentities:
-            - "*"
-EOF
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary.yaml
+    assert_success
     sleep 10
 
     # verify that the image can now be run
@@ -396,5 +366,48 @@ EOF
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
     run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
+    assert_failure
+}
+
+@test "validate image signed by leaf cert" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
+
+        # restore the original notary verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml'
+    }
+
+    # configure the default template/constraint
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+
+    # add the root certificate as an inline certificate store
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    assert_success
+    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+
+    # configure the notary verifier to use the inline certificate store
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary.yaml
+    assert_success
+
+    # verify that the image can be run with a root cert
+    run kubectl run demo-leaf --namespace default --image=registry:5000/notation:leafSigned
+    assert_success
+
+    # add the root certificate as an inline certificate store
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    assert_success
+    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+
+    # wait for the httpserver cache to be invalidated
+    sleep 15
+    # verify that the image cannot be run with a leaf cert
+    run kubectl run demo-leaf2 --namespace default --image=registry:5000/notation:leafSigned
     assert_failure
 }
