@@ -26,22 +26,22 @@ import (
 
 // EcrAuthToken provides helper functions for ECR auth token data
 type EcrAuthToken struct {
-	AuthData types.AuthorizationData
+	AuthData map[string]types.AuthorizationData
 }
 
-// Expiry
-func (e EcrAuthToken) Expiry() time.Time {
-	return *e.AuthData.ExpiresAt
+// Expiry returns the expiry time
+func (e EcrAuthToken) Expiry(host string) time.Time {
+	return *e.AuthData[host].ExpiresAt
 }
 
-// ProxyEndpoint
-func (e EcrAuthToken) ProxyEndpoint() string {
-	return *e.AuthData.ProxyEndpoint
+// ProxyEndpoint returns the authdata proxy endpoint
+func (e EcrAuthToken) ProxyEndpoint(host string) string {
+	return *e.AuthData[host].ProxyEndpoint
 }
 
-// BasicAuthCreds
-func (e EcrAuthToken) BasicAuthCreds() ([]string, error) {
-	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData.AuthorizationToken)
+// BasicAuthCreds returns a string array of the basic creds
+func (e EcrAuthToken) BasicAuthCreds(host string) ([]string, error) {
+	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData[host].AuthorizationToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode ECR auth token: %w", err)
 	}

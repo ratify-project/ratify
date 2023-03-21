@@ -26,10 +26,11 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials/stscreds"
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
+	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/deislabs/ratify/pkg/utils"
 )
 
 type AwsEcrBasicProviderFactory struct{}
@@ -53,7 +54,7 @@ func init() {
 }
 
 // Get ECR auth token from IRSA config
-func getEcrAuthToken(image string) (EcrAuthToken, error) {
+func (d *awsEcrBasicAuthProvider) getEcrAuthToken(image string) (EcrAuthToken, error) {
 	region := os.Getenv("AWS_REGION")
 	roleArn := os.Getenv("AWS_ROLE_ARN")
 	tokenFilePath := os.Getenv("AWS_WEB_IDENTITY_TOKEN_FILE")
@@ -94,10 +95,12 @@ func getEcrAuthToken(image string) (EcrAuthToken, error) {
 	}
 
 	// region from image
-	region, err = utils.RegionFromImage(image)
+	registry, err := utils.RegistryFromImage(image)
+	region = utils.RegionFromRegistry(registry)
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("failed to get region from image: %w", err)
 	}
+	logrus.Infof("AWS ECR basic regsitry=%s, region=%s", registry, region)
 	cfg.Region = region
 
 	ecrClient := ecr.NewFromConfig(cfg)
@@ -106,7 +109,9 @@ func getEcrAuthToken(image string) (EcrAuthToken, error) {
 		return EcrAuthToken{}, fmt.Errorf("could not retrieve ECR auth token collection: %w", err)
 	}
 
-	return EcrAuthToken{AuthData: authOutput.AuthorizationData[0]}, nil
+	d.ecrAuthToken.AuthData[registry] = authOutput.AuthorizationData[0]
+
+	return d.ecrAuthToken, nil
 }
 
 // Create returns an AwsEcrBasicProvider
@@ -127,8 +132,11 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 	//	return nil, fmt.Errorf("failed to get ECR auth data: %w", err)
 	//}
 
+	ecrAuthToken := EcrAuthToken{}
+	ecrAuthToken.AuthData = make(map[string]types.AuthorizationData)
+
 	return &awsEcrBasicAuthProvider{
-		ecrAuthToken: EcrAuthToken{},
+		ecrAuthToken: ecrAuthToken,
 		providerName: awsEcrAuthProviderName,
 	}, nil
 }
@@ -171,8 +179,13 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 		return provider.AuthConfig{}, fmt.Errorf("AWS IRSA basic auth provider is not properly enabled")
 	}
 
-	if *d.ecrAuthToken.AuthData.AuthorizationToken == "" {
-		authToken, err := getEcrAuthToken(artifact)
+	artifactHostName, err := provider.GetRegistryHostName(artifact)
+	if err != nil {
+		return provider.AuthConfig{}, err
+	}
+
+	if *d.ecrAuthToken.AuthData[artifactHostName].AuthorizationToken == "" {
+		authToken, err := d.getEcrAuthToken(artifact)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not retrieve ECR auth token")
 		}
@@ -181,8 +194,8 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 
 	// need to refresh AWS ECR credentials
 	t := time.Now().Add(time.Minute * 5)
-	if t.After(d.ecrAuthToken.Expiry()) || time.Now().After(d.ecrAuthToken.Expiry()) {
-		authToken, err := getEcrAuthToken(artifact)
+	if t.After(d.ecrAuthToken.Expiry(artifactHostName)) || time.Now().After(d.ecrAuthToken.Expiry(artifactHostName)) {
+		authToken, err := d.getEcrAuthToken(artifact)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh ECR auth token")
 		}
@@ -191,7 +204,7 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 	}
 
 	// Get ECR basic auth creds from auth data token
-	creds, err := d.ecrAuthToken.BasicAuthCreds()
+	creds, err := d.ecrAuthToken.BasicAuthCreds(artifactHostName)
 	if err != nil {
 		return provider.AuthConfig{}, errors.Wrap(err, "could not retrieve ECR credentials")
 	}
@@ -200,7 +213,7 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 		Username:  creds[0],
 		Password:  creds[1],
 		Provider:  d,
-		ExpiresOn: d.ecrAuthToken.Expiry(),
+		ExpiresOn: d.ecrAuthToken.Expiry(artifactHostName),
 	}
 
 	return authConfig, nil
