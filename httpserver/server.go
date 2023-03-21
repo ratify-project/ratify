@@ -22,49 +22,78 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/deislabs/ratify/config"
+
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	ServerRootURL     = "/ratify/gatekeeper/v1"
-	certName          = "tls.crt"
-	keyName           = "tls.key"
-	readHeaderTimeout = 5 * time.Second
+	ServerRootURL                    = "/ratify/gatekeeper/v1"
+	certName                         = "tls.crt"
+	keyName                          = "tls.key"
+	readHeaderTimeout                = 5 * time.Second
+	defaultMutationReferrerStoreName = "oras"
+
+	// DefaultCacheTTL is the default time-to-live for the cache entry.
+	DefaultCacheTTL = 10 * time.Second
+	// DefaultCacheMaxSize is the default maximum size of the cache.
+	DefaultCacheMaxSize = 100
 )
 
-type (
-	Server struct {
-		Address       string
-		Router        *mux.Router
-		GetExecutor   config.GetExecutor
-		Context       context.Context
-		CertDirectory string
-		CaCertFile    string
+type Server struct {
+	Address           string
+	Router            *mux.Router
+	GetExecutor       config.GetExecutor
+	Context           context.Context
+	CertDirectory     string
+	CaCertFile        string
+	MutationStoreName string
+
+	keyMutex keyMutex
+	// cache is a thread-safe expiring lru cache which caches external data item indexed
+	// by the subject
+	cache *simpleCache
+}
+
+// keyMutex is a thread-safe map of mutexes, indexed by key.
+type keyMutex struct {
+	locks sync.Map
+}
+
+// Lock locks the mutex for the given key, and returns a function to unlock it.
+func (m *keyMutex) Lock(key string) func() {
+	v, _ := m.locks.LoadOrStore(key, &sync.Mutex{})
+	v.(*sync.Mutex).Lock()
+	return func() {
+		v.(*sync.Mutex).Unlock()
 	}
-)
+}
 
-func NewServer(context context.Context, address string, getExecutor config.GetExecutor, certDir string, caCertFile string) (*Server, error) {
+func NewServer(context context.Context, address string, getExecutor config.GetExecutor, certDir, caCertFile string, cacheSize int, cacheTTL time.Duration) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
 	}
 
 	server := &Server{
-		Address:       address,
-		GetExecutor:   getExecutor,
-		Router:        mux.NewRouter(),
-		Context:       context,
-		CertDirectory: certDir,
-		CaCertFile:    caCertFile,
+		Address:           address,
+		GetExecutor:       getExecutor,
+		Router:            mux.NewRouter(),
+		Context:           context,
+		CertDirectory:     certDir,
+		CaCertFile:        caCertFile,
+		MutationStoreName: defaultMutationReferrerStoreName,
+		keyMutex:          keyMutex{},
+		cache:             newSimpleCache(cacheTTL, cacheSize),
 	}
-	server.registerHandlers()
 
-	return server, nil
+	return server, server.registerHandlers()
 }
 
 func (server *Server) Run() error {
@@ -125,8 +154,20 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 	})
 }
 
-func (server *Server) registerHandlers() {
-	server.register("POST", ServerRootURL+"/verify", processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout()))
+func (server *Server) registerHandlers() error {
+	verifyPath, err := url.JoinPath(ServerRootURL, "verify")
+	if err != nil {
+		return err
+	}
+	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
+
+	mutatePath, err := url.JoinPath(ServerRootURL, "mutate")
+	if err != nil {
+		return err
+	}
+	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
+
+	return nil
 }
 
 type ServerAddrNotFoundError struct{}

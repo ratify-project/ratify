@@ -8,6 +8,32 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - certificatestores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - certificatestores/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - certificatestores/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - stores
   verbs:
   - create

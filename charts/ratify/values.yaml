@@ -1,52 +1,29 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.0.0-beta.2
+  tag: v1.0.0-rc.2
   pullPolicy: IfNotPresent
 
 nameOverride: ""
 fullnameOverride: ""
 logLevel: info
-ratifyTestCert: |
-  -----BEGIN CERTIFICATE-----
-  MIIDWDCCAkCgAwIBAgIBUTANBgkqhkiG9w0BAQsFADBaMQswCQYDVQQGEwJVUzEL
-  MAkGA1UECBMCV0ExEDAOBgNVBAcTB1NlYXR0bGUxDzANBgNVBAoTBk5vdGFyeTEb
-  MBkGA1UEAxMSd2FiYml0LW5ldHdvcmtzLmlvMCAXDTIyMTIwMjA4MDg0NFoYDzIx
-  MjIxMjAzMDgwODQ0WjBaMQswCQYDVQQGEwJVUzELMAkGA1UECBMCV0ExEDAOBgNV
-  BAcTB1NlYXR0bGUxDzANBgNVBAoTBk5vdGFyeTEbMBkGA1UEAxMSd2FiYml0LW5l
-  dHdvcmtzLmlvMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnoskJWB0
-  ZsYcfbTvCYQMLqWaB/yN3Jf7Ryxvndrij83fWEQPBQJi8Mk8SpNqm2x9uP3gsQDc
-  L/73a0p6/D+hza2jQQVhebe/oB0LJtUoD5LXlJ83UQdZETLMYAzeBNcBR4kMecrY
-  CnE6yjHeiEWdAH+U7Mt39zJh+9lGIcbk0aUE5UOp8o3t5RWFDcl9hQ7QOXROwmpO
-  thLUIiY/bcPpsg/2nH1nzFjqiBef3sgopFCTgtJ7qF8B83Xy/+hJ5vD29xsbSwuB
-  3iLE7qLxu2NxdIa4oL0Y2QKMh/getjI0xnvwAmPkFiFbzC7LFdDfd6+gA5GpUXxL
-  u6UmwucAgiljGQIDAQABoycwJTAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYI
-  KwYBBQUHAwMwDQYJKoZIhvcNAQELBQADggEBAFvRW/mGjnnMNFKJc/e3o/+yiJor
-  dcrq/1UzyD7eNmOaASXz8rrrFT/6/TBXExPuB2OIf9OgRJFfPGLxmzCwVgaWQbK0
-  VfTN4MQzRrSwPmNYsBAAwLxXbarYlMbm4DEmdJGyVikq08T2dZI51GC/YXEwzlnv
-  ldN0dBflb/FKkY5rAp0JgpHLGKeStxFvB62noBjWfrm7ShCf9gkn1CjmgvP/sYK0
-  pJgA1FHPd6EeB6yRBpLV4EJgQYUJoOpbHz+us62jKj5fAXsX052LPmk9ArmP0uJ1
-  CJLNdj+aShCs4paSWOObDmIyXHwCx3MxCvYsFk/Wsnwura6jGC+cNsjzSx4=
-  -----END CERTIFICATE-----
+notaryCert: ""
 cosign:
   enabled: true
-  key: |
-    -----BEGIN PUBLIC KEY-----
-    MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEvjrMZFyaBDsvg5e0C8JaHqw8ULuc
-    n947ODVAMvfdqtjqK2eW77OGrsFLdkbG3BET9U4Dj37odn4kI5lC4Lj9Eg==
-    -----END PUBLIC KEY-----
+  key: ""
 resources:
-   limits:
-     cpu: 1000m
-     memory: 512Mi
-   requests:
-     cpu: 600m
-     memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 600m
+    memory: 512Mi
 serviceAccount:
   create: true
   name: ratify-admin
 gatekeeper:
   version: "3.11.0"
+  namespace: # default is gatekeeper-system
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
@@ -60,23 +37,44 @@ azureManagedIdentity:
 
 akvCertConfig:
   enabled: false
-  vaultName:
+  vaultURI:
   cert1Name:
+  cert1Version:
   cert2Name:
+  cert2Version:
   tenantId:
 
 oras:
+  useHttp: false
   authProviders:
     azureWorkloadIdentityEnabled: false
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
+    awsApiOverride:
+      enabled: false
+      endpoint: ""
+      partition: "" # defaults to aws
+      region: ""
+  cache:
+    # Please tune your cache parameters to get better performance on the Oras Store performance.
+    enabled: true # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
+    ttl: 10 # in seconds
+    capacity: 100 # capacity is the max size in megabytes of the full cache.
+    keyNumber: 10000 # keyNumber is the number of items you expect to keep in the cache when full. It makes a difference to the cache performance, please set it close to the item count.
 
 provider:
   tls:
-    crt: # crt used by ratify (httpserver), please provide your own crt
-    key: # key used by ratify (httpserver), please provide your own key
-    cabundle: # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+    crt: "" # crt used by ratify (httpserver), please provide your own crt
+    key: "" # key used by ratify (httpserver), please provide your own key
+    cabundle: "" # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+  timeout:
+    # timeout values must match gatekeeper webhook timeouts
+    validationTimeoutSeconds: 5
+    mutationTimeoutSeconds: 2
+  cache:
+    ttl: 10s # cache ttl duration
+    size: 100 # number of items to be kept in cache. Set to 0 to disable cache.
 
 podAnnotations: {}
 podLabels: {}
@@ -84,7 +82,7 @@ enableRuntimeDefaultSeccompProfile: true
 
 rbac:
   create: true
-  
+
 upgradeCRDs:
   enabled: true
   extraRules: []
@@ -92,13 +90,13 @@ upgradeCRDs:
 crds:
   affinity: {}
   tolerations: []
-  nodeSelector: {kubernetes.io/os: linux}
+  nodeSelector: { kubernetes.io/os: linux }
   resources: {}
   securityContext:
     allowPrivilegeEscalation: false
     capabilities:
       drop:
-      - ALL
+        - ALL
     readOnlyRootFilesystem: true
     runAsGroup: 65532
     runAsNonRoot: true

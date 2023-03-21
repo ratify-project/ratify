@@ -8,12 +8,9 @@ import (
 	paths "path/filepath"
 	"reflect"
 	"testing"
-	"time"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
-	e "github.com/deislabs/ratify/pkg/executor"
-	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -62,7 +59,6 @@ var (
 	invalidRef = common.Reference{
 		Original: "invalid",
 	}
-	testExecutor                         = &mockExecutor{}
 	testNotaryVerifier notation.Verifier = mockNotaryVerifier{}
 	validBlobDesc                        = ocispec.Descriptor{
 		Digest: testDigest,
@@ -134,16 +130,6 @@ func (s mockStore) GetSubjectDescriptor(ctx context.Context, subjectReference co
 	return &ocispecs.SubjectDescriptor{
 		Descriptor: ocispec.Descriptor{},
 	}, nil
-}
-
-type mockExecutor struct{}
-
-func (e mockExecutor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	return types.VerifyResult{}, nil
-}
-
-func (e mockExecutor) GetVerifyRequestTimeout() time.Duration {
-	return time.Hour
 }
 
 func TestName(t *testing.T) {
@@ -237,8 +223,29 @@ func TestParseVerifierConfig(t *testing.T) {
 				VerificationCerts: []string{testPath, defaultCertDir},
 			},
 		},
+		{
+			name: "successfully parsed with specified cert stores",
+			configMap: map[string]interface{}{
+				"name":              test,
+				"verificationCerts": []string{testPath},
+				"verificationCertStores": map[string][]string{
+					"certstore1": {"akv1", "akv2"},
+					"certstore2": {"akv3", "akv4"},
+				},
+			},
+			expectErr: false,
+			expect: &NotaryV2VerifierConfig{
+				Name:              test,
+				VerificationCerts: []string{testPath, defaultCertDir},
+				VerificationCertStores: map[string][]string{
+					"certstore1": {"akv1", "akv2"},
+					"certstore2": {"akv3", "akv4"},
+				},
+			},
+		},
 	}
 
+	//TODO add new test for parseVerifierConfig
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notaryConfig, err := parseVerifierConfig(tt.configMap)
@@ -361,7 +368,7 @@ func TestVerify(t *testing.T) {
 				manifest: tt.manifest,
 			}
 
-			result, err := v.Verify(context.Background(), tt.ref, ocispecs.ReferenceDescriptor{}, store, testExecutor)
+			result, err := v.Verify(context.Background(), tt.ref, ocispecs.ReferenceDescriptor{}, store)
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("error = %v, expectErr = %v", err, tt.expectErr)
@@ -370,5 +377,14 @@ func TestVerify(t *testing.T) {
 				t.Fatalf("expect %+v, got %+v", tt.expect, result)
 			}
 		})
+	}
+}
+
+func TestGetNestedReferences(t *testing.T) {
+	verifier := &notaryV2Verifier{}
+	nestedReferences := verifier.GetNestedReferences()
+
+	if len(nestedReferences) != 0 {
+		t.Fatalf("notation signature should not have nested references")
 	}
 }

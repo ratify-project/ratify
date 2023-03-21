@@ -86,12 +86,13 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 		}},
 		Verifiers: []verifier.ReferenceVerifier{&TestVerifier{}},
 		Config: &exConfig.ExecutorConfig{
-			RequestTimeout: nil,
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
 		},
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
@@ -130,12 +131,13 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			RequestTimeout: nil,
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
 		},
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -185,12 +187,13 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			RequestTimeout: nil,
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
 		},
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -236,12 +239,13 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			RequestTimeout: nil,
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
 		},
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -295,12 +299,13 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 		Config: &exConfig.ExecutorConfig{
-			RequestTimeout: nil,
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
 		},
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -319,5 +324,268 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 
 	if result.VerifierReports[0].(verifier.VerifierResult).ArtifactType != "test-type2" {
 		t.Fatalf("verification expected to return second artifact verifier report first")
+	}
+}
+
+// TestVerifySubject_NestedReferences_Expected tests verifier config can specify nested references
+func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"default": "all",
+		}}
+
+	store := mocks.CreateNewTestStoreForNestedSbom()
+
+	// sbom verifier WITH nested references in config
+	sbomVerifier := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SbomArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+		nestedReferences: []string{"string-content-does-not-matter"},
+	}
+
+	signatureVerifier := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SignatureArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{sbomVerifier, signatureVerifier},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: mocks.TestSubjectWithDigest,
+	}
+
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != nil {
+		t.Fatalf("verification failed with err %v", err)
+	}
+
+	if !result.IsSuccess {
+		t.Fatal("verification expected to succeed")
+	}
+
+	if len(result.VerifierReports) != 2 {
+		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
+	}
+
+	for _, report := range result.VerifierReports {
+		castedReport := report.(verifier.VerifierResult)
+
+		// check sbom report
+		if castedReport.ArtifactType == mocks.SbomArtifactType {
+			// check sbom has one nested results
+			if len(castedReport.NestedResults) != 1 {
+				t.Fatalf("Expected sbom report to have 1 nested result")
+			}
+			// check sbom nested result is successful
+			if !castedReport.NestedResults[0].IsSuccess {
+				t.Fatalf("Expected the sbom nested result to be successful")
+			}
+		} else {
+			// check non-sbom reports have zero nested results
+			if len(castedReport.NestedResults) != 0 {
+				t.Fatalf("Expected non-sboms reports to have zero nested results")
+			}
+		}
+	}
+}
+
+// TestVerifySubject__NoNestedReferences_Expected tests verifier config can specify no nested references
+func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
+	configPolicy := config.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+			"default": "all",
+		}}
+	store := mocks.CreateNewTestStoreForNestedSbom()
+
+	// sbom verifier WITHOUT nested references in config
+	sbomVer := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SbomArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	signatureVer := &TestVerifier{
+		CanVerifyFunc: func(at string) bool {
+			return at == mocks.SignatureArtifactType
+		},
+		VerifyResult: func(artifactType string) bool {
+			return true
+		},
+	}
+
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{sbomVer, signatureVer},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
+
+	verifyParameters := e.VerifyParameters{
+		Subject: mocks.TestSubjectWithDigest,
+	}
+
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+
+	if err != nil {
+		t.Fatalf("verification failed with err %v", err)
+	}
+
+	if !result.IsSuccess {
+		t.Fatal("verification expected to succeed")
+	}
+
+	if len(result.VerifierReports) != 2 {
+		t.Fatalf("verification expected to return two reports but actual count %d", len(result.VerifierReports))
+	}
+
+	// check each report for: success, zero nested results
+	for _, report := range result.VerifierReports {
+		castedReport := report.(verifier.VerifierResult)
+
+		// check for success
+		if !castedReport.IsSuccess {
+			t.Fatal("verification expected to succeed")
+		}
+		// check there are no nested results
+		if len(castedReport.NestedResults) != 0 {
+			t.Fatalf("expected reports to have zero nested results")
+		}
+	}
+}
+
+// TestGetVerifyRequestTimeout_ExpectedResults tests the verification request timeout returned
+func TestGetVerifyRequestTimeout_ExpectedResults(t *testing.T) {
+	testcases := []struct {
+		setTimeout      int
+		ex              Executor
+		expectedTimeout int
+	}{
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config:         nil,
+			},
+			expectedTimeout: 2900,
+		},
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     nil,
+				},
+			},
+			expectedTimeout: 2900,
+		},
+		{
+			setTimeout: 5000,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: new(int),
+					MutationRequestTimeout:     nil,
+				},
+			},
+			expectedTimeout: 5000,
+		},
+	}
+
+	for _, testcase := range testcases {
+		if testcase.setTimeout >= 0 {
+			*testcase.ex.Config.VerificationRequestTimeout = testcase.setTimeout
+		}
+		expected := time.Millisecond * time.Duration(testcase.expectedTimeout)
+		actual := testcase.ex.GetVerifyRequestTimeout()
+		if actual != expected {
+			t.Fatalf("verification request timeout returned expected %dms but got %dms", expected.Milliseconds(), actual.Milliseconds())
+		}
+	}
+}
+
+// TestGetMutationRequestTimeout_ExpectedResults tests the mutation request timeout returned
+func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
+	testcases := []struct {
+		setTimeout      int
+		ex              Executor
+		expectedTimeout int
+	}{
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config:         nil,
+			},
+			expectedTimeout: 950,
+		},
+		{
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     nil,
+				},
+			},
+			expectedTimeout: 950,
+		},
+		{
+			setTimeout: 2400,
+			ex: Executor{
+				PolicyEnforcer: config.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     new(int),
+				},
+			},
+			expectedTimeout: 2400,
+		},
+	}
+
+	for _, testcase := range testcases {
+		if testcase.setTimeout >= 0 {
+			*testcase.ex.Config.MutationRequestTimeout = testcase.setTimeout
+		}
+		expected := time.Millisecond * time.Duration(testcase.expectedTimeout)
+		actual := testcase.ex.GetMutationRequestTimeout()
+		if actual != expected {
+			t.Fatalf("mutation request timeout returned expected %dms but got %dms", expected.Milliseconds(), actual.Milliseconds())
+		}
 	}
 }

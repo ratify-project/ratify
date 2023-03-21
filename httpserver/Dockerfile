@@ -1,5 +1,5 @@
 ARG BUILDPLATFORM="linux/amd64"
-ARG BUILDERIMAGE="golang:1.18"
+ARG BUILDERIMAGE="golang:1.19"
 ARG BASEIMAGE="gcr.io/distroless/static:nonroot"
 
 FROM --platform=$BUILDPLATFORM $BUILDERIMAGE as builder
@@ -35,7 +35,7 @@ ARG RATIFY_FOLDER=$HOME/.ratify/
 WORKDIR /
 
 COPY --from=builder /app/out/ratify /app/
-COPY --from=builder /app/out/plugins ${RATIFY_FOLDER}/plugins
+COPY --from=builder --chown=65532:65532 /app/out/plugins ${RATIFY_FOLDER}/plugins
 COPY --from=builder /app/config/config.json ${RATIFY_FOLDER}
 
 ENV RATIFY_CONFIG=${RATIFY_FOLDER}

@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
+        {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
+        azure.workload.identity/use: "true"
+        {{- end }}
       annotations:
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
@@ -48,16 +51,11 @@ spec:
             {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
             - --ca-cert-file=usr/local/tls/client-ca/ca.crt
             {{- end }}
+            - --cache-size={{ .Values.provider.cache.size }}
+            - --cache-ttl={{ .Values.provider.cache.ttl }}
           ports:
             - containerPort: 6001
-          volumeMounts:
-            - mountPath: "/usr/local/ratify-certs/notary/truststore"
-            {{- if .Values.akvCertConfig.enabled }}
-              name: cert-from-akv
-            {{- else }}
-              name: notary-certs
-            {{- end }}
-              readOnly: true
+          volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
               name: cosign-certs
@@ -92,6 +90,16 @@ spec:
             - name: AZURE_TENANT_ID
               value: {{ .Values.azureManagedIdentity.tenantId }}
           {{- end }}
+          {{- if and .Values.oras.authProviders.awsEcrBasicEnabled .Values.oras.authProviders.awsApiOverride.enabled }}
+            {{- if and .Values.oras.authProviders.awsApiOverride.endpoint .Values.oras.authProviders.awsApiOverride.partition .Values.oras.authProviders.awsApiOverride.region }}
+            - name: AWS_API_OVERRIDE_ENDPOINT
+              value: {{ .Values.oras.authProviders.awsApiOverride.endpoint }}
+            - name: AWS_API_OVERRIDE_PARTITION
+              value: {{ .Values.oras.authProviders.awsApiOverride.partition }}
+            - name: AWS_API_OVERRIDE_REGION
+              value: {{ .Values.oras.authProviders.awsApiOverride.region }}
+            {{- end }}
+          {{- end }}
             - name: RATIFY_NAMESPACE
               valueFrom:
                 fieldRef:
@@ -103,13 +111,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        - name: notary-certs
-          secret:
-            secretName: {{ include "ratify.fullname" . }}-notary-certificate         
         {{- if .Values.cosign.enabled }}
         - name: cosign-certs
           secret:
-            secretName: {{ include "ratify.fullname" . }}-cosign-certificate         
+            secretName: {{ include "ratify.fullname" . }}-cosign-certificate
         {{- end }}
         {{- if $dockerAuthMode }}
         - name: dockerconfig
@@ -122,25 +127,13 @@ spec:
             items:
               - key: .dockerconfigjson
                 path: config.json
-        {{- end }}
-        {{- if .Values.akvCertConfig.enabled }}
-        - name: cert-from-akv
-          csi:
-            driver: secrets-store.csi.k8s.io
-            readOnly: true
-            volumeAttributes:
-              secretProviderClass: "{{ include "ratify.akv.secretProviderClassName" . }}"
-        {{- end }}
+        {{- end }}        
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
         - name: tls
           secret:
-            {{- if and .Values.provider.tls.crt .Values.provider.tls.key }}
             secretName: {{ include "ratify.fullname" . }}-tls
-            {{- else }}
-            secretName: ratify-cert-secret
-            {{- end }}
             items:
               - key: tls.key
                 path: tls.key

@@ -17,7 +17,6 @@ package notaryv2
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	paths "path/filepath"
@@ -25,11 +24,10 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/homedir"
+
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
@@ -39,7 +37,6 @@ import (
 	"github.com/notaryproject/notation-go"
 	notaryVerifier "github.com/notaryproject/notation-go/verifier"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
-	"github.com/notaryproject/notation-go/verifier/truststore"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -55,7 +52,8 @@ type NotaryV2VerifierConfig struct {
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-
+	// VerificationCerts is map defining which keyvault certificates belong to which trust store
+	VerificationCertStores map[string][]string `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
@@ -65,29 +63,10 @@ type notaryV2Verifier struct {
 	notationVerifier *notation.Verifier
 }
 
-type trustStore struct {
-	certPaths []string
-}
-
 type notaryv2VerifierFactory struct{}
 
 func init() {
 	factory.Register(verifierName, &notaryv2VerifierFactory{})
-}
-
-// trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221117143817-2573c88a5f62/verifier/truststore#X509TrustStore]
-// Note: this api gets invoked when Ratify calls verify API, so the certificates
-// will be loaded for each signature verification.
-func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs := make([]*x509.Certificate, 0)
-	for _, path := range s.certPaths {
-		bundledCerts, err := utils.GetCertificatesFromPath(path)
-		if err != nil {
-			return nil, err
-		}
-		certs = append(certs, bundledCerts...)
-	}
-	return certs, nil
 }
 
 func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {
@@ -124,8 +103,7 @@ func (v *notaryV2Verifier) CanVerify(ctx context.Context, referenceDescriptor oc
 func (v *notaryV2Verifier) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	store referrerstore.ReferrerStore,
-	executor executor.Executor) (verifier.VerifierResult, error) {
+	store referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	extensions := make(map[string]string)
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
@@ -136,6 +114,10 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
 		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get reference manifest for reference: %s, err: %w", subjectReference.Original, err)
+	}
+
+	if len(referenceManifest.Blobs) == 0 {
+		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String())
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
@@ -168,7 +150,8 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 
 func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
 	store := &trustStore{
-		certPaths: conf.VerificationCerts,
+		certPaths:  conf.VerificationCerts,
+		certStores: conf.VerificationCertStores,
 	}
 
 	return notaryVerifier.New(&conf.TrustPolicyDoc, store, nil)
@@ -197,6 +180,10 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
-
 	return conf, nil
+}
+
+// signatures should not have nested references
+func (v *notaryV2Verifier) GetNestedReferences() []string {
+	return []string{}
 }

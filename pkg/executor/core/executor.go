@@ -35,7 +35,10 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const defaultRequestTimeoutMilliseconds = 2800
+const (
+	defaultVerifyRequestTimeoutMilliseconds = 2900
+	defaultMutateRequestTimeoutMilliseconds = 950
+)
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
@@ -59,9 +62,17 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 }
 
 func (executor Executor) GetVerifyRequestTimeout() time.Duration {
-	timeoutMilliSeconds := defaultRequestTimeoutMilliseconds
-	if executor.Config != nil && executor.Config.RequestTimeout != nil {
-		timeoutMilliSeconds = *executor.Config.RequestTimeout
+	timeoutMilliSeconds := defaultVerifyRequestTimeoutMilliseconds
+	if executor.Config != nil && executor.Config.VerificationRequestTimeout != nil {
+		timeoutMilliSeconds = *executor.Config.VerificationRequestTimeout
+	}
+	return time.Duration(timeoutMilliSeconds) * time.Millisecond
+}
+
+func (executor Executor) GetMutationRequestTimeout() time.Duration {
+	timeoutMilliSeconds := defaultMutateRequestTimeoutMilliseconds
+	if executor.Config != nil && executor.Config.MutationRequestTimeout != nil {
+		timeoutMilliSeconds = *executor.Config.MutationRequestTimeout
 	}
 	return time.Duration(timeoutMilliSeconds) * time.Millisecond
 }
@@ -136,13 +147,17 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 
 	for _, verifier := range ex.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
-			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore, ex)
+			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
 			verifyResult.Subject = subjectRef.String()
 			if err != nil {
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
 					Message:   fmt.Sprintf("an error thrown by the verifier: %v", err)}
+			}
+
+			if len(verifier.GetNestedReferences()) > 0 {
+				ex.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
@@ -153,4 +168,26 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	}
 
 	return types.VerifyResult{IsSuccess: isSuccess, VerifierReports: verifyResults}
+}
+
+func (ex Executor) addNestedVerifierResult(ctx context.Context, referenceDesc ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifyResult *vr.VerifierResult) {
+	verifyParameters := e.VerifyParameters{
+		Subject:        fmt.Sprintf("%s@%s", subjectRef.Path, referenceDesc.Digest),
+		ReferenceTypes: []string{"*"},
+	}
+
+	nestedVerifyResult, err := ex.VerifySubject(ctx, verifyParameters)
+	if err != nil {
+		nestedVerifyResult = ex.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
+	}
+
+	for _, report := range nestedVerifyResult.VerifierReports {
+		if result, ok := report.(vr.VerifierResult); ok {
+			verifyResult.NestedResults = append(verifyResult.NestedResults, result)
+			if !nestedVerifyResult.IsSuccess {
+				verifyResult.IsSuccess = false
+				verifyResult.Message = "nested verification failed"
+			}
+		}
+	}
 }

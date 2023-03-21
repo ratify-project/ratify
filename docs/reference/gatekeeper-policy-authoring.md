@@ -104,7 +104,7 @@ actual values of fields may differ):
             "subject": "localhost:5000/net-monitor:v1"
           },
           {
-            "artifactType": "org.sigstore.cosign.v1",
+            "artifactType": "application/vnd.dev.cosign.artifact.sig.v1+json",
             "isSuccess": true,
             "message": "cosign verification success. valid signatures found",
             "name": "cosign",

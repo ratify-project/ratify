@@ -19,10 +19,12 @@ import (
 	"context"
 	"flag"
 	"os"
+	"time"
 
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
+	"github.com/go-logr/logr"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -40,9 +42,9 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
-	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -59,9 +61,11 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(configv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
+	utilruntime.Must(configv1beta1.AddToScheme(scheme))
+	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress string, configFilePath string, certDirectory string, caCertFile string) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -71,7 +75,6 @@ func StartServer(httpServerAddress string, configFilePath string, certDirectory 
 	}
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
-
 	if err != nil {
 		logrus.Warnf("error initializing from config %v", err)
 		os.Exit(1)
@@ -110,7 +113,7 @@ func StartServer(httpServerAddress string, configFilePath string, certDirectory 
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile)
+	}, certDirectory, caCertFile, cacheSize, cacheTTL)
 
 	if err != nil {
 		os.Exit(1)
@@ -130,13 +133,10 @@ func StartManager() {
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
-	opts := zap.Options{
-		Development: true,
-	}
-	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	logrusSink := controllers.NewLogrusSink(logrus.StandardLogger())
+	ctrl.SetLogger(logr.New(logrusSink))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
@@ -174,6 +174,13 @@ func StartManager() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Store")
+		os.Exit(1)
+	}
+	if err = (&controllers.CertificateStoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

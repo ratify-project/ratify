@@ -25,7 +25,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -57,7 +57,7 @@ var (
 func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	storeLogger := logrus.WithContext(ctx)
 
-	var store configv1alpha1.Store
+	var store configv1beta1.Store
 	var resource = req.Name
 	storeLogger.Infof("reconciling store '%v'", resource)
 
@@ -84,12 +84,12 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 // SetupWithManager sets up the controller with the Manager.
 func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1alpha1.Store{}).
+		For(&configv1beta1.Store{}).
 		Complete(r)
 }
 
 // Creates a store reference from CRD spec and add store to map
-func storeAddOrReplace(spec configv1alpha1.StoreSpec, fullname string) error {
+func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 	storeConfig, err := specToStoreConfig(spec)
 	if err != nil {
 		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
@@ -120,7 +120,7 @@ func storeRemove(resourceName string) {
 }
 
 // Returns a store reference from spec
-func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig, error) {
+func specToStoreConfig(storeSpec configv1beta1.StoreSpec) (rc.StorePluginConfig, error) {
 	storeConfig := rc.StorePluginConfig{}
 
 	if string(storeSpec.Parameters.Raw) != "" {
@@ -130,6 +130,9 @@ func specToStoreConfig(storeSpec configv1alpha1.StoreSpec) (rc.StorePluginConfig
 		}
 	}
 	storeConfig[types.Name] = storeSpec.Name
+	if storeSpec.Source != nil {
+		storeConfig[types.Source] = storeSpec.Source
+	}
 
 	return storeConfig, nil
 }

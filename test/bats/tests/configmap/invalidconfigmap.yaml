@@ -6,7 +6,7 @@ data:
   config.json: |
     {
       "executor": {
-        "requestTimeout": 6800
+        "verificationRequestTimeout": 6800
       },
       "store": {
         "version": "1.0.0",
@@ -21,7 +21,7 @@ data:
         "plugin": {
             "name": "configPolicy",
             "artifactVerificationPolicies": {
-                "org.sigstore.cosign.v1": "any"
+                "application/vnd.dev.cosign.artifact.sig.v1+json": "any"
             }
         }
       },

@@ -16,54 +16,51 @@ limitations under the License.
 package oras
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/google/go-containerregistry/pkg/name"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
-	"github.com/google/go-containerregistry/pkg/v1/remote/transport"
-	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+
+	"oras.land/oras-go/v2/errdef"
+	"oras.land/oras-go/v2/registry"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
-const CosignArtifactType = "org.sigstore.cosign.v1"
+const CosignArtifactType = "application/vnd.dev.cosign.artifact.sig.v1+json"
 const CosignSignatureTagSuffix = ".sig"
 
-func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.ReferenceDescriptor, error) {
+var ErrNoCosignSubjectDigest = errors.New("failed to mutate cosign image tag: no digest specified for subject")
+
+func getCosignReferences(ctx context.Context, subjectReference common.Reference, store *orasStore, repository registry.Repository) (*[]ocispecs.ReferenceDescriptor, error) {
 	var references []ocispecs.ReferenceDescriptor
-	ref, err := name.ParseReference(subjectReference.Original)
+	signatureTag, err := attachedImageTag(subjectReference, CosignSignatureTagSuffix)
 	if err != nil {
-		return &references, err
-	}
-	hash := v1.Hash{
-		Algorithm: subjectReference.Digest.Algorithm().String(),
-		Hex:       subjectReference.Digest.Hex(),
+		return nil, err
 	}
 
-	signatureTag := attachedImageTag(ref.Context(), hash, CosignSignatureTagSuffix)
-
-	desc, err := remote.Get(signatureTag)
-	var terr *transport.Error
+	desc, err := repository.Resolve(ctx, signatureTag)
 	if err != nil {
-		if errors.As(err, &terr) && terr.StatusCode == http.StatusNotFound {
-			return &references, nil
+		if errors.Is(err, errdef.ErrNotFound) {
+			return nil, nil
 		}
-		return &references, err
-	}
-	descDig, err := digest.Parse(desc.Digest.String())
-	if err != nil {
-		return &references, err
+		var ec errcode.Error
+		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
+			store.evictAuthCache(subjectReference.Original, err)
+			return nil, err
+		}
+		return nil, err
 	}
 
 	references = append(references, ocispecs.ReferenceDescriptor{
 		ArtifactType: CosignArtifactType,
 		Descriptor: oci.Descriptor{
-			MediaType: string(desc.MediaType),
-			Digest:    descDig,
+			MediaType: desc.MediaType,
+			Digest:    desc.Digest,
 			Size:      desc.Size,
 		},
 	})
@@ -71,8 +68,11 @@ func getCosignReferences(subjectReference common.Reference) (*[]ocispecs.Referen
 	return &references, nil
 }
 
-func attachedImageTag(repo name.Repository, digest v1.Hash, tagSuffix string) name.Tag {
+func attachedImageTag(subjectReference common.Reference, tagSuffix string) (string, error) {
 	// sha256:d34db33f -> sha256-d34db33f.suffix
-	tagStr := strings.ReplaceAll(digest.String(), ":", "-") + tagSuffix
-	return repo.Tag(tagStr)
+	if subjectReference.Digest.String() == "" {
+		return "", ErrNoCosignSubjectDigest
+	}
+	tagStr := strings.ReplaceAll(subjectReference.Digest.String(), ":", "-") + tagSuffix
+	return fmt.Sprintf("%s:%s", subjectReference.Path, tagStr), nil
 }

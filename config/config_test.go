@@ -172,3 +172,11 @@ func TestLoad_ComputeHash(t *testing.T) {
 		t.Fatalf("Unexpected configuration hash, expected %v, actual %v", expectedHash, config.fileHash)
 	}
 }
+
+func TestGetHomeDir(t *testing.T) {
+	homeDir = "test"
+	testOutput := getHomeDir()
+	if testOutput != homeDir {
+		t.Fatalf("mismatch of home directory: expected %s, actual %s", homeDir, testOutput)
+	}
+}

@@ -1,296 +1,190 @@
-# Notary v2 Signature Verification With ACR Using Ratify
+# Ratify on Azure: Allow only signed images to be deployed on AKS with Notation and Ratify
 
-## Install Notation, ORAS, and Ratify
+The signed container images enable users to assure deployments are built from a trusted entity and verify images haven't been tampered with since their creation. The signed image ensures integrity and authenticity before the user pulls an image into any environment and avoid attacks. 
 
-### Notation
+Azure Key Vault (AKV) stores a signing key, Notation and the Notation AKV plugin (azure-kv) consumes this key to sign and verify container images and other artifacts. Azure Container Registry (ACR) allows you to store and distribute signed images with signatures.
 
-Install Notation v1.0.0-rc.1 with plugin support from [Notation GitHub Release](https://github.com/notaryproject/notation/releases/tag/v1.0.0-rc.1).
+This article walks you through an end-to-end workflow of validating and enforcing only signed images are allowed to be deployed on AKS with Notation and Ratify.
 
-```bash
-# Download the Notation binary
-curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v1.0.0-rc.1/notation_1.0.0-rc.1_linux_amd64.tar.gz
-# Extract it from the binary and copy it to the bin directory
-tar xvzf notation.tar.gz -C  /usr/local/bin notation
-```
+In this article:
 
-### ORAS
+* Create an AKS cluster with Azure Workload Identity configured
+* Install Ratify and OPA Gatekeeper
+* Deploy two sample images on AKS
+* Validate the signature associated with the sample image using Ratify and Gatekeeper
 
-Install ORAS 0.16.0 on a Linux machine. You can refer to the [ORAS installation guide](https://oras.land/cli/) for details.
+![e2e workflow diagram](./img/e2e-workflow-diagram.png)
 
-```bash
-# Download the ORAS binary
-curl -Lo oras.tar.gz https://github.com/oras-project/oras/releases/download/v0.16.0/oras_0.16.0_linux_amd64.tar.gz
-# Extract it from the binary and copy it to the bin directory
-tar xvzf oras.tar.gz -C /usr/local/bin oras
-```
+## Prerequisite
 
-### Ratify
+Complete the steps in [Build, sign, and verify container images using Notary and Azure Key Vault (Preview)](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-tutorial-sign-build-push#build-and-sign-a-container-image). Please note you need to have a signed image and configure the environment variables before getting started with the following steps.
 
-Install Ratify v1.0.0-beta.2 from [Ratify GitHub Release](https://github.com/deislabs/ratify/releases/tag/v1.0.0-beta.2).
+## Create and configure Azure Workload Identity
 
-```bash
-# Download the Ratify binary
-RATIFY_VERSION=1.0.0-beta.2
-curl -Lo ratify.tar.gz https://github.com/deislabs/ratify/releases/download/v${RATIFY_VERSION}/ratify_${RATIFY_VERSION}_Linux_amd64.tar.gz
-# Extract it from the binary and copy it to the bin directory
-tar xvzf ratify.tar.gz -C /usr/local/bin ratify
-```
+Ratify pulls artifacts from a private Azure Container Registry using Workload Federated Identity in an Azure Kubernetes Service cluster. For an overview on how workload identity operates in Azure, refer to the [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation). You can use workload identity federation to configure an Azure AD app registration or user-assigned managed identity. The following workflow includes the Workload Identity configuration.
 
-## Presets
-
-### Set up ACR and Auth information
-
-```bash
-export ACR_NAME=<YOUR_ACR_NAME>
-export REGISTRY=$ACR_NAME.azurecr.io
-export REPO=${REGISTRY}/net-monitor
-export IMAGE=${REPO}:v1
-export RESOURCE_GROUP=$ACR_NAME-acr
-export LOCATION=westus3
-
-# Create an ACR
-# Premium to use tokens
-az group create -n $RESOURCE_GROUP -l $LOCATION
-az acr create -n $ACR_NAME -g $RESOURCE_GROUP --sku Premium
-az configure --default acr=$ACR_NAME
-az acr update --anonymous-pull-enabled true
-
-# Using ACR Auth with Tokens
-export NOTATION_USERNAME='wabbitnetworks-token'
-export NOTATION_PASSWORD=$(az acr token create -n $NOTATION_USERNAME \
-                    -r $ACR_NAME \
-                    --scope-map _repositories_admin \
-                    --only-show-errors \
-                    -o json | jq -r ".credentials.passwords[0].value")
-
-docker login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
-oras login $REGISTRY -u $NOTATION_USERNAME -p $NOTATION_PASSWORD
-```
-
-## Demo 1: Discover & Verify Signatures using Ratify
-
-### Sign the image using ```notation```
-
-1. We will build, push, sign the image in ACR
+1. Configure environment variables.
 
     ```bash
-    # Build, push, sign the image in ACR
-    echo $IMAGE
+    export IDENTITY_NAME=<Identity Name>
+    export GROUP_NAME=<Azure Resource Group Name>
+    export SUBSCRIPTION_ID=<Azure Subscription ID>
+    export TENANT_ID=<Azure Tenant ID>
+    export AKS_NAME=<Azure Kubernetes Service Name>
+    export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
     ```
 
-2. Build and push the image
+2. Create a Workload Federated Identity.
 
     ```bash
-    # build the image
-    docker build -t $IMAGE https://github.com/wabbit-networks/net-monitor.git#main
+    az identity create --name "${IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --location "${LOCATION}" --subscription "${SUBSCRIPTION_ID}"
 
-    # push the image
-    docker push $IMAGE
+    export IDENTITY_OBJECT_ID="$(az identity show --name "${IDENTITY_NAME}" --resource-group "${GROUP_NAME}" --query 'principalId' -otsv)"
+    export IDENTITY_CLIENT_ID=$(az identity show --name ${IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
     ```
 
-3. Generate a test certificate
+> Note: If you have identity authentication issues on your local machine, you can use Azure Cloud Shell to complete this section.
+
+## Configure workload identity for ACR
+
+Configure user-assigned managed identity and enable `AcrPull` role to the workload identity.
 
     ```bash
-    # Generate a test certificate
-    notation cert generate-test --default "wabbit-networks.io"
+    az role assignment create \
+    --assignee-object-id ${IDENTITY_OBJECT_ID} \
+    --role acrpull \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.ContainerRegistry/registries/${ACR_NAME}
     ```
 
-4. Sign the image
+## Create an OIDC enabled AKS cluster and configure workload identity
+
+1. Create an OIDC enabled AKS cluster by following the steps below. You can skip this step if you have an AKS cluster with OIDC enabled.
 
     ```bash
-    notation sign $IMAGE
+    # Install the aks-preview extension
+    az extension add --name aks-preview
+
+    # Register the 'EnableWorkloadIdentityPreview' feature flag
+    az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
+    az provider register --namespace Microsoft.ContainerService
+
+    az aks create \
+        --resource-group "${GROUP_NAME}" \
+        --name "${AKS_NAME}" \
+        --node-vm-size Standard_DS3_v2 \
+        --node-count 1 \
+        --generate-ssh-keys \
+        --enable-workload-identity \
+        --attach-acr ${ACR_NAME} \
+        --enable-oidc-issuer
+
+    # Connect to the AKS cluster:
+    az aks get-credentials --resource-group ${GROUP_NAME} --name ${AKS_NAME}
+
+    export AKS_OIDC_ISSUER="$(az aks show -n ${AKS_NAME} -g ${GROUP_NAME} --query "oidcIssuerProfile.issuerUrl" -otsv)"
     ```
 
-5. List the signatures with notation
+> Note: The official steps for setting up Workload Identity on AKS can be found [here](https://azure.github.io/azure-workload-identity/docs/quick-start.html).
+
+2. This step above may take around 10 minutes to complete. The registration status can be checked by running the following command:
 
     ```bash
-    # List the signatures
-    notation list $IMAGE
+    az feature show --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview" -o table
+    Name                                                      RegistrationState
+    --------------------------------------------------------    -------------------
+    Microsoft.ContainerService/EnableWorkloadIdentityPreview    Registered
     ```
 
-    > You can repeat step 4-5 to create multiple signatures to the image.
-
-### Discover & Verify using Ratify
-
-1. Create a Ratify config with ORAS as the signature store and notary v2 as the signature verifier.
-Trust Policy reference: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy
+3. Establish federated identity credential. On AZ CLI `${RATIFY_NAMESPACE}` is where you deploy Ratify:
 
     ```bash
-    cat <<EOF > ~/.ratify/config.json 
-    { 
-        "store": { 
-            "version": "1.0.0", 
-            "plugins": [ 
-                { 
-                    "name": "oras"
-                }
-            ]
-        },
-        "policy": {
-            "version": "1.0.0",
-            "plugin": {
-                "name": "configPolicy",
-                "artifactVerificationPolicies": {
-                    "application/vnd.cncf.notary.signature": "any"
-                }
-            }
-        },
-        "verifier": {
-            "version": "1.0.0",
-            "plugins": [
-                {
-                    "name":"notaryv2",
-                    "artifactTypes" : "application/vnd.cncf.notary.signature",
-                    "verificationCerts": [
-                        "~/.config/notation/truststore"
-                    ],
-                    "trustPolicyDoc": {
-                        "version": "1.0",
-                        "trustPolicies": [
-                            {
-                                "name": "default",
-                                "registryScopes": [ "*" ],
-                                "signatureVerification": {
-                                    "level" : "strict" 
-                                },
-                                "trustStores": ["ca:certs"],
-                                "trustedIdentities": ["*"]
-                            }
-                        ]
-                    }
-                }
-            ]
-        }
-    }
-    EOF
+    az identity federated-credential create \
+    --name ratify-federated-credential \
+    --identity-name "${IDENTITY_NAME}" \
+    --resource-group "${GROUP_NAME}" \
+    --issuer "${AKS_OIDC_ISSUER}" \
+    --subject system:serviceaccount:"${RATIFY_NAMESPACE}":"ratify-admin"
     ```
 
-2. Discover the signatures
+## Configure access policy for AKV 
+
+> Note: Azure Key Vault integration currently only support self signed certificate, if you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider).
+
+1. Set the environmental variable for Azure Key Vault URI.
 
     ```bash
-    # Query for the signatures
-    export IMAGE_DIGEST_REF=$(docker image inspect $IMAGE | jq -r '.[0].RepoDigests[0]')
-    ratify discover -s $IMAGE_DIGEST_REF
+    export VAULT_URI=$(az keyvault show --name ${AKV_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
     ```
 
-3. Verify all signatures for the image
+2. Import your own private key and certificates. You can import it on the portal as well.
 
     ```bash
-    # Verify signatures
-    ratify verify -s $IMAGE_DIGEST_REF
+    az keyvault certificate import \
+    --vault-name ${AKV_NAME} \
+    -n ${KEY_NAME} \
+    -f ${CERT_PATH}
+    ```
+   
+3. Configure policy for user-assigned managed identity:
+    
+    ```bash
+    az keyvault set-policy --name ${AKV_NAME} \
+    --certificate-permissions get \
+    --object-id ${IDENTITY_OBJECT_ID}
     ```
 
-## Demo 2: Discover & Verify SBOMs, scan results using Ratify
+## Deploy Gatekeeper and Ratify on AKS 
 
-### Generate, Sign, Push SBOMs, Scan results
-
-1. Generate a sample SBOM
+1. Deploy Gatekeeper from helm chart:
 
     ```bash
-    echo '{"version": "0.0.0.0", "artifact": "'${IMAGE}'", "contents": "good"}' > sbom.json
+    helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
+
+    helm install gatekeeper/gatekeeper  \
+    --name-template=gatekeeper \
+    --namespace gatekeeper-system --create-namespace \
+    --set enableExternalData=true \
+    --set validatingWebhookTimeoutSeconds=5 \
+    --set mutatingWebhookTimeoutSeconds=2
     ```
 
-2. Push the SBOM
+2. Install Ratify on AKS from helm chart:
 
     ```bash
-    oras attach $IMAGE \
-        --artifact-type org.example.sbom.v0 \
-        -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-        sbom.json:application/json
+    # Add a Helm repo
+    helm repo add ratify https://deislabs.github.io/ratify
+
+    # Install Ratify
+    helm install ratify \
+        ./charts/ratify --atomic \
+        --namespace ${RATIFY_NAMESPACE} --create-namespace \
+        --set akvCertConfig.enabled=true \
+        --set akvCertConfig.vaultURI=${VAULT_URI} \
+        --set akvCertConfig.cert1Name=${KEY_NAME} \
+        --set akvCertConfig.tenantId=${TENANT_ID} \
+        --set oras.authProviders.azureWorkloadIdentityEnabled=true \
+        --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID}
     ```
 
-3. Sign the SBOM
+3. Enforce Gatekeeper policy to allow only signed images can be deployed on AKS:
 
     ```bash
-    # Capture the digest, to sign it
-    SBOM_DIGEST=$(oras discover -o json \
-                    --artifact-type org.example.sbom.v0 \
-                    -u $NOTATION_USERNAME -p $NOTATION_PASSWORD \
-                    $IMAGE | jq -r ".manifests[0].digest")
-
-    notation sign $REPO@$SBOM_DIGEST
+    kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
+    kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
     ```
 
-### Discover & Verify SBOMs and Signature using Ratify
+## Deploy two sample image to AKS cluster
 
-1. Extract the SBOM plugin from the Ratify tarball and copy it to the default plugins directory
+1. Run a Pod using an image that you have signed in the previous step. Ratify will verify if this image has a valid signature.
 
     ```bash
-    tar xvf ratify.tar.gz -C ~/.ratify/plugins/ sbom
+    $ kubectl run ratify-demo-signed --image=$IMAGE
+    Pod ratify-demo-signed created
     ```
 
-2. Create a Ratify config with ORAS as the store for SBoMs, Scan results and their corresponding signatures. Also, plugin the verifier for SBOM and scan results in the config.
+2. Deploy an unsigned image to AKS cluster. The deployment has been denied since the image has not been signed and doesn't meet the deployment criteria. 
 
     ```bash
-    cat <<EOF > ~/.ratify/config.json 
-    { 
-        "store": { 
-            "version": "1.0.0", 
-            "plugins": [ 
-                { 
-                    "name": "oras"
-                }
-            ]
-        },
-        "policy": {
-            "version": "1.0.0",
-            "plugin": {
-                "name": "configPolicy",
-                "artifactVerificationPolicies": {
-                    "application/vnd.cncf.notary.signature": "all"
-                }
-            }
-        },
-        "verifier": {
-            "version": "1.0.0",
-            "plugins": [
-                {
-                    "name":"notaryv2",
-                    "artifactTypes" : "application/vnd.cncf.notary.signature",
-                    "verificationCerts": [
-                        "~/.config/notation/truststore"
-                    ],
-                    "trustPolicyDoc": {
-                        "version": "1.0",
-                        "trustPolicies": [
-                            {
-                            "name": "default",
-                            "registryScopes": [
-                                "*"
-                            ],
-                            "signatureVerification": {
-                                "level": "strict"
-                            },
-                            "trustStores": [
-                                "ca:certs"
-                            ],
-                            "trustedIdentities": [
-                                "*"
-                            ]
-                        }]
-                    }
-                },
-                {
-                    "name":"sbom",
-                    "artifactTypes" : "org.example.sbom.v0",
-                    "nestedReferences": "application/vnd.cncf.notary.signature"
-                }
-            ]
-        }
-    }
-    EOF
-    ```
-
-3. Discover the signatures
-
-    ```bash
-    # Discover full graph of supply chain content
-    ratify discover -s $IMAGE_DIGEST_REF
-    ```
-
-4. Verify the full graph of supply chain content
-
-    ```bash
-    # Verify full graph
-    ratify verify -s $IMAGE_DIGEST_REF
+    $ kubectl run ratify-demo-unsigned --image=unsigned:v1
+    Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [ratify-constraint] Subject failed verification: wabbitnetworks.azurecr.io/test/net-monitor:unsigned
     ```

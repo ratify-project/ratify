@@ -24,8 +24,12 @@ import (
 	"sync"
 	"time"
 
-	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+	pkgUtils "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/utils"
+
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
 )
@@ -33,6 +37,84 @@ import (
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
 
 func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	startTime := time.Now()
+	sanitizedMethod := utils.SanitizeString(r.Method)
+	sanitizedURL := utils.SanitizeURL(*r.URL)
+	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return fmt.Errorf("unable to read request body: %w", err)
+	}
+	defer r.Body.Close()
+
+	// parse request body
+	var providerRequest externaldata.ProviderRequest
+	if err = json.Unmarshal(body, &providerRequest); err != nil {
+		return fmt.Errorf("unable to unmarshal request body: %w", err)
+	}
+
+	results := make([]externaldata.Item, 0)
+	wg := sync.WaitGroup{}
+	mu := sync.Mutex{}
+
+	// iterate over all keys
+	for _, subject := range providerRequest.Request.Keys {
+		wg.Add(1)
+		go func(subject string) {
+			defer wg.Done()
+			routineStartTime := time.Now()
+			returnItem := externaldata.Item{
+				Key: subject,
+			}
+			defer func() {
+				mu.Lock()
+				results = append(results, returnItem)
+				mu.Unlock()
+			}()
+			subjectReference, err := pkgUtils.ParseSubjectReference(subject)
+			if err != nil {
+				returnItem.Error = err.Error()
+				return
+			}
+			resolvedSubjectReference := subjectReference.Original
+			unlock := server.keyMutex.Lock(resolvedSubjectReference)
+			defer unlock()
+
+			logrus.Infof("verifying subject %v", resolvedSubjectReference)
+			var result types.VerifyResult
+			res := server.cache.get(resolvedSubjectReference)
+			if res != nil {
+				logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
+				result = *res
+			} else {
+				logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
+				verifyParameters := executor.VerifyParameters{
+					Subject: resolvedSubjectReference,
+				}
+
+				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
+					returnItem.Error = err.Error()
+					return
+				}
+				server.cache.set(resolvedSubjectReference, &result)
+
+				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
+					fmt.Println(string(res))
+				}
+			}
+
+			returnItem.Value = fromVerifyResult(result)
+			logrus.Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
+		}(utils.SanitizeString(subject))
+	}
+	wg.Wait()
+	logrus.Debugf("verification: execution time for request: %dms", time.Since(startTime).Milliseconds())
+	return sendResponse(&results, "", w, http.StatusOK, false)
+}
+
+func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
 	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
@@ -44,57 +126,76 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 	// parse request body
 	var providerRequest externaldata.ProviderRequest
-	err = json.Unmarshal(body, &providerRequest)
-	if err != nil {
+	if err = json.Unmarshal(body, &providerRequest); err != nil {
 		return fmt.Errorf("unable to unmarshal request body: %w", err)
 	}
 
 	results := make([]externaldata.Item, 0)
 	wg := sync.WaitGroup{}
-	mu := sync.RWMutex{}
+	mu := sync.Mutex{}
 
-	// iterate over all keys
-	for _, subject := range providerRequest.Request.Keys {
+	for _, image := range providerRequest.Request.Keys {
 		wg.Add(1)
-		go func(subject string) {
+		go func(image string) {
 			defer wg.Done()
-			// TODO: Enable caching:  Providers should add a caching mechanism to avoid extra calls to external data sources.
-			logrus.Infof("subject for request %v %v is %v", sanitizedMethod, sanitizedURL, subject)
+			routineStartTime := time.Now()
+			logrus.Infof("mutating image %v", image)
 			returnItem := externaldata.Item{
-				Key: subject,
+				Key:   image,
+				Value: image,
 			}
-
-			verifyParameters := e.VerifyParameters{
-				Subject: subject,
-			}
-
-			result, err := server.GetExecutor().VerifySubject(ctx, verifyParameters)
+			defer func() {
+				mu.Lock()
+				results = append(results, returnItem)
+				mu.Unlock()
+			}()
+			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
-				returnItem.Error = err.Error()
+				errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+				logrus.Error(errMessage)
+				returnItem.Error = errMessage
+				return
 			}
 
-			res, err := json.MarshalIndent(result, "", "  ")
-			if err == nil {
-				fmt.Println(string(res))
+			if parsedReference.Digest == "" {
+				var selectedStore referrerstore.ReferrerStore
+				for _, store := range server.GetExecutor().ReferrerStores {
+					if store.Name() == server.MutationStoreName {
+						selectedStore = store
+						break
+					}
+				}
+				if selectedStore == nil {
+					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)
+					logrus.Error(errMessage)
+					returnItem.Error = errMessage
+					return
+				}
+				descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
+				if err != nil {
+					errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
+					logrus.Error(errMessage)
+					returnItem.Error = errMessage
+					return
+				}
+				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 			}
-			mu.Lock()
-			defer mu.Unlock()
-			results = append(results, externaldata.Item{
-				Key:   subject,
-				Value: fromVerifyResult(result),
-			})
-		}(utils.SanitizeString(subject))
+			logrus.Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
+		}(utils.SanitizeString(image))
 	}
 	wg.Wait()
-
-	return sendResponse(&results, "", w, http.StatusOK)
+	logrus.Debugf("mutation: execution time for request: %dms", time.Since(startTime).Milliseconds())
+	return sendResponse(&results, "", w, http.StatusOK, true)
 }
 
-func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter, respCode int) error {
+func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter, respCode int, isMutation bool) error {
 	response := externaldata.ProviderResponse{
 		APIVersion: apiVersion,
 		Kind:       "ProviderResponse",
 	}
+
+	// only mutation webhook can be invoked multiple times and thus must be idempotent
+	response.Response.Idempotent = isMutation
 
 	if results != nil {
 		response.Response.Items = *results
@@ -106,7 +207,7 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
-func processTimeout(h ContextHandler, duration time.Duration) ContextHandler {
+func processTimeout(h ContextHandler, duration time.Duration, isMutation bool) ContextHandler {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ctx, cancel := context.WithTimeout(r.Context(), duration)
 		defer cancel()
@@ -127,7 +228,7 @@ func processTimeout(h ContextHandler, duration time.Duration) ContextHandler {
 		}
 
 		if err != nil {
-			return sendResponse(nil, fmt.Sprintf("validate operation failed with error %v", err), w, http.StatusInternalServerError)
+			return sendResponse(nil, fmt.Sprintf("operation failed with error %v", err), w, http.StatusInternalServerError, isMutation)
 		}
 
 		return nil

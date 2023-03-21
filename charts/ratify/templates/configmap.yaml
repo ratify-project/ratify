@@ -6,10 +6,12 @@ data:
   config.json: |
     {
       "executor": {
-        "requestTimeout": 6800
+        "verificationRequestTimeout": {{ .Values.provider.timeout.validationTimeoutSeconds | int | mul 1000 | add -100 }},
+        "mutationRequestTimeout": {{ .Values.provider.timeout.mutationTimeoutSeconds | int | mul 1000 | add -50 }}
       },
       "store": {
         "version": "1.0.0",
+        "useHttp": {{ .Values.oras.useHttp }},
         "plugins": [
             {
                 "name": "oras"
@@ -20,14 +22,15 @@ data:
                 {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
                 ,
                 "authProvider": {
-                    "name": "azureWorkloadIdentity"
+                    "name": "azureWorkloadIdentity",
+                    "clientID": {{ .Values.azureWorkloadIdentity.clientId | quote }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
                 ,
                 "authProvider": {
                     "name": "azureManagedIdentity",
-                    "clientID": "{{ .Values.azureManagedIdentity.clientId }}"
+                    "clientID": {{ .Values.azureManagedIdentity.clientId }}
                 }
                 {{- end }}
                 {{- if .Values.oras.authProviders.k8secretsEnabled }}
@@ -58,9 +61,15 @@ data:
             {
                 "name":"notaryv2",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
-                "verificationCerts": [
-                  "/usr/local/ratify-certs/notary/truststore"
-                  ],
+                "verificationCertStores": {
+                  "certs":[
+                    {{- if .Values.akvCertConfig.enabled }}
+                    "certstore-akv"
+                    {{- else }}
+                    "{{ include "ratify.fullname" . }}-notary-inline-cert"
+                    {{- end }}
+                   ]
+                },
                 "trustPolicyDoc": {
                   "version": "1.0",
                   "trustPolicies": [
@@ -79,7 +88,7 @@ data:
             },
             {
                 "name": "cosign",
-                "artifactTypes": "org.sigstore.cosign.v1",
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
                 "key": "/usr/local/ratify-certs/cosign/cosign.pub"
             {{- end }}
             }

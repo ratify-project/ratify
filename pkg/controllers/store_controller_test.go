@@ -18,14 +18,14 @@ package controllers
 import (
 	"testing"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
-	var testStoreSpec = configv1alpha1.StoreSpec{
+	var testStoreSpec = configv1beta1.StoreSpec{
 		Name: "oras",
 	}
 
@@ -69,7 +69,7 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	}
 
 	// modify the Store
-	var updatedSpec = configv1alpha1.StoreSpec{
+	var updatedSpec = configv1beta1.StoreSpec{
 		Name: "oras",
 	}
 
@@ -93,11 +93,11 @@ func resetStoreMap() {
 	StoreMap = map[string]referrerstore.ReferrerStore{}
 }
 
-func getOrasStoreSpec() configv1alpha1.StoreSpec {
-	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosign-enabled\":false,\"useHttp\":false}"
+func getOrasStoreSpec() configv1beta1.StoreSpec {
+	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosignEnabled\":false,\"useHttp\":false}"
 	var storeParameters = []byte(parametersString)
 
-	return configv1alpha1.StoreSpec{
+	return configv1beta1.StoreSpec{
 		Name: "oras",
 		Parameters: runtime.RawExtension{
 			Raw: storeParameters,

@@ -1,6 +1,8 @@
 name: build-pr
 
 on:
+  pull_request_target:
+    types: [labeled]
   pull_request:
     branches:
       - main
@@ -8,6 +10,7 @@ on:
   push:
     branches:
       - 1.0.0*
+      - main
   workflow_dispatch:
 
 permissions: read-all
@@ -19,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: setup go environment
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.19"
       - name: Run tidy
@@ -28,15 +31,21 @@ jobs:
         run: make
       - name: Check build
         run: bin/ratify version
-  
+      - name: Upload coverage to codecov.io
+        uses: codecov/codecov-action@v3
+      - name: Run helm lint
+        run: helm lint charts/ratify
+
   build_test_cli:
     name: "Build and run tests for CLI"
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v3
       - name: setup go environment
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.19"
       - name: Run tidy
@@ -49,11 +58,34 @@ jobs:
         run: |
           make install ratify-config install-bats
           make test-e2e-cli
+  
+  build_test_cli_oci_1_0:
+    name: "Build and run tests for CLI OCI 1.0"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: setup go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.19"
+      - name: Run tidy
+        run: go mod tidy
+      - name: Build CLI
+        run: make
+      - name: Check build
+        run: bin/ratify version
+      - name: Test CLI
+        run: |
+          make install ratify-config install-bats
+          make test-e2e-cli IS_OCI_1_1=false LOCAL_REGISTRY_IMAGE=registry
 
   build_test_e2e:
     name: "Build and run e2e Test"
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     permissions:
       contents: read
     strategy:
@@ -62,11 +94,12 @@ jobs:
         GATEKEEPER_VERSION: ["3.10.0", "3.11.0"]
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        uses: actions/checkout@v3
       - name: Set up Go 1.19
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: 1.19
+
       - name: Bootstrap e2e
         run: |
           mkdir -p $GITHUB_WORKSPACE/bin
@@ -81,14 +114,63 @@ jobs:
       - name: Save logs
         if: ${{ always() }}
         run: |
-          kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 > logs-externaldata-controller.json
-          kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 > logs-externaldata-audit.json
-          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall.json
-          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify.json
+          kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 > logs-externaldata-controller-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 > logs-externaldata-audit-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
       - name: Upload artifacts
         uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
           name: e2e-logs
           path: |
-            logs-*.json        
+            logs-*.json
+
+  build_test_aks_e2e:
+    name: "Build and run e2e Test on AKS"
+    env:
+      AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
+      AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+      AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    timeout-minutes: 30
+    continue-on-error: true
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        KUBERNETES_VERSION: ["1.23.12", "1.24.6"]
+        GATEKEEPER_VERSION: ["3.10.0", "3.11.0"]
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+      - name: Set up Go 1.19
+        uses: actions/setup-go@v4
+        with:
+          go-version: 1.19
+
+      - name: Az CLI login
+        uses: azure/login@v1
+        with:
+          creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
+
+      - name: Dependencies e2e
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+          make e2e-docker-credential-store-setup
+          make e2e-dependencies
+
+      - name: Run e2e on Azure
+        run: |
+          make e2e-aks KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }} GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }} TENANT_ID=${{ env.AZURE_TENANT_ID }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        if: ${{ always() }}
+        with:
+          name: e2e-logs
+          path: |
+            logs-*.json

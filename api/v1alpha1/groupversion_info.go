@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright The Ratify Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	runtime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
@@ -33,4 +34,6 @@ var (
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
+
+	localSchemeBuilder = runtime.NewSchemeBuilder(SchemeBuilder.AddToScheme)
 )

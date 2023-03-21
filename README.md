@@ -29,13 +29,20 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 - Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).
 
+## Pull Request Review Series
+- We hold a weekly Ratify Pull Request Review Series on Mondays 5-6 pm PST.  
+- People are able to use this time to walk through any Pull Requests and seek feedback from others in the Community.  If there are no PR to review, the meeting will be cancelled during that week.
+- Reach out on Slack if you want to reserve a session for review or during our weekly community meetings.
+
 ## Quick Start
 
 Try out ratify in Kubernetes through Gatekeeper as the admission controller.
 
-Prerequisite: Kubernetes v1.20 or higher
+Prerequisites:
+- Kubernetes v1.20 or higher
+- OPA Gatekeeper v3.10 or higher  
 
-- Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
+### Step 1: Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
 
 ```bash
 helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -44,27 +51,43 @@ helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=7
+    --set validatingWebhookTimeoutSeconds=5 \
+    --set mutatingWebhookTimeoutSeconds=2
 ```
 
-NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify operations complete in complex scenarios. See [discussion here](https://github.com/deislabs/ratify/issues/269) to remove this requirement. Kubernetes v1.20 or higher is REQUIRED to increase timeout.  
+NOTE: `validatingWebhookTimeoutSeconds` and `mutationWebhookTimeoutSeconds` increased from 3 to 5 and 1 to 2 respectively, so all Ratify operations complete in complex scenarios. See [discussion here](https://github.com/deislabs/ratify/issues/269) to remove this requirement. Kubernetes v1.20 or higher is REQUIRED to increase timeout. Timeout is configurable in helm chart under `provider.timeout` section.   
 
-- Deploy ratify and a `demo` constraint on gatekeeper in the default namespace.
+### Step 2: Deploy ratify on gatekeeper in the default namespace.
+
+Option 1: Install the last released version of Ratify
+
+Note: if the crt/key/cabundle are NOT set under `provider.tls` in values.yaml, helm would generate a CA certificate and server key/certificate for you.
 
 ```bash
-export RATIFY_NAMESPACE=default
-export CERT_DIR=path/to/your/certificate/directory # the directory will be created by generate-certs
-
-make generate-certs RATIFY_NAMESPACE=$RATIFY_NAMESPACE CERT_DIR=$CERT_DIR
-
 helm repo add ratify https://deislabs.github.io/ratify
+# download the notary verification certificate
+curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file provider.tls.crt=${CERT_DIR}/server.crt \
-    --set-file provider.tls.key=${CERT_DIR}/server.key \
-    --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+    --set-file notaryCert=./notary.crt
+```
 
+Option 2: Install ratify with charts from your local branch.  
+Note: Latest chart in main may not be compatible with the last released version of ratify image, learn more about weekly dev builds [here](RELEASES.md/#weekly-dev-release) 
+```bash
+git clone https://github.com/deislabs/ratify.git
+cd ratify
+helm install ratify \
+    ./charts/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file notaryCert=./test/testdata/notary.crt
+```
+
+### Step 3: See Ratify in action
+
+- Deploy a `demo` constraint.
+```
 kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 ```
@@ -94,12 +117,12 @@ Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" deni
 
 You just validated the container images in your k8s cluster!
 
-- Uninstall Ratify
+### Step 4: Uninstall Ratify
 
 ```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
-helm delete ratify
+helm delete ratify --namespace gatekeeper-system
 ```
 
 ### Notes

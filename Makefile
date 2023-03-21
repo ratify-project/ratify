@@ -15,6 +15,9 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.25.4
 GATEKEEPER_VERSION ?= 3.11.0
+COSIGN_VERSION ?= 1.13.1
+NOTATION_VERSION ?= 1.0.0-rc.3
+ORAS_VERSION ?= 1.0.0-rc.2
 
 HELM_VERSION ?= 3.9.2
 BATS_TESTS_FILE ?= test/bats/test.bats
@@ -26,6 +29,14 @@ ENVTEST_K8S_VERSION = 1.24.2
 
 GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
+
+# Local Registry Setup
+LOCAL_REGISTRY_IMAGE ?= ghcr.io/oras-project/registry:v1.0.0-rc.4
+LOCAL_UNSIGNED_IMAGE = hello-world:latest
+TEST_REGISTRY = localhost:5000
+TEST_REGISTRY_USERNAME = test_user
+TEST_REGISTRY_PASSWORD = test_pw
+IS_OCI_1_1 ?= true
 
 all: build test
 
@@ -57,11 +68,12 @@ ratify-config:
 	cp ./test/bats/tests/config/* ${INSTALL_DIR}
 	cp ./test/bats/tests/certificates/wabbit-networks.io.crt ${INSTALL_DIR}/ratify-certs/notary/wabbit-networks.io.crt
 	cp ./test/bats/tests/certificates/cosign.pub ${INSTALL_DIR}/ratify-certs/cosign/cosign.pub
-
+	cp -r ./test/bats/tests/schemas/ ${INSTALL_DIR}
+	
 .PHONY: test
 test:
-	go test -v ./...
-	
+	go test -v -coverprofile=coverage.txt -covermode=atomic ./...
+
 .PHONY: clean
 clean:
 	go clean
@@ -96,10 +108,9 @@ deploy-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	helm install gatekeeper/gatekeeper  \
 		--version ${GATEKEEPER_VERSION} \
-	    --name-template=gatekeeper \
-	    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
-	    --set enableExternalData=true \
-	    --set controllerManager.dnsPolicy=ClusterFirst,audit.dnsPolicy=ClusterFirst \
+		--name-template=gatekeeper \
+		--namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	    --set enableExternalData=true
 
 .PHONY: delete-gatekeeper
 delete-gatekeeper:
@@ -110,18 +121,13 @@ test-e2e:
 	bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-test-e2e-cli:
-	RATIFY_DIR=${INSTALL_DIR} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+	IS_OCI_1_1=${IS_OCI_1_1} RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 
 .PHONY: generate-certs
 generate-certs:
-	mkdir -p ${CERT_DIR}
-	cd ${CERT_DIR} && openssl genrsa -out ca.key 2048 && \
-	openssl req -new -x509 -days 365 -key ca.key -subj "/O=My Org/CN=External Data Provider CA" -out ca.crt && \
-	openssl genrsa -out server.key 2048 && \
-	openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=${RATIFY_NAME}.${GATEKEEPER_NAMESPACE}" -out server.csr && \
-	printf "subjectAltName=DNS:${RATIFY_NAME}.${GATEKEEPER_NAMESPACE}" > server.ext && \
-	openssl x509 -req -extfile server.ext -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+	./scripts/generate-tls-certs.sh ${CERT_DIR} ${GATEKEEPER_NAMESPACE}
 
 install-bats:
 	# Download and install bats
@@ -134,14 +140,59 @@ e2e-dependencies:
 	curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl --output ${GITHUB_WORKSPACE}/bin/kubectl && chmod +x ${GITHUB_WORKSPACE}/bin/kubectl
 	# Download and install bats
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
+	# Download and install jq
+	curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 --output ${GITHUB_WORKSPACE}/bin/jq && chmod +x ${GITHUB_WORKSPACE}/bin/jq
+	# Install ORAS
+	curl -LO https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz
+	mkdir -p oras-install/
+	tar -zxf oras*.tar.gz -C oras-install/
+	mv oras-install/oras ${GITHUB_WORKSPACE}/bin
+	rm -rf oras*.tar.gz oras-install/
 
 KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
 
-e2e-bootstrap: e2e-dependencies
+e2e-create-local-registry: e2e-run-local-registry e2e-create-all-image
+
+e2e-run-local-registry:
+	rm -rf ~/auth
+	mkdir ~/auth
+	docker run --entrypoint htpasswd httpd@sha256:dd993a2108430ec8fdc4942f791ccf9b0c7a6df196907a80e7e8a5f8f1bbf678 -Bbn ${TEST_REGISTRY_USERNAME} ${TEST_REGISTRY_PASSWORD}> ~/auth/htpasswd
+
+	if [ "$$(docker inspect -f '{{.State.Running}}' "registry" 2>/dev/null || true)" ]; then docker stop registry && docker rm registry; fi
+	docker pull ${LOCAL_REGISTRY_IMAGE}
+	docker run -d \
+		-p 5000:5000 \
+		--restart=always \
+		--name registry \
+		-v ${HOME}/auth:/auth \
+		-e "REGISTRY_AUTH=htpasswd" \
+		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
+		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
+		-e REGISTRY_STORAGE_DELETE_ENABLED=true \
+		${LOCAL_REGISTRY_IMAGE}
+	sleep 5
+	docker login -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}
+	${GITHUB_WORKSPACE}/bin/oras login \
+		-u ${TEST_REGISTRY_USERNAME} \
+		-p ${TEST_REGISTRY_PASSWORD} \
+		${TEST_REGISTRY}
+
+e2e-create-all-image:
+	rm -rf .staging
+	mkdir .staging
+	echo 'FROM alpine\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/all:v0 .staging
+	docker push ${TEST_REGISTRY}/all:v0
+
+e2e-bootstrap: e2e-dependencies e2e-create-local-registry
+	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
+
 	# Check for existing kind cluster
 	if [ $$(${GITHUB_WORKSPACE}/bin/kind get clusters) ]; then ${GITHUB_WORKSPACE}/bin/kind delete cluster; fi
 	# Create a new kind cluster
-	TERM=dumb ${GITHUB_WORKSPACE}/bin/kind create cluster --image $(KIND_NODE_VERSION) --wait 5m
+	TERM=dumb ${GITHUB_WORKSPACE}/bin/kind create cluster --image $(KIND_NODE_VERSION) --wait 5m --config=kind_config.yaml
+	if [ "$$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "registry")" = 'null' ]; then docker network connect "kind" "registry"; fi
+	rm kind_config.yaml
 
 e2e-helm-install:
 	rm -rf .staging/helm
@@ -150,6 +201,212 @@ e2e-helm-install:
 	cd .staging/helm && tar -xvf helmbin.tar.gz
 	./.staging/helm/linux-amd64/helm version --client
 
+e2e-docker-credential-store-setup:
+	rm -rf .staging/pass
+	mkdir -p .staging/pass
+	cd .staging/pass && git clone https://github.com/docker/docker-credential-helpers.git
+	cd .staging/pass/docker-credential-helpers && make pass
+	cp .staging/pass/docker-credential-helpers/bin/build/docker-credential-pass /usr/local/bin/
+	sed -i '0,/{/s/{/{\n\t"credsStore": "pass",/' ~/.docker/config.json
+
+	gpg --batch --passphrase '' --quick-gen-key ratify default default
+	pass init $$(gpg --list-keys ratify | sed -n 2p | tr -d " \t\n\r")
+
+e2e-notaryv2-setup:
+	rm -rf .staging/notaryv2
+	mkdir -p .staging/notaryv2
+	curl -L https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz --output ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz
+	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notaryv2
+
+	echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed .staging/notaryv2
+	docker push ${TEST_REGISTRY}/notation:signed
+
+	docker pull ${LOCAL_UNSIGNED_IMAGE}
+	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${TEST_REGISTRY}/notation:unsigned
+	docker push ${TEST_REGISTRY}/notation:unsigned
+
+	rm -rf ~/.config/notation
+	.staging/notaryv2/notation cert generate-test --default "ratify-bats-test"
+
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+
+	# OCI 1.1 Artifact Resources
+	if [ ${IS_OCI_1_1} = 'true' ]; then \
+		echo 'FROM alpine\nCMD ["echo", "notaryv2 signed image oci artifact"]' > .staging/notaryv2/Dockerfile && \
+		docker build --no-cache -t ${TEST_REGISTRY}/notation:ociartifact .staging/notaryv2 && \
+		docker push ${TEST_REGISTRY}/notation:ociartifact && \
+		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:ociartifact | jq -r .[0].RepoDigests[0]`; \
+	fi
+
+e2e-notation-leaf-cert-setup:
+	mkdir -p .staging/notaryv2/leaf-test
+	mkdir -p ~/.config/notation/truststore/x509/ca/leaf-test
+	./scripts/generate-cert-chain.sh .staging/notaryv2/leaf-test
+	cp .staging/notaryv2/leaf-test/leaf.crt ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt
+	cp .staging/notaryv2/leaf-test/ca.crt ~/.config/notation/truststore/x509/ca/leaf-test/root.crt
+	cat .staging/notaryv2/leaf-test/ca.crt >> .staging/notaryv2/leaf-test/leaf.crt
+
+	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notaryv2/leaf-test/leaf.key","certPath":".staging/notaryv2/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
+
+	echo 'FROM alpine\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:leafSigned .staging/notaryv2
+	docker push ${TEST_REGISTRY}/notation:leafSigned
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" `docker image inspect ${TEST_REGISTRY}/notation:leafSigned | jq -r .[0].RepoDigests[0]`
+
+e2e-cosign-setup:
+	rm -rf .staging/cosign
+	mkdir -p .staging/cosign
+	curl -sSLO https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64
+	mv cosign-linux-amd64 .staging/cosign
+	chmod +x .staging/cosign/cosign-linux-amd64
+
+	# image signed with a key
+	echo 'FROM alpine\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/cosign:signed-key .staging/cosign
+	docker push ${TEST_REGISTRY}/cosign:signed-key
+
+	docker pull ${LOCAL_UNSIGNED_IMAGE}
+	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${TEST_REGISTRY}/cosign:unsigned
+	docker push ${TEST_REGISTRY}/cosign:unsigned
+
+	export COSIGN_PASSWORD="test" && \
+	cd .staging/cosign && \
+	./cosign-linux-amd64 login ${TEST_REGISTRY} -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} && \
+	./cosign-linux-amd64 generate-key-pair && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${TEST_REGISTRY}/cosign:signed-key | jq -r .[0].RepoDigests[0]` && \
+	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+
+e2e-licensechecker-setup:
+	rm -rf .staging/licensechecker
+	mkdir -p .staging/licensechecker
+
+	# Install Syft
+	curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .staging/licensechecker
+
+	# Build/Push Image
+	echo 'FROM alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
+	docker push ${TEST_REGISTRY}/licensechecker:v0
+
+	# Create/Attach SPDX
+	.staging/licensechecker/syft -o spdx --file .staging/licensechecker/sbom.spdx ${TEST_REGISTRY}/licensechecker:v0
+	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:v0 \
+  		--artifact-type application/vnd.ratify.spdx.v0 \
+  		.staging/licensechecker/sbom.spdx:application/text
+	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/all:v0 \
+  		--artifact-type application/vnd.ratify.spdx.v0 \
+  		.staging/licensechecker/sbom.spdx:application/text
+
+	# OCI 1.1 Artifact Resources
+	if [ ${IS_OCI_1_1} = 'true' ]; then \
+		echo 'FROM alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0\nCMD ["echo", "licensechecker image oci artifact"]' > .staging/licensechecker/Dockerfile && \
+		docker build -t ${TEST_REGISTRY}/licensechecker:ociartifact .staging/licensechecker && \
+		docker push ${TEST_REGISTRY}/licensechecker:ociartifact && \
+		${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:ociartifact \
+			--artifact-type application/vnd.ratify.spdx.v0 \
+			--image-spec v1.1-artifact \
+			.staging/licensechecker/sbom.spdx:application/text; \
+	fi
+
+e2e-sbom-setup:
+	rm -rf .staging/sbom
+	mkdir -p .staging/sbom
+
+	# Install sbom-tool
+	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+
+	# Build/Push Images
+	echo 'FROM alpine\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
+	docker push ${TEST_REGISTRY}/sbom:v0
+	echo 'FROM alpine\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
+	docker push ${TEST_REGISTRY}/sbom:unsigned
+
+	# Generate/Attach sbom
+	.staging/sbom/sbom-tool generate -b .staging/sbom -bc . -pn ratify -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type org.example.sbom.v0 \
+		 ${TEST_REGISTRY}/sbom:v0 \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type org.example.sbom.v0 \
+		 ${TEST_REGISTRY}/sbom:unsigned \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type org.example.sbom.v0 \
+		 ${TEST_REGISTRY}/all:v0 \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+
+	# Push Signature to sbom
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+
+	# OCI 1.1 Artifact Resources
+	if [ ${IS_OCI_1_1} = 'true' ]; then \
+		echo 'FROM alpine\nCMD ["echo", "sbom image oci artifact"]' > .staging/sbom/Dockerfile && \
+		docker build --no-cache -t ${TEST_REGISTRY}/sbom:ociartifact .staging/sbom && \
+		docker push ${TEST_REGISTRY}/sbom:ociartifact && \
+		${GITHUB_WORKSPACE}/bin/oras attach \
+			--artifact-type org.example.sbom.v0 \
+			--image-spec v1.1-artifact \
+			 ${TEST_REGISTRY}/sbom:ociartifact \
+			.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json && \
+		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:ociartifact | jq -r ".manifests[0].digest"`; \
+	fi
+
+e2e-schemavalidator-setup:
+	rm -rf .staging/schemavalidator
+	mkdir -p .staging/schemavalidator
+
+	# Install Trivy
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
+	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
+
+	# Build/Push Images
+	echo 'FROM alpine\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
+	docker push ${TEST_REGISTRY}/schemavalidator:v0
+
+	# Create/Attach Scan Results
+	.staging/schemavalidator/trivy image --format sarif --output .staging/schemavalidator/trivy-scan.sarif ${TEST_REGISTRY}/schemavalidator:v0
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		${TEST_REGISTRY}/schemavalidator:v0 \
+		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		${TEST_REGISTRY}/all:v0 \
+		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
+	
+	# OCI 1.1 Artifact Resources
+	if [ ${IS_OCI_1_1} = 'true' ]; then \
+		echo 'FROM alpine\nCMD ["echo", "schemavalidator image oci artifact"]' > .staging/schemavalidator/Dockerfile && \
+		docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:ociartifact .staging/schemavalidator && \
+		docker push ${TEST_REGISTRY}/schemavalidator:ociartifact && \
+		${GITHUB_WORKSPACE}/bin/oras attach \
+			--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+			${TEST_REGISTRY}/schemavalidator:ociartifact \
+			--image-spec v1.1-artifact \
+			.staging/schemavalidator/trivy-scan.sarif:application/sarif+json; \
+	fi
+
+e2e-inlinecert-setup:
+	rm -rf .staging/inlinecert
+	mkdir -p .staging/inlinecert
+
+	# build and sign an image with an alternate certificate
+	echo 'FROM alpine\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
+	docker push ${TEST_REGISTRY}/notation:signed-alternate
+
+	.staging/notaryv2/notation cert generate-test "alternate-cert"
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "alternate-cert" `docker image inspect ${TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
+
+e2e-azure-setup: e2e-create-all-image e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
 	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
@@ -157,15 +414,18 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --name-template=gatekeeper \
     --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
     --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=7 \
-    --set auditInterval=0 \
+    --set validatingWebhookTimeoutSeconds=5 \
+    --set mutatingWebhookTimeoutSeconds=2 \
+    --set auditInterval=0
 
-e2e-deploy-ratify:
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
-	
+
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
+
+	echo "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
     ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
@@ -175,7 +435,16 @@ e2e-deploy-ratify:
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
-	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+	--set oras.useHttp=true \
+	--set-file dockerConfig="mount_config.json" \
+	--set logLevel=debug
+
+	rm mount_config.json
+e2e-aks:
+	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 
 ##@ Development
 
@@ -184,8 +453,12 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 
 .PHONY: generate
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
+generate: controller-gen conversion-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations. Also generate conversions between structs of different API versions.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+	$(CONVERSION_GEN) \
+        --input-dirs "./api/v1beta1,./api/v1alpha1" \
+        --go-header-file "./hack/boilerplate.go.txt" \
+        --output-file-base "zz_generated.conversion"
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -229,10 +502,12 @@ $(LOCALBIN):
 KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
+CONVERSION_GEN ?= $(LOCALBIN)/conversion-gen
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
 CONTROLLER_TOOLS_VERSION ?= v0.9.2
+CONVERSION_TOOLS_VERSION ?= v0.26.1
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -244,3 +519,8 @@ $(KUSTOMIZE): $(LOCALBIN)
 controller-gen: $(CONTROLLER_GEN) ## Download controller-gen locally if necessary.
 $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
+
+.PHONY: conversion-gen
+conversion-gen: $(CONVERSION_GEN) ## Download conversion-gen locally if necessary.
+$(CONVERSION_GEN): $(LOCALBIN)
+	test -s $(LOCALBIN)/conversion-gen || GOBIN=$(LOCALBIN) go install k8s.io/code-generator/cmd/conversion-gen@$(CONVERSION_TOOLS_VERSION)

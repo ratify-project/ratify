@@ -1,16 +1,20 @@
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Store
 metadata:
   name: store-oras
 spec:
   name: oras
   parameters:
+    {{- if .Values.oras.useHttp }}
+    useHttp: true
+    {{- end }}
     {{- if .Values.cosign.enabled }}
     cosignEnabled: true
     {{- end }}
     {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
     authProvider:
       name: azureWorkloadIdentity
+      clientID: {{ .Values.azureWorkloadIdentity.clientId }}
     {{- end }}
     {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
     authProvider:
@@ -25,4 +29,10 @@ spec:
     {{- if .Values.oras.authProviders.awsEcrBasicEnabled }}
     authProvider:
       name: awsEcrBasic
+    {{- end }}
+    {{- if .Values.oras.cache.enabled }}
+    cacheEnabled: true
+    ttl: {{ .Values.oras.cache.ttl }}
+    capacity: {{ .Values.oras.cache.capacity }}
+    keyNumber: {{ .Values.oras.cache.keyNumber }}
     {{- end }}

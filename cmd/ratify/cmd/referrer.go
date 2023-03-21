@@ -179,6 +179,10 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return err
 	}
 
+	if subRef.Digest == "" {
+		fmt.Println(taggedReferenceWarning)
+	}
+
 	digest, err := utils.ParseDigest(opts.digest)
 	if err != nil {
 		return err

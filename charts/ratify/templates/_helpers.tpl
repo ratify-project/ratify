@@ -5,12 +5,6 @@ Expand the name of the chart.
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
-{{/*
-Define secret provider class name.
-*/}}
-{{- define "ratify.akv.secretProviderClassName" -}}
-{{ include "ratify.fullname" . }}-akv-secret-provider
-{{- end }}
 
 {{- define "ratify.podLabels" -}}
 {{- if .Values.podLabels }}
@@ -71,5 +65,67 @@ Create the name of the service account to use
 {{- default (include "ratify.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
+{{- end }}
+{{- end }}
+
+{{/*
+Choose the Gatekeeper api version for Assign
+*/}}
+{{- define "ratify.assignGKVersion" -}}
+{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
+apiVersion: mutations.gatekeeper.sh/v1
+{{- else }}
+apiVersion: mutations.gatekeeper.sh/v1beta1
+{{- end }}
+{{- end }}
+
+{{/*
+Choose the Gatekeeper api version for External Data Provider
+*/}}
+{{- define "ratify.providerGKVersion" -}}
+{{- if semverCompare ">= 3.11.0" .Values.gatekeeper.version }}
+apiVersion: externaldata.gatekeeper.sh/v1beta1
+{{- else }}
+apiVersion: externaldata.gatekeeper.sh/v1alpha1
+{{- end }}
+{{- end }}
+
+{{/*
+Choose the caBundle field for External Data Provider
+*/}}
+{{- define "ratify.providerCabundle" -}}
+{{- $top := index . 0 -}}
+{{- $ca := index . 1 -}}
+{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle }}
+caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
+{{- else }}
+caBundle: {{ $ca.Cert | b64enc | replace "\n" "" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Choose the certificate/key pair to enable TLS for HTTP server
+*/}}
+{{- define "ratify.tlsSecret" -}}
+{{- $top := index . 0 -}}
+{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle }}
+tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}  
+tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
+{{- else }}
+{{- $cert := index . 1 -}}
+tls.crt: {{ $cert.Cert | b64enc | quote }}
+tls.key: {{ $cert.Key | b64enc | quote }}
+{{- end }}
+{{- end }}
+
+{{/*
+Set the namespace exclusions for Assign
+*/}}
+{{- define "ratify.assignExcludedNamespaces" -}}
+{{- $gkNamespace := default "gatekeeper-system" .Values.gatekeeper.namespace -}}
+- {{ $gkNamespace | quote}}
+- "kube-system"
+{{- if and (ne .Release.Namespace $gkNamespace) (ne .Release.Namespace "kube-system") }}
+- {{ .Release.Namespace | quote}}
 {{- end }}
 {{- end }}

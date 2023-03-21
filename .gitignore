@@ -3,12 +3,16 @@ dist/
 local_oras_cache/
 .idea
 __debug_bin
+coverage.txt
 
-# generated certificate directory
+# generated directories
 certs/
+.staging
 
 # symlink to ~/.ratify folder
 /.ratify
 
 # IDE files
 .vscode/settings.json
+
+.staging

@@ -1,5 +1,5 @@
 /*
-Copyright 2022.
+Copyright The Ratify Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -25,10 +25,12 @@ import (
 type StoreSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the verifier
+	// Name of the store
 	Name string `json:"name,omitempty"`
 	// Plugin path, optional
 	Address string `json:"address,omitempty"`
+	// OCI Artifact source to download the plugin from, optional
+	Source *PluginSource `json:"source,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters of the store
@@ -42,6 +44,7 @@ type StoreStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:deprecatedversion:warning="v1alpha1 of the Store API has been deprecated. Please migrate to v1beta1."
 
 // Store is the Schema for the stores API
 type Store struct {

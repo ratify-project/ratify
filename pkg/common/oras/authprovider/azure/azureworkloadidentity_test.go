@@ -29,6 +29,7 @@ import (
 func TestAzureWIEnabled_ExpectedResults(t *testing.T) {
 	azAuthProvider := azureWIAuthProvider{
 		tenantID: "test_tenant",
+		clientID: "test_client",
 		aadToken: confidential.AuthResult{
 			AccessToken: "test_token",
 		},
@@ -43,6 +44,11 @@ func TestAzureWIEnabled_ExpectedResults(t *testing.T) {
 	azAuthProvider.tenantID = ""
 	if azAuthProvider.Enabled(ctx) {
 		t.Fatal("enabled should have returned false but returned true for empty tenantID")
+	}
+
+	azAuthProvider.clientID = ""
+	if azAuthProvider.Enabled(ctx) {
+		t.Fatal("enabled should have returned false but returned true for empty clientID")
 	}
 
 	azAuthProvider.aadToken.AccessToken = ""
@@ -75,9 +81,36 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatal("failed to set env variable AZURE_TENANT_ID")
 	}
 
+	authProviderConfigWithClientID := map[string]interface{}{
+		"name":     "azureWorkloadIdentity",
+		"clientID": "client id from config",
+	}
+
+	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfigWithClientID)
+
+	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
+	}
+
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
-	expectedErr = fmt.Errorf("required environment variables not set, AZURE_CLIENT_ID: , AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
+	expectedErr = fmt.Errorf("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
+	if err == nil || err.Error() != expectedErr.Error() {
+		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
+	}
+
+	err = os.Setenv("AZURE_CLIENT_ID", "client id")
+	if err != nil {
+		t.Fatal("failed to set env variable AZURE_CLIENT_ID")
+	}
+
+	defer os.Unsetenv("AZURE_CLIENT_ID")
+	defer os.Unsetenv("AZURE_TENANT_ID")
+
+	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+
+	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
