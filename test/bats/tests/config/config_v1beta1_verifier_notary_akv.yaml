@@ -1,0 +1,23 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-notary
+spec:
+  name: notaryv2
+  artifactTypes: application/vnd.cncf.notary.signature
+  parameters:
+    verificationCertStores:
+      certs:
+        - certstore-akv
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: default
+          registryScopes:
+            - "*"
+          signatureVerification:
+            level: strict
+          trustStores:
+            - ca:certs
+          trustedIdentities:
+            - "*"
