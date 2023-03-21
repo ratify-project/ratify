@@ -36,6 +36,11 @@ spec:
 | tenantID   | yes     |   tenantID of the workload identity that have read access to this key vault   |     ""    |
 | clientID   | yes     |   clientID of the workload identity that have read access to this key vault   |     ""    |
 
+### Limitation
+Azure Key Vault integration currently only works for self signed certificate, we are following up on Azure Key Vault specific limitations so we could support certificate chains in the future, please use [issue 695](https://github.com/deislabs/ratify/issues/695) for tracking. If you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](certificate-stores.md#inline-certificate-provider). 
+
+Please also ensure the certificate is in PEM format, PKCS12 format with nonexportable private keys can not be parsed due to limitation of Golang certificate library.
+
 ## Inline Certificate Provider
 ```
 apiVersion: config.ratify.deislabs.io/v1alpha1
