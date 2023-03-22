@@ -108,6 +108,8 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
 
 ## Configure access policy for AKV 
 
+> Note: Azure Key Vault integration currently only support self signed certificate, if you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider).
+
 1. Set the environmental variable for Azure Key Vault URI.
 
     ```bash
@@ -122,7 +124,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     -n ${KEY_NAME} \
     -f ${CERT_PATH}
     ```
- 
+   
 3. Configure policy for user-assigned managed identity:
     
     ```bash

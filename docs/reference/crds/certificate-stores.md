@@ -6,7 +6,8 @@ View more CRD samples [here](../../../config/samples/). Each provider must speci
 provider: required, name of the certificate store provider
 parameters: required, parameters specific to this certificate store provider
 ```
- 
+
+# Certificate Store Provider
 ## AzureKeyVault Certificate Provider
 See notary integration example [here](../../developer/verifier.md#section-6-built-in-verifiers)
 ```yml
@@ -34,6 +35,11 @@ spec:
 | certificateVersion   | no     |   provider will fetch latest version if empty   |     ""    |
 | tenantID   | yes     |   tenantID of the workload identity that have read access to this key vault   |     ""    |
 | clientID   | yes     |   clientID of the workload identity that have read access to this key vault   |     ""    |
+
+### Limitation
+Azure Key Vault integration currently only works for self signed certificate, we are following up on Azure Key Vault specific limitations so we could support certificate chains in the future, please use [issue 695](https://github.com/deislabs/ratify/issues/695) for tracking. If you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](certificate-stores.md#inline-certificate-provider). 
+
+Please also ensure the certificate is in PEM format, PKCS12 format with nonexportable private keys can not be parsed due to limitation of Golang certificate library.
 
 ## Inline Certificate Provider
 ```
@@ -71,3 +77,19 @@ spec:
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
 | value      | yes    |      public certificate content       |   ""            |
+
+# Certificate Specification
+The main use case of certificate store is for notation verifier in Ratify, so users must follow the [TrustStore specification](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store) defined by notation.
+
+In brief, users must provide CA certificates or self-signed signing certificates, which means leaf certificates are not allowed to be used. Whatever certificates are provided, Ratify would keep only CA certificates and self-signed certificates. Therefore, if only leaf certificates are provided, Ratify would fail the verification directly since there are no valid certificates.
+
+For `AzureKeyVault Certificate Provider`, users must use the self-signed certificates due to some limitations on the SDK API. If users want to configure a certificate chain from root to leaf, it's recommended to use the `Inline Certificate Provider` instead.
+
+# CRD Resource Create/Update 
+During the CRD creating/updating process, some matters require attention. The CRD operation could be successful even though some invalid values or typos are provided. Examples:
+
+1. Invalid certificate value is provided in inline certificate provider.
+2. Invalid vaultUri/certificateName or typos within them are provided in AKV certificate provider.
+
+However, those invalid values or typos would cause failures while parsing certificates and signature verification in Ratify.
+So it's recommended to check the CRD status once the CRD operation is done.
