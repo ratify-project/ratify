@@ -122,7 +122,7 @@ test-e2e:
 
 .PHONY: test-e2e-cli
 
-test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 	IS_OCI_1_1=${IS_OCI_1_1} RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 
 .PHONY: generate-certs
@@ -239,6 +239,21 @@ e2e-notaryv2-setup:
 		docker push ${TEST_REGISTRY}/notation:ociartifact && \
 		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:ociartifact | jq -r .[0].RepoDigests[0]`; \
 	fi
+
+e2e-notation-leaf-cert-setup:
+	mkdir -p .staging/notaryv2/leaf-test
+	mkdir -p ~/.config/notation/truststore/x509/ca/leaf-test
+	./scripts/generate-cert-chain.sh .staging/notaryv2/leaf-test
+	cp .staging/notaryv2/leaf-test/leaf.crt ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt
+	cp .staging/notaryv2/leaf-test/ca.crt ~/.config/notation/truststore/x509/ca/leaf-test/root.crt
+	cat .staging/notaryv2/leaf-test/ca.crt >> .staging/notaryv2/leaf-test/leaf.crt
+
+	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notaryv2/leaf-test/leaf.key","certPath":".staging/notaryv2/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
+
+	echo 'FROM alpine\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/notation:leafSigned .staging/notaryv2
+	docker push ${TEST_REGISTRY}/notation:leafSigned
+	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" `docker image inspect ${TEST_REGISTRY}/notation:leafSigned | jq -r .[0].RepoDigests[0]`
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
@@ -390,7 +405,7 @@ e2e-inlinecert-setup:
 	.staging/notaryv2/notation cert generate-test "alternate-cert"
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "alternate-cert" `docker image inspect ${TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
 
-e2e-azure-setup: e2e-create-all-image e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+e2e-azure-setup: e2e-create-all-image e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -403,7 +418,7 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
-e2e-deploy-ratify: e2e-notaryv2-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
 	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 

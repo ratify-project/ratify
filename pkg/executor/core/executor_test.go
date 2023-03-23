@@ -92,7 +92,7 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
@@ -137,7 +137,7 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -193,7 +193,7 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -245,7 +245,7 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
@@ -305,7 +305,7 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	}
 
 	verifyParameters := e.VerifyParameters{
-		Subject: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
+		Subject: "localhost:5000/net-monitor:v1",
 	}
 
 	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
