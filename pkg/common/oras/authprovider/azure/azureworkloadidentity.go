@@ -23,7 +23,7 @@ import (
 	"time"
 
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	"github.com/deislabs/ratify/pkg/utils/azureauth"
+	"github.com/deislabs/ratify/pkg/utils"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
@@ -78,7 +78,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	// retrieve an AAD Access token
-	token, err := azureauth.GetAADAccessToken(context.Background(), tenant, clientID, AADResource)
+	token, err := utils.GetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +118,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 
 	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
-		newToken, err := azureauth.GetAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
+		newToken, err := utils.GetAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
 		}
