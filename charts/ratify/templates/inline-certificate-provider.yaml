@@ -1,4 +1,4 @@
-{{- if eq .Values.akvCertConfig.enabled false }}  
+{{- if .Values.notaryCert}} 
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
 metadata:
@@ -6,5 +6,5 @@ metadata:
 spec:
   provider: inline
   parameters:
-    value: {{ required "You must provide .Values.notaryCert" .Values.notaryCert | quote }}
+    value: {{ .Values.notaryCert | quote }}
 {{- end }}
