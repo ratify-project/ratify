@@ -146,10 +146,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		// The verification will return an error if the signature is not valid.
 		// Currently the bundle verification result is ignored
 		_, err = cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
-		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to verify image signature: %w", err)), nil
+		if err == nil {
+			signatures = append(signatures, sig)
 		}
-		signatures = append(signatures, sig)
 	}
 
 	if len(signatures) > 0 {
