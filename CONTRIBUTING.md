@@ -208,32 +208,35 @@ Prerequisites:
 - Connect to K8s cluster
 - Namespace context set to Ratify's installation namespace (default is `gatekeeper-system`)
 
-Configure Bridge to Kubernetes (Comprehensive guide [here](https://learn.microsoft.com/en-us/visualstudio/bridge/bridge-to-kubernetes-vs-code))
-1. Open the `Command Palette` in VSCode `CTRL-SHIFT-P`
-1. Select `Bridge to Kubernetes: Configure`
-1. Select `Ratify` from the list as the service to redirect to
-1. Set port to be 6001
-1. Select `Serve w/ CRD manager and TLS enabled` as the launch config
+Gatekeeper requires TLS for external data provider interactions. As such ratify must run with TLS cert and key configured on server startup. The current helm chart will automatically generate the cabundle, cert, and key if none are manually specified. For ease of use in starting the local ratify server on our development environment, we should pre generate the TLS ca bundle, cert, and key and instead provide them during helm installation. 
 
-This should automatically append a new Bridge to Kubernetes configuration to the launch.json file and add a new tasks.json file. 
-
-NOTE: If you are using a remote development environment, set the `useKubernetesServiceEnvironmentVariables` field to `true` in the tasks.json file. 
-
-Gatekeeper requires TLS for external data provider interactions. As such ratify must run with TLS cert and key configured on server startup. The current helm chart will automatically generate the cert and key if none are manually specified. For ease of use in starting the local ratify server on our development environment, we should pre generate the TLS cert and key and instead provide the TLS cert and key during helm installation. 
-
-1. Generate TLS cert and key. By default this will place the tls/cert folder in the $WORKSPACE_DIRECTORY
+1. Generate TLS cabundle, cert, and key. By default this will place the tls/cert folder in the $WORKSPACE_DIRECTORY
     ```
     make generate-certs
     ```
+1. Rename files server.crt and server.key to tls.crt and tls.key
 1. Updated helm install command
     ```
     helm install ratify \
       ./charts/ratify --atomic \
       --namespace gatekeeper-system \
       --set-file notaryCert=./test/testdata/notary.crt \
-      --set-file provider.tls.cert=./tls/certs/server.crt
-      --set-file provider.tls.key=./tls/certs/server.key
+      --set-file provider.tls.crt=./tls/certs/tls.crt \
+      --set-file provider.tls.key=./tls/certs/tls.key \
+      --set-file provider.tls.cabundle=./tls/certs/ca.crt
     ```
+
+Configure Bridge to Kubernetes (Comprehensive guide [here](https://learn.microsoft.com/en-us/visualstudio/bridge/bridge-to-kubernetes-vs-code))
+1. Open the `Command Palette` in VSCode `CTRL-SHIFT-P`
+1. Select `Bridge to Kubernetes: Configure`
+1. Select `Ratify` from the list as the service to redirect to
+1. Set port to be 6001
+1. Select `Serve w/ CRD manager and TLS enabled` as the launch config
+1. Select 'No' for request isolation
+
+This should automatically append a new Bridge to Kubernetes configuration to the launch.json file and add a new tasks.json file. 
+
+NOTE: If you are using a remote development environment, set the `useKubernetesServiceEnvironmentVariables` field to `true` in the tasks.json file. 
 
 Start the debug session with the generated Bridge to Kubernetes launch config selected. This will start up the local Ratify server and forward all requests from the Ratify service to the local instance. The http server logs in the debug console will show new requests being processed locally.
 ## Pull Requests
