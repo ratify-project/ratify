@@ -38,6 +38,8 @@ type serveCmdOptions struct {
 	enableCrdManager  bool
 	cacheSize         int
 	cacheTTL          time.Duration
+	metricsType       string
+	metricsPort       int
 }
 
 func NewCmdServe(argv ...string) *cobra.Command {
@@ -62,6 +64,8 @@ func NewCmdServe(argv ...string) *cobra.Command {
 	flags.BoolVar(&opts.enableCrdManager, "enable-crd-manager", false, "Start crd manager if enabled")
 	flags.IntVar(&opts.cacheSize, "cache-size", httpserver.DefaultCacheMaxSize, "Cache size for the verifier http server")
 	flags.DurationVar(&opts.cacheTTL, "cache-ttl", httpserver.DefaultCacheTTL, "Cache TTL for the verifier http server")
+	flags.StringVar(&opts.metricsType, "metrics-type", httpserver.DefaultMetricsType, "Metrics exporter type to use")
+	flags.IntVar(&opts.metricsPort, "metrics-port", httpserver.DefaultMetricsPort, "Metrics exporter port to use")
 	return cmd
 }
 
@@ -70,7 +74,7 @@ func serve(opts serveCmdOptions) error {
 	if opts.enableCrdManager {
 		logrus.Infof("starting crd manager")
 		go manager.StartManager()
-		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL)
+		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL, opts.metricsType, opts.metricsPort)
 
 		return nil
 	}
@@ -81,7 +85,7 @@ func serve(opts serveCmdOptions) error {
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL, opts.metricsType, opts.metricsPort)
 		if err != nil {
 			return err
 		}

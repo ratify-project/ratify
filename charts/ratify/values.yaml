@@ -24,6 +24,9 @@ serviceAccount:
 gatekeeper:
   version: "3.11.0"
   namespace: # default is gatekeeper-system
+instrumentation:
+  metricsType: prometheus
+  metricsPort: 8888
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled

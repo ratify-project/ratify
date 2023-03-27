@@ -25,6 +25,7 @@ import (
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -147,6 +148,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 
 	for _, verifier := range ex.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
+			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
 			verifyResult.Subject = subjectRef.String()
 			if err != nil {
@@ -163,6 +165,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
 			verifyResults = append(verifyResults, verifyResult)
 			isSuccess = verifyResult.IsSuccess
+			metrics.ReportVerifierDuration(ctx, time.Since(verifierStartTime).Milliseconds(), verifier.Name(), subjectRef.String())
 			break
 		}
 	}
