@@ -68,7 +68,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	logger.Infof("reconciling certificate store '%v'", resource)
 	resetStatus(r, ctx, certStore, logger)
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
-
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", req.Name)
 			delete(certificatesMap, resource)
@@ -99,7 +98,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err != nil {
 		updateStatusWithErr(r, ctx, certStore, err, logger)
 
-		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %v", resource, certStore.Spec.Provider, err)
+		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
 	if err := setSuccessStatus(r, ctx, certStore, logger); err != nil {
