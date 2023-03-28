@@ -19,8 +19,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"reflect"
 	"testing"
 	"time"
@@ -32,6 +36,7 @@ import (
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
 const inputOriginalPath = "localhost:5000/net-monitor:v0"
@@ -468,5 +473,54 @@ func TestORASGetBlobContent_NotCachedDesc(t *testing.T) {
 	}
 	if !bytes.Equal(content, expectedContent) {
 		t.Fatalf("expected content %s, got %s", expectedContent, content)
+	}
+}
+
+// Test_ORASRetryClient tests that the retry client retries on 429 for specified number of retries
+func Test_ORASRetryClient(t *testing.T) {
+	ctx := context.Background()
+	// Create a test server
+	count := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodHead && r.URL.Path == "/v2/test/manifests/latest":
+			w.WriteHeader(http.StatusTooManyRequests)
+			count++
+			return
+		default:
+			w.WriteHeader(http.StatusForbidden)
+		}
+		w.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer ts.Close()
+
+	conf := config.StorePluginConfig{
+		"name":    "oras",
+		"useHttp": true,
+	}
+	store, err := createBaseStore("1.0.0", conf)
+	if err != nil {
+		t.Fatalf("failed to create oras store: %v", err)
+	}
+	uri, err := url.Parse(ts.URL)
+	if err != nil {
+		t.Fatalf("invalid test http server: %v", err)
+	}
+	_, err = store.GetSubjectDescriptor(ctx, common.Reference{
+		Original: uri.Host + "/test:latest",
+		Tag:      "latest",
+		Path:     uri.Host + "/test",
+	})
+	if err != nil {
+		var ec errcode.Error
+		if errors.As(err, &ec) && (ec.Code != fmt.Sprint(http.StatusTooManyRequests)) {
+			t.Fatalf("expected error code %d, got %s", http.StatusTooManyRequests, ec.Code)
+		}
+	}
+
+	// Verify that the retry client was used by checking the number of retries
+	// The retry client will retry 5 times, so we expect 6 total requests
+	if count != 6 {
+		t.Fatalf("expected 6 retries, got %d", count)
 	}
 }
