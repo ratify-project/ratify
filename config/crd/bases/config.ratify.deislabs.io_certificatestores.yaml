@@ -107,6 +107,8 @@ spec:
                   of error
                 format: date-time
                 type: string
+            required:
+            - issuccess
             type: object
         type: object
     served: true

@@ -97,7 +97,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	certificates, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
-		certStore.Status.IsSuccess = false
 		updateStatusWithErr(r, ctx, certStore, err, logger)
 
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %v", resource, certStore.Spec.Provider, err)
@@ -143,6 +142,7 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 
 func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, err error, logger *logrus.Entry) {
 	certStore.Status.Error = err.Error()
+
 	certStore.Status.IsSuccess = false
 	var now = metav1.Now()
 	certStore.Status.LastFetchedTime = &now

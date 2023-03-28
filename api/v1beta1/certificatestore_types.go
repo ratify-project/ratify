@@ -40,8 +40,7 @@ type CertificateStoreStatus struct {
 	// Important: Run "make manifests" to regenerate code after modifying this file
 
 	// Is successful in loading certificate files
-	// +optional
-	IsSuccess bool `json:"issuccess,omitempty"`
+	IsSuccess bool `json:"issuccess"`
 	// Error message if operation was unsuccessful
 	// +optional
 	Error string `json:"error,omitempty"`
