@@ -23,6 +23,7 @@ import (
 	"time"
 
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
+	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
@@ -131,10 +132,12 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 
 	// create registry client and exchange AAD token for registry refresh token
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
+	starttime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
 		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry - %w", err)
 	}
+	metrics.ReportACRExchangeDuration(ctx, time.Since(starttime).Milliseconds(), artifactHostName)
 
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,

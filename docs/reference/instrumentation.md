@@ -59,6 +59,7 @@ Prior to installing Ratify on the cluster:
 1. Install the `prometheus-community/kube-prometheus-stack` helm chart. This will install the standard kubernetes metrics including Grafana. It will also expose Prometheus and Grafana on an external IP and load a Ratify specific dashboard.
     ```
     helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --atomic\
+        --set prometheus.prometheusSpec.scrapeInterval=15s \
         --set prometheus.prometheusSpec.additionalScrapeConfigsSecret.enabled=true \
         --set prometheus.prometheusSpec.additionalScrapeConfigsSecret.name=additional-scrape-configs \
         --set prometheus.prometheusSpec.additionalScrapeConfigsSecret.key=prometheus-additional.yaml \

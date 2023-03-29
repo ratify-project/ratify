@@ -45,6 +45,7 @@ import (
 	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure"
 	commonutils "github.com/deislabs/ratify/pkg/common/utils"
 	"github.com/deislabs/ratify/pkg/homedir"
+	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -145,9 +146,20 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 		return nil, fmt.Errorf("could not create local oras cache at path %s: %w", conf.LocalCachePath, err)
 	}
 
+	var customPredicate retry.Predicate = func(resp *http.Response, err error) (bool, error) {
+		host := ""
+		if resp != nil {
+			if resp.Request != nil && resp.Request.URL != nil {
+				host = resp.Request.URL.Host
+			}
+			metrics.ReportRegistryRequestCount(resp.Request.Context(), resp.StatusCode, host)
+		}
+		return retry.DefaultPredicate(resp, err)
+	}
+
 	customRetryPolicy := func() retry.Policy {
 		return &retry.GenericPolicy{
-			Retryable: retry.DefaultPredicate,
+			Retryable: customPredicate,
 			Backoff:   retry.DefaultBackoff,
 			MinWait:   HttpRetryDurationMin,
 			MaxWait:   HttpRetryDurationMax,

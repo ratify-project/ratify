@@ -32,6 +32,11 @@ var (
 	mutationDuration     instrument.Int64Histogram
 	verifierDuration     instrument.Int64Histogram
 	systemErrorCount     instrument.Int64Counter
+	registryRequestCount instrument.Int64Counter
+
+	// Azure Metrics
+	aadExchangeDuration instrument.Int64Histogram
+	acrExchangeDuration instrument.Int64Histogram
 )
 
 const (
@@ -42,6 +47,11 @@ const (
 	metricNameMutationDuration     = "ratify_mutation_request"
 	metricNameVerifierDuration     = "ratify_verifier_duration"
 	metricNameSystemErrorCount     = "ratify_system_error_count"
+	metricNameRegistryRequestCount = "ratify_registry_request_count"
+
+	// Azure Metrics
+	metricNameAADExchangeDuration = "ratify_aad_exchange_duration"
+	metricNameACRExchangeDuration = "ratify_acr_exchange_duration"
 )
 
 // NewStatsReporter creates a new StatsReporter
@@ -80,6 +90,28 @@ func initStatsReporter() error {
 					Boundaries: []float64{0, 10, 50, 100, 200, 400, 800, 1600},
 				},
 			},
+		),
+		sdkmetric.NewView(
+			sdkmetric.Instrument{
+				Name:  metricNameAADExchangeDuration,
+				Scope: instrumentation.Scope{Name: scope},
+			},
+			sdkmetric.Stream{
+				Aggregation: aggregation.ExplicitBucketHistogram{
+					Boundaries: []float64{0, 10, 50, 100, 200, 400, 600, 800},
+				},
+			},
+		),
+		sdkmetric.NewView(
+			sdkmetric.Instrument{
+				Name:  metricNameACRExchangeDuration,
+				Scope: instrumentation.Scope{Name: scope},
+			},
+			sdkmetric.Stream{
+				Aggregation: aggregation.ExplicitBucketHistogram{
+					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500},
+				},
+			},
 		)}
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(MetricReader), sdkmetric.WithView(views...))
 	meter := provider.Meter(scope)
@@ -99,6 +131,21 @@ func initStatsReporter() error {
 		return err
 	}
 	systemErrorCount, err = meter.Int64Counter(metricNameSystemErrorCount, instrument.WithDescription("system error count"))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	registryRequestCount, err = meter.Int64Counter(metricNameRegistryRequestCount, instrument.WithDescription("registry request count"))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	aadExchangeDuration, err = meter.Int64Histogram(metricNameVerifierDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("AAD exchange duration in ms"))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	acrExchangeDuration, err = meter.Int64Histogram(metricNameVerifierDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("ACR exchange duration in ms"))
 	if err != nil {
 		logrus.Error(err)
 		return err
@@ -127,5 +174,23 @@ func ReportVerifierDuration(ctx context.Context, duration int64, veriferName str
 func ReportSystemError(ctx context.Context, errorString string) {
 	if systemErrorCount != nil {
 		systemErrorCount.Add(ctx, 1, attribute.KeyValue{Key: "error", Value: attribute.StringValue(errorString)})
+	}
+}
+
+func ReportRegistryRequestCount(ctx context.Context, statusCode int, registryHost string) {
+	if registryRequestCount != nil {
+		registryRequestCount.Add(ctx, 1, attribute.KeyValue{Key: "status_code", Value: attribute.IntValue(statusCode)}, attribute.KeyValue{Key: "registry_host", Value: attribute.StringValue(registryHost)})
+	}
+}
+
+func ReportAADExchangeDuration(ctx context.Context, duration int64, resourceType string) {
+	if aadExchangeDuration != nil {
+		aadExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "resource_type", Value: attribute.StringValue(resourceType)})
+	}
+}
+
+func ReportACRExchangeDuration(ctx context.Context, duration int64, repository string) {
+	if acrExchangeDuration != nil {
+		acrExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)})
 	}
 }

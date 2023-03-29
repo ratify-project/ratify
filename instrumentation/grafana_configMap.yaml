@@ -41,6 +41,199 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "verification route requests per seconds averaged over 15 seconds",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 0,
+            "y": 0
+          },
+          "id": 1,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "9.3.8",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "builder",
+              "expr": "sum(rate(ratify_verification_request_count[15s]))",
+              "instant": true,
+              "key": "Q-806348e4-5c52-4af8-87f1-0676999cd43c-0",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Verification RPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "description": "registry operations requests per second averaged over 15 seconds",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "drawStyle": "line",
+                "fillOpacity": 15,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "lineInterpolation": "linear",
+                "lineWidth": 2,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": false,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green",
+                    "value": null
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 12,
+            "x": 12,
+            "y": 0
+          },
+          "id": 8,
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": false
+            },
+            "tooltip": {
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "prometheus"
+              },
+              "editorMode": "builder",
+              "expr": "sum(rate(ratify_registry_request_count_total[15s]))",
+              "instant": true,
+              "key": "Q-b9c0e144-a699-49f6-9b4f-9853f178fb02-0",
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Registry RPS",
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -89,7 +282,8 @@ data:
                     "value": 80
                   }
                 ]
-              }
+              },
+              "unit": "ms"
             },
             "overrides": []
           },
@@ -97,7 +291,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 0
+            "y": 8
           },
           "id": 5,
           "options": {
@@ -181,7 +375,8 @@ data:
                     "value": 80
                   }
                 ]
-              }
+              },
+              "unit": "ms"
             },
             "overrides": []
           },
@@ -189,7 +384,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 0
+            "y": 8
           },
           "id": 3,
           "options": {
@@ -225,6 +420,7 @@ data:
             "type": "prometheus",
             "uid": "prometheus"
           },
+          "description": "registry operations requests per second resulting in 429 averaged over 15 seconds",
           "fieldConfig": {
             "defaults": {
               "color": {
@@ -282,9 +478,9 @@ data:
             "h": 8,
             "w": 12,
             "x": 0,
-            "y": 8
+            "y": 16
           },
-          "id": 1,
+          "id": 9,
           "options": {
             "legend": {
               "calcs": [],
@@ -297,7 +493,6 @@ data:
               "sort": "none"
             }
           },
-          "pluginVersion": "9.3.8",
           "targets": [
             {
               "datasource": {
@@ -305,15 +500,15 @@ data:
                 "uid": "prometheus"
               },
               "editorMode": "builder",
-              "expr": "rate(ratify_verification_request_count[$__rate_interval])",
+              "expr": "sum(rate(ratify_registry_request_count_total{status_code=\"429\"}[15s]))",
               "instant": true,
-              "key": "Q-806348e4-5c52-4af8-87f1-0676999cd43c-0",
+              "key": "Q-b9c0e144-a699-49f6-9b4f-9853f178fb02-0",
               "legendFormat": "__auto",
               "range": true,
               "refId": "A"
             }
           ],
-          "title": "Verification RPS",
+          "title": "Registry 429 RPS",
           "type": "timeseries"
         },
         {
@@ -378,7 +573,7 @@ data:
             "h": 8,
             "w": 12,
             "x": 12,
-            "y": 8
+            "y": 16
           },
           "id": 7,
           "options": {
@@ -410,7 +605,7 @@ data:
           "type": "timeseries"
         }
       ],
-      "refresh": "30s",
+      "refresh": "10s",
       "schemaVersion": 37,
       "style": "dark",
       "tags": [],
@@ -425,6 +620,6 @@ data:
       "timezone": "",
       "title": "Ratify",
       "uid": "mBWgLNBVk",
-      "version": 2,
+      "version": 1,
       "weekStart": ""
     }
