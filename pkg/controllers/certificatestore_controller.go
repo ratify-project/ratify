@@ -66,7 +66,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
-	resetStatus(r, ctx, certStore, logger)
+
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", req.Name)
@@ -79,6 +79,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	resetStatus(r, ctx, certStore, logger)
 	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
 	if err != nil {
@@ -147,7 +148,7 @@ func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, cer
 	certStore.Status.LastFetchedTime = &now
 
 	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
-		logger.Error(statusErr, "unable to update certificate store error status")
+		logger.Error(statusErr, " unable to update certificate store error status")
 	}
 }
 
@@ -158,19 +159,19 @@ func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, certSt
 	certStore.Status.LastFetchedTime = &now
 
 	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
-		logger.Error(statusErr, "unable to update certificate store success status")
+		logger.Error(statusErr, " unable to update certificate store success status")
 		return statusErr
 	}
 	return nil
 }
 
 func resetStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry) {
-	certStore.Status.Error = ""
+	certStore.Status.Error = "Fetching in progress.."
 	certStore.Status.IsSuccess = false
 	//status.LastFetchedTime = &(metav1.Now()) , this did not compile, any insights?
 	var now = metav1.Now()
 	certStore.Status.LastFetchedTime = &now
 	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
-		logger.Error(statusErr, "unable to update certificate store success status")
+		logger.Error(statusErr, " unable to reset certificate store status")
 	}
 }
