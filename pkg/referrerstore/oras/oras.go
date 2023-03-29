@@ -36,6 +36,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote"
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"oras.land/oras-go/v2/registry/remote/errcode"
+	"oras.land/oras-go/v2/registry/remote/retry"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
@@ -48,8 +49,6 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/referrerstore/utils"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/opencontainers/go-digest"
 	"github.com/sirupsen/logrus"
 )
@@ -58,9 +57,9 @@ const (
 	HttpMaxIdleConns                      = 100
 	HttpMaxConnsPerHost                   = 100
 	HttpMaxIdleConnsPerHost               = 100
-	HttpRetryMax                          = 10
-	HttpRetryDurationMin    time.Duration = 100 * time.Millisecond
-	HttpRetryDurationMax    time.Duration = 200 * time.Millisecond
+	HttpRetryMax                          = 5
+	HttpRetryDurationMin    time.Duration = 200 * time.Millisecond
+	HttpRetryDurationMax    time.Duration = 1750 * time.Millisecond
 )
 
 const (
@@ -146,26 +145,25 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 		return nil, fmt.Errorf("could not create local oras cache at path %s: %w", conf.LocalCachePath, err)
 	}
 
+	customRetryPolicy := func() retry.Policy {
+		return &retry.GenericPolicy{
+			Retryable: retry.DefaultPredicate,
+			Backoff:   retry.DefaultBackoff,
+			MinWait:   HttpRetryDurationMin,
+			MaxWait:   HttpRetryDurationMax,
+			MaxRetry:  HttpRetryMax,
+		}
+	}
+
 	// define the http client for TLS enabled
-	secureRetryClient := retryablehttp.NewClient()
-	secureRetryClient.RetryMax = HttpRetryMax
-	secureRetryClient.Backoff = retryablehttp.LinearJitterBackoff
-	secureRetryClient.RetryWaitMin = HttpRetryDurationMin
-	secureRetryClient.RetryWaitMax = HttpRetryDurationMax
-	secureRetryClient.Logger = utils.HttpRetryLogger{}
 	secureTransport := http.DefaultTransport.(*http.Transport).Clone()
 	secureTransport.MaxIdleConns = HttpMaxIdleConns
 	secureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
 	secureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
-	secureRetryClient.HTTPClient.Transport = secureTransport
+	secureRetryTransport := retry.NewTransport(secureTransport)
+	secureRetryTransport.Policy = customRetryPolicy
 
 	// define the http client for TLS disabled
-	insecureRetryClient := retryablehttp.NewClient()
-	insecureRetryClient.RetryMax = HttpRetryMax
-	insecureRetryClient.Backoff = retryablehttp.LinearJitterBackoff
-	insecureRetryClient.RetryWaitMin = HttpRetryDurationMin
-	insecureRetryClient.RetryWaitMax = HttpRetryDurationMax
-	insecureRetryClient.Logger = utils.HttpRetryLogger{}
 	insecureTransport := http.DefaultTransport.(*http.Transport).Clone()
 	insecureTransport.MaxIdleConns = HttpMaxIdleConns
 	insecureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
@@ -174,14 +172,15 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 	insecureTransport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
-	insecureRetryClient.HTTPClient.Transport = insecureTransport
+	insecureRetryTransport := retry.NewTransport(insecureTransport)
+	insecureRetryTransport.Policy = customRetryPolicy
 
 	return &orasStore{config: &conf,
 		rawConfig:          config.StoreConfig{Version: version, Store: storeConfig},
 		localCache:         localRegistry,
 		authProvider:       authenticationProvider,
-		httpClient:         secureRetryClient.StandardClient(),
-		httpClientInsecure: insecureRetryClient.StandardClient(),
+		httpClient:         &http.Client{Transport: secureRetryTransport},
+		httpClientInsecure: &http.Client{Transport: insecureRetryTransport},
 		createRepository:   createDefaultRepository}, nil
 }
 

@@ -56,6 +56,26 @@
       ],
     },
     {
+      // This requires your kubeconfig to be pointed at a cluster with Ratify CRDs installed
+      // This requires you to have generated tls.crt and tls.key and placed them in a single directory
+      "name": "Serve w/ CRD manager and TLS enabled",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/cmd/ratify",
+      "env": {
+        "RATIFY_LOG_LEVEL": "debug",
+        "RATIFY_DYNAMIC_PLUGINS": "1"
+      },
+      "args": [
+        "serve",
+        "--enable-crd-manager",
+        "--http",
+        ":6001",
+        "--cert-dir=${input:tlsDir}"
+      ],
+    },
+    {
       "name": "Debug Cosign Plugin",
       "type": "go",
       "request": "launch",
@@ -83,6 +103,12 @@
       "type": "promptString",
       "description": "Absolute path to config file",
       "default": "${workspaceFolder}/test/bats/tests/config/config.json"
-    }
+    },
+    {
+      "id": "tlsDir",
+      "type": "promptString",
+      "description": "Absolute path to tls cert and key directory",
+      "default": "${workspaceFolder}/tls/certs"
+    },
   ]
 }
