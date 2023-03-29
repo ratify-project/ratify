@@ -234,45 +234,29 @@ Ratify resolves registry credentials from [Docker Config Kubernetes secrets](htt
 
 Ratify only supports the kubernetes.io/dockerconfigjson secret type.
 
-#### Sample Configuration
+> Note: Kubernetes secrets are reloaded and refreshed for Ratify to use every 12 hours. Changes to the Secret may not be reflected immediately.
 
-```json
-"store": {
-        "version": "1.0.0",
-        "plugins": [
-            {
-                "name": "oras",
-                "localCachePath": "./local_oras_cache",
-                "authProvider": {
-                    "name": "k8Secrets",
-                    "serviceAccountName": "ratify-sa", // will be 'default' if not specified
-                    "secrets" : [
-                        {
-                            "secretName": "artifact-pull-dockerConfig" // Ratify namespace will be used 
-                        },
-                        {
-                            "secretName": "artifact-pull-dockerConfig2",
-                            "namespace": "test"
-                        }
-                    ]
-                }
-            }
-        ]
-    }
-```
-
-Note: Kubernetes secrets are reloaded and refreshed for Ratify to use every 12 hours. Changes to the Secret may not be reflected immediately.
-
+#### Sample install guide using service account image pull secrets
 - Create a k8s secret by providing credentials on the command line. This secret should be in the same namespace that contains Ratify deployment.
 
 ```bash
-kubectl create secret docker-registry ratify-regcred --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
+kubectl create secret docker-registry ratify-regcred -n <ratify-namespace> --docker-server=<your-registry-server> --docker-username=<your-name> --docker-password=<your-pword> --docker-email=<your-email>
 ```
 
 - Deploy Ratify using helm
 
 ```bash
-helm install ratify charts/ratify --set registryCredsSecret=ratify-regcred
+helm install ratify \
+    ratify/ratify --atomic \
+    --namespace gatekeeper-system \
+    --set-file notaryCert=./notary.crt \
+    --set oras.authProviders.k8secretsEnabled=true
+```
+
+- Patch the Ratify service account (default is `ratify-admin`) for the ratify namespace (default is `gatekeeper-system`) to append `ratify-regcred` secret to `imagePullSecrets` array
+
+```bash
+kubectl patch serviceaccount ratify-admin -n gatekeeper-system -p '{"imagePullSecrets": [{"name": "ratify-regcred"}]}'
 ```
 
 > This mode can be used to authenticate with a single registry. If authentication to multiple registries is needed, docker config file can be used as described below
@@ -288,6 +272,30 @@ helm install ratify charts/ratify --set-file dockerConfig=<path to the local Doc
 ```
 
 Both the above modes uses a k8s secret of type ```dockerconfigjson``` that is described in the [document](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/)
+
+#### Sample Store Resource with specified k8s secrets
+
+```yaml
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Store
+metadata:
+  name: store-oras
+spec:
+  name: oras
+  parameters: 
+    cacheEnabled: true
+    capacity: 100
+    keyNumber: 10000
+    ttl: 10
+    useHttp: true  
+    authProvider:
+      name: k8Secrets
+      serviceAccountName: ratify-admin
+      secrets: 
+      - secretName: artifact-pull-dockerConfig
+      - secretName: artifact-pull-dockerConfig2
+        namespace: test 
+```
 
 ### 5. AWS IAM Roles for Service Accounts (IRSA)
 
@@ -374,7 +382,7 @@ oras:
 
 Once ratify is started, if an AWS custom endpoint resolver is successfully enabled, you will see the following log entries in the ratify pod logs, with no following errors:
 
-```bash
+```
 AWS ECR basic auth using custom endpoint resolver...
 AWS ECR basic auth API override endpoint: <AWS_ENDPOINT>
 AWS ECR basic auth API override partition: <AWS_PARTITION>
