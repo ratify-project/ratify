@@ -107,6 +107,9 @@ spec:
                   of error
                 format: date-time
                 type: string
+              parameters:
+                description: provider specific parameters of the each individual certificate
+                type: object
             required:
             - issuccess
             type: object

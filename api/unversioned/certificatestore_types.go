@@ -45,6 +45,9 @@ type CertificateStoreStatus struct {
 	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
 	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
+	// provider specific parameters of the each individual certificate
+	// +optional
+	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
 // CertificateStore is the Schema for the certificatestores API

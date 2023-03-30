@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"crypto/x509"
 	"encoding/json"
@@ -27,6 +28,8 @@ import (
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
 	"github.com/deislabs/ratify/pkg/utils"
+
+	"encoding/gob"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -45,6 +48,8 @@ type CertificateStoreReconciler struct {
 var (
 	// a map between CertificateStore name to array of x509 certificates
 	certificatesMap = map[string][]*x509.Certificate{}
+	// a map between CertificateStore name to array of certificate attributes
+	attributesMap = map[string]([]map[string]string){}
 )
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
@@ -95,18 +100,20 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
 	}
 
-	certificates, err := provider.GetCertificates(ctx, attributes)
+	certificates, certAttributes, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
 		updateStatusWithErr(r, ctx, certStore, err, logger)
 
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
-	if err := setSuccessStatus(r, ctx, certStore, logger); err != nil {
+	certificatesMap[resource] = certificates
+	attributesMap[resource] = certAttributes
+
+	if err := setSuccessStatus(r, ctx, certAttributes, certStore, logger); err != nil {
 		return ctrl.Result{}, err
 	}
 
-	certificatesMap[resource] = certificates
 	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
@@ -123,6 +130,16 @@ func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.CertificateStore{}).
 		Complete(r)
+}
+
+func getBytes(key []map[string]string) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
 }
 
 func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
@@ -152,9 +169,15 @@ func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, cer
 	}
 }
 
-func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
+func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, attributes []map[string]string, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
 	certStore.Status.IsSuccess = true
 	certStore.Status.Error = ""
+	params, _ := getBytes(attributes)
+	//todo handle error
+	raw := runtime.RawExtension{
+		Raw: params,
+	}
+	certStore.Status.Parameters = raw
 	var now = metav1.Now()
 	certStore.Status.LastFetchedTime = &now
 

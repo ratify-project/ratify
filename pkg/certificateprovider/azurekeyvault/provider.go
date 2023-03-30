@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
@@ -57,38 +58,38 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error) {
+func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, []map[string]string, error) {
 	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
 	workloadIdentityClientID := types.GetClientID(attrib)
 
 	if keyvaultUri == "" {
-		return nil, fmt.Errorf("keyvaultUri is not set")
+		return nil, nil, fmt.Errorf("keyvaultUri is not set")
 	}
 	if tenantID == "" {
-		return nil, fmt.Errorf("tenantID is not set")
+		return nil, nil, fmt.Errorf("tenantID is not set")
 	}
 	if workloadIdentityClientID == "" {
-		return nil, fmt.Errorf("clientID is not set")
+		return nil, nil, fmt.Errorf("clientID is not set")
 	}
 
 	azureCloudEnv, err := parseAzureEnvironment(cloudName)
 	if err != nil {
-		return nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
+		return nil, nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
 	}
 
 	// 1. cleaning up keyvault objects definition
 	certificatesStrings := types.GetCertificates(attrib)
 	if certificatesStrings == "" {
-		return nil, fmt.Errorf("certificates is not set")
+		return nil, nil, fmt.Errorf("certificates is not set")
 	}
 
 	logrus.Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
 
 	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
-		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
+		return nil, nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
 	}
 	logrus.Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
@@ -96,7 +97,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	for i, object := range objects.Array {
 		var keyVaultCert types.KeyVaultCertificate
 		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
-			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
+			return nil, nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
 		}
 		// remove whitespace from all fields in keyVaultCert
 		formatKeyVaultCertificate(&keyVaultCert)
@@ -107,24 +108,26 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	logrus.Debugf("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 
 	if len(keyVaultCerts) == 0 {
-		return nil, fmt.Errorf("no keyvault certificate configured")
+		return nil, nil, fmt.Errorf("no keyvault certificate configured")
 	}
 
 	logrus.Debugf("vaultURI %s", keyvaultUri)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
+		return nil, nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
 	}
 
 	certs := []*x509.Certificate{}
+	certsAttributes := []map[string]string{}
 	for _, keyVaultCert := range keyVaultCerts {
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
+		certFetchTime := time.Now().GoString()
 
 		// fetch the object from Key Vault
 		result, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 
 		objectContent := []byte(result.content)
@@ -140,13 +143,20 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		// convert bytes to x509
 		decodedCerts, err := certificateprovider.DecodeCertificates(cert.Content)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode certificate %s, error: %w", cert.CertificateName, err)
+			return nil, nil, fmt.Errorf("failed to decode certificate %s, error: %w", cert.CertificateName, err)
 		}
+
+		// save the attributes of the certificate
 		certs = append(certs, decodedCerts...)
+		attributes := map[string]string{}
+		attributes["CertificateName"] = keyVaultCert.CertificateName
+		attributes["Version"] = result.version
+		attributes["CertLastCached"] = certFetchTime
+		certsAttributes = append(certsAttributes, attributes)
 		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
 	}
 
-	return certs, nil
+	return certs, certsAttributes, nil
 }
 
 // formatKeyVaultCertificate formats the fields in KeyVaultCertificate
