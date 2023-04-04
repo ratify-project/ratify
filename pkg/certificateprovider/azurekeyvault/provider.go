@@ -58,7 +58,7 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, map[string]map[string]string, error) {
+func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
 	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
@@ -119,10 +119,11 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	}
 
 	certs := []*x509.Certificate{}
-	certsAttributes := []map[string]string{}
+	certsStatus := []map[string]string{}
+	lastRefreshed := time.Now().GoString()
+
 	for _, keyVaultCert := range keyVaultCerts {
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
-		certFetchTime := time.Now().GoString()
 
 		// fetch the object from Key Vault
 		result, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
@@ -148,15 +149,17 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 
 		// save the attributes of the certificate
 		certs = append(certs, decodedCerts...)
-		attributes := map[string]string{}
-		attributes["CertificateName"] = keyVaultCert.CertificateName
-		attributes["Version"] = result.version
-		attributes["CertLastCached"] = certFetchTime
-		certsAttributes = append(certsAttributes, attributes)
+		certProperty := map[string]string{}
+		certProperty["CertificateName"] = keyVaultCert.CertificateName
+		certProperty["Version"] = result.version
+		certProperty["LastRefreshed"] = lastRefreshed
+		certsStatus = append(certsStatus, certProperty)
 		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
 	}
 
-	return certs, nil, nil
+	status := certificateprovider.CertificatesStatus{}
+	status["Certificates"] = certsStatus
+	return certs, status, nil
 }
 
 // formatKeyVaultCertificate formats the fields in KeyVaultCertificate

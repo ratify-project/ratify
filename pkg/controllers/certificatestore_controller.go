@@ -47,8 +47,8 @@ type CertificateStoreReconciler struct {
 var (
 	// a map between CertificateStore name to array of x509 certificates
 	certificatesMap = map[string][]*x509.Certificate{}
-	// a map between CertificateStore name to array of certificate attributes
-	attributesMap = map[string]map[string]map[string]string{}
+	// a map between CertificateStore name to array of certificates status
+	attributesMap = map[string]certificateprovider.CertificatesStatus{}
 )
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
@@ -142,7 +142,7 @@ func getBytes(key []map[string]string) ([]byte, error) {
 
 }
 
-func getJsonBytes(key map[string]map[string]string) ([]byte, error) {
+func getJsonBytes(key certificateprovider.CertificatesStatus) ([]byte, error) {
 
 	jsonString, _ := json.Marshal(key)
 	var storeParameters = []byte(jsonString)
@@ -176,7 +176,7 @@ func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, cer
 	}
 }
 
-func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, attributes map[string]map[string]string, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
+func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, attributes certificateprovider.CertificatesStatus, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
 	certStore.Status.IsSuccess = true
 
 	params, _ := getJsonBytes(attributes)
