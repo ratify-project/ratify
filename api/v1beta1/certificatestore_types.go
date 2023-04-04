@@ -49,7 +49,7 @@ type CertificateStoreStatus struct {
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
 	// provider specific parameters of the each individual certificate
 	// +optional
-	Parameters runtime.RawExtension `json:"parameters,omitempty"`
+	Properties runtime.RawExtension `json:"properties,omitempty"`
 }
 
 // +kubebuilder:object:root=true

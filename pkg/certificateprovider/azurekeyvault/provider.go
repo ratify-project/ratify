@@ -58,7 +58,7 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, []map[string]string, error) {
+func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, map[string]map[string]string, error) {
 	keyvaultUri := types.GetKeyVaultUri(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
@@ -156,7 +156,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
 	}
 
-	return certs, certsAttributes, nil
+	return certs, nil, nil
 }
 
 // formatKeyVaultCertificate formats the fields in KeyVaultCertificate

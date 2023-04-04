@@ -28,7 +28,7 @@ type CertStoreConfig map[string]string
 // CertificateProvider is an interface that defines methods to be implemented by a each certificate provider
 type CertificateProvider interface {
 	// Returns an array of certificates and the provider specific cert attributes based on certificate properties defined in attrib map
-	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, []map[string]string, error)
+	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, map[string]map[string]string, error)
 }
 
 var certificateProviders = make(map[string]CertificateProvider)

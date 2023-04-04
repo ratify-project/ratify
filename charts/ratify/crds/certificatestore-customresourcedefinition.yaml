@@ -1,3 +1,4 @@
+---
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
@@ -15,8 +16,8 @@ spec:
   scope: Namespaced
   versions:
   - deprecated: true
-    deprecationWarning: v1alpha1 of the eraser API has been deprecated. Please migrate
-      to v1beta1.
+    deprecationWarning: v1alpha1 of the CertificateStore API has been deprecated.
+      Please migrate to v1beta1.
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -53,7 +54,17 @@ spec:
     storage: false
     subresources:
       status: {}
-  - name: v1beta1
+  - additionalPrinterColumns:
+    - jsonPath: .status.issuccess
+      name: IsSuccess
+      type: boolean
+    - jsonPath: .status.error
+      name: Error
+      type: string
+    - jsonPath: .status.lastfetchedtime
+      name: LastFetchedTime
+      type: date
+    name: v1beta1
     schema:
       openAPIV3Schema:
         description: CertificateStore is the Schema for the certificatestores API
@@ -83,6 +94,25 @@ spec:
             type: object
           status:
             description: CertificateStoreStatus defines the observed state of CertificateStore
+            properties:
+              error:
+                description: Error message if operation was unsuccessful
+                type: string
+              issuccess:
+                description: Is successful in loading certificate files
+                type: boolean
+              lastfetchedtime:
+                description: The time stamp of last successful certificates fetch
+                  operation. If operation failed, last fetched time shows the time
+                  of error
+                format: date-time
+                type: string
+              properties:
+                description: provider specific parameters of the each individual certificate
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+            required:
+            - issuccess
             type: object
         type: object
     served: true

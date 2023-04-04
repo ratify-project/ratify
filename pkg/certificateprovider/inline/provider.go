@@ -42,7 +42,7 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-func (s *inlineCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, []map[string]string, error) {
+func (s *inlineCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, map[string]map[string]string, error) {
 	value, ok := attrib[ValueParameter]
 	if !ok {
 		return nil, nil, fmt.Errorf("value parameter is not set")
@@ -50,5 +50,13 @@ func (s *inlineCertProvider) GetCertificates(ctx context.Context, attrib map[str
 
 	certs, err := certificateprovider.DecodeCertificates([]byte(value))
 
-	return certs, nil, err
+	// testing logic
+	cert1 := map[string]map[string]string{}
+	attributes := map[string]string{}
+	attributes["CertName"] = "hello1"
+	attributes["Version"] = "ABC"
+
+	cert1["MyCertificate"] = attributes
+
+	return certs, cert1, err
 }

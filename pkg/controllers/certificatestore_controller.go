@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/x509"
+	"encoding/gob"
 	"encoding/json"
 	"fmt"
 
@@ -28,8 +29,6 @@ import (
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
 	"github.com/deislabs/ratify/pkg/utils"
-
-	"encoding/gob"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -49,7 +48,7 @@ var (
 	// a map between CertificateStore name to array of x509 certificates
 	certificatesMap = map[string][]*x509.Certificate{}
 	// a map between CertificateStore name to array of certificate attributes
-	attributesMap = map[string]([]map[string]string){}
+	attributesMap = map[string]map[string]map[string]string{}
 )
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
@@ -140,6 +139,14 @@ func getBytes(key []map[string]string) ([]byte, error) {
 		return nil, err
 	}
 	return buf.Bytes(), nil
+
+}
+
+func getJsonBytes(key map[string]map[string]string) ([]byte, error) {
+
+	jsonString, _ := json.Marshal(key)
+	var storeParameters = []byte(jsonString)
+	return storeParameters, nil
 }
 
 func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
@@ -169,15 +176,14 @@ func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, cer
 	}
 }
 
-func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, attributes []map[string]string, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
+func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, attributes map[string]map[string]string, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
 	certStore.Status.IsSuccess = true
-	certStore.Status.Error = ""
-	params, _ := getBytes(attributes)
-	//todo handle error
+
+	params, _ := getJsonBytes(attributes)
 	raw := runtime.RawExtension{
 		Raw: params,
 	}
-	certStore.Status.Parameters = raw
+	certStore.Status.Properties = raw
 	var now = metav1.Now()
 	certStore.Status.LastFetchedTime = &now
 
