@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/deislabs/ratify/config"
@@ -38,6 +39,9 @@ type serveCmdOptions struct {
 	enableCrdManager  bool
 	cacheSize         int
 	cacheTTL          time.Duration
+	metricsEnabled    bool
+	metricsType       string
+	metricsPort       int
 }
 
 func NewCmdServe(argv ...string) *cobra.Command {
@@ -59,9 +63,12 @@ func NewCmdServe(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringVar(&opts.certDirectory, "cert-dir", "", "Path to ratify certs")
 	flags.StringVar(&opts.caCertFile, "ca-cert-file", "", "Path to CA cert file")
-	flags.BoolVar(&opts.enableCrdManager, "enable-crd-manager", false, "Start crd manager if enabled")
-	flags.IntVar(&opts.cacheSize, "cache-size", httpserver.DefaultCacheMaxSize, "Cache size for the verifier http server")
-	flags.DurationVar(&opts.cacheTTL, "cache-ttl", httpserver.DefaultCacheTTL, "Cache TTL for the verifier http server")
+	flags.BoolVar(&opts.enableCrdManager, "enable-crd-manager", false, "Start crd manager if enabled (default: false)")
+	flags.IntVar(&opts.cacheSize, "cache-size", httpserver.DefaultCacheMaxSize, fmt.Sprintf("Cache size for the verifier http server (default: %d)", httpserver.DefaultCacheMaxSize))
+	flags.DurationVar(&opts.cacheTTL, "cache-ttl", httpserver.DefaultCacheTTL, fmt.Sprintf("Cache TTL for the verifier http server (default: %fs)", httpserver.DefaultCacheTTL.Seconds()))
+	flags.BoolVar(&opts.metricsEnabled, "metrics-enabled", false, "Enable metrics exporter if enabled (default: false)")
+	flags.StringVar(&opts.metricsType, "metrics-type", httpserver.DefaultMetricsType, fmt.Sprintf("Metrics exporter type to use (default: %s)", httpserver.DefaultMetricsType))
+	flags.IntVar(&opts.metricsPort, "metrics-port", httpserver.DefaultMetricsPort, fmt.Sprintf("Metrics exporter port to use (default: %d)", httpserver.DefaultMetricsPort))
 	return cmd
 }
 
@@ -70,7 +77,7 @@ func serve(opts serveCmdOptions) error {
 	if opts.enableCrdManager {
 		logrus.Infof("starting crd manager")
 		go manager.StartManager()
-		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL)
+		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort)
 
 		return nil
 	}
@@ -81,7 +88,7 @@ func serve(opts serveCmdOptions) error {
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL)
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheSize, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort)
 		if err != nil {
 			return err
 		}
