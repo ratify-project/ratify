@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // CertificateStoreReconciler reconciles a CertificateStore object
@@ -47,8 +48,6 @@ type CertificateStoreReconciler struct {
 var (
 	// a map between CertificateStore name to array of x509 certificates
 	certificatesMap = map[string][]*x509.Certificate{}
-	// a map between CertificateStore name to array of certificates status
-	attributesMap = map[string]certificateprovider.CertificatesStatus{}
 )
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
@@ -79,15 +78,17 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 			logger.Error(err, "unable to fetch certificate store")
 		}
 
-		updateStatusWithErr(r, ctx, certStore, err, logger)
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	//resetStatus(r, ctx, certStore, logger)
 	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
+	lastFetchedTime := metav1.Now()
+	isFetchSuccessful := false
+
 	if err != nil {
-		updateStatusWithErr(r, ctx, certStore, err, logger)
+		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
 	}
 
@@ -96,22 +97,22 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	certStore.Spec.Provider = utils.TrimSpaceAndToLower(certStore.Spec.Provider)
 	provider, registered := providers[certStore.Spec.Provider]
 	if !registered {
-		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+		err := fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		return ctrl.Result{}, err
 	}
 
 	certificates, certAttributes, err := provider.GetCertificates(ctx, attributes)
-	if err != nil {
-		updateStatusWithErr(r, ctx, certStore, err, logger)
 
+	if err != nil {
+		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
 	certificatesMap[resource] = certificates
-	attributesMap[resource] = certAttributes
-
-	if err := setSuccessStatus(r, ctx, certAttributes, certStore, logger); err != nil {
-		return ctrl.Result{}, err
-	}
+	isFetchSuccessful = true
+	emptyErrorString := ""
+	writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
 
 	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
@@ -126,8 +127,10 @@ func GetCertificatesMap() map[string][]*x509.Certificate {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	pred := predicate.GenerationChangedPredicate{}
+
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.CertificateStore{}).
+		For(&configv1beta1.CertificateStore{}).WithEventFilter(pred).
 		Complete(r)
 }
 
@@ -140,13 +143,6 @@ func getBytes(key []map[string]string) ([]byte, error) {
 	}
 	return buf.Bytes(), nil
 
-}
-
-func getJsonBytes(key certificateprovider.CertificatesStatus) ([]byte, error) {
-
-	jsonString, _ := json.Marshal(key)
-	var storeParameters = []byte(jsonString)
-	return storeParameters, nil
 }
 
 func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
@@ -164,32 +160,35 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 	return attributes, nil
 }
 
-func updateStatusWithErr(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, err error, logger *logrus.Entry) {
-	certStore.Status.Error = err.Error()
-
-	certStore.Status.IsSuccess = false
-	var now = metav1.Now()
-	certStore.Status.LastFetchedTime = &now
-
+func writeCertStoreStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, certStatus certificateprovider.CertificatesStatus) {
+	if isSuccess {
+		updateSuccessStatus(&certStore, &operationTime, certStatus)
+	} else {
+		updateErrorStatus(&certStore, errorString, operationTime)
+	}
 	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
 		logger.Error(statusErr, ",unable to update certificate store error status")
 	}
 }
 
-func setSuccessStatus(r *CertificateStoreReconciler, ctx context.Context, attributes certificateprovider.CertificatesStatus, certStore configv1beta1.CertificateStore, logger *logrus.Entry) error {
+func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime metav1.Time) {
+	certStore.Status.IsSuccess = false
+	certStore.Status.Error = errorString
+	certStore.Status.LastFetchedTime = &operationTime
+}
+
+func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperationTime *metav1.Time, certStatus certificateprovider.CertificatesStatus) {
 	certStore.Status.IsSuccess = true
+	certStore.Status.Error = ""
+	certStore.Status.LastFetchedTime = lastOperationTime
 
-	params, _ := getJsonBytes(attributes)
-	raw := runtime.RawExtension{
-		Raw: params,
-	}
-	certStore.Status.Properties = raw
-	var now = metav1.Now()
-	certStore.Status.LastFetchedTime = &now
+	if certStatus != nil {
+		jsonString, _ := json.Marshal(certStatus)
+		var storeParameters = []byte(jsonString)
 
-	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
-		logger.Error(statusErr, ", unable to update certificate store success status")
-		return statusErr
+		raw := runtime.RawExtension{
+			Raw: storeParameters,
+		}
+		certStore.Status.Properties = raw
 	}
-	return nil
 }

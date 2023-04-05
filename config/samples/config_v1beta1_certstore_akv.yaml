@@ -5,12 +5,14 @@ metadata:
 spec:
   provider: azurekeyvault
   parameters:
-    vaultURI: https://yourkeyvault.vault.azure.net/
+    vaultURI: https://notarycerts.vault.azure.net/
     certificates:  |
       array:
         - |
-          certificateName: yourCertName
-          #Optional, fetch latest version if empty 
-          certificateVersion: yourCertVersion 
-    tenantID:
-    clientID: 
+          certificateName: wabbit-networks-io          
+          certificateVersion: 97a1545d893344079ce57699c8810590
+        - |
+          certificateName: wabbit-networks-io5          
+          certificateVersion: 72086d944ff04bf2bcbf36cb33728a86
+    tenantID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+    clientID: 1c7ac023-5bf6-4916-83f2-96dd203e35a3

@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -67,4 +68,41 @@ func TestGetCertStoreConfig_EmptyStringError(t *testing.T) {
 	if err.Error() != expectedError {
 		t.Fatalf("Unexpected error, expected %+v, got %+v", expectedError, err.Error())
 	}
+}
+
+func TestUpdateErrorStatus(t *testing.T) {
+	var parametersString = "{\"certs\":{\"name\":\"certName\"}}"
+	var certStatus = []byte(parametersString)
+
+	status := configv1beta1.CertificateStoreStatus{
+		IsSuccess: true,
+		Properties: runtime.RawExtension{
+			Raw: certStatus,
+		},
+	}
+	certStore := configv1beta1.CertificateStore{
+		Status: status,
+	}
+	expectedErr := "error from unit test"
+	lastFetchedTime := metav1.Now()
+	updateErrorStatus(&certStore, expectedErr, lastFetchedTime)
+
+	if certStore.Status.IsSuccess != false {
+		t.Fatalf("Unexpected error, expected isSuccess to be false , actual %+v", certStore.Status.IsSuccess)
+	}
+
+	if certStore.Status.Error != expectedErr {
+		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr, certStore.Status.Error)
+	}
+
+	//make sure properties of last cached cert was not overriden
+	if len(certStore.Status.Properties.Raw) == 0 {
+		t.Fatalf("Unexpected properties,  expected %+v, got %+v", parametersString, string(certStore.Status.Properties.Raw))
+	}
+}
+
+func TestUpdateSuccessStatus(t *testing.T) {
+}
+
+func TestUpdateSuccessStatus_emptyProperties(t *testing.T) {
 }

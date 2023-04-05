@@ -1,8 +1,8 @@
 image:
-  repository: ghcr.io/deislabs/ratify
-  crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.0.0-rc.2
-  pullPolicy: IfNotPresent
+  repository: huishratifyimage.azurecr.io/deislabs/ratify
+  crdRepository: huishratifyimage.azurecr.io/deislabs/ratify-crds
+  tag: v4041
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""
@@ -20,7 +20,7 @@ resources:
     memory: 512Mi
 serviceAccount:
   create: true
-  name: ratify-admin
+  name: wlidsa
 gatekeeper:
   version: "3.11.0"
   namespace: # default is gatekeeper-system
@@ -29,25 +29,25 @@ gatekeeper:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
 # Key Vault -> akvCertConfig.enabled
 azureWorkloadIdentity:
-  clientId:
+  clientId: 1c7ac023-5bf6-4916-83f2-96dd203e35a3
 
 azureManagedIdentity:
-  clientId:
+  clientId: 
   tenantId:
 
 akvCertConfig:
-  enabled: false
-  vaultURI:
-  cert1Name:
+  enabled: true
+  vaultURI: https://notarycerts.vault.azure.net/
+  cert1Name: wabbit-networks-io
   cert1Version:
   cert2Name:
   cert2Version:
-  tenantId:
+  tenantId: 72f988bf-86f1-41af-91ab-2d7cd011db47
 
 oras:
   useHttp: false
   authProviders:
-    azureWorkloadIdentityEnabled: false
+    azureWorkloadIdentityEnabled: true
     azureManagedIdentityEnabled: false
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
