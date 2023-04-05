@@ -10,13 +10,13 @@ Metrics Types:
 - Gauge: Point-in-time value of a continuous data stream (e.g file system size, speed, pressure)
 - Histogram: Aggregation of counters where each bin is bounded from the min value (0) to the upper bin boundary. For example if we had bin boundaries [0, 1, 2, 3, 4, 5] and the measured value is 3.5, then the resulting histogram would be [0, 0, 0, 1, 1].
 
+|            Name             | Type      |     Unit     | Description                                                                                                                                                                                                    |
+|:---------------------------:| --------- |:------------:|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ratify_verification_request | Histogram | milliseconds | Duration of a single request to the `/verify` endpoint. Histogram bins:   [0, 10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 4000, 4400, 4900] |
+|   ratify_mutation_request   | Histogram | milliseconds | Duration of a single request to the `/mutate` endpoint. Histogram bins: [0, 10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1400, 1600, 1800]                                       |
+|  ratify_verifier_duration   | Histogram | milliseconds | Duration of a single verifier's execution for a single referrer artifact. Histogram bins: [0, 10, 50, 100, 200, 300, 400, 600, 800, 1100, 1500, 2000]                                                          |
+|  ratify_system_error_count  | Counter   |     N/A      | Count of errors emitted   by http handlers                                                                                                                                                                     |
 
-|            Name             | Type      |     Unit     | Description                                                                                                                     |
-|:---------------------------:| --------- |:------------:|:------------------------------------------------------------------------------------------------------------------------------- |
-| ratify_verification_request | Histogram | milliseconds | Duration of a single request to the `/verify` endpoint. Histogram bins:   [0, 100, 400, 700, 1000, 1300, 1600, 1900]            |
-|   ratify_mutation_request   | Histogram | milliseconds | Duration of a single request to the `/mutate` endpoint. Histogram bins: [0, 10, 50, 100, 200, 400, 800, 1600]                   |
-|  ratify_verifier_duration   | Histogram | milliseconds | Duration of a single verifier's execution for a single referrer artifact. Histogram bins: [0, 10, 50, 100, 200, 400, 800, 1600] |
-|  ratify_system_error_count  | Counter   |     N/A      | Count of errors emitted   by http handlers                                                                                      |
 
 ## Metrics Providers Supported
 
