@@ -58,6 +58,7 @@ type Server struct {
 	CertDirectory     string
 	CaCertFile        string
 	MutationStoreName string
+	MetricsEnabled    bool
 	MetricsType       string
 	MetricsPort       int
 
@@ -81,7 +82,16 @@ func (m *keyMutex) Lock(key string) func() {
 	}
 }
 
-func NewServer(context context.Context, address string, getExecutor config.GetExecutor, certDir, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsType string, metricsPort int) (*Server, error) {
+func NewServer(context context.Context,
+	address string,
+	getExecutor config.GetExecutor,
+	certDir string,
+	caCertFile string,
+	cacheSize int,
+	cacheTTL time.Duration,
+	metricsEnabled bool,
+	metricsType string,
+	metricsPort int) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
 	}
@@ -94,6 +104,7 @@ func NewServer(context context.Context, address string, getExecutor config.GetEx
 		CertDirectory:     certDir,
 		CaCertFile:        caCertFile,
 		MutationStoreName: defaultMutationReferrerStoreName,
+		MetricsEnabled:    metricsEnabled,
 		MetricsType:       metricsType,
 		MetricsPort:       metricsPort,
 		keyMutex:          keyMutex{},
@@ -110,9 +121,11 @@ func (server *Server) Run() error {
 	}
 
 	// initialize metrics exporters
-	if err := metrics.InitMetricsExporter(server.MetricsType, server.MetricsPort); err != nil {
-		logrus.Errorf("failed to initialize metrics exporter %s: %v", server.MetricsType, err)
-		os.Exit(1)
+	if server.MetricsEnabled {
+		if err := metrics.InitMetricsExporter(server.MetricsType, server.MetricsPort); err != nil {
+			logrus.Errorf("failed to initialize metrics exporter %s: %v", server.MetricsType, err)
+			os.Exit(1)
+		}
 	}
 
 	lsnr, err := net.ListenTCP("tcp", tcpAddr)

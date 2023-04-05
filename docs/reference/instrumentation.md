@@ -25,15 +25,18 @@ Metrics Types:
 Prometheus is a very popular metrics, monitoring, and database tool. It is time series based and is widely used in K8s. Prometheus metrics collection is pull-based. A prometheus instance is installed in the cluster. This instance is responsible for periodically "scraping" the metrics from the `/metrics` endpoint for each resource. Ratify's prometheus metrics provider implementation  creates a new http server which binds the `/metrics` endpoint to a prometheus handler. Once the OpenTelemetry Prometheus exporter is created, the handler takes care of publishing the correct Prometheus-formatted metrics. 
 
 
-Scraping is achieved via annotations on the resources that expose metrics on the `/metrics` endpoint. There are two parts to this: First, how does prometheus know which resources to consider and what annotations to look for? The prometheus config is responsible for this. The configuration contains instructions on which annotations to look for to determine if a resource is eligible for scraping and which resources it should check. Depending on the prometheus configuration that exists on the cluster, users may need to append an additional scrape configuration (instruction below on how to do this). 
-For ratify, the metrics will be published by the Ratify pod. Second, how do we tell Prometheus to look for Ratify metrics specifically from the `/metrics` endpoint on the Ratify pod? The Ratify helm chart contains annotations to the on Deployment spec to indicate scraping and which port the metrics server is running on the pod:
-```
-annotations:
-    prometheus.io/scrape: 'true'
-    prometheus.io/port: '8888'
-```
+Scraping is achieved via annotations on the resources that expose metrics on the `/metrics` endpoint. There are two parts to this:
+1. How does prometheus know which resources to consider and what annotations to look for?
+The prometheus config is responsible for this. The configuration contains instructions on which annotations to look for to determine if a resource is eligible for scraping and which resources it should check. Depending on the prometheus configuration that exists on the cluster, users may need to append an additional scrape configuration (instruction below on how to do this). 
+For ratify, the metrics will be published by the Ratify pod. 
+2. How do we tell Prometheus to look for Ratify metrics specifically from the `/metrics` endpoint on the Ratify pod? The Ratify helm chart contains annotations to the on Deployment spec to indicate scraping and which port the metrics server is running on the pod:
+    ```
+    annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8888'
+    ```
 
-## Prometheus and Grafana Setup
+### Prometheus and Grafana Setup
 
 This quick start provides instructions on installing and using Prometheus with Grafana to visualize the current supported metrics. This guide assumes neither is installed on the K8s cluster. (Warning: This guide is purely informational and should not be considered a production-grade solution for installing Prometheus and Grafana on cluster. Please consult the corresponding project guidelines for more scenario-specific information)
 
@@ -59,7 +62,6 @@ Prior to installing Ratify on the cluster:
 1. Install the `prometheus-community/kube-prometheus-stack` helm chart. This will install the standard kubernetes metrics including Grafana. It will also expose Prometheus and Grafana on an external IP and load a Ratify specific dashboard.
     ```
     helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --atomic\
-        --set prometheus.prometheusSpec.scrapeInterval=15s \
         --set prometheus.prometheusSpec.additionalScrapeConfigsSecret.enabled=true \
         --set prometheus.prometheusSpec.additionalScrapeConfigsSecret.name=additional-scrape-configs \
         --set prometheus.prometheusSpec.additionalScrapeConfigsSecret.key=prometheus-additional.yaml \
@@ -82,4 +84,9 @@ Prior to installing Ratify on the cluster:
 1. View Ratify dashboard under "General/Ratify"
     - Note: Metrics will not appear until after Ratify has been installed and an external data request is processed
     
+### Adding a new metric provider
 
+>Note: There is only support for a single metric exporter at a time
+
+Additional metrics exporters can be added as metrics backends.
+The exporter must be initialized in the `InitMetricsExporter` method as a new exporter type. Each exporter type is determined from the `metricsBackend` parameter. During metric exporter initialization a new metric reader must be instantiated and assigned to the static global variable `MetricsReader`. Once registered, the global `MetricsReader` is used to initialize OpenTelemetry meter and instruments.

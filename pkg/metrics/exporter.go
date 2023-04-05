@@ -28,6 +28,7 @@ const prometheusExporter = "prometheus"
 
 var MetricReader metric.Reader
 
+// InitMetricsExporter initializes the metrics exporter for the specified metrics backend and port
 func InitMetricsExporter(metricsBackend string, port int) error {
 	if port < 0 || port > 65535 {
 		return fmt.Errorf("invalid port %v", port)

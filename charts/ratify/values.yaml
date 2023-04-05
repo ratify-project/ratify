@@ -25,6 +25,7 @@ gatekeeper:
   version: "3.11.0"
   namespace: # default is gatekeeper-system
 instrumentation:
+  metricsEnabled: true
   metricsType: prometheus
   metricsPort: 8888
 

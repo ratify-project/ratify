@@ -61,7 +61,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsType string, metricsPort int) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -109,7 +109,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsType, metricsPort)
+	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
 		os.Exit(1)

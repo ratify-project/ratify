@@ -57,6 +57,9 @@ const (
 // NewStatsReporter creates a new StatsReporter
 func initStatsReporter() error {
 	var err error
+	// defines the data-stream transformation of histogram metrics
+	// the boundaries of the histogram are based on historical data observed and attempt to minimize the error of quantile estimation
+	// NOTE: https://prometheus.io/docs/practices/histograms/#errors-of-quantile-estimation
 	views := []sdkmetric.View{
 		sdkmetric.NewView(
 			sdkmetric.Instrument{
@@ -65,7 +68,7 @@ func initStatsReporter() error {
 			},
 			sdkmetric.Stream{
 				Aggregation: aggregation.ExplicitBucketHistogram{
-					Boundaries: []float64{0, 100, 400, 700, 1000, 1300, 1600, 1900},
+					Boundaries: []float64{0, 10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 4000, 4400, 4900},
 				},
 			},
 		),
@@ -76,7 +79,7 @@ func initStatsReporter() error {
 			},
 			sdkmetric.Stream{
 				Aggregation: aggregation.ExplicitBucketHistogram{
-					Boundaries: []float64{0, 10, 50, 100, 200, 400, 800, 1600},
+					Boundaries: []float64{0, 10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1400, 1600, 1800},
 				},
 			},
 		),
@@ -87,7 +90,7 @@ func initStatsReporter() error {
 			},
 			sdkmetric.Stream{
 				Aggregation: aggregation.ExplicitBucketHistogram{
-					Boundaries: []float64{0, 10, 50, 100, 200, 400, 800, 1600},
+					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 600, 800, 1100, 1500, 2000},
 				},
 			},
 		),
@@ -165,9 +168,26 @@ func ReportMutationRequest(ctx context.Context, duration int64) {
 	}
 }
 
-func ReportVerifierDuration(ctx context.Context, duration int64, veriferName string, subjectReference string) {
+func ReportVerifierDuration(ctx context.Context, duration int64, veriferName string, subjectReference string, success bool, isError bool) {
 	if verifierDuration != nil {
-		verifierDuration.Record(ctx, duration, attribute.KeyValue{Key: "verifier", Value: attribute.StringValue(veriferName)}, attribute.KeyValue{Key: "subject", Value: attribute.StringValue(subjectReference)})
+		verifierDuration.Record(ctx, duration,
+			attribute.KeyValue{
+				Key:   "verifier",
+				Value: attribute.StringValue(veriferName),
+			},
+			attribute.KeyValue{
+				Key:   "subject",
+				Value: attribute.StringValue(subjectReference),
+			},
+			attribute.KeyValue{
+				Key:   "success",
+				Value: attribute.BoolValue(success),
+			},
+			attribute.KeyValue{
+				Key:   "error",
+				Value: attribute.BoolValue(isError),
+			},
+		)
 	}
 }
 

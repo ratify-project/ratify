@@ -17,6 +17,7 @@ package metrics
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -32,7 +33,11 @@ type MockInt64Histogram struct {
 func (m *MockInt64Histogram) Record(ctx context.Context, incr int64, attrs ...attribute.KeyValue) {
 	m.Value = incr
 	for _, attr := range attrs {
-		m.Attributes[string(attr.Key)] = attr.Value.AsString()
+		setValue := attr.Value.AsString()
+		if attr.Value.Type() == attribute.BOOL {
+			setValue = fmt.Sprintf("%t", attr.Value.AsBool())
+		}
+		m.Attributes[string(attr.Key)] = setValue
 	}
 }
 
@@ -82,11 +87,11 @@ func TestReportVerifierDuration(t *testing.T) {
 
 	mockDuration := &MockInt64Histogram{Attributes: make(map[string]string)}
 	verifierDuration = mockDuration
-	ReportVerifierDuration(context.Background(), 5, "test_verifier", "test_subject")
+	ReportVerifierDuration(context.Background(), 5, "test_verifier", "test_subject", true, true)
 	if mockDuration.Value != 5 {
 		t.Fatalf("ReportVerifierDuration() mockDuration.Value = %v, expected %v", mockDuration.Value, 5)
 	}
-	if len(mockDuration.Attributes) != 2 {
+	if len(mockDuration.Attributes) != 4 {
 		t.Fatalf("ReportVerifierDuration() len(mockDuration.Attributes) = %v, expected %v", len(mockDuration.Attributes), 2)
 	}
 	if mockDuration.Attributes["verifier"] != "test_verifier" {
@@ -94,6 +99,9 @@ func TestReportVerifierDuration(t *testing.T) {
 	}
 	if mockDuration.Attributes["subject"] != "test_subject" {
 		t.Fatalf("expected subject attribute to be test_subject but got %s", mockDuration.Attributes["subject"])
+	}
+	if mockDuration.Attributes["error"] != "true" {
+		t.Fatalf("expected error attribute to be true but got %s", mockDuration.Attributes["error"])
 	}
 }
 

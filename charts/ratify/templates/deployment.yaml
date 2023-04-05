@@ -57,11 +57,14 @@ spec:
             {{- end }}
             - --cache-size={{ .Values.provider.cache.size }}
             - --cache-ttl={{ .Values.provider.cache.ttl }}
+            - --metrics-enabled={{ .Values.instrumentation.metricsEnabled }}
             - --metrics-type={{ .Values.instrumentation.metricsType }}
             - --metrics-port={{ .Values.instrumentation.metricsPort }}
           ports:
             - containerPort: 6001
-            - containerPort: 8888
+            {{- if .Values.instrumentation.metricsEnabled }}
+            - containerPort: {{ required "You must provide .Values.instrumentation.metricsPort" .Values.instrumentation.metricsPort }}
+            {{- end }}
           volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
