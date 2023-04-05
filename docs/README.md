@@ -20,9 +20,8 @@ These documents can be found generally useful to understand using or implementin
 - [gatekeeper-policy-authoring](reference/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify, including rego references/examples.
 - [oras-auth-provider](reference/oras-auth-provider.md) - Explanation of various authentication mechanisms available for use with ratify.
 - [creating-plugins](reference/creating-plugins.md) - Details on creating your own plugins for use with ratify.
-
-- [CRD references](reference/crds/) -
-Describes the required and optional properties of ratify CRDs
+- [CRD references](reference/crds/) - Describes the required and optional properties of ratify CRDs
+- [instrumentation](reference/instrumentation.md) - Details on the current supported instruments and metric provider setup guides
 ## developer
 
 The documents in this directory are for developers who want to contribute to Ratify or want to understand the internals of Ratify.
