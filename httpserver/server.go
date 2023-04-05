@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/pkg/metrics"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"
@@ -45,6 +46,8 @@ const (
 	DefaultCacheTTL = 10 * time.Second
 	// DefaultCacheMaxSize is the default maximum size of the cache.
 	DefaultCacheMaxSize = 100
+	DefaultMetricsType  = "prometheus"
+	DefaultMetricsPort  = 8888
 )
 
 type Server struct {
@@ -55,6 +58,9 @@ type Server struct {
 	CertDirectory     string
 	CaCertFile        string
 	MutationStoreName string
+	MetricsEnabled    bool
+	MetricsType       string
+	MetricsPort       int
 
 	keyMutex keyMutex
 	// cache is a thread-safe expiring lru cache which caches external data item indexed
@@ -76,7 +82,16 @@ func (m *keyMutex) Lock(key string) func() {
 	}
 }
 
-func NewServer(context context.Context, address string, getExecutor config.GetExecutor, certDir, caCertFile string, cacheSize int, cacheTTL time.Duration) (*Server, error) {
+func NewServer(context context.Context,
+	address string,
+	getExecutor config.GetExecutor,
+	certDir string,
+	caCertFile string,
+	cacheSize int,
+	cacheTTL time.Duration,
+	metricsEnabled bool,
+	metricsType string,
+	metricsPort int) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
 	}
@@ -89,6 +104,9 @@ func NewServer(context context.Context, address string, getExecutor config.GetEx
 		CertDirectory:     certDir,
 		CaCertFile:        caCertFile,
 		MutationStoreName: defaultMutationReferrerStoreName,
+		MetricsEnabled:    metricsEnabled,
+		MetricsType:       metricsType,
+		MetricsPort:       metricsPort,
 		keyMutex:          keyMutex{},
 		cache:             newSimpleCache(cacheTTL, cacheSize),
 	}
@@ -100,6 +118,14 @@ func (server *Server) Run() error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", server.Address)
 	if err != nil {
 		return err
+	}
+
+	// initialize metrics exporters
+	if server.MetricsEnabled {
+		if err := metrics.InitMetricsExporter(server.MetricsType, server.MetricsPort); err != nil {
+			logrus.Errorf("failed to initialize metrics exporter %s: %v", server.MetricsType, err)
+			os.Exit(1)
+		}
 	}
 
 	lsnr, err := net.ListenTCP("tcp", tcpAddr)

@@ -18,6 +18,10 @@ spec:
         azure.workload.identity/use: "true"
         {{- end }}
       annotations:
+        {{- if eq .Values.instrumentation.metricsType "prometheus" }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ .Values.instrumentation.metricsPort | quote }}
+        {{- end }}
         checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       {{- if or .Values.azureWorkloadIdentity.clientId .Values.serviceAccount.create .Values.serviceAccount.name }}
@@ -53,8 +57,14 @@ spec:
             {{- end }}
             - --cache-size={{ .Values.provider.cache.size }}
             - --cache-ttl={{ .Values.provider.cache.ttl }}
+            - --metrics-enabled={{ .Values.instrumentation.metricsEnabled }}
+            - --metrics-type={{ .Values.instrumentation.metricsType }}
+            - --metrics-port={{ .Values.instrumentation.metricsPort }}
           ports:
             - containerPort: 6001
+            {{- if .Values.instrumentation.metricsEnabled }}
+            - containerPort: {{ required "You must provide .Values.instrumentation.metricsPort" .Values.instrumentation.metricsPort }}
+            {{- end }}
           volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
