@@ -62,12 +62,12 @@ data:
                   "viz": false
                 },
                 "lineInterpolation": "linear",
-                "lineWidth": 1,
+                "lineWidth": 2,
                 "pointSize": 5,
                 "scaleDistribution": {
                   "type": "linear"
                 },
-                "showPoints": "auto",
+                "showPoints": "never",
                 "spanNulls": false,
                 "stacking": {
                   "group": "A",
@@ -92,7 +92,24 @@ data:
                 ]
               }
             },
-            "overrides": []
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "verifier= isSuccess= isError="
+                },
+                "properties": [
+                  {
+                    "id": "custom.hideFrom",
+                    "value": {
+                      "legend": true,
+                      "tooltip": true,
+                      "viz": true
+                    }
+                  }
+                ]
+              }
+            ]
           },
           "gridPos": {
             "h": 8,
@@ -121,7 +138,7 @@ data:
               },
               "editorMode": "builder",
               "expr": "sum(increase(ratify_verifier_duration_count[$__rate_interval])) by(error, success, verifier)",
-              "instant": true,
+              "instant": false,
               "key": "Q-e20b12bd-6bd1-4c51-a1f5-4b1582183dc6-0",
               "legendFormat": "verifier={{verifier}} isSuccess={{success}} isError={{error}}",
               "range": true,
@@ -863,11 +880,6 @@ data:
             "type": "query"
           },
           {
-            "current": {
-              "selected": false,
-              "text": "ratify-7c98b775cd-dzf8p",
-              "value": "ratify-7c98b775cd-dzf8p"
-            },
             "datasource": {
               "type": "prometheus",
               "uid": "prometheus"
@@ -896,11 +908,11 @@ data:
         "to": "now"
       },
       "timepicker": {
-        "nowDelay": "1m"
+        "nowDelay": ""
       },
       "timezone": "",
       "title": "Ratify",
       "uid": "mBWgLNBVk",
-      "version": 17,
+      "version": 4,
       "weekStart": ""
     }
