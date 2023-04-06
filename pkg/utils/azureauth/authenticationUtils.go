@@ -29,16 +29,16 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path
 	// 	AZURE_AUTHORITY_HOST is the AAD authority hostname
 
-	/*tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
+	tokenFilePath := os.Getenv("AZURE_FEDERATED_TOKEN_FILE")
 	authority := os.Getenv("AZURE_AUTHORITY_HOST")
 
 	if tokenFilePath == "" || authority == "" {
 		return confidential.AuthResult{}, fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: %s, AZURE_AUTHORITY_HOST: %s", tokenFilePath, authority)
-	}*/
-	authority := "https://login.microsoftonline.com/"
+	}
+
 	cred := confidential.NewCredFromAssertionCallback(func(context.Context, confidential.AssertionRequestOptions) (string, error) {
 		// read the service account token from the filesystem
-		return "eyJhbGciOiJSUzI1NiIsImtpZCI6Ii0yRS0tOW1jcDFFMG4wc1hxREhTLXk5Sjg3T0ZyaEtLQ1NXUUhZVlBPTzAifQ.eyJhdWQiOlsiYXBpOi8vQXp1cmVBRFRva2VuRXhjaGFuZ2UiXSwiZXhwIjoxNjgwNjk3ODQyLCJpYXQiOjE2ODA2OTQyNDIsImlzcyI6Imh0dHBzOi8vb2lkYy5wcm9kLWFrcy5henVyZS5jb20vYmVlMTUzMjgtMmZhYS00YWY5LTk5NmEtOTU2NDQ1N2EyZjA3LyIsImt1YmVybmV0ZXMuaW8iOnsibmFtZXNwYWNlIjoiZGVmYXVsdCIsInBvZCI6eyJuYW1lIjoicmF0aWZ5LTY0ZmY2OGJiZC14OXFjNCIsInVpZCI6ImU2YTI2ODlkLThjMzMtNGQyZi05MzM0LTIwOTJkMmI3NzM2NyJ9LCJzZXJ2aWNlYWNjb3VudCI6eyJuYW1lIjoid2xpZHNhIiwidWlkIjoiN2ZiMzg5YzItMGQyYS00MTBkLTg3YzgtODI0MWM3YzM5OTBhIn19LCJuYmYiOjE2ODA2OTQyNDIsInN1YiI6InN5c3RlbTpzZXJ2aWNlYWNjb3VudDpkZWZhdWx0OndsaWRzYSJ9.VcIzIB9R67HauvlSdAOc34ax4y2UFJbdzskhgkyK6y6nd0zSE5nTxl_4TxmUpYanuFzw31CanOhOsOSXttrEruhdFIv3lAk2lrX42AJ6FkjnKjEMmJ9uHZgqZiwSjZs2hb1l4OZHKAglPqqEpps3YPxGHmwyJWLLV6AYcppLZuGepgeUEjHlAd9Nsdoal3JaGW3n7n1aWHyjEVq_b57eaNV7ubTOwCsUtswQYVeQTW82QxokWLOdRCmOZ9n5JVwJaFwwU64cayZoheNDRDbDJPufl0GwtgXxaW94Q9Lv4hmOPacQgM9B7_MyAyn3T4sdCU2Bxic-fNjIQwNnN90Nh4P7-RDM0MRyKy_vwGpNQX_FrJaI_E9vIBRp9h7phgfbQn---ltvrFUQSTtJ5qHkvzaAJHAZEpwEYQqrsoMbATyjRDc49dT2pqA2yq0aLDtw5AvEpEBRTCqOX8MbWPVgpCY5E1GFG2ufKLQBGcjwzc9os8ZsFcgc8jEISV8cRWVRI9g-KxlnG253eJw6frNl6jhEDekznrKk1d_N5cHrJV-VIxBk-uB5P35t9dlTO0NJz_-oPF8PlCKMlmaJJPzQGuMCwcLa3K_xoNipZAWusxU3HC7XroRnB_r9v01ToaiTWUKmrmp7i_Qm-jKdTE_rUzf9OsJDSt9t5xg9bzavnhc", nil
+		return readJWTFromFS(tokenFilePath)
 	})
 
 	// create the confidential client to request an AAD token
