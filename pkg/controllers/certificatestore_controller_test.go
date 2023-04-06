@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/pkg/certificateprovider"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -85,7 +86,7 @@ func TestUpdateErrorStatus(t *testing.T) {
 	}
 	expectedErr := "error from unit test"
 	lastFetchedTime := metav1.Now()
-	updateErrorStatus(&certStore, expectedErr, lastFetchedTime)
+	updateErrorStatus(&certStore, expectedErr, &lastFetchedTime)
 
 	if certStore.Status.IsSuccess != false {
 		t.Fatalf("Unexpected error, expected isSuccess to be false , actual %+v", certStore.Status.IsSuccess)
@@ -102,7 +103,63 @@ func TestUpdateErrorStatus(t *testing.T) {
 }
 
 func TestUpdateSuccessStatus(t *testing.T) {
+	certStatus := certificateprovider.CertificatesStatus{}
+	properties := map[string]string{}
+	properties["CertName"] = "wabbit"
+	properties["Version"] = "ABC"
+
+	certStatus["Certificates"] = properties
+
+	lastFetchedTime := metav1.Now()
+
+	status := configv1beta1.CertificateStoreStatus{
+		IsSuccess: false,
+		Error:     "error from last operation",
+	}
+	certStore := configv1beta1.CertificateStore{
+		Status: status,
+	}
+
+	updateSuccessStatus(&certStore, &lastFetchedTime, certStatus)
+
+	if certStore.Status.IsSuccess != true {
+		t.Fatalf("Expected isSuccess to be true , actual %+v", certStore.Status.IsSuccess)
+	}
+
+	if certStore.Status.Error != "" {
+		t.Fatalf("Unexpected error string, actual %+v", certStore.Status.Error)
+	}
+
+	//make sure properties of last cached cert was updated
+	if len(certStore.Status.Properties.Raw) == 0 {
+		t.Fatalf("Properties should not be empty")
+	}
 }
 
 func TestUpdateSuccessStatus_emptyProperties(t *testing.T) {
+
+	lastFetchedTime := metav1.Now()
+
+	status := configv1beta1.CertificateStoreStatus{
+		IsSuccess: false,
+		Error:     "error from last operation",
+	}
+	certStore := configv1beta1.CertificateStore{
+		Status: status,
+	}
+
+	updateSuccessStatus(&certStore, &lastFetchedTime, nil)
+
+	if certStore.Status.IsSuccess != true {
+		t.Fatalf("Expected isSuccess to be true , actual %+v", certStore.Status.IsSuccess)
+	}
+
+	if certStore.Status.Error != "" {
+		t.Fatalf("Unexpected error string, actual %+v", certStore.Status.Error)
+	}
+
+	//make sure properties of last cached cert was updated
+	if len(certStore.Status.Properties.Raw) != 0 {
+		t.Fatalf("Properties should be empty")
+	}
 }

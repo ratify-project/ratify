@@ -37,7 +37,7 @@ The executor is the "glue" that links all Ratify plugin-based components such as
     - `all`: policy that REQUIRES all artifacts of specified type to verify to `true``
 - Default policy:
     - The `default` policy applies to unspecified artifact types. The `default` policy is set to `all`. Thus, all unspecified artifact types must have all successful verification results for an overall success result.
-    - The `default` policy can be overriden to `any` in the map:
+    - The `default` policy can be overridden to `any` in the map:
         
         ```
         ...

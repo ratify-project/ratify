@@ -17,10 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	"bytes"
 	"context"
 	"crypto/x509"
-	"encoding/gob"
 	"encoding/json"
 	"fmt"
 
@@ -134,17 +132,6 @@ func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func getBytes(key []map[string]string) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(key)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-
-}
-
 func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
 	attributes := map[string]string{}
 
@@ -164,17 +151,17 @@ func writeCertStoreStatus(r *CertificateStoreReconciler, ctx context.Context, ce
 	if isSuccess {
 		updateSuccessStatus(&certStore, &operationTime, certStatus)
 	} else {
-		updateErrorStatus(&certStore, errorString, operationTime)
+		updateErrorStatus(&certStore, errorString, &operationTime)
 	}
 	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
 		logger.Error(statusErr, ",unable to update certificate store error status")
 	}
 }
 
-func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime metav1.Time) {
+func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime *metav1.Time) {
 	certStore.Status.IsSuccess = false
 	certStore.Status.Error = errorString
-	certStore.Status.LastFetchedTime = &operationTime
+	certStore.Status.LastFetchedTime = operationTime
 }
 
 func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperationTime *metav1.Time, certStatus certificateprovider.CertificatesStatus) {

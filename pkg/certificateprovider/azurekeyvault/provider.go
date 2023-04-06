@@ -150,15 +150,15 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		// save the attributes of the certificate
 		certs = append(certs, decodedCerts...)
 		certProperty := map[string]string{}
-		certProperty["CertificateName"] = keyVaultCert.CertificateName
-		certProperty["Version"] = result.version
-		certProperty["LastRefreshed"] = lastRefreshed
+		certProperty[types.CertificateName] = keyVaultCert.CertificateName
+		certProperty[types.CertificateVersion] = result.version
+		certProperty[types.CertificateLastRefreshed] = lastRefreshed
 		certsStatus = append(certsStatus, certProperty)
 		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
 	}
 
 	status := certificateprovider.CertificatesStatus{}
-	status["Certificates"] = certsStatus
+	status[types.CertificatesStatus] = certsStatus
 	return certs, status, nil
 }
 
