@@ -79,7 +79,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	//resetStatus(r, ctx, certStore, logger)
 	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
 	lastFetchedTime := metav1.Now()
@@ -127,6 +126,9 @@ func GetCertificatesMap() map[string][]*x509.Certificate {
 func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	pred := predicate.GenerationChangedPredicate{}
 
+	// status updates will trigger a reconcile event
+	// if there are no changes to spec of CRD, this event should be filtered out by using the predicate
+	// see more discussions at https://github.com/kubernetes-sigs/kubebuilder/issues/618
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.CertificateStore{}).WithEventFilter(pred).
 		Complete(r)
