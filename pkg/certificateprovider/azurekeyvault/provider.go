@@ -120,7 +120,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 
 	certs := []*x509.Certificate{}
 	certsStatus := []map[string]string{}
-	lastRefreshed := time.Now().GoString()
+	lastRefreshed := time.Now().Format(time.RFC3339)
 
 	for _, keyVaultCert := range keyVaultCerts {
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
