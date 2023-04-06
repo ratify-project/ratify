@@ -21,11 +21,7 @@ import (
 	"os"
 	"time"
 
-	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
-	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
 	"github.com/go-logr/logr"
-	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -65,7 +61,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -113,7 +109,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile, cacheSize, cacheTTL)
+	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
 		os.Exit(1)
