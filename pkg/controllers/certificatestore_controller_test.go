@@ -96,7 +96,7 @@ func TestUpdateErrorStatus(t *testing.T) {
 		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr, certStore.Status.Error)
 	}
 
-	//make sure properties of last cached cert was not overriden
+	//make sure properties of last cached cert was not overridden
 	if len(certStore.Status.Properties.Raw) == 0 {
 		t.Fatalf("Unexpected properties,  expected %+v, got %+v", parametersString, string(certStore.Status.Properties.Raw))
 	}
@@ -137,9 +137,7 @@ func TestUpdateSuccessStatus(t *testing.T) {
 }
 
 func TestUpdateSuccessStatus_emptyProperties(t *testing.T) {
-
 	lastFetchedTime := metav1.Now()
-
 	status := configv1beta1.CertificateStoreStatus{
 		IsSuccess: false,
 		Error:     "error from last operation",

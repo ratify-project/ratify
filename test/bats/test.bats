@@ -34,12 +34,7 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-    sleep 5
-    echo "notary get inline"
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notary-inline-cert -n gatekeeper-system -o yaml"
-    echo "notary get inline2"
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notary-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
-    echo "notary get inline3"
+    sleep 5    
     run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notary-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed

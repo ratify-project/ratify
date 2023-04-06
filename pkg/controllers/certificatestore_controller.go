@@ -171,10 +171,9 @@ func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperatio
 
 	if certStatus != nil {
 		jsonString, _ := json.Marshal(certStatus)
-		var storeParameters = []byte(jsonString)
 
 		raw := runtime.RawExtension{
-			Raw: storeParameters,
+			Raw: jsonString,
 		}
 		certStore.Status.Properties = raw
 	}
