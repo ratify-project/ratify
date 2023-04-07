@@ -90,7 +90,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.24.6"]
+        KUBERNETES_VERSION: ["1.25.8", "1.26.3"]
         GATEKEEPER_VERSION: ["3.10.0", "3.11.0"]
     steps:
       - name: Check out code into the Go module directory
@@ -141,7 +141,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.23.12", "1.24.10"]
+        KUBERNETES_VERSION: ["1.24.10", "1.25.6"]
         GATEKEEPER_VERSION: ["3.10.0", "3.11.0"]
     steps:
       - name: Check out code into the Go module directory
