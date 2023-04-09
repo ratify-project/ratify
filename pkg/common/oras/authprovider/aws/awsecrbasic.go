@@ -142,6 +142,7 @@ func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
 		logrus.Error("basic ECR providerName was empty")
 		return false
 	}
+
 	return true
 }
 
