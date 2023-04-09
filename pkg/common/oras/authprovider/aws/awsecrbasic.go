@@ -28,7 +28,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/ecr"
 	"github.com/aws/aws-sdk-go-v2/service/ecr/types"
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/deislabs/ratify/pkg/utils/awsauth"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -95,8 +95,8 @@ func (d *awsEcrBasicAuthProvider) getEcrAuthToken(image string) (EcrAuthToken, e
 	}
 
 	// region from image
-	registry, err := utils.RegistryFromImage(image)
-	region = utils.RegionFromRegistry(registry)
+	registry, err := awsauth.RegistryFromImage(image)
+	region = awsauth.RegionFromRegistry(registry)
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("failed to get region from image: %w", err)
 	}
@@ -126,12 +126,6 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
 	}
 
-	// Build auth provider from AWS IRSA and ECR auth token
-	//authData, err := getEcrAuthToken()
-	//if err != nil {
-	//	return nil, fmt.Errorf("failed to get ECR auth data: %w", err)
-	//}
-
 	ecrAuthToken := EcrAuthToken{}
 	ecrAuthToken.AuthData = make(map[string]types.AuthorizationData)
 
@@ -143,31 +137,11 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 
 // Enabled checks for non-empty AWS IAM creds
 func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
-	//creds, err := d.ecrAuthToken.BasicAuthCreds()
-	//if creds == nil || err != nil {
-	//	logrus.Errorf("error getting basic ECR creds: %v", err)
-	//	return false
-	//}
-	//
-	//if len(creds) < 2 {
-	//	logrus.Error("basic ECR creds array had incorrect length")
-	//	return false
-	//}
-	//
-	//if creds[0] == "" || creds[1] == "" {
-	//	logrus.Error("basic ECR creds were empty")
-	//	return false
-	//}
 
 	if d.providerName == "" {
 		logrus.Error("basic ECR providerName was empty")
 		return false
 	}
-
-	//if d.ecrAuthToken.AuthData.ExpiresAt == nil {
-	//	logrus.Error("basic ECR expiry was nil")
-	//	return false
-	//}
 
 	return true
 }

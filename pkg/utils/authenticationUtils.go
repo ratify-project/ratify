@@ -21,8 +21,6 @@ import (
 	"os"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"strings"
-	"net/url"
 )
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
@@ -68,38 +66,4 @@ func readJWTFromFS(tokenFilePath string) (string, error) {
 		return "", err
 	}
 	return string(token), nil
-}
-
-// RegionFromImage parses region from image url
-func RegionFromImage(image string) (string, error) {
-	registry, err := RegistryFromImage(image)
-	if err != nil {
-		return "", err
-	}
-
-	region := RegionFromRegistry(registry)
-
-	return region, nil
-}
-
-// RegionFromRegistry parses AWS region ID from registry url
-func RegionFromRegistry(registry string) string {
-	a := strings.Split(registry, ".")
-	if len(a) >= 6 {
-		return a[3]
-	}
-	return ""
-}
-
-// RegistryFromImage parses registry host from image url
-func RegistryFromImage(image string) (string, error) {
-	if strings.Contains(image, "https://") {
-		u, err := url.Parse(image)
-		if err != nil {
-			return "", err
-		}
-		return u.Host, nil
-	}
-
-	return image[:strings.IndexByte(image, '/')], nil
 }
