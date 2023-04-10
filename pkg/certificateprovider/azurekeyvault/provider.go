@@ -121,10 +121,14 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		certsStatus = append(certsStatus, certProperty)
 	}
 
-	// azure keyvault provider certificate status is a map from "certificates" key to an array of of certificate status
+	return certs, getCertStatusMap(certsStatus), nil
+}
+
+// azure keyvault provider certificate status is a map from "certificates" key to an array of of certificate status
+func getCertStatusMap(certsStatus []map[string]string) certificateprovider.CertificatesStatus {
 	status := certificateprovider.CertificatesStatus{}
 	status[types.CertificatesStatus] = certsStatus
-	return certs, status, nil
+	return status
 }
 
 // parse the requested keyvault cert object from the input attributes

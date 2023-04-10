@@ -222,6 +222,21 @@ func TestGetCertificates(t *testing.T) {
 	}
 }
 
+func TestGetCertStatusMap(t *testing.T) {
+	certsStatus := []map[string]string{}
+	certsStatus = append(certsStatus, map[string]string{
+		"CertName":    "Cert1",
+		"CertVersion": "VersionABC",
+	})
+	certsStatus = append(certsStatus, map[string]string{
+		"CertName":    "Cert2",
+		"CertVersion": "VersionEDF",
+	})
+
+	actual := getCertStatusMap(certsStatus)
+	assert.NotNil(t, actual[types.CertificatesStatus])
+}
+
 func TestGetObjectVersion(t *testing.T) {
 	id := "https://kindkv.vault.azure.net/secrets/cert1/c55925c29c6743dcb9bb4bf091be03b0"
 	expectedVersion := "c55925c29c6743dcb9bb4bf091be03b0"
