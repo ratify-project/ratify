@@ -11,8 +11,8 @@ spec:
   provider: # required, name of the certificate store provider
   parameters: # required, parameters specific to this certificate store provider
 status: # supported in version >= config.ratify.deislabs.io/v1beta1
-  error:            # error message if the operation has failed
-  issuccess:        # bool that indicates if operation was successful
+  error:            # error message if the operation failed
+  issuccess:        # boolean that indicate if operation was successful
   lastfetchedtime:  # timestamp of last attempted certificate fetch operation
   properties: # provider specific properties of the fetched certificates. If the current certificate fetch operation fails, this property displays the properties of last successfully cached certificate
 ```
@@ -38,15 +38,12 @@ spec:
     clientID:
 status:
   issuccess:        true
-  lastfetchedtime:  2023-04-06T18:50:37Z
-  properties:
+  lastfetchedtime:  # time stamp of last fetch operation
+  properties: 
     certificates:
-      certificate Name:  wabbit-networks-io
-      last Refreshed:    2023-04-06T18:50:37Z
-      version:           97a1545d893344079ce57699c8810590
-      certificate Name:  wabbit-networks-io
-      last Refreshed:    2023-04-06T18:50:37Z
-      version:           72086d944ff04bf2bcbf36cb33728a86
+      certificate Name:  yourCertName
+      last Refreshed:    # time stamp of last successful cert fetch operation
+      version:           yourCertVersion 
 ```
 
 | Name        | Required | Description | Default Value |
