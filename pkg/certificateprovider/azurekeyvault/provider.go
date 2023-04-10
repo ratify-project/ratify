@@ -103,33 +103,22 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
 		// fetch the object from Key Vault
-		result, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
+		keyvaultResult, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		objectContent := []byte(result.content)
-
-		cert := types.Certificate{
-			CertificateName: keyVaultCert.CertificateName,
-			Content:         objectContent,
-			Version:         result.version,
-		}
-
-		logrus.Debugf("retreived certificate %v from keyvault", cert.CertificateName)
-
 		// convert bytes to x509
-		decodedCerts, err := certificateprovider.DecodeCertificates(cert.Content)
+		decodedCerts, err := certificateprovider.DecodeCertificates([]byte(keyvaultResult.content))
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to decode certificate %s, error: %w", cert.CertificateName, err)
+			return nil, nil, fmt.Errorf("failed to decode certificate %s, error: %w", keyVaultCert.CertificateName, err)
 		}
 
-		// save the attributes of the certificate
-		certProperty := getCertStatusProperty(keyVaultCert.CertificateName, result.version, lastRefreshed)
 		certs = append(certs, decodedCerts...)
-		certsStatus = append(certsStatus, certProperty)
+		logrus.Debugf("cert '%v', version '%v' added", keyVaultCert.CertificateName, keyvaultResult.version)
 
-		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
+		certProperty := getCertStatusProperty(keyVaultCert.CertificateName, keyvaultResult.version, lastRefreshed)
+		certsStatus = append(certsStatus, certProperty)
 	}
 
 	// azure keyvault provider certificate status is a map from "certificates" key to an array of of certificate status
@@ -138,6 +127,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	return certs, status, nil
 }
 
+// parse the requested keyvault cert object from the input attributes
 func getKeyvaultRequestObj(attrib map[string]string) ([]types.KeyVaultCertificate, error) {
 	keyVaultCerts := []types.KeyVaultCertificate{}
 

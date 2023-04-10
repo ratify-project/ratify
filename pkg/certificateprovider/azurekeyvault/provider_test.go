@@ -247,3 +247,37 @@ func TestGetKeyvaultRequestObj(t *testing.T) {
 	assert.Equal(t, "wabbit-networks-io", result[0].CertificateName)
 	assert.Equal(t, "testversion", result[0].CertificateVersion)
 }
+
+func TestGetKeyvaultRequestObj_error(t *testing.T) {
+	cases := []struct {
+		desc        string
+		attrib      map[string]string
+		expectedErr bool
+	}{
+		{
+			desc: "certificates is not set",
+			attrib: map[string]string{
+				"certificates": "",
+			},
+			expectedErr: true,
+		},
+		{
+			desc: "unexpected certificate string",
+			attrib: map[string]string{
+				"certificates": "certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n",
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := getKeyvaultRequestObj(tc.attrib)
+			if tc.expectedErr {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
