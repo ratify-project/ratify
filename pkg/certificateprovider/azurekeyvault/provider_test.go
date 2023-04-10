@@ -128,6 +128,14 @@ func TestGetCertificates(t *testing.T) {
 			expectedErr: true,
 		},
 		{
+			desc: "clientID not provided",
+			parameters: map[string]string{
+				"vaultUri": "https://testkv.vault.azure.net/",
+				"tenantID": "tid",
+			},
+			expectedErr: true,
+		},
+		{
 			desc: "invalid cloud name",
 			parameters: map[string]string{
 				"vaultUri":  "https://testkv.vault.azure.net/",
@@ -202,9 +210,11 @@ func TestGetCertificates(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, _, err := provider.GetCertificates(context.TODO(), tc.parameters)
+			certs, certStatus, err := provider.GetCertificates(context.TODO(), tc.parameters)
 			if tc.expectedErr {
 				assert.NotNil(t, err)
+				assert.Nil(t, certs)
+				assert.Nil(t, certStatus)
 			} else {
 				assert.Nil(t, err)
 			}
