@@ -79,33 +79,10 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		return nil, nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
 	}
 
-	// 1. cleaning up keyvault objects definition
-	certificatesStrings := types.GetCertificates(attrib)
-	if certificatesStrings == "" {
-		return nil, nil, fmt.Errorf("certificates is not set")
-	}
-
-	logrus.Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
-
-	objects, err := types.GetCertificatesArray(certificatesStrings)
+	keyVaultCerts, err := getKeyvaultRequestObj(attrib)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
+		return nil, nil, fmt.Errorf("failed to get keyvault request object from provider attributes, error: %w", err)
 	}
-	logrus.Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
-
-	keyVaultCerts := []types.KeyVaultCertificate{}
-	for i, object := range objects.Array {
-		var keyVaultCert types.KeyVaultCertificate
-		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
-			return nil, nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
-		}
-		// remove whitespace from all fields in keyVaultCert
-		formatKeyVaultCertificate(&keyVaultCert)
-
-		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
-	}
-
-	logrus.Debugf("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 
 	if len(keyVaultCerts) == 0 {
 		return nil, nil, fmt.Errorf("no keyvault certificate configured")
@@ -159,6 +136,37 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	status := certificateprovider.CertificatesStatus{}
 	status[types.CertificatesStatus] = certsStatus
 	return certs, status, nil
+}
+
+func getKeyvaultRequestObj(attrib map[string]string) ([]types.KeyVaultCertificate, error) {
+	keyVaultCerts := []types.KeyVaultCertificate{}
+
+	certificatesStrings := types.GetCertificates(attrib)
+	if certificatesStrings == "" {
+		return nil, fmt.Errorf("certificates is not set")
+	}
+
+	logrus.Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
+
+	objects, err := types.GetCertificatesArray(certificatesStrings)
+	if err != nil {
+		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
+	}
+	logrus.Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
+
+	for i, object := range objects.Array {
+		var keyVaultCert types.KeyVaultCertificate
+		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
+			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
+		}
+		// remove whitespace from all fields in keyVaultCert
+		formatKeyVaultCertificate(&keyVaultCert)
+
+		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
+	}
+
+	logrus.Debugf("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
+	return keyVaultCerts, nil
 }
 
 // return a certificate status object that consist of the cert name, version and last refreshed time

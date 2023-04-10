@@ -26,6 +26,7 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -227,4 +228,22 @@ func TestGetCertStatusProperty(t *testing.T) {
 	assert.Equal(t, certName, status[types.CertificateName])
 	assert.Equal(t, timeNow, status[types.CertificateLastRefreshed])
 	assert.Equal(t, certVersion, status[types.CertificateVersion])
+}
+
+func TestGetKeyvaultRequestObj(t *testing.T) {
+	attrib := map[string]string{}
+	attrib["vaultURI"] = "https://testvault.vault.azure.net/"
+	attrib["clientID"] = "TestClient"
+	attrib["cloudName"] = "TestCloud"
+	attrib["tenantID"] = "TestIDABC"
+	attrib["certificates"] = "array:\n- |\n  certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n"
+
+	result, err := getKeyvaultRequestObj(attrib)
+
+	if err != nil {
+		logrus.Infof("err %v", err)
+	}
+
+	assert.Equal(t, "wabbit-networks-io", result[0].CertificateName)
+	assert.Equal(t, "testversion", result[0].CertificateVersion)
 }
