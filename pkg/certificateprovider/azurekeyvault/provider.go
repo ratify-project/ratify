@@ -148,18 +148,26 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		}
 
 		// save the attributes of the certificate
+		certProperty := getCertStatusProperty(keyVaultCert.CertificateName, result.version, lastRefreshed)
 		certs = append(certs, decodedCerts...)
-		certProperty := map[string]string{}
-		certProperty[types.CertificateName] = keyVaultCert.CertificateName
-		certProperty[types.CertificateVersion] = result.version
-		certProperty[types.CertificateLastRefreshed] = lastRefreshed
 		certsStatus = append(certsStatus, certProperty)
+
 		logrus.Debugf("cert '%v', version '%v' added", cert.CertificateName, cert.Version)
 	}
 
+	// azure keyvault provider certificate status is a map from "certificates" key to an array of of certificate status
 	status := certificateprovider.CertificatesStatus{}
 	status[types.CertificatesStatus] = certsStatus
 	return certs, status, nil
+}
+
+// return a certificate status object that consist of the cert name, version and last refreshed time
+func getCertStatusProperty(certificateName, version, lastRefreshed string) map[string]string {
+	certProperty := map[string]string{}
+	certProperty[types.CertificateName] = certificateName
+	certProperty[types.CertificateVersion] = version
+	certProperty[types.CertificateLastRefreshed] = lastRefreshed
+	return certProperty
 }
 
 // formatKeyVaultCertificate formats the fields in KeyVaultCertificate

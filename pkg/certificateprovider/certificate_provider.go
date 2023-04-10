@@ -26,6 +26,7 @@ import (
 type CertStoreConfig map[string]string
 
 // This is a map of properties for fetched certificates
+// The key and values are specific to each provider
 type CertificatesStatus map[string]interface{}
 
 // CertificateProvider is an interface that defines methods to be implemented by a each certificate provider

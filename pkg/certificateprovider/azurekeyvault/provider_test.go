@@ -22,6 +22,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
@@ -215,4 +216,15 @@ func TestGetObjectVersion(t *testing.T) {
 	expectedVersion := "c55925c29c6743dcb9bb4bf091be03b0"
 	actual := getObjectVersion(id)
 	assert.Equal(t, expectedVersion, actual)
+}
+
+func TestGetCertStatusProperty(t *testing.T) {
+	timeNow := time.Now().String()
+	certName := "certName"
+	certVersion := "versionABC"
+
+	status := getCertStatusProperty(certName, certVersion, timeNow)
+	assert.Equal(t, certName, status[types.CertificateName])
+	assert.Equal(t, timeNow, status[types.CertificateLastRefreshed])
+	assert.Equal(t, certVersion, status[types.CertificateVersion])
 }
