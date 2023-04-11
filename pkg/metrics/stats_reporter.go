@@ -101,7 +101,7 @@ func initStatsReporter() error {
 			},
 			sdkmetric.Stream{
 				Aggregation: aggregation.ExplicitBucketHistogram{
-					Boundaries: []float64{0, 10, 50, 100, 200, 400, 600, 800},
+					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
 				},
 			},
 		),
@@ -112,7 +112,7 @@ func initStatsReporter() error {
 			},
 			sdkmetric.Stream{
 				Aggregation: aggregation.ExplicitBucketHistogram{
-					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500},
+					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
 				},
 			},
 		)}
@@ -143,12 +143,12 @@ func initStatsReporter() error {
 		logrus.Error(err)
 		return err
 	}
-	aadExchangeDuration, err = meter.Int64Histogram(metricNameVerifierDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("AAD exchange duration in ms"))
+	aadExchangeDuration, err = meter.Int64Histogram(metricNameAADExchangeDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("AAD exchange duration in ms"))
 	if err != nil {
 		logrus.Error(err)
 		return err
 	}
-	acrExchangeDuration, err = meter.Int64Histogram(metricNameVerifierDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("ACR exchange duration in ms"))
+	acrExchangeDuration, err = meter.Int64Histogram(metricNameACRExchangeDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("ACR exchange duration in ms"))
 	if err != nil {
 		logrus.Error(err)
 		return err
