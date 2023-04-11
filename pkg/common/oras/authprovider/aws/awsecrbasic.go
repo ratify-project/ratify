@@ -96,6 +96,9 @@ func (d *awsEcrBasicAuthProvider) getEcrAuthToken(artifact string) (EcrAuthToken
 
 	// registry/region from image
 	registry, err := awsauth.RegistryFromImage(artifact)
+	if err != nil {
+		return EcrAuthToken{}, fmt.Errorf("failed to get registry from image: %w", err)
+	}
 	region = awsauth.RegionFromRegistry(registry)
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("failed to get region from image: %w", err)

@@ -50,6 +50,19 @@ func mockAuthData() types.AuthorizationData {
 	}
 }
 
+func TestAwsEcrBasicAuthProvider_Create(t *testing.T) {
+	authProviderConfig := map[string]interface{}{
+		"name": "awsEcrBasic",
+	}
+
+	factory := AwsEcrBasicProviderFactory{}
+	_, err := factory.Create(authProviderConfig)
+
+	if err != nil {
+		t.Fatalf("create failed %v", err)
+	}
+}
+
 func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
 	ecrAuthToken := EcrAuthToken{}
 	ecrAuthToken.AuthData = make(map[string]types.AuthorizationData)

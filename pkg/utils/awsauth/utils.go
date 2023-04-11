@@ -20,18 +20,6 @@ import (
 	"strings"
 )
 
-// RegionFromImage parses region from image url
-func RegionFromImage(image string) (string, error) {
-	registry, err := RegistryFromImage(image)
-	if err != nil {
-		return "", err
-	}
-
-	region := RegionFromRegistry(registry)
-
-	return region, nil
-}
-
 // RegionFromRegistry parses AWS region ID from registry url
 func RegionFromRegistry(registry string) string {
 	a := strings.Split(registry, ".")

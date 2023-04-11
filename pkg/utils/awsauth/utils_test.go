@@ -41,10 +41,3 @@ func TestRegionFromRegistry_ReturnsExpected(t *testing.T) {
 		t.Fatalf("incorrect region returned, expected %s, but received %s", region, reg)
 	}
 }
-
-func TestRegionFromImage_ReturnsExpected(t *testing.T) {
-	reg, err := RegionFromImage(image)
-	if reg != region {
-		t.Fatalf("incorrect region returned, expected %s, but received %s, %v", region, reg, err)
-	}
-}
