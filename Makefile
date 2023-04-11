@@ -46,7 +46,7 @@ all: build test
 build: build-cli build-plugins
 
 .PHONY: build-cli
-build-cli: generate fmt vet
+build-cli: fmt vet
 	go build --ldflags="$(LDFLAGS)" \
 	-o ./bin/${BINARY_NAME} ./cmd/${BINARY_NAME}
 
