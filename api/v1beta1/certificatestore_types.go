@@ -37,13 +37,28 @@ type CertificateStoreSpec struct {
 
 // CertificateStoreStatus defines the observed state of CertificateStore
 type CertificateStoreStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make manifests" to regenerate code after modifying this file
+
+	// Is successful in loading certificate files
+	IsSuccess bool `json:"issuccess"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
+	// +optional
+	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
+	// provider specific parameters of the each individual certificate
+	// +optional
+	Properties runtime.RawExtension `json:"properties,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // CertificateStore is the Schema for the certificatestores API
+// +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
+// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.error`
+// +kubebuilder:printcolumn:name="LastFetchedTime",type=date,JSONPath=`.status.lastfetchedtime`
 type CertificateStore struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
