@@ -34,7 +34,10 @@ SLEEP_TIME=1
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-    sleep 5
+    sleep 5 
+    # validate certificate store status property shows success
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notary-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
+    assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
     # notation signature with OCI Artifact manifest format

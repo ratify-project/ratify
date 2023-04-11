@@ -30,9 +30,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 // CertificateStoreReconciler reconciles a CertificateStore object
@@ -79,24 +81,31 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// get cert provider attributes
 	attributes, err := getCertStoreConfig(certStore.Spec)
+	lastFetchedTime := metav1.Now()
+	isFetchSuccessful := false
+
 	if err != nil {
+		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
 	}
 
-	providers := certificateprovider.GetCertificateProviders()
-
-	certStore.Spec.Provider = utils.TrimSpaceAndToLower(certStore.Spec.Provider)
-
-	provider, registered := providers[certStore.Spec.Provider]
-	if !registered {
-		return ctrl.Result{}, fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+	provider, err := getCertificateProvider(certificateprovider.GetCertificateProviders(), certStore.Spec.Provider)
+	if err != nil {
+		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		return ctrl.Result{}, err
 	}
 
-	certificates, err := provider.GetCertificates(ctx, attributes)
+	certificates, certAttributes, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
+		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
+
 	certificatesMap[resource] = certificates
+	isFetchSuccessful = true
+	emptyErrorString := ""
+	writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
+
 	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
@@ -110,8 +119,13 @@ func GetCertificatesMap() map[string][]*x509.Certificate {
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	pred := predicate.GenerationChangedPredicate{}
+
+	// status updates will trigger a reconcile event
+	// if there are no changes to spec of CRD, this event should be filtered out by using the predicate
+	// see more discussions at https://github.com/kubernetes-sigs/kubebuilder/issues/618
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.CertificateStore{}).
+		For(&configv1beta1.CertificateStore{}).WithEventFilter(pred).
 		Complete(r)
 }
 
@@ -123,9 +137,51 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 	}
 
 	if err := json.Unmarshal(spec.Parameters.Raw, &attributes); err != nil {
-		logrus.Error(err, "unable to decode cert store parameters", "Parameters.Raw", spec.Parameters.Raw)
+		logrus.Error(err, ",unable to decode cert store parameters", "Parameters.Raw", spec.Parameters.Raw)
 		return attributes, err
 	}
 
 	return attributes, nil
+}
+
+func writeCertStoreStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, certStatus certificateprovider.CertificatesStatus) {
+	if isSuccess {
+		updateSuccessStatus(&certStore, &operationTime, certStatus)
+	} else {
+		updateErrorStatus(&certStore, errorString, &operationTime)
+	}
+	if statusErr := r.Status().Update(ctx, &certStore); statusErr != nil {
+		logger.Error(statusErr, ",unable to update certificate store error status")
+	}
+}
+
+func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime *metav1.Time) {
+	certStore.Status.IsSuccess = false
+	certStore.Status.Error = errorString
+	certStore.Status.LastFetchedTime = operationTime
+}
+
+func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperationTime *metav1.Time, certStatus certificateprovider.CertificatesStatus) {
+	certStore.Status.IsSuccess = true
+	certStore.Status.Error = ""
+	certStore.Status.LastFetchedTime = lastOperationTime
+
+	if certStatus != nil {
+		jsonString, _ := json.Marshal(certStatus)
+
+		raw := runtime.RawExtension{
+			Raw: jsonString,
+		}
+		certStore.Status.Properties = raw
+	}
+}
+
+// given the name of the target provider, returns the provider from the providers map
+func getCertificateProvider(providers map[string]certificateprovider.CertificateProvider, providerName string) (certificateprovider.CertificateProvider, error) {
+	providerName = utils.TrimSpaceAndToLower(providerName)
+	provider, registered := providers[providerName]
+	if !registered {
+		return nil, fmt.Errorf("Unknown provider value '%v' defined", provider)
+	}
+	return provider, nil
 }
