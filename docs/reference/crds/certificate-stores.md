@@ -3,8 +3,18 @@ A `Certificate Store` resource defines an array of public certificates to fetch 
 View more CRD samples [here](../../../config/samples/). Each provider must specify the `name` of the certificate store.
 
 ```yml
-provider: required, name of the certificate store provider
-parameters: required, parameters specific to this certificate store provider
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: CertificateStore
+metadata:
+  name:  
+spec:
+  provider: # required, name of the certificate store provider
+  parameters: # required, parameters specific to this certificate store provider
+status: # supported in version >= config.ratify.deislabs.io/v1beta1
+  error:            # error message if the operation failed
+  issuccess:        # boolean that indicate if operation was successful
+  lastfetchedtime:  # timestamp of last attempted certificate fetch operation
+  properties: # provider specific properties of the fetched certificates. If the current certificate fetch operation fails, this property displays the properties of last successfully cached certificate
 ```
 
 # Certificate Store Provider
@@ -25,7 +35,15 @@ spec:
           certificateName: yourCertName
           certificateVersion: yourCertVersion 
     tenantID:
-    clientID: 
+    clientID:
+status:
+  issuccess:        true
+  lastfetchedtime:  # time stamp of last fetch operation
+  properties: 
+    certificates:
+      certificate Name:  yourCertName
+      last Refreshed:    # time stamp of last successful cert fetch operation
+      version:           yourCertVersion 
 ```
 
 | Name        | Required | Description | Default Value |
@@ -36,6 +54,8 @@ spec:
 | tenantID   | yes     |   tenantID of the workload identity that have read access to this key vault   |     ""    |
 | clientID   | yes     |   clientID of the workload identity that have read access to this key vault   |     ""    |
 
+Use command `kubectl get certificatestores.config.ratify.deislabs.io` to see a overview of `certificatestores` status.
+Use command `kubectl get certificatestores.config.ratify.deislabs.io/certstore-akv` to see full details on each certificate.
 ### Limitation
 Azure Key Vault integration currently only works for self signed certificate, we are following up on Azure Key Vault specific limitations so we could support certificate chains in the future, please use [issue 695](https://github.com/deislabs/ratify/issues/695) for tracking. If you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](certificate-stores.md#inline-certificate-provider). 
 
