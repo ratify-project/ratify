@@ -165,7 +165,6 @@ func TestUpdateSuccessStatus_emptyProperties(t *testing.T) {
 }
 
 func TestGetCertificateProvider(t *testing.T) {
-
 	providers := map[string]certificateprovider.CertificateProvider{}
 	providers["inline"] = inline.Create()
 	result, _ := getCertificateProvider(providers, "inline")

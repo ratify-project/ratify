@@ -182,7 +182,6 @@ func getCertificateProvider(providers map[string]certificateprovider.Certificate
 	provider, registered := providers[providerName]
 	if !registered {
 		return nil, fmt.Errorf("Unknown provider value '%v' defined", provider)
-
 	}
 	return provider, nil
 }
