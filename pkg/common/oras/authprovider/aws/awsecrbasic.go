@@ -154,8 +154,6 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 		return provider.AuthConfig{}, fmt.Errorf("AWS IRSA basic auth provider is not properly enabled")
 	}
 
-	var authToken EcrAuthToken
-
 	registry, err := awsauth.RegistryFromImage(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, errors.Wrapf(err, "could not get ECR registry from %s", artifact)
@@ -163,18 +161,20 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 
 	if !d.ecrAuthToken.exists(registry) {
 		logrus.Debugf("ecrAuthToken for %s does not exist", registry)
-		authToken, err = d.getEcrAuthToken(artifact)
-		d.ecrAuthToken = authToken
+		_, err = d.getEcrAuthToken(artifact)
+		if err != nil {
+			return provider.AuthConfig{}, errors.Wrapf(err, "could not get ECR auth token for %s", artifact)
+		}
 	}
 
 	// need to refresh AWS ECR credentials
 	t := time.Now().Add(time.Minute * 5)
 	if t.After(d.ecrAuthToken.Expiry(registry)) || time.Now().After(d.ecrAuthToken.Expiry(registry)) {
-		authToken, err = d.getEcrAuthToken(artifact)
+		_, err = d.getEcrAuthToken(artifact)
 		if err != nil {
 			return provider.AuthConfig{}, errors.Wrapf(err, "could not refresh ECR auth token for %s", artifact)
 		}
-		d.ecrAuthToken = authToken
+
 		logrus.Debugf("successfully refreshed ECR auth token for %s", artifact)
 	}
 
