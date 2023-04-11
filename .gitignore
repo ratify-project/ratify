@@ -16,3 +16,6 @@ certs/
 .vscode/settings.json
 
 .staging
+
+pkg/referrerstore/factory/plugin-store
+

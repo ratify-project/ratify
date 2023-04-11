@@ -19,16 +19,16 @@ import (
 	"strings"
 
 	"github.com/spdx/tools-golang/spdx"
-	"github.com/spdx/tools-golang/tvloader"
+	"github.com/spdx/tools-golang/tagvalue"
 )
 
-func BlobToSPDX(bytes []byte) (*spdx.Document2_2, error) {
+func BlobToSPDX(bytes []byte) (*spdx.Document, error) {
 	raw := string(bytes)
 	reader := strings.NewReader(raw)
-	return tvloader.Load2_2(reader)
+	return tagvalue.Read(reader)
 }
 
-func GetPackageLicenses(doc spdx.Document2_2) []PackageLicense {
+func GetPackageLicenses(doc spdx.Document) []PackageLicense {
 	output := []PackageLicense{}
 	for _, p := range doc.Packages {
 		output = append(output, PackageLicense{

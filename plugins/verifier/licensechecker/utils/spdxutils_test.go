@@ -46,7 +46,7 @@ func TestBlobToSPDX(t *testing.T) {
 		t.Fatalf("could not parse SPDX doc from bytes")
 	}
 	expected := "localhost-5000/test-v1"
-	result := spdxDoc.CreationInfo.DocumentName
+	result := spdxDoc.DocumentName
 	if expected != result {
 		t.Fatalf("expected: %s, got: %s", expected, result)
 	}
