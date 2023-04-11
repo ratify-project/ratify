@@ -120,11 +120,12 @@ Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" deni
 You just validated the container images in your k8s cluster!
 
 ### Step 4: Uninstall Ratify
-
+Notes: Helm does NOT support upgrading CRDs, so uninstalling Ratify will require you to delete the CRDs manually. Otherwise, you might fail to install CRDs of newer versions when installing Ratify.
 ```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 helm delete ratify --namespace gatekeeper-system
+kubectl delete crd stores.config.ratify.deislabs.io verifiers.config.ratify.deislabs.io certificatestores.config.ratify.deislabs.io
 ```
 
 ### Notes
