@@ -22,9 +22,11 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -126,6 +128,14 @@ func TestGetCertificates(t *testing.T) {
 			expectedErr: true,
 		},
 		{
+			desc: "clientID not provided",
+			parameters: map[string]string{
+				"vaultUri": "https://testkv.vault.azure.net/",
+				"tenantID": "tid",
+			},
+			expectedErr: true,
+		},
+		{
 			desc: "invalid cloud name",
 			parameters: map[string]string{
 				"vaultUri":  "https://testkv.vault.azure.net/",
@@ -200,9 +210,11 @@ func TestGetCertificates(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := provider.GetCertificates(context.TODO(), tc.parameters)
+			certs, certStatus, err := provider.GetCertificates(context.TODO(), tc.parameters)
 			if tc.expectedErr {
 				assert.NotNil(t, err)
+				assert.Nil(t, certs)
+				assert.Nil(t, certStatus)
 			} else {
 				assert.Nil(t, err)
 			}
@@ -210,9 +222,87 @@ func TestGetCertificates(t *testing.T) {
 	}
 }
 
+func TestGetCertStatusMap(t *testing.T) {
+	certsStatus := []map[string]string{}
+	certsStatus = append(certsStatus, map[string]string{
+		"CertName":    "Cert1",
+		"CertVersion": "VersionABC",
+	})
+	certsStatus = append(certsStatus, map[string]string{
+		"CertName":    "Cert2",
+		"CertVersion": "VersionEDF",
+	})
+
+	actual := getCertStatusMap(certsStatus)
+	assert.NotNil(t, actual[types.CertificatesStatus])
+}
+
 func TestGetObjectVersion(t *testing.T) {
 	id := "https://kindkv.vault.azure.net/secrets/cert1/c55925c29c6743dcb9bb4bf091be03b0"
 	expectedVersion := "c55925c29c6743dcb9bb4bf091be03b0"
 	actual := getObjectVersion(id)
 	assert.Equal(t, expectedVersion, actual)
+}
+
+func TestGetCertStatusProperty(t *testing.T) {
+	timeNow := time.Now().String()
+	certName := "certName"
+	certVersion := "versionABC"
+
+	status := getCertStatusProperty(certName, certVersion, timeNow)
+	assert.Equal(t, certName, status[types.CertificateName])
+	assert.Equal(t, timeNow, status[types.CertificateLastRefreshed])
+	assert.Equal(t, certVersion, status[types.CertificateVersion])
+}
+
+func TestGetKeyvaultRequestObj(t *testing.T) {
+	attrib := map[string]string{}
+	attrib["vaultURI"] = "https://testvault.vault.azure.net/"
+	attrib["clientID"] = "TestClient"
+	attrib["cloudName"] = "TestCloud"
+	attrib["tenantID"] = "TestIDABC"
+	attrib["certificates"] = "array:\n- |\n  certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n"
+
+	result, err := getKeyvaultRequestObj(attrib)
+
+	if err != nil {
+		logrus.Infof("err %v", err)
+	}
+
+	assert.Equal(t, "wabbit-networks-io", result[0].CertificateName)
+	assert.Equal(t, "testversion", result[0].CertificateVersion)
+}
+
+func TestGetKeyvaultRequestObj_error(t *testing.T) {
+	cases := []struct {
+		desc        string
+		attrib      map[string]string
+		expectedErr bool
+	}{
+		{
+			desc: "certificates is not set",
+			attrib: map[string]string{
+				"certificates": "",
+			},
+			expectedErr: true,
+		},
+		{
+			desc: "unexpected certificate string",
+			attrib: map[string]string{
+				"certificates": "certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n",
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := getKeyvaultRequestObj(tc.attrib)
+			if tc.expectedErr {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
 }
