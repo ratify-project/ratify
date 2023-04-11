@@ -20,6 +20,8 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
+	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -159,5 +161,21 @@ func TestUpdateSuccessStatus_emptyProperties(t *testing.T) {
 	//make sure properties of last cached cert was updated
 	if len(certStore.Status.Properties.Raw) != 0 {
 		t.Fatalf("Properties should be empty")
+	}
+}
+
+func TestGetCertificateProvider(t *testing.T) {
+
+	providers := map[string]certificateprovider.CertificateProvider{}
+	providers["inline"] = inline.Create()
+	result, _ := getCertificateProvider(providers, "inline")
+
+	if result == nil {
+		t.Fatalf("Expected getCertificateProvider() to return inline cert provider")
+	}
+
+	_, err := getCertificateProvider(providers, "azurekv")
+	if err == nil {
+		t.Fatalf("Getting unregistered provider should returns an error")
 	}
 }

@@ -89,18 +89,13 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	providers := certificateprovider.GetCertificateProviders()
-
-	certStore.Spec.Provider = utils.TrimSpaceAndToLower(certStore.Spec.Provider)
-	provider, registered := providers[certStore.Spec.Provider]
-	if !registered {
-		err := fmt.Errorf("Unknown provider value %v defined in certificate store %v", certStore.Spec.Provider, resource)
+	provider, err := getCertificateProvider(certificateprovider.GetCertificateProviders(), certStore.Spec.Provider)
+	if err != nil {
 		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
 	}
 
 	certificates, certAttributes, err := provider.GetCertificates(ctx, attributes)
-
 	if err != nil {
 		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
@@ -179,4 +174,15 @@ func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperatio
 		}
 		certStore.Status.Properties = raw
 	}
+}
+
+// given the name of the target provider, returns the provider from the providers map
+func getCertificateProvider(providers map[string]certificateprovider.CertificateProvider, providerName string) (certificateprovider.CertificateProvider, error) {
+	providerName = utils.TrimSpaceAndToLower(providerName)
+	provider, registered := providers[providerName]
+	if !registered {
+		return nil, fmt.Errorf("Unknown provider value '%v' defined", provider)
+
+	}
+	return provider, nil
 }
