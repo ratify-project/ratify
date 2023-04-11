@@ -3,10 +3,15 @@ Please review doc [here](https://github.com/deislabs/ratify/blob/main/docs/devel
 To see more sample store configuration, click [here](../../../config/samples/). Each resource must specify the `name` of the store.
  
 ```yml
-name: required, name of the store
-address: optional. Plugin path, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
-source:  optional. Source location to download the plugin binary, learn more at docs/reference/dynamic-plugins.md
-parameters: optional. Parameters specific to this store
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Store
+metadata:
+  name: 
+spec:
+  name: required, name of the store
+  address: optional. Plugin path, defaults to value of env "RATIFY_CONFIG" or "~/.ratify/plugins"
+  source:  optional. Source location to download the plugin binary, learn more at docs/reference/dynamic-plugins.md
+  parameters: optional. Parameters specific to this store
 ```
 
 ## Oras

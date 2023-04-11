@@ -26,22 +26,39 @@ import (
 
 // EcrAuthToken provides helper functions for ECR auth token data
 type EcrAuthToken struct {
-	AuthData types.AuthorizationData
+	AuthData map[string]types.AuthorizationData
 }
 
-// Expiry
-func (e EcrAuthToken) Expiry() time.Time {
-	return *e.AuthData.ExpiresAt
+// exists checks if authdata entries exist
+func (e EcrAuthToken) exists(key string) bool {
+	if len(e.AuthData) < 1 {
+		return false
+	}
+
+	if _, ok := e.AuthData[key]; !ok {
+		return false
+	}
+
+	if *e.AuthData[key].AuthorizationToken == "" {
+		return false
+	}
+
+	return true
 }
 
-// ProxyEndpoint
-func (e EcrAuthToken) ProxyEndpoint() string {
-	return *e.AuthData.ProxyEndpoint
+// Expiry returns the expiry time
+func (e EcrAuthToken) Expiry(key string) time.Time {
+	return *e.AuthData[key].ExpiresAt
 }
 
-// BasicAuthCreds
-func (e EcrAuthToken) BasicAuthCreds() ([]string, error) {
-	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData.AuthorizationToken)
+// ProxyEndpoint returns the authdata proxy endpoint
+func (e EcrAuthToken) ProxyEndpoint(key string) string {
+	return *e.AuthData[key].ProxyEndpoint
+}
+
+// BasicAuthCreds returns a string array of the basic creds
+func (e EcrAuthToken) BasicAuthCreds(key string) ([]string, error) {
+	rawDecodedToken, err := base64.StdEncoding.DecodeString(*e.AuthData[key].AuthorizationToken)
 	if err != nil {
 		return nil, fmt.Errorf("could not decode ECR auth token: %w", err)
 	}
