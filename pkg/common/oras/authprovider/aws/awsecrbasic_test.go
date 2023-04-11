@@ -31,6 +31,7 @@ const (
 	// #nosec G101 (Ref: https://github.com/securego/gosec/issues/295)
 	testPassword = "eyJwYXlsb2FkIjoiOThPNTFqemhaUmZWVG"
 	testProxy    = "PROXY_ENDPOINT"
+	testHost     = "123456789012.dkr.ecr.us-east-2.amazonaws.com"
 )
 
 // Verifies that awsEcrBasicAuthProvider is properly constructed by mocking EcrAuthToken
@@ -40,16 +41,21 @@ func mockAuthData() types.AuthorizationData {
 	creds := []string{testUsername, testPassword}
 	encoded := base64.StdEncoding.EncodeToString([]byte(strings.Join(creds, ":")))
 
+	expiry := aws.Time(time.Now().Add(time.Minute * 10))
+
 	return types.AuthorizationData{
 		AuthorizationToken: aws.String(encoded),
-		ExpiresAt:          aws.Time(time.Now().Add(time.Minute * 10)),
+		ExpiresAt:          expiry,
 		ProxyEndpoint:      aws.String(testProxy),
 	}
 }
 
 func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
+	ecrAuthToken := EcrAuthToken{}
+	ecrAuthToken.AuthData = make(map[string]types.AuthorizationData)
+	ecrAuthToken.AuthData[testHost] = mockAuthData()
 	authProvider := awsEcrBasicAuthProvider{
-		ecrAuthToken: EcrAuthToken{mockAuthData()},
+		ecrAuthToken: ecrAuthToken,
 		providerName: awsEcrAuthProviderName,
 	}
 
@@ -60,26 +66,6 @@ func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
 	}
 
 	authProvider.providerName = ""
-	if authProvider.Enabled(ctx) {
-		t.Fatal("enabled should have returned false but returned true")
-	}
-
-	authProvider = awsEcrBasicAuthProvider{
-		ecrAuthToken: EcrAuthToken{mockAuthData()},
-		providerName: awsEcrAuthProviderName,
-	}
-
-	authProvider.ecrAuthToken.AuthData.AuthorizationToken = aws.String("")
-	if authProvider.Enabled(ctx) {
-		t.Fatal("enabled should have returned false but returned true")
-	}
-
-	authProvider = awsEcrBasicAuthProvider{
-		ecrAuthToken: EcrAuthToken{mockAuthData()},
-		providerName: awsEcrAuthProviderName,
-	}
-
-	authProvider.ecrAuthToken.AuthData.ExpiresAt = nil
 	if authProvider.Enabled(ctx) {
 		t.Fatal("enabled should have returned false but returned true")
 	}
