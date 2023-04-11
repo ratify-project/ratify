@@ -30,6 +30,15 @@ const (
 	CertificatesParameter = "certificates"
 	// Static string for certificate type
 	CertificateType = "CERTIFICATE"
+
+	// key of the certificate status property
+	CertificatesStatus = "Certificates"
+	// Static string for certificate name for the certificate status property
+	CertificateName = "CertificateName"
+	// Certificate version string for the certificate status property
+	CertificateVersion = "Version"
+	// Last refreshed string for the certificate status property
+	CertificateLastRefreshed = "LastRefreshed"
 )
 
 // KeyVaultCertificate holds keyvault certificate related config
