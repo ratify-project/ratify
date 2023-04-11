@@ -18,12 +18,14 @@ package metrics
 import (
 	"net/http"
 	"testing"
+	"time"
 )
 
 func TestInitPrometheusExporter(t *testing.T) {
 	if err := initPrometheusExporter(8888); err != nil {
 		t.Fatalf("initPrometheusExporter() error = %v", err)
 	}
+	time.Sleep(2 * time.Second)
 	r, err := http.NewRequest("GET", "http://localhost:8888/metrics", nil)
 	if err != nil {
 		t.Fatalf("http.NewRequest() error = %v", err)
