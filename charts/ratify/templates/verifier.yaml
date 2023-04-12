@@ -2,6 +2,9 @@ apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-notary
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
 spec:
   name: notaryv2
   artifactTypes: application/vnd.cncf.notary.signature
@@ -32,6 +35,9 @@ apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-cosign
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
 spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
