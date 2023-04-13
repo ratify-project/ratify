@@ -281,6 +281,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 	}
 
 	if !isCached {
+		metrics.ReportBlobCacheCount(ctx, false)
 		// generate the reference path with digest
 		ref := fmt.Sprintf("%s@%s", subjectReference.Path, digest)
 
@@ -300,6 +301,8 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return nil, err
 		}
+	} else {
+		metrics.ReportBlobCacheCount(ctx, true)
 	}
 	// add the repository client to the auth cache if all repository operations successful
 	store.addAuthCache(subjectReference.Original, repository, expiry)
@@ -320,6 +323,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	}
 
 	if !isCached {
+		metrics.ReportBlobCacheCount(ctx, false)
 		// fetch manifest content from repository
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
@@ -345,6 +349,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		// add the repository client to the auth cache if all repository operations successful
 		store.addAuthCache(subjectReference.Original, repository, expiry)
 	} else {
+		metrics.ReportBlobCacheCount(ctx, true)
 		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
 		if err != nil {
 			return ocispecs.ReferenceManifest{}, err

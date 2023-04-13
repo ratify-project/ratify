@@ -33,10 +33,12 @@ var (
 	verifierDuration     instrument.Int64Histogram
 	systemErrorCount     instrument.Int64Counter
 	registryRequestCount instrument.Int64Counter
+	cacheBlobCount       instrument.Int64Counter
 
 	// Azure Metrics
-	aadExchangeDuration instrument.Int64Histogram
-	acrExchangeDuration instrument.Int64Histogram
+	aadExchangeDuration    instrument.Int64Histogram
+	acrExchangeDuration    instrument.Int64Histogram
+	akvCertificateDuration instrument.Int64Histogram
 )
 
 const (
@@ -48,10 +50,12 @@ const (
 	metricNameVerifierDuration     = "ratify_verifier_duration"
 	metricNameSystemErrorCount     = "ratify_system_error_count"
 	metricNameRegistryRequestCount = "ratify_registry_request_count"
+	metricNameBlobCacheCount       = "ratify_blob_cache_count"
 
 	// Azure Metrics
-	metricNameAADExchangeDuration = "ratify_aad_exchange_duration"
-	metricNameACRExchangeDuration = "ratify_acr_exchange_duration"
+	metricNameAADExchangeDuration    = "ratify_aad_exchange_duration"
+	metricNameACRExchangeDuration    = "ratify_acr_exchange_duration"
+	metricNameAKVCertificateDuration = "ratify_akv_certificate_duration"
 )
 
 // NewStatsReporter creates a new StatsReporter
@@ -115,7 +119,19 @@ func initStatsReporter() error {
 					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
 				},
 			},
-		)}
+		),
+		sdkmetric.NewView(
+			sdkmetric.Instrument{
+				Name:  metricNameAKVCertificateDuration,
+				Scope: instrumentation.Scope{Name: scope},
+			},
+			sdkmetric.Stream{
+				Aggregation: aggregation.ExplicitBucketHistogram{
+					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
+				},
+			},
+		),
+	}
 	provider := sdkmetric.NewMeterProvider(sdkmetric.WithReader(MetricReader), sdkmetric.WithView(views...))
 	meter := provider.Meter(scope)
 	verificationDuration, err = meter.Int64Histogram(metricNameVerificationDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("verification request duration in ms"))
@@ -149,6 +165,16 @@ func initStatsReporter() error {
 		return err
 	}
 	acrExchangeDuration, err = meter.Int64Histogram(metricNameACRExchangeDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("ACR exchange duration in ms"))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	akvCertificateDuration, err = meter.Int64Histogram(metricNameAKVCertificateDuration, instrument.WithUnit("millisecond"), instrument.WithDescription("AKV certificate duration in ms"))
+	if err != nil {
+		logrus.Error(err)
+		return err
+	}
+	cacheBlobCount, err = meter.Int64Counter(metricNameBlobCacheCount, instrument.WithDescription("blob cache hit/miss count"))
 	if err != nil {
 		logrus.Error(err)
 		return err
@@ -212,5 +238,17 @@ func ReportAADExchangeDuration(ctx context.Context, duration int64, resourceType
 func ReportACRExchangeDuration(ctx context.Context, duration int64, repository string) {
 	if acrExchangeDuration != nil {
 		acrExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)})
+	}
+}
+
+func ReportAKVCertificateDuration(ctx context.Context, duration int64, certificateName string) {
+	if akvCertificateDuration != nil {
+		akvCertificateDuration.Record(ctx, duration, attribute.KeyValue{Key: "certificate_name", Value: attribute.StringValue(certificateName)})
+	}
+}
+
+func ReportBlobCacheCount(ctx context.Context, hit bool) {
+	if cacheBlobCount != nil {
+		cacheBlobCount.Add(ctx, 1, attribute.KeyValue{Key: "hit", Value: attribute.BoolValue(hit)})
 	}
 }

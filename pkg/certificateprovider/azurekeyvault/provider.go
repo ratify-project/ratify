@@ -28,6 +28,7 @@ import (
 
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/deislabs/ratify/pkg/metrics"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -103,10 +104,12 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
 		// fetch the object from Key Vault
+		starttime := time.Now()
 		keyvaultResult, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
 		if err != nil {
 			return nil, nil, err
 		}
+		metrics.ReportAKVCertificateDuration(ctx, time.Since(starttime).Milliseconds(), keyVaultCert.CertificateName)
 
 		// convert bytes to x509
 		decodedCerts, err := certificateprovider.DecodeCertificates([]byte(keyvaultResult.content))
