@@ -58,7 +58,7 @@ const (
 	metricNameAKVCertificateDuration = "ratify_akv_certificate_duration"
 )
 
-// NewStatsReporter creates a new StatsReporter
+// initStatsReporter creates defines data transformation and creates the metrics
 func initStatsReporter() error {
 	var err error
 	// defines the data-stream transformation of histogram metrics
