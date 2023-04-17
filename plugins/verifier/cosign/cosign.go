@@ -33,11 +33,13 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/opencontainers/go-digest"
 	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/sigstore/cosign/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/pkg/cosign"
+	"github.com/sigstore/cosign/pkg/cosign/bundle"
 	"github.com/sigstore/cosign/pkg/oci"
 	"github.com/sigstore/cosign/pkg/oci/static"
 	"github.com/sigstore/sigstore/pkg/signature"
@@ -61,6 +63,13 @@ type StoreWrapperConfig struct {
 type PluginInputConfig struct {
 	Config             PluginConfig       `json:"config"`
 	StoreWrapperConfig StoreWrapperConfig `json:"storeConfig"`
+}
+
+type cosignExtension struct {
+	SignatureDigest digest.Digest `json:"signatureDigest"`
+	IsSuccess       bool          `json:"isSuccess"`
+	BundleVerified  bool          `json:"bundleVerified"`
+	Err             error         `json:"error,omitempty"`
 }
 
 func main() {
@@ -133,33 +142,49 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		Hex:       subjectDesc.Digest.Hex(),
 	}
 
+	extensions := make([]cosignExtension, 0)
 	signatures := []oci.Signature{}
 	for _, blob := range referenceManifest.Blobs {
 		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
 		if err != nil {
 			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get blob content: %w", err)), nil
 		}
-		sig, err := static.NewSignature(blobBytes, blob.Annotations[static.SignatureAnnotationKey], staticLayerOpts(blob)...)
+		staticOpts, err := staticLayerOpts(blob)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to parse static signature opts: %w", err)), nil
+		}
+		sig, err := static.NewSignature(blobBytes, blob.Annotations[static.SignatureAnnotationKey], staticOpts...)
 		if err != nil {
 			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to generate static signature: %w", err)), nil
 		}
 		// The verification will return an error if the signature is not valid.
-		// Currently the bundle verification result is ignored
-		_, err = cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
-		if err == nil {
+		bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
+		extension := cosignExtension{
+			SignatureDigest: blob.Digest,
+			IsSuccess:       true,
+			BundleVerified:  bundleVerified,
+		}
+		if err != nil {
+			extension.IsSuccess = false
+			extension.Err = err
+		} else {
 			signatures = append(signatures, sig)
 		}
+		extensions = append(extensions, extension)
 	}
 
 	if len(signatures) > 0 {
 		return &verifier.VerifierResult{
-			Name:      input.Config.Name,
-			IsSuccess: true,
-			Message:   "cosign verification success. valid signatures found",
+			Name:       input.Config.Name,
+			IsSuccess:  true,
+			Message:    "cosign verification success. valid signatures found",
+			Extensions: extensions,
 		}, nil
 	}
 
-	return errorToVerifyResult(input.Config.Name, fmt.Errorf("no valid signatures found")), nil
+	errorResult := errorToVerifyResult(input.Config.Name, fmt.Errorf("no valid signatures found"))
+	errorResult.Extensions = extensions
+	return errorResult, nil
 }
 
 func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verifier, err error) {
@@ -177,7 +202,7 @@ func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verif
 	return signature.LoadECDSAVerifier(ed, crypto.SHA256)
 }
 
-func staticLayerOpts(desc imgspec.Descriptor) []static.Option {
+func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 	options := []static.Option{}
 	options = append(options, static.WithAnnotations(desc.Annotations))
 	cert := desc.Annotations[static.CertificateAnnotationKey]
@@ -185,8 +210,16 @@ func staticLayerOpts(desc imgspec.Descriptor) []static.Option {
 	if cert != "" && chain != "" {
 		options = append(options, static.WithCertChain([]byte(cert), []byte(chain)))
 	}
-	// TODO: Add support for bundle parsing. Cosign verifier does not consider bundle verification today
-	return options
+	var rekorBundle bundle.RekorBundle
+	if val, ok := desc.Annotations[static.BundleAnnotationKey]; ok {
+		err := json.Unmarshal([]byte(val), &rekorBundle)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to unmarshal bundle from blob payload")
+		}
+		options = append(options, static.WithBundle(&rekorBundle))
+	}
+
+	return options, nil
 }
 
 func errorToVerifyResult(name string, err error) *verifier.VerifierResult {
