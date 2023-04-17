@@ -11,7 +11,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0
 	github.com/aws/aws-sdk-go-v2 v1.17.8
-	github.com/aws/aws-sdk-go-v2/config v1.18.20
+	github.com/aws/aws-sdk-go-v2/config v1.18.21
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.20
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/cespare/xxhash/v2 v2.1.2
@@ -42,7 +42,7 @@ require (
 	google.golang.org/protobuf v1.28.1
 	k8s.io/api v0.24.13
 	k8s.io/apimachinery v0.24.13
-	k8s.io/client-go v0.24.12
+	k8s.io/client-go v0.24.13
 	oras.land/oras-go/v2 v2.0.2
 )
 
