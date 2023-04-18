@@ -132,12 +132,12 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 
 	// create registry client and exchange AAD token for registry refresh token
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
-	starttime := time.Now()
+	startTime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
 		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry - %w", err)
 	}
-	metrics.ReportACRExchangeDuration(ctx, time.Since(starttime).Milliseconds(), artifactHostName)
+	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,

@@ -182,18 +182,26 @@ func initStatsReporter() error {
 	return nil
 }
 
+// ReportVerificationRequest reports the duration of a verification request
 func ReportVerificationRequest(ctx context.Context, duration int64) {
 	if verificationDuration != nil {
 		verificationDuration.Record(ctx, duration)
 	}
 }
 
+// ReportMutationRequest reports the duration of a mutation request
 func ReportMutationRequest(ctx context.Context, duration int64) {
 	if mutationDuration != nil {
 		mutationDuration.Record(ctx, duration)
 	}
 }
 
+// ReportVerifierDuration reports the duration of a single verifier's execution
+// Attributes:
+// verifierName: the name of the verifier
+// subjectReference: the subject reference of the verification
+// success: whether the verification succeeded
+// isError: whether the verification failed due to an error
 func ReportVerifierDuration(ctx context.Context, duration int64, veriferName string, subjectReference string, success bool, isError bool) {
 	if verifierDuration != nil {
 		verifierDuration.Record(ctx, duration,
@@ -217,36 +225,55 @@ func ReportVerifierDuration(ctx context.Context, duration int64, veriferName str
 	}
 }
 
+// ReportSystemError reports a system error from the server handler
+// Attributes:
+// errorString: the error message
 func ReportSystemError(ctx context.Context, errorString string) {
 	if systemErrorCount != nil {
 		systemErrorCount.Add(ctx, 1, attribute.KeyValue{Key: "error", Value: attribute.StringValue(errorString)})
 	}
 }
 
+// ReportRegistryRequestCount reports a registry request
+// Attributes:
+// statusCode: the status code of the request
+// registryHost: the host name of the registry
 func ReportRegistryRequestCount(ctx context.Context, statusCode int, registryHost string) {
 	if registryRequestCount != nil {
 		registryRequestCount.Add(ctx, 1, attribute.KeyValue{Key: "status_code", Value: attribute.IntValue(statusCode)}, attribute.KeyValue{Key: "registry_host", Value: attribute.StringValue(registryHost)})
 	}
 }
 
+// ReportAADExchangeDuration reports the duration of an AAD exchange
+// Attributes:
+// resourceType: the scope of resource being exchanged (AKV or ACR)
 func ReportAADExchangeDuration(ctx context.Context, duration int64, resourceType string) {
 	if aadExchangeDuration != nil {
 		aadExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "resource_type", Value: attribute.StringValue(resourceType)})
 	}
 }
 
+// ReportACRExchangeDuration reports the duration of an ACR exchange (AAD token for ACR refresh token)
+// Attributes:
+// repository: the repository being accessed
 func ReportACRExchangeDuration(ctx context.Context, duration int64, repository string) {
 	if acrExchangeDuration != nil {
 		acrExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)})
 	}
 }
 
+// ReportAKVCertificateDuration reports the duration of an AKV certificate fetch
+// Attributes:
+// certificateName: the object name of the certificate
 func ReportAKVCertificateDuration(ctx context.Context, duration int64, certificateName string) {
 	if akvCertificateDuration != nil {
 		akvCertificateDuration.Record(ctx, duration, attribute.KeyValue{Key: "certificate_name", Value: attribute.StringValue(certificateName)})
 	}
 }
 
+// ReportBlobCacheCount reports a blob cache hit or miss
+// Attributes:
+// hit: whether the blob was found in the cache
 func ReportBlobCacheCount(ctx context.Context, hit bool) {
 	if cacheBlobCount != nil {
 		cacheBlobCount.Add(ctx, 1, attribute.KeyValue{Key: "hit", Value: attribute.BoolValue(hit)})

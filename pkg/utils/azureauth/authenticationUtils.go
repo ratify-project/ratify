@@ -27,9 +27,9 @@ import (
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
 func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (confidential.AuthResult, error) {
-	starttime := time.Now()
+	startTime := time.Now()
 	defer func() {
-		metrics.ReportAADExchangeDuration(ctx, time.Since(starttime).Milliseconds(), scope)
+		metrics.ReportAADExchangeDuration(ctx, time.Since(startTime).Milliseconds(), scope)
 	}()
 	// Azure AD Workload Identity webhook will inject the following env vars:
 	// 	AZURE_FEDERATED_TOKEN_FILE is the service account token path

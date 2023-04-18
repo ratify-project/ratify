@@ -104,12 +104,12 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
 
 		// fetch the object from Key Vault
-		starttime := time.Now()
+		startTime := time.Now()
 		keyvaultResult, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
 		if err != nil {
 			return nil, nil, err
 		}
-		metrics.ReportAKVCertificateDuration(ctx, time.Since(starttime).Milliseconds(), keyVaultCert.CertificateName)
+		metrics.ReportAKVCertificateDuration(ctx, time.Since(startTime).Milliseconds(), keyVaultCert.CertificateName)
 
 		// convert bytes to x509
 		decodedCerts, err := certificateprovider.DecodeCertificates([]byte(keyvaultResult.content))
