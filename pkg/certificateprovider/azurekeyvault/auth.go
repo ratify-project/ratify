@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/deislabs/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
@@ -59,7 +59,7 @@ func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, r
 		scope = fmt.Sprintf("%s/.default", resource)
 	}
 
-	result, err := utils.GetAADAccessToken(ctx, tenantID, clientID, scope)
+	result, err := azureauth.GetAADAccessToken(ctx, tenantID, clientID, scope)
 	if err != nil {
 		return nil, fmt.Errorf("failed to acquire token: %w", err)
 	}

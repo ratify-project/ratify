@@ -26,6 +26,7 @@ import (
 
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	pkgUtils "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/utils"
@@ -109,7 +110,9 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 		}(utils.SanitizeString(subject))
 	}
 	wg.Wait()
-	logrus.Debugf("verification: execution time for request: %dms", time.Since(startTime).Milliseconds())
+	elapsedTime := time.Since(startTime).Milliseconds()
+	logrus.Debugf("verification: execution time for request: %dms", elapsedTime)
+	metrics.ReportVerificationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, false)
 }
 
@@ -184,7 +187,9 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 		}(utils.SanitizeString(image))
 	}
 	wg.Wait()
-	logrus.Debugf("mutation: execution time for request: %dms", time.Since(startTime).Milliseconds())
+	elapsedTime := time.Since(startTime).Milliseconds()
+	logrus.Debugf("mutation: execution time for request: %dms", elapsedTime)
+	metrics.ReportMutationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, true)
 }
 
@@ -200,6 +205,7 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 	if results != nil {
 		response.Response.Items = *results
 	} else {
+		metrics.ReportSystemError(context.Background(), systemErr) // this context should not be tied to the lifetime of the request
 		response.Response.SystemError = systemErr
 	}
 

@@ -16,6 +16,7 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -29,7 +30,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 
-	"github.com/spdx/tools-golang/jsonloader/parser2v2"
+	jsonLoader "github.com/spdx/tools-golang/json"
 )
 
 // PluginConfig describes the configuration of the sbom verifier
@@ -108,7 +109,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 }
 
 func processSpdxJsonMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
-	if doc, err := parser2v2.Load2_2(refBlob); doc != nil {
+	if doc, err := jsonLoader.Read(bytes.NewReader(refBlob)); doc != nil {
 		return &verifier.VerifierResult{
 			Name:       name,
 			IsSuccess:  true,

@@ -25,10 +25,14 @@ import (
 // This is a map containing Cert store configuration including name, tenantID, and cert object information
 type CertStoreConfig map[string]string
 
+// This is a map of properties for fetched certificates
+// The key and values are specific to each provider
+type CertificatesStatus map[string]interface{}
+
 // CertificateProvider is an interface that defines methods to be implemented by a each certificate provider
 type CertificateProvider interface {
-	// Returns an array of certificates based on certificate properties defined in attrib map
-	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, error)
+	// Returns an array of certificates and the provider specific cert attributes based on certificate properties defined in attrib map
+	GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, CertificatesStatus, error)
 }
 
 var certificateProviders = make(map[string]CertificateProvider)
