@@ -216,8 +216,7 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 	}
 	var rekorBundle bundle.RekorBundle
 	if val, ok := desc.Annotations[static.BundleAnnotationKey]; ok {
-		err := json.Unmarshal([]byte(val), &rekorBundle)
-		if err != nil {
+		if err := json.Unmarshal([]byte(val), &rekorBundle); err != nil {
 			return nil, errors.Wrap(err, "failed to unmarshal bundle from blob payload")
 		}
 		options = append(options, static.WithBundle(&rekorBundle))
