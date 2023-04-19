@@ -65,6 +65,10 @@ type PluginInputConfig struct {
 	StoreWrapperConfig StoreWrapperConfig `json:"storeConfig"`
 }
 
+type Extension struct {
+	SignatureExtension []cosignExtension `json:"signatures,omitempty"`
+}
+
 type cosignExtension struct {
 	SignatureDigest digest.Digest `json:"signatureDigest"`
 	IsSuccess       bool          `json:"isSuccess"`
@@ -142,7 +146,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		Hex:       subjectDesc.Digest.Hex(),
 	}
 
-	extensions := make([]cosignExtension, 0)
+	sigExtensions := make([]cosignExtension, 0)
 	signatures := []oci.Signature{}
 	for _, blob := range referenceManifest.Blobs {
 		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
@@ -170,7 +174,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		} else {
 			signatures = append(signatures, sig)
 		}
-		extensions = append(extensions, extension)
+		sigExtensions = append(sigExtensions, extension)
 	}
 
 	if len(signatures) > 0 {
@@ -178,12 +182,12 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			Name:       input.Config.Name,
 			IsSuccess:  true,
 			Message:    "cosign verification success. valid signatures found",
-			Extensions: extensions,
+			Extensions: Extension{SignatureExtension: sigExtensions},
 		}, nil
 	}
 
 	errorResult := errorToVerifyResult(input.Config.Name, fmt.Errorf("no valid signatures found"))
-	errorResult.Extensions = extensions
+	errorResult.Extensions = sigExtensions
 	return errorResult, nil
 }
 
