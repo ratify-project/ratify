@@ -187,7 +187,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}
 
 	errorResult := errorToVerifyResult(input.Config.Name, fmt.Errorf("no valid signatures found"))
-	errorResult.Extensions = sigExtensions
+	errorResult.Extensions = Extension{SignatureExtension: sigExtensions}
 	return errorResult, nil
 }
 
