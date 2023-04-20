@@ -45,6 +45,7 @@ import (
 	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure"
 	commonutils "github.com/deislabs/ratify/pkg/common/utils"
 	"github.com/deislabs/ratify/pkg/homedir"
+	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -145,9 +146,20 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 		return nil, fmt.Errorf("could not create local oras cache at path %s: %w", conf.LocalCachePath, err)
 	}
 
+	var customPredicate retry.Predicate = func(resp *http.Response, err error) (bool, error) {
+		host := ""
+		if resp != nil {
+			if resp.Request != nil && resp.Request.URL != nil {
+				host = resp.Request.URL.Host
+			}
+			metrics.ReportRegistryRequestCount(resp.Request.Context(), resp.StatusCode, host)
+		}
+		return retry.DefaultPredicate(resp, err)
+	}
+
 	customRetryPolicy := func() retry.Policy {
 		return &retry.GenericPolicy{
-			Retryable: retry.DefaultPredicate,
+			Retryable: customPredicate,
 			Backoff:   retry.DefaultBackoff,
 			MinWait:   HttpRetryDurationMin,
 			MaxWait:   HttpRetryDurationMax,
@@ -267,6 +279,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 	if err != nil {
 		return nil, err
 	}
+	metrics.ReportBlobCacheCount(ctx, isCached)
 
 	if !isCached {
 		// generate the reference path with digest
@@ -289,6 +302,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 			return nil, err
 		}
 	}
+
 	// add the repository client to the auth cache if all repository operations successful
 	store.addAuthCache(subjectReference.Original, repository, expiry)
 
@@ -306,6 +320,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
+	metrics.ReportBlobCacheCount(ctx, isCached)
 
 	if !isCached {
 		// fetch manifest content from repository
