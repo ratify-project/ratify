@@ -88,7 +88,7 @@ var (
 
 type mockNotaryVerifier struct{}
 
-func (v mockNotaryVerifier) Verify(ctx context.Context, desc ocispec.Descriptor, signature []byte, opts notation.VerifyOptions) (*notation.VerificationOutcome, error) {
+func (v mockNotaryVerifier) Verify(ctx context.Context, desc ocispec.Descriptor, signature []byte, opts notation.VerifierVerifyOptions) (*notation.VerificationOutcome, error) {
 	if reflect.DeepEqual(signature, testRefBlob2) {
 		return nil, fmt.Errorf("failed verification")
 	}

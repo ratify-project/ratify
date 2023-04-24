@@ -158,7 +158,7 @@ func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error)
 }
 
 func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
-	opts := notation.VerifyOptions{
+	opts := notation.VerifierVerifyOptions{
 		SignatureMediaType: mediaType,
 		ArtifactReference:  subjectRef,
 	}
