@@ -34,7 +34,8 @@ type VerifierResult struct {
 	ArtifactType  string           `json:"artifactType,omitempty"`
 }
 
-// ReferenceVerifier is an interface that defines methods to verify a reference for a subject
+// ReferenceVerifier is an interface that defines methods to verify a reference 
+// for a subject by a verifier.
 type ReferenceVerifier interface {
 	// Name returns the name of the verifier
 	Name() string

@@ -102,11 +102,9 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		}
 
 		// return executor with latest configuration
-		executor := ef.Executor{
-			Verifiers:      activeVerifiers,
-			ReferrerStores: activeStores,
-			PolicyEnforcer: policy,
-			Config:         &cf.ExecutorConfig,
+		executor, err := ef.NewExecutor(activeStores, policy, activeVerifiers, &cf.ExecutorConfig)
+		if err != nil {
+			return nil
 		}
 		return &executor
 	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsEnabled, metricsType, metricsPort)

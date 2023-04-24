@@ -374,8 +374,8 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	return referenceManifest, nil
 }
 
+var desc oci.Descriptor
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-	var desc oci.Descriptor
 	if cachedDesc, ok := store.subjectDescriptorCache.Load(subjectReference.Digest); ok && subjectReference.Digest != "" {
 		desc = cachedDesc.(oci.Descriptor)
 		return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil

@@ -13,13 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package core
+package policyevaluation
 
-import "errors"
+import "context"
 
-var (
-	// ErrReferrersNotFound is thrown when there aren't any references for an artifact
-	ErrReferrersNotFound = errors.New("no referrers found for this artifact")
-	// ErrExecutionMode is thrown when passthrough mode is enabled with config policy.
-	ErrExecutionMode = errors.New("passthrough mode is only supported with rego policy")
-)
+// PolicyEvaluator is an interface with methods that represents policy decisions.
+type PolicyEvaluator interface {
+	// Evaluate evaluates the policy with the given input.
+	Evaluate(ctx context.Context, input map[string]interface{}) (bool, error)
+}

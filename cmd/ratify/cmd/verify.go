@@ -106,11 +106,9 @@ func verify(opts verifyCmdOptions) error {
 		return err
 	}
 
-	executor := ef.Executor{
-		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
-		Config:         &cf.ExecutorConfig,
+	executor, err := ef.NewExecutor(stores, policyEnforcer, verifiers, &cf.ExecutorConfig)
+	if err != nil {
+		return err
 	}
 
 	verifyParameters := e.VerifyParameters{

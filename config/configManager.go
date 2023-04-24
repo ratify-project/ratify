@@ -49,11 +49,9 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 		return func() *ef.Executor { return &ef.Executor{} }, err
 	}
 
-	executor = ef.Executor{
-		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
-		Config:         &cf.ExecutorConfig,
+	executor, err := ef.NewExecutor(stores, policyEnforcer, verifiers, &cf.ExecutorConfig)
+	if err != nil {
+		return func() *ef.Executor { return &ef.Executor{} }, err
 	}
 
 	err = watchForConfigurationChange(configFilePath)
@@ -77,16 +75,14 @@ func reloadExecutor(configFilePath string) {
 
 	if configHash != cf.fileHash {
 		stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
-
-		newExecutor := ef.Executor{
-			Verifiers:      verifiers,
-			ReferrerStores: stores,
-			PolicyEnforcer: policyEnforcer,
-			Config:         &cf.ExecutorConfig,
-		}
-
 		if err != nil {
 			logrus.Warnf("failed to store/verifier/policy objects from config, no updates loaded. err: %v", err)
+			return
+		}
+
+		newExecutor, err := ef.NewExecutor(stores, policyEnforcer, verifiers, &cf.ExecutorConfig)
+		if err != nil {
+			logrus.Warnf("failed to create new executor from config, no updates loaded. err: %v", err)
 			return
 		}
 
