@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deislabs/ratify/cache"
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/manager"
@@ -37,7 +38,9 @@ type serveCmdOptions struct {
 	certDirectory     string
 	caCertFile        string
 	enableCrdManager  bool
+	cacheType         string
 	cacheSize         int
+	cacheKeyNumber    int
 	cacheTTL          time.Duration
 	metricsEnabled    bool
 	metricsType       string
@@ -64,8 +67,10 @@ func NewCmdServe(argv ...string) *cobra.Command {
 	flags.StringVar(&opts.certDirectory, "cert-dir", "", "Path to ratify certs")
 	flags.StringVar(&opts.caCertFile, "ca-cert-file", "", "Path to CA cert file")
 	flags.BoolVar(&opts.enableCrdManager, "enable-crd-manager", false, "Start crd manager if enabled (default: false)")
-	flags.IntVar(&opts.cacheSize, "cache-size", httpserver.DefaultCacheMaxSize, fmt.Sprintf("Cache size for the verifier http server (default: %d)", httpserver.DefaultCacheMaxSize))
-	flags.DurationVar(&opts.cacheTTL, "cache-ttl", httpserver.DefaultCacheTTL, fmt.Sprintf("Cache TTL for the verifier http server (default: %fs)", httpserver.DefaultCacheTTL.Seconds()))
+	flags.StringVar(&opts.cacheType, "cache-type", cache.DefaultCacheType, fmt.Sprintf("Cache type to use (default: %s)", cache.DefaultCacheType))
+	flags.IntVar(&opts.cacheSize, "cache-size", cache.DefaultCacheMaxSize, fmt.Sprintf("Cache size (default: %d)", cache.DefaultCacheMaxSize))
+	flags.IntVar(&opts.cacheKeyNumber, "cache-key-number", cache.DefaultCacheKeyNumber, fmt.Sprintf("Cache Key Size (default: %d)", cache.DefaultCacheKeyNumber))
+	flags.DurationVar(&opts.cacheTTL, "cache-ttl", cache.DefaultCacheTTL, fmt.Sprintf("Cache TTL for the verifier http server (default: %fs)", cache.DefaultCacheTTL.Seconds()))
 	flags.BoolVar(&opts.metricsEnabled, "metrics-enabled", false, "Enable metrics exporter if enabled (default: false)")
 	flags.StringVar(&opts.metricsType, "metrics-type", httpserver.DefaultMetricsType, fmt.Sprintf("Metrics exporter type to use (default: %s)", httpserver.DefaultMetricsType))
 	flags.IntVar(&opts.metricsPort, "metrics-port", httpserver.DefaultMetricsPort, fmt.Sprintf("Metrics exporter port to use (default: %d)", httpserver.DefaultMetricsPort))
@@ -73,6 +78,13 @@ func NewCmdServe(argv ...string) *cobra.Command {
 }
 
 func serve(opts serveCmdOptions) error {
+	// initialize global cache of specified type
+	_, err := cache.NewCacheProvider(opts.cacheType, opts.cacheSize, opts.cacheKeyNumber)
+	if err != nil {
+		return fmt.Errorf("error initializing cache of type %s: %w", opts.cacheType, err)
+	}
+	logrus.Debugf("initialized cache of type %s", opts.cacheType)
+
 	// in crd mode, the manager gets latest store/verifier from crd and pass on to the http server
 	if opts.enableCrdManager {
 		logrus.Infof("starting crd manager")

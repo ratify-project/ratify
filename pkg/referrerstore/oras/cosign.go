@@ -50,7 +50,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 		}
 		var ec errcode.Error
 		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			store.evictAuthCache(subjectReference.Original, err)
+			store.evictAuthCache(subjectReference.Original)
 			return nil, err
 		}
 		return nil, err

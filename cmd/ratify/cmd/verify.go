@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/deislabs/ratify/cache"
 	"github.com/deislabs/ratify/config"
 	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
@@ -27,6 +28,7 @@ import (
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/utils"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -39,6 +41,9 @@ type verifyCmdOptions struct {
 	subject        string
 	artifactTypes  []string
 	silentMode     bool
+	cacheType      string
+	cacheSize      int
+	cacheKeyNumber int
 }
 
 func NewCmdVerify(argv ...string) *cobra.Command {
@@ -59,6 +64,9 @@ func NewCmdVerify(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.subject, "subject", "s", "", "Subject Reference")
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringArrayVarP(&opts.artifactTypes, "artifactType", "t", nil, "artifact type to filter")
+	flags.StringVar(&opts.cacheType, "cache-type", cache.DefaultCacheType, fmt.Sprintf("Cache type to use (default: %s)", cache.DefaultCacheType))
+	flags.IntVar(&opts.cacheSize, "cache-size", cache.DefaultCacheMaxSize, fmt.Sprintf("Cache size (default: %d)", cache.DefaultCacheMaxSize))
+	flags.IntVar(&opts.cacheKeyNumber, "cache-key-number", cache.DefaultCacheKeyNumber, fmt.Sprintf("Cache Key Size (default: %d)", cache.DefaultCacheKeyNumber))
 	flags.BoolVar(&opts.silentMode, "silent", false, "Silent output")
 	return cmd
 }
@@ -70,6 +78,13 @@ func TestVerify(subject string) {
 }
 
 func verify(opts verifyCmdOptions) error {
+	// initialize global cache of specified type
+	_, err := cache.NewCacheProvider(opts.cacheType, opts.cacheSize, opts.cacheKeyNumber)
+	if err != nil {
+		return fmt.Errorf("error initializing cache of type %s: %w", opts.cacheType, err)
+	}
+	logrus.Debugf("initialized cache of type %s", opts.cacheType)
+
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
 	}

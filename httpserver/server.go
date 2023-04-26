@@ -42,12 +42,8 @@ const (
 	readHeaderTimeout                = 5 * time.Second
 	defaultMutationReferrerStoreName = "oras"
 
-	// DefaultCacheTTL is the default time-to-live for the cache entry.
-	DefaultCacheTTL = 10 * time.Second
-	// DefaultCacheMaxSize is the default maximum size of the cache.
-	DefaultCacheMaxSize = 100
-	DefaultMetricsType  = "prometheus"
-	DefaultMetricsPort  = 8888
+	DefaultMetricsType = "prometheus"
+	DefaultMetricsPort = 8888
 )
 
 type Server struct {
@@ -61,11 +57,9 @@ type Server struct {
 	MetricsEnabled    bool
 	MetricsType       string
 	MetricsPort       int
+	CacheTTL          time.Duration
 
 	keyMutex keyMutex
-	// cache is a thread-safe expiring lru cache which caches external data item indexed
-	// by the subject
-	cache *simpleCache
 }
 
 // keyMutex is a thread-safe map of mutexes, indexed by key.
@@ -107,8 +101,8 @@ func NewServer(context context.Context,
 		MetricsEnabled:    metricsEnabled,
 		MetricsType:       metricsType,
 		MetricsPort:       metricsPort,
+		CacheTTL:          cacheTTL,
 		keyMutex:          keyMutex{},
-		cache:             newSimpleCache(cacheTTL, cacheSize),
 	}
 
 	return server, server.registerHandlers()

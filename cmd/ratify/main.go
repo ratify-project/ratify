@@ -18,6 +18,7 @@ package main
 import (
 	"os"
 
+	_ "github.com/deislabs/ratify/cache/ristretto"
 	"github.com/deislabs/ratify/cmd/ratify/cmd"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"

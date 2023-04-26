@@ -22,10 +22,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/deislabs/ratify/cache"
 	"github.com/deislabs/ratify/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -36,6 +38,9 @@ const (
 type resolveCmdOptions struct {
 	configFilePath string
 	subject        string
+	cacheType      string
+	cacheSize      int
+	cacheKeyNumber int
 }
 
 func NewCmdResolve(argv ...string) *cobra.Command {
@@ -62,6 +67,9 @@ func NewCmdResolve(argv ...string) *cobra.Command {
 
 	flags.StringVarP(&opts.subject, "subject", "s", "", "Subject Reference")
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
+	flags.StringVar(&opts.cacheType, "cache-type", cache.DefaultCacheType, fmt.Sprintf("Cache type to use (default: %s)", cache.DefaultCacheType))
+	flags.IntVar(&opts.cacheSize, "cache-size", cache.DefaultCacheMaxSize, fmt.Sprintf("Cache size (default: %d)", cache.DefaultCacheMaxSize))
+	flags.IntVar(&opts.cacheKeyNumber, "cache-key-number", cache.DefaultCacheKeyNumber, fmt.Sprintf("Cache Key Size (default: %d)", cache.DefaultCacheKeyNumber))
 	return cmd
 }
 
@@ -69,6 +77,13 @@ func resolve(opts resolveCmdOptions) error {
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
 	}
+
+	// initialize global cache of specified type
+	_, err := cache.NewCacheProvider(opts.cacheType, opts.cacheSize, opts.cacheKeyNumber)
+	if err != nil {
+		return fmt.Errorf("error initializing cache of type %s: %w", opts.cacheType, err)
+	}
+	logrus.Debugf("initialized cache of type %s", opts.cacheType)
 
 	subRef, err := utils.ParseSubjectReference(opts.subject)
 	if err != nil {

@@ -24,6 +24,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deislabs/ratify/cache"
+	_ "github.com/deislabs/ratify/cache/ristretto"
 	exconfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -48,6 +50,12 @@ func TestServer_Timeout_Failed(t *testing.T) {
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
+		cacheProvider, err := cache.NewCacheProvider("ristretto", cache.DefaultCacheMaxSize, cache.DefaultCacheKeyNumber)
+		if err != nil {
+			t.Fatalf("unable to create cache provider: %v", err)
+		}
+		cacheProvider.Clear()
+		time.Sleep(1 * time.Second)
 		_ = json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageName}))
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
 		logrus.Infof("policies successfully created. %s", body.Bytes())
@@ -92,7 +100,6 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -113,6 +120,12 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 	t.Run("server_multiple_subjects_success", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
+		cacheProvider, err := cache.NewCacheProvider("ristretto", cache.DefaultCacheMaxSize, cache.DefaultCacheKeyNumber)
+		if err != nil {
+			t.Fatalf("unable to create cache provider: %v", err)
+		}
+		cacheProvider.Clear()
+		time.Sleep(1 * time.Second)
 		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames)); err != nil {
 			t.Fatalf("failed to encode request body: %v", err)
 		}
@@ -164,7 +177,6 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -238,7 +250,6 @@ func TestServer_Mutation_Success(t *testing.T) {
 			MutationStoreName: store.Name(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -267,6 +278,12 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 	t.Run("server_multiple_subjects_success", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
+		cacheProvider, err := cache.NewCacheProvider("ristretto", cache.DefaultCacheMaxSize, cache.DefaultCacheKeyNumber)
+		if err != nil {
+			t.Fatalf("unable to create cache provider: %v", err)
+		}
+		cacheProvider.Clear()
+		time.Sleep(1 * time.Second)
 		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames)); err != nil {
 			t.Fatalf("failed to encode request body: %v", err)
 		}
@@ -299,12 +316,13 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			},
 		}
 
+		verifyTimeout := 5000
 		ex := &core.Executor{
 			PolicyEnforcer: configPolicy,
 			ReferrerStores: []referrerstore.ReferrerStore{store},
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 			Config: &exconfig.ExecutorConfig{
-				VerificationRequestTimeout: nil,
+				VerificationRequestTimeout: &verifyTimeout,
 				MutationRequestTimeout:     nil,
 			},
 		}
@@ -318,7 +336,6 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -371,7 +388,6 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{

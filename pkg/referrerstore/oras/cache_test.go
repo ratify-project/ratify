@@ -17,10 +17,13 @@ package oras
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/deislabs/ratify/cache"
+	_ "github.com/deislabs/ratify/cache/ristretto"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -42,10 +45,8 @@ var (
 		"ttl":          ttl,
 	}
 	conf = &cacheConf{
-		Enabled:   true,
-		TTL:       ttl,
-		Capacity:  100 * 1024 * 1024,
-		KeyNumber: 10000,
+		Enabled: true,
+		TTL:     ttl,
 	}
 	testStoreConfig = &config.StoreConfig{}
 	testBlob        = make([]byte, 0)
@@ -54,7 +55,7 @@ var (
 		Path:   "testRegistry/testRepo",
 		Digest: testDigest,
 	}
-	testDesc    = &ocispecs.SubjectDescriptor{}
+	testDesc    = &ocispecs.SubjectDescriptor{Descriptor: oci.Descriptor{Digest: testDigest}}
 	testResult1 = referrerstore.ListReferrersResult{
 		Referrers: []ocispecs.ReferenceDescriptor{
 			{
@@ -138,15 +139,48 @@ func TestGetBlobContent(t *testing.T) {
 	}
 }
 
-func TestGetSubjectDescriptor(t *testing.T) {
+func TestGetSubjectDescriptor_Cache(t *testing.T) {
 	store, _ := createCachedStore(base, conf)
+	cacheProvider, err := cache.NewCacheProvider("ristretto", cache.DefaultCacheMaxSize, cache.DefaultCacheKeyNumber)
+	if err != nil {
+		t.Fatalf("failed to create cache provider: %v", err)
+	}
 
+	// GetSubjectDescriptor should populate cache and return test descriptor
 	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
 	if err != nil {
-		t.Fatalf("expect no error, got %v", err)
+		t.Fatalf("err should be nil, but got %v", err)
 	}
-	if !reflect.DeepEqual(testDesc, desc) {
-		t.Fatalf("expect desc: %v, got %v", desc, testDesc)
+
+	if !reflect.DeepEqual(desc, testDesc) {
+		t.Fatalf("expect desc: %+v, got %+v", testDesc, desc)
+	}
+
+	// ristretto cache is eventually consistent, so wait a bit
+	time.Sleep(1 * time.Second)
+	// check cache directly to make sure key exists
+	_, exists := cacheProvider.Get(fmt.Sprintf(cache.CacheKeySubjectDescriptor, testDigest))
+	if !exists {
+		t.Fatalf("cache key should exist")
+	}
+
+	// override cache to different value
+	newDesc := ocispecs.SubjectDescriptor{Descriptor: oci.Descriptor{Digest: "sha256:654321"}}
+	isSuccess := cacheProvider.Set(fmt.Sprintf(cache.CacheKeySubjectDescriptor, testDigest), newDesc)
+	if !isSuccess {
+		t.Fatalf("cache set should succeed")
+	}
+
+	// ristretto cache is eventually consistent, so wait a bit
+	time.Sleep(1 * time.Second)
+	// check returned value matches new value
+	desc, err = store.GetSubjectDescriptor(context.Background(), testReference)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
+
+	if !reflect.DeepEqual(desc, &newDesc) {
+		t.Fatalf("expect desc: %+v, got %+v", &newDesc, desc)
 	}
 }
 

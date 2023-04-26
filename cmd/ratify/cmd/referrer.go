@@ -22,10 +22,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/deislabs/ratify/cache"
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +40,9 @@ type referrerCmdOptions struct {
 	subject        string
 	digest         string
 	storeName      string
+	cacheType      string
+	cacheSize      int
+	cacheKeyNumber int
 }
 
 func NewCmdReferrer(argv ...string) *cobra.Command {
@@ -81,6 +86,9 @@ func NewCmdShowBlob(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringVarP(&opts.digest, "digest", "d", "", "blob digest")
 	flags.StringVar(&opts.storeName, "store", "", "store name")
+	flags.StringVar(&opts.cacheType, "cache-type", cache.DefaultCacheType, fmt.Sprintf("Cache type to use (default: %s)", cache.DefaultCacheType))
+	flags.IntVar(&opts.cacheSize, "cache-size", cache.DefaultCacheMaxSize, fmt.Sprintf("Cache size (default: %d)", cache.DefaultCacheMaxSize))
+	flags.IntVar(&opts.cacheKeyNumber, "cache-key-number", cache.DefaultCacheKeyNumber, fmt.Sprintf("Cache Key Size (default: %d)", cache.DefaultCacheKeyNumber))
 	return cmd
 }
 
@@ -110,6 +118,9 @@ func NewCmdShowRefManifest(argv ...string) *cobra.Command {
 	flags.StringVarP(&opts.configFilePath, "config", "c", "", "Config File Path")
 	flags.StringVarP(&opts.digest, "digest", "d", "", "blob digest")
 	flags.StringVar(&opts.storeName, "store", "", "store name")
+	flags.StringVar(&opts.cacheType, "cache-type", cache.DefaultCacheType, fmt.Sprintf("Cache type to use (default: %s)", cache.DefaultCacheType))
+	flags.IntVar(&opts.cacheSize, "cache-size", cache.DefaultCacheMaxSize, fmt.Sprintf("Cache size (default: %d)", cache.DefaultCacheMaxSize))
+	flags.IntVar(&opts.cacheKeyNumber, "cache-key-number", cache.DefaultCacheKeyNumber, fmt.Sprintf("Cache Key Size (default: %d)", cache.DefaultCacheKeyNumber))
 	return cmd
 }
 
@@ -125,6 +136,13 @@ func showBlob(opts referrerCmdOptions) error {
 	if opts.storeName == "" {
 		return errors.New("store name parameter is required")
 	}
+
+	// initialize global cache of specified type
+	_, err := cache.NewCacheProvider(opts.cacheType, opts.cacheSize, opts.cacheKeyNumber)
+	if err != nil {
+		return fmt.Errorf("error initializing cache of type %s: %w", opts.cacheType, err)
+	}
+	logrus.Debugf("initialized cache of type %s", opts.cacheType)
 
 	subRef, err := utils.ParseSubjectReference(opts.subject)
 	if err != nil {
@@ -173,6 +191,13 @@ func showRefManifest(opts referrerCmdOptions) error {
 	if opts.digest == "" {
 		return errors.New("digest parameter is required")
 	}
+
+	// initialize global cache of specified type
+	_, err := cache.NewCacheProvider(opts.cacheType, opts.cacheSize, opts.cacheKeyNumber)
+	if err != nil {
+		return fmt.Errorf("error initializing cache of type %s: %w", opts.cacheType, err)
+	}
+	logrus.Debugf("initialized cache of type %s", opts.cacheType)
 
 	subRef, err := utils.ParseSubjectReference(opts.subject)
 	if err != nil {

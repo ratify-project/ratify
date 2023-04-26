@@ -29,6 +29,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/deislabs/ratify/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -72,75 +73,6 @@ func TestORASGetConfig(t *testing.T) {
 	}
 }
 
-// TestORASGetSubjectDescriptor_CacheMiss tests the case where the subject descriptor cache is empty
-func TestORASGetSubjectDescriptor_CacheMiss(t *testing.T) {
-	conf := config.StorePluginConfig{
-		"name": "oras",
-	}
-	ctx := context.Background()
-	store, err := createBaseStore("1.0.0", conf)
-	if err != nil {
-		t.Fatalf("failed to create oras store: %v", err)
-	}
-	testRepo := mocks.TestRepository{
-		ResolveMap: map[string]oci.Descriptor{
-			inputOriginalPath: {
-				Digest: digest.FromString("testDigest"),
-			},
-		},
-	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
-	}
-	inputRef := common.Reference{
-		Original: inputOriginalPath,
-		Digest:   digest.FromString("testDigest"),
-	}
-	subjDesc, err := store.GetSubjectDescriptor(ctx, inputRef)
-	if err != nil {
-		t.Fatalf("failed to get subject descriptor: %v", err)
-	}
-	if subjDesc.Digest != digest.FromString("testDigest") {
-		t.Fatalf("expected digest %s, got %s", digest.FromString("testDigest"), subjDesc.Digest)
-	}
-}
-
-// TestORASGetSubjectDescriptor_CacheHit tests that the subject descriptor cache is used
-func TestORASGetSubjectDescriptor_CacheHit(t *testing.T) {
-	conf := config.StorePluginConfig{
-		"name": "oras",
-	}
-	ctx := context.Background()
-	store, err := createBaseStore("1.0.0", conf)
-	if err != nil {
-		t.Fatalf("failed to create oras store: %v", err)
-	}
-	firstDigest := digest.FromString("firstDigest")
-	secondDigest := digest.FromString("secondDigest")
-	store.subjectDescriptorCache.Store(firstDigest, oci.Descriptor{Digest: secondDigest})
-	testRepo := mocks.TestRepository{
-		ResolveMap: map[string]oci.Descriptor{
-			inputOriginalPath: {
-				Digest: firstDigest,
-			},
-		},
-	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
-	}
-	inputRef := common.Reference{
-		Original: inputOriginalPath,
-		Digest:   firstDigest,
-	}
-	subjDesc, err := store.GetSubjectDescriptor(ctx, inputRef)
-	if err != nil {
-		t.Fatalf("failed to get subject descriptor: %v", err)
-	}
-	if subjDesc.Digest != secondDigest {
-		t.Fatalf("expected digest %s, got %s", secondDigest, subjDesc.Digest)
-	}
-}
-
 func TestORASListReferrers_SubjectDesc(t *testing.T) {
 	conf := config.StorePluginConfig{
 		"name":          "oras",
@@ -169,8 +101,8 @@ func TestORASListReferrers_SubjectDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
+	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+		return testRepo, nil
 	}
 	inputRef := common.Reference{
 		Original: inputOriginalPath,
@@ -226,8 +158,8 @@ func TestORASListReferrers_NoSubjectDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
+	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+		return testRepo, nil
 	}
 	inputRef := common.Reference{
 		Original: inputOriginalPath,
@@ -294,8 +226,8 @@ func TestORASGetReferenceManifest_CachedDesc(t *testing.T) {
 			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
+	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
 		ExistsMap: map[digest.Digest]io.Reader{
@@ -358,8 +290,8 @@ func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
 			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
+	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
 		ExistsMap: map[digest.Digest]io.Reader{
@@ -414,8 +346,8 @@ func TestORASGetBlobContent_CachedDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
+	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
 		ExistsMap: map[digest.Digest]io.Reader{
@@ -461,8 +393,8 @@ func TestORASGetBlobContent_NotCachedDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
-		return testRepo, time.Now().Add(time.Minute), nil
+	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
 		ExistsMap: map[digest.Digest]io.Reader{},
@@ -479,6 +411,12 @@ func TestORASGetBlobContent_NotCachedDesc(t *testing.T) {
 // Test_ORASRetryClient tests that the retry client retries on 429 for specified number of retries
 func Test_ORASRetryClient(t *testing.T) {
 	ctx := context.Background()
+	cacheProvider, err := cache.NewCacheProvider("ristretto", cache.DefaultCacheMaxSize, cache.DefaultCacheKeyNumber)
+	if err != nil {
+		t.Fatalf("unable to create cache provider: %v", err)
+	}
+	cacheProvider.Clear()
+	time.Sleep(1 * time.Second)
 	// Create a test server
 	count := 0
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
