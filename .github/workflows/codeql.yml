@@ -27,7 +27,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # tag=3.0.2
       - name: setup go environment
-        uses: actions/setup-go@v4 # tag=3.3.0
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: "1.19"
       - name: Initialize CodeQL
