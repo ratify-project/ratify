@@ -22,7 +22,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: setup go environment
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: "1.19"
       - name: Run tidy
@@ -32,7 +32,7 @@ jobs:
       - name: Check build
         run: bin/ratify version
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@894ff025c7b54547a9a2a1e9f228beae737ad3c2 # v3.1.3
       - name: Run helm lint
         run: helm lint charts/ratify
 
@@ -43,9 +43,9 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - name: setup go environment
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: "1.19"
       - name: Run tidy
@@ -66,9 +66,9 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - name: setup go environment
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: "1.19"
       - name: Run tidy
@@ -94,9 +94,9 @@ jobs:
         GATEKEEPER_VERSION: ["3.10.0", "3.11.0"]
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - name: Set up Go 1.19
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: 1.19
 
@@ -119,7 +119,7 @@ jobs:
           kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
           kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         if: ${{ always() }}
         with:
           name: e2e-logs
@@ -145,14 +145,14 @@ jobs:
         GATEKEEPER_VERSION: ["3.10.0", "3.11.0"]
     steps:
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
       - name: Set up Go 1.19
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@4d34df0c2316fe8122ab82dc22947d607c0c91f9 # v4.0.0
         with:
           go-version: 1.19
 
       - name: Az CLI login
-        uses: azure/login@v1
+        uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2 # v1.4.7
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
@@ -168,7 +168,7 @@ jobs:
           make e2e-aks KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }} GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }} TENANT_ID=${{ env.AZURE_TENANT_ID }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         if: ${{ always() }}
         with:
           name: e2e-logs
