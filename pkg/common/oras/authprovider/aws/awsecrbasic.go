@@ -95,14 +95,15 @@ func (d *awsEcrBasicAuthProvider) getEcrAuthToken(artifact string) (EcrAuthToken
 	}
 
 	// registry/region from image
-	registry, err := awsauth.RegistryFromImage(artifact)
+	registry, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
 		return EcrAuthToken{}, fmt.Errorf("failed to get registry from image: %w", err)
 	}
 	region = awsauth.RegionFromRegistry(registry)
-	if err != nil {
+	if region == "" {
 		return EcrAuthToken{}, fmt.Errorf("failed to get region from image: %w", err)
 	}
+
 	logrus.Debugf("AWS ECR basic artifact=%s, registry=%s, region=%s", artifact, registry, region)
 	cfg.Region = region
 
@@ -157,7 +158,7 @@ func (d *awsEcrBasicAuthProvider) Provide(ctx context.Context, artifact string) 
 		return provider.AuthConfig{}, fmt.Errorf("AWS IRSA basic auth provider is not properly enabled")
 	}
 
-	registry, err := awsauth.RegistryFromImage(artifact)
+	registry, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, errors.Wrapf(err, "could not get ECR registry from %s", artifact)
 	}
