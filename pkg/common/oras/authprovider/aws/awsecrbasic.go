@@ -101,7 +101,7 @@ func (d *awsEcrBasicAuthProvider) getEcrAuthToken(artifact string) (EcrAuthToken
 	}
 	region = awsauth.RegionFromRegistry(registry)
 	if region == "" {
-		return EcrAuthToken{}, fmt.Errorf("failed to get region from image: %w", err)
+		return EcrAuthToken{}, fmt.Errorf("failed to get region from image")
 	}
 
 	logrus.Debugf("AWS ECR basic artifact=%s, registry=%s, region=%s", artifact, registry, region)

@@ -20,7 +20,6 @@ import (
 	"io/fs"
 	"strings"
 
-	// "github.com/deislabs/ratify/config"
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/plugin"
 )
@@ -30,6 +29,7 @@ const (
 	defaultPluginDirectory = "/.ratify/plugins"
 )
 
+// Implements interface defined in https://github.com/notaryproject/notation-go/blob/main/plugin/manager.go#L20
 type RatifyPluginManager struct {
 	pluginFS dir.SysFS
 }
@@ -38,6 +38,7 @@ func NewRatifyPluginManager(directory string) *RatifyPluginManager {
 	return &RatifyPluginManager{pluginFS: dir.NewSysFS(directory)}
 }
 
+// Returns a notation Plugin for the given name if present in the target directory
 func (m *RatifyPluginManager) Get(ctx context.Context, name string) (plugin.Plugin, error) {
 	path, err := m.pluginFS.SysPath(notationPluginPrefix + name)
 	if err != nil {
@@ -48,9 +49,10 @@ func (m *RatifyPluginManager) Get(ctx context.Context, name string) (plugin.Plug
 	return plugin.NewCLIPlugin(ctx, name, path)
 }
 
+// Lists available notation plugins in the target directory
 func (m *RatifyPluginManager) List(ctx context.Context) ([]string, error) {
 	var plugins []string
-	fs.WalkDir(m.pluginFS, ".", func(dir string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(m.pluginFS, ".", func(dir string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -66,5 +68,10 @@ func (m *RatifyPluginManager) List(ctx context.Context) ([]string, error) {
 		plugins = append(plugins, name)
 		return fs.SkipDir
 	})
+
+	if err != nil {
+		return nil, err
+	}
+
 	return plugins, nil
 }

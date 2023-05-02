@@ -2,24 +2,46 @@ package notaryv2
 
 import (
 	"context"
+	"os"
 	"testing"
 )
 
 const (
-	expectedPluginName = "mock.plugin"
+	pluginDirectory  = "./pluginmanagertest"
+	ignoredDirectory = "notation-ignored"
+	ignoredFile      = "ignored.file"
+	testPluginName   = "mock.plugin"
 )
 
-func TestPluginManagerGet(t *testing.T) {
-	pluginManager := NewRatifyPluginManager("./")
+func TestMain(m *testing.M) {
+	setupTestFiles()
+	code := m.Run()
+	cleanupTestFiles()
+	os.Exit(code)
+}
 
-	_, err := pluginManager.Get(context.TODO(), expectedPluginName)
+func setupTestFiles() {
+	os.Mkdir(pluginDirectory, 0700)
+	os.Mkdir(pluginDirectory+"/"+ignoredDirectory, 0700)
+	os.WriteFile(pluginDirectory+"/"+notationPluginPrefix+testPluginName, []byte(""), 0700)
+	os.WriteFile(pluginDirectory+"/"+ignoredFile, []byte(""), 0700)
+}
+
+func cleanupTestFiles() {
+	os.RemoveAll(pluginDirectory)
+}
+
+func TestPluginManagerGet(t *testing.T) {
+	pluginManager := NewRatifyPluginManager(pluginDirectory)
+
+	_, err := pluginManager.Get(context.TODO(), testPluginName)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
 }
 
 func TestPluginManagerList(t *testing.T) {
-	pluginManager := NewRatifyPluginManager("./")
+	pluginManager := NewRatifyPluginManager(pluginDirectory)
 
 	pluginList, err := pluginManager.List(context.TODO())
 	if err != nil {
@@ -31,7 +53,7 @@ func TestPluginManagerList(t *testing.T) {
 		t.Fatalf("plugin list: %+v", pluginList)
 	}
 
-	if pluginList[0] != expectedPluginName {
-		t.Errorf("expected to find plugin named %s, instead found %s", expectedPluginName, pluginList[0])
+	if pluginList[0] != testPluginName {
+		t.Errorf("expected to find plugin named %s, instead found %s", testPluginName, pluginList[0])
 	}
 }
