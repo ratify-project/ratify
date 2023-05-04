@@ -34,12 +34,12 @@ func setupTestFiles() error {
 		return err
 	}
 
-	err = os.WriteFile(pluginDirectory+"/"+notationPluginPrefix+testPluginName, []byte(""), 0700)
+	err = os.WriteFile(pluginDirectory+"/"+notationPluginPrefix+testPluginName, []byte(""), 0600)
 	if err != nil {
 		return err
 	}
 
-	err = os.WriteFile(pluginDirectory+"/"+ignoredFile, []byte(""), 0700)
+	err = os.WriteFile(pluginDirectory+"/"+ignoredFile, []byte(""), 0600)
 	if err != nil {
 		return err
 	}
