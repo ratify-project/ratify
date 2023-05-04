@@ -14,17 +14,37 @@ const (
 )
 
 func TestMain(m *testing.M) {
-	setupTestFiles()
-	code := m.Run()
+	err := setupTestFiles()
+	code := 1
+	if err == nil {
+		code = m.Run()
+	}
 	cleanupTestFiles()
 	os.Exit(code)
 }
 
-func setupTestFiles() {
-	os.Mkdir(pluginDirectory, 0700)
-	os.Mkdir(pluginDirectory+"/"+ignoredDirectory, 0700)
-	os.WriteFile(pluginDirectory+"/"+notationPluginPrefix+testPluginName, []byte(""), 0700)
-	os.WriteFile(pluginDirectory+"/"+ignoredFile, []byte(""), 0700)
+func setupTestFiles() error {
+	err := os.Mkdir(pluginDirectory, 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.Mkdir(pluginDirectory+"/"+ignoredDirectory, 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(pluginDirectory+"/"+notationPluginPrefix+testPluginName, []byte(""), 0700)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(pluginDirectory+"/"+ignoredFile, []byte(""), 0700)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func cleanupTestFiles() {
