@@ -125,6 +125,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		if err != nil {
 			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to create Rekor client from URL %s: %w", rekorURL, err)), nil
 		}
+	} else {
+		// if no rekor url is provided, turn off transparency log verification
+		cosignOpts.IgnoreTlog = true
 	}
 
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
