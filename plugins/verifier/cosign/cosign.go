@@ -125,9 +125,19 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		if err != nil {
 			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to create Rekor client from URL %s: %w", rekorURL, err)), nil
 		}
+		cosignOpts.CTLogPubKeys, err = cosign.GetCTLogPubs(ctx)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to set Certificate Transparency Log public keys: %w", err)), nil
+		}
+		// Fetches the Rekor public keys from the Rekor server
+		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
+		if err != nil {
+			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to set Rekor public keys: %w", err)), nil
+		}
 	} else {
-		// if no rekor url is provided, turn off transparency log verification
+		// if no rekor url is provided, turn off transparency log verification and ignore SCTs
 		cosignOpts.IgnoreTlog = true
+		cosignOpts.IgnoreSCT = true
 	}
 
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
