@@ -28,7 +28,9 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/plugin"
 )
 
-type TestVerifier struct{}
+type TestVerifier struct {
+	verifierDirectory string
+}
 type TestVerifierFactory struct{}
 
 func (s *TestVerifier) Name() string {
@@ -50,8 +52,8 @@ func (s *TestVerifier) GetNestedReferences() []string {
 	return []string{}
 }
 
-func (f *TestVerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {
-	return &TestVerifier{}, nil
+func (f *TestVerifierFactory) Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
+	return &TestVerifier{verifierDirectory: pluginDirectory}, nil
 }
 
 func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T) {
@@ -66,7 +68,7 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		Verifiers: []config.VerifierConfig{verifierConfig},
 	}
 
-	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "")
+	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir")
 
 	if err != nil {
 		t.Fatalf("create verifiers failed with err %v", err)
@@ -82,6 +84,14 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 
 	if _, ok := verifiers[0].(*plugin.VerifierPlugin); ok {
 		t.Fatalf("type assertion failed expected a built in verifier")
+	}
+
+	if verifierTest, ok := verifiers[0].(*TestVerifier); !ok {
+		t.Fatalf("type assertion failed expected a test verifier")
+	} else {
+		if verifierTest.verifierDirectory != "test/dir" {
+			t.Fatalf("expected verifier directory to be empty")
+		}
 	}
 }
 
