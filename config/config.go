@@ -82,10 +82,6 @@ func getHomeDir() string {
 
 // Returns created referer store, verifier, policyprovider objects from config
 func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
-	if cf.ExecutorConfig.UseRegoPolicy && cf.PoliciesConfig.PolicyPlugin["name"] == "test" {
-		return nil, nil, nil, errors.New("rego policy and test policy cannot be used together")
-	}
-
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
 
 	if err != nil {

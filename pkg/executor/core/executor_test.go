@@ -153,6 +153,11 @@ func TestNewExecutor(t *testing.T) {
 			config:    &config.ExecutorConfig{},
 			expectErr: false,
 		},
+		{
+			name:      "nil config",
+			config:    nil,
+			expectErr: false,
+		},
 	}
 
 	for _, tc := range testCases {

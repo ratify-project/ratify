@@ -77,14 +77,18 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
+		// ex := &core.Executor{
+		// 	PolicyEnforcer: configPolicy,
+		// 	ReferrerStores: []referrerstore.ReferrerStore{store},
+		// 	Verifiers:      []verifier.ReferenceVerifier{ver},
+		// }
+		ex, err := core.NewExecutor([]referrerstore.ReferrerStore{store}, configPolicy, []verifier.ReferenceVerifier{ver}, nil)
+		if err != nil {
+			t.Errorf("Error creating executor: %v", err)
 		}
 
 		getExecutor := func() *core.Executor {
-			return ex
+			return &ex
 		}
 
 		server := &Server{

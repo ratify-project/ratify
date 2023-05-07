@@ -58,6 +58,9 @@ func NewExecutor(
 	verifiers []vr.ReferenceVerifier,
 	executorConfig *config.ExecutorConfig,
 ) (Executor, error) {
+	if executorConfig == nil {
+		executorConfig = &config.ExecutorConfig{}
+	}
 	if executorConfig.ExecutionMode == config.PassthroughExecutionMode && !executorConfig.UseRegoPolicy {
 		return Executor{}, ErrExecutionMode
 	}
