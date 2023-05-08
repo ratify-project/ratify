@@ -7,7 +7,9 @@ data:
     {
       "executor": {
         "verificationRequestTimeout": {{ .Values.provider.timeout.validationTimeoutSeconds | int | mul 1000 | add -100 }},
-        "mutationRequestTimeout": {{ .Values.provider.timeout.mutationTimeoutSeconds | int | mul 1000 | add -50 }}
+        "mutationRequestTimeout": {{ .Values.provider.timeout.mutationTimeoutSeconds | int | mul 1000 | add -50 }},
+        "useRegoPolicy": {{ .Values.policyProvider.useRegoPolicy }},
+        "executionMode": {{ .Values.policyProvider.executionMode | quote }}
       },
       "store": {
         "version": "1.0.0",
@@ -52,7 +54,12 @@ data:
       "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy"
+        {{- if .Values.policyProvider.useRegoPolicy }}
+          "name": "regoPolicy",
+          "policyPath": "/usr/local/ratify/policy/policy.rego"
+        {{- else }}
+          "name": "configPolicy"
+        {{- end }}
         }
       },
       "verifier": {

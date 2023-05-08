@@ -49,7 +49,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 		return func() *ef.Executor { return &ef.Executor{} }, err
 	}
 
-	executor, err := ef.NewExecutor(stores, policyEnforcer, verifiers, &cf.ExecutorConfig)
+	executor, err = ef.NewExecutor(stores, policyEnforcer, verifiers, &cf.ExecutorConfig)
 	if err != nil {
 		return func() *ef.Executor { return &ef.Executor{} }, err
 	}

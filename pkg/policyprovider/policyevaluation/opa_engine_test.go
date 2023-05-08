@@ -21,8 +21,7 @@ import (
 )
 
 const (
-	policy1 = 
-`
+	policy1 = `
 package ratify.policy
 
 default valid := false
@@ -30,33 +29,33 @@ default valid := false
 valid {
     input.method == "GET"
 }
-`	
+`
 	policy2 = "package"
 )
 
 func TestNewOpaEngine(t *testing.T) {
 	testcases := []struct {
-		name string
-		policy string
-		expectErr bool
+		name         string
+		policy       string
+		expectErr    bool
 		expectEngine bool
 	}{
 		{
-			name: "empty policy",
-			policy: " ",
-			expectErr: true,
+			name:         "empty policy",
+			policy:       " ",
+			expectErr:    true,
 			expectEngine: false,
 		},
 		{
-			name: "valid policy",
-			policy: policy1,
-			expectErr: false,
+			name:         "valid policy",
+			policy:       policy1,
+			expectErr:    false,
 			expectEngine: true,
 		},
 		{
-			name: "invalid policy",
-			policy: policy2,
-			expectErr: true,
+			name:         "invalid policy",
+			policy:       policy2,
+			expectErr:    true,
 			expectEngine: false,
 		},
 	}
@@ -81,16 +80,16 @@ func TestEvaluate(t *testing.T) {
 	}
 
 	testcases := []struct {
-		name string
-		input map[string]interface{}
+		name         string
+		input        map[string]interface{}
 		expectResult bool
-		expectErr bool
+		expectErr    bool
 	}{
 		{
-			name: "empty input",
-			input: nil,
+			name:         "empty input",
+			input:        nil,
 			expectResult: false,
-			expectErr: false,
+			expectErr:    false,
 		},
 		{
 			name: "input with false result",
@@ -98,7 +97,7 @@ func TestEvaluate(t *testing.T) {
 				"method": "POST",
 			},
 			expectResult: false,
-			expectErr: false,
+			expectErr:    false,
 		},
 		{
 			name: "valid input",
@@ -106,7 +105,7 @@ func TestEvaluate(t *testing.T) {
 				"method": "GET",
 			},
 			expectResult: true,
-			expectErr: false,
+			expectErr:    false,
 		},
 	}
 

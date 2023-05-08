@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor/types"
@@ -32,6 +33,7 @@ import (
 
 const (
 	nestedReportsField = "nested_reports"
+	RegoPolicy         = "regoPolicy"
 )
 
 type policyEnforcer struct {
@@ -40,15 +42,16 @@ type policyEnforcer struct {
 }
 
 type policyEnforcerConf struct {
-	Name   string `json:"name"`
-	Policy string `json:"policy"`
+	Name       string `json:"name"`
+	Policy     string `json:"policy"`
+	PolicyPath string `json:"policyPath"`
 }
 
 type RegoPolicyFactory struct{}
 
 // init calls Register for our rego policy provider.
 func init() {
-	pf.Register("regoPolicy", &RegoPolicyFactory{})
+	pf.Register(RegoPolicy, &RegoPolicyFactory{})
 }
 
 // Create creates a new policy enforcer based on the policy provided in config.
@@ -63,6 +66,13 @@ func (f *RegoPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (poli
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
 		return nil, fmt.Errorf("failed to parse policy provider configuration: %w", err)
+	}
+	if conf.Policy == "" {
+		body, err := os.ReadFile(conf.PolicyPath)
+		if err != nil {
+			return nil, fmt.Errorf("unable to read rego policy file at path: %s, err: %w", conf.PolicyPath, err)
+		}
+		conf.Policy = string(body)
 	}
 	if conf.Policy == "" {
 		return nil, fmt.Errorf("policy is required for rego policy provider")

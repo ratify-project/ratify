@@ -28,6 +28,7 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
 	"github.com/sirupsen/logrus"

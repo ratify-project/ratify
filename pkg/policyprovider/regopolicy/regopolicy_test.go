@@ -26,9 +26,9 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 )
+
 const (
-	policy1 = 
-`
+	policy1 = `
 package ratify.policy
 
 default valid := false
@@ -36,7 +36,7 @@ default valid := false
 valid {
     input.method == "GET"
 }
-`	
+`
 	policy2 = "package"
 )
 
@@ -54,19 +54,19 @@ func (e policyEngine) Evaluate(ctx context.Context, input map[string]interface{}
 func TestCreate(t *testing.T) {
 	factory := &RegoPolicyFactory{}
 	testCases := []struct {
-		name   string
-		config config.PolicyPluginConfig
-		expectErr    bool
+		name      string
+		config    config.PolicyPluginConfig
+		expectErr bool
 	}{
 		{
-			name: "config with empty policy",
-			config: map[string]interface{}{},
+			name:      "config with empty policy",
+			config:    map[string]interface{}{},
 			expectErr: true,
 		},
 		{
 			name: "config with invalid policy",
 			config: map[string]interface{}{
-				"name": "test",
+				"name":   "test",
 				"policy": policy2,
 			},
 			expectErr: true,
@@ -74,7 +74,7 @@ func TestCreate(t *testing.T) {
 		{
 			name: "config with valid policy",
 			config: map[string]interface{}{
-				"name": "test",
+				"name":   "test",
 				"policy": policy1,
 			},
 			expectErr: false,

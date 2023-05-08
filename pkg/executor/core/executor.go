@@ -124,6 +124,9 @@ func (executor Executor) verifySubjectInternalWithDecision(ctx context.Context, 
 	if err != nil {
 		return types.VerifyResult{}, err
 	}
+	if len(verifierReports) == 0 {
+		return types.VerifyResult{}, ErrReferrersNotFound
+	}
 
 	// Making the decision based on the Json policy.
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
@@ -197,10 +200,6 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 
 	if err = eg.Wait(); err != nil {
 		return nil, err
-	}
-
-	if len(verifierReports) == 0 {
-		return nil, ErrReferrersNotFound
 	}
 
 	return verifierReports, nil
