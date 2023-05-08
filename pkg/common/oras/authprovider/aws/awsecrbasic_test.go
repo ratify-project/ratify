@@ -18,6 +18,7 @@ package aws
 import (
 	"context"
 	"encoding/base64"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -29,24 +30,34 @@ import (
 const (
 	testUsername = "AWS"
 	// #nosec G101 (Ref: https://github.com/securego/gosec/issues/295)
-	testPassword = "eyJwYXlsb2FkIjoiOThPNTFqemhaUmZWVG"
-	testProxy    = "PROXY_ENDPOINT"
-	testHost     = "123456789012.dkr.ecr.us-east-2.amazonaws.com"
+	testPassword              = "eyJwYXlsb2FkIjoiOThPNTFqemhaUmZWVG"
+	testProxy                 = "PROXY_ENDPOINT"
+	testHost                  = "123456789012.dkr.ecr.us-east-2.amazonaws.com"
+	testArtifact              = testHost + "/foo:latest"
+	testArtifactWithoutRegion = "public.ecr.aws/foo/foo:latest"
 )
 
 // Verifies that awsEcrBasicAuthProvider is properly constructed by mocking EcrAuthToken
 
-func mockAuthData() types.AuthorizationData {
+func mockAuthProvider() awsEcrBasicAuthProvider {
 	// Setup
+	ecrAuthToken := EcrAuthToken{}
+	ecrAuthToken.AuthData = make(map[string]types.AuthorizationData)
+
 	creds := []string{testUsername, testPassword}
 	encoded := base64.StdEncoding.EncodeToString([]byte(strings.Join(creds, ":")))
 
 	expiry := aws.Time(time.Now().Add(time.Minute * 10))
 
-	return types.AuthorizationData{
+	ecrAuthToken.AuthData[testHost] = types.AuthorizationData{
 		AuthorizationToken: aws.String(encoded),
 		ExpiresAt:          expiry,
 		ProxyEndpoint:      aws.String(testProxy),
+	}
+
+	return awsEcrBasicAuthProvider{
+		ecrAuthToken: ecrAuthToken,
+		providerName: awsEcrAuthProviderName,
 	}
 }
 
@@ -64,13 +75,7 @@ func TestAwsEcrBasicAuthProvider_Create(t *testing.T) {
 }
 
 func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
-	ecrAuthToken := EcrAuthToken{}
-	ecrAuthToken.AuthData = make(map[string]types.AuthorizationData)
-	ecrAuthToken.AuthData[testHost] = mockAuthData()
-	authProvider := awsEcrBasicAuthProvider{
-		ecrAuthToken: ecrAuthToken,
-		providerName: awsEcrAuthProviderName,
-	}
+	authProvider := mockAuthProvider()
 
 	ctx := context.Background()
 
@@ -81,5 +86,40 @@ func TestAwsEcrBasicAuthProvider_Enabled(t *testing.T) {
 	authProvider.providerName = ""
 	if authProvider.Enabled(ctx) {
 		t.Fatal("enabled should have returned false but returned true")
+	}
+}
+
+func TestAwsEcrBasicAuthProvider_ProvidesWithArtifact(t *testing.T) {
+	authProvider := mockAuthProvider()
+
+	_, err := authProvider.Provide(context.TODO(), testArtifact)
+	if err != nil {
+		t.Fatalf("encountered error: %+v", err)
+	}
+}
+
+func TestAwsEcrBasicAuthProvider_ProvidesWithHost(t *testing.T) {
+	authProvider := mockAuthProvider()
+
+	_, err := authProvider.Provide(context.TODO(), testHost)
+	if err != nil {
+		t.Fatalf("encountered error: %+v", err)
+	}
+}
+
+func TestAwsEcrBasicAuthProvider_GetAuthTokenWithoutRegion(t *testing.T) {
+	authProvider := mockAuthProvider()
+
+	os.Setenv("AWS_REGION", "placeholder")
+	os.Setenv("AWS_ROLE_ARN", "placeholder")
+	os.Setenv("AWS_WEB_IDENTITY_TOKEN_FILE", "placeholder")
+	_, err := authProvider.getEcrAuthToken(testArtifactWithoutRegion)
+	if err == nil {
+		t.Fatalf("expected error: %+v", err)
+	}
+
+	expectedMessage := "failed to get region from image"
+	if err.Error() != expectedMessage {
+		t.Fatalf("expected message: %s, instead got error: %s", expectedMessage, err.Error())
 	}
 }

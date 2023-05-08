@@ -154,7 +154,7 @@ func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error)
 		certStores: conf.VerificationCertStores,
 	}
 
-	return notaryVerifier.New(&conf.TrustPolicyDoc, store, nil)
+	return notaryVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(defaultPluginDirectory))
 }
 
 func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
