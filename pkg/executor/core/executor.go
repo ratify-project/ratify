@@ -263,7 +263,7 @@ func (ex Executor) verifyReferenceForRegoPolicy(ctx context.Context, subjectRef 
 		eg.Go(func() error {
 			var verifierReport vt.VerifierResult
 			verifierStartTime := time.Now()
-			verifierResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
+			verifierResult, err := verifier.Verify(errCtx, subjectRef, referenceDesc, referrerStore)
 			if err != nil {
 				verifierReport = vt.VerifierResult{
 					IsSuccess: false,
@@ -277,7 +277,7 @@ func (ex Executor) verifyReferenceForRegoPolicy(ctx context.Context, subjectRef 
 			nestedReport.VerifierReports = append(nestedReport.VerifierReports, verifierReport)
 			mu.Unlock()
 
-			metrics.ReportVerifierDuration(ctx, time.Since(verifierStartTime).Milliseconds(), verifier.Name(), subjectRef.String(), verifierReport.IsSuccess, err != nil)
+			metrics.ReportVerifierDuration(errCtx, time.Since(verifierStartTime).Milliseconds(), verifier.Name(), subjectRef.String(), verifierReport.IsSuccess, err != nil)
 			return nil
 		})
 	}

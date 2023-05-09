@@ -15,6 +15,97 @@ Currently, Ratify supports a Configuration based Policy Provider named `configPo
 
 The executor is the "glue" that links all Ratify plugin-based components such as the verifiers, referrer stores, and policy providers. The policy provider is primarily invoked for each reference artifact discovered AFTER a configured verifier is found that can be used to verify that particular artifacy type. If a reference artifact is found that does not have a corresponding verifier configured that can perform verification, the executor will ignore this artifact. As a result, this unverifiable artifact will NOT influence the final overall verification success determined by the policy provider.
 
+## Rego Policy Provider
+
+The Rego Policy Provider is a built-in policy provider that uses [Open Policy Agent](https://www.openpolicyagent.org/) (OPA) and [Rego](https://www.openpolicyagent.org/docs/latest/policy-language/) to implement a policy provider. The Rego Policy Provider is a plugin that is registered with Ratify and is invoked by the executor to determine the overall verification success if required. The Rego Policy Provider is configured using the `policy` section of the configuration.
+
+```json
+"policy": {
+    "version": "1.0.0",
+    "plugin": {
+        "name": "regoPolicy",
+        "policyPath": "",
+        "policy": "package ratify.policy\ndefault valid := false\nvalid {\n  not failed_verify(input)\n}\nfailed_verify(reports) {\n  [path, value] := walk(reports)\n  value == false\n  path[count(path) - 1] == \"isSuccess\"\n}"
+    }
+},
+```
+- The `name` field is REQUIRED and MUST match the name of the registered policy provider.
+- One of `policyPath` and `policy` fields MUST be specified.
+    - `policyPath`: path to the Rego policy file. The file MUST be a valid Rego policy file.
+    - `policy`: Rego policy as a string. The string MUST be a valid Rego policy.
+
+### Rego Policy Requirements
+
+There are some special requirements on Rego policy used by Ratify. The package declaration MUST be `package ratify.policy`, and there MUST be a boolean variable `valid` declared. The variable `valid` MUST be set to `true` if the overall verification is successful, and `false` otherwise. The `input` is a Json object that contains the verification results of all reference artifacts. An example of the `input` is shown below:
+```json
+{
+  "nestedReports": [
+    {
+      "artifactType": "org.example.sbom.v0",
+      "subject": "test.azurecr.io/test/hello-world:v1",
+      "referenceDigest": "test.azurecr.io/test/hello-world@sha256:22222",
+      "verifierReports": [
+        {
+          "verifierName": "sbom",
+          "verifierType": "sbom-verifier",
+          "isSuccess": false,
+          "message": "error msg",
+          "extensions": {}
+        },
+        {
+          "verifierName": "schemavalidator",
+          "verifierType": "verifier-schemavalidator",
+          "isSuccess": true,
+          "message": "",
+          "extensions": {}
+        }
+      ],
+      "nestedReports": [
+        {
+          "artifactType": "application/vnd.cncf.notary.signature",
+          "subject": "test.azurecr.io/test/hello-world@sha256:123",
+          "referenceDigest": "test.azurecr.io/test/hello-world@sha256:33333",
+          "verifierReports": [
+            {
+              "verifierName": "notaryv2",
+              "verifierType": "verifier-notary",
+              "isSuccess": true,
+              "message": "",
+              "extensions": {
+                "Issuer": "testIssuer",
+                "SN": "testSN"
+              }
+            }
+          ],
+          "nestedReports": []
+        }
+      ]
+    }  
+  ]
+}
+```
+An example of a Rego policy is shown below:
+```rego
+package ratify.policy
+
+default valid := false
+
+valid {
+  not failed_verify(input)
+}
+
+failed_verify(reports) {
+  [path, value] := walk(reports)
+  value == false
+  path[count(path) - 1] == "isSuccess"
+}
+
+failed_verify(reports) {
+  [path, value] := walk(reports)
+  path[count(path) - 1] == "verifierReports"
+  count(value) == 0
+}
+```
 ## Config Policy Provider
 
 ```

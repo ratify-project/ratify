@@ -448,6 +448,29 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 
+e2e-upgrade-ratify-use-rego:
+	./.staging/helm/linux-amd64/helm uninstall ${RATIFY_NAME} --namespace ${GATEKEEPER_NAMESPACE}
+
+	echo "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+
+	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
+    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	--set image.repository=localbuild \
+	--set image.crdRepository=localbuildcrd \
+	--set image.tag=test \
+	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
+	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+	--set oras.useHttp=true \
+	--set-file dockerConfig="mount_config.json" \
+	--set logLevel=debug \
+	--set policyProvider.useRegoPolicy=true
+
+	rm mount_config.json
+
 ##@ Development
 
 .PHONY: manifests

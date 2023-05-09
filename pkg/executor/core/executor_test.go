@@ -24,6 +24,7 @@ import (
 
 	"github.com/deislabs/ratify/pkg/common"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
+	"github.com/deislabs/ratify/pkg/policyprovider"
 
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
@@ -43,12 +44,14 @@ const (
 	testArtifactType1 = "test-type1"
 	testArtifactType2 = "test-type2"
 	subject1          = "localhost:5000/net-monitor:v1"
-	subjectDigest     = "sha256:001"
-	signatureDigest   = "sha256:002"
-	artifactType = "testArtifactType"
+	subjectDigest     = "sha256:6a5a5368e0c2d3e5909184fa28ddfd56072e7ff3ee9a945876f7eee5896ef5bb"
+	signatureDigest   = "sha256:9f13e0ac480cf86a5c9ec5d173001bbb6ec455f501f1812f0b0ad1f3468e8cfa"
+	artifactType      = "testArtifactType"
 )
 
-type mockPolicyProvider struct{}
+type mockPolicyProvider struct {
+	result bool
+}
 
 func (p *mockPolicyProvider) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
 	return true
@@ -63,7 +66,7 @@ func (p *mockPolicyProvider) ErrorToVerifyResult(ctx context.Context, subjectRef
 }
 
 func (p *mockPolicyProvider) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
-	return true
+	return p.result
 }
 
 type mockStore struct {
@@ -76,7 +79,7 @@ func (s *mockStore) Name() string {
 
 func (s *mockStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	if s.referrers == nil {
-		return referrerstore.ListReferrersResult{}, errors.New("no referrers")
+		return referrerstore.ListReferrersResult{}, errors.New("some error happened")
 	}
 	if _, ok := s.referrers[subjectDesc.Digest.String()]; ok {
 		return referrerstore.ListReferrersResult{
@@ -84,7 +87,7 @@ func (s *mockStore) ListReferrers(ctx context.Context, subjectReference common.R
 			Referrers: s.referrers[subjectDesc.Digest.String()],
 		}, nil
 	}
-	return referrerstore.ListReferrersResult{}, errors.New("no referrers")
+	return referrerstore.ListReferrersResult{}, nil
 }
 
 func (s *mockStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
@@ -100,9 +103,16 @@ func (s *mockStore) GetConfig() *storeConfig.StoreConfig {
 }
 
 func (s *mockStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+	if subjectReference.Tag == "v1" {
+		return &ocispecs.SubjectDescriptor{
+			Descriptor: oci.Descriptor{
+				Digest: subjectDigest,
+			},
+		}, nil
+	}
 	return &ocispecs.SubjectDescriptor{
 		Descriptor: oci.Descriptor{
-			Digest: subjectDigest,
+			Digest: subjectReference.Digest,
 		},
 	}, nil
 }
@@ -729,7 +739,7 @@ func TestVerifySubject(t *testing.T) {
 		params         e.VerifyParameters
 		expectedResult types.VerifyResult
 		stores         []referrerstore.ReferrerStore
-		policyEnforcer policyConfig.PolicyEnforcer
+		policyEnforcer policyprovider.PolicyProvider
 		verifiers      []verifier.ReferenceVerifier
 		config         *exConfig.ExecutorConfig
 		referrers      []ocispecs.ReferenceDescriptor
@@ -750,12 +760,12 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			stores:    []referrerstore.ReferrerStore{
+			stores: []referrerstore.ReferrerStore{
 				&mockStore{
 					referrers: nil,
 				},
 			},
-			expectErr: true,
+			expectErr:      true,
 			expectedResult: types.VerifyResult{},
 		},
 		{
@@ -766,12 +776,12 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			stores:    []referrerstore.ReferrerStore{
+			stores: []referrerstore.ReferrerStore{
 				&mockStore{
 					referrers: nil,
 				},
 			},
-			expectErr: true,
+			expectErr:      true,
 			expectedResult: types.VerifyResult{},
 		},
 		{
@@ -801,8 +811,11 @@ func TestVerifySubject(t *testing.T) {
 					canVerify: false,
 				},
 			},
-			expectErr: true,
-			expectedResult: types.VerifyResult{},
+			policyEnforcer: &mockPolicyProvider{result: true},
+			expectErr:      false,
+			expectedResult: types.VerifyResult{
+				IsSuccess: true,
+			},
 		},
 		{
 			name: "one signature with verifier failed",
@@ -828,12 +841,15 @@ func TestVerifySubject(t *testing.T) {
 			},
 			verifiers: []verifier.ReferenceVerifier{
 				&mockVerifier{
-					canVerify:      true,
-					verifierResult: verifier.VerifierResult{},
+					canVerify: true,
+					verifierResult: verifier.VerifierResult{
+						IsSuccess: false,
+					},
 				},
 			},
-			expectErr:      true,
-			expectedResult: types.VerifyResult{},
+			policyEnforcer: &mockPolicyProvider{result: false},
+			expectErr:      false,
+			expectedResult: types.VerifyResult{IsSuccess: false},
 		},
 		{
 			name: "one signature with verifier success",
@@ -859,12 +875,17 @@ func TestVerifySubject(t *testing.T) {
 			},
 			verifiers: []verifier.ReferenceVerifier{
 				&mockVerifier{
-					canVerify:      true,
-					verifierResult: verifier.VerifierResult{},
+					canVerify: true,
+					verifierResult: verifier.VerifierResult{
+						IsSuccess: true,
+					},
 				},
 			},
-			expectErr:      true,
-			expectedResult: types.VerifyResult{},
+			policyEnforcer: &mockPolicyProvider{result: true},
+			expectErr:      false,
+			expectedResult: types.VerifyResult{
+				IsSuccess: true,
+			},
 		},
 	}
 
@@ -879,8 +900,8 @@ func TestVerifySubject(t *testing.T) {
 			if (err != nil) != tc.expectErr {
 				t.Fatalf("expected error %v but got %v", tc.expectErr, err)
 			}
-			if !reflect.DeepEqual(result, tc.expectedResult) {
-				t.Fatalf("expected result %v but got %v", tc.expectedResult, result)
+			if result.IsSuccess != tc.expectedResult.IsSuccess {
+				t.Fatalf("expected result: %+v but got: %+v", tc.expectedResult, result)
 			}
 		})
 	}

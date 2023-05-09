@@ -218,8 +218,8 @@ SLEEP_TIME=1
 
     # Skipping test for now until expected usage/configuration of this plugin can be verified
     # sleep 5
-    # run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
-    # sleep 5
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
+    sleep 5
 
     # wait for the httpserver cache to be invalidated
     sleep 15
