@@ -309,7 +309,7 @@ func TestCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := &notaryv2VerifierFactory{}
-			_, err := f.Create(testVersion, tt.configMap)
+			_, err := f.Create(testVersion, tt.configMap, "")
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("error = %v, expectErr = %v", err, tt.expectErr)

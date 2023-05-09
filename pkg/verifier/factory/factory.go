@@ -34,7 +34,7 @@ import (
 var builtInVerifiers = make(map[string]VerifierFactory)
 
 type VerifierFactory interface {
-	Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error)
+	Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error)
 }
 
 func Register(name string, factory VerifierFactory) {
@@ -82,7 +82,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 
 	verifierFactory, ok := builtInVerifiers[verifierNameStr]
 	if ok {
-		return verifierFactory.Create(configVersion, verifierConfig)
+		return verifierFactory.Create(configVersion, verifierConfig, pluginBinDir[0])
 	} else {
 		return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
 	}
