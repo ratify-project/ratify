@@ -11,3 +11,21 @@ spec:
       targetPort: 6001
   selector:
     {{- include "ratify.selectorLabels" . | nindent 4 }}
+
+---
+{{- if and .Values.provider.cache.enabled  (eq .Values.provider.cache.type "redis") }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ratify.redisName" . }}
+  labels:
+    helm.sh/chart: {{ include "ratify.chart" . }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: 6379
+  selector:
+    component: {{ include "ratify.redisName" . }}
+{{- end }}

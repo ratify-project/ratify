@@ -95,3 +95,15 @@ data:
           ]
       }
     }
+
+---
+{{- if and .Values.provider.cache.enabled  (eq .Values.provider.cache.type "redis") }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  redis-config: |
+    maxmemory {{ printf "%dmb" (int .Values.provider.cache.cacheSizeMb) }}
+    maxmemory-policy allkeys-lru  
+{{- end }}

@@ -10,12 +10,13 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.1.4
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.1.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v0.7.0
+	github.com/alicebob/miniredis/v2 v2.30.2
 	github.com/aws/aws-sdk-go-v2 v1.18.0
 	github.com/aws/aws-sdk-go-v2/config v1.18.23
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.22
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
-	github.com/cespare/xxhash/v2 v2.1.2
-	github.com/dgraph-io/ristretto v0.1.1
+	github.com/cespare/xxhash/v2 v2.2.0
+	github.com/dgraph-io/ristretto v0.1.0
 	github.com/docker/cli v23.0.5+incompatible
 	github.com/docker/distribution v2.8.1+incompatible
 	github.com/fsnotify/fsnotify v1.5.4
@@ -28,6 +29,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/pkg/errors v0.9.1
+	github.com/redis/go-redis/v9 v9.0.3
 	github.com/sigstore/cosign v1.13.1
 	github.com/sigstore/sigstore v1.4.6
 	github.com/sirupsen/logrus v1.9.0
@@ -65,6 +67,7 @@ require (
 	github.com/alibabacloud-go/tea v1.1.18 // indirect
 	github.com/alibabacloud-go/tea-utils v1.4.4 // indirect
 	github.com/alibabacloud-go/tea-xml v1.1.2 // indirect
+	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/aliyun/credentials-go v1.2.3 // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.12.0 // indirect
@@ -73,6 +76,7 @@ require (
 	github.com/clbanning/mxj/v2 v2.5.6 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
 	github.com/coreos/go-oidc/v3 v3.4.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/frankban/quicktest v1.14.4 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
@@ -90,6 +94,7 @@ require (
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	github.com/tjfoc/gmsm v1.3.2 // indirect
 	github.com/xanzy/go-gitlab v0.73.1 // indirect
+	github.com/yuin/gopher-lua v1.1.0 // indirect
 	sigs.k8s.io/release-utils v0.7.3 // indirect
 )
 

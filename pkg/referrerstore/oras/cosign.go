@@ -50,8 +50,10 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 		}
 		var ec errcode.Error
 		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			store.evictAuthCache(subjectReference.Original, err)
-			return nil, err
+			evict_err := store.evictAuthCache(ctx, subjectReference.Original)
+			if evict_err != nil {
+				err = fmt.Errorf("%s: failed to evict from auth cache: %w", err.Error(), evict_err)
+			}
 		}
 		return nil, err
 	}

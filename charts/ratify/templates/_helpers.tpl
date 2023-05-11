@@ -129,3 +129,17 @@ Set the namespace exclusions for Assign
 - {{ .Release.Namespace | quote}}
 {{- end }}
 {{- end }}
+
+{{/*
+Create the ratify redis name
+*/}}
+{{- define "ratify.redisName" -}}
+{{- printf "%s-redis" (include "ratify.fullname" .) }}
+{{- end }}
+
+{{/*
+Create the ratify redis endpoint
+*/}}
+{{- define "ratify.redisEndpoint" -}}
+{{- printf "%s.%s.svc.cluster.local:6379" (include "ratify.redisName" .) .Release.Namespace }}
+{{- end }}

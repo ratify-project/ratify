@@ -19,15 +19,20 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
+	"github.com/deislabs/ratify/pkg/cache"
+	_ "github.com/deislabs/ratify/pkg/cache/ristretto"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/mocks"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
 func TestAttachedImageTag(t *testing.T) {
@@ -71,6 +76,19 @@ func TestAttachedImageTag(t *testing.T) {
 
 func TestGetCosignReferences(t *testing.T) {
 	ctx := context.Background()
+	var err error
+	// first attempt to get the cache provider if it's already been initialized
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		// if no cache provider has been initialized, initialize one
+		_, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheEndpoint, cache.DefaultCacheSize)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
+	nonStandardError := errors.New("non-standard error")
+	forbiddenError := errcode.Error{Code: fmt.Sprint(http.StatusForbidden)}
+	unauthorizedError := errcode.Error{Code: fmt.Sprint(http.StatusUnauthorized)}
 	testSubjectDigest := digest.FromString("test")
 	testCosignSubjectTag := fmt.Sprintf("%s-%s.sig", testSubjectDigest.Algorithm().String(), testSubjectDigest.Hex())
 	testCosignImageDigest := digest.FromString("test_cosign")
@@ -135,6 +153,50 @@ func TestGetCosignReferences(t *testing.T) {
 				},
 			},
 			err: nil,
+		},
+		{
+			name: "resolve error non-standard error code",
+			subjectRef: common.Reference{
+				Path:   "localhost:5000/net-monitor",
+				Tag:    "v1",
+				Digest: testSubjectDigest,
+			},
+			store: &orasStore{},
+			repository: mocks.TestRepository{
+				ResolveErr: nonStandardError,
+			},
+			output: nil,
+			err:    nonStandardError,
+		},
+		{
+			name: "resolve error forbidden error code",
+			subjectRef: common.Reference{
+				// purposely omitting OriginalPath to trigger reference parsing error
+				Path:   "localhost:5000/net-monitor",
+				Tag:    "v1",
+				Digest: testSubjectDigest,
+			},
+			store: &orasStore{},
+			repository: mocks.TestRepository{
+				ResolveErr: forbiddenError,
+			},
+			output: nil,
+			err:    errdef.ErrInvalidReference,
+		},
+		{
+			name: "resolve error unauthorized error code",
+			subjectRef: common.Reference{
+				// purposely omitting OriginalPath to trigger reference parsing error
+				Path:   "localhost:5000/net-monitor",
+				Tag:    "v1",
+				Digest: testSubjectDigest,
+			},
+			store: &orasStore{},
+			repository: mocks.TestRepository{
+				ResolveErr: unauthorizedError,
+			},
+			output: nil,
+			err:    errdef.ErrInvalidReference,
 		},
 	}
 	for _, testcase := range testcases {

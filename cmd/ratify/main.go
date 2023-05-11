@@ -19,6 +19,8 @@ import (
 	"os"
 
 	"github.com/deislabs/ratify/cmd/ratify/cmd"
+	_ "github.com/deislabs/ratify/pkg/cache/redis"
+	_ "github.com/deislabs/ratify/pkg/cache/ristretto"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"

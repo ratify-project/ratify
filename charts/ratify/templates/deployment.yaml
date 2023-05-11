@@ -55,7 +55,10 @@ spec:
             {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
             - --ca-cert-file=usr/local/tls/client-ca/ca.crt
             {{- end }}
-            - --cache-size={{ .Values.provider.cache.size }}
+            - --cache-enabled={{ .Values.provider.cache.enabled }}
+            - --cache-type={{ default "ristretto" .Values.provider.cache.type }}
+            - --cache-endpoint={{ default (include "ratify.redisEndpoint" . ) .Values.provider.cache.endpoint }}
+            - --cache-size={{ .Values.provider.cache.cacheSizeMb }}
             - --cache-ttl={{ .Values.provider.cache.ttl }}
             - --metrics-enabled={{ .Values.instrumentation.metricsEnabled }}
             - --metrics-type={{ .Values.instrumentation.metricsType }}

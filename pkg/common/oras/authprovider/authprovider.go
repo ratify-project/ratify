@@ -36,7 +36,7 @@ type AuthConfig struct {
 	Password      string
 	IdentityToken string
 	Email         string
-	Provider      AuthProvider
+	Provider      AuthProvider `json:"-"` // Provider is not serialized
 	ExpiresOn     time.Time
 }
 

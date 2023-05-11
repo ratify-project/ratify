@@ -1,0 +1,50 @@
+{{- if and .Values.provider.cache.enabled  (eq .Values.provider.cache.type "redis") }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "ratify.redisName" . }}
+  labels:
+    component: {{ include "ratify.redisName" . }}
+spec:
+  containers:
+  - name: redis
+    image: docker.io/library/redis@sha256:ea30bef6a1424d032295b90db20a869fc8db76331091543b7a80175cede7d887
+    command:
+      - redis-server
+      - "/redis-master/redis.conf"
+    env:
+    - name: MASTER
+      value: "true"
+    ports:
+    - containerPort: 6379
+    volumeMounts:
+    - mountPath: /redis-master-data
+      name: data
+    - mountPath: /redis-master
+      name: config
+    resources:
+      limits:
+        memory: {{ printf "%dMi" (int (mul .Values.provider.cache.cacheSizeMb 2)) }}
+      requests:
+        memory: {{ printf "%dMi" (int .Values.provider.cache.cacheSizeMb) }}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+      readOnlyRootFilesystem: false
+      runAsGroup: 65532
+      runAsNonRoot: true
+      runAsUser: 65532
+      seccompProfile:
+        type: RuntimeDefault
+  volumes:
+    - name: data
+      emptyDir: {}
+    - name: config
+      configMap:
+        name: redis-config
+        items:
+        - key: redis-config
+          path: redis.conf
+{{- end }}

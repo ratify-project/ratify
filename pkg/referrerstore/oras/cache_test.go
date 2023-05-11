@@ -17,10 +17,14 @@ package oras
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	miniredis "github.com/alicebob/miniredis/v2"
+	"github.com/deislabs/ratify/pkg/cache"
+	_ "github.com/deislabs/ratify/pkg/cache/redis"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -41,11 +45,12 @@ var (
 		"cacheEnabled": true,
 		"ttl":          ttl,
 	}
+	pluginConfigTTL = map[string]interface{}{
+		"cacheEnabled": true,
+	}
 	conf = &cacheConf{
-		Enabled:   true,
-		TTL:       ttl,
-		Capacity:  100 * 1024 * 1024,
-		KeyNumber: 10000,
+		Enabled: true,
+		TTL:     ttl,
 	}
 	testStoreConfig = &config.StoreConfig{}
 	testBlob        = make([]byte, 0)
@@ -54,7 +59,7 @@ var (
 		Path:   "testRegistry/testRepo",
 		Digest: testDigest,
 	}
-	testDesc    = &ocispecs.SubjectDescriptor{}
+	testDesc    = &ocispecs.SubjectDescriptor{Descriptor: oci.Descriptor{Digest: testDigest}}
 	testResult1 = referrerstore.ListReferrersResult{
 		Referrers: []ocispecs.ReferenceDescriptor{
 			{
@@ -138,24 +143,89 @@ func TestGetBlobContent(t *testing.T) {
 	}
 }
 
-func TestGetSubjectDescriptor(t *testing.T) {
-	store, _ := createCachedStore(base, conf)
-
-	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
+func TestGetSubjectDescriptor_CacheProviderNil(t *testing.T) {
+	store, err := createCachedStore(base, conf)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
-	if !reflect.DeepEqual(testDesc, desc) {
-		t.Fatalf("expect desc: %v, got %v", desc, testDesc)
+	_, err = store.GetSubjectDescriptor(context.Background(), testReference)
+	if err == nil || err.Error() != "failed to get cache provider" {
+		t.Fatalf("expect error, got %v", err)
+	}
+}
+
+func TestListReferrers_CacheProviderNil(t *testing.T) {
+	store, err := createCachedStore(base, conf)
+	if err != nil {
+		t.Fatalf("expect no error, got %v", err)
+	}
+	_, err = store.ListReferrers(context.Background(), testReference, nil, "", nil)
+	if err == nil || err.Error() != "failed to get cache provider" {
+		t.Fatalf("expect error, got %v", err)
+	}
+}
+
+func TestGetSubjectDescriptor_Cache(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to create miniredis server")
+	}
+	time.Sleep(1 * time.Second)
+	store, _ := createCachedStore(base, conf)
+	cacheProvider, err := cache.NewCacheProvider(context.Background(), "redis", s.Addr(), cache.DefaultCacheSize)
+	if err != nil {
+		t.Fatalf("failed to create cache provider: %v", err)
+	}
+
+	// GetSubjectDescriptor should populate cache and return test descriptor
+	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
+
+	if !reflect.DeepEqual(desc, testDesc) {
+		t.Fatalf("expect desc: %+v, got %+v", testDesc, desc)
+	}
+
+	// check cache directly to make sure key exists
+	_, exists := cacheProvider.Get(context.Background(), fmt.Sprintf(cache.CacheKeySubjectDescriptor, testDigest))
+	if !exists {
+		t.Fatalf("cache key should exist")
+	}
+
+	// override cache to different value
+	newDesc := ocispecs.SubjectDescriptor{Descriptor: oci.Descriptor{Digest: "sha256:654321"}}
+	isSuccess := cacheProvider.Set(context.Background(), fmt.Sprintf(cache.CacheKeySubjectDescriptor, testDigest), newDesc)
+	if !isSuccess {
+		t.Fatalf("cache set should succeed")
+	}
+
+	// check returned value matches new value
+	desc, err = store.GetSubjectDescriptor(context.Background(), testReference)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
+
+	if !reflect.DeepEqual(desc, &newDesc) {
+		t.Fatalf("expect desc: %+v, got %+v", &newDesc, desc)
 	}
 }
 
 func TestListReferrers_CacheHit(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to create miniredis server")
+	}
+	time.Sleep(1 * time.Second)
 	store, _ := createCachedStore(base, conf)
+	_, err = cache.NewCacheProvider(context.Background(), "redis", s.Addr(), cache.DefaultCacheSize)
+	if err != nil {
+		t.Fatalf("failed to create cache provider: %v", err)
+	}
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
-	time.Sleep(time.Duration(ttl-5) * time.Second)
+	s.FastForward(time.Duration(ttl-5) * time.Second)
 
 	cachedResult, err := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
 	if err != nil {
@@ -167,11 +237,20 @@ func TestListReferrers_CacheHit(t *testing.T) {
 }
 
 func TestListReferrers_CacheMiss(t *testing.T) {
+	s, err := miniredis.Run()
+	if err != nil {
+		t.Fatalf("failed to create miniredis server")
+	}
+	time.Sleep(1 * time.Second)
 	store, _ := createCachedStore(base, conf)
+	_, err = cache.NewCacheProvider(context.Background(), "redis", s.Addr(), cache.DefaultCacheSize)
+	if err != nil {
+		t.Fatalf("failed to create cache provider: %v", err)
+	}
 
 	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
 
-	time.Sleep(time.Duration(ttl+5) * time.Second)
+	s.FastForward(time.Duration(ttl+5) * time.Second)
 
 	cachedResult, err := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
 	if err != nil {
@@ -184,6 +263,14 @@ func TestListReferrers_CacheMiss(t *testing.T) {
 
 func TestToCacheConfig(t *testing.T) {
 	resultCache, err := toCacheConfig(pluginConfig)
+	if err != nil {
+		t.Fatalf("expect no error, got %v", err)
+	}
+	if !reflect.DeepEqual(conf, resultCache) {
+		t.Fatalf("expect %v, got %v", conf, resultCache)
+	}
+	// test TTL is set to default 10 seconds
+	resultCache, err = toCacheConfig(pluginConfigTTL)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
