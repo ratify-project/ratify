@@ -69,13 +69,13 @@ func init() {
 	factory.Register(verifierName, &notaryv2VerifierFactory{})
 }
 
-func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.VerifierConfig) (verifier.ReferenceVerifier, error) {
+func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
 	conf, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	verfiyService, err := getVerifierService(conf)
+	verfiyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
 		return nil, err
 	}
@@ -148,13 +148,13 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	}, nil
 }
 
-func getVerifierService(conf *NotaryV2VerifierConfig) (notation.Verifier, error) {
+func getVerifierService(conf *NotaryV2VerifierConfig, pluginDirectory string) (notation.Verifier, error) {
 	store := &trustStore{
 		certPaths:  conf.VerificationCerts,
 		certStores: conf.VerificationCertStores,
 	}
 
-	return notaryVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(defaultPluginDirectory))
+	return notaryVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
 }
 
 func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
