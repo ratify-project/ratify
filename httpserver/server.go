@@ -145,23 +145,32 @@ func (server *Server) Run() error {
 
 		logrus.Info(fmt.Sprintf("%s: [%s:%s] [%s:%s]", "starting server using TLS", "certFile", certFile, "keyFile", keyFile))
 
-		if server.CaCertFile != "" {
-			caCert, err := os.ReadFile(server.CaCertFile)
+		config := &tls.Config{}
+		config.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+			newConfig := tls.Config{}
+			if server.CaCertFile != "" {
+				caCert, err := os.ReadFile(server.CaCertFile)
+				if err != nil {
+					return nil, err
+				}
+
+				clientCAs := x509.NewCertPool()
+				clientCAs.AppendCertsFromPEM(caCert)
+
+				newConfig.MinVersion = tls.VersionTLS13
+				newConfig.ClientCAs = clientCAs
+				newConfig.ClientAuth = tls.RequireAndVerifyClientCert
+			}
+			var err error
+			newConfig.Certificates = make([]tls.Certificate, 1)
+			newConfig.Certificates[0], err = tls.LoadX509KeyPair(certFile, keyFile)
 			if err != nil {
-				panic(err)
+				return nil, err
 			}
-
-			clientCAs := x509.NewCertPool()
-			clientCAs.AppendCertsFromPEM(caCert)
-
-			config := &tls.Config{
-				MinVersion: tls.VersionTLS13,
-				ClientCAs:  clientCAs,
-				ClientAuth: tls.RequireAndVerifyClientCert,
-			}
-			svr.TLSConfig = config
-			logrus.Info(fmt.Sprintf("%s: [%s:%s] ", "loaded client CA certificate for mTLS", "CaFIle", server.CaCertFile))
+			newConfig.GetConfigForClient = config.GetConfigForClient
+			return &newConfig, nil
 		}
+		svr.TLSConfig = config
 		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil {
 			logrus.Errorf("failed to start server: %v", err)
 			return err
@@ -200,4 +209,8 @@ type ServerAddrNotFoundError struct{}
 
 func (err ServerAddrNotFoundError) Error() string {
 	return "The http server address configuration is not set. Skipping server creation"
+}
+
+func getConfigForClient(info *tls.ClientHelloInfo) (*tls.Config, error) {
+	return nil, nil
 }
