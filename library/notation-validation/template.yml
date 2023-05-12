@@ -1,0 +1,41 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: notationvalidation
+spec:
+  crd:
+    spec:
+      names:
+        kind: notationvalidation
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package notationvalidation
+
+        # Get data from Ratify
+        remote_data := response {
+          images := [img | img = input.review.object.spec.containers[_].image]
+          response := external_data({"provider": "ratify-provider", "keys": images})
+        }
+
+        # Base Gatekeeper violation
+        violation[{"msg": msg}] {
+          general_violation[{"result": msg}]
+        }
+
+        # Check if there are any system errors
+        general_violation[{"result": result}] {
+          err := remote_data.system_error
+          err != ""
+          result := sprintf("System error calling external data provider: %s", [err])
+        }
+
+        # Check for a valid signature
+        general_violation[{"result": result}] {
+          subject_results := remote_data.responses[_]
+          subject_result := subject_results[1]
+          notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
+          successful_result := [ notaryv2_result | notaryv2_result := notaryv2_results[_]; notaryv2_result["isSuccess"] == true]
+          successful_result == []
+          result = sprintf("signature verification failed for all signatures associated with %s", [subject_results[0]])
+        }
