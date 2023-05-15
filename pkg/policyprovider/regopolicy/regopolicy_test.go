@@ -134,12 +134,6 @@ func TestOverallVerifyResult(t *testing.T) {
 		expectResult bool
 	}{
 		{
-			name:         "empty reports",
-			reports:      nil,
-			expectResult: false,
-			returnErr:    false,
-		},
-		{
 			name:         "opa engine returns error",
 			reports:      []interface{}{types.VerifyResult{}},
 			expectResult: false,

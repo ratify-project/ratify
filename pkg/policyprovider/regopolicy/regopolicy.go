@@ -33,7 +33,8 @@ import (
 
 const (
 	nestedReportsField = "nested_reports"
-	RegoPolicy         = "regoPolicy"
+	// RegoPolicy is the name of the rego policy provider.
+	RegoPolicy = "regoPolicy"
 )
 
 type policyEnforcer struct {
@@ -47,6 +48,7 @@ type policyEnforcerConf struct {
 	PolicyPath string `json:"policyPath"`
 }
 
+// RegoPolicyFactory is a factory for creating rego policy enforcers.
 type RegoPolicyFactory struct{}
 
 // init calls Register for our rego policy provider.
@@ -106,11 +108,6 @@ func (enforcer *policyEnforcer) ErrorToVerifyResult(ctx context.Context, subject
 
 // OverallVerifyResult determines if the overall verification result should be a success or failure.
 func (enforcer *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
-	if len(verifierReports) == 0 {
-		logrus.Errorf("no verifier reports to evaluate")
-		return false
-	}
-
 	nestedReports := map[string]interface{}{}
 	nestedReports[nestedReportsField] = verifierReports
 	result, err := enforcer.OpaEngine.Evaluate(ctx, nestedReports)

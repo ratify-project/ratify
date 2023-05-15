@@ -24,6 +24,7 @@ import (
 	"github.com/open-policy-agent/opa/rego"
 )
 
+// OpaEngine is an OPA engine implementing PolicyEvaluator interface.
 type OpaEngine struct {
 	query rego.PreparedEvalQuery
 }
