@@ -11,13 +11,13 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.2.2
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.0.0
 	github.com/aws/aws-sdk-go-v2 v1.18.0
-	github.com/aws/aws-sdk-go-v2/config v1.18.23
-	github.com/aws/aws-sdk-go-v2/credentials v1.13.22
+	github.com/aws/aws-sdk-go-v2/config v1.18.25
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.24
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/docker/cli v23.0.5+incompatible
-	github.com/docker/distribution v2.8.1+incompatible
+	github.com/docker/cli v23.0.6+incompatible
+	github.com/docker/distribution v2.8.2+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
@@ -84,7 +84,6 @@ require (
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
-	github.com/google/go-github/v45 v45.2.0 // indirect
 	github.com/google/go-github/v50 v50.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
@@ -122,7 +121,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.27 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.12.10 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.14.10 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.18.11 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.19.0 // indirect
 	github.com/aws/smithy-go v1.13.5 // indirect
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
