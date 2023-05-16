@@ -210,7 +210,3 @@ type ServerAddrNotFoundError struct{}
 func (err ServerAddrNotFoundError) Error() string {
 	return "The http server address configuration is not set. Skipping server creation"
 }
-
-func getConfigForClient(info *tls.ClientHelloInfo) (*tls.Config, error) {
-	return nil, nil
-}
