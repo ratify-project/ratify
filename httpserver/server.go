@@ -145,9 +145,9 @@ func (server *Server) Run() error {
 
 		logrus.Info(fmt.Sprintf("%s: [%s:%s] [%s:%s]", "starting server using TLS", "certFile", certFile, "keyFile", keyFile))
 
-		config := &tls.Config{}
+		config := &tls.Config{MinVersion: tls.VersionTLS13}
 		config.GetConfigForClient = func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
-			newConfig := tls.Config{}
+			newConfig := tls.Config{MinVersion: tls.VersionTLS13}
 			if server.CaCertFile != "" {
 				caCert, err := os.ReadFile(server.CaCertFile)
 				if err != nil {
@@ -157,7 +157,6 @@ func (server *Server) Run() error {
 				clientCAs := x509.NewCertPool()
 				clientCAs.AppendCertsFromPEM(caCert)
 
-				newConfig.MinVersion = tls.VersionTLS13
 				newConfig.ClientCAs = clientCAs
 				newConfig.ClientAuth = tls.RequireAndVerifyClientCert
 			}
