@@ -414,3 +414,32 @@ SLEEP_TIME=1
     run kubectl run demo-leaf2 --namespace default --image=registry:5000/notation:leafSigned
     assert_failure
 }
+
+@test "validate ratify tls cert rotation" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+    }
+
+    # update Providers to use the new CA
+    run kubectl get Provider ratify-mutation-provider -o json | jq --arg ca "$(cat .staging/rotation/ca.crt | base64)" '.spec.caBundle=$ca' | kubectl replace -f -
+    assert_success
+    run kubectl get Provider ratify-provider -o json | jq --arg ca "$(cat .staging/rotation/ca.crt | base64)" '.spec.caBundle=$ca' | kubectl replace -f -
+    assert_success
+    
+    # update the ratify tls secret to use the new tls cert and key
+    run kubectl get secret ratify-tls -n gatekeeper-system -o json | jq --arg cert "$(cat .staging/rotation/server.crt | base64)" --arg key "$(cat .staging/rotation/server.key | base64)" '.data["tls.key"]=$key | .data["tls.crt"]=$cert'| kubectl replace -f -
+    assert_success
+
+    # volume projection can take up to 90 seconds
+    sleep 100
+
+    # verify that the verification succeeds
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5 
+    run kubectl run demo --namespace default --image=registry:5000/notation:signed
+    assert_success
+}
