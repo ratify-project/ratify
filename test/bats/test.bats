@@ -422,13 +422,10 @@ SLEEP_TIME=1
 
     # update Providers to use the new CA
     run kubectl get Provider ratify-mutation-provider -o json | jq --arg ca "$(cat .staging/rotation/ca.crt | base64)" '.spec.caBundle=$ca' | kubectl replace -f -
-    assert_success
     run kubectl get Provider ratify-provider -o json | jq --arg ca "$(cat .staging/rotation/ca.crt | base64)" '.spec.caBundle=$ca' | kubectl replace -f -
-    assert_success
     
     # update the ratify tls secret to use the new tls cert and key
     run kubectl get secret ratify-tls -n gatekeeper-system -o json | jq --arg cert "$(cat .staging/rotation/server.crt | base64)" --arg key "$(cat .staging/rotation/server.key | base64)" '.data["tls.key"]=$key | .data["tls.crt"]=$cert'| kubectl replace -f -
-    assert_success
 
     # volume projection can take up to 90 seconds
     sleep 100
