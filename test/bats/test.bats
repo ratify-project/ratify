@@ -75,20 +75,20 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
     }
-    # update the config to use the keyless verifier since ratify doesn't support multiple verifiers of same type
-    sed -i 's/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/""/g' ./config/samples/config_v1beta1_verifier_cosign.yaml
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_cosign.yaml
-    sleep 5
 
     # use imperative command to guarantee useHttp is updated
+    run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign_keyless.yaml
+    sleep 5
+
     run kubectl replace -f ./config/samples/config_v1beta1_store_oras.yaml
     sleep 5
 
     run kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
     assert_success
 
-    sed -i 's/""/\/usr\/local\/ratify-certs\/cosign\/cosign.pub/g' ./config/samples/config_v1beta1_verifier_cosign.yaml
-    run kubectl apply -f ./config/samples/config_v1beta1_store_oras_http.yaml
+    run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign.yaml
+    sleep 5
+    run kubectl replace -f ./config/samples/config_v1beta1_store_oras_http.yaml
 }
 
 @test "licensechecker test" {
