@@ -49,9 +49,9 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 
 	// create the confidential client to request an AAD token
 	confidentialClientApp, err := confidential.New(
+		fmt.Sprintf("%s%s/oauth2/token", authority, tenantID),
 		clientID,
-		cred,
-		confidential.WithAuthority(fmt.Sprintf("%s%s/oauth2/token", authority, tenantID)))
+		cred)
 	if err != nil {
 		return confidential.AuthResult{}, fmt.Errorf("failed to create confidential client app: %w", err)
 	}

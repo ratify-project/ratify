@@ -31,7 +31,8 @@
             },
             {
                 "name": "cosign",
-                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json"
+                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
+                "rekorURL": "https://rekor.sigstore.dev"
             },
             {
                 "name": "notaryv2",
