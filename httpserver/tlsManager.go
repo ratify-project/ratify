@@ -59,7 +59,6 @@ func NewTLSCertWatcher(ratifyServerCertPath, ratifyServerKeyPath, clientCACertPa
 	}
 
 	return certWatcher, nil
-
 }
 
 func (t *TLSCertWatcher) Start() error {
@@ -76,14 +75,14 @@ func (t *TLSCertWatcher) Start() error {
 			for f := range files {
 				if err := t.watcher.Add(f); err != nil {
 					watchErr = err
-					return false, nil
+					return false, nil //nolint:nilerr // we want to keep trying.
 				}
 				// remove it from the set
 				delete(files, f)
 			}
 			return true, nil
 		}); err != nil {
-			return fmt.Errorf("failed to add watches: %v: %v", err, watchErr)
+			return fmt.Errorf("failed to add watches: %s: %s", err.Error(), watchErr.Error())
 		}
 	}
 
@@ -91,11 +90,12 @@ func (t *TLSCertWatcher) Start() error {
 	go t.Watch()
 
 	return nil
-
 }
 
-func (t *TLSCertWatcher) Stop() error {
-	return t.watcher.Close()
+func (t *TLSCertWatcher) Stop() {
+	if err := t.watcher.Close(); err != nil {
+		logrus.Errorf("error closing certificate watcher: %v", err)
+	}
 }
 
 func (t *TLSCertWatcher) ReadCertificates() error {
@@ -127,6 +127,7 @@ func (t *TLSCertWatcher) GetConfigForClient(*tls.ClientHelloInfo) (*tls.Config, 
 	defer t.RUnlock()
 
 	config := &tls.Config{
+		MinVersion:         tls.VersionTLS13,
 		Certificates:       []tls.Certificate{*t.ratifyServerCert},
 		GetConfigForClient: t.GetConfigForClient,
 	}
