@@ -25,6 +25,7 @@ import (
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider"
@@ -51,43 +52,12 @@ type Executor struct {
 	Config         *config.ExecutorConfig
 }
 
-// NewExecutor creates a new executor instance with validation on config.
-func NewExecutor(
-	referrerStores []referrerstore.ReferrerStore,
-	policyEnforcer policyprovider.PolicyProvider,
-	verifiers []vr.ReferenceVerifier,
-	executorConfig *config.ExecutorConfig,
-) (Executor, error) {
-	if executorConfig == nil {
-		executorConfig = &config.ExecutorConfig{}
-	}
-	if executorConfig.ExecutionMode == config.PassthroughExecutionMode && !executorConfig.UseRegoPolicy {
-		return Executor{}, ErrExecutionMode
-	}
-	return Executor{
-		ReferrerStores: referrerStores,
-		PolicyEnforcer: policyEnforcer,
-		Verifiers:      verifiers,
-		Config:         executorConfig,
-	}, nil
-}
-
 // TODO Logging within executor
 // VerifySubject verifies the subject and returns results. And it also returns
 // the decision based on the verifier results if required.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	if executor.Config.UseRegoPolicy {
-		result, err := executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
-		if err != nil {
-			return types.VerifyResult{}, err
-		}
-
-		// If it requires embedded Rego Policy Engine make the decision, execute
-		// OverallVerifyResult to evaluate the overall result based on the policy.
-		if executor.Config.ExecutionMode != config.PassthroughExecutionMode {
-			result.IsSuccess = executor.PolicyEnforcer.OverallVerifyResult(ctx, result.VerifierReports)
-		}
-		return result, nil
+	if featureflag.UseRegoPolicy.Enabled {
+		return executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
 	}
 	return executor.verifySubjectWithJsonPolicy(ctx, verifyParameters)
 }
@@ -111,10 +81,14 @@ func (executor Executor) verifySubjectForRegoPolicy(ctx context.Context, verifyP
 	if err != nil {
 		return types.VerifyResult{}, err
 	}
+	// If it requires embedded Rego Policy Engine make the decision, execute
+	// OverallVerifyResult to evaluate the overall result based on the policy.
+	result := types.VerifyResult{VerifierReports: results}
+	if !featureflag.PassthroughMode.Enabled {
+		result.IsSuccess = executor.PolicyEnforcer.OverallVerifyResult(ctx, result.VerifierReports)
+	}
 
-	return types.VerifyResult{
-		VerifierReports: results,
-	}, nil
+	return result, nil
 }
 
 // verifySubjectInternalWithDecision verifies the subject and makes the decision
@@ -172,7 +146,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 					}
 					reference := reference
 					innerGroup.Go(func() error {
-						if executor.Config.UseRegoPolicy {
+						if featureflag.UseRegoPolicy.Enabled {
 							verifyResult, err := executor.verifyReferenceForRegoPolicy(innerErrCtx, subjectReference, desc, reference, referrerStore)
 							if err != nil {
 								logrus.Errorf("error while verifying reference %+v, err: %v", reference, err)

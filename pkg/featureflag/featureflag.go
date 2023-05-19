@@ -26,6 +26,8 @@ import (
 // Remember to capture changes in the usage guide and release notes.
 var (
 	DynamicPlugins = new("DYNAMIC_PLUGINS", false)
+	UseRegoPolicy = new("USE_REGO_POLICY", false)
+	PassthroughMode = new("PASSTHROUGH_MODE", false)
 )
 
 var flags = make(map[string]*FeatureFlag)

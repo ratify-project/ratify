@@ -115,8 +115,8 @@ jobs:
       - name: Save logs
         if: ${{ always() }}
         run: |
-          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
-          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
       - name: Run e2e with Rego policy
         run: |
           make e2e-upgrade-ratify-use-rego GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}
@@ -126,8 +126,8 @@ jobs:
         run: |
           kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 > logs-externaldata-controller-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
           kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 > logs-externaldata-audit-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
-          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 >> logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
-          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 >> logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         if: ${{ always() }}

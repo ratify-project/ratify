@@ -15,14 +15,8 @@ limitations under the License.
 
 package config
 
-const PassthroughExecutionMode = "passthrough"
-
 // ExecutorConfig represents the configuration for the executor
 type ExecutorConfig struct {
-	// ExecutionMode can be "passthrough" or empty.
-	ExecutionMode string `json:"executionMode,omitempty"`
-	// UseRegoPolicy is a flag to enable/disable rego policy.
-	UseRegoPolicy bool `json:"useRegoPolicy,omitempty"`
 	// Gatekeeper default verification webhook timeout is 3 seconds. 100ms network buffer added
 	VerificationRequestTimeout *int `json:"verificationRequestTimeout"`
 	// Gatekeeper default mutation webhook timeout is 1 seconds. 50ms network buffer added

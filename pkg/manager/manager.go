@@ -28,7 +28,6 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
 	"github.com/sirupsen/logrus"
@@ -103,9 +102,11 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		}
 
 		// return executor with latest configuration
-		executor, err := ef.NewExecutor(activeStores, policy, activeVerifiers, &cf.ExecutorConfig)
-		if err != nil {
-			return nil
+		executor := ef.Executor{
+			Verifiers:      activeVerifiers,
+			ReferrerStores: activeStores,
+			PolicyEnforcer: policy,
+			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
 	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsEnabled, metricsType, metricsPort)

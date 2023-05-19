@@ -20,6 +20,4 @@ import "errors"
 var (
 	// ErrReferrersNotFound is thrown when there aren't any references for an artifact
 	ErrReferrersNotFound = errors.New("no referrers found for this artifact")
-	// ErrExecutionMode is thrown when passthrough mode is enabled with config policy.
-	ErrExecutionMode = errors.New("passthrough mode is only supported with rego policy")
 )

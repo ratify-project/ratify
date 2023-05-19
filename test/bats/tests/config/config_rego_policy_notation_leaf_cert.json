@@ -1,7 +1,5 @@
 {
-    "executor": {
-        "useRegoPolicy": true
-    },
+    "executor": {},
     "store": {
         "version": "1.0.0",
         "plugins": [

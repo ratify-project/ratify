@@ -24,7 +24,7 @@ const VerificationResultVersion = "0.1.0"
 type VerificationResponse struct {
 	Version         string        `json:"version"`
 	IsSuccess       bool          `json:"isSuccess"`
-	VerifierReports []interface{} `json:"nestedReports,omitempty"`
+	VerifierReports []interface{} `json:"verifierReports,omitempty"`
 }
 
 func fromVerifyResult(res types.VerifyResult) VerificationResponse {

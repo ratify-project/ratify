@@ -28,13 +28,12 @@ import (
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
 	"github.com/deislabs/ratify/pkg/policyprovider/policyevaluation"
+	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	nestedReportsField = "nested_reports"
-	// RegoPolicy is the name of the rego policy provider.
-	RegoPolicy = "regoPolicy"
 )
 
 type policyEnforcer struct {
@@ -53,7 +52,7 @@ type RegoPolicyFactory struct{}
 
 // init calls Register for our rego policy provider.
 func init() {
-	pf.Register(RegoPolicy, &RegoPolicyFactory{})
+	pf.Register(policyTypes.RegoPolicy, &RegoPolicyFactory{})
 }
 
 // Create creates a new policy enforcer based on the policy provided in config.

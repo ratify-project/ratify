@@ -106,10 +106,8 @@ crds:
     runAsNonRoot: true
     runAsUser: 65532
 
-policyProvider:
-  useRegoPolicy: false
-  executionMode: ""
-
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
+  RATIFY_USE_REGO_POLICY: false
+  RATIFY_PASSTHROUGH_MODE: false

@@ -29,7 +29,6 @@ import (
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	"github.com/deislabs/ratify/pkg/policyprovider/regopolicy"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
@@ -83,9 +82,6 @@ func getHomeDir() string {
 
 // Returns created referer store, verifier, policyprovider objects from config
 func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
-	if err := validateConfig(cf); err != nil {
-		return nil, nil, nil, errors.Wrap(err, "failed to validate config")
-	}
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
 
 	if err != nil {
@@ -161,16 +157,4 @@ func getFileHash(file []byte) (fileHash string, err error) {
 	}
 
 	return hex.EncodeToString(hash.Sum(nil)), nil
-}
-
-func validateConfig(config Config) error {
-	if !config.ExecutorConfig.UseRegoPolicy && config.ExecutorConfig.ExecutionMode == exConfig.PassthroughExecutionMode {
-		return errors.New("passthrough mode only works in conjunction with Rego policy provider")
-	}
-
-	if config.ExecutorConfig.UseRegoPolicy != (config.PoliciesConfig.PolicyPlugin != nil && config.PoliciesConfig.PolicyPlugin["name"] == regopolicy.RegoPolicy) {
-		return errors.New("Rego policy provider must be set up to let embedded Rego engine make the decision.")
-	}
-
-	return nil
 }
