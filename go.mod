@@ -1,6 +1,6 @@
 module github.com/deislabs/ratify
 
-go 1.19
+go 1.20
 
 // Accidentally published prior to 1.0.0 release
 retract v1.1.0-alpha.1

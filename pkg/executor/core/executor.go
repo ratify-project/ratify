@@ -53,8 +53,7 @@ type Executor struct {
 }
 
 // TODO Logging within executor
-// VerifySubject verifies the subject and returns results. And it also returns
-// the decision based on the verifier results if required.
+// VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	if featureflag.UseRegoPolicy.Enabled {
 		return executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
@@ -74,8 +73,8 @@ func (executor Executor) verifySubjectWithJsonPolicy(ctx context.Context, verify
 	return result, nil
 }
 
-// verifySubjectForRegoPolicy verifies the subject with results used for making
-// decisions by the Rego-based policy enforcer.
+// verifySubjectForRegoPolicy verifies the subject with results.
+// And it also returns the decision based on the verifier results if required.
 func (executor Executor) verifySubjectForRegoPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	results, err := executor.verifySubjectInternalWithoutDecision(ctx, verifyParameters)
 	if err != nil {
