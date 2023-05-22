@@ -1,6 +1,6 @@
 module github.com/deislabs/ratify
 
-go 1.19
+go 1.20
 
 // Accidentally published prior to 1.0.0 release
 retract v1.1.0-alpha.1
@@ -30,7 +30,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.3
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.2
 	github.com/spdx/tools-golang v0.5.0
 	github.com/spf13/cobra v1.7.0
 	github.com/xlab/treeprint v1.1.0
@@ -38,10 +38,10 @@ require (
 	go.opentelemetry.io/otel/metric v0.37.0
 	go.opentelemetry.io/otel/sdk/metric v0.37.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/grpc v1.54.0
+	google.golang.org/grpc v1.54.1
 	google.golang.org/protobuf v1.30.0
 	k8s.io/api v0.26.1
-	k8s.io/apimachinery v0.26.1
+	k8s.io/apimachinery v0.26.5
 	k8s.io/client-go v0.25.4
 	oras.land/oras-go/v2 v2.0.2
 )
@@ -228,7 +228,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
 	github.com/theupdateframework/go-tuf v0.5.2 // indirect
