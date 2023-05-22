@@ -13,12 +13,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package policyevaluation
+package policyengine
 
 import "context"
 
-// PolicyEvaluator is an interface with methods that represents policy decisions.
-type PolicyEvaluator interface {
+// PolicyEngine is an interface with methods that represents policy decisions.
+type PolicyEngine interface {
 	// Evaluate evaluates the policy with the given input.
 	Evaluate(ctx context.Context, input map[string]interface{}) (bool, error)
 }

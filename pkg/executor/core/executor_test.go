@@ -20,7 +20,6 @@ import (
 	"errors"
 	"os"
 	"reflect"
-	"strconv"
 	"testing"
 	"time"
 
@@ -699,6 +698,11 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 }
 
 func TestVerifySubject(t *testing.T) {
+	if err := os.Setenv("RATIFY_USE_REGO_POLICY", "1"); err != nil {
+		t.Fatalf("failed to set env var: %v", err)
+	}
+	featureflag.InitFeatureFlagsFromEnv()
+
 	testCases := []struct {
 		name           string
 		params         e.VerifyParameters
@@ -706,18 +710,16 @@ func TestVerifySubject(t *testing.T) {
 		stores         []referrerstore.ReferrerStore
 		policyEnforcer policyprovider.PolicyProvider
 		verifiers      []verifier.ReferenceVerifier
-		useRegoPolicy  bool
 		referrers      []ocispecs.ReferenceDescriptor
 		expectErr      bool
 	}{
 		{
-			name:          "verify subject with invalid subject",
-			useRegoPolicy: true,
-			expectErr:     true,
+			name:      "verify subject with invalid subject",
+			params:    e.VerifyParameters{},
+			expectErr: true,
 		},
 		{
-			name:          "error from ListReferrers",
-			useRegoPolicy: true,
+			name: "error from ListReferrers",
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
@@ -730,8 +732,7 @@ func TestVerifySubject(t *testing.T) {
 			expectedResult: types.VerifyResult{},
 		},
 		{
-			name:          "empty referrers",
-			useRegoPolicy: true,
+			name: "empty referrers",
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
@@ -744,8 +745,7 @@ func TestVerifySubject(t *testing.T) {
 			expectedResult: types.VerifyResult{},
 		},
 		{
-			name:          "one signature without matching verifier",
-			useRegoPolicy: true,
+			name: "one signature without matching verifier",
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
@@ -775,8 +775,7 @@ func TestVerifySubject(t *testing.T) {
 			},
 		},
 		{
-			name:          "one signature with verifier failed",
-			useRegoPolicy: true,
+			name: "one signature with verifier failed",
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
@@ -807,8 +806,7 @@ func TestVerifySubject(t *testing.T) {
 			expectedResult: types.VerifyResult{IsSuccess: false},
 		},
 		{
-			name:          "one signature with verifier success",
-			useRegoPolicy: true,
+			name: "one signature with verifier success",
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
@@ -844,10 +842,6 @@ func TestVerifySubject(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			featureflag.InitFeatureFlagsFromEnv()
-			if err := os.Setenv("RATIFY_USE_REGO_POLICY", strconv.FormatBool(tc.useRegoPolicy)); err != nil {
-				t.Fatalf("failed to set env var: %v", err) 
-			}
 			ex := &Executor{tc.stores, tc.policyEnforcer, tc.verifiers, nil}
 
 			result, err := ex.VerifySubject(context.Background(), tc.params)

@@ -25,8 +25,8 @@ import (
 // They are activated via environment variables, starting with "RATIFY_", ex: RATIFY_DYNAMIC_PLUGINS=1
 // Remember to capture changes in the usage guide and release notes.
 var (
-	DynamicPlugins = new("DYNAMIC_PLUGINS", false)
-	UseRegoPolicy = new("USE_REGO_POLICY", false)
+	DynamicPlugins  = new("DYNAMIC_PLUGINS", false)
+	UseRegoPolicy   = new("USE_REGO_POLICY", false)
 	PassthroughMode = new("PASSTHROUGH_MODE", false)
 )
 

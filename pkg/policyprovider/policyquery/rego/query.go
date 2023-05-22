@@ -13,60 +13,55 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package policyevaluation
+package query
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"strings"
 
+	"github.com/deislabs/ratify/pkg/policyprovider/policyquery"
 	"github.com/open-policy-agent/opa/rego"
+	"github.com/pkg/errors"
 )
 
-// OpaEngine is an OPA engine implementing PolicyEvaluator interface.
-type OpaEngine struct {
+const (
+	query    = "data.ratify.policy.valid"
+	RegoName = "rego"
+)
+
+// Rego is a wrapper around the OPA rego library.
+type Rego struct {
 	query rego.PreparedEvalQuery
 }
 
-const query = "data.ratify.policy.valid"
+// RegoFactory is a factory for creating Rego query objects.
+type RegoFactory struct{}
 
-// NewOpaEngine creates a new OPA engine.
-func NewOpaEngine(policy string) (*OpaEngine, error) {
-	engine := &OpaEngine{}
-	if err := engine.UpdatePolicy(policy); err != nil {
-		return nil, err
-	}
-	return engine, nil
+func init() {
+	policyquery.Register(RegoName, &RegoFactory{})
 }
 
-// UpdatePolicy updates the policy of the engine.
-func (oa *OpaEngine) UpdatePolicy(policy string) error {
-	trimmedPolicy := strings.TrimSpace(policy)
-	if trimmedPolicy == "" {
-		return errors.New("policy is empty")
-	}
-
+// Create creates a new Rego query object.
+func (f *RegoFactory) Create(policy string) (policyquery.PolicyQuery, error) {
 	query, err := rego.New(
 		rego.Query(query),
-		rego.Module("policy.rego", trimmedPolicy),
+		rego.Module("policy.rego", policy),
 	).PrepareForEval(context.Background())
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("failed to prepare rego query, err: %+w", err)
 	}
 
-	oa.query = query
-	return nil
+	return &Rego{query: query}, nil
 }
 
-// Evaluate evaluates the policy with the given input.
-func (oe *OpaEngine) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
-	results, err := oe.query.Eval(ctx, rego.EvalInput(input))
+// Evaluate evaluates the policy against the input.
+func (r *Rego) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
+	results, err := r.query.Eval(ctx, rego.EvalInput(input))
 
 	if err != nil {
 		return false, err
 	} else if len(results) == 0 {
-		return false, errors.New("no results returned from OPA")
+		return false, errors.New("no results returned from query")
 	} else {
 		result, ok := results[0].Expressions[0].Value.(bool)
 		if !ok {

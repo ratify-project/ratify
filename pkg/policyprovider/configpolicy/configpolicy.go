@@ -26,7 +26,6 @@ import (
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
 	vt "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/verifier"
 )
@@ -49,7 +48,7 @@ type configPolicyFactory struct{}
 
 // init calls Register for our config policy provider
 func init() {
-	pf.Register(policyTypes.ConfigPolicy, &configPolicyFactory{})
+	pf.Register(vt.ConfigPolicy, &configPolicyFactory{})
 }
 
 // Create initializes a new policy provider based on the provider selected in config

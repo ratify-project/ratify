@@ -59,7 +59,7 @@ func TestCreate(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name:      "config with empty policy",
+			name:      "empty config",
 			config:    map[string]interface{}{},
 			expectErr: true,
 		},

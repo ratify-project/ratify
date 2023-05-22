@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package policyevaluation
+package query
 
 import (
 	"context"
@@ -22,61 +22,57 @@ import (
 
 const (
 	policy1 = `
-package ratify.policy
-
-default valid := false
-
-valid {
-    input.method == "GET"
-}
-`
+  package ratify.policy
+  
+  default valid := false
+  
+  valid {
+	  input.method == "GET"
+  }
+  `
 	policy2 = "package"
 )
 
-func TestNewOpaEngine(t *testing.T) {
+func TestCreate(t *testing.T) {
 	testcases := []struct {
-		name         string
-		policy       string
-		expectErr    bool
-		expectEngine bool
+		name        string
+		policy      string
+		expectErr   bool
+		expectQuery bool
 	}{
 		{
-			name:         "empty policy",
-			policy:       " ",
-			expectErr:    true,
-			expectEngine: false,
+			name:        "valid policy",
+			policy:      policy1,
+			expectErr:   false,
+			expectQuery: true,
 		},
 		{
-			name:         "valid policy",
-			policy:       policy1,
-			expectErr:    false,
-			expectEngine: true,
-		},
-		{
-			name:         "invalid policy",
-			policy:       policy2,
-			expectErr:    true,
-			expectEngine: false,
+			name:        "invalid policy",
+			policy:      policy2,
+			expectErr:   true,
+			expectQuery: false,
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			engine, err := NewOpaEngine(tc.policy)
+			factory := &RegoFactory{}
+			query, err := factory.Create(tc.policy)
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("error = %v, expectErr = %v", err, tc.expectErr)
 			}
-			if tc.expectEngine == (engine == nil) {
-				t.Fatalf("engine = %v, expectEngine = %v", engine, tc.expectEngine)
+			if tc.expectQuery != (query != nil) {
+				t.Fatalf("query = %v, expectQuery = %v", query, tc.expectQuery)
 			}
 		})
 	}
 }
 
 func TestEvaluate(t *testing.T) {
-	engine, err := NewOpaEngine(policy1)
+	factory := &RegoFactory{}
+	query, err := factory.Create(policy1)
 	if err != nil {
-		t.Fatalf("error = %v", err)
+		t.Fatalf("err = %v", err)
 	}
 
 	testcases := []struct {
@@ -111,7 +107,7 @@ func TestEvaluate(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			result, err := engine.Evaluate(context.Background(), tc.input)
+			result, err := query.Evaluate(context.Background(), tc.input)
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("error = %v, expectErr = %v", err, tc.expectErr)
 			}

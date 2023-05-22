@@ -27,18 +27,16 @@ import (
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	"github.com/deislabs/ratify/pkg/policyprovider/policyevaluation"
+	"github.com/deislabs/ratify/pkg/policyprovider/policyengine"
+	opa "github.com/deislabs/ratify/pkg/policyprovider/policyengine/opaengine"
+	query "github.com/deislabs/ratify/pkg/policyprovider/policyquery/rego"
 	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	nestedReportsField = "nested_reports"
-)
-
 type policyEnforcer struct {
 	Policy    string
-	OpaEngine policyevaluation.PolicyEvaluator
+	OpaEngine policyengine.PolicyEngine
 }
 
 type policyEnforcerConf struct {
@@ -79,7 +77,11 @@ func (f *RegoPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (poli
 		return nil, fmt.Errorf("policy is required for rego policy provider")
 	}
 
-	engine, err := policyevaluation.NewOpaEngine(conf.Policy)
+	engine, err := policyengine.CreateEngineFromConfig(policyengine.PolicyEngineConfig{
+		Name:          opa.OPA,
+		QueryLanguage: query.RegoName,
+		Policy:        conf.Policy,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create OPA engine: %w", err)
 	}
@@ -108,7 +110,7 @@ func (enforcer *policyEnforcer) ErrorToVerifyResult(ctx context.Context, subject
 // OverallVerifyResult determines if the overall verification result should be a success or failure.
 func (enforcer *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
 	nestedReports := map[string]interface{}{}
-	nestedReports[nestedReportsField] = verifierReports
+	nestedReports["verifierReports"] = verifierReports
 	result, err := enforcer.OpaEngine.Evaluate(ctx, nestedReports)
 	if err != nil {
 		logrus.Errorf("failed to evaluate policy: %v", err)

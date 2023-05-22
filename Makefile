@@ -470,7 +470,7 @@ e2e-upgrade-ratify-use-rego:
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logLevel=debug \
-	--set policyProvider.useRegoPolicy=true
+	--set featureFlags.RATIFY_USE_REGO_POLICY=true
 
 	rm mount_config.json
 
