@@ -124,7 +124,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 
 	subjectReference.Digest = desc.Digest
 
-	var verifierReports []interface{}
+	verifierReports := make([]interface{}, 0)
 	eg, errCtx := errgroup.WithContext(ctx)
 	var mu sync.Mutex
 

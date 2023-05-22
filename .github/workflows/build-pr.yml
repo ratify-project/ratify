@@ -103,7 +103,7 @@ jobs:
       - name: Set up Go 1.20
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version: 1.20
+          go-version: '1.20'
 
       - name: Bootstrap e2e
         run: |
@@ -163,7 +163,7 @@ jobs:
       - name: Set up Go 1.20
         uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
         with:
-          go-version: 1.20
+          go-version: '1.20'
 
       - name: Az CLI login
         uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2 # v1.4.7

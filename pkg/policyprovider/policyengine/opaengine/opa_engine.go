@@ -24,6 +24,8 @@ import (
 	"github.com/deislabs/ratify/pkg/policyprovider/policyquery"
 )
 
+const OPA = "opa"
+
 // OpaEngine is an OPA engine implementing PolicyEvaluator interface.
 type OpaEngine struct {
 	query policyquery.PolicyQuery
@@ -31,8 +33,6 @@ type OpaEngine struct {
 
 // OpaEngineFactory is a factory for creating OPA engines.
 type OpaEngineFactory struct{}
-
-const OPA = "opa"
 
 func init() {
 	policyengine.Register(OPA, &OpaEngineFactory{})

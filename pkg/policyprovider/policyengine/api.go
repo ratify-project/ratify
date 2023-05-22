@@ -17,7 +17,7 @@ package policyengine
 
 import "context"
 
-// PolicyEngine is an interface with methods that represents policy decisions.
+// PolicyEngine is an interface that represents a policy engine.
 type PolicyEngine interface {
 	// Evaluate evaluates the policy with the given input.
 	Evaluate(ctx context.Context, input map[string]interface{}) (bool, error)

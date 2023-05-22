@@ -17,11 +17,6 @@ package policyquery
 
 import "fmt"
 
-const (
-	Name   = "name"
-	Policy = "policy"
-)
-
 var policyQueryFactories = make(map[string]PolicyQueryFactory)
 
 // PolicyQueryConfig is a configuration for a policy query.

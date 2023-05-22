@@ -31,6 +31,7 @@ type PolicyEngineConfig struct {
 
 // EngineFactory is an interface for creating OPA policy engines.
 type EngineFactory interface {
+	// Create creates a new engine.
 	Create(policy string, queryLanguage string) (PolicyEngine, error)
 }
 
