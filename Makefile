@@ -47,16 +47,17 @@ build: build-cli build-plugins
 
 .PHONY: build-cli
 build-cli: fmt vet
-	go build --ldflags="$(LDFLAGS)" \
+	go build --ldflags="$(LDFLAGS)" -cover \
+	-coverpkg=github.com/deislabs/ratify/pkg/...,github.com/deislabs/ratify/config/...,github.com/deislabs/ratify/cmd/... \
 	-o ./bin/${BINARY_NAME} ./cmd/${BINARY_NAME}
 
 .PHONY: build-plugins
 build-plugins:
-	go build -o ./bin/plugins/ ./plugins/verifier/cosign
-	go build -o ./bin/plugins/ ./plugins/verifier/licensechecker
-	go build -o ./bin/plugins/ ./plugins/verifier/sample
-	go build -o ./bin/plugins/ ./plugins/verifier/sbom
-	go build -o ./bin/plugins/ ./plugins/verifier/schemavalidator
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/cosign/... -o ./bin/plugins/ ./plugins/verifier/cosign
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/licensechecker/... -o ./bin/plugins/ ./plugins/verifier/licensechecker
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sample/... -o ./bin/plugins/ ./plugins/verifier/sample
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sbom/... -o ./bin/plugins/ ./plugins/verifier/sbom
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/schemavalidator/... -o ./bin/plugins/ ./plugins/verifier/schemavalidator
 
 .PHONY: install
 install:
@@ -123,9 +124,11 @@ test-e2e:
 	bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+	rm ${GOCOVERDIR} -rf
+	mkdir ${GOCOVERDIR} -p
 	IS_OCI_1_1=${IS_OCI_1_1} RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+	go tool covdata textfmt -i=${GOCOVERDIR} -o test/e2e/coverage.txt
 
 .PHONY: generate-certs
 generate-certs:

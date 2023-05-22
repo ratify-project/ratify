@@ -108,6 +108,7 @@ This section outlines how to use `ratify` to verify the signatures signed using 
 Please note that the `key` is not specified in the config. This is because the keyless verification uses ephemeral keys and certificates, which are signed automatically by the [fulcio](https://github.com/sigstore/fulcio) root CA. Signatures are stored in the [Rekor](https://github.com/sigstore/rekor) transparency log, which automatically provides an attestation as to when the signature was created.
 
 Default Rekor transparency log URL is `https://rekor.sigstore.dev`. If using a custom Rekor transparency log instance, you can customize the Rekor URL using the `rekorURL` field.
+Note: If `rekorURL` is not provided, transparency log verification is skipped. 
 
 ```json
 ...
