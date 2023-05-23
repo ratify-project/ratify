@@ -84,7 +84,7 @@ func (t *TLSCertWatcher) Start() error {
 			}
 			return true, nil
 		}); err != nil {
-			return fmt.Errorf("failed to add watches: %s: %s", err.Error(), watchErr.Error())
+			return fmt.Errorf("failed to add watches: %w: %s", err, watchErr.Error())
 		}
 	}
 
