@@ -31,7 +31,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.3
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.2
 	github.com/spdx/tools-golang v0.5.0
 	github.com/spf13/cobra v1.7.0
 	github.com/xlab/treeprint v1.1.0
@@ -39,7 +39,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.37.0
 	go.opentelemetry.io/otel/sdk/metric v0.37.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/grpc v1.54.0
+	google.golang.org/grpc v1.54.1
 	google.golang.org/protobuf v1.30.0
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.5
