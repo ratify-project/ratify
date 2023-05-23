@@ -41,6 +41,7 @@ type TLSCertWatcher struct {
 	clientCACertPath     string
 }
 
+// NewTLSCertWatcher creates a new TLSCertWatcher for ratify tls cert/key paths and client CA cert path
 func NewTLSCertWatcher(ratifyServerCertPath, ratifyServerKeyPath, clientCACertPath string) (*TLSCertWatcher, error) {
 	var err error
 	certWatcher := &TLSCertWatcher{
@@ -61,6 +62,7 @@ func NewTLSCertWatcher(ratifyServerCertPath, ratifyServerKeyPath, clientCACertPa
 	return certWatcher, nil
 }
 
+// Start adds the files to watcher and starts the certificate watcher routine
 func (t *TLSCertWatcher) Start() error {
 	files := map[string]struct{}{t.ratifyServerCertPath: {}, t.ratifyServerKeyPath: {}}
 	if t.clientCACertPath != "" {
@@ -92,12 +94,14 @@ func (t *TLSCertWatcher) Start() error {
 	return nil
 }
 
+// Stop closes the watcher
 func (t *TLSCertWatcher) Stop() {
 	if err := t.watcher.Close(); err != nil {
 		logrus.Errorf("error closing certificate watcher: %v", err)
 	}
 }
 
+// ReadCertificates reads the certificates from the cert/key paths
 func (t *TLSCertWatcher) ReadCertificates() error {
 	if t.ratifyServerCertPath == "" || t.ratifyServerKeyPath == "" {
 		return fmt.Errorf("ratify server cert or key path is empty")
@@ -122,6 +126,7 @@ func (t *TLSCertWatcher) ReadCertificates() error {
 	return nil
 }
 
+// GetConfigForClient returns the tls config for the client use in the TLS Config
 func (t *TLSCertWatcher) GetConfigForClient(*tls.ClientHelloInfo) (*tls.Config, error) {
 	t.RLock()
 	defer t.RUnlock()
@@ -159,6 +164,7 @@ func (t *TLSCertWatcher) handleEvent(event fsnotify.Event) {
 	}
 }
 
+// Watch watches the certificate files for changes and terminates on error/stop
 func (t *TLSCertWatcher) Watch() {
 	for {
 		select {
