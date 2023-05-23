@@ -111,7 +111,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
           make e2e-bootstrap KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }}
           make generate-certs
-      - name: Run e2e
+      - name: Run e2e with config policy
         run: |
           make e2e-deploy-gatekeeper GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}
           make e2e-deploy-ratify GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}

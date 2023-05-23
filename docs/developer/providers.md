@@ -34,12 +34,104 @@ The Rego Policy Provider is a built-in policy provider that uses [Open Policy Ag
     - `policyPath`: path to the Rego policy file. The file MUST be a valid Rego policy file.
     - `policy`: Rego policy as a string. The string MUST be a valid Rego policy.
 
+### Rego Policy Usage
+Ratify embeds OPA engine inside the executor to provide a built-in policy provider. This feature is behind the `RATIFY_USE_REGO_POLICY` feature flag. And if users want to offload policy decison-making to Gatekeeper, they can enable `RATIFY_PASSTHROUGH_MODE` which will bypass OPA engine embedded in Ratify. In this mode, Ratify will NOT make the decision but only pass the verification results to Gatekeeper for making the decision. Note that verification results returned while switching Rego policy/config policy are a bit different.
+
+Example results when using config policy provider:
+```json
+{
+  "isSuccess": true,
+  "verifierReports": [
+    {
+      "subject": "registry:5000/sbom@sha256:4139357ed163984fe8ea49eaa0b82325dfc4feda98d0f6691b24f24cd6f0591e",
+      "isSuccess": true,
+      "name": "sbom",
+      "message": "SBOM verification success. The schema is good.",
+      "extensions": {
+        "created": "2023-05-08T17:11:15Z",
+        "creators": [
+          "Organization: acme",
+          "Tool: Microsoft.SBOMTool-1.0.2"
+        ],
+        "licenseListVersion": ""
+      },
+      "nestedResults": [
+        {
+          "subject": "registry:5000/sbom@sha256:a59b9a5ee8ce41fed4be7f6b8d8619bd9e619bbda6b7b1feb591c3c85f6ab7af",
+          "isSuccess": true,
+          "name": "notaryv2",
+          "message": "signature verification success",
+          "extensions": {
+            "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
+            "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"
+          },
+          "artifactType": "application/vnd.cncf.notary.signature"
+        }
+      ],
+      "artifactType": "org.example.sbom.v0"
+    }
+  ]
+}
+```
+
+Example results when using Rego policy provider:
+```json
+{
+  "isSuccess": true,
+  "nestedReports": [
+    {
+      "subject": "registry:5000/sbom@sha256:f291201143149e4006894b2d64202a8b90416b7dcde1c8ad997b1099312af3ce",
+      "referenceDigest": "sha256:932dde71a9f26ddafa61e8a7df2b296b1787bcb6e75c515584a53776e81a8a00",
+      "artifactType": "org.example.sbom.v0",
+      "verifierReports": [
+        {
+          "isSuccess": true,
+          "message": "SBOM verification success. The schema is good.",
+          "name": "sbom",
+          "extensions": {
+            "created": "2023-05-11T05:20:43Z",
+            "creators": [
+              "Organization: acme",
+              "Tool: Microsoft.SBOMTool-1.1.0"
+            ],
+            "licenseListVersion": ""
+          }
+        }
+      ],
+      "nestedReports": [
+        {
+          "subject": "registry:5000/sbom@sha256:932dde71a9f26ddafa61e8a7df2b296b1787bcb6e75c515584a53776e81a8a00",
+          "referenceDigest": "sha256:bf67213f8e048c2262b1dd007a4380f03431e1aa2ab58c7afdce7c2f763f7684",
+          "artifactType": "application/vnd.cncf.notary.signature",
+          "verifierReports": [
+            {
+              "isSuccess": true,
+              "message": "signature verification success",
+              "name": "notaryv2",
+              "extensions": {
+                "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
+                "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"
+              }
+            }
+          ],
+          "nestedReports": []
+        }
+      ]
+    }
+  ]
+}
+```
+
+To enable Rego policy provider for a Ratify server, the value of `RATIFY_USE_REGO_POLICY` MUST be set to true in the helm chart.
+
+If Ratify is used as command line, `RATIFY_USE_REGO_POLICY=1` MUST be passed to the corresponding command1.
+
 ### Rego Policy Requirements
 
 There are some special requirements on Rego policy used by Ratify. The package declaration MUST be `package ratify.policy`, and there MUST be a boolean variable `valid` declared. The variable `valid` MUST be set to `true` if the overall verification is successful, and `false` otherwise. The `input` is a Json object that contains the verification results of all reference artifacts. An example of the `input` is shown below:
 ```json
 {
-  "nestedReports": [
+  "verifierReports": [
     {
       "artifactType": "org.example.sbom.v0",
       "subject": "test.azurecr.io/test/hello-world:v1",
