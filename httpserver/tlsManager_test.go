@@ -16,14 +16,23 @@ limitations under the License.
 package httpserver
 
 import (
+	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/fsnotify/fsnotify"
 )
 
-const firstCertFileName string = "firstCert.crt"
-const firstKeyFileName string = "firstKey.key"
-const firstCACertFileName string = "firstCACert.crt"
+const (
+	firstCertFileName   string = "firstCert.crt"
+	firstKeyFileName    string = "firstKey.key"
+	firstCACertFileName string = "firstCACert.crt"
+	invalidPath         string = "invalid"
+)
 const firstCertificate string = `-----BEGIN CERTIFICATE-----
 MIIDAjCCAeqgAwIBAgIUAbsAmO7kx6m5NgjlMLTvdHNqZtAwDQYJKoZIhvcNAQEL
 BQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe
@@ -93,8 +102,79 @@ WqlYtBTNTFx4eisM277wPKV8iHNGqULVGtADGmU0WWsWPDmHytmBaE5tF/NifRrF
 ve39ZodlqIAz
 -----END CERTIFICATE-----
 `
+const secondCertificate string = `-----BEGIN CERTIFICATE-----
+MIIDAjCCAeqgAwIBAgIUKM/3jH+txmBUCQAOTc93FjzJUP0wDQYJKoZIhvcNAQEL
+BQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe
+Fw0yMzA1MjMyMTUzMDNaFw0yNDA1MjIyMTUzMDNaMCMxITAfBgNVBAMMGHJhdGlm
+eS5nYXRla2VlcGVyLXN5c3RlbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoC
+ggEBALcOqIaafGjT4aRc4OLQCK+2pSEHgZSKdv/pRBDLT6+Tbe8vrK9eLRhuoEIw
+k2QPeO7gQnvT+R8zlqOsS0l8echaXjrZypF8D2FACgn2nUotJFMMJvV552vKhq01
+MxkD0nlhQE12TOWtR/fNavyf+GcyQW2rM72Nwj4RfdHQ56wpN2Q9WRRITWXpqy6M
+RWnaVhLA9tRtSk0SRwPIk5xrLNDlVRQiw8GnAL7lK4d3n+dDdFoKHyn61pGVauav
+Lf7Sd1yUoSqplEGWjA3R/T8j3sKQjOL/SeJqXI0vsniRTfIFMmlFhoTIxROVCIa4
+AVDCLdQaH+9wwp29NyjqJZ0ajFsCAwEAAaMnMCUwIwYDVR0RBBwwGoIYcmF0aWZ5
+LmdhdGVrZWVwZXItc3lzdGVtMA0GCSqGSIb3DQEBCwUAA4IBAQDDx3Z9Z5kwSa24
+3AJZpgNIRsrnoqumqPnYt555U8oZAJKl175tHlDbJAFaRXK4cq1Ua2Q+h0ytzulo
+kTi+B45PJjSdi4P62SDxJoqNaiqFoKUA98z32os/FTcyJoXDC7y7DoVpqjJkuSjH
+I130FBsc+IBUeHqjSbPRoaNXOYOA36YoMtV2wJ2uPmG1wLbfyk8vqWUv4u30g7z1
+36bQN1yigqNZEO0gM0pOBDodW1OhyNE83d3UHdmCcx3pejbWNWbAEbnuMluGqNLx
+CGq38sYWjgy1eHctMF/MpMcCK3Nm64YYvmIwBa0wl7EJArZJLWMGpgB4MC8fwqam
++4RirFh7
+-----END CERTIFICATE-----
+`
+const secondKey string = `-----BEGIN PRIVATE KEY-----
+MIIEwAIBADANBgkqhkiG9w0BAQEFAASCBKowggSmAgEAAoIBAQC3DqiGmnxo0+Gk
+XODi0AivtqUhB4GUinb/6UQQy0+vk23vL6yvXi0YbqBCMJNkD3ju4EJ70/kfM5aj
+rEtJfHnIWl462cqRfA9hQAoJ9p1KLSRTDCb1eedryoatNTMZA9J5YUBNdkzlrUf3
+zWr8n/hnMkFtqzO9jcI+EX3R0OesKTdkPVkUSE1l6asujEVp2lYSwPbUbUpNEkcD
+yJOcayzQ5VUUIsPBpwC+5SuHd5/nQ3RaCh8p+taRlWrmry3+0ndclKEqqZRBlowN
+0f0/I97CkIzi/0nialyNL7J4kU3yBTJpRYaEyMUTlQiGuAFQwi3UGh/vcMKdvTco
+6iWdGoxbAgMBAAECggEBAKwQMiX7Vc8uwZw91QA8rL2E/yfRp2IY2IvpFZp3kBon
+iKDXfgiEi/y4FxjAEfpudKyLzNIZx8MlOYX07/tN7iZ9kq7cggRHySkPCaCd1vCf
+B9KrzH7WK8ls3zQ1mib8Kbz/xXJKLTOBsfDhe5ujPdi6KzfLQWH9ukOfK1Wpd+mg
+aMAt2txGkQYgFFX+m00zAxCXPs9gqgsiQvsE3HSP8PSRnOaeYIz2me0y7UWkn+Rq
+jbVvtbb1VDG6A2xe3bpFWzJuybHuE13nq7zK8MwLDaYSQL15JcQhnsBXl5SnHHJJ
+LvRFXxLhCBpcMO2LfnlsGr2aMqbHvzgcNcLKjB9hc5ECgYEA46JVBcYNKAPhPbN/
+xjFQ4I/gmzyVPE/D5iGTnSwc2XEh5/f5S3BI7WzhSA0j0MtOo6LFC5x8JwYKCcno
+geUM9GH4sI8UAmkZbquGcRU1yPGTj9LM4uBqvNL4nrSuiS+eY71MEU9a5Fw5JGYa
+fdNLw7SkgluprJ9o6fNc/YxbzgMCgYEAzd5MGe4uUv9+r8o4g4KqmJmgw7FYkw7r
+1hEp5eN9bvQvQRMONzhoQfDSC+DARtdTcir5JUMJH1CBsh1+alW+QgM3P8Bklqdq
+yx9iYHyUqqnNx5mv46NtlhYObxy+9CVjuyVjZT29hfkl2BOlw0TmaGuUv+MvQj6p
+wNKoxJFvRMkCgYEAmcwY89CvHOUaLqzzXH3/benn0BqrndcqvXbcHCosx8EHLoo9
+NfoEW93fi+XM2Ao09JxJ06GDxH3xFFIFtJWEHi1/cBMLauGFnF9pc0foUf7eOyMq
+6PLFSxSjg98BuZChzDOejGd4OqgQt4YAyhiTrQOEzsqNpiMCKGcT4f8OG+8CgYEA
+sSnf1eTaasTC8mcVkV9OjnqPFjm1nwCVRiiJJPRMCsMLM3ZBopXhavXi3SPydERz
+5GlE9aMl45P1uSGWm83kKIz569wW9GtpBRqiH6S2j9QHagFBk6Yd9a5Ph6F2V0ch
+93jqe8LRKc1KmxP1cAEIQ85pOWU6U0j37x+a62a5GbkCgYEA4QPZpUBU+tiLeQRn
+8Jh6G6OELoMHf1Ik6dtDFGM2Cnjmu5iUyRDSsyEQEvRD81RgNbaeIbvagpCCafLJ
+IaJp+XVCACjQmmJxJzMPXPjGIQnmk6VrDXttJKQA49DAEZ/aboXGSxjNZiNW3orB
+US+cjMyfbSZlnfuxmH5YXqX10co=
+-----END PRIVATE KEY-----
+`
+const secondCACert string = `-----BEGIN CERTIFICATE-----
+MIIDNTCCAh2gAwIBAgIUdZS8ouQu+djZ+H+LqqOCVkw89N8wDQYJKoZIhvcNAQEL
+BQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe
+Fw0yMzA1MjMyMTUzMDNaFw0yMzA1MjQyMTUzMDNaMCoxDzANBgNVBAoMBlJhdGlm
+eTEXMBUGA1UEAwwOUmF0aWZ5IFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB
+DwAwggEKAoIBAQDaMktJqu7h89TLP/JGNtU0f1zCxQEdiVJZQpDxHHVbwp7fW+j7
+MF68N7AGIVgMXuAsu/ewtA0Y6M+zr8ZJ3sBxWWX//QHoNqOIsGDS8Jx0jsG8448q
+0wnkrwWMMiz8Vw182byPKOPlrnrdZ65KjuXXBtWR0LOaZXqQ1e7UA+AloBY8OTk7
+T10ZuyolB/PL8nNIjCesVzTvzHRdR+WC446XeXED68IpV/7uInzzpV/+z1k3foR5
+/wFK/p5Qt5SGcQCacIWBWFTXNLOggZgEpQBZbdO0jQF0fqjAEfksjzgngLALQ+GF
+Zp1N2DrmC6RXirvCtnK6Ctto6hgaetWFz7mFAgMBAAGjUzBRMB0GA1UdDgQWBBTP
+fzcZabuyIPwAZxgqVQyhmt2J8jAfBgNVHSMEGDAWgBTPfzcZabuyIPwAZxgqVQyh
+mt2J8jAPBgNVHRMBAf8EBTADAQH/MA0GCSqGSIb3DQEBCwUAA4IBAQBLB87eJAld
+zp8is33YCyu1iQcfXhzMCI/vQVwieV7YPQPYSrn+QQete02n8jzibd2QhPrQbZa5
+mYejaR7fVlJ8KWkhOZAr9nKor7oC3rBywQ9lQhKIUOJr4REPcr11j+iZACcHq/xW
+CQ6putzEi4jjDcRQ3bJEEGTcYSQt8KYLzuCYUyS0kjU5Qu9i6Obv4ZhT5/JBIYr9
++cyT75CQ6D1qyQB0zjtJ1oPWBux5Poix46TGRXXeeR50qEb+bIdNa24aJ+F32iXV
+A2lm1FHtdZBdx6x23Oz6FY6YM4jk6CAVwQCkfOsolEVtQqC7IytHrKc+EMVYTjdx
+WbAZC9hFRlJ1
+-----END CERTIFICATE-----
+`
 
 func TestNewTLSCertWatcher_Expected(t *testing.T) {
+	// setup temp dir with test certs/key
 	tmpDir, err := os.MkdirTemp("", "test-certs")
 	if err != nil {
 		t.Fatalf("temp dir creation failed %v", err)
@@ -113,16 +193,19 @@ func TestNewTLSCertWatcher_Expected(t *testing.T) {
 	if err = os.WriteFile(caFileName, []byte(firstCACert), 0600); err != nil {
 		t.Fatalf("ca cert file creation failed %v", err)
 	}
+	// initialize cert watcher with empty paths
 	var cw *TLSCertWatcher
 	_, err = NewTLSCertWatcher("", "", "")
 	if err == nil {
 		t.Errorf("Expected error, got %v", err)
 	}
+	// initialize cert watcher with valid paths
 	cw, err = NewTLSCertWatcher(certFileName, keyFileName, caFileName)
 	if err != nil {
 		t.Errorf("Expected no error, got %v", err)
 	}
 
+	// check if cert watcher is initialized correctly
 	if cw.ratifyServerCertPath != certFileName {
 		t.Errorf("Expected %s, got %s", certFileName, cw.ratifyServerCertPath)
 	}
@@ -132,7 +215,6 @@ func TestNewTLSCertWatcher_Expected(t *testing.T) {
 	if cw.clientCACertPath != caFileName {
 		t.Errorf("Expected %s, got %s", caFileName, cw.clientCACertPath)
 	}
-
 	if cw.ratifyServerCert == nil {
 		t.Errorf("Expected ratifyServerCert to be set")
 	}
@@ -166,16 +248,15 @@ func TestReadCertificates_Expected(t *testing.T) {
 	}
 
 	// test with empty cert/key paths
-	var cw *TLSCertWatcher
-	cw = &TLSCertWatcher{}
+	cw := &TLSCertWatcher{}
 	if err := cw.ReadCertificates(); err == nil {
 		t.Errorf("Expected error, got %v", err)
 	}
 
 	// test with invalid ca cert path
-	cw.ratifyServerCertPath = "invalid"
-	cw.clientCACertPath = "invalid"
-	cw.ratifyServerKeyPath = "invalid"
+	cw.ratifyServerCertPath = invalidPath
+	cw.clientCACertPath = invalidPath
+	cw.ratifyServerKeyPath = invalidPath
 	if err := cw.ReadCertificates(); err == nil {
 		t.Errorf("Expected error, got %v", err)
 	}
@@ -184,5 +265,107 @@ func TestReadCertificates_Expected(t *testing.T) {
 	cw.clientCACertPath = caFileName
 	if err := cw.ReadCertificates(); err == nil {
 		t.Errorf("Expected error, got %v", err)
+	}
+}
+
+func TestCertRotation(t *testing.T) {
+	// setup temp dir with test certs/key
+	tmpDir, err := os.MkdirTemp("", "test-certs")
+	if err != nil {
+		t.Fatalf("temp dir creation failed %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	certFileName := filepath.Join(tmpDir, firstCertFileName)
+	if err = os.WriteFile(certFileName, []byte(firstCertificate), 0600); err != nil {
+		t.Fatalf("cert file creation failed %v", err)
+	}
+	keyFileName := filepath.Join(tmpDir, firstKeyFileName)
+	if err = os.WriteFile(keyFileName, []byte(firstKey), 0600); err != nil {
+		t.Fatalf("cert key creation failed %v", err)
+	}
+	caFileName := filepath.Join(tmpDir, firstCACertFileName)
+	if err = os.WriteFile(caFileName, []byte(firstCACert), 0600); err != nil {
+		t.Fatalf("ca cert file creation failed %v", err)
+	}
+
+	// set up new cert watcher
+	var cw *TLSCertWatcher
+	cw, err = NewTLSCertWatcher(certFileName, keyFileName, caFileName)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	// start cert watcher
+	if err = cw.Start(); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	defer cw.Stop()
+
+	// load actual cert bundle and ca cert
+	actualCertBundle, err := tls.LoadX509KeyPair(certFileName, keyFileName)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	actualCaKey := x509.NewCertPool()
+	actualCaKey.AppendCertsFromPEM([]byte(firstCACert))
+
+	// check if certs match
+	if !bytes.Equal(actualCertBundle.Certificate[0], cw.ratifyServerCert.Certificate[0]) {
+		t.Errorf("Expected ratify certs to match")
+	}
+	if !actualCaKey.Equal(cw.clientCACert) {
+		t.Errorf("Expected client CA certs to match")
+	}
+
+	// update cert/key files for rotation
+	if err = os.WriteFile(certFileName, []byte(secondCertificate), 0600); err != nil {
+		t.Fatalf("second cert file creation failed %v", err)
+	}
+	if err = os.WriteFile(keyFileName, []byte(secondKey), 0600); err != nil {
+		t.Fatalf("cert key creation failed %v", err)
+	}
+	if err = os.WriteFile(caFileName, []byte(secondCACert), 0600); err != nil {
+		t.Fatalf("second ca cert file creation failed %v", err)
+	}
+
+	// wait for cert rotation (watcher is not instant)
+	time.Sleep(1 * time.Second)
+
+	// reload actual cert bundle and ca cert
+	actualCertBundle, err = tls.LoadX509KeyPair(certFileName, keyFileName)
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	actualCaKey = x509.NewCertPool()
+	actualCaKey.AppendCertsFromPEM([]byte(secondCACert))
+
+	// check if updated certs match
+	if !bytes.Equal(actualCertBundle.Certificate[0], cw.ratifyServerCert.Certificate[0]) {
+		t.Errorf("Expected ratify certs to match")
+	}
+	if !actualCaKey.Equal(cw.clientCACert) {
+		t.Errorf("Expected client CA certs to match")
+	}
+}
+
+func TestIsWrite_Expected(t *testing.T) {
+	actual := fsnotify.Event{Op: fsnotify.Write}
+	if !isWrite(actual) {
+		t.Errorf("Expected true, got false")
+	}
+}
+
+func TestIsCreate_Expected(t *testing.T) {
+	actual := fsnotify.Event{Op: fsnotify.Create}
+	if !isCreate(actual) {
+		t.Errorf("Expected true, got false")
+	}
+}
+
+func TestIsRemove_Expected(t *testing.T) {
+	actual := fsnotify.Event{Op: fsnotify.Remove}
+	if !isRemove(actual) {
+		t.Errorf("Expected true, got false")
 	}
 }
