@@ -21,7 +21,7 @@ status: # supported in version >= config.ratify.deislabs.io/v1beta1
 ## AzureKeyVault Certificate Provider
 See notary integration example [here](../../developer/verifier.md#section-6-built-in-verifiers)
 ```yml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
 metadata:
   name: certstore-akv
@@ -63,7 +63,7 @@ Please also ensure the certificate is in PEM format, PKCS12 format with nonexpor
 
 ## Inline Certificate Provider
 ```
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
 metadata:
   name: certstore-inline
