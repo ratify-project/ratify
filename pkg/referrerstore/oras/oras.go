@@ -246,18 +246,6 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		referrers = append(referrers, OciDescriptorToReferenceDescriptor(referrer))
 	}
 
-	if store.config.CosignEnabled {
-		// add cosign descriptor if exists
-		cosignReferences, err := getCosignReferences(ctx, subjectReference, store, repository)
-		if err != nil {
-			return referrerstore.ListReferrersResult{}, err
-		}
-
-		if cosignReferences != nil {
-			referrers = append(referrers, *cosignReferences...)
-		}
-	}
-
 	return referrerstore.ListReferrersResult{Referrers: referrers}, nil
 }
 

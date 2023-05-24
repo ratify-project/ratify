@@ -22,10 +22,6 @@ WORKDIR /app
 COPY . .
 
 RUN go build -o /app/out/ /app/cmd/ratify 
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/sbom
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/cosign
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/licensechecker
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/schemavalidator
 
 FROM $BASEIMAGE
 LABEL org.opencontainers.image.source https://github.com/deislabs/ratify
@@ -35,7 +31,6 @@ ARG RATIFY_FOLDER=$HOME/.ratify/
 WORKDIR /
 
 COPY --from=builder /app/out/ratify /app/
-COPY --from=builder --chown=65532:65532 /app/out/plugins ${RATIFY_FOLDER}/plugins
 COPY --from=builder /app/config/config.json ${RATIFY_FOLDER}
 
 ENV RATIFY_CONFIG=${RATIFY_FOLDER}
