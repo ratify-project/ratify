@@ -54,7 +54,7 @@ spec:
 ## Cosign
 Cosign verifier can be used to verify signatures generated using [cosign](https://github.com/sigstore/cosign/), learn more about the plugin [here](../../../plugins/verifier/cosign/README.md)
 ```yml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-cosign
@@ -70,7 +70,7 @@ spec:
 
 ## Sbom
 ```yml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-sbom
@@ -89,7 +89,7 @@ spec:
 Validate Json artifacts against JSON schemas, learn more about the plugin [here](../../../plugins/verifier/schemavalidator/README.md)
 
 ```yml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-schemavalidator

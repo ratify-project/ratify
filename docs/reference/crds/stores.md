@@ -20,7 +20,7 @@ An implementation of the `Referrer Store` using the ORAS Library to interact wit
 
 Sample Oras yaml spec:
 ```yml
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Store
 metadata:
   name: store-oras
