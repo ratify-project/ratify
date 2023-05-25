@@ -115,14 +115,18 @@ func (t *TLSCertWatcher) ReadCertificates() error {
 
 		clientCAs := x509.NewCertPool()
 		clientCAs.AppendCertsFromPEM(caCert)
+		t.Lock()
 		t.clientCACert = clientCAs
+		t.Unlock()
 	}
 
 	ratifyServerCert, err := tls.LoadX509KeyPair(t.ratifyServerCertPath, t.ratifyServerKeyPath)
 	if err != nil {
 		return err
 	}
+	t.Lock()
 	t.ratifyServerCert = &ratifyServerCert
+	t.Unlock()
 	return nil
 }
 

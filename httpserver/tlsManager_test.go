@@ -266,6 +266,13 @@ func TestReadCertificates_Expected(t *testing.T) {
 	if err := cw.ReadCertificates(); err == nil {
 		t.Errorf("Expected error, got %v", err)
 	}
+
+	// test with valid cert/key paths
+	cw.ratifyServerCertPath = certFileName
+	cw.ratifyServerKeyPath = keyFileName
+	if err := cw.ReadCertificates(); err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
 }
 
 func TestCertRotation(t *testing.T) {

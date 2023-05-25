@@ -148,8 +148,7 @@ func (server *Server) Run() error {
 		if err != nil {
 			return err
 		}
-		err = tlsCertWatcher.Start()
-		if err != nil {
+		if err = tlsCertWatcher.Start(); err != nil {
 			return err
 		}
 		defer tlsCertWatcher.Stop()
