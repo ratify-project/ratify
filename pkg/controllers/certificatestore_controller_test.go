@@ -16,6 +16,7 @@ limitations under the License.
 package controllers
 
 import (
+	"fmt"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
@@ -67,7 +68,7 @@ func TestGetCertStoreConfig_EmptyStringError(t *testing.T) {
 		t.Fatalf("Expected error")
 	}
 
-	expectedError := "Received empty parameters"
+	expectedError := "received empty parameters"
 	if err.Error() != expectedError {
 		t.Fatalf("Unexpected error, expected %+v, got %+v", expectedError, err.Error())
 	}
@@ -86,7 +87,7 @@ func TestUpdateErrorStatus(t *testing.T) {
 	certStore := configv1beta1.CertificateStore{
 		Status: status,
 	}
-	expectedErr := "error from unit test"
+	expectedErr := "it's a long error from unit test"
 	lastFetchedTime := metav1.Now()
 	updateErrorStatus(&certStore, expectedErr, &lastFetchedTime)
 
@@ -96,6 +97,10 @@ func TestUpdateErrorStatus(t *testing.T) {
 
 	if certStore.Status.Error != expectedErr {
 		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr, certStore.Status.Error)
+	}
+	expectedBriedErr := fmt.Sprintf("%s...", expectedErr[:30])
+	if certStore.Status.BriefError != expectedBriedErr {
+		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedBriedErr, certStore.Status.Error)
 	}
 
 	//make sure properties of last cached cert was not overridden
