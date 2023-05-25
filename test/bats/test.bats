@@ -415,7 +415,7 @@ SLEEP_TIME=1
     assert_failure
 }
 
-@test "validate ratify tls cert rotation" {
+@test "validate ratify/gatekeeper tls cert rotation" {
     teardown() {
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
     }
@@ -426,6 +426,9 @@ SLEEP_TIME=1
     
     # update the ratify tls secret to use the new tls cert and key
     run kubectl get secret ratify-tls -n gatekeeper-system -o json | jq --arg cert "$(cat .staging/rotation/server.crt | base64)" --arg key "$(cat .staging/rotation/server.key | base64)" '.data["tls.key"]=$key | .data["tls.crt"]=$cert'| kubectl replace -f -
+
+    # update the gatekeeper webhook server tls secret to use the new cert bundle
+    run kubectl get Secret gatekeeper-webhook-server-cert -n gatekeeper-system -o json | jq --arg caCert "$(cat .staging/rotation/gatekeeper/ca.crt | base64)" --arg caKey "$(cat .staging/rotation/gatekeeper/ca.key | base64)" --arg tlsCert "$(cat .staging/rotation/gatekeeper/server.crt | base64)" --arg tlsKey "$(cat .staging/rotation/gatekeeper/server.key | base64)" '.data["ca.crt"]=$caCert | .data["ca.key"]=$caKey | .data["tls.crt"]=$tlsCert | .data["tls.key"]=$tlsKey' | kubectl replace -f -
 
     # volume projection can take up to 90 seconds
     sleep 100

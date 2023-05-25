@@ -136,6 +136,9 @@ generate-certs:
 
 generate-rotation-certs:
 	mkdir -p .staging/rotation
+	mkdir -p .staging/rotation/gatekeeper
+
+	./scripts/generate-gk-tls-certs.sh .staging/rotation/gatekeeper ${GATEKEEPER_NAMESPACE}
 	./scripts/generate-tls-certs.sh .staging/rotation ${GATEKEEPER_NAMESPACE}
 
 install-bats:
