@@ -20,20 +20,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-ns=${2:-default}
+ns=${2:-gatekeeper-system}
 CERT_DIR=$1
 
 generate() {
     # generate CA key and certificate
-    echo "Generating CA key and certificate for ratify..."
+    echo "Generating CA key and certificate for gatekeeper..."
     openssl genrsa -out ca.key 2048
-    openssl req -new -x509 -days 1 -key ca.key -subj "/O=Ratify/CN=Ratify Root CA" -out ca.crt
+    openssl req -new -x509 -days 365 -key ca.key -subj "/O=gatekeeper/CN=gatekeeper-ca" -out ca.crt
 
     # generate server key and certificate
-    echo "Generating server key and certificate for ratify..."
+    echo "Generating server key and certificate for gatekeeper..."
     openssl genrsa -out server.key 2048
-    openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=ratify.${ns}" -out server.csr
-    openssl x509 -req -extfile <(printf "subjectAltName=DNS:ratify.${ns}") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+    openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=gatekeeper-webhook-service.${ns}.svc" -out server.csr
+    openssl x509 -req -extfile <(printf "subjectAltName=DNS:gatekeeper-webhook-service.${ns}.svc") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 }
 
 mkdir -p ${CERT_DIR}
