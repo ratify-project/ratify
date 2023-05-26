@@ -18,7 +18,6 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"fmt"
 	"net"
 	"net/http"
@@ -145,23 +144,20 @@ func (server *Server) Run() error {
 
 		logrus.Info(fmt.Sprintf("%s: [%s:%s] [%s:%s]", "starting server using TLS", "certFile", certFile, "keyFile", keyFile))
 
-		if server.CaCertFile != "" {
-			caCert, err := os.ReadFile(server.CaCertFile)
-			if err != nil {
-				panic(err)
-			}
-
-			clientCAs := x509.NewCertPool()
-			clientCAs.AppendCertsFromPEM(caCert)
-
-			config := &tls.Config{
-				MinVersion: tls.VersionTLS13,
-				ClientCAs:  clientCAs,
-				ClientAuth: tls.RequireAndVerifyClientCert,
-			}
-			svr.TLSConfig = config
-			logrus.Info(fmt.Sprintf("%s: [%s:%s] ", "loaded client CA certificate for mTLS", "CaFIle", server.CaCertFile))
+		tlsCertWatcher, err := NewTLSCertWatcher(certFile, keyFile, server.CaCertFile)
+		if err != nil {
+			return err
 		}
+		if err = tlsCertWatcher.Start(); err != nil {
+			return err
+		}
+		defer tlsCertWatcher.Stop()
+
+		svr.TLSConfig = &tls.Config{
+			GetConfigForClient: tlsCertWatcher.GetConfigForClient,
+			MinVersion:         tls.VersionTLS13,
+		}
+
 		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil {
 			logrus.Errorf("failed to start server: %v", err)
 			return err
