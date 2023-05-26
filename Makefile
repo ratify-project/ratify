@@ -120,7 +120,7 @@ delete-gatekeeper:
 	helm delete gatekeeper --namespace ${GATEKEEPER_NAMESPACE}
 
 .PHONY: test-e2e
-test-e2e:
+test-e2e: generate-rotation-certs
 	bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
@@ -133,6 +133,13 @@ test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-
 .PHONY: generate-certs
 generate-certs:
 	./scripts/generate-tls-certs.sh ${CERT_DIR} ${GATEKEEPER_NAMESPACE}
+
+generate-rotation-certs:
+	mkdir -p .staging/rotation
+	mkdir -p .staging/rotation/gatekeeper
+
+	./scripts/generate-gk-tls-certs.sh .staging/rotation/gatekeeper ${GATEKEEPER_NAMESPACE}
+	./scripts/generate-tls-certs.sh .staging/rotation ${GATEKEEPER_NAMESPACE}
 
 install-bats:
 	# Download and install bats
