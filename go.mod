@@ -250,7 +250,6 @@ require (
 )
 
 replace (
-	// github.com/google/certificate-transparency-go => github.com/google/certificate-transparency-go v1.1.3
 	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
 	k8s.io/apiserver => k8s.io/apiserver v0.22.5
 )
