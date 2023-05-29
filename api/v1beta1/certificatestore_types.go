@@ -44,6 +44,9 @@ type CertificateStoreStatus struct {
 	// Error message if operation was unsuccessful
 	// +optional
 	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
 	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
@@ -57,7 +60,7 @@ type CertificateStoreStatus struct {
 // +kubebuilder:storageversion
 // CertificateStore is the Schema for the certificatestores API
 // +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
-// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.error`
+// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.brieferror`
 // +kubebuilder:printcolumn:name="LastFetchedTime",type=date,JSONPath=`.status.lastfetchedtime`
 type CertificateStore struct {
 	metav1.TypeMeta   `json:",inline"`

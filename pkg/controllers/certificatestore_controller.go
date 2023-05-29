@@ -48,6 +48,8 @@ var (
 	certificatesMap = map[string][]*x509.Certificate{}
 )
 
+const maxBriefErrLength = 30
+
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/finalizers,verbs=update
@@ -133,7 +135,7 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 	attributes := map[string]string{}
 
 	if string(spec.Parameters.Raw) == "" {
-		return nil, fmt.Errorf("Received empty parameters")
+		return nil, fmt.Errorf("received empty parameters")
 	}
 
 	if err := json.Unmarshal(spec.Parameters.Raw, &attributes); err != nil {
@@ -156,14 +158,21 @@ func writeCertStoreStatus(r *CertificateStoreReconciler, ctx context.Context, ce
 }
 
 func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime *metav1.Time) {
+	// truncate brief error string to maxBriefErrLength
+	briefErr := errorString
+	if len(errorString) > maxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+	}
 	certStore.Status.IsSuccess = false
 	certStore.Status.Error = errorString
+	certStore.Status.BriefError = briefErr
 	certStore.Status.LastFetchedTime = operationTime
 }
 
 func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperationTime *metav1.Time, certStatus certificateprovider.CertificatesStatus) {
 	certStore.Status.IsSuccess = true
 	certStore.Status.Error = ""
+	certStore.Status.BriefError = ""
 	certStore.Status.LastFetchedTime = lastOperationTime
 
 	if certStatus != nil {
