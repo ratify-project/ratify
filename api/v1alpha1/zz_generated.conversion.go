@@ -70,11 +70,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.CertificateStoreStatus)(nil), (*CertificateStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_CertificateStoreStatus_To_v1alpha1_CertificateStoreStatus(a.(*unversioned.CertificateStoreStatus), b.(*CertificateStoreStatus), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*PluginSource)(nil), (*unversioned.PluginSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_PluginSource_To_unversioned_PluginSource(a.(*PluginSource), b.(*unversioned.PluginSource), scope)
 	}); err != nil {
@@ -165,6 +160,11 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddConversionFunc((*unversioned.CertificateStoreStatus)(nil), (*CertificateStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_CertificateStoreStatus_To_v1alpha1_CertificateStoreStatus(a.(*unversioned.CertificateStoreStatus), b.(*CertificateStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -202,7 +202,17 @@ func Convert_unversioned_CertificateStore_To_v1alpha1_CertificateStore(in *unver
 
 func autoConvert_v1alpha1_CertificateStoreList_To_unversioned_CertificateStoreList(in *CertificateStoreList, out *unversioned.CertificateStoreList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]unversioned.CertificateStore)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]unversioned.CertificateStore, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_CertificateStore_To_unversioned_CertificateStore(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -213,7 +223,17 @@ func Convert_v1alpha1_CertificateStoreList_To_unversioned_CertificateStoreList(i
 
 func autoConvert_unversioned_CertificateStoreList_To_v1alpha1_CertificateStoreList(in *unversioned.CertificateStoreList, out *CertificateStoreList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]CertificateStore)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]CertificateStore, len(*in))
+		for i := range *in {
+			if err := Convert_unversioned_CertificateStore_To_v1alpha1_CertificateStore(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -254,6 +274,11 @@ func Convert_v1alpha1_CertificateStoreStatus_To_unversioned_CertificateStoreStat
 }
 
 func autoConvert_unversioned_CertificateStoreStatus_To_v1alpha1_CertificateStoreStatus(in *unversioned.CertificateStoreStatus, out *CertificateStoreStatus, s conversion.Scope) error {
+	// WARNING: in.IsSuccess requires manual conversion: does not exist in peer-type
+	// WARNING: in.Error requires manual conversion: does not exist in peer-type
+	// WARNING: in.BriefError requires manual conversion: does not exist in peer-type
+	// WARNING: in.LastFetchedTime requires manual conversion: does not exist in peer-type
+	// WARNING: in.Properties requires manual conversion: does not exist in peer-type
 	return nil
 }
 
