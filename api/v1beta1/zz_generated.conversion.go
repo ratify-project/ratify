@@ -24,6 +24,7 @@ import (
 	unsafe "unsafe"
 
 	unversioned "github.com/deislabs/ratify/api/unversioned"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
@@ -245,6 +246,11 @@ func Convert_unversioned_CertificateStoreSpec_To_v1beta1_CertificateStoreSpec(in
 }
 
 func autoConvert_v1beta1_CertificateStoreStatus_To_unversioned_CertificateStoreStatus(in *CertificateStoreStatus, out *unversioned.CertificateStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
 	return nil
 }
 
@@ -254,6 +260,11 @@ func Convert_v1beta1_CertificateStoreStatus_To_unversioned_CertificateStoreStatu
 }
 
 func autoConvert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatus(in *unversioned.CertificateStoreStatus, out *CertificateStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
 	return nil
 }
 
