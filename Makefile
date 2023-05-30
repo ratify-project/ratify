@@ -192,7 +192,7 @@ e2e-run-local-registry:
 e2e-create-all-image:
 	rm -rf .staging
 	mkdir .staging
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/all:v0 .staging
 	docker push ${TEST_REGISTRY}/all:v0
 
@@ -230,7 +230,7 @@ e2e-notaryv2-setup:
 	curl -L https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz --output ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz
 	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notaryv2
 
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed .staging/notaryv2
 	docker push ${TEST_REGISTRY}/notation:signed
 
@@ -246,7 +246,7 @@ e2e-notaryv2-setup:
 
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image oci artifact"]' > .staging/notaryv2/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image oci artifact"]' > .staging/notaryv2/Dockerfile && \
 		docker build --no-cache -t ${TEST_REGISTRY}/notation:ociartifact .staging/notaryv2 && \
 		docker push ${TEST_REGISTRY}/notation:ociartifact && \
 		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:ociartifact | jq -r .[0].RepoDigests[0]`; \
@@ -262,7 +262,7 @@ e2e-notation-leaf-cert-setup:
 
 	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notaryv2/leaf-test/leaf.key","certPath":".staging/notaryv2/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
 
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:leafSigned .staging/notaryv2
 	docker push ${TEST_REGISTRY}/notation:leafSigned
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" `docker image inspect ${TEST_REGISTRY}/notation:leafSigned | jq -r .[0].RepoDigests[0]`
@@ -275,7 +275,7 @@ e2e-cosign-setup:
 	chmod +x .staging/cosign/cosign-linux-amd64
 
 	# image signed with a key
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/cosign:signed-key .staging/cosign
 	docker push ${TEST_REGISTRY}/cosign:signed-key
 
@@ -298,7 +298,7 @@ e2e-licensechecker-setup:
 	curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .staging/licensechecker ${SYFT_VERSION}
 
 	# Build/Push Image
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
 	docker push ${TEST_REGISTRY}/licensechecker:v0
 
@@ -313,7 +313,7 @@ e2e-licensechecker-setup:
 
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image oci artifact"]' > .staging/licensechecker/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image oci artifact"]' > .staging/licensechecker/Dockerfile && \
 		docker build -t ${TEST_REGISTRY}/licensechecker:ociartifact .staging/licensechecker && \
 		docker push ${TEST_REGISTRY}/licensechecker:ociartifact && \
 		${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:ociartifact \
@@ -330,10 +330,10 @@ e2e-sbom-setup:
 	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
 
 	# Build/Push Images
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:v0
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:unsigned
 
@@ -358,7 +358,7 @@ e2e-sbom-setup:
 
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image oci artifact"]' > .staging/sbom/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image oci artifact"]' > .staging/sbom/Dockerfile && \
 		docker build --no-cache -t ${TEST_REGISTRY}/sbom:ociartifact .staging/sbom && \
 		docker push ${TEST_REGISTRY}/sbom:ociartifact && \
 		${GITHUB_WORKSPACE}/bin/oras attach \
@@ -378,7 +378,7 @@ e2e-schemavalidator-setup:
 	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
 
 	# Build/Push Images
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
 	docker push ${TEST_REGISTRY}/schemavalidator:v0
 
@@ -395,7 +395,7 @@ e2e-schemavalidator-setup:
 	
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image oci artifact"]' > .staging/schemavalidator/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image oci artifact"]' > .staging/schemavalidator/Dockerfile && \
 		docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:ociartifact .staging/schemavalidator && \
 		docker push ${TEST_REGISTRY}/schemavalidator:ociartifact && \
 		${GITHUB_WORKSPACE}/bin/oras attach \
@@ -410,7 +410,7 @@ e2e-inlinecert-setup:
 	mkdir -p .staging/inlinecert
 
 	# build and sign an image with an alternate certificate
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
 	docker push ${TEST_REGISTRY}/notation:signed-alternate
 
@@ -437,7 +437,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
-	echo "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
     ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
