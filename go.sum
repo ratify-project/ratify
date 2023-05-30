@@ -733,8 +733,8 @@ github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8m
 github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
-github.com/notaryproject/notation-core-go v1.0.0-rc.3 h1:ukRBOwctPF0bWLFs+ThDHwgj+L3+AHdyaOqmziLp8w0=
-github.com/notaryproject/notation-core-go v1.0.0-rc.3/go.mod h1:XWAlhOksW+c9AA/TyobkPv5Xoz8RWGwOAoDdybZLEiI=
+github.com/notaryproject/notation-core-go v1.0.0-rc.4 h1:gzo4JzKRMLGoOeOhPXxoudjL79Mi9X6flS8qJbRtZ+k=
+github.com/notaryproject/notation-core-go v1.0.0-rc.4/go.mod h1:PEHrnhW0mEIVpyYdXqAJoJAaUgfz757tqxB3LG4qcag=
 github.com/notaryproject/notation-go v1.0.0-rc.4 h1:thTDY0wD6YS4EJeHt9kF0bZF9Z9Vin0tidalhJt1Q9o=
 github.com/notaryproject/notation-go v1.0.0-rc.4/go.mod h1:UEEAyBOSlx2yDDiMoofBz635ewcL/KU48AX1WDd5Les=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
