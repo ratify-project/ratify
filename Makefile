@@ -121,7 +121,7 @@ delete-gatekeeper:
 
 .PHONY: test-e2e
 test-e2e: generate-rotation-certs
-	bats -t ${BATS_TESTS_FILE}
+	${GITHUB_WORKSPACE}/bin/bats -t ${BATS_TESTS_FILE}
 
 .PHONY: test-e2e-cli
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
