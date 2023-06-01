@@ -17,7 +17,9 @@ package manager
 
 import (
 	"context"
+	"crypto/x509"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -27,13 +29,17 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
+	"github.com/deislabs/ratify/pkg/featureflag"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
+	"github.com/deislabs/ratify/pkg/utils"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
+	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,6 +52,12 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	//+kubebuilder:scaffold:imports
+)
+
+const (
+	caOrganization = "Ratify"
+	serviceName    = "Ratify"
+	certDir        = "/usr/local/tls"
 )
 
 var (
@@ -156,6 +168,45 @@ func StartManager() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	// Make sure certs are generated and valid if cert rotation is enabled.
+	setupFinished := make(chan struct{})
+	if featureflag.CertRotation.Enabled {
+		setupLog.Info("setting up cert rotation")
+
+		keyUsages := []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+		webhooks := []rotator.WebhookInfo{
+			{
+				Name: "ratify-mutation-provider",
+				Type: rotator.ExternalDataProvider,
+			},
+			{
+				Name: "ratify-provider",
+				Type: rotator.ExternalDataProvider,
+			},
+		}
+		namespace := utils.GetNamespace()
+		serviceName := utils.GetServiceName()
+
+		if err := rotator.AddRotator(mgr, &rotator.CertRotator{
+			SecretKey: types.NamespacedName{
+				Namespace: namespace,
+				Name:      fmt.Sprintf("%s-tls", serviceName),
+			},
+			CertDir:        certDir,
+			CAName:         fmt.Sprintf("%s.%s", serviceName, namespace),
+			CAOrganization: caOrganization,
+			DNSName:        fmt.Sprintf("%s.%s", serviceName, namespace),
+			IsReady:        setupFinished,
+			Webhooks:       webhooks,
+			ExtKeyUsages:   &keyUsages,
+		}); err != nil {
+			setupLog.Error(err, "Unable to set up cert rotation")
+			os.Exit(1)
+		}
+	} else {
+		close(setupFinished)
 	}
 
 	if err = (&controllers.VerifierReconciler{

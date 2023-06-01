@@ -5,6 +5,9 @@ metadata:
   name: {{ include "ratify.fullname" . }}
   labels:
     {{- include "ratify.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "10"
 spec:
   replicas: 1
   selector:
@@ -114,6 +117,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: RATIFY_NAME
+              value: {{ include "ratify.fullname" . }}
           {{- range $k, $v := .Values.featureFlags }}
             - name: {{ $k }}
               value: {{ $v | ternary 1 0 | quote }}

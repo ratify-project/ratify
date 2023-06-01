@@ -27,7 +27,7 @@ generate() {
     # generate CA key and certificate
     echo "Generating CA key and certificate for ratify..."
     openssl genrsa -out ca.key 2048
-    openssl req -new -x509 -days 1 -key ca.key -subj "/O=Ratify/CN=Ratify Root CA" -out ca.crt
+    openssl req -new -x509 -days 365 -key ca.key -subj "/O=Ratify/CN=ratify.${ns}" -extensions v3_ca -config <(printf "[req]\ndistinguished_name=ratify_ca\nprompt=no\n[ratify_ca]\n[v3_ca]\nsubjectAltName=DNS:ratify.${ns}\nbasicConstraints = critical, CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\n") -out ca.crt
 
     # generate server key and certificate
     echo "Generating server key and certificate for ratify..."

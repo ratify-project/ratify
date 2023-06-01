@@ -453,6 +453,8 @@ e2e-deploy-base-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-inli
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set oras.useHttp=true \
@@ -482,6 +484,8 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
