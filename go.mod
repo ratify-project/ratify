@@ -23,7 +23,7 @@ require (
 	github.com/google/go-containerregistry v0.14.1-0.20230409045903-ed5c185df419
 	github.com/gorilla/mux v1.8.0
 	github.com/notaryproject/notation-core-go v1.0.0-rc.4
-	github.com/notaryproject/notation-go v1.0.0-rc.4
+	github.com/notaryproject/notation-go v1.0.0-rc.6
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20220627162905-95c012350402
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0-rc2
@@ -43,7 +43,7 @@ require (
 	k8s.io/api v0.26.5
 	k8s.io/apimachinery v0.26.5
 	k8s.io/client-go v0.25.10
-	oras.land/oras-go/v2 v2.0.2
+	oras.land/oras-go/v2 v2.2.0
 )
 
 require (
