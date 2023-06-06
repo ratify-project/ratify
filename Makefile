@@ -20,7 +20,8 @@ NOTATION_VERSION ?= 1.0.0-rc.3
 ORAS_VERSION ?= 1.0.0-rc.2
 
 HELM_VERSION ?= 3.9.2
-BATS_TESTS_FILE ?= test/bats/test.bats
+BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
+BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_VERSION ?= 1.7.0
 SYFT_VERSION ?= v0.76.0
@@ -121,7 +122,8 @@ delete-gatekeeper:
 
 .PHONY: test-e2e
 test-e2e: generate-rotation-certs
-	bats -t ${BATS_TESTS_FILE}
+	bats -t ${BATS_BASE_TESTS_FILE}
+	bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
