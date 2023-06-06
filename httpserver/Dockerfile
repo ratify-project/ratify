@@ -10,6 +10,10 @@ ARG TARGETARCH
 ARG TARGETVARIANT=""
 ARG LDFLAGS
 ARG GOPROXY
+ARG build_sbom
+ARG build_cosign
+ARG build_licensechecker
+ARG build_schemavalidator
 
 ENV CGO_ENABLED=0 \
     GOOS=${TARGETOS} \
@@ -21,11 +25,12 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o /app/out/ /app/cmd/ratify 
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/sbom
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/cosign
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/licensechecker
-RUN go build -o /app/out/plugins/ /app/plugins/verifier/schemavalidator
+RUN go build -o /app/out/ /app/cmd/ratify
+RUN mkdir /app/out/plugins
+RUN if [ "$build_sbom" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/sbom; fi
+RUN if [ "$build_cosign" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/cosign; fi
+RUN if [ "$build_licensechecker" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/licensechecker; fi
+RUN if [ "$build_schemavalidator" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/schemavalidator; fi
 
 FROM $BASEIMAGE
 LABEL org.opencontainers.image.source https://github.com/deislabs/ratify
