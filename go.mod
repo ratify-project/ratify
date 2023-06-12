@@ -7,7 +7,7 @@ retract v1.1.0-alpha.1
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.6.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.6.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.0.0
 	github.com/aws/aws-sdk-go-v2 v1.18.0
@@ -31,7 +31,7 @@ require (
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.4
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spdx/tools-golang v0.5.1
+	github.com/spdx/tools-golang v0.5.2
 	github.com/spf13/cobra v1.7.0
 	github.com/xlab/treeprint v1.1.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.37.0
