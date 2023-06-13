@@ -111,4 +111,6 @@ crds:
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
+
+  # RATIFY_CERT_ROTATION enables rotation for TLS certificates.
   RATIFY_CERT_ROTATION: true

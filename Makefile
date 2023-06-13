@@ -123,7 +123,7 @@ delete-gatekeeper:
 
 .PHONY: test-e2e
 test-e2e: generate-rotation-certs
-	bats -t ${BATS_BASE_TESTS_FILE}
+	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs bats -t ${BATS_BASE_TESTS_FILE}
 	bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
@@ -140,9 +140,11 @@ generate-certs:
 generate-rotation-certs:
 	mkdir -p .staging/rotation
 	mkdir -p .staging/rotation/gatekeeper
+	mkdir -p .staging/rotation/expiring-certs
 
 	./scripts/generate-gk-tls-certs.sh .staging/rotation/gatekeeper ${GATEKEEPER_NAMESPACE}
 	./scripts/generate-tls-certs.sh .staging/rotation ${GATEKEEPER_NAMESPACE}
+	./scripts/generate-tls-certs.sh .staging/rotation/expiring-certs ${GATEKEEPER_NAMESPACE} 1
 
 install-bats:
 	# Download and install bats

@@ -6,6 +6,19 @@ BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
 
+@test "cert rotator test" {
+    helm upgrade --atomic --namespace gatekeeper-system --reuse-values ratify ./charts/ratify \
+        --set-file provider.tls.crt=${EXPIRING_CERT_DIR}/server.crt \
+        --set-file provider.tls.key=${EXPIRING_CERT_DIR}/server.key \
+        --set-file provider.tls.caCert=${EXPIRING_CERT_DIR}/ca.crt \
+        --set-file provider.tls.caKey=${EXPIRING_CERT_DIR}/ca.key \
+        --set provider.tls.cabundle="$(cat ${EXPIRING_CERT_DIR}/ca.crt | base64 | tr -d '\n')"
+    sleep 120
+
+    run [ "$(kubectl get secret ratify-tls -n gatekeeper-system -o json | jq '.data."ca.crt"')" != "$(cat ${EXPIRING_CERT_DIR}/ca.crt | base64 | tr -d '\n')" ]
+    assert_success
+}
+
 @test "crd version test" {
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
     assert_success

@@ -56,7 +56,6 @@ import (
 
 const (
 	caOrganization = "Ratify"
-	serviceName    = "Ratify"
 	certDir        = "/usr/local/tls"
 )
 
@@ -73,7 +72,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, tlsWatcherReady chan struct{}) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -127,12 +126,12 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
-	if err := server.Run(); err != nil {
+	if err := server.Run(tlsWatcherReady); err != nil {
 		os.Exit(1)
 	}
 }
 
-func StartManager() {
+func StartManager(tlsWatcherReady chan struct{}) {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -170,6 +169,12 @@ func StartManager() {
 		os.Exit(1)
 	}
 
+	// Make sure TLS cert watcher is already set up.
+	if tlsWatcherReady == nil {
+		setupLog.Error(err, "tls watcher not ready")
+		os.Exit(1)
+	}
+	<-tlsWatcherReady
 	// Make sure certs are generated and valid if cert rotation is enabled.
 	setupFinished := make(chan struct{})
 	if featureflag.CertRotation.Enabled {
