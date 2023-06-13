@@ -53,7 +53,8 @@ deploy_gatekeeper() {
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=7 \
+    --set validatingWebhookTimeoutSeconds=5 \
+    --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 }
 
