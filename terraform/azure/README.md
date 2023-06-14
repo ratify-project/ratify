@@ -140,7 +140,7 @@ As part of the Terraform deployment, several output variables were created. Thes
 Run the following command to export the Terraform output as environment variables:
 
 <details>
-<summary>bash</summary>
+<summary>Bash</summary>
 
 ```bash
 export GROUP_NAME="$(terraform output -raw resource_group_name)"
