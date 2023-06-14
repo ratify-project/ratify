@@ -6,6 +6,7 @@ As part of this configuration Terraform deploys a resource group, an Azure Key V
 
 Terraform outputs are used to provide all the necessary resource information to continue with the Azure on Ratify setup, see the Export Terraform output as environment variables section.
 
+```bash
                       +-------------------------+
                       |   Resource Group        |
                       +-------------------------+
@@ -23,6 +24,7 @@ Terraform outputs are used to provide all the necessary resource information to 
     | Azure User Assigned     |    |     Azure Federated         |
     | Managed Identity        |    |         Credential          |
     +-------------------------+    +-----------------------------+
+```
 
 ## Prerequisites
 
