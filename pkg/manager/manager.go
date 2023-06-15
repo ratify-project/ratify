@@ -169,15 +169,15 @@ func StartManager(tlsWatcherReady chan struct{}) {
 		os.Exit(1)
 	}
 
-	// Make sure TLS cert watcher is already set up.
-	if tlsWatcherReady == nil {
-		setupLog.Error(err, "tls watcher not ready")
-		os.Exit(1)
-	}
-	<-tlsWatcherReady
 	// Make sure certs are generated and valid if cert rotation is enabled.
 	setupFinished := make(chan struct{})
 	if featureflag.CertRotation.Enabled {
+		// Make sure TLS cert watcher is already set up.
+		if tlsWatcherReady == nil {
+			setupLog.Error(err, "to use cert rotation, you must provide a channel to signal when the TLS watcher is ready")
+			os.Exit(1)
+		}
+		<-tlsWatcherReady
 		setupLog.Info("setting up cert rotation")
 
 		keyUsages := []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}

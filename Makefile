@@ -27,6 +27,7 @@ BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_VERSION ?= 1.7.0
 SYFT_VERSION ?= v0.76.0
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
+CERT_ROTATION_ENABLED ?= false
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -123,7 +124,7 @@ delete-gatekeeper:
 
 .PHONY: test-e2e
 test-e2e: generate-rotation-certs
-	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs bats -t ${BATS_BASE_TESTS_FILE}
+	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_BASE_TESTS_FILE}
 	bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
@@ -453,6 +454,7 @@ e2e-deploy-base-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-inli
 	--set image.crdRepository=localbuildcrd \
 	--set image.tag=test \
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
@@ -466,7 +468,9 @@ e2e-deploy-base-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-inli
 
 	rm mount_config.json
 
-e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup e2e-build-crd-image
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
+
+e2e-build-local-ratify-image:
 	docker build --progress=plain --no-cache \
 	--build-arg build_cosign=true \
 	--build-arg build_sbom=true \
@@ -476,6 +480,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	-t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 
+e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
@@ -484,6 +489,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	--set image.crdRepository=localbuildcrd \
 	--set image.tag=test \
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
@@ -496,6 +502,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	--set logLevel=debug
 
 	rm mount_config.json
+
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 
