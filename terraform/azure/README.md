@@ -1,10 +1,10 @@
 # Automating Ratify on AKS and Azure Workload Identity with Terraform
 
-In this README, you'll learn how to deploy the necessary Azure resources to setup Ratify on Azure.
+This guide will walk you through the process of setting up and deploying the necessary Azure resources for Ratify using Terraform.
 
-As part of this configuration Terraform deploys a resource group, an Azure Key Vault instance, Azure Container Registry, Azure Kubernetes Service Cluster, and Workload identity for Kubernetes to authenticate with Azure resources. Once these resources are deployed to Azure, you can deploy Ratify to Azure using Helm or the alternative installation methods.
+The deployment process involves the creation of various Azure resources, including a resource group, an Azure Key Vault instance, an Azure Container Registry, an Azure Kubernetes Service Cluster, and the configuration of Workload Identity for Kubernetes to authenticate with Azure resources. 
 
-Terraform outputs are used to provide all the necessary resource information to continue with the Azure on Ratify setup, see the Export Terraform output as environment variables section.
+Once these resources are set up, you can deploy Ratify to Azure using Helm or other alternative installation methods.
 
 ```bash
                       +-------------------------+
@@ -17,13 +17,13 @@ Terraform outputs are used to provide all the necessary resource information to 
   | Azure Key Vault |   | Azure Container |    | Azure Kubernetes |
   |                 |   |   Registry      |    |      Service      |
   +-----------------+   +-----------------+    +-------------------+
-                                |
-                +----------------------------------+
-                |                                  |
-    +-------------------------+    +-----------------------------+
-    | Azure User Assigned     |    |     Azure Federated         |
-    | Managed Identity        |    |         Credential          |
-    +-------------------------+    +-----------------------------+
+                                                        |
+                        +----------------------------------+
+                        |                                  |
+            +-------------------------+    +-----------------------------+
+            | Azure User Assigned     |    |     Azure Federated         |
+            | Managed Identity        |    |         Credential          |
+            +-------------------------+    +-----------------------------+
 ```
 
 ## Prerequisites
@@ -34,6 +34,12 @@ Terraform outputs are used to provide all the necessary resource information to 
 | Azure account        | [Get a free Azure account](https://azure.microsoft.com/free) |
 | Azure CLI            | [Install Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) |
 | Terraform            | [Install Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) |
+
+<div class="info" data-title="Note">
+
+> The `terraform.tfvars` file that's provided contains example resource group names. Before continuing, please update the values with your desired Azure resource names.
+
+</div>
 
 ## Log into Azure with the Azure CLI.
 
@@ -135,7 +141,7 @@ azurerm_container_registry.acr: Creating...
 
 ## Export Terraform output as environment variables
 
-As part of the Terraform deployment, several output variables were created. These variables will be used by the other tools in this workshop. 
+As part of the Terraform deployment, several output variables were created. These variables will be used to configure the Ratify environment. 
 
 Run the following command to export the Terraform output as environment variables:
 
@@ -143,11 +149,7 @@ Run the following command to export the Terraform output as environment variable
 <summary>Bash</summary>
 
 ```bash
-export GROUP_NAME="$(terraform output -raw resource_group_name)"
-export AKS_NAME="$(terraform output -raw aks_cluster_name)"
 export VAULT_URI="$(terraform output -raw key_vault_uri)"
-export KEYVAULT_NAME="$(terraform output -raw key_vault_name)"
-export ACR_NAME="$(terraform output -raw acr_name)"
 export CERT_NAME="$(terraform output -raw ratify_certificate_name)"
 export TENANT_ID="$(terraform output -raw tenant_id)"
 export CLIENT_ID="$(terraform output -raw workload_identity_client_id)"
@@ -160,11 +162,7 @@ export CLIENT_ID="$(terraform output -raw workload_identity_client_id)"
 <summary>PowerShell</summary>
 
 ```pwsh
-$GROUP_NAME="$(terraform output -raw resource_group_name)"
-$AKS_NAME="$(terraform output -raw aks_cluster_name)"
 $VAULT_URI="$(terraform output -raw key_vault_uri)"
-$KEYVAULT_NAME="$(terraform output -raw key_vault_name)"
-$ACR_NAME="$(terraform output -raw acr_name)"
 $CERT_NAME="$(terraform output -raw ratify_certificate_name)"
 $TENANT_ID="$(terraform output -raw tenant_id)"
 $CLIENT_ID="$(terraform output -raw workload_identity_client_id)"
