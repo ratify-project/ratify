@@ -394,7 +394,7 @@ func evictOnError(err error, store *orasStore, subjectReference string) {
 	var ec *errcode.ErrorResponse
 
 	if errors.As(err, &ec) && (ec.StatusCode == http.StatusForbidden || ec.StatusCode == http.StatusUnauthorized) {
-		store.evictAuthCache(subjectReference, err)
+		store.authCache.Delete(subjectReference)
 	}
 }
 func createDefaultRepository(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
@@ -474,8 +474,4 @@ func (store *orasStore) addAuthCache(ref string, repository registry.Repository,
 		client:    repository,
 		expiresOn: expiry,
 	})
-}
-
-func (store *orasStore) evictAuthCache(ref string, err error) {
-	store.authCache.Delete(ref)
 }
