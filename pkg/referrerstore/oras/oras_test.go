@@ -476,6 +476,56 @@ func TestORASGetBlobContent_NotCachedDesc(t *testing.T) {
 	}
 }
 
+func Test_EvictOnError(t *testing.T) {
+	// store setup
+	conf := config.StorePluginConfig{
+		"name":    "oras",
+		"useHttp": true,
+	}
+
+	store, err := createBaseStore("1.0.0", conf)
+
+	if err != nil {
+		t.Fatalf("failed to create oras store: %v", err)
+	}
+
+	testcases := []struct {
+		Method           string
+		StatusCode       int
+		subjectReference string
+	}{
+		{
+			Method:     "GET",
+			StatusCode: 401,
+		},
+		{
+			Method:     "GET",
+			StatusCode: 403,
+		},
+	}
+
+	for _, testcase := range testcases {
+		subjectReference := "testSubjectRef"
+		store.authCache.Store(subjectReference, "hello")
+		_, ok := store.authCache.Load(subjectReference)
+		if !ok {
+			t.Fatalf("failed to add entry to auth cache")
+		}
+
+		mockErrResponse := errcode.ErrorResponse{
+			Method:     testcase.Method,
+			StatusCode: testcase.StatusCode,
+		}
+		evictOnError(&mockErrResponse, store, subjectReference)
+
+		// validate the entry should no longer exist
+		_, ok = store.authCache.Load(subjectReference)
+		if ok {
+			t.Fatalf("Auth cache entry should have been evicted")
+		}
+	}
+}
+
 // Test_ORASRetryClient tests that the retry client retries on 429 for specified number of retries
 func Test_ORASRetryClient(t *testing.T) {
 	ctx := context.Background()

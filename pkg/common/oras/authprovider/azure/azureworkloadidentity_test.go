@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
@@ -54,6 +55,20 @@ func TestAzureWIEnabled_ExpectedResults(t *testing.T) {
 	azAuthProvider.aadToken.AccessToken = ""
 	if azAuthProvider.Enabled(ctx) {
 		t.Fatal("enabled should have returned false but returned true for empty AAD access token")
+	}
+}
+
+func TestGetEarliestExpiration(t *testing.T) {
+	var aadExpiry = time.Now().Add(12 * time.Hour)
+
+	if getACRExpiryIfEarlier(aadExpiry) == aadExpiry {
+		t.Fatal("expected acr token expiry time")
+	}
+
+	aadExpiry = time.Now().Add(12 * time.Minute)
+
+	if getACRExpiryIfEarlier(aadExpiry) != aadExpiry {
+		t.Fatal("expected aad token expiry time")
 	}
 }
 
