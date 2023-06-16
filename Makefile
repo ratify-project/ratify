@@ -124,8 +124,8 @@ delete-gatekeeper:
 
 .PHONY: test-e2e
 test-e2e: generate-rotation-certs
-	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_BASE_TESTS_FILE}
-	bats -t ${BATS_PLUGIN_TESTS_FILE}
+	bats -t ${BATS_BASE_TESTS_FILE}
+	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
