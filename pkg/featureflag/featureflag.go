@@ -26,6 +26,7 @@ import (
 // Remember to capture changes in the usage guide and release notes.
 var (
 	DynamicPlugins = new("DYNAMIC_PLUGINS", false)
+	CertRotation   = new("CERT_ROTATION", false)
 )
 
 var flags = make(map[string]*FeatureFlag)

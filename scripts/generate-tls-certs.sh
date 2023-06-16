@@ -20,20 +20,21 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-ns=${2:-default}
 CERT_DIR=$1
+ns=${2:-default}
+expire_day=${3:-3650}
 
 generate() {
     # generate CA key and certificate
     echo "Generating CA key and certificate for ratify..."
     openssl genrsa -out ca.key 2048
-    openssl req -new -x509 -days 1 -key ca.key -subj "/O=Ratify/CN=Ratify Root CA" -out ca.crt
+    openssl req -new -x509 -days ${expire_day} -key ca.key -subj "/O=Ratify/CN=ratify.${ns}" -extensions v3_ca -config <(printf "[req]\ndistinguished_name=ratify_ca\nprompt=no\n[ratify_ca]\n[v3_ca]\nsubjectAltName=DNS:ratify.${ns}\nbasicConstraints = critical, CA:TRUE\nkeyUsage=critical,digitalSignature,keyEncipherment,keyCertSign\n") -out ca.crt
 
     # generate server key and certificate
     echo "Generating server key and certificate for ratify..."
     openssl genrsa -out server.key 2048
     openssl req -newkey rsa:2048 -nodes -keyout server.key -subj "/CN=ratify.${ns}" -out server.csr
-    openssl x509 -req -extfile <(printf "subjectAltName=DNS:ratify.${ns}") -days 365 -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
+    openssl x509 -req -extfile <(printf "subjectAltName=DNS:ratify.${ns}") -days ${expire_day} -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt
 }
 
 mkdir -p ${CERT_DIR}
