@@ -148,9 +148,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry by azure managed identity token - %w", err)
 	}
 
-	// set default refresh token expiry to default ACR expiry - 5 minutes
-	acrExpiration := time.Now().Add(defaultACRExpiryDuration - 5*time.Minute)
-	expiresOn := getEarliestExpiration(acrExpiration, d.identityToken.ExpiresOn)
+	expiresOn := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)
 
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,

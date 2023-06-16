@@ -59,11 +59,16 @@ func TestAzureWIEnabled_ExpectedResults(t *testing.T) {
 }
 
 func TestGetEarliestExpiration(t *testing.T) {
-	var earlierTime = time.Now()
-	var laterTime = time.Now().Add(5 * time.Minute)
+	var aadExpiry = time.Now().Add(12 * time.Hour)
 
-	if getEarliestExpiration(earlierTime, laterTime) != earlierTime {
-		t.Fatal("an earlier time should be returned")
+	if getACRExpiryIfEarlier(aadExpiry) == aadExpiry {
+		t.Fatal("expected acr token expiry time")
+	}
+
+	aadExpiry = time.Now().Add(12 * time.Minute)
+
+	if getACRExpiryIfEarlier(aadExpiry) != aadExpiry {
+		t.Fatal("expected aad token expiry time")
 	}
 }
 
