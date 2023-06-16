@@ -72,7 +72,8 @@ curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./notary.crt
+    --set-file notaryCert=./notary.crt \
+    --set featureFlags.RATIFY_CERT_ROTATION=true
 ```
 
 - Option 2: Install ratify with charts from your local branch.  
@@ -83,7 +84,8 @@ cd ratify
 helm install ratify \
     ./charts/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./test/testdata/notary.crt
+    --set-file notaryCert=./test/testdata/notary.crt \
+    --set featureFlags.RATIFY_CERT_ROTATION=true
 ```
 
 ### Step 3: See Ratify in action

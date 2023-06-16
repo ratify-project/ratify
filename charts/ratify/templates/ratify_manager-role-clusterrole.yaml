@@ -83,4 +83,24 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - externaldata.gatekeeper.sh
+  resources:
+  - providers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+  - update
+  - create
   {{- end }}
