@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/deislabs/ratify/pkg/common"
@@ -28,7 +27,6 @@ import (
 
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
-	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
 const CosignArtifactType = "application/vnd.dev.cosign.artifact.sig.v1+json"
@@ -48,11 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 		if errors.Is(err, errdef.ErrNotFound) {
 			return nil, nil
 		}
-		var ec errcode.Error
-		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			store.evictAuthCache(subjectReference.Original, err)
-			return nil, err
-		}
+		evictOnError(err, store, subjectReference.Original)
 		return nil, err
 	}
 
