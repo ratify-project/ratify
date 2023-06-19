@@ -42,7 +42,7 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-func (s *inlineCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
+func (s *inlineCertProvider) GetCertificates(_ context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
 	value, ok := attrib[ValueParameter]
 	if !ok {
 		return nil, nil, fmt.Errorf("value parameter is not set")

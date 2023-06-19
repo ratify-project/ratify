@@ -33,7 +33,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AwsEcrBasicProviderFactory struct{}
+type AwsEcrBasicProviderFactory struct{} //nolint:revive
 type awsEcrBasicAuthProvider struct {
 	ecrAuthToken EcrAuthToken
 	providerName string
@@ -140,7 +140,7 @@ func (s *AwsEcrBasicProviderFactory) Create(authProviderConfig provider.AuthProv
 }
 
 // Enabled checks for non-empty AWS IAM creds
-func (d *awsEcrBasicAuthProvider) Enabled(ctx context.Context) bool {
+func (d *awsEcrBasicAuthProvider) Enabled(_ context.Context) bool {
 	if d.providerName == "" {
 		logrus.Error("basic ECR providerName was empty")
 		return false

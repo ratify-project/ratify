@@ -41,7 +41,7 @@ type verifyCmdOptions struct {
 	silentMode     bool
 }
 
-func NewCmdVerify(argv ...string) *cobra.Command {
+func NewCmdVerify(_ ...string) *cobra.Command {
 	var opts verifyCmdOptions
 
 	cmd := &cobra.Command{

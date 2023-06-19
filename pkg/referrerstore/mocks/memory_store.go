@@ -30,7 +30,7 @@ type memoryTestStore struct {
 	Referrers map[digest.Digest][]ocispecs.ReferenceDescriptor
 }
 
-func (store *memoryTestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (store *memoryTestStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	// assume subjectDesc is given and good
 
 	if item, ok := store.Referrers[subjectDesc.Digest]; ok {
@@ -43,23 +43,23 @@ func (store *memoryTestStore) ListReferrers(ctx context.Context, subjectReferenc
 	return referrerstore.ListReferrersResult{}, nil
 }
 
-func (s *memoryTestStore) Name() string {
+func (store *memoryTestStore) Name() string {
 	return "memoryTestStore"
 }
 
-func (s *memoryTestStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+func (store *memoryTestStore) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
 	return nil, nil
 }
 
-func (s *memoryTestStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+func (store *memoryTestStore) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	return ocispecs.ReferenceManifest{}, nil
 }
 
-func (s *memoryTestStore) GetConfig() *config.StoreConfig {
+func (store *memoryTestStore) GetConfig() *config.StoreConfig {
 	return &config.StoreConfig{}
 }
 
-func (store *memoryTestStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func (store *memoryTestStore) GetSubjectDescriptor(_ context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	if item, ok := store.Subjects[subjectReference.Digest]; ok {
 		return item, nil
 	}

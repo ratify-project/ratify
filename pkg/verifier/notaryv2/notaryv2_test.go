@@ -66,9 +66,6 @@ var (
 	validBlobDesc2 = ocispec.Descriptor{
 		Digest: testDigest2,
 	}
-	invalidBlobDesc = ocispec.Descriptor{
-		Digest: invalidDigest,
-	}
 	defaultCertDir  = paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	testTrustPolicy = map[string]interface{}{
 		"version": "1.0",
@@ -88,7 +85,7 @@ var (
 
 type mockNotaryVerifier struct{}
 
-func (v mockNotaryVerifier) Verify(ctx context.Context, desc ocispec.Descriptor, signature []byte, opts notation.VerifierVerifyOptions) (*notation.VerificationOutcome, error) {
+func (v mockNotaryVerifier) Verify(_ context.Context, _ ocispec.Descriptor, signature []byte, _ notation.VerifierVerifyOptions) (*notation.VerificationOutcome, error) {
 	if reflect.DeepEqual(signature, testRefBlob2) {
 		return nil, fmt.Errorf("failed verification")
 	}
@@ -104,18 +101,18 @@ func (s mockStore) Name() string {
 	return test
 }
 
-func (s mockStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (s mockStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, _ *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	return referrerstore.ListReferrersResult{}, nil
 }
 
-func (s mockStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+func (s mockStore) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
 	if s.refBlob == nil {
 		return nil, fmt.Errorf("invalid blob")
 	}
 	return s.refBlob, nil
 }
 
-func (s mockStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+func (s mockStore) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	if len(s.manifest.Blobs) == 0 {
 		return s.manifest, fmt.Errorf("invalid reference")
 	}
@@ -126,7 +123,7 @@ func (s mockStore) GetConfig() *config.StoreConfig {
 	return nil
 }
 
-func (s mockStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func (s mockStore) GetSubjectDescriptor(_ context.Context, _ common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	return &ocispecs.SubjectDescriptor{
 		Descriptor: ocispec.Descriptor{},
 	}, nil

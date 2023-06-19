@@ -41,8 +41,8 @@ import (
 	ratifyconfig "github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/aws"
-	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure"
+	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/aws"   // register aws auth provider
+	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure" // register azure auth provider
 	commonutils "github.com/deislabs/ratify/pkg/common/utils"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/metrics"
@@ -55,12 +55,12 @@ import (
 )
 
 const (
-	HttpMaxIdleConns                      = 100
-	HttpMaxConnsPerHost                   = 100
-	HttpMaxIdleConnsPerHost               = 100
-	HttpRetryMax                          = 5
-	HttpRetryDurationMin    time.Duration = 200 * time.Millisecond
-	HttpRetryDurationMax    time.Duration = 1750 * time.Millisecond
+	HTTPMaxIdleConns                       = 100
+	HTTPMaxConnsPerHost                    = 100
+	HTTPMaxIdleConnsPerHost                = 100
+	HTTPRetryMax                           = 5
+	HTTPRetryDurationMinimum time.Duration = 200 * time.Millisecond
+	HTTPRetryDurationMax     time.Duration = 1750 * time.Millisecond
 )
 
 const (
@@ -71,9 +71,9 @@ const (
 )
 
 // OrasStoreConf describes the configuration of ORAS store
-type OrasStoreConf struct {
+type OrasStoreConf struct { //nolint:revive
 	Name           string                          `json:"name"`
-	UseHttp        bool                            `json:"useHttp,omitempty"`
+	UseHTTP        bool                            `json:"useHttp,omitempty"`
 	CosignEnabled  bool                            `json:"cosignEnabled,omitempty"`
 	AuthProvider   authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
 	LocalCachePath string                          `json:"localCachePath,omitempty"`
@@ -161,25 +161,25 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 		return &retry.GenericPolicy{
 			Retryable: customPredicate,
 			Backoff:   retry.DefaultBackoff,
-			MinWait:   HttpRetryDurationMin,
-			MaxWait:   HttpRetryDurationMax,
-			MaxRetry:  HttpRetryMax,
+			MinWait:   HTTPRetryDurationMinimum,
+			MaxWait:   HTTPRetryDurationMax,
+			MaxRetry:  HTTPRetryMax,
 		}
 	}
 
 	// define the http client for TLS enabled
 	secureTransport := http.DefaultTransport.(*http.Transport).Clone()
-	secureTransport.MaxIdleConns = HttpMaxIdleConns
-	secureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
-	secureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
+	secureTransport.MaxIdleConns = HTTPMaxIdleConns
+	secureTransport.MaxConnsPerHost = HTTPMaxConnsPerHost
+	secureTransport.MaxIdleConnsPerHost = HTTPMaxIdleConnsPerHost
 	secureRetryTransport := retry.NewTransport(secureTransport)
 	secureRetryTransport.Policy = customRetryPolicy
 
 	// define the http client for TLS disabled
 	insecureTransport := http.DefaultTransport.(*http.Transport).Clone()
-	insecureTransport.MaxIdleConns = HttpMaxIdleConns
-	insecureTransport.MaxConnsPerHost = HttpMaxConnsPerHost
-	insecureTransport.MaxIdleConnsPerHost = HttpMaxIdleConnsPerHost
+	insecureTransport.MaxIdleConns = HTTPMaxIdleConns
+	insecureTransport.MaxConnsPerHost = HTTPMaxConnsPerHost
+	insecureTransport.MaxIdleConnsPerHost = HTTPMaxIdleConnsPerHost
 	// #nosec G402
 	insecureTransport.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
@@ -204,7 +204,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 	return &store.rawConfig
 }
 
-func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	repository, expiry, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
@@ -451,7 +451,7 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 
 	repository.Client = repoClient
 	// enable plain HTTP if specified in config
-	repository.PlainHTTP = store.config.UseHttp
+	repository.PlainHTTP = store.config.UseHTTP
 
 	return repository, authConfig.ExpiresOn, nil
 }

@@ -32,7 +32,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AzureWIProviderFactory struct{}
+type AzureWIProviderFactory struct{} //nolint:revive
 type azureWIAuthProvider struct {
 	aadToken confidential.AuthResult
 	tenantID string
@@ -92,7 +92,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
-func (d *azureWIAuthProvider) Enabled(ctx context.Context) bool {
+func (d *azureWIAuthProvider) Enabled(_ context.Context) bool {
 	if d.tenantID == "" || d.clientID == "" {
 		return false
 	}
@@ -128,10 +128,10 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	}
 
 	// add protocol to generate complete URI
-	serverUrl := "https://" + artifactHostName
+	serverURL := "https://" + artifactHostName
 
 	// create registry client and exchange AAD token for registry refresh token
-	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
+	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
 	startTime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {

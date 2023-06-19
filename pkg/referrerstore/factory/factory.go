@@ -83,9 +83,8 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 	storeFactory, ok := builtInStores[storeNameStr]
 	if ok {
 		return storeFactory.Create(configVersion, storeConfig)
-	} else {
-		return plugin.NewStore(configVersion, storeConfig, pluginBinDir)
 	}
+	return plugin.NewStore(configVersion, storeConfig, pluginBinDir)
 }
 
 // CreateStoresFromConfig creates a stores from the provided configuration
@@ -103,7 +102,7 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 		return nil, errors.New("referrer store config should have at least one store")
 	}
 
-	var stores []referrerstore.ReferrerStore
+	stores := make([]referrerstore.ReferrerStore, 0)
 
 	if len(storesConfig.PluginBinDirs) == 0 {
 		storesConfig.PluginBinDirs = []string{defaultPluginPath}
@@ -115,15 +114,14 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 		store, err := CreateStoreFromConfig(storeConfig, storesConfig.Version, storesConfig.PluginBinDirs)
 		if err != nil {
 			return nil, err
-		} else {
-			stores = append(stores, store)
 		}
+		stores = append(stores, store)
 	}
 
 	return stores, nil
 }
 
-func validateStoresConfig(storesConfig *config.StoresConfig) error {
+func validateStoresConfig(_ *config.StoresConfig) error {
 	// TODO check for existence of plugin dirs
 	// TODO check if version is supported
 	return nil

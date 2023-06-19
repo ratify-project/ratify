@@ -34,7 +34,7 @@ func TestNewLogSink(t *testing.T) {
 	}
 }
 
-func TestInit(t *testing.T) {
+func TestInit(_ *testing.T) {
 	logger := logrus.New()
 	sink := NewLogrusSink(logger)
 	sink.Init(logr.RuntimeInfo{})

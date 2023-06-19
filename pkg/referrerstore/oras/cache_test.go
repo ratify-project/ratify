@@ -81,7 +81,7 @@ func (m *mockBase) GetConfig() *config.StoreConfig {
 	return testStoreConfig
 }
 
-func (m *mockBase) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (m *mockBase) ListReferrers(_ context.Context, _ common.Reference, _ []string, nextToken string, _ *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	if nextToken == testNextToken1 {
 		return testResult1, nil
 	} else if nextToken == testNextToken2 {
@@ -90,15 +90,15 @@ func (m *mockBase) ListReferrers(ctx context.Context, subjectReference common.Re
 	return referrerstore.ListReferrersResult{}, nil
 }
 
-func (m *mockBase) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+func (m *mockBase) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
 	return testBlob, nil
 }
 
-func (m *mockBase) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+func (m *mockBase) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	return ocispecs.ReferenceManifest{}, nil
 }
 
-func (m *mockBase) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func (m *mockBase) GetSubjectDescriptor(_ context.Context, _ common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	return testDesc, nil
 }
 

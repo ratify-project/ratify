@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-type PluginArgs interface {
+type PluginArgs interface { //nolint:revive
 	AsEnviron() []string
 }
 

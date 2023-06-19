@@ -43,18 +43,18 @@ type BlobPair struct {
 	Reader     io.ReadCloser
 }
 
-func (r TestRepository) Resolve(ctx context.Context, reference string) (oci.Descriptor, error) {
+func (r TestRepository) Resolve(_ context.Context, reference string) (oci.Descriptor, error) {
 	if desc, ok := r.ResolveMap[reference]; ok {
 		return desc, nil
 	}
 	return oci.Descriptor{}, errdef.ErrNotFound
 }
 
-func (r TestRepository) Referrers(ctx context.Context, desc oci.Descriptor, artifactType string, fn func(referrers []oci.Descriptor) error) error {
+func (r TestRepository) Referrers(_ context.Context, _ oci.Descriptor, _ string, fn func(referrers []oci.Descriptor) error) error {
 	return fn(r.ReferrersList)
 }
 
-func (r TestRepository) Fetch(ctx context.Context, target oci.Descriptor) (io.ReadCloser, error) {
+func (r TestRepository) Fetch(_ context.Context, target oci.Descriptor) (io.ReadCloser, error) {
 	if reader, ok := r.FetchMap[target.Digest]; ok {
 		return reader, nil
 	}
@@ -65,7 +65,7 @@ func (r TestRepository) Blobs() registry.BlobStore {
 	return r.BlobStoreTest
 }
 
-func (b TestBlobStore) FetchReference(ctx context.Context, reference string) (oci.Descriptor, io.ReadCloser, error) {
+func (b TestBlobStore) FetchReference(_ context.Context, reference string) (oci.Descriptor, io.ReadCloser, error) {
 	if pair, ok := b.BlobMap[reference]; ok {
 		return pair.Descriptor, pair.Reader, nil
 	}

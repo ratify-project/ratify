@@ -30,7 +30,7 @@ type MockInt64Histogram struct {
 	Attributes map[string]string
 }
 
-func (m *MockInt64Histogram) Record(ctx context.Context, incr int64, attrs ...attribute.KeyValue) {
+func (m *MockInt64Histogram) Record(_ context.Context, incr int64, attrs ...attribute.KeyValue) {
 	m.Value = incr
 	for _, attr := range attrs {
 		setValue := attr.Value.AsString()
@@ -41,7 +41,7 @@ func (m *MockInt64Histogram) Record(ctx context.Context, incr int64, attrs ...at
 	}
 }
 
-func (m *MockInt64Counter) Add(ctx context.Context, incr int64, attrs ...attribute.KeyValue) {
+func (m *MockInt64Counter) Add(_ context.Context, incr int64, attrs ...attribute.KeyValue) {
 	m.Value = incr
 	for _, attr := range attrs {
 		setValue := attr.Value.AsString()

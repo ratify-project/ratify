@@ -26,15 +26,15 @@ import (
 
 type TestPolicyProvider struct{}
 
-func (p *TestPolicyProvider) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
+func (p *TestPolicyProvider) VerifyNeeded(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) bool {
 	return true
 }
 
-func (p *TestPolicyProvider) ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool {
+func (p *TestPolicyProvider) ContinueVerifyOnFailure(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor, _ types.VerifyResult) bool {
 	return true
 }
 
-func (p *TestPolicyProvider) ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult {
+func (p *TestPolicyProvider) ErrorToVerifyResult(_ context.Context, subjectRefString string, _ error) types.VerifyResult {
 	errorReport := verifier.VerifierResult{
 		Subject:   subjectRefString,
 		IsSuccess: false,
@@ -45,6 +45,6 @@ func (p *TestPolicyProvider) ErrorToVerifyResult(ctx context.Context, subjectRef
 	return types.VerifyResult{IsSuccess: false, VerifierReports: reports}
 }
 
-func (p *TestPolicyProvider) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
+func (p *TestPolicyProvider) OverallVerifyResult(_ context.Context, _ []interface{}) bool {
 	return true
 }
