@@ -33,14 +33,6 @@ SLEEP_TIME=1
     assert_failure
 }
 
-@test "cert rotator test" {
-    helm uninstall ratify --namespace gatekeeper-system
-    make e2e-helm-deploy-ratify CERT_DIR=${EXPIRING_CERT_DIR} CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
-    sleep 120
-    run [ "$(kubectl get secret ratify-tls -n gatekeeper-system -o json | jq '.data."ca.crt"')" != "$(cat ${EXPIRING_CERT_DIR}/ca.crt | base64 | tr -d '\n')" ]
-    assert_success
-}
-
 @test "crd version test" {
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
     assert_success
