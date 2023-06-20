@@ -46,7 +46,7 @@ const (
 )
 
 // NotaryV2VerifierConfig describes the configuration of notation verifier
-type NotaryV2VerifierConfig struct { //nolint:revive
+type NotaryV2VerifierConfig struct { //nolint:revive // ignore linter to have unique type name
 	Name          string `json:"name"`
 	ArtifactTypes string `json:"artifactTypes"`
 

@@ -24,7 +24,7 @@ import (
 var builtInAuthProviders = make(map[string]AuthProviderFactory)
 
 // AuthProviderFactory is an interface that defines methods to create an AuthProvider
-type AuthProviderFactory interface { //nolint:revive
+type AuthProviderFactory interface { //nolint:revive // ignore linter to have unique type name
 	Create(authProviderConfig AuthProviderConfig) (AuthProvider, error)
 }
 

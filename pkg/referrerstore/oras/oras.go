@@ -71,7 +71,7 @@ const (
 )
 
 // OrasStoreConf describes the configuration of ORAS store
-type OrasStoreConf struct { //nolint:revive
+type OrasStoreConf struct { //nolint:revive // ignore linter to have unique type name
 	Name           string                          `json:"name"`
 	UseHTTP        bool                            `json:"useHttp,omitempty"`
 	CosignEnabled  bool                            `json:"cosignEnabled,omitempty"`

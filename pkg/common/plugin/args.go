@@ -20,7 +20,7 @@ import (
 	"strings"
 )
 
-type PluginArgs interface { //nolint:revive
+type PluginArgs interface { //nolint:revive // ignore linter to have unique type name
 	AsEnviron() []string
 }
 

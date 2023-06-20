@@ -24,7 +24,7 @@ import (
 )
 
 // VerifierResult describes the result of verifying a reference manifest for a subject
-type VerifierResult struct { //nolint:revive
+type VerifierResult struct { //nolint:revive // ignore linter to have unique type name
 	Subject       string           `json:"subject,omitempty"`
 	IsSuccess     bool             `json:"isSuccess"`
 	Name          string           `json:"name,omitempty"`

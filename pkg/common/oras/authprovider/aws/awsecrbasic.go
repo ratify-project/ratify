@@ -33,7 +33,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AwsEcrBasicProviderFactory struct{} //nolint:revive
+type AwsEcrBasicProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
 type awsEcrBasicAuthProvider struct {
 	ecrAuthToken EcrAuthToken
 	providerName string

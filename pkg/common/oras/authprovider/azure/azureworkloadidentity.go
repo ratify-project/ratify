@@ -32,7 +32,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AzureWIProviderFactory struct{} //nolint:revive
+type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
 type azureWIAuthProvider struct {
 	aadToken confidential.AuthResult
 	tenantID string
