@@ -1,49 +1,55 @@
 # Ratify Documentation
 
-This is an overview of the documentation available today for Ratify in the folders
+Within this directory you will find documentation for Ratify.  The documentation is broken down into the following sections:
 
-Titles by sub-folder in this directory
+## Quickstarts 
 
-## examples
+## End-to-end scenarios
 
-These walk through end-to-end examples of using ratify.
+- [ratify-on-aws](quickstarts/ratify-on-aws.md) - How to use ratify on AWS
+- [ratify-verify-azure-cmd](quickstarts/ratify-on-azure.md) - Use notation, oras, and ratify to build and sign a container image and SBOM and verify it with the ratify cli.
+- [working-with-spdx](quickstarts/working-with-spdx.md) - Use ratify with syft, oras, and verification using ratify cli.
 
-- [ratify-on-aws](examples/ratify-on-aws.md) - How to use ratify on AWS
-- [ratify-verify-azure-cmd](examples/ratify-verify-azure-cmd.md) - Use notation, oras, and ratify to build and sign a container image and SBOM and verify it with the ratify cli.
-- [working-with-spdx](examples/working-with-spdx.md) - Use ratify with syft, oras, and verification using ratify cli.
+### Plugin development:
 
-## reference
+- [creating-plugins](quickstarts/creating-plugins.md) - Details on creating your own plugins for use with ratify.
 
-These documents can be found generally useful to understand using or implementing ratify, but do not walk through end-to-end examples.
+### Policy Management:
 
+- [gatekeeper-policy-authoring](quickstarts/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify, including rego references/examples.
+
+### SPDX Integration:
+
+- [working-with-spdx](quickstarts/working-with-spdx.md) - Use ratify with syft, oras, and verification using ratify cli.
+
+### Contributing:
+- [Developer Getting Started](../CONTRIBUTING.md) - Getting started with ratify development.
+
+## Reference 
+
+Documentation for understanding ratify and its components:
+
+Framework and configuration:
+- [Framework](reference/ratify-framework-overview.md) - The ratify framework is the core of ratify.  It is responsible for orchestrating the execution of the various plugins and providing a common interface for them to interact with each other.
+- [Configuration](reference/ratify-configuration.md) - Ratify's configuration consist of:
+  - [store](reference/store.md) - Ratify's store is responsible for storing and retrieving artifacts.
+  - [verifier](reference/verifier.md) - Ratify's verifier is responsible for verifying the integrity of artifacts.
+  - [provider](reference/providers.md) - Ratify's policy provider is responsible for providing policies to the framework.  Policies are used to determine if an artifact is valid or not.  Policies are written in [rego](https://www.openpolicyagent.org/docs/latest/policy-language/).
+  - [executor](reference/executor.md) - Ratify's executor is responsible for executing the plugins.
+
+
+Ratify CLI
 - [usage](reference/usage.md) - Additional information for using the `ratify` executable
-- [gatekeeper-policy-authoring](reference/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify, including rego references/examples.
+
+Authentication:
 - [oras-auth-provider](reference/oras-auth-provider.md) - Explanation of various authentication mechanisms available for use with ratify.
-- [creating-plugins](reference/creating-plugins.md) - Details on creating your own plugins for use with ratify.
-- [CRD references](reference/crds/) - Describes the required and optional properties of ratify CRDs
+
+Instrumentation:
 - [instrumentation](reference/instrumentation.md) - Details on the current supported instruments and metric provider setup guides
-## developer
 
-The documents in this directory are for developers who want to contribute to Ratify or want to understand the internals of Ratify.
+CRDs:
+- [CRD references](reference/crds/) - Describes the required and optional properties of ratify CRDs
 
-- [Contributing](../CONTRIBUTING.md) - How to get ratify development environment setup and generally contribute back to Ratify.
-- [README](./developer/README.md) - breaks down the architecture of Ratify and how it works.
-- [providers](./developer/providers.md) - information about built-in providers and the extensible policy provider interface
-- [executor](./developer/executor.md) - information about the executor and how it works
-- [store](./developer/store.md) - information about the store plugin and how it works
-- [verifier](./developer/verifier.md) - information about the verifier plugin and how it works.
+## Archive
 
-### docs improvements backlog
-
-developer
-
-- Overhaul the root readme as this was from original creation and the design has been more finalized since then.  Likely combined effort with the next item to streamline.
-- Streamline documentation between contributing, framework readme and providers, executor, store, verifier docs.
-- [Guidance for new plugins](https://github.com/deislabs/ratify/issues/405)
-- [Create a new plugin scaffold](https://github.com/deislabs/ratify/issues/8)
-
-examples
-
-- [Azure e2e walkthrough](https://github.com/deislabs/ratify/issues/59)
-- [Cosign walkthrough](https://github.com/deislabs/ratify/issues/230)
-- Using ratify in pass-through execution mode
+A historical record of Ratify documentation:
