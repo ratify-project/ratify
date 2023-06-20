@@ -216,10 +216,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		resolvedSubjectDesc = subjectDesc
 	} else {
 		if resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference); err != nil {
-			var ec errcode.Error
-			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-				store.evictAuthCache(subjectReference.Original, err)
-			}
+			evictOnError(err, store, subjectReference.Original)
 			return referrerstore.ListReferrersResult{}, err
 		}
 	}
@@ -231,10 +228,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
 	}); err != nil && !errors.Is(err, errdef.ErrNotFound) {
-		var ec errcode.Error
-		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			store.evictAuthCache(subjectReference.Original, err)
-		}
+		evictOnError(err, store, subjectReference.Original)
 		return referrerstore.ListReferrersResult{}, err
 	}
 	// add the repository client to the auth cache if all repository operations successful
@@ -288,10 +282,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		// fetch blob content from remote repository
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
 		if err != nil {
-			var ec errcode.Error
-			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-				store.evictAuthCache(subjectReference.Original, err)
-			}
+			evictOnError(err, store, subjectReference.Original)
 			return nil, err
 		}
 
@@ -326,10 +317,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		// fetch manifest content from repository
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
-			var ec errcode.Error
-			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-				store.evictAuthCache(subjectReference.Original, err)
-			}
+			evictOnError(err, store, subjectReference.Original)
 			return ocispecs.ReferenceManifest{}, err
 		}
 
@@ -389,12 +377,10 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 
 	desc, err = repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
-		var ec errcode.Error
-		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			store.evictAuthCache(subjectReference.Original, err)
-		}
+		evictOnError(err, store, subjectReference.Original)
 		return nil, err
 	}
+
 	// add the subject descriptor to cache
 	store.subjectDescriptorCache.Store(desc.Digest, desc)
 	// add the repository client to the auth cache if all repository operations successful
@@ -403,6 +389,14 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
 
+// evict from cache on non retry-able errors including 401 and 403
+func evictOnError(err error, store *orasStore, subjectReference string) {
+	var ec *errcode.ErrorResponse
+
+	if errors.As(err, &ec) && (ec.StatusCode == http.StatusForbidden || ec.StatusCode == http.StatusUnauthorized) {
+		store.authCache.Delete(subjectReference)
+	}
+}
 func createDefaultRepository(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
 	if store.authProvider == nil || !store.authProvider.Enabled(ctx) {
 		return nil, time.Now(), fmt.Errorf("auth provider not properly enabled")
@@ -480,8 +474,4 @@ func (store *orasStore) addAuthCache(ref string, repository registry.Repository,
 		client:    repository,
 		expiresOn: expiry,
 	})
-}
-
-func (store *orasStore) evictAuthCache(ref string, err error) {
-	store.authCache.Delete(ref)
 }

@@ -6,6 +6,14 @@ BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
 
+@test "cert rotator test" {
+    helm uninstall ratify --namespace gatekeeper-system
+    make e2e-helm-deploy-ratify CERT_DIR=${EXPIRING_CERT_DIR} CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
+    sleep 120
+    run [ "$(kubectl get secret ratify-tls -n gatekeeper-system -o json | jq '.data."ca.crt"')" != "$(cat ${EXPIRING_CERT_DIR}/ca.crt | base64 | tr -d '\n')" ]
+    assert_success
+}
+
 @test "cosign test" {
     teardown() {
         echo "cleaning up"
@@ -30,7 +38,6 @@ SLEEP_TIME=1
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign.yaml'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_store_oras_http.yaml'
     }
