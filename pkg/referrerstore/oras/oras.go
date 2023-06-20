@@ -213,13 +213,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		resolvedSubjectDesc = subjectDesc
 	} else {
 		if resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference); err != nil {
-			var ec errcode.Error
-			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-				evict_err := store.evictAuthCache(ctx, subjectReference.Original)
-				if evict_err != nil {
-					err = fmt.Errorf("%s: failed to evict from auth cache: %w", err.Error(), evict_err)
-				}
-			}
+			evictOnError(ctx, err, store, subjectReference.Original)
 			return referrerstore.ListReferrersResult{}, err
 		}
 	}
@@ -231,13 +225,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
 	}); err != nil && !errors.Is(err, errdef.ErrNotFound) {
-		var ec errcode.Error
-		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			evict_err := store.evictAuthCache(ctx, subjectReference.Original)
-			if evict_err != nil {
-				err = fmt.Errorf("%s: failed to evict from auth cache: %w", err.Error(), evict_err)
-			}
-		}
+		evictOnError(ctx, err, store, subjectReference.Original)
 		return referrerstore.ListReferrersResult{}, err
 	}
 
@@ -289,13 +277,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		// fetch blob content from remote repository
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
 		if err != nil {
-			var ec errcode.Error
-			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-				evict_err := store.evictAuthCache(ctx, subjectReference.Original)
-				if evict_err != nil {
-					err = fmt.Errorf("%s: failed to evict from auth cache: %w", err.Error(), evict_err)
-				}
-			}
+			evictOnError(ctx, err, store, subjectReference.Original)
 			return nil, err
 		}
 
@@ -327,13 +309,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		// fetch manifest content from repository
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
-			var ec errcode.Error
-			if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-				evict_err := store.evictAuthCache(ctx, subjectReference.Original)
-				if evict_err != nil {
-					err = fmt.Errorf("%s: failed to evict from auth cache: %w", err.Error(), evict_err)
-				}
-			}
+			evictOnError(ctx, err, store, subjectReference.Original)
 			return ocispecs.ReferenceManifest{}, err
 		}
 
@@ -383,17 +359,29 @@ func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReferen
 
 	desc, err := repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
-		var ec errcode.Error
-		if errors.As(err, &ec) && (ec.Code == fmt.Sprint(http.StatusForbidden) || ec.Code == fmt.Sprint(http.StatusUnauthorized)) {
-			evict_err := store.evictAuthCache(ctx, subjectReference.Original)
-			if evict_err != nil {
-				err = fmt.Errorf("%s: failed to evict from auth cache: %w", err.Error(), evict_err)
-			}
-		}
+		evictOnError(ctx, err, store, subjectReference.Original)
 		return nil, err
 	}
 
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
+}
+
+// evict from cache on non retry-able errors including 401 and 403
+func evictOnError(ctx context.Context, err error, store *orasStore, subjectReference string) {
+	cacheProvider := cache.GetCacheProvider()
+	// if cache provider is not enabled, return
+	if cacheProvider == nil {
+		return
+	}
+	var ec *errcode.ErrorResponse
+
+	if errors.As(err, &ec) && (ec.StatusCode == http.StatusForbidden || ec.StatusCode == http.StatusUnauthorized) {
+		artifactRef, err := registry.ParseReference(subjectReference)
+		if err != nil {
+			logrus.Warnf("failed to evict credential from cache for %s: %v", subjectReference, err)
+		}
+		cacheProvider.Delete(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry))
+	}
 }
 
 func createDefaultRepository(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
@@ -483,19 +471,4 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 		return nil, err
 	}
 	return buf, nil
-}
-
-func (store *orasStore) evictAuthCache(ctx context.Context, ref string) error {
-	cacheProvider := cache.GetCacheProvider()
-	if cacheProvider == nil {
-		return nil
-	}
-
-	artifactRef, err := registry.ParseReference(ref)
-	if err != nil {
-		return err
-	}
-
-	cacheProvider.Delete(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry))
-	return nil
 }

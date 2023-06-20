@@ -148,11 +148,13 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry by azure managed identity token - %w", err)
 	}
 
+	expiresOn := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)
+
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,
 		Password:  *rt.RefreshToken,
 		Provider:  d,
-		ExpiresOn: d.identityToken.ExpiresOn,
+		ExpiresOn: expiresOn,
 	}
 
 	return authConfig, nil

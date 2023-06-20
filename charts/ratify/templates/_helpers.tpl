@@ -108,13 +108,18 @@ Choose the certificate/key pair to enable TLS for HTTP server
 */}}
 {{- define "ratify.tlsSecret" -}}
 {{- $top := index . 0 -}}
-{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle }}
+{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle $top.Values.provider.tls.caCert $top.Values.provider.tls.caKey }}
 tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}  
 tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
+ca.crt: {{ $top.Values.provider.tls.caCert | b64enc | quote }}
+ca.key: {{ $top.Values.provider.tls.caKey | b64enc | quote }}
 {{- else }}
 {{- $cert := index . 1 -}}
+{{- $ca := index . 2 -}}
 tls.crt: {{ $cert.Cert | b64enc | quote }}
 tls.key: {{ $cert.Key | b64enc | quote }}
+ca.crt: {{ $ca.Cert | b64enc | quote }}
+ca.key: {{ $ca.Key | b64enc | quote }}
 {{- end }}
 {{- end }}
 

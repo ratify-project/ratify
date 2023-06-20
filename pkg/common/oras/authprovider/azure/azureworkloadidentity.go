@@ -139,12 +139,24 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	}
 	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 
+	refreshTokenExpiry := getACRExpiryIfEarlier(d.aadToken.ExpiresOn)
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,
 		Password:  *rt.RefreshToken,
 		Provider:  d,
-		ExpiresOn: d.aadToken.ExpiresOn,
+		ExpiresOn: refreshTokenExpiry,
 	}
 
 	return authConfig, nil
+}
+
+// Compare addExpiry with default ACR refresh token expiry
+func getACRExpiryIfEarlier(aadExpiry time.Time) time.Time {
+	// set default refresh token expiry to default ACR expiry - 5 minutes
+	acrExpiration := time.Now().Add(defaultACRExpiryDuration - 5*time.Minute)
+
+	if acrExpiration.Before(aadExpiry) {
+		return acrExpiration
+	}
+	return aadExpiry
 }

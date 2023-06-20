@@ -30,7 +30,6 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/mocks"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote/errcode"
 )
@@ -87,8 +86,8 @@ func TestGetCosignReferences(t *testing.T) {
 		}
 	}
 	nonStandardError := errors.New("non-standard error")
-	forbiddenError := errcode.Error{Code: fmt.Sprint(http.StatusForbidden)}
-	unauthorizedError := errcode.Error{Code: fmt.Sprint(http.StatusUnauthorized)}
+	forbiddenError := &errcode.ErrorResponse{StatusCode: http.StatusForbidden, Errors: []errcode.Error{{Code: "FORBIDDEN"}}}
+	unauthorizedError := &errcode.ErrorResponse{StatusCode: http.StatusUnauthorized, Errors: []errcode.Error{{Code: "UNAUTHORIZED"}}}
 	testSubjectDigest := digest.FromString("test")
 	testCosignSubjectTag := fmt.Sprintf("%s-%s.sig", testSubjectDigest.Algorithm().String(), testSubjectDigest.Hex())
 	testCosignImageDigest := digest.FromString("test_cosign")
@@ -171,32 +170,32 @@ func TestGetCosignReferences(t *testing.T) {
 		{
 			name: "resolve error forbidden error code",
 			subjectRef: common.Reference{
-				// purposely omitting OriginalPath to trigger reference parsing error
-				Path:   "localhost:5000/net-monitor",
-				Tag:    "v1",
-				Digest: testSubjectDigest,
+				Original: "localhost:5000/net-monitor:v1",
+				Path:     "localhost:5000/net-monitor",
+				Tag:      "v1",
+				Digest:   testSubjectDigest,
 			},
 			store: &orasStore{},
 			repository: mocks.TestRepository{
 				ResolveErr: forbiddenError,
 			},
 			output: nil,
-			err:    errdef.ErrInvalidReference,
+			err:    forbiddenError,
 		},
 		{
 			name: "resolve error unauthorized error code",
 			subjectRef: common.Reference{
-				// purposely omitting OriginalPath to trigger reference parsing error
-				Path:   "localhost:5000/net-monitor",
-				Tag:    "v1",
-				Digest: testSubjectDigest,
+				Original: "localhost:5000/net-monitor:v1",
+				Path:     "localhost:5000/net-monitor",
+				Tag:      "v1",
+				Digest:   testSubjectDigest,
 			},
 			store: &orasStore{},
 			repository: mocks.TestRepository{
 				ResolveErr: unauthorizedError,
 			},
 			output: nil,
-			err:    errdef.ErrInvalidReference,
+			err:    unauthorizedError,
 		},
 	}
 	for _, testcase := range testcases {

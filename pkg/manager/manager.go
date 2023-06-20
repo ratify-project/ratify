@@ -17,7 +17,9 @@ package manager
 
 import (
 	"context"
+	"crypto/x509"
 	"flag"
+	"fmt"
 	"os"
 	"time"
 
@@ -27,13 +29,17 @@ import (
 	// to ensure that exec-entrypoint and run can make use of them.
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
+	"github.com/deislabs/ratify/pkg/featureflag"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
+	"github.com/deislabs/ratify/pkg/utils"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"
+	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -46,6 +52,11 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	//+kubebuilder:scaffold:imports
+)
+
+const (
+	caOrganization = "Ratify"
+	certDir        = "/usr/local/tls"
 )
 
 var (
@@ -61,7 +72,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, tlsWatcherReady chan struct{}) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -115,12 +126,12 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
-	if err := server.Run(); err != nil {
+	if err := server.Run(tlsWatcherReady); err != nil {
 		os.Exit(1)
 	}
 }
 
-func StartManager() {
+func StartManager(tlsWatcherReady chan struct{}) {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -156,6 +167,51 @@ func StartManager() {
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
+	}
+
+	// Make sure certs are generated and valid if cert rotation is enabled.
+	setupFinished := make(chan struct{})
+	if featureflag.CertRotation.Enabled {
+		// Make sure TLS cert watcher is already set up.
+		if tlsWatcherReady == nil {
+			setupLog.Error(err, "to use cert rotation, you must provide a channel to signal when the TLS watcher is ready")
+			os.Exit(1)
+		}
+		<-tlsWatcherReady
+		setupLog.Info("setting up cert rotation")
+
+		keyUsages := []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+		webhooks := []rotator.WebhookInfo{
+			{
+				Name: "ratify-mutation-provider",
+				Type: rotator.ExternalDataProvider,
+			},
+			{
+				Name: "ratify-provider",
+				Type: rotator.ExternalDataProvider,
+			},
+		}
+		namespace := utils.GetNamespace()
+		serviceName := utils.GetServiceName()
+
+		if err := rotator.AddRotator(mgr, &rotator.CertRotator{
+			SecretKey: types.NamespacedName{
+				Namespace: namespace,
+				Name:      fmt.Sprintf("%s-tls", serviceName),
+			},
+			CertDir:        certDir,
+			CAName:         fmt.Sprintf("%s.%s", serviceName, namespace),
+			CAOrganization: caOrganization,
+			DNSName:        fmt.Sprintf("%s.%s", serviceName, namespace),
+			IsReady:        setupFinished,
+			Webhooks:       webhooks,
+			ExtKeyUsages:   &keyUsages,
+		}); err != nil {
+			setupLog.Error(err, "Unable to set up cert rotation")
+			os.Exit(1)
+		}
+	} else {
+		close(setupFinished)
 	}
 
 	if err = (&controllers.VerifierReconciler{

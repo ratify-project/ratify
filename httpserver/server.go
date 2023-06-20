@@ -106,7 +106,7 @@ func NewServer(context context.Context,
 	return server, server.registerHandlers()
 }
 
-func (server *Server) Run() error {
+func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", server.Address)
 	if err != nil {
 		return err
@@ -145,6 +145,9 @@ func (server *Server) Run() error {
 			return err
 		}
 		defer tlsCertWatcher.Stop()
+		if tlsWatcherReady != nil {
+			close(tlsWatcherReady)
+		}
 
 		svr.TLSConfig = &tls.Config{
 			GetConfigForClient: tlsCertWatcher.GetConfigForClient,

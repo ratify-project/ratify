@@ -13,12 +13,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package azure
+package utils
 
-import "time"
+import "os"
 
-const (
-	dockerTokenLoginUsernameGUID               = "00000000-0000-0000-0000-000000000000"
-	AADResource                                = "https://containerregistry.azure.net/.default"
-	defaultACRExpiryDuration     time.Duration = 3 * time.Hour
-)
+// GetNamespace returns the namespace.
+func GetNamespace() string {
+	ns, found := os.LookupEnv("RATIFY_NAMESPACE")
+	if !found {
+		return "gatekeeper-system"
+	}
+	return ns
+}
+
+// GetServiceName returns the service name.
+func GetServiceName() string {
+	name, found := os.LookupEnv("RATIFY_NAME")
+	if !found {
+		return "ratify"
+	}
+	return name
+}

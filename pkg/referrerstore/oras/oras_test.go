@@ -27,7 +27,9 @@ import (
 	"net/url"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
@@ -403,6 +405,64 @@ func TestORASGetBlobContent_NotCachedDesc(t *testing.T) {
 	}
 	if !bytes.Equal(content, expectedContent) {
 		t.Fatalf("expected content %s, got %s", expectedContent, content)
+	}
+}
+
+func Test_EvictOnError(t *testing.T) {
+	ctx := context.Background()
+	// store setup
+	conf := config.StorePluginConfig{
+		"name":    "oras",
+		"useHttp": true,
+	}
+
+	store, err := createBaseStore("1.0.0", conf)
+	if err != nil {
+		t.Fatalf("failed to create oras store: %v", err)
+	}
+
+	cacheProvider, err := cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheEndpoint, cache.DefaultCacheSize)
+	if err != nil {
+		t.Fatalf("failed to create cache provider: %v", err)
+	}
+
+	testcases := []struct {
+		Method           string
+		StatusCode       int
+		subjectReference string
+	}{
+		{
+			Method:     "GET",
+			StatusCode: 401,
+		},
+		{
+			Method:     "GET",
+			StatusCode: 403,
+		},
+	}
+
+	for _, testcase := range testcases {
+		subjectReference := "testSubjectRef"
+		cacheKey := fmt.Sprintf(cache.CacheKeyOrasAuth, subjectReference)
+		cacheProvider.Set(ctx, cacheKey, "hello")
+		time.Sleep(1 * time.Second)
+		// validate the entry exists
+		_, ok := cacheProvider.Get(ctx, cacheKey)
+		if !ok {
+			t.Fatalf("failed to add entry to auth cache")
+		}
+
+		mockErrResponse := errcode.ErrorResponse{
+			Method:     testcase.Method,
+			StatusCode: testcase.StatusCode,
+		}
+		evictOnError(ctx, &mockErrResponse, store, subjectReference+"/test")
+		time.Sleep(1 * time.Second)
+		// validate the entry should no longer exist
+		_, ok = cacheProvider.Get(ctx, cacheKey)
+		if ok {
+			t.Fatalf("Auth cache entry should have been evicted")
+		}
 	}
 }
 

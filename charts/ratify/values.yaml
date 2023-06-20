@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.0.0-rc.4
+  tag: v1.0.0-rc.5
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -69,6 +69,8 @@ provider:
   tls:
     crt: "" # crt used by ratify (httpserver), please provide your own crt
     key: "" # key used by ratify (httpserver), please provide your own key
+    caCert: "" # CA crt used by ratify (httpserver), please provide your own CA crt
+    caKey: "" # CA key used by ratify (httpserver), please provide your own CA key
     cabundle: "" # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
   timeout:
     # timeout values must match gatekeeper webhook timeouts
@@ -110,3 +112,6 @@ crds:
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
+
+  # RATIFY_CERT_ROTATION enables rotation for TLS certificates.
+  RATIFY_CERT_ROTATION: false
