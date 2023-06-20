@@ -33,7 +33,6 @@ resource "azurerm_container_registry" "registry" {
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
   sku                 = "Standard"
-  anonymous_pull_enabled = true
 }
 
 resource "azurerm_user_assigned_identity" "identity" {
@@ -140,7 +139,7 @@ resource "azurerm_key_vault_certificate" "ratify-cert" {
     }
 
     key_properties {
-      exportable = true
+      exportable = false 
       key_size   = 2048
       key_type   = "RSA"
       reuse_key  = true
