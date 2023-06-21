@@ -23,9 +23,9 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// GetKeyVaultUri returns the key vault name
-func GetKeyVaultUri(parameters map[string]string) string {
-	return strings.TrimSpace(parameters[KeyVaultUriParameter])
+// GetKeyVaultURI returns the key vault name
+func GetKeyVaultURI(parameters map[string]string) string {
+	return strings.TrimSpace(parameters[KeyVaultURIParameter])
 }
 
 // GetCloudName returns the cloud name

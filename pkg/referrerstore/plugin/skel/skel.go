@@ -69,7 +69,7 @@ func PluginMain(name, version string, listReferrers ListReferrers, getBlobConten
 	}
 }
 
-func (c *pcontext) pluginMainCore(name, version string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, getSubDesc GetSubjectDescriptor, supportedVersions []string) *plugin.Error {
+func (c *pcontext) pluginMainCore(_, _ string, listReferrers ListReferrers, getBlobContent GetBlobContent, getRefManifest GetReferenceManifest, getSubDesc GetSubjectDescriptor, supportedVersions []string) *plugin.Error {
 	cmd, cmdArgs, err := c.getCmdArgsFromEnv()
 	if err != nil {
 		return err

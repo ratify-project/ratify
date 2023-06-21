@@ -66,7 +66,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 		// if filepath.EvalSymlinks fails to resolve multi level sym link, skip this file
 		if targetFileInfo != nil && !targetFileInfo.IsDir() && !isSymbolicLink(targetFileInfo) {
 			if _, ok := fileMap[targetFilePath]; !ok {
-				certs, err = loadCertFile(targetFileInfo, targetFilePath, certs, fileMap)
+				certs, err = loadCertFile(targetFilePath, certs, fileMap)
 				if err != nil {
 					return errors.Wrap(err, "error reading certificate file "+targetFilePath)
 				}
@@ -88,7 +88,7 @@ func isSymbolicLink(info fs.FileInfo) bool {
 	return info.Mode()&os.ModeSymlink != 0
 }
 
-func loadCertFile(fileInfo fs.FileInfo, filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
+func loadCertFile(filePath string, certificate []*x509.Certificate, fileMap map[string]bool) ([]*x509.Certificate, error) {
 	cert, certError := notationx509.ReadCertificateFile(filePath) // ReadCertificateFile returns empty if file was not a certificate
 	if certError != nil {
 		return certificate, certError
@@ -109,9 +109,8 @@ func ReplaceHomeShortcut(path string) string {
 		home := homedir.Get()
 		if len(home) > 0 {
 			return strings.Replace(path, homedir.GetShortcutString(), home, 1) // replace 1 instance
-		} else {
-			logrus.Warningf("Path '%v' replacement failed , value of Home dir '%v'", path, home)
 		}
+		logrus.Warningf("Path '%v' replacement failed , value of Home dir '%v'", path, home)
 	}
 	return path
 }

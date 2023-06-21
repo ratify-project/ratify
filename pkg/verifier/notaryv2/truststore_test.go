@@ -1,14 +1,11 @@
 package notaryv2
 
 import (
-	"context"
 	"crypto/x509"
 	"encoding/pem"
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/notaryproject/notation-go/verifier/truststore"
 )
 
 const (
@@ -27,7 +24,7 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	}
 
 	certificatesMap := map[string][]*x509.Certificate{}
-	if _, err := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "store1", certificatesMap); err == nil {
+	if _, err := store.getCertificatesInternal("store1", certificatesMap); err == nil {
 		t.Fatalf("error expected if cert map is empty")
 	}
 }
@@ -49,7 +46,7 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	certificatesMap["kv2"] = []*x509.Certificate{kv2Cert}
 
 	// only the certificate in the specified namedStore should be returned
-	result, _ := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "store1", certificatesMap)
+	result, _ := store.getCertificatesInternal("store1", certificatesMap)
 	expectedLen := 1
 
 	if len(result) != expectedLen {
@@ -74,7 +71,7 @@ func TestGetCertificates_certPath(t *testing.T) {
 	trustStore := &trustStore{
 		certPaths: []string{tmpFile.Name()},
 	}
-	certs, err := trustStore.getCertificatesInternal(context.Background(), truststore.TypeCA, "", nil)
+	certs, err := trustStore.getCertificatesInternal("", nil)
 	if err != nil {
 		t.Fatalf("failed to get certs: %v", err)
 	}

@@ -37,14 +37,14 @@ func (s *TestVerifier) Name() string {
 	return "test-verifier"
 }
 
-func (s *TestVerifier) CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
+func (s *TestVerifier) CanVerify(_ context.Context, _ ocispecs.ReferenceDescriptor) bool {
 	return true
 }
 
-func (s *TestVerifier) Verify(ctx context.Context,
-	subjectReference common.Reference,
-	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+func (s *TestVerifier) Verify(_ context.Context,
+	_ common.Reference,
+	_ ocispecs.ReferenceDescriptor,
+	_ referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	return verifier.VerifierResult{IsSuccess: false}, nil
 }
 
@@ -52,7 +52,7 @@ func (s *TestVerifier) GetNestedReferences() []string {
 	return []string{}
 }
 
-func (f *TestVerifierFactory) Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
+func (f *TestVerifierFactory) Create(_ string, _ config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
 	return &TestVerifier{verifierDirectory: pluginDirectory}, nil
 }
 

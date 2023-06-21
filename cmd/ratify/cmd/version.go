@@ -13,7 +13,7 @@ const (
 	versionUse = "version"
 )
 
-func NewCmdVersion(argv ...string) *cobra.Command {
+func NewCmdVersion(_ ...string) *cobra.Command {
 	eg := `  Example - print version:
 ratify version`
 

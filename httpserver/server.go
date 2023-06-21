@@ -166,10 +166,9 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 			return err
 		}
 		return nil
-	} else {
-		logrus.Info("starting server without TLS")
-		return svr.Serve(lsnr)
 	}
+	logrus.Info("starting server without TLS")
+	return svr.Serve(lsnr)
 }
 
 func (server *Server) register(method, path string, handler ContextHandler) {

@@ -35,13 +35,12 @@ func Validate(schema string, content []byte) error {
 
 	if result.Valid() {
 		return nil
-	} else {
-		var e string = ""
-		for _, desc := range result.Errors() {
-			e += fmt.Sprintf("%s:", desc.Description())
-		}
-		return errors.New(e)
 	}
+	var e string
+	for _, desc := range result.Errors() {
+		e += fmt.Sprintf("%s:", desc.Description())
+	}
+	return errors.New(e)
 }
 
 // Validates content from a byte array against a schema from a byte array
@@ -57,11 +56,10 @@ func ValidateAgainstOfflineSchema(schema []byte, content []byte) error {
 
 	if result.Valid() {
 		return nil
-	} else {
-		var e string = ""
-		for _, desc := range result.Errors() {
-			e += fmt.Sprintf("%s:", desc.Description())
-		}
-		return errors.New(e)
 	}
+	var e string
+	for _, desc := range result.Errors() {
+		e += fmt.Sprintf("%s:", desc.Description())
+	}
+	return errors.New(e)
 }

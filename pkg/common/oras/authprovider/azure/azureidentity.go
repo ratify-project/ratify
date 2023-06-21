@@ -100,7 +100,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
-func (d *azureManagedIdentityAuthProvider) Enabled(ctx context.Context) bool {
+func (d *azureManagedIdentityAuthProvider) Enabled(_ context.Context) bool {
 	if d.clientID == "" {
 		return false
 	}
@@ -139,10 +139,10 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 		logrus.Info("successfully refreshed azure managed identity token")
 	}
 	// add protocol to generate complete URI
-	serverUrl := "https://" + artifactHostName
+	serverURL := "https://" + artifactHostName
 
 	// create registry client and exchange AAD token for registry refresh token
-	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
+	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
 	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
 		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry by azure managed identity token - %w", err)

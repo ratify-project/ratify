@@ -44,7 +44,7 @@ type serveCmdOptions struct {
 	metricsPort       int
 }
 
-func NewCmdServe(argv ...string) *cobra.Command {
+func NewCmdServe(_ ...string) *cobra.Command {
 	var opts serveCmdOptions
 
 	cmd := &cobra.Command{

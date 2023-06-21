@@ -101,7 +101,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 }
 
 // Enabled checks if ratify namespace, config, or cluster client set is nil
-func (d *k8SecretAuthProvider) Enabled(ctx context.Context) bool {
+func (d *k8SecretAuthProvider) Enabled(_ context.Context) bool {
 	if d.ratifyNamespace == "" || d.clusterClientSet == nil {
 		return false
 	}
