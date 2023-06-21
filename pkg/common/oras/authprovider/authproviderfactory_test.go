@@ -22,7 +22,7 @@ import (
 
 type TestAuthProviderFactory struct{}
 
-func (f *TestAuthProviderFactory) Create(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
+func (f *TestAuthProviderFactory) Create(_ AuthProviderConfig) (AuthProvider, error) {
 	return &TestAuthProvider{}, nil
 }
 

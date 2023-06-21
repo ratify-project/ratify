@@ -24,7 +24,7 @@ import (
 var builtInAuthProviders = make(map[string]AuthProviderFactory)
 
 // AuthProviderFactory is an interface that defines methods to create an AuthProvider
-type AuthProviderFactory interface {
+type AuthProviderFactory interface { //nolint:revive // ignore linter to have unique type name
 	Create(authProviderConfig AuthProviderConfig) (AuthProvider, error)
 }
 
@@ -76,6 +76,6 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 }
 
 // TODO: add validation
-func validateAuthProviderConfig(authProviderConfig AuthProviderConfig) error {
+func validateAuthProviderConfig(_ AuthProviderConfig) error {
 	return nil
 }

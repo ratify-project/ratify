@@ -32,8 +32,8 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 
-	_ "github.com/notaryproject/notation-core-go/signature/cose"
-	_ "github.com/notaryproject/notation-core-go/signature/jws"
+	_ "github.com/notaryproject/notation-core-go/signature/cose" // register COSE signature
+	_ "github.com/notaryproject/notation-core-go/signature/jws"  // register JWS signature
 	"github.com/notaryproject/notation-go"
 	notaryVerifier "github.com/notaryproject/notation-go/verifier"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
@@ -46,7 +46,7 @@ const (
 )
 
 // NotaryV2VerifierConfig describes the configuration of notation verifier
-type NotaryV2VerifierConfig struct {
+type NotaryV2VerifierConfig struct { //nolint:revive // ignore linter to have unique type name
 	Name          string `json:"name"`
 	ArtifactTypes string `json:"artifactTypes"`
 
@@ -69,7 +69,7 @@ func init() {
 	factory.Register(verifierName, &notaryv2VerifierFactory{})
 }
 
-func (f *notaryv2VerifierFactory) Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
+func (f *notaryv2VerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
 	conf, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
 		return nil, err
@@ -91,7 +91,7 @@ func (v *notaryV2Verifier) Name() string {
 	return verifierName
 }
 
-func (v *notaryV2Verifier) CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
+func (v *notaryV2Verifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
 	for _, at := range v.artifactTypes {
 		if at == "*" || at == referenceDescriptor.ArtifactType {
 			return true

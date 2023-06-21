@@ -24,8 +24,8 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
-	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault"
-	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"
+	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
+	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
 	"github.com/deislabs/ratify/pkg/utils"
 
 	"github.com/sirupsen/logrus"
@@ -87,26 +87,26 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	isFetchSuccessful := false
 
 	if err != nil {
-		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
 	}
 
 	provider, err := getCertificateProvider(certificateprovider.GetCertificateProviders(), certStore.Spec.Provider)
 	if err != nil {
-		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
 	}
 
 	certificates, certAttributes, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
-		writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
 	certificatesMap[resource] = certificates
 	isFetchSuccessful = true
 	emptyErrorString := ""
-	writeCertStoreStatus(r, ctx, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
+	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
 
 	logger.Infof("%v certificates fetched for certificate store %v", len(certificates), resource)
 
@@ -146,7 +146,7 @@ func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]str
 	return attributes, nil
 }
 
-func writeCertStoreStatus(r *CertificateStoreReconciler, ctx context.Context, certStore configv1beta1.CertificateStore, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, certStatus certificateprovider.CertificatesStatus) {
+func writeCertStoreStatus(ctx context.Context, r *CertificateStoreReconciler, certStore configv1beta1.CertificateStore, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, certStatus certificateprovider.CertificatesStatus) {
 	if isSuccess {
 		updateSuccessStatus(&certStore, &operationTime, certStatus)
 	} else {

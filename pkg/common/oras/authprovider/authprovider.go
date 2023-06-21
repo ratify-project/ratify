@@ -89,12 +89,12 @@ func (s *defaultProviderFactory) Create(authProviderConfig AuthProviderConfig) (
 }
 
 // Enabled always returns true for defaultAuthProvider
-func (d *defaultAuthProvider) Enabled(ctx context.Context) bool {
+func (d *defaultAuthProvider) Enabled(_ context.Context) bool {
 	return true
 }
 
 // Provide reads docker config file and returns corresponding credentials from file if exists
-func (d *defaultAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
+func (d *defaultAuthProvider) Provide(_ context.Context, artifact string) (AuthConfig, error) {
 	// load docker config file at default path if config file path not specified
 	var cfg *configfile.ConfigFile
 	if d.configPath == "" {
