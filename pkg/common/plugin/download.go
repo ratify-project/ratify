@@ -33,7 +33,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 )
 
-type PluginSource struct {
+type PluginSource struct { //nolint:revive // ignore linter to have unique type name
 	Artifact     string                          `json:"artifact"`
 	AuthProvider authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
 }

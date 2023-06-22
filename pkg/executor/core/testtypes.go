@@ -34,14 +34,14 @@ func (s *TestVerifier) Name() string {
 	return "test-verifier"
 }
 
-func (s *TestVerifier) CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
+func (s *TestVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
 	return s.CanVerifyFunc(referenceDescriptor.ArtifactType)
 }
 
-func (s *TestVerifier) Verify(ctx context.Context,
-	subjectReference common.Reference,
+func (s *TestVerifier) Verify(_ context.Context,
+	_ common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+	_ referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	return verifier.VerifierResult{
 		IsSuccess: s.VerifyResult(referenceDescriptor.ArtifactType),
 	}, nil

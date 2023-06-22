@@ -68,7 +68,7 @@ func PluginMain(name, version string, verifyReference VerifyReference, supported
 	}
 }
 
-func (pc *pcontext) pluginMainCore(name, version string, verifyReference VerifyReference, supportedVersions []string) *plugin.Error {
+func (pc *pcontext) pluginMainCore(_, version string, verifyReference VerifyReference, supportedVersions []string) *plugin.Error {
 	cmd, cmdArgs, err := pc.getCmdArgsFromEnv()
 	if err != nil {
 		return err

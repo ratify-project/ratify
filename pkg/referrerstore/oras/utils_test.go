@@ -43,7 +43,7 @@ func TestIsInsecureRegistry(t *testing.T) {
 			registry: "registry:5000/test/registry:v0",
 			config: OrasStoreConf{
 				Name:    "oras",
-				UseHttp: true,
+				UseHTTP: true,
 			},
 			expected: true,
 		},

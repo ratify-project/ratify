@@ -30,7 +30,7 @@ var reLoopback = regexp.MustCompile(regexp.QuoteMeta("127.0.0.1"))
 var reipv6Loopback = regexp.MustCompile(regexp.QuoteMeta("::1"))
 
 func isInsecureRegistry(registry string, config *OrasStoreConf) bool {
-	if config.UseHttp {
+	if config.UseHTTP {
 		return true
 	}
 	if strings.HasPrefix(registry, "localhost:") {
