@@ -33,8 +33,8 @@ jobs:
 
       - name: Copy signed sample test image
         run: 
-          oras cp wabbitnetworks.azurecr.io/test/notary-image:signed ${{ env.REGISTRY }}/${REPO_OWNER}/test/notary-image:signed
+          oras cp wabbitnetworks.azurecr.io/test/notary-image:signed ${{ env.REGISTRY }}/${REPO_OWNER}/ratify/notary-image:signed
 
       - name: Copy unsigned sample test image 
         run: 
-          oras cp wabbitnetworks.azurecr.io/test/notary-image:unsigned ${{ env.REGISTRY }}/${REPO_OWNER}/test/notary-image:unsigned
+          oras cp wabbitnetworks.azurecr.io/test/notary-image:unsigned ${{ env.REGISTRY }}/${REPO_OWNER}/ratify/notary-image:unsigned
