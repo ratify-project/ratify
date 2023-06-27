@@ -5,7 +5,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-
+  
 permissions:
   contents: read
 
@@ -21,8 +21,8 @@ jobs:
        
       # need to convert repo name to lowercase for Docker
       - name: Get repo
-        run: |
-          echo "REPO_OWNER=$(echo $GITHUB_REPOSITORY_OWNER | awk '{print tolower($0)}')" >> $GITHUB_ENV
+        run: |          
+          echo "REPOSITORY=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_ENV
 
       - name: Log in to the GHCR
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
@@ -33,8 +33,8 @@ jobs:
 
       - name: Copy signed sample test image
         run: 
-          oras cp wabbitnetworks.azurecr.io/test/notary-image:signed ${{ env.REGISTRY }}/${REPO_OWNER}/ratify/notary-image:signed
+          oras cp wabbitnetworks.azurecr.io/test/notary-image:signed ${REPOSITORY}/notary-image:signed
 
       - name: Copy unsigned sample test image 
         run: 
-          oras cp wabbitnetworks.azurecr.io/test/notary-image:unsigned ${{ env.REGISTRY }}/${REPO_OWNER}/ratify/notary-image:unsigned
+          oras cp wabbitnetworks.azurecr.io/test/notary-image:unsigned ${REPOSITORY}/notary-image:unsigned
