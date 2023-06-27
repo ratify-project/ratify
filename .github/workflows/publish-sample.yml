@@ -17,9 +17,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    steps:
-       
-      # need to convert repo name to lowercase for Docker
+    steps:            
       - name: Get repo
         run: |          
           echo "REPOSITORY=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_ENV
