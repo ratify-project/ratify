@@ -119,6 +119,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: RATIFY_NAME
+              value: {{ include "ratify.fullname" . }}
           {{- range $k, $v := .Values.featureFlags }}
             - name: {{ $k }}
               value: {{ $v | ternary 1 0 | quote }}

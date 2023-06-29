@@ -180,11 +180,11 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 
 // verifyReferenceForJsonPolicy verifies the referenced artifact with results
 // used for the Json-based policy enforcer.
-func (ex Executor) verifyReferenceForJsonPolicy(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
+func (executor Executor) verifyReferenceForJsonPolicy(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
 
-	for _, verifier := range ex.Verifiers {
+	for _, verifier := range executor.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
@@ -197,7 +197,7 @@ func (ex Executor) verifyReferenceForJsonPolicy(ctx context.Context, subjectRef 
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
-				ex.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
+				executor.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
@@ -263,15 +263,15 @@ func (ex Executor) verifyReferenceForRegoPolicy(ctx context.Context, subjectRef 
 
 // addNestedVerifierResult adds the nested verifier result to the parent verify
 // result used for Json-based policy enforcer.
-func (ex Executor) addNestedVerifierResult(ctx context.Context, referenceDesc ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifyResult *vr.VerifierResult) {
+func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceDesc ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifyResult *vr.VerifierResult) {
 	verifyParameters := e.VerifyParameters{
 		Subject:        fmt.Sprintf("%s@%s", subjectRef.Path, referenceDesc.Digest),
 		ReferenceTypes: []string{"*"},
 	}
 
-	nestedVerifyResult, err := ex.verifySubjectWithJsonPolicy(ctx, verifyParameters)
+	nestedVerifyResult, err := executor.verifySubjectWithJsonPolicy(ctx, verifyParameters)
 	if err != nil {
-		nestedVerifyResult = ex.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
+		nestedVerifyResult = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
 
 	for _, report := range nestedVerifyResult.VerifierReports {

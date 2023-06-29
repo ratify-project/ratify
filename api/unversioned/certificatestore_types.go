@@ -42,6 +42,9 @@ type CertificateStoreStatus struct {
 	// Error message if operation was unsuccessful
 	// +optional
 	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
 	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`

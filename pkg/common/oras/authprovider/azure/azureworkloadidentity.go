@@ -32,7 +32,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type AzureWIProviderFactory struct{}
+type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
 type azureWIAuthProvider struct {
 	aadToken confidential.AuthResult
 	tenantID string
@@ -92,7 +92,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
-func (d *azureWIAuthProvider) Enabled(ctx context.Context) bool {
+func (d *azureWIAuthProvider) Enabled(_ context.Context) bool {
 	if d.tenantID == "" || d.clientID == "" {
 		return false
 	}
@@ -128,10 +128,10 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	}
 
 	// add protocol to generate complete URI
-	serverUrl := "https://" + artifactHostName
+	serverURL := "https://" + artifactHostName
 
 	// create registry client and exchange AAD token for registry refresh token
-	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverUrl)
+	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
 	startTime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
@@ -139,12 +139,24 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	}
 	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 
+	refreshTokenExpiry := getACRExpiryIfEarlier(d.aadToken.ExpiresOn)
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,
 		Password:  *rt.RefreshToken,
 		Provider:  d,
-		ExpiresOn: d.aadToken.ExpiresOn,
+		ExpiresOn: refreshTokenExpiry,
 	}
 
 	return authConfig, nil
+}
+
+// Compare addExpiry with default ACR refresh token expiry
+func getACRExpiryIfEarlier(aadExpiry time.Time) time.Time {
+	// set default refresh token expiry to default ACR expiry - 5 minutes
+	acrExpiration := time.Now().Add(defaultACRExpiryDuration - 5*time.Minute)
+
+	if acrExpiration.Before(aadExpiry) {
+		return acrExpiration
+	}
+	return aadExpiry
 }

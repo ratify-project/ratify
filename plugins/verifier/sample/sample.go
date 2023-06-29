@@ -49,7 +49,7 @@ func parseInput(stdin []byte) (*PluginConfig, error) {
 	return &conf.Config, nil
 }
 
-func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
+func VerifyReference(args *skel.CmdArgs, _ common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, _ referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
 	input, err := parseInput(args.StdinData)
 	if err != nil {
 		return nil, err

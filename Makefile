@@ -18,13 +18,16 @@ GATEKEEPER_VERSION ?= 3.11.0
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.3
 ORAS_VERSION ?= 1.0.0-rc.2
+SBOM_TOOL_VERSION ?= 1.1.2
 
 HELM_VERSION ?= 3.9.2
-BATS_TESTS_FILE ?= test/bats/test.bats
+BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
+BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_VERSION ?= 1.7.0
 SYFT_VERSION ?= v0.76.0
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
+CERT_ROTATION_ENABLED ?= false
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -120,8 +123,9 @@ delete-gatekeeper:
 	helm delete gatekeeper --namespace ${GATEKEEPER_NAMESPACE}
 
 .PHONY: test-e2e
-test-e2e:
-	bats -t ${BATS_TESTS_FILE}
+test-e2e: generate-rotation-certs
+	bats -t ${BATS_BASE_TESTS_FILE}
+	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
@@ -134,9 +138,25 @@ test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-
 generate-certs:
 	./scripts/generate-tls-certs.sh ${CERT_DIR} ${GATEKEEPER_NAMESPACE}
 
+generate-rotation-certs:
+	mkdir -p .staging/rotation
+	mkdir -p .staging/rotation/gatekeeper
+	mkdir -p .staging/rotation/expiring-certs
+
+	./scripts/generate-gk-tls-certs.sh .staging/rotation/gatekeeper ${GATEKEEPER_NAMESPACE}
+	./scripts/generate-tls-certs.sh .staging/rotation ${GATEKEEPER_NAMESPACE}
+	./scripts/generate-tls-certs.sh .staging/rotation/expiring-certs ${GATEKEEPER_NAMESPACE} 1
+
 install-bats:
 	# Download and install bats
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
+
+.PHONY: lint
+lint:
+	# Download and install golangci-lint
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	# Run golangci-lint
+	golangci-lint run --print-issued-lines=false --out-format=colored-line-number --issues-exit-code=0
 
 e2e-dependencies:
 	# Download and install kind
@@ -185,12 +205,12 @@ e2e-run-local-registry:
 e2e-create-all-image:
 	rm -rf .staging
 	mkdir .staging
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/all:v0 .staging
 	docker push ${TEST_REGISTRY}/all:v0
 
 e2e-bootstrap: e2e-dependencies e2e-create-local-registry
-	echo 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
+	printf 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
 
 	# Check for existing kind cluster
 	if [ $$(${GITHUB_WORKSPACE}/bin/kind get clusters) ]; then ${GITHUB_WORKSPACE}/bin/kind delete cluster; fi
@@ -223,7 +243,7 @@ e2e-notaryv2-setup:
 	curl -L https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz --output ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz
 	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notaryv2/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notaryv2
 
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image"]' > .staging/notaryv2/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed .staging/notaryv2
 	docker push ${TEST_REGISTRY}/notation:signed
 
@@ -239,7 +259,7 @@ e2e-notaryv2-setup:
 
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image oci artifact"]' > .staging/notaryv2/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image oci artifact"]' > .staging/notaryv2/Dockerfile && \
 		docker build --no-cache -t ${TEST_REGISTRY}/notation:ociartifact .staging/notaryv2 && \
 		docker push ${TEST_REGISTRY}/notation:ociartifact && \
 		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:ociartifact | jq -r .[0].RepoDigests[0]`; \
@@ -255,7 +275,7 @@ e2e-notation-leaf-cert-setup:
 
 	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notaryv2/leaf-test/leaf.key","certPath":".staging/notaryv2/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
 
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 leaf signed image"]' > .staging/notaryv2/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:leafSigned .staging/notaryv2
 	docker push ${TEST_REGISTRY}/notation:leafSigned
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" `docker image inspect ${TEST_REGISTRY}/notation:leafSigned | jq -r .[0].RepoDigests[0]`
@@ -268,7 +288,7 @@ e2e-cosign-setup:
 	chmod +x .staging/cosign/cosign-linux-amd64
 
 	# image signed with a key
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/cosign:signed-key .staging/cosign
 	docker push ${TEST_REGISTRY}/cosign:signed-key
 
@@ -291,7 +311,7 @@ e2e-licensechecker-setup:
 	curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .staging/licensechecker ${SYFT_VERSION}
 
 	# Build/Push Image
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
 	docker push ${TEST_REGISTRY}/licensechecker:v0
 
@@ -306,7 +326,7 @@ e2e-licensechecker-setup:
 
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image oci artifact"]' > .staging/licensechecker/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image oci artifact"]' > .staging/licensechecker/Dockerfile && \
 		docker build -t ${TEST_REGISTRY}/licensechecker:ociartifact .staging/licensechecker && \
 		docker push ${TEST_REGISTRY}/licensechecker:ociartifact && \
 		${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:ociartifact \
@@ -320,13 +340,13 @@ e2e-sbom-setup:
 	mkdir -p .staging/sbom
 
 	# Install sbom-tool
-	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/download/v${SBOM_TOOL_VERSION}/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
 
 	# Build/Push Images
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:v0
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:unsigned
 
@@ -351,7 +371,7 @@ e2e-sbom-setup:
 
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image oci artifact"]' > .staging/sbom/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image oci artifact"]' > .staging/sbom/Dockerfile && \
 		docker build --no-cache -t ${TEST_REGISTRY}/sbom:ociartifact .staging/sbom && \
 		docker push ${TEST_REGISTRY}/sbom:ociartifact && \
 		${GITHUB_WORKSPACE}/bin/oras attach \
@@ -371,7 +391,7 @@ e2e-schemavalidator-setup:
 	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
 
 	# Build/Push Images
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
 	docker push ${TEST_REGISTRY}/schemavalidator:v0
 
@@ -388,7 +408,7 @@ e2e-schemavalidator-setup:
 	
 	# OCI 1.1 Artifact Resources
 	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image oci artifact"]' > .staging/schemavalidator/Dockerfile && \
+		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image oci artifact"]' > .staging/schemavalidator/Dockerfile && \
 		docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:ociartifact .staging/schemavalidator && \
 		docker push ${TEST_REGISTRY}/schemavalidator:ociartifact && \
 		${GITHUB_WORKSPACE}/bin/oras attach \
@@ -403,7 +423,7 @@ e2e-inlinecert-setup:
 	mkdir -p .staging/inlinecert
 
 	# build and sign an image with an alternate certificate
-	echo 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "alternate notaryv2 signed image"]' > .staging/inlinecert/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
 	docker push ${TEST_REGISTRY}/notation:signed-alternate
 
@@ -423,14 +443,52 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
-e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup
-	docker build --progress=plain --no-cache -f ./httpserver/Dockerfile -t localbuild:test .
-	kind load docker-image --name kind localbuild:test
-
+e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
-	echo "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+e2e-deploy-base-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-inlinecert-setup e2e-build-crd-image
+	docker build --progress=plain --no-cache \
+	-f ./httpserver/Dockerfile \
+	-t baselocalbuild:test .
+	kind load docker-image --name kind baselocalbuild:test
+
+	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+
+	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
+    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	--set image.repository=baselocalbuild \
+	--set image.crdRepository=localbuildcrd \
+	--set image.tag=test \
+	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
+	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
+	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set oras.useHttp=true \
+	--set cosign.enabled=false \
+	--set-file dockerConfig="mount_config.json" \
+	--set logLevel=debug
+
+	rm mount_config.json
+
+e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
+
+e2e-build-local-ratify-image:
+	docker build --progress=plain --no-cache \
+	--build-arg build_cosign=true \
+	--build-arg build_sbom=true \
+	--build-arg build_licensechecker=true \
+	--build-arg build_schemavalidator=true \
+	-f ./httpserver/Dockerfile \
+	-t localbuild:test .
+	kind load docker-image --name kind localbuild:test
+
+e2e-helm-deploy-ratify:
+	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
     ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
@@ -438,8 +496,11 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	--set image.crdRepository=localbuildcrd \
 	--set image.tag=test \
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
@@ -448,6 +509,7 @@ e2e-deploy-ratify: e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 	--set logLevel=debug
 
 	rm mount_config.json
+
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 

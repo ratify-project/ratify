@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	_ "crypto/sha256"
+	_ "crypto/sha256" // required package for digest.Parse
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/docker/distribution/reference"

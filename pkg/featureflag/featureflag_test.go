@@ -21,22 +21,22 @@ import (
 )
 
 func TestFeatureFlag_UsesDefaultValues(t *testing.T) {
-	flag1 := new("TEST_FLAG1", false)
+	flag1 := newFeatureFlag("TEST_FLAG1", false)
 	if flag1.Enabled {
 		t.Fatal("expected flag1 to be disabled")
 	}
 
-	flag2 := new("TEST_FLAG2", true)
+	flag2 := newFeatureFlag("TEST_FLAG2", true)
 	if !flag2.Enabled {
 		t.Fatal("expected flag2 to be enabled")
 	}
 }
 
 func TestInitFeatureFlagsFromEnv_SetsValues(t *testing.T) {
-	flag1 := new("TEST_FLAG1", false)
-	flag2 := new("TEST_FLAG2", false)
-	flag3 := new("TEST_FLAG3", true)
-	flag4 := new("TEST_FLAG4", true)
+	flag1 := newFeatureFlag("TEST_FLAG1", false)
+	flag2 := newFeatureFlag("TEST_FLAG2", false)
+	flag3 := newFeatureFlag("TEST_FLAG3", true)
+	flag4 := newFeatureFlag("TEST_FLAG4", true)
 
 	// override flag defaults
 	os.Setenv("RATIFY_TEST_FLAG2", "1")

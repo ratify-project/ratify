@@ -20,22 +20,22 @@ import (
 	"testing"
 )
 
-var schema_url = "https://json.schemastore.org/sarif-2.1.0-rtm.5.json"
-var schema_file_bytes []byte
-var schema_file_mismatch_bytes []byte
-var schema_file_bad_bytes []byte
-var trivy_scan_report []byte
+var schemaURL = "https://json.schemastore.org/sarif-2.1.0-rtm.5.json"
+var schemaFileBytes []byte
+var schemaFileMismatchBytes []byte
+var schemaFileBadBytes []byte
+var trivyScanReport []byte
 
 func init() {
-	trivy_scan_report, _ = os.ReadFile("./testdata/trivy_scan_report.json")
-	schema_file_bytes, _ = os.ReadFile("./schemas/sarif-2.1.0-rtm.5.json")
-	schema_file_mismatch_bytes, _ = os.ReadFile("./testdata/mismatch_schema.json")
-	schema_file_bad_bytes, _ = os.ReadFile("./testdata/bad_schema.json")
+	trivyScanReport, _ = os.ReadFile("./testdata/trivy_scan_report.json")
+	schemaFileBytes, _ = os.ReadFile("./schemas/sarif-2.1.0-rtm.5.json")
+	schemaFileMismatchBytes, _ = os.ReadFile("./testdata/mismatch_schema.json")
+	schemaFileBadBytes, _ = os.ReadFile("./testdata/bad_schema.json")
 }
 
 func TestProperSchemaValidates(t *testing.T) {
 	expected := true
-	result := Validate(schema_url, trivy_scan_report) == nil
+	result := Validate(schemaURL, trivyScanReport) == nil
 
 	if expected != result {
 		t.Logf("expected: %v, got: %v", expected, result)
@@ -45,7 +45,7 @@ func TestProperSchemaValidates(t *testing.T) {
 
 func TestInvalidSchemaFailsValidation(t *testing.T) {
 	expected := false
-	result := Validate("bad schema", trivy_scan_report) == nil
+	result := Validate("bad schema", trivyScanReport) == nil
 
 	if expected != result {
 		t.Logf("expected: %v, got: %v", expected, result)
@@ -55,7 +55,7 @@ func TestInvalidSchemaFailsValidation(t *testing.T) {
 
 func TestProperSchemaValidatesFromFile(t *testing.T) {
 	expected := true
-	result := ValidateAgainstOfflineSchema(schema_file_bytes, trivy_scan_report) == nil
+	result := ValidateAgainstOfflineSchema(schemaFileBytes, trivyScanReport) == nil
 
 	if expected != result {
 		t.Logf("expected: %v, got: %v", expected, result)
@@ -65,7 +65,7 @@ func TestProperSchemaValidatesFromFile(t *testing.T) {
 
 func TestSchemaMismatchFromFile(t *testing.T) {
 	expected := false
-	result := ValidateAgainstOfflineSchema(schema_file_mismatch_bytes, trivy_scan_report) == nil
+	result := ValidateAgainstOfflineSchema(schemaFileMismatchBytes, trivyScanReport) == nil
 
 	if expected != result {
 		t.Logf("expected: %v, got: %v", expected, result)
@@ -75,7 +75,7 @@ func TestSchemaMismatchFromFile(t *testing.T) {
 
 func TestBadSchemaValidatesFromFile(t *testing.T) {
 	expected := false
-	result := ValidateAgainstOfflineSchema(schema_file_bad_bytes, trivy_scan_report) == nil
+	result := ValidateAgainstOfflineSchema(schemaFileBadBytes, trivyScanReport) == nil
 
 	if expected != result {
 		t.Logf("expected: %v, got: %v", expected, result)

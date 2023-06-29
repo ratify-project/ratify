@@ -58,7 +58,7 @@ spec:
     - jsonPath: .status.issuccess
       name: IsSuccess
       type: boolean
-    - jsonPath: .status.error
+    - jsonPath: .status.brieferror
       name: Error
       type: string
     - jsonPath: .status.lastfetchedtime
@@ -95,6 +95,9 @@ spec:
           status:
             description: CertificateStoreStatus defines the observed state of CertificateStore
             properties:
+              brieferror:
+                description: Truncated error message if the message is too long
+                type: string
               error:
                 description: Error message if operation was unsuccessful
                 type: string
@@ -110,7 +113,6 @@ spec:
               properties:
                 description: provider specific parameters of the each individual certificate
                 type: object
-                x-kubernetes-preserve-unknown-fields: true
             required:
             - issuccess
             type: object

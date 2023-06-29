@@ -30,7 +30,7 @@ import (
 
 type TestStoreFactory struct{}
 
-func (f *TestStoreFactory) Create(version string, storesConfig config.StorePluginConfig) (referrerstore.ReferrerStore, error) {
+func (f *TestStoreFactory) Create(_ string, _ config.StorePluginConfig) (referrerstore.ReferrerStore, error) {
 	return &mocks.TestStore{}, nil
 }
 

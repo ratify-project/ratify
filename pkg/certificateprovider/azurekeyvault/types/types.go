@@ -17,8 +17,8 @@ package types
 // This class is based on implementation from  azure secret store csi provider
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 const (
-	// KeyVaultUriParameter is the name of the key vault URI parameter
-	KeyVaultUriParameter = "vaultURI"
+	// KeyVaultURIParameter is the name of the key vault URI parameter
+	KeyVaultURIParameter = "vaultURI"
 	// CloudNameParameter is the name of the cloud name parameter
 	CloudNameParameter = "cloudName"
 	// TenantIDParameter is the name of the tenant ID parameter

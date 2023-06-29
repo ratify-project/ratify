@@ -50,7 +50,7 @@ func (m *RatifyPluginManager) Get(ctx context.Context, name string) (plugin.Plug
 }
 
 // Lists available notation plugins in the target directory
-func (m *RatifyPluginManager) List(ctx context.Context) ([]string, error) {
+func (m *RatifyPluginManager) List(_ context.Context) ([]string, error) {
 	var plugins []string
 	err := fs.WalkDir(m.pluginFS, ".", func(dir string, d fs.DirEntry, err error) error {
 		if err != nil {

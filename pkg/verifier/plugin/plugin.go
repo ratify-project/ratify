@@ -75,7 +75,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 	}, nil
 }
 
-func (vp *VerifierPlugin) CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
+func (vp *VerifierPlugin) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
 	for _, at := range vp.artifactTypes {
 		if at == "*" || at == referenceDescriptor.ArtifactType {
 			return true

@@ -53,7 +53,7 @@ type PluginConfig struct {
 }
 
 type StoreConfig struct {
-	UseHttp bool `json:"useHttp,omitempty"`
+	UseHTTP bool `json:"useHttp,omitempty"`
 }
 
 type StoreWrapperConfig struct {
@@ -204,7 +204,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	return errorResult, nil
 }
 
-func loadPublicKey(ctx context.Context, keyRef string) (verifier signature.Verifier, err error) {
+func loadPublicKey(_ context.Context, keyRef string) (verifier signature.Verifier, err error) {
 	keyPath := filepath.Clean(utils.ReplaceHomeShortcut(keyRef))
 	raw, err := os.ReadFile(keyPath)
 	if err != nil {
