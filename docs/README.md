@@ -18,10 +18,6 @@ Within this directory you will find documentation for Ratify.  The documentation
 
 - [gatekeeper-policy-authoring](quickstarts/gatekeeper-policy-authoring.md) - Authoring gatekeeper policies for use with ratify, including rego references/examples.
 
-### SPDX Integration:
-
-- [working-with-spdx](quickstarts/working-with-spdx.md) - Use ratify with syft, oras, and verification using ratify cli.
-
 ### Contributing:
 - [Developer Getting Started](../CONTRIBUTING.md) - Getting started with ratify development.
 
