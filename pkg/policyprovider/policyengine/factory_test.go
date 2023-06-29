@@ -24,7 +24,7 @@ import (
 
 type mockEngine struct{}
 
-func (e *mockEngine) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
+func (e *mockEngine) Evaluate(_ context.Context, _ map[string]interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -32,7 +32,7 @@ type mockFactory struct {
 	returnErr bool
 }
 
-func (f *mockFactory) Create(policy string, queryLanguage string) (PolicyEngine, error) {
+func (f *mockFactory) Create(_ string, _ string) (PolicyEngine, error) {
 	if f.returnErr {
 		return nil, errors.New("error")
 	}
@@ -89,14 +89,14 @@ func TestRegister(t *testing.T) {
 func TestCreateEngineFromConf(t *testing.T) {
 	testcases := []struct {
 		name         string
-		config       PolicyEngineConfig
+		config       Config
 		factories    map[string]EngineFactory
 		expectErr    bool
 		expectEngine PolicyEngine
 	}{
 		{
 			name: "empty engine name",
-			config: PolicyEngineConfig{
+			config: Config{
 				Name: "",
 			},
 			expectErr:    true,
@@ -104,7 +104,7 @@ func TestCreateEngineFromConf(t *testing.T) {
 		},
 		{
 			name: "engine not found",
-			config: PolicyEngineConfig{
+			config: Config{
 				Name: "test",
 			},
 			factories:    map[string]EngineFactory{},
@@ -113,7 +113,7 @@ func TestCreateEngineFromConf(t *testing.T) {
 		},
 		{
 			name: "failed creating engine",
-			config: PolicyEngineConfig{
+			config: Config{
 				Name: "test",
 			},
 			factories: map[string]EngineFactory{
@@ -126,7 +126,7 @@ func TestCreateEngineFromConf(t *testing.T) {
 		},
 		{
 			name: "engine created",
-			config: PolicyEngineConfig{
+			config: Config{
 				Name: "test",
 			},
 			factories: map[string]EngineFactory{

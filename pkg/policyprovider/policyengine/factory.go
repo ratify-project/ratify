@@ -19,8 +19,8 @@ import "fmt"
 
 var engineFactories = make(map[string]EngineFactory)
 
-// PolicyEngineConfig represents the configuration for an OPA policy engine.
-type PolicyEngineConfig struct {
+// Config represents the configuration for an OPA policy engine.
+type Config struct {
 	// Name is the name of the policy engine.
 	Name string
 	// QueryLanguage is the language of the policy query.
@@ -49,7 +49,7 @@ func Register(name string, factory EngineFactory) {
 }
 
 // CreateEngineFromConfig creates an OPA policy engine from the provided configuration.
-func CreateEngineFromConfig(engineConfig PolicyEngineConfig) (PolicyEngine, error) {
+func CreateEngineFromConfig(engineConfig Config) (PolicyEngine, error) {
 	engineName := engineConfig.Name
 	if engineName == "" {
 		return nil, fmt.Errorf("policy engine name must be specified")

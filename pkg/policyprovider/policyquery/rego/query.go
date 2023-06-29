@@ -25,7 +25,8 @@ import (
 )
 
 const (
-	query    = "data.ratify.policy.valid"
+	query = "data.ratify.policy.valid"
+	// RegoName is a constant for "rego"
 	RegoName = "rego"
 )
 

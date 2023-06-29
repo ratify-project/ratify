@@ -37,7 +37,7 @@ valid {
 
 type mockQuery struct{}
 
-func (q *mockQuery) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
+func (q *mockQuery) Evaluate(_ context.Context, _ map[string]interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -73,7 +73,7 @@ func TestCreate(t *testing.T) {
 	}
 
 	for _, tc := range testcases {
-		factory := &OpaEngineFactory{}
+		factory := &EngineFactory{}
 		engine, err := factory.Create(tc.policy, tc.queryLanguage)
 		if tc.expectErr != (err != nil) {
 			t.Fatalf("error = %v, expectErr = %v", err, tc.expectErr)
@@ -85,7 +85,7 @@ func TestCreate(t *testing.T) {
 }
 
 func TestEvalua(t *testing.T) {
-	engine := &OpaEngine{
+	engine := &Engine{
 		query: &mockQuery{},
 	}
 	result, err := engine.Evaluate(context.Background(), nil)

@@ -24,7 +24,7 @@ import (
 
 type mockQuery struct{}
 
-func (q *mockQuery) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
+func (q *mockQuery) Evaluate(_ context.Context, _ map[string]interface{}) (bool, error) {
 	return true, nil
 }
 
@@ -32,7 +32,7 @@ type mockFactory struct {
 	returnErr bool
 }
 
-func (f *mockFactory) Create(policy string) (PolicyQuery, error) {
+func (f *mockFactory) Create(_ string) (PolicyQuery, error) {
 	if f.returnErr {
 		return nil, errors.New("error")
 	}
@@ -43,8 +43,8 @@ func TestRegister(t *testing.T) {
 	testcases := []struct {
 		name        string
 		queryName   string
-		factory     PolicyQueryFactory
-		factories   map[string]PolicyQueryFactory
+		factory     Factory
+		factories   map[string]Factory
 		expectPanic bool
 	}{
 		{
@@ -57,7 +57,7 @@ func TestRegister(t *testing.T) {
 			name:      "factory duplicated",
 			queryName: "test",
 			factory:   &mockFactory{},
-			factories: map[string]PolicyQueryFactory{
+			factories: map[string]Factory{
 				"test": &mockFactory{},
 			},
 			expectPanic: true,
@@ -66,7 +66,7 @@ func TestRegister(t *testing.T) {
 			name:        "factory registered",
 			queryName:   "test",
 			factory:     &mockFactory{},
-			factories:   map[string]PolicyQueryFactory{},
+			factories:   map[string]Factory{},
 			expectPanic: false,
 		},
 	}
@@ -89,14 +89,14 @@ func TestRegister(t *testing.T) {
 func TestCreateQueryFromConfig(t *testing.T) {
 	testcases := []struct {
 		name        string
-		config      PolicyQueryConfig
-		factories   map[string]PolicyQueryFactory
+		config      Config
+		factories   map[string]Factory
 		expectErr   bool
 		expectQuery PolicyQuery
 	}{
 		{
 			name: "empty query name",
-			config: PolicyQueryConfig{
+			config: Config{
 				Name: "",
 			},
 			expectErr:   true,
@@ -104,19 +104,19 @@ func TestCreateQueryFromConfig(t *testing.T) {
 		},
 		{
 			name: "query not found",
-			config: PolicyQueryConfig{
+			config: Config{
 				Name: "test",
 			},
-			factories:   map[string]PolicyQueryFactory{},
+			factories:   map[string]Factory{},
 			expectErr:   true,
 			expectQuery: nil,
 		},
 		{
 			name: "failed creating query",
-			config: PolicyQueryConfig{
+			config: Config{
 				Name: "test",
 			},
-			factories: map[string]PolicyQueryFactory{
+			factories: map[string]Factory{
 				"test": &mockFactory{
 					returnErr: true,
 				},
@@ -126,10 +126,10 @@ func TestCreateQueryFromConfig(t *testing.T) {
 		},
 		{
 			name: "query created",
-			config: PolicyQueryConfig{
+			config: Config{
 				Name: "test",
 			},
-			factories: map[string]PolicyQueryFactory{
+			factories: map[string]Factory{
 				"test": &mockFactory{},
 			},
 			expectErr:   false,

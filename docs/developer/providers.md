@@ -78,7 +78,7 @@ Example results when using Rego policy provider:
 ```json
 {
   "isSuccess": true,
-  "nestedReports": [
+  "verifierReports": [
     {
       "subject": "registry:5000/sbom@sha256:f291201143149e4006894b2d64202a8b90416b7dcde1c8ad997b1099312af3ce",
       "referenceDigest": "sha256:932dde71a9f26ddafa61e8a7df2b296b1787bcb6e75c515584a53776e81a8a00",
