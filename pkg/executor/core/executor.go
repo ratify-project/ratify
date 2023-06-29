@@ -58,11 +58,11 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 	if featureflag.UseRegoPolicy.Enabled {
 		return executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
 	}
-	return executor.verifySubjectWithJsonPolicy(ctx, verifyParameters)
+	return executor.verifySubjectWithJSONPolicy(ctx, verifyParameters)
 }
 
-// verifySubjectWithJsonPolicy verifies the subject with the Json-based policy enforcer.
-func (executor Executor) verifySubjectWithJsonPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+// verifySubjectWithJSONPolicy verifies the subject with the Json-based policy enforcer.
+func (executor Executor) verifySubjectWithJSONPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	result, err := executor.verifySubjectInternalWithDecision(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -146,7 +146,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 					reference := reference
 					innerGroup.Go(func() error {
 						if featureflag.UseRegoPolicy.Enabled {
-							verifyResult, err := executor.verifyReferenceForRegoPolicy(innerErrCtx, subjectReference, desc, reference, referrerStore)
+							verifyResult, err := executor.verifyReferenceForRegoPolicy(innerErrCtx, subjectReference, reference, referrerStore)
 							if err != nil {
 								logrus.Errorf("error while verifying reference %+v, err: %v", reference, err)
 								return err
@@ -155,7 +155,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 							defer mu.Unlock()
 							verifierReports = append(verifierReports, verifyResult)
 						} else {
-							verifyResult := executor.verifyReferenceForJsonPolicy(innerErrCtx, subjectReference, desc, reference, referrerStore)
+							verifyResult := executor.verifyReferenceForJSONPolicy(innerErrCtx, subjectReference, reference, referrerStore)
 							mu.Lock() // locks the verifierReports List for write safety
 							defer mu.Unlock()
 							verifierReports = append(verifierReports, verifyResult.VerifierReports...)
@@ -178,9 +178,9 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 	return verifierReports, nil
 }
 
-// verifyReferenceForJsonPolicy verifies the referenced artifact with results
+// verifyReferenceForJSONPolicy verifies the referenced artifact with results
 // used for the Json-based policy enforcer.
-func (executor Executor) verifyReferenceForJsonPolicy(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
+func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
 
@@ -213,7 +213,7 @@ func (executor Executor) verifyReferenceForJsonPolicy(ctx context.Context, subje
 
 // verifyReferenceForRegoPolicy verifies the referenced artifact with results
 // used for Rego-based policy enforcer.
-func (ex Executor) verifyReferenceForRegoPolicy(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (types.NestedVerifierReport, error) {
+func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (types.NestedVerifierReport, error) {
 	nestedReport := types.NestedVerifierReport{
 		Subject:         subjectRef.String(),
 		ArtifactType:    referenceDesc.ArtifactType,
@@ -225,10 +225,10 @@ func (ex Executor) verifyReferenceForRegoPolicy(ctx context.Context, subjectRef 
 	eg, errCtx := errgroup.WithContext(ctx)
 
 	eg.Go(func() error {
-		return ex.addNestedReports(errCtx, referenceDesc, subjectRef, &nestedReport)
+		return executor.addNestedReports(errCtx, referenceDesc, subjectRef, &nestedReport)
 	})
 
-	for _, verifier := range ex.Verifiers {
+	for _, verifier := range executor.Verifiers {
 		if !verifier.CanVerify(ctx, referenceDesc) {
 			continue
 		}
@@ -269,7 +269,7 @@ func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceD
 		ReferenceTypes: []string{"*"},
 	}
 
-	nestedVerifyResult, err := executor.verifySubjectWithJsonPolicy(ctx, verifyParameters)
+	nestedVerifyResult, err := executor.verifySubjectWithJSONPolicy(ctx, verifyParameters)
 	if err != nil {
 		nestedVerifyResult = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
@@ -287,14 +287,14 @@ func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceD
 
 // addNestedReports adds the nested verifier reports to the parent report used
 // for Rego-based policy enforcer.
-func (ex Executor) addNestedReports(ctx context.Context, referenceDes ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifierReport *types.NestedVerifierReport) error {
+func (executor Executor) addNestedReports(ctx context.Context, referenceDes ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifierReport *types.NestedVerifierReport) error {
 	verifyParameters := e.VerifyParameters{
 		Subject:        fmt.Sprintf("%s@%s", subjectRef.Path, referenceDes.Digest),
 		ReferenceTypes: []string{"*"},
 	}
 
 	// get nested reports.
-	reports, err := ex.verifySubjectForRegoPolicy(ctx, verifyParameters)
+	reports, err := executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
 	if err != nil {
 		return fmt.Errorf("failed to verify nested subject, param: %+v, err: %w", verifyParameters, err)
 	}

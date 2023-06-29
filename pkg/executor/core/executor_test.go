@@ -54,19 +54,19 @@ type mockPolicyProvider struct {
 	result bool
 }
 
-func (p *mockPolicyProvider) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
+func (p *mockPolicyProvider) VerifyNeeded(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) bool {
 	return true
 }
 
-func (p *mockPolicyProvider) ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool {
+func (p *mockPolicyProvider) ContinueVerifyOnFailure(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor, _ types.VerifyResult) bool {
 	return true
 }
 
-func (p *mockPolicyProvider) ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult {
+func (p *mockPolicyProvider) ErrorToVerifyResult(_ context.Context, _ string, _ error) types.VerifyResult {
 	return types.VerifyResult{}
 }
 
-func (p *mockPolicyProvider) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
+func (p *mockPolicyProvider) OverallVerifyResult(_ context.Context, _ []interface{}) bool {
 	return p.result
 }
 
@@ -78,7 +78,7 @@ func (s *mockStore) Name() string {
 	return "mockStore"
 }
 
-func (s *mockStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (s *mockStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	if s.referrers == nil {
 		return referrerstore.ListReferrersResult{}, errors.New("some error happened")
 	}
@@ -91,11 +91,11 @@ func (s *mockStore) ListReferrers(ctx context.Context, subjectReference common.R
 	return referrerstore.ListReferrersResult{}, nil
 }
 
-func (s *mockStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+func (s *mockStore) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
 	return nil, nil
 }
 
-func (s *mockStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+func (s *mockStore) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	return ocispecs.ReferenceManifest{}, nil
 }
 
@@ -103,7 +103,7 @@ func (s *mockStore) GetConfig() *storeConfig.StoreConfig {
 	return nil
 }
 
-func (s *mockStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func (s *mockStore) GetSubjectDescriptor(_ context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	if subjectReference.Tag == "v1" {
 		return &ocispecs.SubjectDescriptor{
 			Descriptor: oci.Descriptor{
@@ -127,14 +127,14 @@ func (v *mockVerifier) Name() string {
 	return "mockVerifier"
 }
 
-func (v *mockVerifier) CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
+func (v *mockVerifier) CanVerify(_ context.Context, _ ocispecs.ReferenceDescriptor) bool {
 	return v.canVerify
 }
 
-func (v *mockVerifier) Verify(ctx context.Context,
-	subjectReference common.Reference,
-	referenceDescriptor ocispecs.ReferenceDescriptor,
-	referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+func (v *mockVerifier) Verify(_ context.Context,
+	_ common.Reference,
+	_ ocispecs.ReferenceDescriptor,
+	_ referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	if reflect.DeepEqual(v.verifierResult, verifier.VerifierResult{}) {
 		return verifier.VerifierResult{}, errors.New("no verifier result")
 	}

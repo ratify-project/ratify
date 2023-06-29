@@ -26,27 +26,27 @@ import (
 
 const OPA = "opa"
 
-// OpaEngine is an OPA engine implementing PolicyEvaluator interface.
-type OpaEngine struct {
+// Engine is an OPA engine implementing PolicyEvaluator interface.
+type Engine struct {
 	query policyquery.PolicyQuery
 }
 
-// OpaEngineFactory is a factory for creating OPA engines.
-type OpaEngineFactory struct{}
+// EngineFactory is a factory for creating OPA engines.
+type EngineFactory struct{}
 
 func init() {
-	policyengine.Register(OPA, &OpaEngineFactory{})
+	policyengine.Register(OPA, &EngineFactory{})
 }
 
 // Create creates a new OPA engine.
-func (f *OpaEngineFactory) Create(policy string, queryLanguage string) (policyengine.PolicyEngine, error) {
-	engine := &OpaEngine{}
+func (f *EngineFactory) Create(policy string, queryLanguage string) (policyengine.PolicyEngine, error) {
+	engine := &Engine{}
 	trimmedPolicy := strings.TrimSpace(policy)
 	if trimmedPolicy == "" {
 		return nil, errors.New("policy is empty")
 	}
 
-	query, err := policyquery.CreateQueryFromConfig(policyquery.PolicyQueryConfig{
+	query, err := policyquery.CreateQueryFromConfig(policyquery.Config{
 		Name:   queryLanguage,
 		Policy: trimmedPolicy,
 	})
@@ -59,6 +59,6 @@ func (f *OpaEngineFactory) Create(policy string, queryLanguage string) (policyen
 }
 
 // Evaluate evaluates the policy with the given input.
-func (oe *OpaEngine) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
+func (oe *Engine) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
 	return oe.query.Evaluate(ctx, input)
 }

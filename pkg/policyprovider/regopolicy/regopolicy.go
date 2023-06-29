@@ -45,16 +45,16 @@ type policyEnforcerConf struct {
 	PolicyPath string `json:"policyPath"`
 }
 
-// RegoPolicyFactory is a factory for creating rego policy enforcers.
-type RegoPolicyFactory struct{}
+// Factory is a factory for creating rego policy enforcers.
+type Factory struct{}
 
 // init calls Register for our rego policy provider.
 func init() {
-	pf.Register(policyTypes.RegoPolicy, &RegoPolicyFactory{})
+	pf.Register(policyTypes.RegoPolicy, &Factory{})
 }
 
 // Create creates a new policy enforcer based on the policy provided in config.
-func (f *RegoPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
+func (f *Factory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
 	policyEnforcer := &policyEnforcer{}
 
 	conf := policyEnforcerConf{}
@@ -77,7 +77,7 @@ func (f *RegoPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (poli
 		return nil, fmt.Errorf("policy is required for rego policy provider")
 	}
 
-	engine, err := policyengine.CreateEngineFromConfig(policyengine.PolicyEngineConfig{
+	engine, err := policyengine.CreateEngineFromConfig(policyengine.Config{
 		Name:          opa.OPA,
 		QueryLanguage: query.RegoName,
 		Policy:        conf.Policy,
@@ -93,25 +93,25 @@ func (f *RegoPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (poli
 }
 
 // VerifyNeeded determines if verification should be performed for a given artifact.
-func (e *policyEnforcer) VerifyNeeded(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) bool {
+func (e *policyEnforcer) VerifyNeeded(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) bool {
 	return true
 }
 
 // ContinueVerifyOnFailure determines if verification should continue if a previous verification failed.
-func (e *policyEnforcer) ContinueVerifyOnFailure(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor, partialVerifyResult types.VerifyResult) bool {
+func (e *policyEnforcer) ContinueVerifyOnFailure(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor, _ types.VerifyResult) bool {
 	return true
 }
 
 // ErrorToVerifyResult converts an error to a VerifyResult.
-func (enforcer *policyEnforcer) ErrorToVerifyResult(ctx context.Context, subjectRefString string, verifyError error) types.VerifyResult {
+func (e *policyEnforcer) ErrorToVerifyResult(_ context.Context, _ string, _ error) types.VerifyResult {
 	return types.VerifyResult{}
 }
 
 // OverallVerifyResult determines if the overall verification result should be a success or failure.
-func (enforcer *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
+func (e *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
 	nestedReports := map[string]interface{}{}
 	nestedReports["verifierReports"] = verifierReports
-	result, err := enforcer.OpaEngine.Evaluate(ctx, nestedReports)
+	result, err := e.OpaEngine.Evaluate(ctx, nestedReports)
 	if err != nil {
 		logrus.Errorf("failed to evaluate policy: %v", err)
 		return false

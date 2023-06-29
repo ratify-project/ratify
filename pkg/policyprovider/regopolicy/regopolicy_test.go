@@ -44,7 +44,7 @@ type policyEngine struct {
 	ReturnErr bool
 }
 
-func (e policyEngine) Evaluate(ctx context.Context, input map[string]interface{}) (bool, error) {
+func (e policyEngine) Evaluate(_ context.Context, _ map[string]interface{}) (bool, error) {
 	if e.ReturnErr {
 		return false, errors.New("error")
 	}
@@ -52,7 +52,7 @@ func (e policyEngine) Evaluate(ctx context.Context, input map[string]interface{}
 }
 
 func TestCreate(t *testing.T) {
-	factory := &RegoPolicyFactory{}
+	factory := &Factory{}
 	testCases := []struct {
 		name      string
 		config    config.PolicyPluginConfig

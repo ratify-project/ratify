@@ -17,21 +17,21 @@ package policyquery
 
 import "fmt"
 
-var policyQueryFactories = make(map[string]PolicyQueryFactory)
+var policyQueryFactories = make(map[string]Factory)
 
-// PolicyQueryConfig is a configuration for a policy query.
-type PolicyQueryConfig struct {
+// Config is a configuration for a policy query.
+type Config struct {
 	Name   string
 	Policy string
 }
 
-// PolicyQueryFactory is an interface for creating policy queries.
-type PolicyQueryFactory interface {
+// Factory is an interface for creating policy queries.
+type Factory interface {
 	Create(policy string) (PolicyQuery, error)
 }
 
 // Register adds the factory to the built-in policyQueryies map.
-func Register(name string, factory PolicyQueryFactory) {
+func Register(name string, factory Factory) {
 	if factory == nil {
 		panic("policy query factory cannot be nil")
 	}
@@ -44,7 +44,7 @@ func Register(name string, factory PolicyQueryFactory) {
 }
 
 // CreateQueryFromConfig creates a policy query from the provided configuration.
-func CreateQueryFromConfig(queryConfig PolicyQueryConfig) (PolicyQuery, error) {
+func CreateQueryFromConfig(queryConfig Config) (PolicyQuery, error) {
 	policyQueryName := queryConfig.Name
 	if policyQueryName == "" {
 		return nil, fmt.Errorf("policy query name must be specified")

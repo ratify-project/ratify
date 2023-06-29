@@ -9,11 +9,13 @@ data:
     valid {
       not failed_verify(input)
     }
+    # The verification requires all reports to have isSuccess as true.
     failed_verify(reports) {
       [path, value] := walk(reports)
       value == false
       path[count(path) - 1] == "isSuccess"
     }
+    # The verification requires at least one report for each artifact.
     failed_verify(reports) {
       [path, value] := walk(reports)
       path[count(path) - 1] == "verifierReports"
