@@ -34,7 +34,7 @@ Framework and configuration:
 - [Configuration](reference/ratify-configuration.md) - Ratify's configuration consist of:
   - [store](reference/store.md) - Ratify's store is responsible for storing and retrieving artifacts.
   - [verifier](reference/verifier.md) - Ratify's verifier is responsible for verifying the integrity of artifacts.
-  - [provider](reference/providers.md) - Ratify's policy provider is responsible for providing policies to the framework.  Policies are used to determine if an artifact is valid or not.  Policies are written in [rego](https://www.openpolicyagent.org/docs/latest/policy-language/).
+  - [provider](reference/providers.md) - Ratify's policy provider is used by the framework to make a final decision on if an artifact is valid or not. Policies are defined via [configuration](reference/providers.md#policy-providers).
   - [executor](reference/executor.md) - Ratify's executor is responsible for executing the plugins.
 
 
