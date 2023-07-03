@@ -25,7 +25,6 @@ import (
 	"io"
 	"net/http"
 	paths "path/filepath"
-	"sync"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -39,6 +38,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote/retry"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/aws"   // register aws auth provider
@@ -81,21 +81,14 @@ type OrasStoreConf struct { //nolint:revive // ignore linter to have unique type
 
 type orasStoreFactory struct{}
 
-type authCacheEntry struct {
-	client    registry.Repository
-	expiresOn time.Time
-}
-
 type orasStore struct {
-	config                 *OrasStoreConf
-	rawConfig              config.StoreConfig
-	localCache             content.Storage
-	authProvider           authprovider.AuthProvider
-	authCache              sync.Map
-	subjectDescriptorCache sync.Map
-	httpClient             *http.Client
-	httpClientInsecure     *http.Client
-	createRepository       func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error)
+	config             *OrasStoreConf
+	rawConfig          config.StoreConfig
+	localCache         content.Storage
+	authProvider       authprovider.AuthProvider
+	httpClient         *http.Client
+	httpClientInsecure *http.Client
+	createRepository   func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error)
 }
 
 func init() {
@@ -106,6 +99,10 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 	storeBase, err := createBaseStore(version, storeConfig)
 	if err != nil {
 		return nil, err
+	}
+
+	if cache.GetCacheProvider() == nil {
+		return storeBase, nil
 	}
 
 	cacheConf, err := toCacheConfig(storeBase.GetConfig().Store)
@@ -205,7 +202,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 }
 
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
-	repository, expiry, err := store.createRepository(ctx, store, subjectReference)
+	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
 		return referrerstore.ListReferrersResult{}, err
 	}
@@ -216,7 +213,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		resolvedSubjectDesc = subjectDesc
 	} else {
 		if resolvedSubjectDesc, err = store.GetSubjectDescriptor(ctx, subjectReference); err != nil {
-			evictOnError(err, store, subjectReference.Original)
+			evictOnError(ctx, err, subjectReference.Original)
 			return referrerstore.ListReferrersResult{}, err
 		}
 	}
@@ -228,11 +225,9 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 		referrerDescriptors = append(referrerDescriptors, referrers...)
 		return nil
 	}); err != nil && !errors.Is(err, errdef.ErrNotFound) {
-		evictOnError(err, store, subjectReference.Original)
+		evictOnError(ctx, err, subjectReference.Original)
 		return referrerstore.ListReferrersResult{}, err
 	}
-	// add the repository client to the auth cache if all repository operations successful
-	store.addAuthCache(subjectReference.Original, repository, expiry)
 
 	// convert artifact descriptors to oci descriptor with artifact type
 	referrers := []ocispecs.ReferenceDescriptor{}
@@ -242,7 +237,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 	if store.config.CosignEnabled {
 		// add cosign descriptor if exists
-		cosignReferences, err := getCosignReferences(ctx, subjectReference, store, repository)
+		cosignReferences, err := getCosignReferences(ctx, subjectReference, repository)
 		if err != nil {
 			return referrerstore.ListReferrersResult{}, err
 		}
@@ -257,7 +252,7 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	var err error
-	repository, expiry, err := store.createRepository(ctx, store, subjectReference)
+	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
 		return nil, err
 	}
@@ -282,7 +277,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		// fetch blob content from remote repository
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
 		if err != nil {
-			evictOnError(err, store, subjectReference.Original)
+			evictOnError(ctx, err, subjectReference.Original)
 			return nil, err
 		}
 
@@ -294,14 +289,11 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		}
 	}
 
-	// add the repository client to the auth cache if all repository operations successful
-	store.addAuthCache(subjectReference.Original, repository, expiry)
-
 	return store.getRawContentFromCache(ctx, blobDescriptor)
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
-	repository, expiry, err := store.createRepository(ctx, store, subjectReference)
+	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
 		return ocispecs.ReferenceManifest{}, err
 	}
@@ -317,7 +309,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		// fetch manifest content from repository
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
-			evictOnError(err, store, subjectReference.Original)
+			evictOnError(ctx, err, subjectReference.Original)
 			return ocispecs.ReferenceManifest{}, err
 		}
 
@@ -332,9 +324,6 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
 			return ocispecs.ReferenceManifest{}, err
 		}
-
-		// add the repository client to the auth cache if all repository operations successful
-		store.addAuthCache(subjectReference.Original, repository, expiry)
 	} else {
 		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
 		if err != nil {
@@ -363,63 +352,78 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 }
 
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
-	var desc oci.Descriptor
-	if cachedDesc, ok := store.subjectDescriptorCache.Load(subjectReference.Digest); ok && subjectReference.Digest != "" {
-		desc = cachedDesc.(oci.Descriptor)
-		return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
-	}
-
-	logrus.Debugf("no digest provided for reference %s. attempting to resolve...", subjectReference.Original)
-	repository, expiry, err := store.createRepository(ctx, store, subjectReference)
+	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
 		return nil, err
 	}
 
-	desc, err = repository.Resolve(ctx, subjectReference.Original)
+	desc, err := repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
-		evictOnError(err, store, subjectReference.Original)
+		evictOnError(ctx, err, subjectReference.Original)
 		return nil, err
 	}
-
-	// add the subject descriptor to cache
-	store.subjectDescriptorCache.Store(desc.Digest, desc)
-	// add the repository client to the auth cache if all repository operations successful
-	store.addAuthCache(subjectReference.Original, repository, expiry)
 
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
 }
 
 // evict from cache on non retry-able errors including 401 and 403
-func evictOnError(err error, store *orasStore, subjectReference string) {
+func evictOnError(ctx context.Context, err error, subjectReference string) {
+	cacheProvider := cache.GetCacheProvider()
+	// if cache provider is not enabled, return
+	if cacheProvider == nil {
+		return
+	}
 	var ec *errcode.ErrorResponse
 
 	if errors.As(err, &ec) && (ec.StatusCode == http.StatusForbidden || ec.StatusCode == http.StatusUnauthorized) {
-		store.authCache.Delete(subjectReference)
+		artifactRef, err := registry.ParseReference(subjectReference)
+		if err != nil {
+			logrus.Warnf("failed to evict credential from cache for %s: %v", subjectReference, err)
+		}
+		cacheProvider.Delete(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry))
 	}
 }
-func createDefaultRepository(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, time.Time, error) {
+
+func createDefaultRepository(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
 	if store.authProvider == nil || !store.authProvider.Enabled(ctx) {
-		return nil, time.Now(), fmt.Errorf("auth provider not properly enabled")
+		return nil, fmt.Errorf("auth provider not properly enabled")
 	}
-
-	if entry, ok := store.authCache.Load(targetRef.Original); ok {
-		// if the auth cache entry expiration has not expired or it was never set
-		cacheEntry := entry.(authCacheEntry)
-		if cacheEntry.expiresOn.IsZero() || cacheEntry.expiresOn.After(time.Now()) {
-			return cacheEntry.client, cacheEntry.expiresOn, nil
-		}
-	}
-
-	authConfig, err := store.authProvider.Provide(ctx, targetRef.Original)
+	artifactRef, err := registry.ParseReference(targetRef.Original)
 	if err != nil {
-		logrus.Warningf("auth provider failed with err, %v", err)
-		logrus.Info("attempting to use anonymous credentials")
+		return nil, err
+	}
+	var authConfig authprovider.AuthConfig
+	cacheProvider := cache.GetCacheProvider()
+	var cacheResponse string
+	found := false
+	if cacheProvider != nil {
+		cacheResponse, found = cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry))
+	}
+	if cacheResponse != "" && found {
+		if err := json.Unmarshal([]byte(cacheResponse), &authConfig); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal auth config cache value: %w", err)
+		}
+		logrus.Debug("auth cache hit")
+	} else {
+		logrus.Debug("auth cache miss")
+		authConfig, err = store.authProvider.Provide(ctx, targetRef.Original)
+		if err != nil {
+			logrus.Warningf("auth provider failed with err, %v", err)
+			logrus.Info("attempting to use anonymous credentials")
+		} else {
+			if cacheProvider != nil {
+				success := cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry), authConfig, time.Until(authConfig.ExpiresOn))
+				if !success {
+					logrus.Warningf("failed to set auth cache for %s", artifactRef.Registry)
+				}
+			}
+		}
 	}
 
 	// create new ORAS repository target to the image/repository reference
 	repository, err := remote.NewRepository(targetRef.Original)
 	if err != nil {
-		return nil, time.Now(), err
+		return nil, err
 	}
 
 	// set the provider to return the resolved credentials
@@ -453,7 +457,7 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 	// enable plain HTTP if specified in config
 	repository.PlainHTTP = store.config.UseHTTP
 
-	return repository, authConfig.ExpiresOn, nil
+	return repository, nil
 }
 
 func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor oci.Descriptor) ([]byte, error) {
@@ -467,11 +471,4 @@ func (store *orasStore) getRawContentFromCache(ctx context.Context, descriptor o
 		return nil, err
 	}
 	return buf, nil
-}
-
-func (store *orasStore) addAuthCache(ref string, repository registry.Repository, expiry time.Time) {
-	store.authCache.LoadOrStore(ref, authCacheEntry{
-		client:    repository,
-		expiresOn: expiry,
-	})
 }

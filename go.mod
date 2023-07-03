@@ -10,11 +10,13 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.6.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.0.0
+	github.com/alicebob/miniredis/v2 v2.30.2
 	github.com/aws/aws-sdk-go-v2 v1.18.1
 	github.com/aws/aws-sdk-go-v2/config v1.18.27
 	github.com/aws/aws-sdk-go-v2/credentials v1.13.26
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/cespare/xxhash/v2 v2.2.0
+	github.com/dapr/go-sdk v1.8.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/docker/cli v23.0.6+incompatible
 	github.com/docker/distribution v2.8.2+incompatible
@@ -67,6 +69,7 @@ require (
 	github.com/alibabacloud-go/tea v1.1.18 // indirect
 	github.com/alibabacloud-go/tea-utils v1.4.4 // indirect
 	github.com/alibabacloud-go/tea-xml v1.1.2 // indirect
+	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/aliyun/credentials-go v1.2.3 // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.12.0 // indirect
@@ -101,6 +104,7 @@ require (
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	github.com/tjfoc/gmsm v1.3.2 // indirect
 	github.com/xanzy/go-gitlab v0.83.0 // indirect
+	github.com/yuin/gopher-lua v1.1.0 // indirect
 	go.step.sm/crypto v0.30.0 // indirect
 	sigs.k8s.io/release-utils v0.7.4 // indirect
 )

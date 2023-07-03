@@ -7,6 +7,7 @@ image:
 nameOverride: ""
 fullnameOverride: ""
 logLevel: info
+replicaCount: 1
 notaryCert: ""
 cosign:
   enabled: true
@@ -16,8 +17,8 @@ resources:
     cpu: 1000m
     memory: 512Mi
   requests:
-    cpu: 600m
-    memory: 512Mi
+    cpu: 200m
+    memory: 256Mi
 serviceAccount:
   create: true
   name: ratify-admin
@@ -64,8 +65,6 @@ oras:
     # Please tune your cache parameters to get better performance on the Oras Store performance.
     enabled: true # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
     ttl: 10 # in seconds
-    capacity: 100 # capacity is the max size in megabytes of the full cache.
-    keyNumber: 10000 # keyNumber is the number of items you expect to keep in the cache when full. It makes a difference to the cache performance, please set it close to the item count.
 
 provider:
   tls:
@@ -79,8 +78,11 @@ provider:
     validationTimeoutSeconds: 5
     mutationTimeoutSeconds: 2
   cache:
+    enabled: true # enable ratify wide cache
+    type: ristretto # cache type, currently only ristretto(default) and redis are supported
+    cacheSizeMb: 256 # max size of the cache in MB
     ttl: 10s # cache ttl duration
-    size: 100 # number of items to be kept in cache. Set to 0 to disable cache.
+    name: "" # state-store name for dapr cache, defaults to redis
 
 podAnnotations: {}
 podLabels: {}
@@ -114,3 +116,5 @@ featureFlags:
 
   # RATIFY_CERT_ROTATION enables rotation for TLS certificates.
   RATIFY_CERT_ROTATION: false
+  # RATIFY_DAPR_CACHE_PROVIDER enables the Dapr cache provider.
+  RATIFY_DAPR_CACHE_PROVIDER: false

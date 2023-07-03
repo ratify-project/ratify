@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/metrics"
@@ -84,12 +85,18 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 			logrus.Infof("verifying subject %v", resolvedSubjectReference)
 			var result types.VerifyResult
-			res := server.cache.get(resolvedSubjectReference)
-			if res != nil {
+			found := false
+			var cacheResponse string
+			cacheProvider := cache.GetCacheProvider()
+			if cacheProvider != nil {
+				cacheResponse, found = cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference))
+			}
+			if found && cacheResponse != "" {
 				logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
-				result = *res
+				if err := json.Unmarshal([]byte(cacheResponse), &result); err != nil {
+					returnItem.Error = err.Error()
+				}
 			} else {
-				logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
 				verifyParameters := executor.VerifyParameters{
 					Subject: resolvedSubjectReference,
 				}
@@ -98,7 +105,14 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 					returnItem.Error = err.Error()
 					return
 				}
-				server.cache.set(resolvedSubjectReference, &result)
+
+				if cacheProvider != nil {
+					logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
+					inserted := cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference), result, server.CacheTTL)
+					if !inserted {
+						logrus.Warnf("unable to insert cache entry for subject %v", resolvedSubjectReference)
+					}
+				}
 
 				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
 					fmt.Println(string(res))

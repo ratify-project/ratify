@@ -17,10 +17,12 @@ package oras
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -35,17 +37,22 @@ const (
 )
 
 var (
-	ttl          = 10
+	ttl          = 3
 	base         = &mockBase{}
 	pluginConfig = map[string]interface{}{
 		"cacheEnabled": true,
 		"ttl":          ttl,
 	}
+	pluginConfigTTL = map[string]interface{}{
+		"cacheEnabled": true,
+	}
 	conf = &cacheConf{
-		Enabled:   true,
-		TTL:       ttl,
-		Capacity:  100 * 1024 * 1024,
-		KeyNumber: 10000,
+		Enabled: true,
+		TTL:     ttl,
+	}
+	configNoTTL = &cacheConf{
+		Enabled: true,
+		TTL:     10,
 	}
 	testStoreConfig = &config.StoreConfig{}
 	testBlob        = make([]byte, 0)
@@ -54,7 +61,7 @@ var (
 		Path:   "testRegistry/testRepo",
 		Digest: testDigest,
 	}
-	testDesc    = &ocispecs.SubjectDescriptor{}
+	testDesc    = &ocispecs.SubjectDescriptor{Descriptor: oci.Descriptor{Digest: testDigest}}
 	testResult1 = referrerstore.ListReferrersResult{
 		Referrers: []ocispecs.ReferenceDescriptor{
 			{
@@ -138,26 +145,95 @@ func TestGetBlobContent(t *testing.T) {
 	}
 }
 
-func TestGetSubjectDescriptor(t *testing.T) {
-	store, _ := createCachedStore(base, conf)
-
-	desc, err := store.GetSubjectDescriptor(context.Background(), testReference)
+func TestGetSubjectDescriptor_CacheProviderNil(t *testing.T) {
+	store, err := createCachedStore(base, conf)
 	if err != nil {
 		t.Fatalf("expect no error, got %v", err)
 	}
-	if !reflect.DeepEqual(testDesc, desc) {
-		t.Fatalf("expect desc: %v, got %v", desc, testDesc)
+	_, err = store.GetSubjectDescriptor(context.Background(), testReference)
+	if err == nil || err.Error() != "failed to get cache provider" {
+		t.Fatalf("expect error, got %v", err)
+	}
+}
+
+func TestListReferrers_CacheProviderNil(t *testing.T) {
+	store, err := createCachedStore(base, conf)
+	if err != nil {
+		t.Fatalf("expect no error, got %v", err)
+	}
+	_, err = store.ListReferrers(context.Background(), testReference, nil, "", nil)
+	if err == nil || err.Error() != "failed to get cache provider" {
+		t.Fatalf("expect error, got %v", err)
+	}
+}
+
+func TestGetSubjectDescriptor_Cache(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	store, _ := createCachedStore(base, conf)
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		// if no cache provider has been initialized, initialize one
+		cacheProvider, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
+
+	// GetSubjectDescriptor should populate cache and return test descriptor
+	desc, err := store.GetSubjectDescriptor(ctx, testReference)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
+
+	if !reflect.DeepEqual(desc, testDesc) {
+		t.Fatalf("expect desc: %+v, got %+v", testDesc, desc)
+	}
+
+	time.Sleep(1 * time.Second) // wait for cache to populate
+
+	// check cache directly to make sure key exists
+	_, exists := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, testDigest))
+	if !exists {
+		t.Fatalf("cache key should exist")
+	}
+
+	// override cache to different value
+	newDesc := ocispecs.SubjectDescriptor{Descriptor: oci.Descriptor{Digest: "sha256:654321"}}
+	isSuccess := cacheProvider.Set(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, testDigest), newDesc)
+	if !isSuccess {
+		t.Fatalf("cache set should succeed")
+	}
+
+	// check returned value matches new value
+	desc, err = store.GetSubjectDescriptor(ctx, testReference)
+	if err != nil {
+		t.Fatalf("err should be nil, but got %v", err)
+	}
+
+	if !reflect.DeepEqual(desc, &newDesc) {
+		t.Fatalf("expect desc: %+v, got %+v", &newDesc, desc)
 	}
 }
 
 func TestListReferrers_CacheHit(t *testing.T) {
 	store, _ := createCachedStore(base, conf)
+	var err error
+	ctx := context.Background()
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		// if no cache provider has been initialized, initialize one
+		_, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
 
-	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
+	result, _ := store.ListReferrers(ctx, testReference, []string{}, testNextToken1, nil)
 
-	time.Sleep(time.Duration(ttl-5) * time.Second)
+	time.Sleep(time.Duration(ttl-2) * time.Second)
 
-	cachedResult, err := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
+	cachedResult, err := store.ListReferrers(ctx, testReference, []string{}, testNextToken2, nil)
 	if err != nil {
 		t.Fatalf("err should be nil, but got %v", err)
 	}
@@ -168,12 +244,22 @@ func TestListReferrers_CacheHit(t *testing.T) {
 
 func TestListReferrers_CacheMiss(t *testing.T) {
 	store, _ := createCachedStore(base, conf)
+	var err error
+	ctx := context.Background()
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		// if no cache provider has been initialized, initialize one
+		_, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
 
-	result, _ := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken1, nil)
+	result, _ := store.ListReferrers(ctx, testReference, []string{}, testNextToken1, nil)
 
-	time.Sleep(time.Duration(ttl+5) * time.Second)
+	time.Sleep(time.Duration(ttl+2) * time.Second)
 
-	cachedResult, err := store.ListReferrers(context.Background(), testReference, []string{}, testNextToken2, nil)
+	cachedResult, err := store.ListReferrers(ctx, testReference, []string{}, testNextToken2, nil)
 	if err != nil {
 		t.Fatalf("err should be nil, but got %v", err)
 	}
@@ -188,6 +274,14 @@ func TestToCacheConfig(t *testing.T) {
 		t.Fatalf("expect no error, got %v", err)
 	}
 	if !reflect.DeepEqual(conf, resultCache) {
+		t.Fatalf("expect %v, got %v", conf, resultCache)
+	}
+	// test TTL is set to default 10 seconds
+	resultCache, err = toCacheConfig(pluginConfigTTL)
+	if err != nil {
+		t.Fatalf("expect no error, got %v", err)
+	}
+	if !reflect.DeepEqual(configNoTTL, resultCache) {
 		t.Fatalf("expect %v, got %v", conf, resultCache)
 	}
 }

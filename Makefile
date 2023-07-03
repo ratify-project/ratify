@@ -13,8 +13,9 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
-KUBERNETES_VERSION ?= 1.25.4
-GATEKEEPER_VERSION ?= 3.11.0
+KUBERNETES_VERSION ?= 1.26.3
+GATEKEEPER_VERSION ?= 3.12.0
+DAPR_VERSION ?= 1.11.1
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.3
 ORAS_VERSION ?= 1.0.0-rc.2
@@ -24,9 +25,13 @@ HELM_VERSION ?= 3.9.2
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
 BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
+BATS_HA_TESTS_FILE ?= test/bats/high-availability.bats
 BATS_VERSION ?= 1.7.0
 SYFT_VERSION ?= v0.76.0
+YQ_VERSION ?= v4.34.1
+YQ_BINARY ?= yq_linux_amd64
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
+REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -134,6 +139,10 @@ test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-
 	IS_OCI_1_1=${IS_OCI_1_1} RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 	go tool covdata textfmt -i=${GOCOVERDIR} -o test/e2e/coverage.txt
 
+.PHONY: test-high-availability
+test-high-availability:
+	bats -t ${BATS_HA_TESTS_FILE}
+
 .PHONY: generate-certs
 generate-certs:
 	./scripts/generate-tls-certs.sh ${CERT_DIR} ${GATEKEEPER_NAMESPACE}
@@ -167,6 +176,8 @@ e2e-dependencies:
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
 	# Download and install jq
 	curl -L https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 --output ${GITHUB_WORKSPACE}/bin/jq && chmod +x ${GITHUB_WORKSPACE}/bin/jq
+	# Download and install yq
+	curl -L https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/${YQ_BINARY} --output ${GITHUB_WORKSPACE}/bin/yq && chmod +x ${GITHUB_WORKSPACE}/bin/yq
 	# Install ORAS
 	curl -LO https://github.com/oras-project/oras/releases/download/v${ORAS_VERSION}/oras_${ORAS_VERSION}_linux_amd64.tar.gz
 	mkdir -p oras-install/
@@ -507,6 +518,51 @@ e2e-helm-deploy-ratify:
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logLevel=debug
+
+	rm mount_config.json
+
+e2e-helm-deploy-dapr:
+	helm repo add dapr https://dapr.github.io/helm-charts/
+	helm repo update
+	helm upgrade --install --version ${DAPR_VERSION} dapr dapr/dapr --namespace dapr-system --create-namespace --wait
+
+e2e-helm-deploy-redis: e2e-helm-deploy-dapr
+	# overwrite pod security labels to baseline
+	kubectl label --overwrite ns ${GATEKEEPER_NAMESPACE} pod-security.kubernetes.io/enforce=baseline
+	kubectl label --overwrite ns ${GATEKEEPER_NAMESPACE} pod-security.kubernetes.io/warn=baseline
+	
+	helm repo add bitnami https://charts.bitnami.com/bitnami
+	helm repo update
+	helm upgrade --install redis bitnami/redis --namespace ${GATEKEEPER_NAMESPACE} --set image.tag=${REDIS_IMAGE_TAG} --wait --set replica.replicaCount=1
+	SIGN_KEY=$(shell openssl rand 16 | hexdump -v -e '/1 "%02x"' | base64) ${GITHUB_WORKSPACE}/bin/yq -i '.data.signingKey = strenv(SIGN_KEY)' test/testdata/dapr/dapr-redis-secret.yaml
+	kubectl apply -f test/testdata/dapr/dapr-redis-secret.yaml -n ${GATEKEEPER_NAMESPACE}
+	kubectl apply -f test/testdata/dapr/dapr-redis.yaml -n ${GATEKEEPER_NAMESPACE}
+ 
+e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notaryv2-setup e2e-build-crd-image e2e-build-local-ratify-image
+	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+
+	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
+    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	--set image.repository=localbuild \
+	--set image.crdRepository=localbuildcrd \
+	--set image.tag=test \
+	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
+	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
+	--set-file provider.tls.key=${CERT_DIR}/server.key \
+	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
+	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set oras.useHttp=true \
+	--set cosign.enabled=false \
+	--set-file dockerConfig="mount_config.json" \
+	--set logLevel=debug \
+	--set replicaCount=2 \
+	--set provider.cache.type="dapr" \
+	--set provider.cache.name="dapr-redis" \
+	--set featureFlags.RATIFY_DAPR_CACHE_PROVIDER=true \
+	--set resources.requests.memory="64Mi"
 
 	rm mount_config.json
 

@@ -34,7 +34,7 @@ const CosignSignatureTagSuffix = ".sig"
 
 var ErrNoCosignSubjectDigest = errors.New("failed to mutate cosign image tag: no digest specified for subject")
 
-func getCosignReferences(ctx context.Context, subjectReference common.Reference, store *orasStore, repository registry.Repository) (*[]ocispecs.ReferenceDescriptor, error) {
+func getCosignReferences(ctx context.Context, subjectReference common.Reference, repository registry.Repository) (*[]ocispecs.ReferenceDescriptor, error) {
 	var references []ocispecs.ReferenceDescriptor
 	signatureTag, err := attachedImageTag(subjectReference, CosignSignatureTagSuffix)
 	if err != nil {
@@ -46,7 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 		if errors.Is(err, errdef.ErrNotFound) {
 			return nil, nil
 		}
-		evictOnError(err, store, subjectReference.Original)
+		evictOnError(ctx, err, subjectReference.Original)
 		return nil, err
 	}
 
