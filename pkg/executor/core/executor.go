@@ -114,7 +114,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 					go func(reference ocispecs.ReferenceDescriptor) {
 						defer wg.Done()
 						if executor.PolicyEnforcer.VerifyNeeded(ctx, subjectReference, reference) {
-							verifyResult := executor.verifyReference(errCtx, subjectReference, desc, reference, referrerStore)
+							verifyResult := executor.verifyReference(errCtx, subjectReference, reference, referrerStore)
 							mu.Lock() // locks the verifierReports List for write safety
 							defer mu.Unlock()
 							verifierReports = append(verifierReports, verifyResult.VerifierReports...)
@@ -142,11 +142,11 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
-func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Reference, subjectDesc *ocispecs.SubjectDescriptor, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
+func (executor Executor) verifyReference(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
 
-	for _, verifier := range ex.Verifiers {
+	for _, verifier := range executor.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
@@ -159,7 +159,7 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
-				ex.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
+				executor.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
 
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
@@ -173,15 +173,15 @@ func (ex Executor) verifyReference(ctx context.Context, subjectRef common.Refere
 	return types.VerifyResult{IsSuccess: isSuccess, VerifierReports: verifyResults}
 }
 
-func (ex Executor) addNestedVerifierResult(ctx context.Context, referenceDesc ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifyResult *vr.VerifierResult) {
+func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceDesc ocispecs.ReferenceDescriptor, subjectRef common.Reference, verifyResult *vr.VerifierResult) {
 	verifyParameters := e.VerifyParameters{
 		Subject:        fmt.Sprintf("%s@%s", subjectRef.Path, referenceDesc.Digest),
 		ReferenceTypes: []string{"*"},
 	}
 
-	nestedVerifyResult, err := ex.VerifySubject(ctx, verifyParameters)
+	nestedVerifyResult, err := executor.VerifySubject(ctx, verifyParameters)
 	if err != nil {
-		nestedVerifyResult = ex.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
+		nestedVerifyResult = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
 
 	for _, report := range nestedVerifyResult.VerifierReports {

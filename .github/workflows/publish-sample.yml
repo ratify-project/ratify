@@ -1,0 +1,38 @@
+name: publish-sample
+
+on: 
+ workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  
+permissions:
+  contents: read
+
+jobs:
+  build-publish-release:
+    name: "release"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      packages: write
+    steps:            
+      - name: Get repo
+        run: |          
+          echo "REPOSITORY=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_ENV
+
+      - name: Log in to the GHCR
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy signed sample test image
+        run: 
+          oras cp -r wabbitnetworks.azurecr.io/ratify/notary-image:signed ${REPOSITORY}/notary-image:signed
+
+      - name: Copy unsigned sample test image 
+        run: 
+          oras cp wabbitnetworks.azurecr.io/ratify/notary-image:unsigned ${REPOSITORY}/notary-image:unsigned

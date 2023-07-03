@@ -28,7 +28,7 @@ func main() {
 	skel.PluginMain("sample", "1.0.0", ListReferrers, GetBlobContent, GetReferenceManifest, GetSubjectDescriptor, []string{"1.0.0"})
 }
 
-func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
+func ListReferrers(_ *skel.CmdArgs, _ common.Reference, artifactTypes []string, _ string, _ *ocispecs.SubjectDescriptor) (*referrerstore.ListReferrersResult, error) {
 	artifactType := ""
 	if len(artifactTypes) > 0 {
 		artifactType = artifactTypes[0]
@@ -41,11 +41,11 @@ func ListReferrers(args *skel.CmdArgs, subjectReference common.Reference, artifa
 	}, nil
 }
 
-func GetBlobContent(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+func GetBlobContent(_ *skel.CmdArgs, _ common.Reference, digest digest.Digest) ([]byte, error) {
 	return []byte(digest.String()), nil
 }
 
-func GetSubjectDescriptor(args *skel.CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func GetSubjectDescriptor(_ *skel.CmdArgs, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	dig := subjectReference.Digest
 	if dig == "" {
 		dig = digest.FromString(subjectReference.Tag)
@@ -53,6 +53,6 @@ func GetSubjectDescriptor(args *skel.CmdArgs, subjectReference common.Reference)
 	return &ocispecs.SubjectDescriptor{Descriptor: v1.Descriptor{Digest: dig}}, nil
 }
 
-func GetReferenceManifest(args *skel.CmdArgs, subjectReference common.Reference, digest digest.Digest) (ocispecs.ReferenceManifest, error) {
+func GetReferenceManifest(_ *skel.CmdArgs, _ common.Reference, _ digest.Digest) (ocispecs.ReferenceManifest, error) {
 	return ocispecs.ReferenceManifest{MediaType: "testMediaType", ArtifactType: "testArtifactType"}, nil
 }

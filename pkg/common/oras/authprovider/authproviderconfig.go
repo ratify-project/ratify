@@ -16,4 +16,4 @@ limitations under the License.
 package authprovider
 
 // AuthProviderConfig represents the configuration of an AuthProvider
-type AuthProviderConfig map[string]interface{}
+type AuthProviderConfig map[string]interface{} //nolint:revive // ignore linter to have unique type name

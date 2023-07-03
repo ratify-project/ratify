@@ -1,3 +1,7 @@
+<div align="center">
+<img src="logo.svg" width="200">
+</div>
+
 # Ratify
 
 Is a verification engine as a binary executable and on Kubernetes which enables verification of artifact security metadata and admits for deployment only those that comply with policies you create.
@@ -22,9 +26,7 @@ by its developers, nor is it "supported" software.
 ## Community meetings
 
 - Agenda: <https://hackmd.io/ABueHjizRz2iFQpWnQrnNA>
-- We hold a weekly Ratify community meeting with alternating times to accommodate more time zones.
-Series #1 Wed 4:30-5:30pm
-Series #2 Wed 1-2pm
+- We hold a weekly Ratify community meeting on Weds 4:30-5:30pm (Pacific Time)   
 Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 - Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).
@@ -101,7 +103,7 @@ Once the installation is completed, you can test the deployment of an image that
 - This will successfully create the pod `demo`
 
 ```bash
-kubectl run demo --image=wabbitnetworks.azurecr.io/test/notary-image:signed
+kubectl run demo --image=ghcr.io/deislabs/ratify/notary-image:signed
 kubectl get pods demo
 ```
 
@@ -110,7 +112,7 @@ Optionally you can see the output of the pod logs via: `kubectl logs demo`
 - Now deploy an unsigned image
 
 ```bash
-kubectl run demo1 --image=wabbitnetworks.azurecr.io/test/notary-image:unsigned
+kubectl run demo1 --image=ghcr.io/deislabs/ratify/notary-image:unsigned
 ```
 
 You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.

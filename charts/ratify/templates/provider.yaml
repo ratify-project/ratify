@@ -1,5 +1,5 @@
-{{- $subject := printf "/CN=ratify.%s" .Release.Namespace -}}
-{{- $dns := printf "ratify.%s" .Release.Namespace -}}
+{{- $subject := printf "/CN=%s.%s" (include "ratify.fullname" .) .Release.Namespace -}}
+{{- $dns := printf "%s.%s" (include "ratify.fullname" .) .Release.Namespace -}}
 {{- $ca := genCA "/O=Ratify/CN=Ratify Root CA" 365 -}}
 {{- $cert := genSignedCert $subject nil (list $dns) 365 $ca -}}
 

@@ -31,6 +31,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
 
 	jsonLoader "github.com/spdx/tools-golang/json"
+	"github.com/spdx/tools-golang/spdx/v2/v2_3"
 )
 
 // PluginConfig describes the configuration of the sbom verifier
@@ -48,7 +49,7 @@ type PackageInfo struct {
 }
 
 const (
-	SpdxJsonMediaType string = "application/spdx+json"
+	SpdxJSONMediaType string = "application/spdx+json"
 )
 
 func main() {
@@ -95,8 +96,8 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}
 
 		switch mediaType {
-		case SpdxJsonMediaType:
-			return processSpdxJsonMediaType(input.Name, refBlob)
+		case SpdxJSONMediaType:
+			return processSpdxJSONMediaType(input.Name, refBlob)
 		default:
 		}
 	}
@@ -108,19 +109,20 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}, nil
 }
 
-func processSpdxJsonMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
-	if doc, err := jsonLoader.Read(bytes.NewReader(refBlob)); doc != nil {
+func processSpdxJSONMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
+	var err error
+	var doc *v2_3.Document
+	if doc, err = jsonLoader.Read(bytes.NewReader(refBlob)); doc != nil {
 		return &verifier.VerifierResult{
 			Name:       name,
 			IsSuccess:  true,
 			Extensions: doc.CreationInfo,
 			Message:    "SBOM verification success. The schema is good.",
 		}, err
-	} else {
-		return &verifier.VerifierResult{
-			Name:      name,
-			IsSuccess: false,
-			Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
-		}, err
 	}
+	return &verifier.VerifierResult{
+		Name:      name,
+		IsSuccess: false,
+		Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
+	}, err
 }

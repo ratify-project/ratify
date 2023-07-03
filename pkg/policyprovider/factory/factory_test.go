@@ -25,7 +25,7 @@ import (
 
 type TestPolicyProviderFactory struct{}
 
-func (f *TestPolicyProviderFactory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
+func (f *TestPolicyProviderFactory) Create(_ config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
 	return &mocks.TestPolicyProvider{}, nil
 }
 

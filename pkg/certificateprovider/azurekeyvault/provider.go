@@ -60,12 +60,12 @@ func Create() certificateprovider.CertificateProvider {
 
 // returns an array of certificates based on certificate properties defined in attrib map
 func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
-	keyvaultUri := types.GetKeyVaultUri(attrib)
+	keyvaultURI := types.GetKeyVaultURI(attrib)
 	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
 	workloadIdentityClientID := types.GetClientID(attrib)
 
-	if keyvaultUri == "" {
+	if keyvaultURI == "" {
 		return nil, nil, fmt.Errorf("keyvaultUri is not set")
 	}
 	if tenantID == "" {
@@ -89,7 +89,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		return nil, nil, fmt.Errorf("no keyvault certificate configured")
 	}
 
-	logrus.Debugf("vaultURI %s", keyvaultUri)
+	logrus.Debugf("vaultURI %s", keyvaultURI)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
@@ -101,11 +101,11 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	lastRefreshed := time.Now().Format(time.RFC3339)
 
 	for _, keyVaultCert := range keyVaultCerts {
-		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultUri)
+		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultURI)
 
 		// fetch the object from Key Vault
 		startTime := time.Now()
-		keyvaultResult, err := getCertificate(ctx, kvClient, keyvaultUri, keyVaultCert)
+		keyvaultResult, err := getCertificate(ctx, kvClient, keyvaultURI, keyVaultCert)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -206,7 +206,7 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientId string) (*kv.BaseClient, error) {
+func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 
@@ -215,7 +215,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 		return nil, fmt.Errorf("failed to add user agent to keyvault client, error: %w", err)
 	}
 
-	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientId, kvEndpoint)
+	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get authorizer for keyvault client, error: %w", err)
 	}

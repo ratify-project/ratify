@@ -30,21 +30,21 @@ func TestGetKeyVaultUri(t *testing.T) {
 		{
 			name: "empty",
 			parameters: map[string]string{
-				KeyVaultUriParameter: "",
+				KeyVaultURIParameter: "",
 			},
 			expected: "",
 		},
 		{
 			name: "not empty",
 			parameters: map[string]string{
-				KeyVaultUriParameter: "https://test.vault.azure.net/",
+				KeyVaultURIParameter: "https://test.vault.azure.net/",
 			},
 			expected: "https://test.vault.azure.net/",
 		},
 		{
 			name: "trim spaces",
 			parameters: map[string]string{
-				KeyVaultUriParameter: " https://test.vault.azure.net/ ",
+				KeyVaultURIParameter: " https://test.vault.azure.net/ ",
 			},
 			expected: "https://test.vault.azure.net/",
 		},
@@ -52,7 +52,7 @@ func TestGetKeyVaultUri(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			actual := GetKeyVaultUri(test.parameters)
+			actual := GetKeyVaultURI(test.parameters)
 			if actual != test.expected {
 				t.Errorf("GetKeyVaultUri() = %v, expected %v", actual, test.expected)
 			}

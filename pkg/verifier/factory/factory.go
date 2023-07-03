@@ -83,9 +83,8 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	verifierFactory, ok := builtInVerifiers[verifierNameStr]
 	if ok {
 		return verifierFactory.Create(configVersion, verifierConfig, pluginBinDir[0])
-	} else {
-		return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
 	}
+	return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
 }
 
 // TODO pointer to avoid copy
@@ -104,7 +103,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 		return nil, errors.New("verifiers config should have at least one verifier")
 	}
 
-	var verifiers []verifier.ReferenceVerifier
+	verifiers := make([]verifier.ReferenceVerifier, 0)
 
 	if len(verifiersConfig.PluginBinDirs) == 0 {
 		verifiersConfig.PluginBinDirs = []string{defaultPluginPath}
@@ -116,15 +115,14 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs)
 		if err != nil {
 			return nil, err
-		} else {
-			verifiers = append(verifiers, verifier)
 		}
+		verifiers = append(verifiers, verifier)
 	}
 
 	return verifiers, nil
 }
 
-func validateVerifiersConfig(verifiersConfig *config.VerifiersConfig) error {
+func validateVerifiersConfig(_ *config.VerifiersConfig) error {
 	// TODO check for existence of plugin dirs
 	// TODO check if version is supported
 	return nil

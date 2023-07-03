@@ -18,7 +18,7 @@ linters:
     - nakedret
     - nilerr
     - prealloc
-    # - revive
+    - revive
     - staticcheck
     - typecheck
     - unconvert

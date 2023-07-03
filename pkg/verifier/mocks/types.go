@@ -28,7 +28,7 @@ type TestExecutor struct {
 	VerifySuccess bool
 }
 
-func (s *TestExecutor) VerifySubject(ctx context.Context, verifyParameters executor.VerifyParameters) (types.VerifyResult, error) {
+func (s *TestExecutor) VerifySubject(_ context.Context, _ executor.VerifyParameters) (types.VerifyResult, error) {
 	report := verifier.VerifierResult{IsSuccess: s.VerifySuccess}
 	return types.VerifyResult{
 		IsSuccess:       s.VerifySuccess,

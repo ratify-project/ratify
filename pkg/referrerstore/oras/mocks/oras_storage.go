@@ -30,19 +30,19 @@ type TestStorage struct {
 	ExistsMap map[digest.Digest]io.Reader
 }
 
-func (s TestStorage) Exists(ctx context.Context, target oci.Descriptor) (bool, error) {
+func (s TestStorage) Exists(_ context.Context, target oci.Descriptor) (bool, error) {
 	if _, ok := s.ExistsMap[target.Digest]; ok {
 		return true, nil
 	}
 	return false, nil
 }
 
-func (s TestStorage) Push(ctx context.Context, expected oci.Descriptor, content io.Reader) error {
+func (s TestStorage) Push(_ context.Context, expected oci.Descriptor, content io.Reader) error {
 	s.ExistsMap[expected.Digest] = content
 	return nil
 }
 
-func (s TestStorage) Fetch(ctx context.Context, target oci.Descriptor) (io.ReadCloser, error) {
+func (s TestStorage) Fetch(_ context.Context, target oci.Descriptor) (io.ReadCloser, error) {
 	if reader, ok := s.ExistsMap[target.Digest]; ok {
 		return io.NopCloser(reader), nil
 	}

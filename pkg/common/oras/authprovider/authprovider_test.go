@@ -48,11 +48,11 @@ const (
 
 type TestAuthProvider struct{}
 
-func (ap *TestAuthProvider) Enabled(ctx context.Context) bool {
+func (ap *TestAuthProvider) Enabled(_ context.Context) bool {
 	return true
 }
 
-func (ap *TestAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
+func (ap *TestAuthProvider) Provide(_ context.Context, _ string) (AuthConfig, error) {
 	return AuthConfig{
 		Username: "test",
 		Password: "testpw",

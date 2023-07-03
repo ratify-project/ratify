@@ -38,15 +38,15 @@ func (s *TestStore) Name() string {
 	return "testStore"
 }
 
-func (s *TestStore) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (s *TestStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, _ *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	return referrerstore.ListReferrersResult{Referrers: s.References}, nil
 }
 
-func (s *TestStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
+func (s *TestStore) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
 	return nil, nil
 }
 
-func (s *TestStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+func (s *TestStore) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	return ocispecs.ReferenceManifest{}, nil
 }
 
@@ -54,7 +54,7 @@ func (s *TestStore) GetConfig() *config.StoreConfig {
 	return &config.StoreConfig{}
 }
 
-func (s *TestStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func (s *TestStore) GetSubjectDescriptor(_ context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	if s.ExtraSubject != "" && subjectReference.Original == s.ExtraSubject {
 		time.Sleep(2 * time.Second)
 	}

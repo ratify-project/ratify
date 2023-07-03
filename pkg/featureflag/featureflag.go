@@ -25,8 +25,8 @@ import (
 // They are activated via environment variables, starting with "RATIFY_", ex: RATIFY_DYNAMIC_PLUGINS=1
 // Remember to capture changes in the usage guide and release notes.
 var (
-	DynamicPlugins = new("DYNAMIC_PLUGINS", false)
-	CertRotation   = new("CERT_ROTATION", false)
+	DynamicPlugins = newFeatureFlag("DYNAMIC_PLUGINS", false)
+	CertRotation   = newFeatureFlag("CERT_ROTATION", false)
 )
 
 var flags = make(map[string]*FeatureFlag)
@@ -51,7 +51,7 @@ type FeatureFlag struct {
 	Enabled bool
 }
 
-func new(name string, defaultValue bool) *FeatureFlag {
+func newFeatureFlag(name string, defaultValue bool) *FeatureFlag {
 	flag := &FeatureFlag{
 		Name:    name,
 		Enabled: defaultValue,

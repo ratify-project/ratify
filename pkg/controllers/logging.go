@@ -39,7 +39,7 @@ func NewLogrusSink(logger *logrus.Logger) *LogrusSink {
 
 // Init receives optional information about the logr library for LogSink
 // implementations that need it.
-func (s *LogrusSink) Init(info logr.RuntimeInfo) {
+func (sink *LogrusSink) Init(_ logr.RuntimeInfo) {
 }
 
 // Enabled tests whether this LogSink is enabled at the specified V-level.
@@ -59,7 +59,7 @@ func (sink *LogrusSink) Enabled(level int) bool {
 // The level argument is provided for optional logging.  This method will
 // only be called when Enabled(level) is true. See Logger.Info for more
 // details.
-func (sink *LogrusSink) Info(level int, msg string, keysAndValues ...interface{}) {
+func (sink *LogrusSink) Info(_ int, msg string, keysAndValues ...interface{}) {
 	entry := sink.createEntry(keysAndValues...)
 	entry.Info(sink.formatMessage(msg))
 }
