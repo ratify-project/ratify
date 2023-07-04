@@ -18,6 +18,7 @@ package factory
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/policyprovider"
@@ -61,7 +62,7 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 		return nil, fmt.Errorf("failed to find policy provider name in the policy config with key %s", "name")
 	}
 
-	providerNameStr := fmt.Sprintf("%s", policyProviderName)
+	providerNameStr := strings.ToLower(fmt.Sprintf("%s", policyProviderName))
 	if featureflag.UseRegoPolicy.Enabled && providerNameStr != pt.RegoPolicy {
 		return nil, fmt.Errorf("policy provider must be set to use Rego policy when enabled Rego policy feature")
 	}
