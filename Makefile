@@ -41,7 +41,7 @@ LOCAL_UNSIGNED_IMAGE = hello-world:latest
 TEST_REGISTRY = localhost:5000
 TEST_REGISTRY_USERNAME = test_user
 TEST_REGISTRY_PASSWORD = test_pw
-IS_OCI_1_1 ?= true
+IS_OCI_1_1 ?= false
 
 all: build test
 
