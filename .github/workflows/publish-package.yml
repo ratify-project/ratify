@@ -27,6 +27,7 @@ jobs:
           DATE=$(date +'%Y%m%d')
           COMMIT=${{ github.sha }}
           REPOSITORY=ghcr.io/${{ github.repository }}
+          REPOSITORYBASE=ghcr.io/${{ github.repository }}-base
           REPOSITORYCRD=ghcr.io/${{ github.repository }}-crds
           if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
             VERSION=$(git rev-parse --short HEAD)
@@ -34,14 +35,19 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "schedule" ]]; then
             VERSION=dev.${DATE}.${COMMIT:0:7}
             REPOSITORY=${REPOSITORY}-dev
+            REPOSITORYBASE=${REPOSITORYBASE}-dev
             REPOSITORYCRD=${REPOSITORYCRD}-dev
           fi
           echo ::set-output name=version::${VERSION}
           echo ::set-output name=ref::${REPOSITORY}:${VERSION}
+          echo ::set-output name=baseref::${REPOSITORYBASE}:${VERSION}
           echo ::set-output name=crdref::${REPOSITORYCRD}:${VERSION}
-      - name: docker build ratify
+      - name: docker build ratify base
         run: |
-          docker build -f ./httpserver/Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} .
+          docker build -f ./httpserver/Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.baseref }} .
+      - name: docker build ratify with plugin
+        run: |
+          docker build -f ./httpserver/Dockerfile --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} .
       - name: docker build ratify-crds
         run: |
           docker build --build-arg KUBE_VERSION="1.25.4" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }} ./charts/ratify/crds
@@ -51,7 +57,10 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: docker push ratify
+      - name: docker push ratify base
+        run: |
+          docker push ${{ steps.prepare.outputs.baseref }}
+      - name: docker push ratify with plugin
         run: |
           docker push ${{ steps.prepare.outputs.ref }}
       - name: docker push ratify-crds
