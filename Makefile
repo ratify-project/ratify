@@ -18,7 +18,6 @@ GATEKEEPER_VERSION ?= 3.11.0
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.7
 ORAS_VERSION ?= 1.0.0-rc.2
-SBOM_TOOL_VERSION ?= 1.1.2
 
 HELM_VERSION ?= 3.9.2
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
@@ -320,7 +319,7 @@ e2e-sbom-setup:
 	mkdir -p .staging/sbom
 
 	# Install sbom-tool
-	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/download/v${SBOM_TOOL_VERSION}/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
