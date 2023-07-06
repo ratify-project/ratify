@@ -3,9 +3,9 @@ entries:
   ratify:
   - apiVersion: v2
     appVersion: v1.0.0-rc.6
-    created: "2023-07-06T02:24:16.934817248Z"
+    created: "2023-07-06T04:58:30.237057994Z"
     description: A Helm chart for Ratify
-    digest: 4f0e8a8469db9091fcb8954585a726d949f7cae36fe2d717ea78fe574ec40522
+    digest: d2a0a35f53413eb1e9dfec1fd8e03b09b2b680a955b8b96c37fe1e6a387e78e0
     home: https://github.com/deislabs/ratify
     name: ratify
     urls:
@@ -126,4 +126,4 @@ entries:
     urls:
     - https://deislabs.github.io/ratify/ratify-gatekeeper-0.1.0.tgz
     version: 0.1.0
-generated: "2023-07-06T02:24:16.932981042Z"
+generated: "2023-07-06T04:58:30.23595521Z"
