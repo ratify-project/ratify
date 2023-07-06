@@ -58,11 +58,11 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 	if featureflag.UseRegoPolicy.Enabled {
 		return executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
 	}
-	return executor.verifySubjectWithJSONPolicy(ctx, verifyParameters)
+	return executor.verifySubjectForJSONPolicy(ctx, verifyParameters)
 }
 
-// verifySubjectWithJSONPolicy verifies the subject with the Json-based policy enforcer.
-func (executor Executor) verifySubjectWithJSONPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+// verifySubjectForJSONPolicy verifies the subject with the Json-based policy enforcer.
+func (executor Executor) verifySubjectForJSONPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	result, err := executor.verifySubjectInternalWithDecision(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -82,6 +82,8 @@ func (executor Executor) verifySubjectForRegoPolicy(ctx context.Context, verifyP
 	}
 	// If it requires embedded Rego Policy Engine make the decision, execute
 	// OverallVerifyResult to evaluate the overall result based on the policy.
+	// NOTE: if Passthrough Mode is enabled, executor will just return the
+	// VerifierReports without evaluating the policy.
 	result := types.VerifyResult{VerifierReports: results}
 	if !featureflag.PassthroughMode.Enabled {
 		result.IsSuccess = executor.PolicyEnforcer.OverallVerifyResult(ctx, result.VerifierReports)
@@ -269,7 +271,7 @@ func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceD
 		ReferenceTypes: []string{"*"},
 	}
 
-	nestedVerifyResult, err := executor.verifySubjectWithJSONPolicy(ctx, verifyParameters)
+	nestedVerifyResult, err := executor.verifySubjectForJSONPolicy(ctx, verifyParameters)
 	if err != nil {
 		nestedVerifyResult = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}

@@ -20,5 +20,8 @@ import "context"
 // PolicyQuery is an interface with methods that make policy decisions.
 type PolicyQuery interface {
 	// Evaluate evaluates the policy with the given input.
+	// input is the verifier reports that query evaluates against.
+	// result indicates whether the input satisfies the policy.
+	// err indicates an error happened during the evaluation.
 	Evaluate(ctx context.Context, input map[string]interface{}) (bool, error)
 }

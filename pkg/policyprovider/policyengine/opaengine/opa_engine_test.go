@@ -84,7 +84,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestEvalua(t *testing.T) {
+func TestEvaluate(t *testing.T) {
 	engine := &Engine{
 		query: &mockQuery{},
 	}

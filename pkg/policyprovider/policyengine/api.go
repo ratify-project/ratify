@@ -20,5 +20,8 @@ import "context"
 // PolicyEngine is an interface that represents a policy engine.
 type PolicyEngine interface {
 	// Evaluate evaluates the policy with the given input.
-	Evaluate(ctx context.Context, input map[string]interface{}) (bool, error)
+	// input is the verifier reports that engine evaluates against.
+	// result indicates whether the input satisfies the policy.
+	// err indicates an error happened during the evaluation.
+	Evaluate(ctx context.Context, input map[string]interface{}) (result bool, err error)
 }

@@ -34,101 +34,23 @@ The Rego Policy Provider is a built-in policy provider that uses [Open Policy Ag
     - `policyPath`: path to the Rego policy file. The file MUST be a valid Rego policy file.
     - `policy`: Rego policy as a string. The string MUST be a valid Rego policy.
 
+NOTE: When Ratify runs as K8s Add-on, any updates to the Policy configuration requires a restart of Ratify pod.
+
 ### Rego Policy Usage
-Ratify embeds OPA engine inside the executor to provide a built-in policy provider. This feature is behind the `RATIFY_USE_REGO_POLICY` feature flag. And if users want to offload policy decison-making to Gatekeeper, they can enable `RATIFY_PASSTHROUGH_MODE` which will bypass OPA engine embedded in Ratify. In this mode, Ratify will NOT make the decision but only pass the verification results to Gatekeeper for making the decision. Note that verification results returned while switching Rego policy/config policy are a bit different.
+Ratify embeds OPA engine inside the executor to provide a built-in policy provider. This feature is behind the `RATIFY_USE_REGO_POLICY` feature flag. And if users want to offload policy decison-making to Gatekeeper, they can enable `RATIFY_PASSTHROUGH_MODE` which will bypass OPA engine embedded in Ratify. In this mode, Ratify will NOT make the decision but only pass the verification results to Gatekeeper for making the decision. Note that verification results returned while switching Rego policy/config policy are different. 
 
-Example results when using config policy provider:
-```json
-{
-  "isSuccess": true,
-  "verifierReports": [
-    {
-      "subject": "registry:5000/sbom@sha256:4139357ed163984fe8ea49eaa0b82325dfc4feda98d0f6691b24f24cd6f0591e",
-      "isSuccess": true,
-      "name": "sbom",
-      "message": "SBOM verification success. The schema is good.",
-      "extensions": {
-        "created": "2023-05-08T17:11:15Z",
-        "creators": [
-          "Organization: acme",
-          "Tool: Microsoft.SBOMTool-1.0.2"
-        ],
-        "licenseListVersion": ""
-      },
-      "nestedResults": [
-        {
-          "subject": "registry:5000/sbom@sha256:a59b9a5ee8ce41fed4be7f6b8d8619bd9e619bbda6b7b1feb591c3c85f6ab7af",
-          "isSuccess": true,
-          "name": "notaryv2",
-          "message": "signature verification success",
-          "extensions": {
-            "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
-            "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"
-          },
-          "artifactType": "application/vnd.cncf.notary.signature"
-        }
-      ],
-      "artifactType": "org.example.sbom.v0"
-    }
-  ]
-}
-```
-
-Example results when using Rego policy provider:
-```json
-{
-  "isSuccess": true,
-  "verifierReports": [
-    {
-      "subject": "registry:5000/sbom@sha256:f291201143149e4006894b2d64202a8b90416b7dcde1c8ad997b1099312af3ce",
-      "referenceDigest": "sha256:932dde71a9f26ddafa61e8a7df2b296b1787bcb6e75c515584a53776e81a8a00",
-      "artifactType": "org.example.sbom.v0",
-      "verifierReports": [
-        {
-          "isSuccess": true,
-          "message": "SBOM verification success. The schema is good.",
-          "name": "sbom",
-          "extensions": {
-            "created": "2023-05-11T05:20:43Z",
-            "creators": [
-              "Organization: acme",
-              "Tool: Microsoft.SBOMTool-1.1.0"
-            ],
-            "licenseListVersion": ""
-          }
-        }
-      ],
-      "nestedReports": [
-        {
-          "subject": "registry:5000/sbom@sha256:932dde71a9f26ddafa61e8a7df2b296b1787bcb6e75c515584a53776e81a8a00",
-          "referenceDigest": "sha256:bf67213f8e048c2262b1dd007a4380f03431e1aa2ab58c7afdce7c2f763f7684",
-          "artifactType": "application/vnd.cncf.notary.signature",
-          "verifierReports": [
-            {
-              "isSuccess": true,
-              "message": "signature verification success",
-              "name": "notaryv2",
-              "extensions": {
-                "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
-                "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"
-              }
-            }
-          ],
-          "nestedReports": []
-        }
-      ]
-    }
-  ]
-}
-```
+When `RATIFY_USE_REGO_POLICY` is enabled, the Verification Response follows `1.0.0` version. [1.0.0](../reference/verification-result-version.md#1.0.0) provides definition and example usage of the response.
 
 To enable Rego policy provider for a Ratify server, the value of `RATIFY_USE_REGO_POLICY` MUST be set to true in the helm chart.
 
-If Ratify is used as command line, `RATIFY_USE_REGO_POLICY=1` MUST be passed to the corresponding command1.
+If Ratify is used as command line, `RATIFY_USE_REGO_POLICY=1` MUST be passed to the corresponding command.
 
 ### Rego Policy Requirements
 
-There are some special requirements on Rego policy used by Ratify. The package declaration MUST be `package ratify.policy`, and there MUST be a boolean variable `valid` declared. The variable `valid` MUST be set to `true` if the overall verification is successful, and `false` otherwise. The `input` is a Json object that contains the verification results of all reference artifacts. An example of the `input` is shown below:
+There are some special requirements on Rego policy used by Ratify. The package declaration MUST be `package ratify.policy`, and there MUST be a boolean variable `valid` declared. The variable `valid` MUST be set to `true` if the overall verification is successful, and `false` otherwise. The `input` is a Json object that contains the verification results of all reference artifacts.
+
+### Rego Policy Examples
+Here is a sample of the `input`:
 ```json
 {
   "verifierReports": [
@@ -176,7 +98,11 @@ There are some special requirements on Rego policy used by Ratify. The package d
   ]
 }
 ```
-An example of a Rego policy is shown below:
+
+#### Example 1
+Require all reference artifacts associated with subject image to be verify successfully.
+Check equivalent [Config Policy](#config-policy-examples)
+
 ```rego
 package ratify.policy
 
@@ -198,6 +124,68 @@ failed_verify(reports) {
   count(value) == 0
 }
 ```
+
+#### Example 2
+Require at least one reference artifact of the same type to verify succesfully. (relaxes the default policy to 'any').
+Check equivalent [Config Policy](#config-policy-examples)
+
+```rego
+package ratify.policy
+
+default valid := false
+
+valid if {
+	not failed_verify(input)
+}
+
+failed_verify(reports) if {
+	newReports := {"nestedReports": reports.verifierReports}
+	has_subject_failed_verify(newReports)
+}
+
+has_subject_failed_verify(nestedReports) if {
+	[path, value] := walk(nestedReports)
+	not artifact_type_pass_verify(value)
+	path[count(path) - 1] == "nestedReports"
+}
+
+# at least one artifact of the same type passed verification
+artifact_type_pass_verify(nestedReports) if {
+	count_artifact_type(nestedReports) == count_successful_artifact_type(nestedReports)
+}
+
+count_artifact_type(nestedReports) := number if {
+	artifact_types := {x |
+		some i
+		x := nestedReports[i].artifactType
+	}
+
+	number := count(artifact_types)
+}
+
+count_successful_artifact_type(nestedReports) := number if {
+	artifact_types := {x |
+		some i
+		x := nestedReports[i].artifactType
+		artifact_pass_verify(nestedReports[i].verifierReports)
+	}
+
+	number := count(artifact_types)
+}
+
+# an artifact has at least one successful report
+artifact_pass_verify(verifierReports) if {
+	verifierReports[_].isSuccess == true
+}
+
+# should be at least one verifier report that is successful
+failed_verify(reports) if {
+	[path, value] := walk(reports)
+	path[count(path) - 1] == "verifierReports"
+	count(value) == 0
+}
+```
+
 ## Config Policy Provider
 
 ```
@@ -235,7 +223,7 @@ failed_verify(reports) {
         },
         ...
         ```
-### Examples:
+### Config Policy Examples:
 
 - Require all reference artifacts associated with subject image to be verify successfully:
     ```
@@ -277,6 +265,7 @@ failed_verify(reports) {
     ...
     ```
 
+The Verification response follows `0.1.0` version. Check definition and examples in [0.1.0](../reference/verification-result-version.md#0.1.0).
 ## Notational Conventions
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "NOT RECOMMENDED", "MAY", and "OPTIONAL" are to be interpreted as described in [RFC 2119](http://tools.ietf.org/html/rfc2119).
