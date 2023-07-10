@@ -13,7 +13,7 @@ In this article:
 * Deploy two sample images on AKS
 * Validate the signature associated with the sample image using Ratify and Gatekeeper
 
-![e2e workflow diagram](./img/e2e-workflow-diagram.png)
+![e2e workflow diagram](../imgs/e2e-workflow-diagram.png)
 
 ## Prerequisite
 

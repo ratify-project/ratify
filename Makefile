@@ -16,9 +16,8 @@ KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.25.4
 GATEKEEPER_VERSION ?= 3.11.0
 COSIGN_VERSION ?= 1.13.1
-NOTATION_VERSION ?= 1.0.0-rc.3
+NOTATION_VERSION ?= 1.0.0-rc.7
 ORAS_VERSION ?= 1.0.0-rc.2
-SBOM_TOOL_VERSION ?= 1.1.2
 
 HELM_VERSION ?= 3.9.2
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
@@ -42,7 +41,6 @@ LOCAL_UNSIGNED_IMAGE = hello-world:latest
 TEST_REGISTRY = localhost:5000
 TEST_REGISTRY_USERNAME = test_user
 TEST_REGISTRY_PASSWORD = test_pw
-IS_OCI_1_1 ?= true
 
 all: build test
 
@@ -132,7 +130,7 @@ test-e2e: generate-rotation-certs
 test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notaryv2-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 	rm ${GOCOVERDIR} -rf
 	mkdir ${GOCOVERDIR} -p
-	IS_OCI_1_1=${IS_OCI_1_1} RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
+	RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 	go tool covdata textfmt -i=${GOCOVERDIR} -o test/e2e/coverage.txt
 
 .PHONY: generate-certs
@@ -258,14 +256,6 @@ e2e-notaryv2-setup:
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
 
-	# OCI 1.1 Artifact Resources
-	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notaryv2 signed image oci artifact"]' > .staging/notaryv2/Dockerfile && \
-		docker build --no-cache -t ${TEST_REGISTRY}/notation:ociartifact .staging/notaryv2 && \
-		docker push ${TEST_REGISTRY}/notation:ociartifact && \
-		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:ociartifact | jq -r .[0].RepoDigests[0]`; \
-	fi
-
 e2e-notation-leaf-cert-setup:
 	mkdir -p .staging/notaryv2/leaf-test
 	mkdir -p ~/.config/notation/truststore/x509/ca/leaf-test
@@ -325,23 +315,12 @@ e2e-licensechecker-setup:
   		--artifact-type application/vnd.ratify.spdx.v0 \
   		.staging/licensechecker/sbom.spdx:application/text
 
-	# OCI 1.1 Artifact Resources
-	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image oci artifact"]' > .staging/licensechecker/Dockerfile && \
-		docker build -t ${TEST_REGISTRY}/licensechecker:ociartifact .staging/licensechecker && \
-		docker push ${TEST_REGISTRY}/licensechecker:ociartifact && \
-		${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:ociartifact \
-			--artifact-type application/vnd.ratify.spdx.v0 \
-			--image-spec v1.1-artifact \
-			.staging/licensechecker/sbom.spdx:application/text; \
-	fi
-
 e2e-sbom-setup:
 	rm -rf .staging/sbom
 	mkdir -p .staging/sbom
 
 	# Install sbom-tool
-	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/download/v${SBOM_TOOL_VERSION}/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
@@ -370,19 +349,6 @@ e2e-sbom-setup:
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
 	.staging/notaryv2/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
-	# OCI 1.1 Artifact Resources
-	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image oci artifact"]' > .staging/sbom/Dockerfile && \
-		docker build --no-cache -t ${TEST_REGISTRY}/sbom:ociartifact .staging/sbom && \
-		docker push ${TEST_REGISTRY}/sbom:ociartifact && \
-		${GITHUB_WORKSPACE}/bin/oras attach \
-			--artifact-type org.example.sbom.v0 \
-			--image-spec v1.1-artifact \
-			 ${TEST_REGISTRY}/sbom:ociartifact \
-			.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json && \
-		.staging/notaryv2/notation sign --signature-manifest artifact -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:ociartifact | jq -r ".manifests[0].digest"`; \
-	fi
-
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
 	mkdir -p .staging/schemavalidator
@@ -406,18 +372,6 @@ e2e-schemavalidator-setup:
 		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
 		${TEST_REGISTRY}/all:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
-	
-	# OCI 1.1 Artifact Resources
-	if [ ${IS_OCI_1_1} = 'true' ]; then \
-		printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image oci artifact"]' > .staging/schemavalidator/Dockerfile && \
-		docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:ociartifact .staging/schemavalidator && \
-		docker push ${TEST_REGISTRY}/schemavalidator:ociartifact && \
-		${GITHUB_WORKSPACE}/bin/oras attach \
-			--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
-			${TEST_REGISTRY}/schemavalidator:ociartifact \
-			--image-spec v1.1-artifact \
-			.staging/schemavalidator/trivy-scan.sarif:application/sarif+json; \
-	fi
 
 e2e-inlinecert-setup:
 	rm -rf .staging/inlinecert
