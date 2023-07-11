@@ -33,7 +33,7 @@ import (
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
 	"github.com/deislabs/ratify/pkg/utils"
-	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2" // register notaryv2 verifier
+	_ "github.com/deislabs/ratify/pkg/verifier/notation" // register notation verifier
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // import additional authentication methods
