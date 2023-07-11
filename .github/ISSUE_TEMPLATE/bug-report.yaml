@@ -14,7 +14,7 @@
 #template created based on verbiage from https://github.com/oras-project/oras/blob/cc40e430ee0cc124250f9855a2e99f535f759221/.github/ISSUE_TEMPLATE/bug-report.yaml
 name: Bug Report
 description: File a bug report
-labels: [bug]
+labels: [bug, triage]
 body:
   - type: markdown
     id: preface
