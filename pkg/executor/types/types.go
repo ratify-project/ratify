@@ -15,8 +15,32 @@ limitations under the License.
 
 package types
 
+import (
+	"fmt"
+
+	"github.com/deislabs/ratify/pkg/verifier/types"
+)
+
 // VerifyResult describes the results of verifying a subject
 type VerifyResult struct {
-	IsSuccess       bool          `json:"isSuccess"`
-	VerifierReports []interface{} `json:"verifierReports,omitempty"`
+	IsSuccess       bool          `json:"isSuccess,omitempty"`
+	VerifierReports []interface{} `json:"verifierReports"`
+}
+
+// NestedVerifierReport describes the results of verifying an artifact and its
+// nested artifacts by available verifiers.
+type NestedVerifierReport struct {
+	Subject         string                 `json:"subject"`
+	ReferenceDigest string                 `json:"referenceDigest"`
+	ArtifactType    string                 `json:"artifactType"`
+	VerifierReports []types.VerifierResult `json:"verifierReports"`
+	NestedReports   []NestedVerifierReport `json:"nestedReports"`
+}
+
+// NewNestedVerifierReport creates a new NestedVerifierReport from an interface.
+func NewNestedVerifierReport(report interface{}) (NestedVerifierReport, error) {
+	if nvr, ok := report.(NestedVerifierReport); ok {
+		return nvr, nil
+	}
+	return NestedVerifierReport{}, fmt.Errorf("unable to convert %v to NestedVerifierReport", report)
 }

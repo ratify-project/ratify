@@ -74,6 +74,11 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
+            {{- if .Values.featureFlags.RATIFY_USE_REGO_POLICY }}
+            - mountPath: "/usr/local/ratify/policy"
+              name: policy
+              readOnly: true
+            {{- end }}
               {{- if $dockerAuthMode }}
             - mountPath: "/usr/local/docker"
               name: dockerconfig
@@ -143,6 +148,9 @@ spec:
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
+        - name: policy
+          configMap:
+            name: {{ include "ratify.fullname" . }}-rego-policy
         - name: tls
           secret:
             secretName: {{ include "ratify.fullname" . }}-tls

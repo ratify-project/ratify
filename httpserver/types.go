@@ -17,9 +17,15 @@ package httpserver
 
 import (
 	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/deislabs/ratify/pkg/featureflag"
 )
 
-const VerificationResultVersion = "0.1.0"
+const (
+	VerificationResultVersion = "0.1.0"
+	// Starting from this version, the verification result can be
+	// evaluated by Ratify embedded OPA engine.
+	ResultVersionSupportingRego = "1.0.0"
+)
 
 type VerificationResponse struct {
 	Version         string        `json:"version"`
@@ -28,8 +34,12 @@ type VerificationResponse struct {
 }
 
 func fromVerifyResult(res types.VerifyResult) VerificationResponse {
+	version := VerificationResultVersion
+	if featureflag.UseRegoPolicy.Enabled {
+		version = ResultVersionSupportingRego
+	}
 	return VerificationResponse{
-		Version:         VerificationResultVersion,
+		Version:         version,
 		IsSuccess:       res.IsSuccess,
 		VerifierReports: res.VerifierReports,
 	}
