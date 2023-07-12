@@ -177,18 +177,18 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod crdtest --namespace default --force --ignore-not-found=true'
     }
 
-    echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
+    echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
-    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_failure
 
-    echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml
+    echo "Add notation verifier and validate deployment succeeds"
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated

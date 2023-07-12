@@ -21,7 +21,7 @@ The framework defines concepts involved in the verification process and provides
 
 This framework will use a provider model for extensibility to support different types of stores & verifiers. It supports two types of providers.
 
-**Built-In/Internal providers** are available in the source of the framework and are registered during startup using the ```init``` function. Referrer store using [ORAS](https://github.com/oras-project/oras) and signature verification using [notaryv2](https://github.com/notaryproject/notation) will  be available as the built-in providers that are managed by the framework.
+**Built-In/Internal providers** are available in the source of the framework and are registered during startup using the ```init``` function. Referrer store using [ORAS](https://github.com/oras-project/oras) and signature verification using [notation](https://github.com/notaryproject/notation) will  be available as the built-in providers that are managed by the framework.
 
 **External/Plugin** providers are external to the source and process of the framework. These providers will be registered as binaries that the framework will locate in the configured paths and execute as per the corresponding plugin specification. The following section outlines the plugin architecture used for supporting external providers into the framework.
 
@@ -151,7 +151,7 @@ type ReferenceVerifier interface {
 - For a given artifact type, all verifiers that ```CanVerify```  will be invoked in the order that are registered in the configuration.
 - The verifier SHOULD return a result that contains all details of the verification for auditing purposes.
 - Every verifier should have access to the store  where the reference artifact is queried from. This store is used to fetch other metadata required for verification like manifest & blobs.
-- The framework MAY provide reference implementations for the interface as internal providers. For example notary v2 verifier that implements the verification of artifacts with type ```notary.v2.signature```. Similary there can be SBOM verifier that supports verification of SBOMs.
+- The framework MAY provide reference implementations for the interface as internal providers. For example notation verifier that implements the verification of artifacts with type ```notary.signature```. Similary there can be SBOM verifier that supports verification of SBOMs.
 
 ### Open Questions
 
@@ -209,7 +209,7 @@ There could be a tree of references that needs to be traversed and verified befo
 - Should executor or verifier responsible for nested verification?
 - Given the recursive nature of verifying the nested references, do we need to define an exit criteria to limit the nested levels?
 - How do we define the need for nested verification for a given artifact type? Will this be encompassed within the verifier settings or will it be a separate config?
-- Can nested verification be the default behavior for every artifact with an option to exclude this behavior for some artifacts? For example, all artifacts will perform nested verification except for the notary v2 signatures?
+- Can nested verification be the default behavior for every artifact with an option to exclude this behavior for some artifacts? For example, all artifacts will perform nested verification except for the notation signatures?
 
 ### Models of executor
 
@@ -229,7 +229,7 @@ In this model, every verifier that is registered with the framework is standalon
 *Cons*
 
 - This model will be good if registry supports artifact type filtering. If not, every verifier will query  all referrers and do the filtering on the client side which can be expensive (we have hard 3 second timeout for the admission controller in k8s)
-- How do we manage configuration without duplicating? For example, trust policy required to verify signatures of SBOM might be duplicated both under SBOM and notary verifier. If delegation model is used to support nested verification, then [model 2](#Model-2-Light-weight-verifiers) might be cleaner way to control the flow of verification.  
+- How do we manage configuration without duplicating? For example, trust policy required to verify signatures of SBOM might be duplicated both under SBOM and notation verifier. If delegation model is used to support nested verification, then [model 2](#Model-2-Light-weight-verifiers) might be cleaner way to control the flow of verification.  
 
 #### Model 2: Light weight verifiers
 
@@ -314,7 +314,7 @@ When an artifact has multiple signatures, teams can choose to ensure any one of 
 ```yaml=
 policy:
     type: config
-    skipAfterFirstSuccess: ["org.cncf.notary.v2"]
+    skipAfterFirstSuccess: ["org.cncf.notary"]
 ```
 
 - OPA
@@ -326,14 +326,14 @@ policy:
         package ratify.rules
         
         verify_reference{
-            not input.reference.artifactType == "org.cncf.notary.v2"
+            not input.reference.artifactType == "org.cncf.notary"
         }
         
         verify_reference {
-           not notary_success
+           not notation_success
         }
         
-        notary_success{
+        notation_success{
             result := input.results[_]           
             result.artifactType ==  input.reference.artifactType
             result.isSuccess == "true"
@@ -390,7 +390,7 @@ Teams can choose to continue verification even if certain verifiers fails with c
 policy:
     type: config
     continueOnErrors:
-        - name : "notaryv2"
+        - name : "notation"
           errorCodes: ["CERT_EXPIRED"]
           matchingArtifacts: [*.azurecr.io]
 ```
@@ -416,7 +416,7 @@ policy:
         is_cert_expired {
             regex.match(".+.azurecr.io$", input.subject)
             result := input.results[_]
-            input.verifier.name == "notaryv2"
+            input.verifier.name == "notation"
             input.verifier.artifactTypes[_] == result.artifactType
             result.error.code == "CERT_EXPIRED"
         }
@@ -576,13 +576,13 @@ stores:
 verifiers:
   version: 1.0.0
   plugins:
-  - name: nv2verifier
-    artifactTypes: application/vnd.cncf.notary.v2
+  - name: notation
+    artifactTypes: application/vnd.cncf.notary
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
+    nestedReferences: application/vnd.cncf.notary
 executor:
   cache: false
 policy:

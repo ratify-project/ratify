@@ -34,7 +34,7 @@ The `authProvider` section of configuration file specifies the authentication pr
         "version": "1.0.0",
         "plugins": [
             {
-                "name":"notaryv2",
+                "name":"notation",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "<cert folder>"
@@ -97,7 +97,7 @@ export ACR_NAME=<Azure Container Registry Name>
 export AKS_NAME=<Azure Kubernetes Service Name>
 export KEYVAULT_NAME=<Azure Key Vault Name>
 export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
-export NOTARY_PEM_NAME=<Name of the certificate file uploaded to Azure Key Vault>
+export NOTATION_PEM_NAME=<Name of the certificate file uploaded to Azure Key Vault>
 ```
 
 2. Create a Workload Federated Identity.
@@ -220,7 +220,7 @@ Notes: add below options while installing Ratify
 --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
 --set akvCertConfig.enabled=true \
 --set akvCertConfig.vaultURI=${VAULT_URI} \
---set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+--set akvCertConfig.cert1Name=${NOTATION_PEM_NAME} \
 --set akvCertConfig.tenantId=${TENANT_ID}
 ```
 
@@ -249,7 +249,7 @@ kubectl create secret docker-registry ratify-regcred -n <ratify-namespace> --doc
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./notary.crt \
+    --set-file notationCert=./notation.crt \
     --set oras.authProviders.k8secretsEnabled=true
 ```
 

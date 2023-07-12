@@ -165,7 +165,7 @@ func TestORASListReferrers_SubjectDesc(t *testing.T) {
 		ReferrersList: []oci.Descriptor{
 			{
 				Digest:       referrerDigest,
-				ArtifactType: "application/vnd.cncf.notary.v2",
+				ArtifactType: "application/vnd.cncf.notary",
 			},
 		},
 	}
@@ -193,8 +193,8 @@ func TestORASListReferrers_SubjectDesc(t *testing.T) {
 		t.Fatalf("expected digest %s, got %s", referrerDigest, referrers.Referrers[0].Digest)
 	}
 
-	if referrers.Referrers[0].ArtifactType != "application/vnd.cncf.notary.v2" {
-		t.Fatalf("expected artifact type %s, got %s", "application/vnd.cncf.notary.v2", referrers.Referrers[0].ArtifactType)
+	if referrers.Referrers[0].ArtifactType != "application/vnd.cncf.notary" {
+		t.Fatalf("expected artifact type %s, got %s", "application/vnd.cncf.notary", referrers.Referrers[0].ArtifactType)
 	}
 }
 
@@ -222,7 +222,7 @@ func TestORASListReferrers_NoSubjectDesc(t *testing.T) {
 		ReferrersList: []oci.Descriptor{
 			{
 				Digest:       referrerDigest,
-				ArtifactType: "application/vnd.cncf.notary.v2",
+				ArtifactType: "application/vnd.cncf.notary",
 			},
 		},
 	}
@@ -250,8 +250,8 @@ func TestORASListReferrers_NoSubjectDesc(t *testing.T) {
 		t.Fatalf("expected digest %s, got %s", referrerDigest, referrers.Referrers[0].Digest)
 	}
 
-	if referrers.Referrers[0].ArtifactType != "application/vnd.cncf.notary.v2" {
-		t.Fatalf("expected artifact type %s, got %s", "application/vnd.cncf.notary.v2", referrers.Referrers[0].ArtifactType)
+	if referrers.Referrers[0].ArtifactType != "application/vnd.cncf.notary" {
+		t.Fatalf("expected artifact type %s, got %s", "application/vnd.cncf.notary", referrers.Referrers[0].ArtifactType)
 	}
 }
 

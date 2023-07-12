@@ -1,4 +1,4 @@
-package notaryv2
+package notation
 
 import (
 	"crypto/x509"
