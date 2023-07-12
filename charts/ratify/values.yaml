@@ -111,6 +111,8 @@ crds:
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
+  RATIFY_USE_REGO_POLICY: false # RATIFY_USE_REGO_POLICY is used when you want the verification results to be evaluated by an OPA engine with Rego policy intead of the default config policy. The OPA engine can be either Ratify embedded or within Gatekeeper.
+  RATIFY_PASSTHROUGH_MODE: false # RATIFY_PASSTHROUGH_MODE is used when you do NOT want the verification results to be evaluated by Ratify, and it only works when RATIFY_USE_REGO_POLICY is enabled.
 
   # RATIFY_CERT_ROTATION enables rotation for TLS certificates.
   RATIFY_CERT_ROTATION: false
