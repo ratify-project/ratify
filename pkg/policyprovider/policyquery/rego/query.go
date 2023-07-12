@@ -61,7 +61,7 @@ func (r *Rego) Evaluate(ctx context.Context, input map[string]interface{}) (bool
 
 	if err != nil {
 		return false, err
-	} else if len(results) == 0 {
+	} else if len(results) == 0 || len(results[0].Expressions) == 0 {
 		return false, errors.New("no results returned from query")
 	} else {
 		result, ok := results[0].Expressions[0].Value.(bool)
