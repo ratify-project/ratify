@@ -15,7 +15,7 @@
 #Template created based on verbiage from https://github.com/oras-project/oras/blob/cc40e430ee0cc124250f9855a2e99f535f759221/.github/ISSUE_TEMPLATE/feature-request.yaml
 name: Feature Request
 description: File a feature request
-labels: [enhancement]
+labels: [enhancement, triage]
 body:
   - type: markdown
     id: preface

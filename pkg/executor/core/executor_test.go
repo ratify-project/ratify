@@ -18,41 +18,148 @@ package core
 import (
 	"context"
 	"errors"
+	"os"
+	"reflect"
 	"testing"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/common"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
+	"github.com/deislabs/ratify/pkg/featureflag"
+	"github.com/deislabs/ratify/pkg/policyprovider"
 
 	e "github.com/deislabs/ratify/pkg/executor"
+	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/ocispecs"
-	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
-	"github.com/deislabs/ratify/pkg/policyprovider/types"
+	policyConfig "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	storeConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/opencontainers/go-digest"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
 	testArtifactType1 = "test-type1"
 	testArtifactType2 = "test-type2"
+	subject1          = "localhost:5000/net-monitor:v1"
+	subjectDigest     = "sha256:6a5a5368e0c2d3e5909184fa28ddfd56072e7ff3ee9a945876f7eee5896ef5bb"
+	signatureDigest   = "sha256:9f13e0ac480cf86a5c9ec5d173001bbb6ec455f501f1812f0b0ad1f3468e8cfa"
+	artifactType      = "testArtifactType"
 )
 
-func TestVerifySubject_ResolveSubjectDescriptor_Failed(t *testing.T) {
+type mockPolicyProvider struct {
+	result bool
+}
+
+func (p *mockPolicyProvider) VerifyNeeded(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) bool {
+	return true
+}
+
+func (p *mockPolicyProvider) ContinueVerifyOnFailure(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor, _ types.VerifyResult) bool {
+	return true
+}
+
+func (p *mockPolicyProvider) ErrorToVerifyResult(_ context.Context, _ string, _ error) types.VerifyResult {
+	return types.VerifyResult{}
+}
+
+func (p *mockPolicyProvider) OverallVerifyResult(_ context.Context, _ []interface{}) bool {
+	return p.result
+}
+
+type mockStore struct {
+	referrers map[string][]ocispecs.ReferenceDescriptor
+}
+
+func (s *mockStore) Name() string {
+	return "mockStore"
+}
+
+func (s *mockStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+	if s.referrers == nil {
+		return referrerstore.ListReferrersResult{}, errors.New("some error happened")
+	}
+	if _, ok := s.referrers[subjectDesc.Digest.String()]; ok {
+		return referrerstore.ListReferrersResult{
+			NextToken: "",
+			Referrers: s.referrers[subjectDesc.Digest.String()],
+		}, nil
+	}
+	return referrerstore.ListReferrersResult{}, nil
+}
+
+func (s *mockStore) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
+	return nil, nil
+}
+
+func (s *mockStore) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+	return ocispecs.ReferenceManifest{}, nil
+}
+
+func (s *mockStore) GetConfig() *storeConfig.StoreConfig {
+	return nil
+}
+
+func (s *mockStore) GetSubjectDescriptor(_ context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+	if subjectReference.Tag == "v1" {
+		return &ocispecs.SubjectDescriptor{
+			Descriptor: oci.Descriptor{
+				Digest: subjectDigest,
+			},
+		}, nil
+	}
+	return &ocispecs.SubjectDescriptor{
+		Descriptor: oci.Descriptor{
+			Digest: subjectReference.Digest,
+		},
+	}, nil
+}
+
+type mockVerifier struct {
+	canVerify      bool
+	verifierResult verifier.VerifierResult
+}
+
+func (v *mockVerifier) Name() string {
+	return "mockVerifier"
+}
+
+func (v *mockVerifier) CanVerify(_ context.Context, _ ocispecs.ReferenceDescriptor) bool {
+	return v.canVerify
+}
+
+func (v *mockVerifier) Verify(_ context.Context,
+	_ common.Reference,
+	_ ocispecs.ReferenceDescriptor,
+	_ referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+	if reflect.DeepEqual(v.verifierResult, verifier.VerifierResult{}) {
+		return verifier.VerifierResult{}, errors.New("no verifier result")
+	}
+	return v.verifierResult, nil
+}
+
+func (v *mockVerifier) GetNestedReferences() []string {
+	return nil
+}
+
+func TestVerifySubjectInternalWithDecision_ResolveSubjectDescriptor_Failed(t *testing.T) {
 	executor := Executor{}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	_, err := executor.verifySubjectInternal(context.Background(), verifyParameters)
+	_, err := executor.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err == nil {
 		t.Fatal("expected subject parsing to fail")
 	}
 }
 
-func TestVerifySubject_ResolveSubjectDescriptor_Success(t *testing.T) {
+func TestVerifySubjectInternalWithDecision_ResolveSubjectDescriptor_Success(t *testing.T) {
 	testDigest := digest.FromString("test")
 	store := &mocks.TestStore{
 		References: []ocispecs.ReferenceDescriptor{},
@@ -69,14 +176,14 @@ func TestVerifySubject_ResolveSubjectDescriptor_Success(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
+	if _, err := executor.verifySubjectInternalWithDecision(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
 
-func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
+func TestVerifySubjectInternalWithDecision_Verify_NoReferrers(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{}
+	configPolicy := policyConfig.PolicyEnforcer{}
 	ex := &Executor{
 		PolicyEnforcer: configPolicy,
 		ReferrerStores: []referrerstore.ReferrerStore{&mocks.TestStore{
@@ -95,16 +202,16 @@ func TestVerifySubject_Verify_NoReferrers(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
+	if _, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
 
-func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
+func TestVerifySubjectInternalWithDecision_CanVerify_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			testArtifactType1: types.AnyVerifySuccess,
+	configPolicy := policyConfig.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
+			testArtifactType1: policyTypes.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -140,7 +247,7 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -155,12 +262,12 @@ func TestVerifySubject_CanVerify_ExpectedResults(t *testing.T) {
 	}
 }
 
-func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
+func TestVerifySubjectInternalWithDecision_VerifyFailures_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	testArtifactType := "test-type1"
-	configPolicy := config.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			testArtifactType: types.AnyVerifySuccess,
+	configPolicy := policyConfig.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
+			testArtifactType: policyTypes.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -196,7 +303,7 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -207,12 +314,12 @@ func TestVerifySubject_VerifyFailures_ExpectedResults(t *testing.T) {
 	}
 }
 
-func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
+func TestVerifySubjectInternalWithDecision_VerifySuccess_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			testArtifactType1: types.AnyVerifySuccess,
-			testArtifactType2: types.AnyVerifySuccess,
+	configPolicy := policyConfig.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
+			testArtifactType1: policyTypes.AnyVerifySuccess,
+			testArtifactType2: policyTypes.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -248,7 +355,7 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -263,13 +370,13 @@ func TestVerifySubject_VerifySuccess_ExpectedResults(t *testing.T) {
 	}
 }
 
-// TestVerifySubject_MultipleArtifacts_ExpectedResults tests multiple artifacts are verified concurrently
-func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
+// TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults tests multiple artifacts are verified concurrently
+func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
-	configPolicy := config.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
-			testArtifactType1: types.AnyVerifySuccess,
-			testArtifactType2: types.AnyVerifySuccess,
+	configPolicy := policyConfig.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
+			testArtifactType1: policyTypes.AnyVerifySuccess,
+			testArtifactType2: policyTypes.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -308,7 +415,7 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -327,10 +434,10 @@ func TestVerifySubject_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	}
 }
 
-// TestVerifySubject_NestedReferences_Expected tests verifier config can specify nested references
-func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
-	configPolicy := config.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+// TestVerifySubjectInternalWithDecision_NestedReferences_Expected tests verifier config can specify nested references
+func TestVerifySubjectInternalWithDecision_NestedReferences_Expected(t *testing.T) {
+	configPolicy := policyConfig.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
 			"default": "all",
 		}}
 
@@ -370,7 +477,7 @@ func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 		Subject: mocks.TestSubjectWithDigest,
 	}
 
-	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -406,10 +513,10 @@ func TestVerifySubject_NestedReferences_Expected(t *testing.T) {
 	}
 }
 
-// TestVerifySubject__NoNestedReferences_Expected tests verifier config can specify no nested references
-func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
-	configPolicy := config.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+// TestVerifySubjectInternalWithDecision__NoNestedReferences_Expected tests verifier config can specify no nested references
+func TestVerifySubjectInternalWithDecision_NoNestedReferences_Expected(t *testing.T) {
+	configPolicy := policyConfig.PolicyEnforcer{
+		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
 			"default": "all",
 		}}
 	store := mocks.CreateNewTestStoreForNestedSbom()
@@ -447,7 +554,7 @@ func TestVerifySubject_NoNestedReferences_Expected(t *testing.T) {
 		Subject: mocks.TestSubjectWithDigest,
 	}
 
-	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -486,7 +593,7 @@ func TestGetVerifyRequestTimeout_ExpectedResults(t *testing.T) {
 		{
 			setTimeout: -1,
 			ex: Executor{
-				PolicyEnforcer: config.PolicyEnforcer{},
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
 				ReferrerStores: []referrerstore.ReferrerStore{},
 				Verifiers:      []verifier.ReferenceVerifier{},
 				Config:         nil,
@@ -496,7 +603,7 @@ func TestGetVerifyRequestTimeout_ExpectedResults(t *testing.T) {
 		{
 			setTimeout: -1,
 			ex: Executor{
-				PolicyEnforcer: config.PolicyEnforcer{},
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
 				ReferrerStores: []referrerstore.ReferrerStore{},
 				Verifiers:      []verifier.ReferenceVerifier{},
 				Config: &exConfig.ExecutorConfig{
@@ -509,7 +616,7 @@ func TestGetVerifyRequestTimeout_ExpectedResults(t *testing.T) {
 		{
 			setTimeout: 5000,
 			ex: Executor{
-				PolicyEnforcer: config.PolicyEnforcer{},
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
 				ReferrerStores: []referrerstore.ReferrerStore{},
 				Verifiers:      []verifier.ReferenceVerifier{},
 				Config: &exConfig.ExecutorConfig{
@@ -543,7 +650,7 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 		{
 			setTimeout: -1,
 			ex: Executor{
-				PolicyEnforcer: config.PolicyEnforcer{},
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
 				ReferrerStores: []referrerstore.ReferrerStore{},
 				Verifiers:      []verifier.ReferenceVerifier{},
 				Config:         nil,
@@ -553,7 +660,7 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 		{
 			setTimeout: -1,
 			ex: Executor{
-				PolicyEnforcer: config.PolicyEnforcer{},
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
 				ReferrerStores: []referrerstore.ReferrerStore{},
 				Verifiers:      []verifier.ReferenceVerifier{},
 				Config: &exConfig.ExecutorConfig{
@@ -566,7 +673,7 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 		{
 			setTimeout: 2400,
 			ex: Executor{
-				PolicyEnforcer: config.PolicyEnforcer{},
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
 				ReferrerStores: []referrerstore.ReferrerStore{},
 				Verifiers:      []verifier.ReferenceVerifier{},
 				Config: &exConfig.ExecutorConfig{
@@ -587,5 +694,163 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 		if actual != expected {
 			t.Fatalf("mutation request timeout returned expected %dms but got %dms", expected.Milliseconds(), actual.Milliseconds())
 		}
+	}
+}
+
+func TestVerifySubject(t *testing.T) {
+	if err := os.Setenv("RATIFY_USE_REGO_POLICY", "1"); err != nil {
+		t.Fatalf("failed to set env var: %v", err)
+	}
+	featureflag.InitFeatureFlagsFromEnv()
+
+	testCases := []struct {
+		name           string
+		params         e.VerifyParameters
+		expectedResult types.VerifyResult
+		stores         []referrerstore.ReferrerStore
+		policyEnforcer policyprovider.PolicyProvider
+		verifiers      []verifier.ReferenceVerifier
+		referrers      []ocispecs.ReferenceDescriptor
+		expectErr      bool
+	}{
+		{
+			name:      "verify subject with invalid subject",
+			params:    e.VerifyParameters{},
+			expectErr: true,
+		},
+		{
+			name: "error from ListReferrers",
+			params: e.VerifyParameters{
+				Subject: subject1,
+			},
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: nil,
+				},
+			},
+			expectErr:      true,
+			expectedResult: types.VerifyResult{},
+		},
+		{
+			name: "empty referrers",
+			params: e.VerifyParameters{
+				Subject: subject1,
+			},
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: nil,
+				},
+			},
+			expectErr:      true,
+			expectedResult: types.VerifyResult{},
+		},
+		{
+			name: "one signature without matching verifier",
+			params: e.VerifyParameters{
+				Subject: subject1,
+			},
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: map[string][]ocispecs.ReferenceDescriptor{
+						subjectDigest: {
+							{
+								ArtifactType: artifactType,
+								Descriptor: oci.Descriptor{
+									Digest: signatureDigest,
+								},
+							},
+						},
+					},
+				},
+			},
+			verifiers: []verifier.ReferenceVerifier{
+				&mockVerifier{
+					canVerify: false,
+				},
+			},
+			policyEnforcer: &mockPolicyProvider{result: true},
+			expectErr:      false,
+			expectedResult: types.VerifyResult{
+				IsSuccess: true,
+			},
+		},
+		{
+			name: "one signature with verifier failed",
+			params: e.VerifyParameters{
+				Subject: subject1,
+			},
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: map[string][]ocispecs.ReferenceDescriptor{
+						subjectDigest: {
+							{
+								ArtifactType: artifactType,
+								Descriptor: oci.Descriptor{
+									Digest: signatureDigest,
+								},
+							},
+						},
+					},
+				},
+			},
+			verifiers: []verifier.ReferenceVerifier{
+				&mockVerifier{
+					canVerify: true,
+					verifierResult: verifier.VerifierResult{
+						IsSuccess: false,
+					},
+				},
+			},
+			policyEnforcer: &mockPolicyProvider{result: false},
+			expectErr:      false,
+			expectedResult: types.VerifyResult{IsSuccess: false},
+		},
+		{
+			name: "one signature with verifier success",
+			params: e.VerifyParameters{
+				Subject: subject1,
+			},
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: map[string][]ocispecs.ReferenceDescriptor{
+						subjectDigest: {
+							{
+								ArtifactType: artifactType,
+								Descriptor: oci.Descriptor{
+									Digest: signatureDigest,
+								},
+							},
+						},
+					},
+				},
+			},
+			verifiers: []verifier.ReferenceVerifier{
+				&mockVerifier{
+					canVerify: true,
+					verifierResult: verifier.VerifierResult{
+						IsSuccess: true,
+					},
+				},
+			},
+			policyEnforcer: &mockPolicyProvider{result: true},
+			expectErr:      false,
+			expectedResult: types.VerifyResult{
+				IsSuccess: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ex := &Executor{tc.stores, tc.policyEnforcer, tc.verifiers, nil}
+
+			result, err := ex.VerifySubject(context.Background(), tc.params)
+			if (err != nil) != tc.expectErr {
+				t.Fatalf("expected error %v but got %v", tc.expectErr, err)
+			}
+			if result.IsSuccess != tc.expectedResult.IsSuccess {
+				t.Fatalf("expected result: %+v but got: %+v", tc.expectedResult, result)
+			}
+		})
 	}
 }

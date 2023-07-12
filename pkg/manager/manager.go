@@ -31,6 +31,7 @@ import (
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/featureflag"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
+	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
 	"github.com/deislabs/ratify/pkg/utils"
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2" // register notaryv2 verifier

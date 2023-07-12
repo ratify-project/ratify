@@ -70,3 +70,14 @@ func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 func WriteVerifyResultResult(result *verifier.VerifierResult, w io.Writer) error {
 	return json.NewEncoder(w).Encode(result)
 }
+
+// NewVerifierResult creates a new verifier result object from the given
+// verifier.VerifierResult.
+func NewVerifierResult(result verifier.VerifierResult) VerifierResult {
+	return VerifierResult{
+		IsSuccess:  result.IsSuccess,
+		Message:    result.Message,
+		Name:       result.Name,
+		Extensions: result.Extensions,
+	}
+}

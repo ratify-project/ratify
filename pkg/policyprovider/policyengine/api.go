@@ -13,16 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package types
+package policyengine
 
-// ArtifactTypeVerifyPolicy represents an artifact type policy
-type ArtifactTypeVerifyPolicy string
+import "context"
 
-const (
-	AnyVerifySuccess ArtifactTypeVerifyPolicy = "any"
-	AllVerifySuccess ArtifactTypeVerifyPolicy = "all"
-	// RegoPolicy is the name of the rego policy provider.
-	RegoPolicy = "regoPolicy"
-	// ConfigPolicy is the name of the config policy provider.
-	ConfigPolicy = "configPolicy"
-)
+// PolicyEngine is an interface that represents a policy engine.
+type PolicyEngine interface {
+	// Evaluate evaluates the policy with the given input.
+	// input is the verifier reports that engine evaluates against.
+	// result indicates whether the input satisfies the policy.
+	// err indicates an error happened during the evaluation.
+	Evaluate(ctx context.Context, input map[string]interface{}) (result bool, err error)
+}

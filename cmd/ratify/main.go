@@ -22,6 +22,7 @@ import (
 	_ "github.com/deislabs/ratify/pkg/cache/dapr"                  // register dapr cache
 	_ "github.com/deislabs/ratify/pkg/cache/ristretto"             // register ristretto cache
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register configpolicy policy provider
+	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register regopolicy policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register oras referrer store
 	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2"           // register notaryv2 verifier
 )
