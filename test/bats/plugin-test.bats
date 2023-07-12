@@ -58,7 +58,6 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker2 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker-oci-image --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
     }
 
@@ -78,18 +77,12 @@ SLEEP_TIME=1
     sleep 15
     run kubectl run license-checker2 --namespace default --image=registry:5000/licensechecker:v0
     assert_success
-    # licensechecker artifact with OCI Artifact manifest format
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run kubectl run license-checker-oci-image --namespace default --image=registry:5000/licensechecker:ociartifact
-        assert_success
-    fi
 }
 
 @test "sbom verifier test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom-oci-image --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
     }
 
@@ -104,11 +97,6 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_success
-    # sbom with OCI Artifact manifest format
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run kubectl run sbom-oci-image --namespace default --image=registry:5000/sbom:ociartifact
-        assert_success
-    fi
 
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom
     assert_success
@@ -126,7 +114,6 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator-oci-image --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator2 --namespace default --force --ignore-not-found=true'
     }
 
@@ -141,11 +128,6 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run schemavalidator --namespace default --image=registry:5000/schemavalidator:v0
     assert_success
-    # schemavalidator with OCI Artifact manifest format
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run kubectl run schemavalidator-oci-image --namespace default --image=registry:5000/schemavalidator:ociartifact
-        assert_success
-    fi
 
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
     assert_success

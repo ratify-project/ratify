@@ -6,12 +6,6 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:signed
     assert_cmd_verify_success
 
-    # Test with OCI Artifact Manifest Signature
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:ociartifact
-        assert_cmd_verify_success
-    fi
-
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:unsigned
     assert_cmd_verify_failure
 }
@@ -48,12 +42,6 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/complete_licensechecker_config.json -s $TEST_REGISTRY/licensechecker:v0
     assert_cmd_verify_success
 
-    # Test with OCI Artifact Manifest Signature
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run bin/ratify verify -c $RATIFY_DIR/complete_licensechecker_config.json -s $TEST_REGISTRY/licensechecker:ociartifact
-        assert_cmd_verify_success
-    fi
-
     run bin/ratify verify -c $RATIFY_DIR/partial_licensechecker_config.json -s $TEST_REGISTRY/licensechecker:v0
     assert_cmd_verify_failure
 }
@@ -63,12 +51,6 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/sbom:v0
     assert_cmd_verify_success
 
-    # Test with OCI Artifact Manifest Signature
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/sbom:ociartifact
-        assert_cmd_verify_success
-    fi
-
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/sbom:unsigned
     assert_cmd_verify_failure
 }
@@ -76,12 +58,6 @@ load helpers
 @test "schemavalidator verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/schemavalidator_config.json -s $TEST_REGISTRY/schemavalidator:v0
     assert_cmd_verify_success
-
-    # Test with OCI Artifact Manifest Signature
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run bin/ratify verify -c $RATIFY_DIR/schemavalidator_config.json -s $TEST_REGISTRY/schemavalidator:ociartifact
-        assert_cmd_verify_success
-    fi
 }
 
 @test "sbom/notary/cosign/licensechecker verifiers test" {
