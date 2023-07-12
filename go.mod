@@ -28,7 +28,7 @@ require (
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230201235642-777dc99a6669
 	github.com/open-policy-agent/opa v0.51.0
 	github.com/opencontainers/go-digest v1.0.0
-	github.com/opencontainers/image-spec v1.1.0-rc2
+	github.com/opencontainers/image-spec v1.1.0-rc4
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.0.2
 	github.com/sigstore/sigstore v1.6.4
