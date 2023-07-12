@@ -256,12 +256,12 @@ policy:
 ```
 ### Section 6: Built in verifiers
 
-#### NotaryV2
-NotaryV2 is a built in verifier to Ratify. Notary v2 currently supports X.509 based PKI and identities, and uses a trust store and trust policy to determine if a signed artifact is considered authentic.
+#### Notation
+Notation is a built in verifier to Ratify. Notation currently supports X.509 based PKI and identities, and uses a trust store and trust policy to determine if a signed artifact is considered authentic.
 There are two ways to configure verification certificates:
 
 1. verificationCerts:  
-notary verifier will load all certificates from path specified in this array  
+notation verifier will load all certificates from path specified in this array  
 
 2. verificationCertStores:  
 
@@ -272,14 +272,14 @@ In the following example, the verifier's configuration references 4 `Certificate
 
 verificationCertStores property defines a collection of cert store objects. [Trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md) is a policy language that indicates which identities are trusted to produce artifacts. The following example shows a generic and permissive policy. Here, ca:certs is the only trust store specified and the certs suffix corresponds to the certs certification collection listed in the verificationCertStores section.   
 
-A sample notary verifier with verificationCertStores defined:
+A sample notation verifier with verificationCertStores defined:
 ```json=
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-notary
+  name: verifier-notation
 spec:
-  name: notaryv2
+  name: notation
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:

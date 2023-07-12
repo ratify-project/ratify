@@ -19,7 +19,7 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "notaryv2",
+                "name": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt"

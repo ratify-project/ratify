@@ -4,7 +4,7 @@ Ratify supports many verifiers to validate different artifact types. View more C
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-notary
+  name: verifier-notation
 spec:
   name: required, name of the verifier
   artifactType: required, the type of artifact this verifier handles
@@ -15,16 +15,16 @@ spec:
 ```
  
 
-## Notary
+## Notation
 
-Sample Notary yaml spec:
+Sample Notation yaml spec:
 ```yml
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-notary
+  name: verifier-notation
 spec:
-  name: notaryv2
+  name: notation
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:  # certificates for validating signatures
@@ -47,7 +47,7 @@ spec:
 
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| verificationCerts      | no    |      An array of string. Notary verifier will load all certificates from path specified in this array        |   ""            |
+| verificationCerts      | no    |      An array of string. Notation verifier will load all certificates from path specified in this array        |   ""            |
 | verificationCertStores      | no    |    Defines a collection of cert store objects. This property supersedes the path defined in `verificationCerts`      |       ""        |
 | trustPolicyDoc   | yes     |   [Trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md) is a policy language that indicates which identities are trusted to produce artifacts.          |     ""    |
 

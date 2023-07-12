@@ -195,7 +195,7 @@ kubectl -n gatekeeper-system get sa ratify-admin -oyaml
 
 ## Deploy Ratify
 
-Now we can deploy Ratify to our cluster with the AWS Signer root as the notary verification certificate:
+Now we can deploy Ratify to our cluster with the AWS Signer root as the notation verification certificate:
 ```shell
 curl -sSLO https://d2hvyiie56hcat.cloudfront.net/aws-signer-notation-root.cert
 
@@ -233,9 +233,9 @@ cat > notation-verifier.yaml << EOF
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-notary
+  name: verifier-notation
 spec:
-  name: notaryv2
+  name: notation
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:

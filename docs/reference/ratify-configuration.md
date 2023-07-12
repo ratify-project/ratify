@@ -32,5 +32,5 @@ kubectl apply -f .../ratify/config/samples/config_v1alpha1_verifier_schemavalida
 ```
 Sample command to remove a verifier:
 ```bash
-kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary 
+kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation 
 ```

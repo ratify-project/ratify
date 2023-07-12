@@ -100,7 +100,7 @@ actual values of fields may differ):
             },
             "isSuccess": true,
             "message": "signature verification success",
-            "name": "notaryv2",
+            "name": "notation",
             "subject": "localhost:5000/net-monitor:v1"
           },
           {
@@ -159,28 +159,28 @@ The most commonly used fields are:
 - `Extensions`: Additional metadata added to the result by the verifier
 
 The `Extensions` field allows the verifiers to include additional metadata as
-part of the response to use for policy evaluation (for example, the notaryv2
+part of the response to use for policy evaluation (for example, the notation
 verifier includes the Issuer and SubjectName from the certificate as an extension field).
 Currently, the best way to determine the extension fields for a verifier is to
 check the source for that verifier.
 
 When Ratify is verifying against a notation signature, there might be ambiguity
-in the verifierReport from notary verifier. Notary verifier introduces 
+in the verifierReport from notation verifier. Notation verifier introduces 
 a [trust policy](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-policy) component in the rc.1 release. Users 
 could control the verification level and scopes applied to specified artifact. There 
 could be 2 scenarios needed to pay attention:
 
 1. If users forgot to set up scopes
-for some repositories/artifacts, then the verification result from notary verifier will be an error saying the policy is missing.
+for some repositories/artifacts, then the verification result from notation verifier will be an error saying the policy is missing.
 2. If users set the verification level in trust policy to any value except `strict`,
-then the notary verification result might be a success even though some underlying
+then the notation verification result might be a success even though some underlying
 validation failed. Check the verification level provided in notation for more information: [Signature Verification Level](https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#signature-verification-details)
 
 ## Sample Rego Policy
 Let's look at a Ratify policy from the library in more detail. Below is the
-rego from the `notaryv2issuervalidation` policy:
+rego from the `notationissuervalidation` policy:
 ```rego
-package notaryv2issuervalidation
+package notationissuervalidation
 
 # Get data from Ratify
 remote_data := response {
@@ -217,8 +217,8 @@ general_violation[{"result": result}] {
 general_violation[{"result": result}] {
   subject_results := remote_data.responses[_]
   subject_result := subject_results[1]
-  notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
-  issuer_results := [res | notaryv2_results[i].extensions.Issuer == input.parameters.issuer; res := notaryv2_results[i]]
+  notation_results := [res | subject_result.verifierReports[i].name == "notation"; res := subject_result.verifierReports[i]]
+  issuer_results := [res | notation_results[i].extensions.Issuer == input.parameters.issuer; res := notation_results[i]]
   count(issuer_results) == 0
   result := sprintf("Subject %s has no signatures for certificate with Issuer: %s", [subject_results[0], input.parameters.issuer])
 }
@@ -227,11 +227,11 @@ general_violation[{"result": result}] {
 general_violation[{"result": result}] {
   subject_results := remote_data.responses[_]
   subject_result := subject_results[1]
-  notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
-  notaryv2_result := notaryv2_results[_]
-  notaryv2_result.isSuccess == false
-  notaryv2_result.extensions.Issuer == input.parameters.issuer
-  result = sprintf("Subject %s failed signature validation: %s", [subject_results[0], notaryv2_result.message])
+  notation_results := [res | subject_result.verifierReports[i].name == "notation"; res := subject_result.verifierReports[i]]
+  notation_result := notation_results[_]
+  notation_result.isSuccess == false
+  notation_result.extensions.Issuer == input.parameters.issuer
+  result = sprintf("Subject %s failed signature validation: %s", [subject_results[0], notation_result.message])
 }
 ```
 

@@ -1,7 +1,7 @@
 # Store/Verifier Providers
 The framework uses a provider model for extensibility to support different types of referrer stores and verifiers. It supports two types of providers. 
 
-Built-In/Internal providers are available in the source of the framework and are registered during startup using the ```init``` function. Referrer store using [ORAS](https://github.com/oras-project/oras) and signature verification using [notaryv2](https://github.com/notaryproject/notation) are currently available as the built-in providers in the framework and are managed by the framework.
+Built-In/Internal providers are available in the source of the framework and are registered during startup using the ```init``` function. Referrer store using [ORAS](https://github.com/oras-project/oras) and signature verification using [notation](https://github.com/notaryproject/notation) are currently available as the built-in providers in the framework and are managed by the framework.
 
 External/Plugin providers are external to the source and process of the framework. They are registered as binaries that implement the plugin specification for the corresponding provider. The framework will locate these binaries in the configured paths and invoke them by passing the required parameters as per the specification. [SBOM](..\plugins\verifier\sbom) verification and signature verification using [cosign](..\plugins\verifier\cosign) libraries are examples of the providers that are implemented as plugins.
 
