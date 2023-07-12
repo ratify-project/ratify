@@ -27,6 +27,7 @@ BATS_VERSION ?= 1.7.0
 SYFT_VERSION ?= v0.76.0
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
 CERT_ROTATION_ENABLED ?= false
+REGO_POLICY_ENABLED ?= false
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -441,6 +442,9 @@ e2e-build-local-ratify-image:
 	-t localbuild:test .
 	kind load docker-image --name kind localbuild:test
 
+e2e-uninstall-ratify:
+	./.staging/helm/linux-amd64/helm uninstall ${RATIFY_NAME} --namespace ${GATEKEEPER_NAMESPACE}
+
 e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
@@ -451,6 +455,7 @@ e2e-helm-deploy-ratify:
 	--set image.tag=test \
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
+	--set featureFlags.RATIFY_USE_REGO_POLICY=${REGO_POLICY_ENABLED} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \

@@ -21,4 +21,8 @@ type ArtifactTypeVerifyPolicy string
 const (
 	AnyVerifySuccess ArtifactTypeVerifyPolicy = "any"
 	AllVerifySuccess ArtifactTypeVerifyPolicy = "all"
+	// RegoPolicy is the name of the rego policy provider.
+	RegoPolicy = "regoPolicy"
+	// ConfigPolicy is the name of the config policy provider.
+	ConfigPolicy = "configPolicy"
 )
