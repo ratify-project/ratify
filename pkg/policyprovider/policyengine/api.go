@@ -13,20 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package policyengine
 
-import (
-	"os"
+import "context"
 
-	"github.com/deislabs/ratify/cmd/ratify/cmd"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
-	_ "github.com/deislabs/ratify/pkg/verifier/notation"
-)
-
-func main() {
-	if err := cmd.Root.Execute(); err != nil {
-		os.Exit(1)
-	}
+// PolicyEngine is an interface that represents a policy engine.
+type PolicyEngine interface {
+	// Evaluate evaluates the policy with the given input.
+	// input is the verifier reports that engine evaluates against.
+	// result indicates whether the input satisfies the policy.
+	// err indicates an error happened during the evaluation.
+	Evaluate(ctx context.Context, input map[string]interface{}) (result bool, err error)
 }

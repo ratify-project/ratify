@@ -13,20 +13,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package policyquery
 
-import (
-	"os"
+import "context"
 
-	"github.com/deislabs/ratify/cmd/ratify/cmd"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
-	_ "github.com/deislabs/ratify/pkg/verifier/notation"
-)
-
-func main() {
-	if err := cmd.Root.Execute(); err != nil {
-		os.Exit(1)
-	}
+// PolicyQuery is an interface with methods that make policy decisions.
+type PolicyQuery interface {
+	// Evaluate evaluates the policy with the given input.
+	// input is the verifier reports that query evaluates against.
+	// result indicates whether the input satisfies the policy.
+	// err indicates an error happened during the evaluation.
+	Evaluate(ctx context.Context, input map[string]interface{}) (bool, error)
 }
