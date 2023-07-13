@@ -54,7 +54,7 @@ func TestSet_Expected(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		cacheProvider, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		cacheProvider, err = cache.NewCacheProvider(ctx, RistrettoCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
@@ -88,7 +88,7 @@ func TestSetWithTTL_Expected(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		cacheProvider, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		cacheProvider, err = cache.NewCacheProvider(ctx, RistrettoCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
@@ -120,7 +120,7 @@ func TestGet_Expected(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		cacheProvider, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		cacheProvider, err = cache.NewCacheProvider(ctx, RistrettoCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
@@ -149,7 +149,7 @@ func TestDelete_Expected(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		cacheProvider, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		cacheProvider, err = cache.NewCacheProvider(ctx, RistrettoCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}

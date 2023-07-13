@@ -17,8 +17,8 @@ resources:
     cpu: 1000m
     memory: 512Mi
   requests:
-    cpu: 200m
-    memory: 256Mi
+    cpu: 600m
+    memory: 512Mi
 serviceAccount:
   create: true
   name: ratify-admin

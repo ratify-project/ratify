@@ -57,10 +57,11 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 	if cacheProvider == nil {
 		return referrerstore.ListReferrersResult{}, fmt.Errorf("failed to get cache provider")
 	}
-	val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original))
+	cacheKey := fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original)
+	val, found := cacheProvider.Get(ctx, cacheKey)
 	if val != "" && found {
 		if err = json.Unmarshal([]byte(val), &result); err != nil {
-			return referrerstore.ListReferrersResult{}, fmt.Errorf("failed to unmarshal cache value: %w", err)
+			return referrerstore.ListReferrersResult{}, fmt.Errorf("failed to unmarshal cache value for key %+v: %w", cacheKey, err)
 		}
 		logrus.Debug("cache hit for list referrers")
 		return result, nil
@@ -68,7 +69,6 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 
 	result, err = store.ReferrerStore.ListReferrers(ctx, subjectReference, artifactTypes, nextToken, subjectDesc)
 	if err == nil {
-		cacheKey := fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original)
 		if added := cacheProvider.SetWithTTL(ctx, cacheKey, result, time.Duration(store.cacheConf.TTL)*time.Second); !added { // TODO: convert ttl to duration in helm values
 			logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
 		}

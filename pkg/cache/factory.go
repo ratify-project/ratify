@@ -20,6 +20,7 @@ import (
 	"fmt"
 )
 
+// CacheFactory is an interface that defines the methods that a cache provider factory must implement
 type CacheFactory interface { //nolint:revive // ignore linter to have unique type name
 	Create(ctx context.Context, cacheName string, cacheSize int) (CacheProvider, error)
 }
@@ -37,10 +38,10 @@ func Register(name string, factory CacheFactory) {
 }
 
 // NewCacheProvider creates a new cache provider based on the name
-func NewCacheProvider(ctx context.Context, name string, cacheName string, cacheSize int) (CacheProvider, error) {
-	factory, ok := cacheProviderFactories[name]
+func NewCacheProvider(ctx context.Context, cacheType string, cacheName string, cacheSize int) (CacheProvider, error) {
+	factory, ok := cacheProviderFactories[cacheType]
 	if !ok {
-		return nil, fmt.Errorf("cache provider %s not found", name)
+		return nil, fmt.Errorf("cache provider %s not found", cacheType)
 	}
 
 	var err error

@@ -108,8 +108,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 				if cacheProvider != nil {
 					logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
-					inserted := cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference), result, server.CacheTTL)
-					if !inserted {
+					if !cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference), result, server.CacheTTL) {
 						logrus.Warnf("unable to insert cache entry for subject %v", resolvedSubjectReference)
 					}
 				}

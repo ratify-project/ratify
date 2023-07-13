@@ -29,9 +29,9 @@ const (
 	DefaultCacheType string = "ristretto"
 	// DefaultCacheTTL is the default time-to-live for the cache entry.
 	DefaultCacheTTL time.Duration = 10 * time.Second
-	// DefaultCacheName is the default endpoint for the cache.
-	DefaultCacheName string = "redis"
-	// DefaultCacheSize is the default size of the cache in MB.
+	// DefaultCacheName is the default endpoint for the cache. Only used for dapr currently.
+	DefaultCacheName string = "dapr-redis"
+	// DefaultCacheSize is the default size of the cache in MB. Only used for ristretto currently.
 	DefaultCacheSize int = 256
 )
 
@@ -42,7 +42,7 @@ type CacheProvider interface { //nolint:revive // ignore linter to have unique t
 	// Set adds value based on key to cache. Assume there will be no ttl. Returns true/false for success
 	Set(ctx context.Context, key string, value interface{}) bool
 
-	// SetWithTTL adds value base on key to cache. Ties ttl of entry to ttl provided. Returns true/false for success
+	// SetWithTTL adds value based on key to cache. Ties ttl of entry to ttl provided. Returns true/false for success
 	SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool
 
 	// Delete removes the specified key/value from the cache

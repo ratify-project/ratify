@@ -174,7 +174,7 @@ func TestGetSubjectDescriptor_Cache(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		cacheProvider, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		cacheProvider, err = cache.NewCacheProvider(ctx, cache.DefaultCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
@@ -223,7 +223,7 @@ func TestListReferrers_CacheHit(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		_, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		_, err = cache.NewCacheProvider(ctx, cache.DefaultCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}
@@ -249,7 +249,7 @@ func TestListReferrers_CacheMiss(t *testing.T) {
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
 		// if no cache provider has been initialized, initialize one
-		_, err = cache.NewCacheProvider(ctx, "ristretto", cache.DefaultCacheName, cache.DefaultCacheSize)
+		_, err = cache.NewCacheProvider(ctx, cache.DefaultCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
 		if err != nil {
 			t.Errorf("Expected no error, but got %v", err)
 		}

@@ -82,8 +82,7 @@ func NewCmdServe(_ ...string) *cobra.Command {
 func serve(opts serveCmdOptions) error {
 	if opts.cacheEnabled {
 		// initialize global cache of specified type
-		_, err := cache.NewCacheProvider(context.TODO(), opts.cacheType, opts.cacheName, opts.cacheSize)
-		if err != nil {
+		if _, err := cache.NewCacheProvider(context.TODO(), opts.cacheType, opts.cacheName, opts.cacheSize); err != nil {
 			return fmt.Errorf("error initializing cache of type %s: %w", opts.cacheType, err)
 		}
 		logrus.Debugf("initialized cache of type %s", opts.cacheType)

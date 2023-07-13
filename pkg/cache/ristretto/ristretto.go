@@ -28,7 +28,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type ristrettoFactory struct {
+const RistrettoCacheType = "ristretto"
+
+type factory struct {
 	once sync.Once
 }
 
@@ -37,10 +39,10 @@ type ristrettoCache struct {
 }
 
 func init() {
-	cache.Register("ristretto", &ristrettoFactory{})
+	cache.Register(RistrettoCacheType, &factory{})
 }
 
-func (f *ristrettoFactory) Create(_ context.Context, _ string, cacheSize int) (cache.CacheProvider, error) {
+func (f *factory) Create(_ context.Context, _ string, cacheSize int) (cache.CacheProvider, error) {
 	var err error
 	var memoryCache *ristretto.Cache
 	f.once.Do(func() {

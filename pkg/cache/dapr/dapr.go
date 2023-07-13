@@ -28,7 +28,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type daprFactory struct{}
+const DaprCacheType = "dapr"
+
+type factory struct{}
 
 type daprCache struct {
 	daprClient client.Client
@@ -36,10 +38,10 @@ type daprCache struct {
 }
 
 func init() {
-	cache.Register("dapr", &daprFactory{})
+	cache.Register(DaprCacheType, &factory{})
 }
 
-func (factory *daprFactory) Create(_ context.Context, cacheName string, _ int) (cache.CacheProvider, error) {
+func (factory *factory) Create(_ context.Context, cacheName string, _ int) (cache.CacheProvider, error) {
 	if !featureflag.DaprCacheProvider.Enabled {
 		return nil, fmt.Errorf("Dapr cache provider is not enabled. Please set the environment variable RATIFY_DAPR_CACHE_PROVIDER to enable it")
 	}
