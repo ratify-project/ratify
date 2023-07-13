@@ -4,6 +4,7 @@ metadata:
   name: "regopolicy"
 spec:
   parameters:
+    passthroughEnabled: false
     policy: |
       package ratify.policy
 

@@ -18,14 +18,12 @@ package core
 import (
 	"context"
 	"errors"
-	"os"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/deislabs/ratify/pkg/common"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
-	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 
 	e "github.com/deislabs/ratify/pkg/executor"
@@ -33,6 +31,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	policyConfig "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
+	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	storeConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
@@ -51,7 +50,8 @@ const (
 )
 
 type mockPolicyProvider struct {
-	result bool
+	result     bool
+	policyType string
 }
 
 func (p *mockPolicyProvider) VerifyNeeded(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) bool {
@@ -68,6 +68,13 @@ func (p *mockPolicyProvider) ErrorToVerifyResult(_ context.Context, _ string, _ 
 
 func (p *mockPolicyProvider) OverallVerifyResult(_ context.Context, _ []interface{}) bool {
 	return p.result
+}
+
+func (p *mockPolicyProvider) GetPolicyType(_ context.Context) string {
+	if p.policyType == "" {
+		return pt.ConfigPolicy
+	}
+	return pt.RegoPolicy
 }
 
 type mockStore struct {
@@ -145,21 +152,21 @@ func (v *mockVerifier) GetNestedReferences() []string {
 	return nil
 }
 
-func TestVerifySubjectInternalWithDecision_ResolveSubjectDescriptor_Failed(t *testing.T) {
+func TestVerifySubjectInternal_ResolveSubjectDescriptor_Failed(t *testing.T) {
 	executor := Executor{}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	_, err := executor.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	_, err := executor.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err == nil {
 		t.Fatal("expected subject parsing to fail")
 	}
 }
 
-func TestVerifySubjectInternalWithDecision_ResolveSubjectDescriptor_Success(t *testing.T) {
+func TestVerifySubjectInternal_ResolveSubjectDescriptor_Success(t *testing.T) {
 	testDigest := digest.FromString("test")
 	store := &mocks.TestStore{
 		References: []ocispecs.ReferenceDescriptor{},
@@ -170,18 +177,19 @@ func TestVerifySubjectInternalWithDecision_ResolveSubjectDescriptor_Success(t *t
 
 	executor := Executor{
 		ReferrerStores: []referrerstore.ReferrerStore{store},
+		PolicyEnforcer: &mockPolicyProvider{},
 	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := executor.verifySubjectInternalWithDecision(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
+	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
 
-func TestVerifySubjectInternalWithDecision_Verify_NoReferrers(t *testing.T) {
+func TestVerifySubjectInternal_Verify_NoReferrers(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{}
 	ex := &Executor{
@@ -202,12 +210,12 @@ func TestVerifySubjectInternalWithDecision_Verify_NoReferrers(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
+	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
 
-func TestVerifySubjectInternalWithDecision_CanVerify_ExpectedResults(t *testing.T) {
+func TestVerifySubjectInternal_CanVerify_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
@@ -247,7 +255,7 @@ func TestVerifySubjectInternalWithDecision_CanVerify_ExpectedResults(t *testing.
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -262,7 +270,7 @@ func TestVerifySubjectInternalWithDecision_CanVerify_ExpectedResults(t *testing.
 	}
 }
 
-func TestVerifySubjectInternalWithDecision_VerifyFailures_ExpectedResults(t *testing.T) {
+func TestVerifySubjectInternal_VerifyFailures_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	testArtifactType := "test-type1"
 	configPolicy := policyConfig.PolicyEnforcer{
@@ -303,7 +311,7 @@ func TestVerifySubjectInternalWithDecision_VerifyFailures_ExpectedResults(t *tes
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -314,7 +322,7 @@ func TestVerifySubjectInternalWithDecision_VerifyFailures_ExpectedResults(t *tes
 	}
 }
 
-func TestVerifySubjectInternalWithDecision_VerifySuccess_ExpectedResults(t *testing.T) {
+func TestVerifySubjectInternal_VerifySuccess_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
@@ -355,7 +363,7 @@ func TestVerifySubjectInternalWithDecision_VerifySuccess_ExpectedResults(t *test
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -415,7 +423,7 @@ func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -434,8 +442,8 @@ func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *
 	}
 }
 
-// TestVerifySubjectInternalWithDecision_NestedReferences_Expected tests verifier config can specify nested references
-func TestVerifySubjectInternalWithDecision_NestedReferences_Expected(t *testing.T) {
+// TestVerifySubjectInternal_NestedReferences_Expected tests verifier config can specify nested references
+func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 	configPolicy := policyConfig.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
 			"default": "all",
@@ -477,7 +485,7 @@ func TestVerifySubjectInternalWithDecision_NestedReferences_Expected(t *testing.
 		Subject: mocks.TestSubjectWithDigest,
 	}
 
-	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -513,8 +521,8 @@ func TestVerifySubjectInternalWithDecision_NestedReferences_Expected(t *testing.
 	}
 }
 
-// TestVerifySubjectInternalWithDecision__NoNestedReferences_Expected tests verifier config can specify no nested references
-func TestVerifySubjectInternalWithDecision_NoNestedReferences_Expected(t *testing.T) {
+// TestVerifySubjectInternal__NoNestedReferences_Expected tests verifier config can specify no nested references
+func TestVerifySubjectInternal_NoNestedReferences_Expected(t *testing.T) {
 	configPolicy := policyConfig.PolicyEnforcer{
 		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
 			"default": "all",
@@ -554,7 +562,7 @@ func TestVerifySubjectInternalWithDecision_NoNestedReferences_Expected(t *testin
 		Subject: mocks.TestSubjectWithDigest,
 	}
 
-	result, err := ex.verifySubjectInternalWithDecision(context.Background(), verifyParameters)
+	result, err := ex.verifySubjectInternal(context.Background(), verifyParameters)
 
 	if err != nil {
 		t.Fatalf("verification failed with err %v", err)
@@ -698,11 +706,6 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 }
 
 func TestVerifySubject(t *testing.T) {
-	if err := os.Setenv("RATIFY_USE_REGO_POLICY", "1"); err != nil {
-		t.Fatalf("failed to set env var: %v", err)
-	}
-	featureflag.InitFeatureFlagsFromEnv()
-
 	testCases := []struct {
 		name           string
 		params         e.VerifyParameters
@@ -714,7 +717,10 @@ func TestVerifySubject(t *testing.T) {
 		expectErr      bool
 	}{
 		{
-			name:      "verify subject with invalid subject",
+			name: "verify subject with invalid subject",
+			policyEnforcer: &mockPolicyProvider{
+				policyType: pt.RegoPolicy,
+			},
 			params:    e.VerifyParameters{},
 			expectErr: true,
 		},
@@ -728,6 +734,9 @@ func TestVerifySubject(t *testing.T) {
 					referrers: nil,
 				},
 			},
+			policyEnforcer: &mockPolicyProvider{
+				policyType: pt.RegoPolicy,
+			},
 			expectErr:      true,
 			expectedResult: types.VerifyResult{},
 		},
@@ -740,6 +749,9 @@ func TestVerifySubject(t *testing.T) {
 				&mockStore{
 					referrers: nil,
 				},
+			},
+			policyEnforcer: &mockPolicyProvider{
+				policyType: pt.RegoPolicy,
 			},
 			expectErr:      true,
 			expectedResult: types.VerifyResult{},
@@ -768,8 +780,11 @@ func TestVerifySubject(t *testing.T) {
 					canVerify: false,
 				},
 			},
-			policyEnforcer: &mockPolicyProvider{result: true},
-			expectErr:      false,
+			policyEnforcer: &mockPolicyProvider{
+				result:     true,
+				policyType: pt.RegoPolicy,
+			},
+			expectErr: false,
 			expectedResult: types.VerifyResult{
 				IsSuccess: true,
 			},
@@ -801,7 +816,10 @@ func TestVerifySubject(t *testing.T) {
 					},
 				},
 			},
-			policyEnforcer: &mockPolicyProvider{result: false},
+			policyEnforcer: &mockPolicyProvider{
+				result:     false,
+				policyType: pt.RegoPolicy,
+			},
 			expectErr:      false,
 			expectedResult: types.VerifyResult{IsSuccess: false},
 		},
@@ -832,8 +850,11 @@ func TestVerifySubject(t *testing.T) {
 					},
 				},
 			},
-			policyEnforcer: &mockPolicyProvider{result: true},
-			expectErr:      false,
+			policyEnforcer: &mockPolicyProvider{
+				result:     true,
+				policyType: pt.RegoPolicy,
+			},
+			expectErr: false,
 			expectedResult: types.VerifyResult{
 				IsSuccess: true,
 			},

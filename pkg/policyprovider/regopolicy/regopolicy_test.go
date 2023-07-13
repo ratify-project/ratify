@@ -162,3 +162,10 @@ func TestOverallVerifyResult(t *testing.T) {
 		})
 	}
 }
+
+func TestGetPolicyType(t *testing.T) {
+	enforcer := policyEnforcer{}
+	if policyType := enforcer.GetPolicyType(context.Background()); policyType != "regopolicy" {
+		t.Fatalf("expected policy type: regopolicy, got %v", policyType)
+	}
+}

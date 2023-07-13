@@ -19,13 +19,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	"github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -39,17 +37,16 @@ type PolicyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-type activePolicy struct {
+type policy struct {
 	// The name of the policy.
-	PolicyName string
+	Name string
 	// The policy enforcer making a decision.
-	PolicyEnforcer policyprovider.PolicyProvider
+	Enforcer policyprovider.PolicyProvider
 }
 
-var (
-	// PolicyEnforcer is the policy enforcer generated from CRD.
-	ActivePolicy activePolicy
-)
+// ActivePolicy is the active policy generated from CRD. There would be exactly
+// one active policy at any given time.
+var ActivePolicy policy
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies/status,verbs=get;update;patch
@@ -68,7 +65,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
-		if apierrors.IsNotFound(err) && resource == ActivePolicy.PolicyName {
+		if apierrors.IsNotFound(err) && resource == ActivePolicy.Name {
 			policyLogger.Infof("delete event detected, removing policy %s", resource)
 			ActivePolicy.deletePolicy(resource)
 		} else {
@@ -117,21 +114,16 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func policyAddOrReplace(spec configv1beta1.PolicySpec, policyName string) error {
 	policyEnforcer, err := specToPolicyEnforcer(spec, policyName)
 	if err != nil {
-		logrus.Error("unable to create policy provider: ", err)
-		return err
+		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	ActivePolicy.PolicyName = policyName
-	ActivePolicy.PolicyEnforcer = policyEnforcer
+	ActivePolicy.Name = policyName
+	ActivePolicy.Enforcer = policyEnforcer
 	return nil
 }
 
 func specToPolicyEnforcer(spec configv1beta1.PolicySpec, policyName string) (policyprovider.PolicyProvider, error) {
-	if strings.ToLower(policyName) != types.RegoPolicy && strings.ToLower(policyName) != types.ConfigPolicy {
-		return nil, fmt.Errorf("unknown policy type %s", policyName)
-	}
-
-	policyConfig, err := specToPolicyConfig(spec, policyName)
+	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, policyName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse policy config: %w", err)
 	}
@@ -144,15 +136,14 @@ func specToPolicyEnforcer(spec configv1beta1.PolicySpec, policyName string) (pol
 	return policyEnforcer, nil
 }
 
-func specToPolicyConfig(spec configv1beta1.PolicySpec, policyName string) (config.PoliciesConfig, error) {
+func rawToPolicyConfig(raw []byte, policyName string) (config.PoliciesConfig, error) {
 	pluginConfig := config.PolicyPluginConfig{}
 
-	if string(spec.Parameters.Raw) == "" {
+	if string(raw) == "" {
 		return config.PoliciesConfig{}, fmt.Errorf("no policy parameters provided")
 	}
-	if err := json.Unmarshal(spec.Parameters.Raw, &pluginConfig); err != nil {
-		logrus.Error("unable to decode policy parameters: ", err, " Parameters.Raw", spec.Parameters.Raw)
-		return config.PoliciesConfig{}, err
+	if err := json.Unmarshal(raw, &pluginConfig); err != nil {
+		return config.PoliciesConfig{}, fmt.Errorf("unable to decode policy parameters.Raw: %s, err: %w", raw, err)
 	}
 
 	pluginConfig["name"] = policyName
@@ -162,13 +153,14 @@ func specToPolicyConfig(spec configv1beta1.PolicySpec, policyName string) (confi
 	}, nil
 }
 
-func (p *activePolicy) deletePolicy(resource string) {
-	if p.PolicyName == resource {
-		p.PolicyName = ""
-		p.PolicyEnforcer = nil
+func (p *policy) deletePolicy(resource string) {
+	if p.Name == resource {
+		p.Name = ""
+		p.Enforcer = nil
 	}
 }
 
-func (p *activePolicy) IsEmpty() bool {
-	return p.PolicyName == "" && p.PolicyEnforcer == nil
+// IsEmpty returns true if there is no policy set up.
+func (p *policy) IsEmpty() bool {
+	return p.Name == "" && p.Enforcer == nil
 }

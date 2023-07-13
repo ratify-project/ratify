@@ -34,4 +34,6 @@ type PolicyProvider interface {
 	// OverallVerifyResult determines the final outcome of verification that is constructed using the results from
 	// individual verifications
 	OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool
+
+	GetPolicyType(ctx context.Context) string
 }

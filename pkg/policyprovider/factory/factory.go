@@ -20,10 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/verifier/types"
 	"github.com/sirupsen/logrus"
 )
@@ -50,9 +48,6 @@ func Register(name string, factory PolicyFactory) {
 
 // CreatePolicyProvidersFromConfig creates a policy provider from the provided configuration
 func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
-	if !featureflag.UseRegoPolicy.Enabled && featureflag.PassthroughMode.Enabled {
-		return nil, errors.New("passthrough mode is only supported with rego policy")
-	}
 	if policyConfig.PolicyPlugin == nil {
 		return nil, errors.New("policy provider config must be specified")
 	}
@@ -63,9 +58,6 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 	}
 
 	providerNameStr := strings.ToLower(fmt.Sprintf("%s", policyProviderName))
-	if featureflag.UseRegoPolicy.Enabled && providerNameStr != pt.RegoPolicy {
-		return nil, fmt.Errorf("policy provider must be set to use Rego policy when enabled Rego policy feature")
-	}
 
 	policyFactory, ok := builtInPolicyProviders[providerNameStr]
 	if !ok {

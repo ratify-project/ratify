@@ -35,14 +35,16 @@ import (
 )
 
 type policyEnforcer struct {
-	Policy    string
-	OpaEngine policyengine.PolicyEngine
+	Policy             string
+	OpaEngine          policyengine.PolicyEngine
+	passthroughEnabled bool
 }
 
 type policyEnforcerConf struct {
-	Name       string `json:"name"`
-	Policy     string `json:"policy"`
-	PolicyPath string `json:"policyPath"`
+	Name               string `json:"name"`
+	Policy             string `json:"policy"`
+	PolicyPath         string `json:"policyPath"`
+	PassthroughEnabled bool   `json:"passthroughEnabled"`
 }
 
 // Factory is a factory for creating rego policy enforcers.
@@ -55,8 +57,6 @@ func init() {
 
 // Create creates a new policy enforcer based on the policy provided in config.
 func (f *Factory) Create(policyConfig config.PolicyPluginConfig) (policyprovider.PolicyProvider, error) {
-	policyEnforcer := &policyEnforcer{}
-
 	conf := policyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
@@ -86,8 +86,11 @@ func (f *Factory) Create(policyConfig config.PolicyPluginConfig) (policyprovider
 		return nil, fmt.Errorf("failed to create OPA engine: %w", err)
 	}
 
-	policyEnforcer.Policy = conf.Policy
-	policyEnforcer.OpaEngine = engine
+	policyEnforcer := &policyEnforcer{
+		Policy:             conf.Policy,
+		OpaEngine:          engine,
+		passthroughEnabled: conf.PassthroughEnabled,
+	}
 
 	return policyEnforcer, nil
 }
@@ -109,6 +112,10 @@ func (e *policyEnforcer) ErrorToVerifyResult(_ context.Context, _ string, _ erro
 
 // OverallVerifyResult determines if the overall verification result should be a success or failure.
 func (e *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReports []interface{}) bool {
+	if e.passthroughEnabled {
+		return false
+	}
+
 	nestedReports := map[string]interface{}{}
 	nestedReports["verifierReports"] = verifierReports
 	result, err := e.OpaEngine.Evaluate(ctx, nestedReports)
@@ -117,4 +124,8 @@ func (e *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReport
 		return false
 	}
 	return result
+}
+
+func (e *policyEnforcer) GetPolicyType(_ context.Context) string {
+	return policyTypes.RegoPolicy
 }

@@ -108,6 +108,10 @@ delete-demo-constraints:
 	kubectl delete -f ./library/default/template.yaml
 	kubectl delete -f ./library/default/samples/constraint.yaml
 
+.PHONY: deploy-rego-policy
+deploy-rego-policy:
+	kubectl apply -f ./config/samples/config_v1beta1_policy_rego.yaml
+
 .PHONY: deploy-gatekeeper
 deploy-gatekeeper:
 	helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -441,9 +445,6 @@ e2e-build-local-ratify-image:
 	-f ./httpserver/Dockerfile \
 	-t localbuild:test .
 	kind load docker-image --name kind localbuild:test
-
-e2e-uninstall-ratify:
-	./.staging/helm/linux-amd64/helm uninstall ${RATIFY_NAME} --namespace ${GATEKEEPER_NAMESPACE}
 
 e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json

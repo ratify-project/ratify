@@ -116,7 +116,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		}
 
 		if !controllers.ActivePolicy.IsEmpty() {
-			activePolicyEnforcer = controllers.ActivePolicy.PolicyEnforcer
+			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
 		} else {
 			activePolicyEnforcer = policy
 		}
