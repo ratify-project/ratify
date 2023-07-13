@@ -521,7 +521,8 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notaryv2-setup e2e-bui
 	--set provider.cache.type="dapr" \
 	--set provider.cache.name="dapr-redis" \
 	--set featureFlags.RATIFY_DAPR_CACHE_PROVIDER=true \
-	--set resources.requests.memory="64Mi"
+	--set resources.requests.memory="64Mi" \
+	--set resources.requests.cpu="200m" \
 
 	rm mount_config.json
 
