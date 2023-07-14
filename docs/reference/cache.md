@@ -28,7 +28,7 @@ When to use Redis as the cache provider?
 - using high availability ratify deployment (multiple replicas)
 
 Here's a diagram of the relationship between the cluster resources installed with Dapr + Redis + Ratify:
-![](caching-dapr-redis.png)
+![](../imgs/caching-dapr-redis.png)
 
 <hr/>
 
@@ -51,6 +51,6 @@ The centralized cache is currently used in 4 different scenarios:
 ORAS provides an OCI layout store for caching blobs in a local file descriptor. Ratify's ORAS store implementation stores all blobs fetched from registry in an OCI store. During verification, blob-related operations (`GetReferenceManifest` & `GetBlobContent`) check the OCI file store for blob existence before making calls to registry.
 
 ## Flow Diagrams
-![](caching-executor.png)
-![](caching-descriptor.png)
-![](caching-verifier.png)
+![](../imgs/caching-executor.png)
+![](../imgs/caching-descriptor.png)
+![](../imgs/caching-verifier.png)
