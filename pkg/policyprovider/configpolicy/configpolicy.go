@@ -157,6 +157,7 @@ func (enforcer PolicyEnforcer) OverallVerifyResult(_ context.Context, verifierRe
 	return true
 }
 
+// GetPolicyType returns the type of the policy.
 func (enforcer PolicyEnforcer) GetPolicyType(_ context.Context) string {
 	return vt.ConfigPolicy
 }

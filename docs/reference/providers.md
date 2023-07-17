@@ -41,13 +41,13 @@ NOTE: When Ratify runs as K8s Add-on, any updates to the Policy configuration re
 ### Rego Policy Usage
 Ratify embeds OPA engine inside the executor to provide a built-in policy provider. There are 2 approaches to enable this feature as an add-on service.
 
-1. Set the helm chart value of `featureFlags.RATIFY_USE_REGO_POLICY` to `true` while deploying Ratify.
+1. Set the helm chart value of `policy.useRego` to `true` while deploying Ratify.
 2. Apply a Policy Customecustom resource with Rego Policy after the service is running. e.g.
 ```bash
 kubectl apply -f ./config/samples/config_v1beta1_policy_rego.yaml
 ```
 
-And if Ratify is used as command line tool, users must provide a config with Rego Policy.
+And if Ratify is used as command line tool, users MUST provide a config with Rego Policy.
 
 Note that verification results returned while switching Rego policy/config policy are different. 
 

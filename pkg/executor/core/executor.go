@@ -67,6 +67,7 @@ func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.V
 	return result, err
 }
 
+// verifySubjectInternal verifies the subject with results.
 func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	verifierReports, err := executor.verifySubjectInternalWithoutDecision(ctx, verifyParameters)
 	if err != nil {

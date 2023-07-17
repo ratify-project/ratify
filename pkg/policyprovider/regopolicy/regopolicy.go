@@ -126,6 +126,7 @@ func (e *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReport
 	return result
 }
 
+// GetPolicyType returns the type of the policy.
 func (e *policyEnforcer) GetPolicyType(_ context.Context) string {
 	return policyTypes.RegoPolicy
 }

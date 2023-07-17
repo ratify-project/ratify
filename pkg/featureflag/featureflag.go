@@ -27,7 +27,6 @@ import (
 var (
 	DynamicPlugins = newFeatureFlag("DYNAMIC_PLUGINS", false)
 	CertRotation   = newFeatureFlag("CERT_ROTATION", false)
-	UseRegoPolicy  = newFeatureFlag("USE_REGO_POLICY", false)
 )
 
 var flags = make(map[string]*FeatureFlag)

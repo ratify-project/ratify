@@ -74,7 +74,7 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
-            {{- if .Values.featureFlags.RATIFY_USE_REGO_POLICY }}
+            {{- if .Values.policy.useRego }}
             - mountPath: "/usr/local/ratify/policy"
               name: policy
               readOnly: true

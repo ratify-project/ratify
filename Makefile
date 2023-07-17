@@ -456,7 +456,6 @@ e2e-helm-deploy-ratify:
 	--set image.tag=test \
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
-	--set featureFlags.RATIFY_USE_REGO_POLICY=${REGO_POLICY_ENABLED} \
 	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
 	--set-file provider.tls.key=${CERT_DIR}/server.key \
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
