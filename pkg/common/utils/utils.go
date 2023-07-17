@@ -21,9 +21,14 @@ import (
 )
 
 func OciManifestToReferenceManifest(ociManifest oci.Manifest) ocispecs.ReferenceManifest {
+	artifactType := ociManifest.Config.MediaType
+	if artifactType == oci.DescriptorEmptyJSON.MediaType {
+		artifactType = ociManifest.ArtifactType
+	}
+
 	return ocispecs.ReferenceManifest{
 		MediaType:    ociManifest.MediaType,
-		ArtifactType: ociManifest.Config.MediaType,
+		ArtifactType: artifactType,
 		Blobs:        ociManifest.Layers,
 		Subject:      ociManifest.Subject,
 		Annotations:  ociManifest.Annotations,
