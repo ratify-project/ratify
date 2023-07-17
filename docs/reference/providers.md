@@ -81,8 +81,8 @@ Here is a sample of the `input`:
           "referenceDigest": "test.azurecr.io/test/hello-world@sha256:33333",
           "verifierReports": [
             {
-              "verifierName": "notaryv2",
-              "verifierType": "verifier-notary",
+              "verifierName": "notation",
+              "verifierType": "verifier-notation",
               "isSuccess": true,
               "message": "",
               "extensions": {
