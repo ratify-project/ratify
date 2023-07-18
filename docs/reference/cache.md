@@ -3,7 +3,7 @@
 Ratify supports memory caches and file-based blob caching. 
 ## Memory Caches
 
-Ratify provides a unified cache API for cache read/write. Caching providers implement the API and are registered on ratify creation. Users can configure which cache provider to use via helm chart/cli. Here are the current cche providers supported:
+Ratify provides a unified cache API for cache read/write. Caching providers implement the API and are registered on ratify creation. Users can configure which cache provider to use via helm chart/cli. For high availability scenarios, reference this [guide](../quickstarts/ratify-high-availability.md). Here are the current cche providers supported:
 
 ### Ristretto (default)
 
