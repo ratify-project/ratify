@@ -240,7 +240,7 @@ func TestORASGetReferenceManifest_CachedDesc(t *testing.T) {
 	}
 	manifest, err := store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
 		Descriptor: oci.Descriptor{
-			MediaType: oci.MediaTypeArtifactManifest,
+			MediaType: ocispecs.MediaTypeArtifactManifest,
 			Digest:    artifactDigest,
 		},
 	})
@@ -304,7 +304,7 @@ func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
 	}
 	manifest, err := store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
 		Descriptor: oci.Descriptor{
-			MediaType: oci.MediaTypeArtifactManifest,
+			MediaType: ocispecs.MediaTypeArtifactManifest,
 			Digest:    artifactDigest,
 		},
 	})

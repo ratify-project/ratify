@@ -340,7 +340,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 			return ocispecs.ReferenceManifest{}, err
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
-	} else if referenceDesc.Descriptor.MediaType == oci.MediaTypeArtifactManifest {
+	} else if referenceDesc.Descriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
 			return ocispecs.ReferenceManifest{}, err
 		}
