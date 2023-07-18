@@ -117,7 +117,7 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 			return err
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
-	} else if referenceManifestDescriptor.MediaType == oci.MediaTypeArtifactManifest {
+	} else if referenceManifestDescriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
 			return err
 		}

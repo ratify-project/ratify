@@ -26,7 +26,7 @@ The Rego Policy Provider is a built-in policy provider that uses [Open Policy Ag
         "name": "regoPolicy",
         "policyPath": "",
         "policy": "package ratify.policy\ndefault valid := false\nvalid {\n  not failed_verify(input)\n}\nfailed_verify(reports) {\n  [path, value] := walk(reports)\n  value == false\n  path[count(path) - 1] == \"isSuccess\"\n}",
-        "passthroughEnabled": true
+        "passthroughEnabled": false
     }
 },
 ```
@@ -34,22 +34,20 @@ The Rego Policy Provider is a built-in policy provider that uses [Open Policy Ag
 - One of `policyPath` and `policy` fields MUST be specified.
     - `policyPath`: path to the Rego policy file. The file MUST be a valid Rego policy file.
     - `policy`: Rego policy as a string. The string MUST be a valid Rego policy.
-- The `passthroughEnabled` feild is Optional, which defaults to be `false` if not provided. If `passthroughEnabled` is set to `true`, the executor will NOT make the decision but only pass the verification results to Gatekeeper for making the decision.
-
-NOTE: When Ratify runs as K8s Add-on, any updates to the Policy configuration requires a restart of Ratify pod.
+- The `passthroughEnabled` field is optional, which defaults to be `false` if not provided, in thise case, Ratify will return the verification results with the decision to Gatekeeper. If `passthroughEnabled` is set to `true`, the executor will NOT make the decision but only pass the verification results to Gatekeeper for making the decision.
 
 ### Rego Policy Usage
 Ratify embeds OPA engine inside the executor to provide a built-in policy provider. There are 2 approaches to enable this feature as an add-on service.
 
 1. Set the helm chart value of `policy.useRego` to `true` while deploying Ratify.
-2. Apply a Policy Customecustom resource with Rego Policy after the service is running. e.g.
+2. Apply a Policy Custom Resource with Rego Policy if the service is up. e.g.
 ```bash
 kubectl apply -f ./config/samples/config_v1beta1_policy_rego.yaml
 ```
 
-And if Ratify is used as command line tool, users MUST provide a config with Rego Policy.
+And if Ratify is used as command line tool, users MUST provide a config with Rego Policy. Check `test/bats/tests/config/config_rego_policy_notation_leaf_cert.json` as an example.
 
-Note that verification results returned while switching Rego policy/config policy are different. 
+Note that verification results returned are different while switching Rego policy/config policy. 
 
 When Rego Policy is selected, the Verification Response follows `1.0.0` version. [1.0.0](../reference/verification-result-version.md#1.0.0) provides definition and example usage of the response.
 
