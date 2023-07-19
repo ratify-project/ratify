@@ -8,8 +8,8 @@ Content-Type: application/json
   "kind":"ProviderRequest",
   "request": {
     "keys": [
-      "wabbitnetworks.azurecr.io/test/notary-image:signed",
-      "wabbitnetworks.azurecr.io/test/notary-image:unsigned"
+      "wabbitnetworks.azurecr.io/test/notation-image:signed",
+      "wabbitnetworks.azurecr.io/test/notation-image:unsigned"
     ]
   }
 }

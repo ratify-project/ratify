@@ -151,7 +151,7 @@ type ReferenceVerifier interface {
 - For a given artifact type, all verifiers that ```CanVerify```  will be invoked in the order that are registered in the configuration.
 - The verifier SHOULD return a result that contains all details of the verification for auditing purposes.
 - Every verifier should have access to the store  where the reference artifact is queried from. This store is used to fetch other metadata required for verification like manifest & blobs.
-- The framework MAY provide reference implementations for the interface as internal providers. For example notation verifier that implements the verification of artifacts with type ```notary.v2.signature```. Similary there can be SBOM verifier that supports verification of SBOMs.
+- The framework MAY provide reference implementations for the interface as internal providers. For example notation verifier that implements the verification of artifacts with type ```notary.signature```. Similary there can be SBOM verifier that supports verification of SBOMs.
 
 ### Open Questions
 
@@ -209,7 +209,7 @@ There could be a tree of references that needs to be traversed and verified befo
 - Should executor or verifier responsible for nested verification?
 - Given the recursive nature of verifying the nested references, do we need to define an exit criteria to limit the nested levels?
 - How do we define the need for nested verification for a given artifact type? Will this be encompassed within the verifier settings or will it be a separate config?
-- Can nested verification be the default behavior for every artifact with an option to exclude this behavior for some artifacts? For example, all artifacts will perform nested verification except for the notary v2 signatures?
+- Can nested verification be the default behavior for every artifact with an option to exclude this behavior for some artifacts? For example, all artifacts will perform nested verification except for the notation signatures?
 
 ### Models of executor
 
@@ -314,7 +314,7 @@ When an artifact has multiple signatures, teams can choose to ensure any one of 
 ```yaml=
 policy:
     type: config
-    skipAfterFirstSuccess: ["org.cncf.notary.v2"]
+    skipAfterFirstSuccess: ["org.cncf.notary"]
 ```
 
 - OPA
@@ -326,7 +326,7 @@ policy:
         package ratify.rules
         
         verify_reference{
-            not input.reference.artifactType == "org.cncf.notary.v2"
+            not input.reference.artifactType == "org.cncf.notary"
         }
         
         verify_reference {
@@ -576,13 +576,13 @@ stores:
 verifiers:
   version: 1.0.0
   plugins:
-  - name: nv2verifier
-    artifactTypes: application/vnd.cncf.notary.v2
+  - name: notation
+    artifactTypes: application/vnd.cncf.notary
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
+    nestedReferences: application/vnd.cncf.notary
 executor:
   cache: false
 policy:

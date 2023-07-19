@@ -67,13 +67,13 @@ Any other fields specified for a plugin other than the above mentioned are consi
 verifiers:
   version: 1.0.0
   plugins:
-  - name: nv2verifier
-    artifactTypes: application/vnd.cncf.notary.v2
+  - name: notation
+    artifactTypes: application/vnd.cncf.notary
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
+    nestedReferences: application/vnd.cncf.notary
 ```
 
 ### Section2 : Verifier Interface
@@ -184,13 +184,13 @@ stores:
 verifiers:
   version: 1.0.0
   plugins:
-  - name: nv2verifier
-    artifactTypes: application/vnd.cncf.notary.v2
+  - name: notation
+    artifactTypes: application/vnd.cncf.notary
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary.v2
+    nestedReferences: application/vnd.cncf.notary
 executor:
   cache: false
 policy:
@@ -210,12 +210,12 @@ policy:
   "mediaType": "application/vnd.cncf.oras.artifact.manifest.v1+json",
   "digest": "sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270",
   "size": 7682,
-  "artifactType": "application/vnd.cncf.notary.v2"
+  "artifactType": "application/vnd.cncf.notary"
 }
 ```
 
-3. The framework uses the ```artifactTypes``` property to match the verifier plugin for the above reference type. In this case, the verifier with the name ```nv2verifier``` supports its verification.
-4. The framework calls the plugin ```nv2verifier``` with the following environment variables
+3. The framework uses the ```artifactTypes``` property to match the verifier plugin for the above reference type. In this case, the verifier with the name ```notation``` supports its verification.
+4. The framework calls the plugin ```notation``` with the following environment variables
 
 - **RATIFY_VERIFIER_COMMAND** : ```VERIFY```
 - **RATIFY_VERIFIER_SUBJECT**: ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb```
@@ -226,8 +226,8 @@ policy:
 ```json=
 {
 "config" : {
-    "name" : "nv2verifier",
-    "artifactTypes": "[application/vnd.cncf.notary.v2]",
+    "name" : "notation",
+    "artifactTypes": "[application/vnd.cncf.notary]",
     "verificationCerts": ["/home/user/.notary/keys/wabbit-networks.crt"]    
 },
 "storeConfig": {
@@ -238,17 +238,17 @@ policy:
   "mediaType": "application/vnd.cncf.oras.artifact.manifest.v1+json",
   "digest": "sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270",
   "size": 7682,
-  "artifactType": "application/vnd.cncf.notary.v2"
+  "artifactType": "application/vnd.cncf.notary"
 }
 }
 ```
 
-6. The  ```nv2verifier``` verifies the artifact using the provided configuration and returns a following JSON result
+6. The  ```notation``` verifies the artifact using the provided configuration and returns a following JSON result
 
 ```json=
 {
       "isSuccess": true,
-      "name": "nv2verifier",
+      "name": "notation",
       "results": [
         "signature verification success"
       ]

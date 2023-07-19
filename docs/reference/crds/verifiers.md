@@ -82,7 +82,7 @@ spec:
 ```
 | Name        | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- | 
-| nestedReferences      | no    | If nestedReferences contains any string value, the nested artifact will also be verified. For example, customer might want to enforce notary signatures on all sboms.|   ""            |
+| nestedReferences      | no    | If nestedReferences contains any string value, the nested artifact will also be verified. For example, customer might want to enforce notation signatures on all sboms.|   ""            |
 
 ## Schemavalidator
 

@@ -20,7 +20,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
     # validate certificate store status property shows success
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notary-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
@@ -34,11 +34,11 @@ SLEEP_TIME=1
 }
 
 @test "crd version test" {
-    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notary.yaml
+    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notation.yaml
     assert_success
-    run bash -c "kubectl get verifiers.config.ratify.deislabs.io/verifier-notary -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
+    run bash -c "kubectl get verifiers.config.ratify.deislabs.io/verifier-notation -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
     assert_success
 
     run kubectl delete stores.config.ratify.deislabs.io/store-oras
@@ -49,7 +49,7 @@ SLEEP_TIME=1
     assert_success
 }
 
-@test "notary test" {
+@test "notation test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
@@ -63,7 +63,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
     # validate certificate store status property shows success
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notary-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n gatekeeper-system -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
@@ -82,18 +82,18 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod crdtest --namespace default --force --ignore-not-found=true'
     }
 
-    echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
+    echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
-    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_failure
 
-    echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml
+    echo "Add notation verifier and validate deployment succeeds"
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -152,8 +152,8 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
-        # restore the original notary verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml'
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
     }
 
     # configure the default template/constraint
@@ -172,8 +172,8 @@ SLEEP_TIME=1
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
-    # configure the notary verifier to use the inline certificate store
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary.yaml
+    # configure the notation verifier to use the inline certificate store
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
     assert_success
     sleep 10
 
@@ -212,8 +212,8 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
-        # restore the original notary verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml'
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
     }
 
     # configure the default template/constraint
@@ -228,8 +228,8 @@ SLEEP_TIME=1
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
-    # configure the notary verifier to use the inline certificate store
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary.yaml
+    # configure the notation verifier to use the inline certificate store
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # verify that the image can be run with a root cert

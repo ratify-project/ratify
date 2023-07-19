@@ -202,7 +202,7 @@ curl -sSLO https://d2hvyiie56hcat.cloudfront.net/aws-signer-notation-root.cert
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./aws-signer-notation-root.cert \
+    --set-file notationCert=./aws-signer-notation-root.cert \
     --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true \
     --set serviceAccount.create=false \
     --set oras.authProviders.awsEcrBasicEnabled=true
@@ -240,7 +240,7 @@ spec:
   parameters:
     verificationCertStores:
       certs:
-        - ratify-notary-inline-cert
+        - ratify-notation-inline-cert
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:

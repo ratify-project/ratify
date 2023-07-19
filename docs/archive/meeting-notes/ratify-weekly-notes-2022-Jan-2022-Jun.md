@@ -173,10 +173,10 @@ recording: https://youtu.be/mT1OVUJDg5g
 - ACTION: Jimmy will send PR to update ratify chart's service account name
     - needed for AWS support
 - ACTION: Set up poll to find new Ratify community meeting time (preferrably morning PST time)
-- Notary Trust Store
+- Trust Store
     - Absorb and integrate into Ratify
         - ACTION: Need to cost this
-    - How are the policy updates going to flow into the notary verifier? (will the config refresh capability address this?)
+    - How are the policy updates going to flow into the notation verifier? (will the config refresh capability address this?)
         - ACTION: Need to cost this
 - ORAS auth updates
     - new functionality for multiple scopes is being added to ORAS; ratify auth provider needs to be updated to support this
@@ -416,12 +416,12 @@ Recording: https://youtu.be/WPn-LjuLoig
 - [Update sample configs with multiple cert](https://github.com/deislabs/ratify/pull/163)
 
 ### Presentation/Discussion Agenda Items:
-- Scenarios to consider when [Cosign/Notary verification shares configuration ](https://github.com/deislabs/ratify/issues/161)
+- Scenarios to consider when [Cosign/Notation verification shares configuration ](https://github.com/deislabs/ratify/issues/161)
     - Registry auth for cosign artifact
         - ListReferrers uses google container registry to fetch cosign artifacts associated. Needs authProvider credential to be used by google container registry client. (This is not a huge fix)
         - Cosign verifier plugin itself needs the auth credentials to pull signature from private registry. Biggest issue is that Ratify verifies artifacts however cosign signatures are OCI images stored in the same repository using specific naming convention. Thus referrer store is not the actual one pulling the consign signature but verifier is currently. 
     TODO: We will call out the limitation for now and focus on other higher pri items
-    - Customer should be able to specify cosign signature or notary signature is required
+    - Customer should be able to specify cosign signature or notation signature is required
 - Github action for updating helmchart on release
 - [Jimmy] AWS support for oras is coming soon
 ### Notes:
@@ -438,7 +438,7 @@ Recording: https://youtu.be/j6M5KsBjIGM
 - Akash Singhal
 
 ### Actionable Agenda Items:
-- [Bug fix and improvement to loading notary verification certs](https://github.com/deislabs/ratify/pull/150)
+- [Bug fix and improvement to loading notation verification certs](https://github.com/deislabs/ratify/pull/150)
 - [Add Auth Cache Eviction](https://github.com/deislabs/ratify/pull/156)
 - [Fix isSuccess not showing in output](https://github.com/deislabs/ratify/pull/157)
 - [CSI Driver template update for workload identity](https://github.com/deislabs/ratify/pull/158/files)
@@ -468,7 +468,7 @@ Recording: https://youtu.be/oRhmEjovFCU
 
 ### Actionable Agenda Items:
 - [Upgrade ORAS to v2](https://github.com/deislabs/ratify/pull/148) 
-- [Bug fix and improvement to loading notary verification certs](https://github.com/deislabs/ratify/pull/150)
+- [Bug fix and improvement to loading notation verification certs](https://github.com/deislabs/ratify/pull/150)
 
 ### Presentation/Discussion Agenda Items:
 - discuss the possibility to revert Gatekeeper timeout to 5s
@@ -480,7 +480,7 @@ Recording: https://youtu.be/oRhmEjovFCU
         - v1.20 has been GA for over a year now so it might be safe to assume most will be using this version now 
     - TODO: Akash will file an issue on Gatekeeper Repo with these findings and see if they can increase default
 - Prioritization
-    - [Notary verification should fail if image has no signature](https://github.com/deislabs/ratify/issues/138)
+    - [Notation verification should fail if image has no signature](https://github.com/deislabs/ratify/issues/138)
     TODO: Gather requirements/ Follow up with OPA on end to end workflow to enforce signature validation. 
     - [Explore integration test for Ratify](https://github.com/deislabs/ratify/issues/145)
     - [Concurrent verification](https://github.com/deislabs/ratify/issues/153)
@@ -505,7 +505,7 @@ https://youtu.be/i4umy9hEkBY
 - [Upgrade ORAS to v2](https://github.com/deislabs/ratify/pull/148), new bench mark at https://hackmd.io/1no_15qrR_i8jqF22E-HXg?view#New-Benchmarks
 This is a at least 3x improvement on fetching of artifacts.
 When there are multiple signature, long term we need support for filtering and sorting. As this time, the implementation is still being discussed, this implementation could be on registry (perferred) or the client.
-- [Bug fix and improvement to loading notary verification certs](https://github.com/deislabs/ratify/pull/150)
+- [Bug fix and improvement to loading notation verification certs](https://github.com/deislabs/ratify/pull/150)
 
 ### Presentation/Discussion Agenda Items:
 - Helm hook exploration: https://github.com/deislabs/ratify/discussions/132
@@ -532,9 +532,9 @@ Recording: https://youtu.be/klc0fHdwh6M
 - Akash Singhal
 
 ### Actionable Agenda Items:
-- Support notary verification certification load from directory,https://github.com/deislabs/ratify/pull/141
+- Support notation verification certification load from directory,https://github.com/deislabs/ratify/pull/141
 
-    TODO: Update sample helm chart demonstrate ability to load multiple cert in notary plugin
+    TODO: Update sample helm chart demonstrate ability to load multiple cert in notation plugin
       Update csi driver to use workload identity instead of pod identity 
 - ORAS Authentication Provider Documentation,
 https://github.com/deislabs/ratify/pull/142/files
@@ -633,9 +633,9 @@ Meeting recording: https://youtu.be/l7X-ZDipe9Q
     - [Susan] we should also think about repo level support for auth provider label matching scheme
 - Support dynamic configuration, https://github.com/deislabs/ratify/issues/9
     - [Eric] Looking into CRDs approach as its a kub native experience. Sample controller at https://github.com/kubernetes/sample-controller
-- Discuss notary verification behavior if image signature is missing, https://github.com/deislabs/ratify/issues/138
+- Discuss notation verification behavior if image signature is missing, https://github.com/deislabs/ratify/issues/138
     - [Jimmy/Susan] Signature verification is a key scenario, we have the option to fail open/close. We could make fail when signature is missing or implement a new policy configuration
-- Susan will looking to item Support notary verification certification load from directory, https://github.com/deislabs/ratify/issues/139
+- Susan will looking to item Support notation verification certification load from directory, https://github.com/deislabs/ratify/issues/139
 
 ### Notes:
  
@@ -750,7 +750,7 @@ https://youtu.be/WUvTGMrqdlQ
     - https://hackmd.io/LFWPWM7wT_icfIPZbuax0Q
     - https://hackmd.io/@akashsinghal/B10BZ6xnY
     - [Teja] Acrpull role is sufficient for work load identity workload
-    - [Akash/Eric/Teja] This auth model is for pulling signitures from the registry. A different interface will need to be defined for notary to fetch trusted key from keyvault
+    - [Akash/Eric/Teja] This auth model is for pulling signitures from the registry. A different interface will need to be defined for notation to fetch trusted key from keyvault
     - [Teja] Next step, We want to figure out the implementation auth provider for using kub secrets, kublet credential provider
     - [Akash/Eric] Ratify runs inside a container in a pod, getting access kublet credential provider is not natural. People use pod identity instead. kublet credential have more access needed, we might not want to expose this to a pod. To discuss/brain storm more.
     - [Teja/Jesse] Implement the kub secrets is a good start, also helps the self host kub scenario.

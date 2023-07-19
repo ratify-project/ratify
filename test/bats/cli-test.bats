@@ -2,7 +2,7 @@
 
 load helpers
 
-@test "notary verifier test" {
+@test "notation verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:signed
     assert_cmd_verify_success
 

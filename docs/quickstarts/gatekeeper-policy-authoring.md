@@ -40,7 +40,7 @@ artifacts:
 ```
 localhost:5000/net-monitor:v1
     - sbom
-    - notaryv2 signature
+    - notation signature
     - cosign signature
 ```
 
