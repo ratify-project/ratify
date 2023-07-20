@@ -53,24 +53,28 @@ func createCachedStore(storeBase referrerstore.ReferrerStore, cacheConf *cacheCo
 func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	var err error
 	var result referrerstore.ListReferrersResult
+	cacheKey := fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original)
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
-		return referrerstore.ListReferrersResult{}, fmt.Errorf("failed to get cache provider")
-	}
-	cacheKey := fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original)
-	val, found := cacheProvider.Get(ctx, cacheKey)
-	if val != "" && found {
-		if err = json.Unmarshal([]byte(val), &result); err != nil {
-			return referrerstore.ListReferrersResult{}, fmt.Errorf("failed to unmarshal cache value for key %+v: %w", cacheKey, err)
+		logrus.Warningf("failed to get cache provider")
+	} else {
+		val, found := cacheProvider.Get(ctx, cacheKey)
+		if val != "" && found {
+			if err = json.Unmarshal([]byte(val), &result); err != nil {
+				logrus.Warningf("failed to unmarshal cache value for key %+v: %v", cacheKey, err)
+			} else {
+				logrus.Debug("cache hit for list referrers")
+				return result, nil
+			}
 		}
-		logrus.Debug("cache hit for list referrers")
-		return result, nil
 	}
-
+	logrus.Debugf("list referrers cache miss for value: %s", subjectReference.Original)
 	result, err = store.ReferrerStore.ListReferrers(ctx, subjectReference, artifactTypes, nextToken, subjectDesc)
 	if err == nil {
-		if added := cacheProvider.SetWithTTL(ctx, cacheKey, result, time.Duration(store.cacheConf.TTL)*time.Second); !added { // TODO: convert ttl to duration in helm values
-			logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+		if cacheProvider != nil {
+			if added := cacheProvider.SetWithTTL(ctx, cacheKey, result, time.Duration(store.cacheConf.TTL)*time.Second); !added { // TODO: convert ttl to duration in helm values
+				logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+			}
 		}
 	}
 
@@ -82,22 +86,26 @@ func (store *orasStoreWithInMemoryCache) GetSubjectDescriptor(ctx context.Contex
 	var err error
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
-		return nil, fmt.Errorf("failed to get cache provider")
-	}
-	val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, subjectReference.Digest))
-	if val != "" && found {
-		if err = json.Unmarshal([]byte(val), result); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal cache value: %w", err)
+		logrus.Warningf("failed to get cache provider")
+	} else {
+		val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, subjectReference.Digest))
+		if val != "" && found {
+			if err = json.Unmarshal([]byte(val), result); err != nil {
+				logrus.Warningf("failed to unmarshal cache value: %v", err)
+			} else {
+				logrus.Debug("cache hit for subject descriptor")
+				return result, nil
+			}
 		}
-		logrus.Debug("cache hit for subject descriptor")
-		return result, nil
 	}
-	logrus.Debugf("no digest provided for reference %s. attempting to resolve...", subjectReference.Original)
+	logrus.Debugf("subject descriptor cache miss for value: %s", subjectReference.Original)
 	result, err = store.ReferrerStore.GetSubjectDescriptor(ctx, subjectReference)
 	if err == nil {
-		cacheKey := fmt.Sprintf(cache.CacheKeySubjectDescriptor, result.Digest)
-		if added := cacheProvider.Set(ctx, cacheKey, *result); !added {
-			logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+		if cacheProvider != nil {
+			cacheKey := fmt.Sprintf(cache.CacheKeySubjectDescriptor, result.Digest)
+			if added := cacheProvider.Set(ctx, cacheKey, *result); !added {
+				logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+			}
 		}
 	}
 

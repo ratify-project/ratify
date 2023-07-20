@@ -86,17 +86,21 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			logrus.Infof("verifying subject %v", resolvedSubjectReference)
 			var result types.VerifyResult
 			found := false
+			cacheHit := false
 			var cacheResponse string
 			cacheProvider := cache.GetCacheProvider()
 			if cacheProvider != nil {
 				cacheResponse, found = cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference))
 			}
 			if found && cacheResponse != "" {
-				logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
 				if err := json.Unmarshal([]byte(cacheResponse), &result); err != nil {
-					returnItem.Error = err.Error()
+					logrus.Warningf("unable to unmarshal cache entry for subject %v: %v", resolvedSubjectReference, err)
+				} else {
+					cacheHit = true
+					logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
 				}
-			} else {
+			}
+			if !cacheHit {
 				verifyParameters := executor.VerifyParameters{
 					Subject: resolvedSubjectReference,
 				}

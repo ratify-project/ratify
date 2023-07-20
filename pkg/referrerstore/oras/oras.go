@@ -396,15 +396,19 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 	cacheProvider := cache.GetCacheProvider()
 	var cacheResponse string
 	found := false
+	cacheHit := false
 	if cacheProvider != nil {
 		cacheResponse, found = cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry))
 	}
 	if cacheResponse != "" && found {
 		if err := json.Unmarshal([]byte(cacheResponse), &authConfig); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal auth config cache value: %w", err)
+			logrus.Warningf("failed to unmarshal auth config cache value: %v", err)
+		} else {
+			logrus.Debug("auth cache hit")
+			cacheHit = true
 		}
-		logrus.Debug("auth cache hit")
-	} else {
+	}
+	if !cacheHit {
 		logrus.Debug("auth cache miss")
 		authConfig, err = store.authProvider.Provide(ctx, targetRef.Original)
 		if err != nil {

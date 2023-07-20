@@ -151,8 +151,8 @@ func TestGetSubjectDescriptor_CacheProviderNil(t *testing.T) {
 		t.Fatalf("expect no error, got %v", err)
 	}
 	_, err = store.GetSubjectDescriptor(context.Background(), testReference)
-	if err == nil || err.Error() != "failed to get cache provider" {
-		t.Fatalf("expect error, got %v", err)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
 	}
 }
 
@@ -162,8 +162,8 @@ func TestListReferrers_CacheProviderNil(t *testing.T) {
 		t.Fatalf("expect no error, got %v", err)
 	}
 	_, err = store.ListReferrers(context.Background(), testReference, nil, "", nil)
-	if err == nil || err.Error() != "failed to get cache provider" {
-		t.Fatalf("expect error, got %v", err)
+	if err != nil {
+		t.Fatalf("expected no error, but got %v", err)
 	}
 }
 
