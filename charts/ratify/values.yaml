@@ -118,5 +118,5 @@ featureFlags:
 
   # RATIFY_CERT_ROTATION enables rotation for TLS certificates.
   RATIFY_CERT_ROTATION: false
-  # RATIFY_DAPR_CACHE_PROVIDER enables the Dapr cache provider.
-  RATIFY_DAPR_CACHE_PROVIDER: false
+  # RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY enables high availability mode including distributed caching.
+  RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY: false

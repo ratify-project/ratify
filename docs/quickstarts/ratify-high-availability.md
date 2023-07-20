@@ -84,7 +84,7 @@ helm install ratify \
     --namespace gatekeeper-system \
     --set-file notaryCert=./notary.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true \
-    --set featureFlags.RATIFY_DAPR_CACHE_PROVIDER=true \
+    --set featureFlags.RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY=true \
     --set replicaCount=3 \
 	--set provider.cache.type="dapr" \
 	--set provider.cache.name="dapr-redis"
