@@ -59,8 +59,23 @@ func TestCreate(t *testing.T) {
 		expectErr bool
 	}{
 		{
+			name: "invalid config",
+			config: map[string]interface{}{
+				"name": make(chan int),
+			},
+			expectErr: true,
+		},
+		{
 			name:      "empty config",
 			config:    map[string]interface{}{},
+			expectErr: true,
+		},
+		{
+			name: "config with invalid field",
+			config: map[string]interface{}{
+				"name":               "test",
+				"passthroughEnabled": "test",
+			},
 			expectErr: true,
 		},
 		{
@@ -128,11 +143,19 @@ func TestErrorToVerifyResult(t *testing.T) {
 
 func TestOverallVerifyResult(t *testing.T) {
 	testcases := []struct {
-		name         string
-		reports      []interface{}
-		returnErr    bool
-		expectResult bool
+		name               string
+		reports            []interface{}
+		passthroughEnabled bool
+		returnErr          bool
+		expectResult       bool
 	}{
+		{
+			name:               "passthrough enabled",
+			reports:            []interface{}{types.VerifyResult{}},
+			passthroughEnabled: true,
+			expectResult:       false,
+			returnErr:          false,
+		},
 		{
 			name:         "opa engine returns error",
 			reports:      []interface{}{types.VerifyResult{}},
@@ -154,6 +177,7 @@ func TestOverallVerifyResult(t *testing.T) {
 				OpaEngine: policyEngine{
 					ReturnErr: tc.returnErr,
 				},
+				passthroughEnabled: tc.passthroughEnabled,
 			}
 			result := policyEnforcer.OverallVerifyResult(context.Background(), tc.reports)
 			if result != tc.expectResult {

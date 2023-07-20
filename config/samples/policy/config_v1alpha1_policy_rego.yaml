@@ -1,4 +1,4 @@
-apiVersion: config.ratify.deislabs.io/v1beta1
+apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: Policy
 metadata:
   name: "regopolicy"
@@ -10,16 +10,19 @@ spec:
 
       default valid := false
 
+      # all artifacts MUST be valid
       valid {
         not failed_verify(input)
       }
 
+      # all reports MUST pass the verification
       failed_verify(reports) {
         [path, value] := walk(reports)
         value == false
         path[count(path) - 1] == "isSuccess"
       }
 
+      # each artifact MUST have at least one report
       failed_verify(reports) {
         [path, value] := walk(reports)
         path[count(path) - 1] == "verifierReports"

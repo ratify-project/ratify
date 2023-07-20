@@ -42,7 +42,7 @@ Ratify embeds OPA engine inside the executor to provide a built-in policy provid
 1. Set the helm chart value of `policy.useRego` to `true` while deploying Ratify.
 2. Apply a Policy Custom Resource with Rego Policy if the service is up. e.g.
 ```bash
-kubectl apply -f ./config/samples/config_v1beta1_policy_rego.yaml
+kubectl apply -f ./config/samples/policy/config_v1alpha1_policy_rego.yaml
 ```
 
 And if Ratify is used as command line tool, users MUST provide a config with Rego Policy. Check `test/bats/tests/config/config_rego_policy_notation_leaf_cert.json` as an example.

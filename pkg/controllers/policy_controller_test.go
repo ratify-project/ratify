@@ -19,7 +19,7 @@ import (
 	"reflect"
 	"testing"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -140,21 +140,21 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 	testCases := []struct {
 		name           string
 		policyName     string
-		spec           configv1beta1.PolicySpec
+		spec           configv1alpha1.PolicySpec
 		expectErr      bool
 		expectProvider bool
 	}{
 		{
 			name:           "invalid spec",
 			policyName:     policyName1,
-			spec:           configv1beta1.PolicySpec{},
+			spec:           configv1alpha1.PolicySpec{},
 			expectErr:      true,
 			expectProvider: false,
 		},
 		{
 			name:       "non-supported policy",
 			policyName: policyName1,
-			spec: configv1beta1.PolicySpec{
+			spec: configv1alpha1.PolicySpec{
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"policy1\"}"),
 				},
@@ -165,7 +165,7 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 		{
 			name:       "valid spec",
 			policyName: "configpolicy",
-			spec: configv1beta1.PolicySpec{
+			spec: configv1alpha1.PolicySpec{
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"configpolicy\"}"),
 				},
@@ -192,19 +192,19 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 func TestPolicyAddOrReplace(t *testing.T) {
 	testCases := []struct {
 		name       string
-		spec       configv1beta1.PolicySpec
+		spec       configv1alpha1.PolicySpec
 		policyName string
 		expectErr  bool
 	}{
 		{
 			name:       "invalid spec",
-			spec:       configv1beta1.PolicySpec{},
+			spec:       configv1alpha1.PolicySpec{},
 			policyName: policyName1,
 			expectErr:  true,
 		},
 		{
 			name: "valid spec",
-			spec: configv1beta1.PolicySpec{
+			spec: configv1alpha1.PolicySpec{
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"configpolicy\"}"),
 				},

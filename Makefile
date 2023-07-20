@@ -110,7 +110,7 @@ delete-demo-constraints:
 
 .PHONY: deploy-rego-policy
 deploy-rego-policy:
-	kubectl apply -f ./config/samples/config_v1beta1_policy_rego.yaml
+	kubectl apply -f ./config/samples/policy/config_v1alpha1_policy_rego.yaml
 
 .PHONY: deploy-gatekeeper
 deploy-gatekeeper:

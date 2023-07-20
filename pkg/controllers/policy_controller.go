@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
@@ -60,7 +60,7 @@ var ActivePolicy policy
 func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	policyLogger := logrus.WithContext(ctx)
 
-	var policy configv1beta1.Policy
+	var policy configv1alpha1.Policy
 	var resource = req.Name
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
@@ -80,7 +80,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// List all policies in the same namespace.
-	policyList := &configv1beta1.PolicyList{}
+	policyList := &configv1alpha1.PolicyList{}
 	if err := r.List(ctx, policyList, client.InNamespace(req.Namespace)); err != nil {
 		policyLogger.Error("failed to list Policies: ", err)
 		return ctrl.Result{}, err
@@ -107,11 +107,11 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.Policy{}).
+		For(&configv1alpha1.Policy{}).
 		Complete(r)
 }
 
-func policyAddOrReplace(spec configv1beta1.PolicySpec, policyName string) error {
+func policyAddOrReplace(spec configv1alpha1.PolicySpec, policyName string) error {
 	policyEnforcer, err := specToPolicyEnforcer(spec, policyName)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
@@ -122,7 +122,7 @@ func policyAddOrReplace(spec configv1beta1.PolicySpec, policyName string) error 
 	return nil
 }
 
-func specToPolicyEnforcer(spec configv1beta1.PolicySpec, policyName string) (policyprovider.PolicyProvider, error) {
+func specToPolicyEnforcer(spec configv1alpha1.PolicySpec, policyName string) (policyprovider.PolicyProvider, error) {
 	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, policyName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse policy config: %w", err)
