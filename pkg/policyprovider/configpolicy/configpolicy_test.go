@@ -304,3 +304,10 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 		}
 	}
 }
+
+func TestGetPolicyType(t *testing.T) {
+	enforcer := PolicyEnforcer{}
+	if policyType := enforcer.GetPolicyType(context.Background()); policyType != "configpolicy" {
+		t.Fatalf("expected policy type: configpolicy, got %v", policyType)
+	}
+}

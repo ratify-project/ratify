@@ -25,10 +25,10 @@ import (
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
-	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/policyprovider"
+	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -55,55 +55,33 @@ type Executor struct {
 // TODO Logging within executor
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	if featureflag.UseRegoPolicy.Enabled {
-		return executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
-	}
-	return executor.verifySubjectForJSONPolicy(ctx, verifyParameters)
-}
-
-// verifySubjectForJSONPolicy verifies the subject with the Json-based policy enforcer.
-func (executor Executor) verifySubjectForJSONPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	result, err := executor.verifySubjectInternalWithDecision(ctx, verifyParameters)
+	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
 		// Do we need to consider no referrers as success or failure?
 		result = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
-
-	return result, nil
+	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
+		return result, nil
+	}
+	return result, err
 }
 
-// verifySubjectForRegoPolicy verifies the subject with results.
-// And it also returns the decision based on the verifier results if required.
-func (executor Executor) verifySubjectForRegoPolicy(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	results, err := executor.verifySubjectInternalWithoutDecision(ctx, verifyParameters)
+// verifySubjectInternal verifies the subject with results.
+func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	verifierReports, err := executor.verifySubjectInternalWithoutDecision(ctx, verifyParameters)
 	if err != nil {
 		return types.VerifyResult{}, err
+	}
+	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
+		if len(verifierReports) == 0 {
+			return types.VerifyResult{}, ErrReferrersNotFound
+		}
 	}
 	// If it requires embedded Rego Policy Engine make the decision, execute
 	// OverallVerifyResult to evaluate the overall result based on the policy.
 	// NOTE: if Passthrough Mode is enabled, executor will just return the
 	// VerifierReports without evaluating the policy.
-	result := types.VerifyResult{VerifierReports: results}
-	if !featureflag.PassthroughMode.Enabled {
-		result.IsSuccess = executor.PolicyEnforcer.OverallVerifyResult(ctx, result.VerifierReports)
-	}
-
-	return result, nil
-}
-
-// verifySubjectInternalWithDecision verifies the subject and makes the decision
-// based on the policy. It is only used internally for the Json-based policy.
-func (executor Executor) verifySubjectInternalWithDecision(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	verifierReports, err := executor.verifySubjectInternalWithoutDecision(ctx, verifyParameters)
-	if err != nil {
-		return types.VerifyResult{}, err
-	}
-	if len(verifierReports) == 0 {
-		return types.VerifyResult{}, ErrReferrersNotFound
-	}
-
-	// Making the decision based on the Json policy.
 	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
@@ -147,7 +125,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 					}
 					reference := reference
 					innerGroup.Go(func() error {
-						if featureflag.UseRegoPolicy.Enabled {
+						if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.RegoPolicy {
 							verifyResult, err := executor.verifyReferenceForRegoPolicy(innerErrCtx, subjectReference, reference, referrerStore)
 							if err != nil {
 								logrus.Errorf("error while verifying reference %+v, err: %v", reference, err)
@@ -271,7 +249,7 @@ func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceD
 		ReferenceTypes: []string{"*"},
 	}
 
-	nestedVerifyResult, err := executor.verifySubjectForJSONPolicy(ctx, verifyParameters)
+	nestedVerifyResult, err := executor.VerifySubject(ctx, verifyParameters)
 	if err != nil {
 		nestedVerifyResult = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
@@ -296,7 +274,7 @@ func (executor Executor) addNestedReports(ctx context.Context, referenceDes ocis
 	}
 
 	// get nested reports.
-	reports, err := executor.verifySubjectForRegoPolicy(ctx, verifyParameters)
+	reports, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		return fmt.Errorf("failed to verify nested subject, param: %+v, err: %w", verifyParameters, err)
 	}
