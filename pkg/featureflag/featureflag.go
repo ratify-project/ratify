@@ -25,10 +25,8 @@ import (
 // They are activated via environment variables, starting with "RATIFY_", ex: RATIFY_DYNAMIC_PLUGINS=1
 // Remember to capture changes in the usage guide and release notes.
 var (
-	DynamicPlugins  = newFeatureFlag("DYNAMIC_PLUGINS", false)
-	UseRegoPolicy   = newFeatureFlag("USE_REGO_POLICY", false)
-	PassthroughMode = newFeatureFlag("PASSTHROUGH_MODE", false)
-	CertRotation    = newFeatureFlag("CERT_ROTATION", false)
+	DynamicPlugins = newFeatureFlag("DYNAMIC_PLUGINS", false)
+	CertRotation   = newFeatureFlag("CERT_ROTATION", false)
 )
 
 var flags = make(map[string]*FeatureFlag)

@@ -17,7 +17,7 @@ package httpserver
 
 import (
 	"github.com/deislabs/ratify/pkg/executor/types"
-	"github.com/deislabs/ratify/pkg/featureflag"
+	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
 )
 
 const (
@@ -33,9 +33,9 @@ type VerificationResponse struct {
 	VerifierReports []interface{} `json:"verifierReports,omitempty"`
 }
 
-func fromVerifyResult(res types.VerifyResult) VerificationResponse {
+func fromVerifyResult(res types.VerifyResult, policyType string) VerificationResponse {
 	version := VerificationResultVersion
-	if featureflag.UseRegoPolicy.Enabled {
+	if policyType == pt.RegoPolicy {
 		version = ResultVersionSupportingRego
 	}
 	return VerificationResponse{
