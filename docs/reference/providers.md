@@ -25,7 +25,8 @@ The Rego Policy Provider is a built-in policy provider that uses [Open Policy Ag
     "plugin": {
         "name": "regoPolicy",
         "policyPath": "",
-        "policy": "package ratify.policy\ndefault valid := false\nvalid {\n  not failed_verify(input)\n}\nfailed_verify(reports) {\n  [path, value] := walk(reports)\n  value == false\n  path[count(path) - 1] == \"isSuccess\"\n}"
+        "policy": "package ratify.policy\ndefault valid := false\nvalid {\n  not failed_verify(input)\n}\nfailed_verify(reports) {\n  [path, value] := walk(reports)\n  value == false\n  path[count(path) - 1] == \"isSuccess\"\n}",
+        "passthroughEnabled": false
     }
 },
 ```
@@ -33,17 +34,22 @@ The Rego Policy Provider is a built-in policy provider that uses [Open Policy Ag
 - One of `policyPath` and `policy` fields MUST be specified.
     - `policyPath`: path to the Rego policy file. The file MUST be a valid Rego policy file.
     - `policy`: Rego policy as a string. The string MUST be a valid Rego policy.
-
-NOTE: When Ratify runs as K8s Add-on, any updates to the Policy configuration requires a restart of Ratify pod.
+- The `passthroughEnabled` field is optional, which defaults to be `false` if not provided, in thise case, Ratify will return the verification results with the decision to Gatekeeper. If `passthroughEnabled` is set to `true`, the executor will NOT make the decision but only pass the verification results to Gatekeeper for making the decision.
 
 ### Rego Policy Usage
-Ratify embeds OPA engine inside the executor to provide a built-in policy provider. This feature is behind the `RATIFY_USE_REGO_POLICY` feature flag. And if users want to offload policy decison-making to Gatekeeper, they can enable `RATIFY_PASSTHROUGH_MODE` which will bypass OPA engine embedded in Ratify. In this mode, Ratify will NOT make the decision but only pass the verification results to Gatekeeper for making the decision. Note that verification results returned while switching Rego policy/config policy are different. 
+Ratify embeds OPA engine inside the executor to provide a built-in policy provider. There are 2 approaches to enable this feature as an add-on service.
 
-When `RATIFY_USE_REGO_POLICY` is enabled, the Verification Response follows `1.0.0` version. [1.0.0](../reference/verification-result-version.md#1.0.0) provides definition and example usage of the response.
+1. Set the helm chart value of `policy.useRego` to `true` while deploying Ratify.
+2. Apply a Policy Custom Resource with Rego Policy if the service is up. e.g.
+```bash
+kubectl apply -f ./config/samples/policy/config_v1alpha1_policy_rego.yaml
+```
 
-To enable Rego policy provider for a Ratify server, the value of `RATIFY_USE_REGO_POLICY` MUST be set to true in the helm chart.
+And if Ratify is used as command line tool, users MUST provide a config with Rego Policy. Check `test/bats/tests/config/config_rego_policy_notation_leaf_cert.json` as an example.
 
-If Ratify is used as command line, `RATIFY_USE_REGO_POLICY=1` MUST be passed to the corresponding command.
+Note that verification results returned are different while switching Rego policy/config policy. 
+
+When Rego Policy is selected, the Verification Response follows `1.0.0` version. [1.0.0](../reference/verification-result-version.md#1.0.0) provides definition and example usage of the response.
 
 ### Rego Policy Requirements
 
