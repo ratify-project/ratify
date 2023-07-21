@@ -203,8 +203,8 @@ kubectl get pods -n ${RATIFY_NAMESPACE}
 # K8s constraint validation
 
 ```bash
-kubectl run demo --image=wabbitnetworks.azurecr.io/test/notation-image:signed
-kubectl run demo --image=wabbitnetworks.azurecr.io/test/notation-image:unsigned
+kubectl run demo --image=wabbitnetworks.azurecr.io/test/notary-image:signed
+kubectl run demo --image=wabbitnetworks.azurecr.io/test/notary-image:unsigned
 ```
 
 # Debugging

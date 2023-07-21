@@ -96,7 +96,7 @@
       "id": "subject",
       "type": "promptString",
       "description": "Subject to verify",
-      "default": "wabbitnetworks.azurecr.io/test/notation-image:signed"
+      "default": "wabbitnetworks.azurecr.io/test/notary-image:signed"
     },
     {
       "id": "configPath",
