@@ -19,15 +19,19 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"testing"
 
+	"github.com/deislabs/ratify/pkg/cache"
+	_ "github.com/deislabs/ratify/pkg/cache/ristretto"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore/oras/mocks"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 	"oras.land/oras-go/v2/registry"
+	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
 func TestAttachedImageTag(t *testing.T) {
@@ -71,13 +75,25 @@ func TestAttachedImageTag(t *testing.T) {
 
 func TestGetCosignReferences(t *testing.T) {
 	ctx := context.Background()
+	var err error
+	// first attempt to get the cache provider if it's already been initialized
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		// if no cache provider has been initialized, initialize one
+		_, err = cache.NewCacheProvider(ctx, cache.DefaultCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
+	nonStandardError := errors.New("non-standard error")
+	forbiddenError := &errcode.ErrorResponse{StatusCode: http.StatusForbidden, Errors: []errcode.Error{{Code: "FORBIDDEN"}}}
+	unauthorizedError := &errcode.ErrorResponse{StatusCode: http.StatusUnauthorized, Errors: []errcode.Error{{Code: "UNAUTHORIZED"}}}
 	testSubjectDigest := digest.FromString("test")
 	testCosignSubjectTag := fmt.Sprintf("%s-%s.sig", testSubjectDigest.Algorithm().String(), testSubjectDigest.Hex())
 	testCosignImageDigest := digest.FromString("test_cosign")
 	testcases := []struct {
 		name       string
 		subjectRef common.Reference
-		store      *orasStore
 		repository registry.Repository
 		output     *[]ocispecs.ReferenceDescriptor
 		err        error
@@ -88,7 +104,6 @@ func TestGetCosignReferences(t *testing.T) {
 				Path: "localhost:5000/net-monitor",
 				Tag:  "v1",
 			},
-			store:      &orasStore{},
 			repository: mocks.TestRepository{},
 			output:     nil,
 			err:        ErrNoCosignSubjectDigest,
@@ -100,7 +115,6 @@ func TestGetCosignReferences(t *testing.T) {
 				Tag:    "v1",
 				Digest: testSubjectDigest,
 			},
-			store: &orasStore{},
 			repository: mocks.TestRepository{
 				ResolveMap: map[string]oci.Descriptor{
 					fmt.Sprintf("localhost:5000/net-monitor-not-found:%s", testCosignSubjectTag): {
@@ -118,7 +132,6 @@ func TestGetCosignReferences(t *testing.T) {
 				Tag:    "v1",
 				Digest: testSubjectDigest,
 			},
-			store: &orasStore{},
 			repository: mocks.TestRepository{
 				ResolveMap: map[string]oci.Descriptor{
 					fmt.Sprintf("localhost:5000/net-monitor:%s", testCosignSubjectTag): {
@@ -136,10 +149,51 @@ func TestGetCosignReferences(t *testing.T) {
 			},
 			err: nil,
 		},
+		{
+			name: "resolve error non-standard error code",
+			subjectRef: common.Reference{
+				Path:   "localhost:5000/net-monitor",
+				Tag:    "v1",
+				Digest: testSubjectDigest,
+			},
+			repository: mocks.TestRepository{
+				ResolveErr: nonStandardError,
+			},
+			output: nil,
+			err:    nonStandardError,
+		},
+		{
+			name: "resolve error forbidden error code",
+			subjectRef: common.Reference{
+				Original: "localhost:5000/net-monitor:v1",
+				Path:     "localhost:5000/net-monitor",
+				Tag:      "v1",
+				Digest:   testSubjectDigest,
+			},
+			repository: mocks.TestRepository{
+				ResolveErr: forbiddenError,
+			},
+			output: nil,
+			err:    forbiddenError,
+		},
+		{
+			name: "resolve error unauthorized error code",
+			subjectRef: common.Reference{
+				Original: "localhost:5000/net-monitor:v1",
+				Path:     "localhost:5000/net-monitor",
+				Tag:      "v1",
+				Digest:   testSubjectDigest,
+			},
+			repository: mocks.TestRepository{
+				ResolveErr: unauthorizedError,
+			},
+			output: nil,
+			err:    unauthorizedError,
+		},
 	}
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			refs, err := getCosignReferences(ctx, testcase.subjectRef, testcase.store, testcase.repository)
+			refs, err := getCosignReferences(ctx, testcase.subjectRef, testcase.repository)
 			if !errors.Is(err, testcase.err) {
 				t.Fatalf("test case: %s; expected error to be %v, but got %v", testcase.name, testcase.err, err)
 			}

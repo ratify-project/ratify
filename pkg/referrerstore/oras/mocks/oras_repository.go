@@ -27,6 +27,7 @@ import (
 
 type TestRepository struct {
 	registry.Repository
+	ResolveErr    error
 	ResolveMap    map[string]oci.Descriptor
 	ReferrersList []oci.Descriptor
 	FetchMap      map[digest.Digest]io.ReadCloser
@@ -44,6 +45,9 @@ type BlobPair struct {
 }
 
 func (r TestRepository) Resolve(_ context.Context, reference string) (oci.Descriptor, error) {
+	if r.ResolveErr != nil {
+		return oci.Descriptor{}, r.ResolveErr
+	}
 	if desc, ok := r.ResolveMap[reference]; ok {
 		return desc, nil
 	}
