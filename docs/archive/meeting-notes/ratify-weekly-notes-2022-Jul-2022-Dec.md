@@ -245,14 +245,14 @@ ____
 - [store and verifier CRD](https://github.com/deislabs/ratify/pull/382), will schedule a Code review meeting
 - [Initial protobuf definitions](https://github.com/deislabs/ratify/pull/373)
 Q: PR 373 has an unverified commit; can this still be approved or do we need to squash this into a new commit?
-- [Chart updates to allow cosign and notation verifier to be configured together](https://github.com/deislabs/ratify/pull/382)
+- [Chart updates to allow cosign and notary verifier to be configured together](https://github.com/deislabs/ratify/pull/382)
 - Can we update the issue to include trust policy implementation - https://github.com/deislabs/ratify/issues/274 [sajay] , David to add a comment that Issue 274 includes work for integrating with trust store and policy. We will use #274 as the main tracking item
 
 ### Presentation/Discussion Agenda Items:
-- [Samir/Jimmy] Would like to understsand ratify/notation integration timeline for trust store and trust policy.
+- [Samir/Jimmy] Would like to understsand ratify/notatryV2 integration timeline for trust store and trust policy.
 Would like to see ratify/notatry rc1 to come at about the same time. 
 
-Ratify is still working out the timeline, currently works against notation alpha. Notation RC1 is set for mid Nov, ratify will align with Notation go RC1 given there is a local auth API dependency.
+Ratify is still working out the timeline, currently works against notary alpha. Notary RC1 is set for mid Nov, ratify will align with Notation go RC1 given there is a local auth API dependency.
 
 [David] Ratify should start thinking about how to integrate with Trust store and trust policy
 
@@ -309,7 +309,7 @@ Update: David have made a fix with PR https://github.com/deislabs/ratify/pull/37
 
 
 - Follow up on cosign AWS walk through
-Findings: There are chart issues that both cosign and notation cert  were deployed to the same  diretory that causes issues in the notation verifier. Cosign workflow also does not work with ECR or support auth to private registries.
+Findings: There are chart issues that both cosign and notary cert  were deployed to the same  diretory that causes issues in the notary verifier. Cosign workflow also does not work with ECR or support auth to private registries.
 - Discussion on Cosign investment : https://github.com/deislabs/ratify/discussions/377
 - Follow up with David to  potentially remove v1.1 release
 
@@ -427,7 +427,7 @@ Recording: https://youtu.be/FXuOSFgRIsU
 | Docker config auth provider    |Status: Completed. <br><br>Steps:<br> 1. Prepare a private  registry with image and artifacts<br> 2. Update docker config with auth info at dockerConfig , sample path /home/azureuser/.docker/config.json<br> 3. Add authProvider to configmap if dockerConfig is not the default auth provider<br> 4.Invoke ratify verify|
 | AWS auth provider    |  Status: Review Required<br><br>Steps:<br>1. Build AWS CodeBuild project to build linux/amd64 architecture container image<br>2. Build ratify image and push to Amazon ECR<br>3. Provision Amazon EKS 1.23 cluster and install OPA/Gatekeeper<br>4. Install ratify via helm with local values that specify the ECR container image and the `awsEcrBasic` auth provider config<br><br>TODO: [blocked] Invoke ratify verify with signed ECR image                                                                      |
 | Cosign verifier      | Status: Completed. <br><br>Steps:<br> 1. Prepare  registry with image and cosign artifacts <br>2. Configre ratify configuration with policy with cosign artifactType and cosign verifier, ensure "cosignEnabled": true for oras store. 3.Invoke ./ratify verify -s yourimage:tag to validate success and faliure scenario     |
-| Notation verifier      | Completed. Covered by quick start E2E test [step](https://github.com/deislabs/ratify#quick-start)|    
+| Notary verifier      | Completed. Covered by quick start E2E test [step](https://github.com/deislabs/ratify#quick-start)|    
 ### Presentation/Discussion Agenda Items:
 - Review components after ratify/[kubebuilder](https://hackmd.io/esm0xHZqQR2_fs5MIOP20A?view#Kubebuilder-Concept-Diagram) integration
 
@@ -518,16 +518,16 @@ Recording: https://youtu.be/nSjn5_kRvoA
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
 ```
-- review notation verifier sample   
- [David] Cert should be configured in a new CertStore CRD, notation verifier should contain a reference to the certStore object being configured for this verifier object.
+- review notary verifier sample   
+ [David] Cert should be configured in a new CertStore CRD, notary verifier should contain a reference to the certStore object being configured for this verifier object.
 ```
 apiVersion: batch.ratify.deislabs.io/v1alpha1
 kind: Verifier
 metadata:
   name: verifier-sample
 spec:
-  name: notation
-  artifactTypes: application/vnd.cncf.notary.signature
+  name: notaryv2
+  artifactTypes: application/vnd.cncf.notary.v2.signature
   parameters:
     reference: {{ include "ratify.akv.secretProviderClassName" . }}
 ```
@@ -572,7 +572,7 @@ https://youtu.be/1Zos9kHZC-o
 - [Config default path](https://github.com/deislabs/ratify/pull/299)
 
 ### Presentation/Discussion Agenda Items:
-- Discuss Notation alpha 3 update
+- Discuss Notary v2 alpha 3 update
 - Discuss work items
 
 ### Notes:
@@ -594,7 +594,7 @@ Recording: https://youtu.be/ZLuqak2xjcQ
 
 [Sajay] Looks like the signature was not uploaded correctly to registry. Xinhe to investigate further on notation sign step
 
--  [Support notation certifates as CRDs](https://hackmd.io/esm0xHZqQR2_fs5MIOP20A?both)
+-  [Support notary certifates as CRDs](https://hackmd.io/esm0xHZqQR2_fs5MIOP20A?both)
 
 [Eric] We should have a base CRD for common fields , and extend the base with addtional properties for specific verifiers.  How should we deal with Polymorphism for verifiers
 
@@ -626,7 +626,7 @@ https://youtu.be/I1enX4eiQNc
 - Support multiple notation certs helm chart https://github.com/deislabs/ratify/issues/133
 - New Ratify slack channel in CNCF workspace
 ### Presentation
-- [Support notation certifates as CRDs](https://hackmd.io/esm0xHZqQR2_fs5MIOP20A?both)  
+- [Support notary certifates as CRDs](https://hackmd.io/esm0xHZqQR2_fs5MIOP20A?both)  
 - _add your items_
 
 ### Notes:
@@ -673,7 +673,7 @@ We will be able to close out the dependabot Prs as this PR captures manual valid
 - Akash: Is oras-go supporting oras-artifacts spec rc2.  
   Yes will be included in the [2.0.0-rc2 release](https://github.com/oras-project/oras-go/milestone/6)
 - Akash: Decide if we want to upgrade to go 1.18 or matrix with 1.17/1.18.  
-  Since oras and notation are doing matrix, it would be good to do the same until 1.17 is no longer being used or supported.
+  Since oras and notary are doing matrix, it would be good to do the same until 1.17 is no longer being used or supported.
 
 ### Notes:
 - Luis: Question if we have any compliance requirements
