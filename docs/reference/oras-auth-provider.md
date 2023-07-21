@@ -284,8 +284,6 @@ spec:
   name: oras
   parameters: 
     cacheEnabled: true
-    capacity: 100
-    keyNumber: 10000
     ttl: 10
     useHttp: true  
     authProvider:

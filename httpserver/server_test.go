@@ -17,6 +17,7 @@ package httpserver
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -41,6 +42,58 @@ import (
 )
 
 const testArtifactType string = "test-type1"
+
+func testGetExecutor() *core.Executor {
+	return &core.Executor{
+		Verifiers:      []verifier.ReferenceVerifier{},
+		ReferrerStores: []referrerstore.ReferrerStore{},
+		PolicyEnforcer: nil,
+		Config:         nil,
+	}
+}
+
+func TestNewServer_Expected(t *testing.T) {
+	testAddress := "localhost:5000"
+	testGetExecutor := testGetExecutor
+	testCertDir := "/tmp"
+	testCACertFile := "/tmp/ca.crt"
+	testCacheTTL := 6 * time.Second
+	testMetricsEnabled := true
+	testMetricsType := "test-metrics"
+	testMetricsPort := 1010
+
+	server, err := NewServer(context.Background(), testAddress, testGetExecutor, testCertDir, testCACertFile, testCacheTTL, testMetricsEnabled, testMetricsType, testMetricsPort)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if server == nil {
+		t.Fatalf("unexpected nil server")
+	}
+	if server.Address != testAddress {
+		t.Fatalf("unexpected address: %s", server.Address)
+	}
+	if server.GetExecutor == nil {
+		t.Fatalf("unexpected nil executor")
+	}
+	if server.CertDirectory != testCertDir {
+		t.Fatalf("unexpected cert directory: %s", server.CertDirectory)
+	}
+	if server.CaCertFile != testCACertFile {
+		t.Fatalf("unexpected ca cert file: %s", server.CaCertFile)
+	}
+	if server.CacheTTL != testCacheTTL {
+		t.Fatalf("unexpected cache ttl: %v", server.CacheTTL)
+	}
+	if server.MetricsEnabled != testMetricsEnabled {
+		t.Fatalf("unexpected metrics enabled: %v", server.MetricsEnabled)
+	}
+	if server.MetricsType != testMetricsType {
+		t.Fatalf("unexpected metrics type: %s", server.MetricsType)
+	}
+	if server.MetricsPort != testMetricsPort {
+		t.Fatalf("unexpected metrics port: %d", server.MetricsPort)
+	}
+}
 
 func TestServer_Timeout_Failed(t *testing.T) {
 	timeoutDuration := 6
@@ -92,7 +145,6 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -164,7 +216,6 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -238,7 +289,6 @@ func TestServer_Mutation_Success(t *testing.T) {
 			MutationStoreName: store.Name(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -299,12 +349,13 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			},
 		}
 
+		verifyTimeout := 5000
 		ex := &core.Executor{
 			PolicyEnforcer: configPolicy,
 			ReferrerStores: []referrerstore.ReferrerStore{store},
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 			Config: &exconfig.ExecutorConfig{
-				VerificationRequestTimeout: nil,
+				VerificationRequestTimeout: &verifyTimeout,
 				MutationRequestTimeout:     nil,
 			},
 		}
@@ -318,7 +369,6 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
@@ -338,7 +388,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 	})
 }
 
-// TestServer_MultipleSubjects_Success tests multiple subjects are verified concurrently
+// TestServer_Verify_ParseReference_Failure tests the case where the reference is not parseable
 func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 	testImageNames := []string{"&&"}
 	t.Run("server_verify_parsereference_failure", func(t *testing.T) {
@@ -371,7 +421,6 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 			Context:     request.Context(),
 
 			keyMutex: keyMutex{},
-			cache:    newSimpleCache(DefaultCacheTTL, DefaultCacheMaxSize),
 		}
 
 		handler := contextHandler{
