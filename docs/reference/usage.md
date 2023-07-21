@@ -21,9 +21,6 @@ A value of `1` indicates the feature is active; any other value disables the fla
 
 - `RATIFY_DYNAMIC_PLUGINS`: (disabled) Enables Ratify to download plugins at runtime from an OCI registry by setting `source` on the plugin config
 
-- `RATIFY_USE_REGO_POLICY`: (disabled) Enables Ratify to generate verification reports in the format designed for evaluation by OPA engine with Rego language. Users can either use the OPA engine embedded in Ratify or the one within Gatekeeper.
-- `RATIFY_PASSTHROUGH_MODE`: (disabled) Enables Ratify to offload the policy decision-making to Gatekeeper. Ratify verify API will just return verification reports without the decision. `RATIFY_USE_REGO_POLICY` must be enabled to use this feature.
-
 - `RATIFY_CERT_ROTATION`: (disabled) Enables Ratify to rotate TLS certificates automatically when they are about to expire. See [cert-controller](https://github.com/open-policy-agent/cert-controller) for more details on the implementation. The cert-controller checks the validation of certificates every 12 hours, if the certificate is expiring in 90 days, cert-controller will generate a new certificate that is valid for 10 years. Notes: as this [post](https://ahmet.im/blog/kubernetes-secret-volumes-delay/) pointed out, it may take Kubernetes 60-90 seconds to progagate changes to Secrets on the mounted volumes. If you provided invalid/expired certificates/keys during the service startup, it may take up to 90 seconds for the service to rotate the certificates and get to actual working state with mounted certs.
 
 - `RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY`: (disabled) Enables high availability mode for ratify which uses a shared distributed cache. Dapr will be used as an external state store for caching. See this [doc](../developer/cache.md#dapr) for more details. 

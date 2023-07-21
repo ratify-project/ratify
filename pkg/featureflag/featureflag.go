@@ -26,8 +26,6 @@ import (
 // Remember to capture changes in the usage guide and release notes.
 var (
 	DynamicPlugins   = newFeatureFlag("DYNAMIC_PLUGINS", false)
-	UseRegoPolicy    = newFeatureFlag("USE_REGO_POLICY", false)
-	PassthroughMode  = newFeatureFlag("PASSTHROUGH_MODE", false)
 	CertRotation     = newFeatureFlag("CERT_ROTATION", false)
 	HighAvailability = newFeatureFlag("EXPERIMENTAL_HIGH_AVAILABILITY", false)
 )

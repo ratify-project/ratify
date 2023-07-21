@@ -122,7 +122,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				}
 			}
 
-			returnItem.Value = fromVerifyResult(result)
+			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
 			logrus.Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(subject))
 	}
