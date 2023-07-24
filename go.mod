@@ -45,7 +45,7 @@ require (
 	google.golang.org/protobuf v1.30.0
 	k8s.io/api v0.26.7
 	k8s.io/apimachinery v0.26.7
-	k8s.io/client-go v0.26.6
+	k8s.io/client-go v0.26.7
 	oras.land/oras-go/v2 v2.2.1
 )
 
