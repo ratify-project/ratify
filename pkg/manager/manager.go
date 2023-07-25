@@ -30,6 +30,7 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/featureflag"
+	"github.com/deislabs/ratify/pkg/policyprovider"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
 	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
@@ -73,7 +74,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, tlsWatcherReady chan struct{}) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, tlsWatcherReady chan struct{}) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -92,6 +93,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
 		var activeVerifiers []vr.ReferenceVerifier
 		var activeStores []referrerstore.ReferrerStore
+		var activePolicyEnforcer policyprovider.PolicyProvider
 
 		// check if there are active verifiers from crd controller
 		// else use verifiers from configuration
@@ -113,15 +115,21 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 			activeStores = configStores
 		}
 
+		if !controllers.ActivePolicy.IsEmpty() {
+			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
+		} else {
+			activePolicyEnforcer = policy
+		}
+
 		// return executor with latest configuration
 		executor := ef.Executor{
 			Verifiers:      activeVerifiers,
 			ReferrerStores: activeStores,
-			PolicyEnforcer: policy,
+			PolicyEnforcer: activePolicyEnforcer,
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsEnabled, metricsType, metricsPort)
+	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
 		os.Exit(1)
@@ -234,6 +242,13 @@ func StartManager(tlsWatcherReady chan struct{}) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
+		os.Exit(1)
+	}
+	if err = (&controllers.PolicyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

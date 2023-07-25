@@ -52,7 +52,7 @@ data:
       "policy": {
         "version": "1.0.0",
         "plugin": {
-        {{- if .Values.featureFlags.RATIFY_USE_REGO_POLICY }}
+        {{- if .Values.policy.useRego }}
           "name": "regoPolicy",
           "policyPath": "/usr/local/ratify/policy/policy.rego"
         {{- else }}
