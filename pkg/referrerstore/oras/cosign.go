@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -31,8 +32,6 @@ import (
 
 const CosignArtifactType = "application/vnd.dev.cosign.artifact.sig.v1+json"
 const CosignSignatureTagSuffix = ".sig"
-
-var ErrNoCosignSubjectDigest = errors.New("failed to mutate cosign image tag: no digest specified for subject")
 
 func getCosignReferences(ctx context.Context, subjectReference common.Reference, repository registry.Repository) (*[]ocispecs.ReferenceDescriptor, error) {
 	var references []ocispecs.ReferenceDescriptor
@@ -47,7 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 			return nil, nil
 		}
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeRepositoryOperationFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
 	}
 
 	references = append(references, ocispecs.ReferenceDescriptor{
@@ -65,7 +64,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 func attachedImageTag(subjectReference common.Reference, tagSuffix string) (string, error) {
 	// sha256:d34db33f -> sha256-d34db33f.suffix
 	if subjectReference.Digest.String() == "" {
-		return "", ErrNoCosignSubjectDigest
+		return "", ratifyerrors.ErrorCodeReferenceInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail("Cosign subject digest is empty")
 	}
 	tagStr := strings.ReplaceAll(subjectReference.Digest.String(), ":", "-") + tagSuffix
 	return fmt.Sprintf("%s:%s", subjectReference.Path, tagStr), nil

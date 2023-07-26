@@ -26,13 +26,13 @@ import (
 	"strings"
 	"time"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/deislabs/ratify/pkg/metrics"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -66,34 +66,34 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	workloadIdentityClientID := types.GetClientID(attrib)
 
 	if keyvaultURI == "" {
-		return nil, nil, fmt.Errorf("keyvaultUri is not set")
+		return nil, nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("keyvaultUri is not set")
 	}
 	if tenantID == "" {
-		return nil, nil, fmt.Errorf("tenantID is not set")
+		return nil, nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("tenantID is not set")
 	}
 	if workloadIdentityClientID == "" {
-		return nil, nil, fmt.Errorf("clientID is not set")
+		return nil, nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("clientID is not set")
 	}
 
 	azureCloudEnv, err := parseAzureEnvironment(cloudName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
+		return nil, nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail(fmt.Sprintf("cloudName %s is not valid", cloudName))
 	}
 
 	keyVaultCerts, err := getKeyvaultRequestObj(attrib)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get keyvault request object from provider attributes, error: %w", err)
+		return nil, nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("failed to get keyvault request object from provider attributes").WithLinkToDoc(ratifyerrors.AKVLink)
 	}
 
 	if len(keyVaultCerts) == 0 {
-		return nil, nil, fmt.Errorf("no keyvault certificate configured")
+		return nil, nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("no keyvault certificate configured")
 	}
 
 	logrus.Debugf("vaultURI %s", keyvaultURI)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
+		return nil, nil, ratifyerrors.ErrorCodePluginInitFailure.WithError(err).WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("failed to get keyvault client")
 	}
 
 	certs := []*x509.Certificate{}
@@ -140,21 +140,21 @@ func getKeyvaultRequestObj(attrib map[string]string) ([]types.KeyVaultCertificat
 
 	certificatesStrings := types.GetCertificates(attrib)
 	if certificatesStrings == "" {
-		return nil, fmt.Errorf("certificates is not set")
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("certificates is not set")
 	}
 
 	logrus.Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
 
 	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
-		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
+		return nil, ratifyerrors.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("failed to yaml unmarshal objects")
 	}
 	logrus.Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
 	for i, object := range objects.Array {
 		var keyVaultCert types.KeyVaultCertificate
 		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
-			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
+			return nil, ratifyerrors.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail(fmt.Sprintf("unmarshal failed for keyVaultCerts at index: %d", i))
 		}
 		// remove whitespace from all fields in keyVaultCert
 		formatKeyVaultCertificate(&keyVaultCert)
@@ -212,12 +212,12 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
-		return nil, fmt.Errorf("failed to add user agent to keyvault client, error: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("failed to add user agent to keyvault client").WithError(err)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get authorizer for keyvault client, error: %w", err)
+		return nil, ratifyerrors.ErrorCodeAuthDenied.WithError(err).WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("failed to get authorizer for keyvault client").WithLinkToDoc(ratifyerrors.AzureWorkloadIdentityLink)
 	}
 	return &kvClient, nil
 }
@@ -226,13 +226,13 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) (keyvaultObject, error) {
 	certbundle, err := kvClient.GetCertificate(ctx, vaultURL, kvObject.CertificateName, kvObject.CertificateVersion)
 	if err != nil {
-		return keyvaultObject{}, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", kvObject.CertificateName, kvObject.CertificateVersion, err)
+		return keyvaultObject{}, ratifyerrors.ErrorCodeKeyVaultOperationFailure.WithError(err).WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail(fmt.Sprintf("failed to get certificate objectName:%s, objectVersion:%s", kvObject.CertificateName, kvObject.CertificateVersion)).WithLinkToDoc(ratifyerrors.AzureWorkloadIdentityLink)
 	}
 	if certbundle.Cer == nil {
-		return keyvaultObject{}, errors.Errorf("certificate value is nil")
+		return keyvaultObject{}, ratifyerrors.ErrorCodeCertInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("certificate value is nil")
 	}
 	if certbundle.ID == nil {
-		return keyvaultObject{}, errors.Errorf("certificate id is nil")
+		return keyvaultObject{}, ratifyerrors.ErrorCodeCertInvalid.WithComponentType(ratifyerrors.CertProvider).WithPluginName(providerName).WithDetail("certificate id is nil")
 	}
 	version := getObjectVersion(*certbundle.ID)
 

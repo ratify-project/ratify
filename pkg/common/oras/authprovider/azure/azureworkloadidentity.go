@@ -18,17 +18,16 @@ package azure
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"os"
 	"time"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -58,30 +57,30 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	conf := azureWIAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.AuthProvider).WithError(err)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.AuthProvider).WithError(err).WithDetail("failed to parse auth provider configuration")
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
 
 	if tenant == "" {
-		return nil, fmt.Errorf("azure tenant id environment variable is empty")
+		return nil, ratifyerrors.ErrorCodeEnvNotSet.WithComponentType(ratifyerrors.AuthProvider).WithDetail("azure tenant id environment variable is empty")
 	}
 	clientID := conf.ClientID
 	if clientID == "" {
 		clientID = os.Getenv("AZURE_CLIENT_ID")
 		if clientID == "" {
-			return nil, fmt.Errorf("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
+			return nil, ratifyerrors.ErrorCodeEnvNotSet.WithComponentType(ratifyerrors.AuthProvider).WithDetail("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
 		}
 	}
 
 	// retrieve an AAD Access token
 	token, err := azureauth.GetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeAuthDenied.WithComponentType(ratifyerrors.AuthProvider).WithError(err).WithLinkToDoc(ratifyerrors.AzureWorkloadIdentityLink)
 	}
 
 	return &azureWIAuthProvider{
@@ -109,19 +108,19 @@ func (d *azureWIAuthProvider) Enabled(_ context.Context) bool {
 // exchanged for a valid ACR refresh token for login.
 func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	if !d.Enabled(ctx) {
-		return provider.AuthConfig{}, fmt.Errorf("azure workload identity auth provider is not properly enabled")
+		return provider.AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.AuthProvider).WithDetail("azure workload identity auth provider is not properly enabled")
 	}
 	// parse the artifact reference string to extract the registry host name
 	artifactHostName, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
-		return provider.AuthConfig{}, err
+		return provider.AuthConfig{}, ratifyerrors.ErrorCodeHostNameInvalid.WithComponentType(ratifyerrors.AuthProvider)
 	}
 
 	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
 		newToken, err := azureauth.GetAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
 		if err != nil {
-			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh AAD token")
+			return provider.AuthConfig{}, ratifyerrors.ErrorCodeAuthDenied.WithComponentType(ratifyerrors.AuthProvider).WithDetail("could not refresh AAD token").WithLinkToDoc(ratifyerrors.AzureWorkloadIdentityLink)
 		}
 		d.aadToken = newToken
 		logrus.Info("successfully refreshed AAD token")
@@ -135,7 +134,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	startTime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
-		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry - %w", err)
+		return provider.AuthConfig{}, ratifyerrors.ErrorCodeAuthDenied.WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to get refresh token for container registry").WithLinkToDoc(ratifyerrors.AzureWorkloadIdentityLink)
 	}
 	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 

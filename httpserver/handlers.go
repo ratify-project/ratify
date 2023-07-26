@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/types"
@@ -94,7 +95,8 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			}
 			if found && cacheResponse != "" {
 				if err := json.Unmarshal([]byte(cacheResponse), &result); err != nil {
-					logrus.Warningf("unable to unmarshal cache entry for subject %v: %v", resolvedSubjectReference, err)
+					err = errors.ErrorCodeDataDecodingFailure.WithError(err).WithDetail(fmt.Sprintf("unable to unmarshal cache entry for subject %v", resolvedSubjectReference))
+					logrus.Warning(err)
 				} else {
 					cacheHit = true
 					logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
@@ -106,7 +108,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				}
 
 				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
-					returnItem.Error = err.Error()
+					returnItem.Error = errors.ErrorCodeExecutorFailure.WithError(err).WithComponentType(errors.Executor).Error()
 					return
 				}
 
@@ -118,7 +120,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				}
 
 				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
-					fmt.Println(string(res))
+					logrus.Infof("verify result for subject %s: %s", resolvedSubjectReference, string(res))
 				}
 			}
 
@@ -141,13 +143,13 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("unable to read request body: %w", err)
+		return errors.ErrorCodeBadRequest.WithError(err).WithDetail("unable to read request body")
 	}
 
 	// parse request body
 	var providerRequest externaldata.ProviderRequest
 	if err = json.Unmarshal(body, &providerRequest); err != nil {
-		return fmt.Errorf("unable to unmarshal request body: %w", err)
+		return errors.ErrorCodeBadRequest.WithError(err).WithDetail("unable to unmarshal request body")
 	}
 
 	results := make([]externaldata.Item, 0)
@@ -171,9 +173,9 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 			}()
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
-				errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
-				logrus.Error(errMessage)
-				returnItem.Error = errMessage
+				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
+				logrus.Error(err)
+				returnItem.Error = err.Error()
 				return
 			}
 
@@ -186,16 +188,16 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 					}
 				}
 				if selectedStore == nil {
-					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)
-					logrus.Error(errMessage)
-					returnItem.Error = errMessage
+					err := errors.ErrorCodeReferrerStoreFailure.WithDetail(fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)).WithComponentType(errors.ReferrerStore)
+					logrus.Error(err)
+					returnItem.Error = err.Error()
 					return
 				}
 				descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
-					errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
-					logrus.Error(errMessage)
-					returnItem.Error = errMessage
+					err = errors.ErrorCodeGetSubjectDescriptorFailure.WithError(err).WithDetail(fmt.Sprintf("failed to get subject descriptor for image %s", image)).WithComponentType(errors.ReferrerStore).WithPluginName(selectedStore.Name())
+					logrus.Error(err)
+					returnItem.Error = err.Error()
 					return
 				}
 				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())

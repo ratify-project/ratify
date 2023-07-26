@@ -22,8 +22,8 @@ import (
 	"os"
 	"time"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
@@ -46,9 +46,8 @@ type azureManagedIdentityAuthProviderConf struct {
 
 var (
 	// ErrorNoAuth indicates that no credentials are provided.
-	ErrorNoAuth    = fmt.Errorf("no credentials provided for Azure cloud provider")
-	ErrorNilEnv    = fmt.Errorf("env is nil pointer for GetServicePrincipalToken")
-	ErrorNilConfig = fmt.Errorf("config is nil pointer for GetServicePrincipalToken")
+	ErrorNoAuth = fmt.Errorf("no credentials provided for Azure cloud provider")
+	ErrorNilEnv = fmt.Errorf("env is nil pointer for GetServicePrincipalToken")
 )
 
 const (
@@ -65,22 +64,22 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	conf := azureManagedIdentityAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse azure managed identity auth provider configuration: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to parse azure managed identity auth provider configuration.")
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
 	if tenant == "" {
-		return nil, fmt.Errorf("AZURE_TENANT_ID environment variable is empty")
+		return nil, ratifyerrors.ErrorCodeEnvNotSet.WithDetail("AZURE_TENANT_ID environment variable is empty").WithComponentType(ratifyerrors.AuthProvider)
 	}
 	client := os.Getenv("AZURE_CLIENT_ID")
 	if client == "" {
 		client = conf.ClientID
 		if client == "" {
-			return nil, fmt.Errorf("AZURE_CLIENT_ID environment variable is empty")
+			return nil, ratifyerrors.ErrorCodeEnvNotSet.WithDetail("AZURE_CLIENT_ID environment variable is empty").WithComponentType(ratifyerrors.AuthProvider)
 		}
 	}
 	if err != nil {
@@ -89,7 +88,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	// retrieve an AAD Access token
 	token, err := getManagedIdentityToken(context.Background(), client)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeAuthDenied.WithComponentType(ratifyerrors.AuthProvider).WithLinkToDoc(ratifyerrors.AzureManagedIdentityLink)
 	}
 
 	return &azureManagedIdentityAuthProvider{
@@ -133,7 +132,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	if time.Now().Add(time.Minute * 5).After(d.identityToken.ExpiresOn) {
 		newToken, err := getManagedIdentityToken(ctx, d.clientID)
 		if err != nil {
-			return provider.AuthConfig{}, errors.Wrap(err, "could not refresh azure managed identity token")
+			return provider.AuthConfig{}, ratifyerrors.ErrorCodeAuthDenied.WithComponentType(ratifyerrors.AuthProvider).WithDetail("could not refresh azure managed identity token").WithLinkToDoc(ratifyerrors.AzureManagedIdentityLink)
 		}
 		d.identityToken = newToken
 		logrus.Info("successfully refreshed azure managed identity token")
@@ -145,7 +144,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
 	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
-		return provider.AuthConfig{}, fmt.Errorf("failed to get refresh token for container registry by azure managed identity token - %w", err)
+		return provider.AuthConfig{}, ratifyerrors.ErrorCodeAuthDenied.WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to get refresh token for container registry by azure managed identity token").WithLinkToDoc(ratifyerrors.AzureManagedIdentityLink)
 	}
 
 	expiresOn := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)
@@ -171,5 +170,5 @@ func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.Acces
 	if cred != nil {
 		return cred.GetToken(ctx, policy.TokenRequestOptions{Scopes: scopes})
 	}
-	return azcore.AccessToken{}, ErrorNilConfig
+	return azcore.AccessToken{}, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.AuthProvider).WithDetail("config is nil pointer for GetServicePrincipalToken")
 }

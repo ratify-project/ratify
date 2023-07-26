@@ -18,6 +18,7 @@ package authprovider
 import (
 	"fmt"
 
+	"github.com/deislabs/ratify/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -52,23 +53,23 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 
 	err := validateAuthProviderConfig(authProviderConfig)
 	if err != nil {
-		return nil, err
+		return nil, errors.ErrorCodeAuthDenied.WithError(err).WithComponentType(errors.AuthProvider)
 	}
 
 	authProviderName, ok := authProviderConfig["name"]
 	if !ok {
-		return nil, fmt.Errorf("failed to find auth provider name in the auth providers config with key %s", "name")
+		return nil, errors.ErrorCodeAuthDenied.WithDetail(fmt.Sprintf("failed to find auth provider name in the auth providers config with key %s", "name")).WithComponentType(errors.AuthProvider)
 	}
 
 	providerNameStr := fmt.Sprintf("%s", authProviderName)
 
 	authFactory, ok := builtInAuthProviders[providerNameStr]
 	if !ok {
-		return nil, fmt.Errorf("failed to find auth provider implementation with name %s", providerNameStr)
+		return nil, errors.ErrorCodeAuthDenied.WithDetail(fmt.Sprintf("failed to find auth provider implementation with name %s", providerNameStr)).WithComponentType(errors.AuthProvider)
 	}
 	authProvider, err := authFactory.Create(authProviderConfig)
 	if err != nil {
-		return nil, err
+		return nil, errors.ErrorCodeAuthDenied.WithError(err).WithComponentType(errors.AuthProvider)
 	}
 
 	logrus.Infof("selected auth provider: %s", providerNameStr)

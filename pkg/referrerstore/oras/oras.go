@@ -38,6 +38,7 @@ import (
 	"oras.land/oras-go/v2/registry/remote/retry"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
@@ -107,7 +108,7 @@ func (s *orasStoreFactory) Create(version string, storeConfig config.StorePlugin
 
 	cacheConf, err := toCacheConfig(storeBase.GetConfig().Store)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
 	}
 	if !cacheConf.Enabled {
 		return storeBase, nil
@@ -121,16 +122,16 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 
 	storeConfigBytes, err := json.Marshal(storeConfig)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
 	}
 
 	if err := json.Unmarshal(storeConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse oras store configuration: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithDetail("failed to parse oras store configuration")
 	}
 
 	authenticationProvider, err := authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create auth provider from configuration: %w", err)
+		return nil, ratifyerrors.ErrorCodePluginInitFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithDetail("failed to create auth provider from configuration")
 	}
 
 	// Set up the local cache where content will land when we pull
@@ -140,7 +141,7 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 
 	localRegistry, err := ocitarget.New(conf.LocalCachePath)
 	if err != nil {
-		return nil, fmt.Errorf("could not create local oras cache at path %s: %w", conf.LocalCachePath, err)
+		return nil, ratifyerrors.ErrorCodePluginInitFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithDetail(fmt.Sprintf("could not create local oras cache at path: %s", conf.LocalCachePath))
 	}
 
 	var customPredicate retry.Predicate = func(resp *http.Response, err error) (bool, error) {
@@ -204,7 +205,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return referrerstore.ListReferrersResult{}, err
+		return referrerstore.ListReferrersResult{}, ratifyerrors.ErrorCodeCreateRepositoryFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
 	}
 
 	// resolve subject descriptor if not provided
@@ -295,7 +296,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, err
+		return ocispecs.ReferenceManifest{}, ratifyerrors.ErrorCodeCreateRepositoryFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(storeName)
 	}
 	var manifestBytes []byte
 	// check if manifest exists in local ORAS cache
@@ -310,12 +311,12 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
 			evictOnError(ctx, err, subjectReference.Original)
-			return ocispecs.ReferenceManifest{}, err
+			return ocispecs.ReferenceManifest{}, ratifyerrors.ErrorCodeRepositoryOperationFailure.WithError(err).WithPluginName(storeName).WithComponentType(ratifyerrors.ReferrerStore)
 		}
 
 		manifestBytes, err = io.ReadAll(manifestReader)
 		if err != nil {
-			return ocispecs.ReferenceManifest{}, err
+			return ocispecs.ReferenceManifest{}, ratifyerrors.ErrorCodeManifestInvalid.WithError(err).WithPluginName(storeName).WithComponentType(ratifyerrors.ReferrerStore)
 		}
 
 		// push fetched manifest to local ORAS cache
@@ -337,12 +338,12 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	if referenceDesc.Descriptor.MediaType == oci.MediaTypeImageManifest {
 		var imageManifest oci.Manifest
 		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, err
+			return ocispecs.ReferenceManifest{}, ratifyerrors.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
 	} else if referenceDesc.Descriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, err
+			return ocispecs.ReferenceManifest{}, ratifyerrors.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
 		}
 	} else {
 		return ocispecs.ReferenceManifest{}, fmt.Errorf("unsupported manifest media type: %s", referenceDesc.Descriptor.MediaType)
@@ -354,13 +355,13 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeCreateRepositoryFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(storeName)
 	}
 
 	desc, err := repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeRepositoryOperationFailure.WithError(err).WithPluginName(storeName)
 	}
 
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
@@ -402,7 +403,7 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 	}
 	if cacheResponse != "" && found {
 		if err := json.Unmarshal([]byte(cacheResponse), &authConfig); err != nil {
-			logrus.Warningf("failed to unmarshal auth config cache value: %v", err)
+			logrus.Warning(ratifyerrors.ErrorCodeDataDecodingFailure.WithDetail(fmt.Sprintf("failed to unmarshal auth config cache value: %s", cacheResponse)).WithError(err).WithComponentType(ratifyerrors.Cache))
 		} else {
 			logrus.Debug("auth cache hit")
 			cacheHit = true
@@ -418,7 +419,7 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 			if cacheProvider != nil {
 				success := cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry), authConfig, time.Until(authConfig.ExpiresOn))
 				if !success {
-					logrus.Warningf("failed to set auth cache for %s", artifactRef.Registry)
+					logrus.Warning(ratifyerrors.ErrorCodeCacheNotSet.WithComponentType(ratifyerrors.Cache).WithDetail(fmt.Sprintf("failed to set auth cache for %s", artifactRef.Registry)))
 				}
 			}
 		}

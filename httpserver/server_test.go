@@ -25,12 +25,11 @@ import (
 	"testing"
 	"time"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	exconfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
-	"github.com/docker/distribution/reference"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/deislabs/ratify/pkg/policyprovider/types"
@@ -438,9 +437,9 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 		if retFirstKey != testImageNames[0] {
 			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[0], retFirstKey)
 		}
-		expectedErr := errors.Wrap(reference.ErrReferenceInvalidFormat, "failed to parse subject reference")
+		expectedErr := ratifyerrors.ErrorCodeReferenceInvalid.WithDetail("failed to parse subject reference")
 		if retFirstErr != expectedErr.Error() {
-			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr.Error(), retFirstErr)
+			t.Fatalf("Expected first subject error to be: %s,: but got %s", expectedErr.Error(), retFirstErr)
 		}
 	})
 }

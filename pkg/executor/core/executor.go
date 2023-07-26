@@ -21,6 +21,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
@@ -75,7 +76,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
 		if len(verifierReports) == 0 {
-			return types.VerifyResult{}, ErrReferrersNotFound
+			return types.VerifyResult{}, errors.ErrorCodeReferrersNotFound.WithComponentType(errors.Executor)
 		}
 	}
 	// If it requires embedded Rego Policy Engine make the decision, execute
@@ -95,9 +96,8 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 	}
 
 	desc, err := su.ResolveSubjectDescriptor(ctx, &executor.ReferrerStores, subjectReference)
-
 	if err != nil {
-		return nil, fmt.Errorf("resolving descriptor for the subject failed with error: %w", err)
+		return nil, err
 	}
 
 	logrus.Infof("Resolve of the image completed successfully the digest is %s", desc.Digest)
@@ -116,7 +116,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 			for {
 				referrersResult, err := referrerStore.ListReferrers(errCtx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
 				if err != nil {
-					return err
+					return errors.ErrorCodeListReferrersFailure.WithError(err).WithComponentType(errors.ReferrerStore).WithPluginName(referrerStore.Name())
 				}
 				continuationToken = referrersResult.NextToken
 				for _, reference := range referrersResult.Referrers {
@@ -173,7 +173,7 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Message:   fmt.Sprintf("an error thrown by the verifier: %v", err)}
+					Message:   errors.ErrorCodeVerifyReferenceFailure.WithError(err).WithComponentType(errors.Verifier).WithPluginName(verifier.Name()).Error()}
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
@@ -221,7 +221,7 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 				verifierReport = vt.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Message:   fmt.Sprintf("an error thrown by the verifier: %v", err)}
+					Message:   errors.ErrorCodeVerifyReferenceFailure.WithError(err).WithComponentType(errors.Verifier).WithPluginName(verifier.Name()).Error()}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
 			}
@@ -284,7 +284,7 @@ func (executor Executor) addNestedReports(ctx context.Context, referenceDes ocis
 	for _, report := range reports.VerifierReports {
 		nestedReport, err := types.NewNestedVerifierReport(report)
 		if err != nil {
-			return err
+			return errors.ErrorCodeExecutorFailure.WithError(err).WithComponentType(errors.Executor)
 		}
 		nestedReports = append(nestedReports, nestedReport)
 	}

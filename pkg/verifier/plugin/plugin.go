@@ -22,6 +22,7 @@ import (
 	"os"
 	"strings"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -47,7 +48,7 @@ type VerifierPlugin struct {
 func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPaths []string) (verifier.ReferenceVerifier, error) {
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
-		return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key: %s", types.Name))
 	}
 
 	var nestedReferences []string
@@ -108,7 +109,7 @@ func (vp *VerifierPlugin) verifyReference(
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
 	pluginPath, err := vp.executor.FindInPaths(vp.name, vp.path)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodePluginNotFound.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(vp.name)
 	}
 
 	pluginArgs := VerifierPluginArgs{
@@ -125,12 +126,12 @@ func (vp *VerifierPlugin) verifyReference(
 
 	verifierConfigBytes, err := json.Marshal(inputConfig)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(vp.name)
 	}
 
 	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeVerifySignatureFailure.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(vp.name)
 	}
 
 	result, err := types.GetVerifierResult(stdoutBytes)

@@ -16,10 +16,10 @@ limitations under the License.
 package factory
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	"github.com/deislabs/ratify/pkg/verifier/types"
@@ -49,24 +49,24 @@ func Register(name string, factory PolicyFactory) {
 // CreatePolicyProvidersFromConfig creates a policy provider from the provided configuration
 func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
 	if policyConfig.PolicyPlugin == nil {
-		return nil, errors.New("policy provider config must be specified")
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config must be specified")
 	}
 
 	policyProviderName, ok := policyConfig.PolicyPlugin[types.Name]
 	if !ok {
-		return nil, fmt.Errorf("failed to find policy provider name in the policy config with key %s", "name")
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail(fmt.Sprintf("failed to find policy provider name in the policy config with key: %s", types.Name))
 	}
 
 	providerNameStr := strings.ToLower(fmt.Sprintf("%s", policyProviderName))
 
 	policyFactory, ok := builtInPolicyProviders[providerNameStr]
 	if !ok {
-		return nil, fmt.Errorf("failed to find registered policy provider with name %s", policyProviderName)
+		return nil, ratifyerrors.ErrorCodeProviderNotFound.WithComponentType(ratifyerrors.PolicyProvider).WithPluginName(providerNameStr).WithDetail("failed to find registered policy provider")
 	}
 
 	policyProvider, err := policyFactory.Create(policyConfig.PolicyPlugin)
 	if err != nil {
-		return nil, fmt.Errorf("failed to Create policy provider: %w", err)
+		return nil, ratifyerrors.ErrorCodePluginInitFailure.WithComponentType(ratifyerrors.PolicyProvider).WithPluginName(providerNameStr).WithDetail("failed to create policy provider").WithError(err)
 	}
 
 	logrus.Infof("selected policy provider: %s", providerNameStr)

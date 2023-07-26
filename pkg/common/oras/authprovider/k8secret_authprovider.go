@@ -24,6 +24,7 @@ import (
 	"os"
 	"time"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/docker/cli/cli/config"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -53,8 +54,6 @@ const defaultName = "default"
 const ratifyNamespaceEnv = "RATIFY_NAMESPACE"
 const secretTimeout = time.Hour * 12
 
-var ErrorNoMatchingCredential = errors.New("no matching credential found for k8 secret")
-
 // init calls Register for our k8Secrets provider
 func init() {
 	Register("k8Secrets", &k8SecretProviderFactory{})
@@ -66,21 +65,21 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal authentication provider config: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to marshal authentication provider config")
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse authentication provider configuration: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to parse authentication provider configuration")
 	}
 
 	clusterConfig, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate cluster configuration: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to generate cluster configuration")
 	}
 
 	clientSet, err := kubernetes.NewForConfig(clusterConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create kubernetes client set from config: %w", err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to create kubernetes client set from config")
 	}
 
 	if conf.ServiceAccountName == "" {
@@ -90,7 +89,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	// get name of namespace ratify is running in
 	namespace := os.Getenv(ratifyNamespaceEnv)
 	if namespace == "" {
-		return nil, fmt.Errorf("environment variable %s not set", ratifyNamespaceEnv)
+		return nil, ratifyerrors.ErrorCodeEnvNotSet.WithComponentType(ratifyerrors.AuthProvider).WithDetail(fmt.Sprintf("environment variable %s not set", ratifyNamespaceEnv))
 	}
 
 	return &k8SecretAuthProvider{
@@ -118,7 +117,7 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 
 	hostName, err := GetRegistryHostName(artifact)
 	if err != nil {
-		return AuthConfig{}, err
+		return AuthConfig{}, ratifyerrors.ErrorCodeHostNameInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
 	}
 
 	// iterate through config secrets, resolve each secret, and store in map
@@ -130,13 +129,13 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 
 		secret, err := d.clusterClientSet.CoreV1().Secrets(k8secret.Namespace).Get(ctx, k8secret.SecretName, meta.GetOptions{})
 		if err != nil {
-			return AuthConfig{}, fmt.Errorf("failed to pull secret %s from cluster: %w", k8secret.SecretName, err)
+			return AuthConfig{}, ratifyerrors.ErrorCodeClusterOperationFailure.WithDetail(fmt.Sprintf("failed to pull secret %s from cluster.", k8secret.SecretName)).WithComponentType(ratifyerrors.AuthProvider)
 		}
 
 		// only docker config json secret type allowed
 		if secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
-			if err != nil && !errors.Is(err, ErrorNoMatchingCredential) {
+			if err != nil && !errors.Is(err, ratifyerrors.ErrorCodeNoMatchingCredential) {
 				return AuthConfig{}, err
 			}
 			// if a resolved AuthConfig is returned
@@ -151,20 +150,20 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 	// get the the service account for ratify
 	serviceAccount, err := d.clusterClientSet.CoreV1().ServiceAccounts(d.ratifyNamespace).Get(ctx, d.config.ServiceAccountName, meta.GetOptions{})
 	if err != nil {
-		return AuthConfig{}, err
+		return AuthConfig{}, ratifyerrors.ErrorCodeClusterOperationFailure.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
 	}
 
 	// extract the imagePullSecrets linked to service account
 	for _, imagePullSecret := range serviceAccount.ImagePullSecrets {
 		secret, err := d.clusterClientSet.CoreV1().Secrets(d.ratifyNamespace).Get(ctx, imagePullSecret.Name, meta.GetOptions{})
 		if err != nil {
-			return AuthConfig{}, err
+			return AuthConfig{}, ratifyerrors.ErrorCodeClusterOperationFailure.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
 		}
 
 		// only dockercfg or docker config json secret type allowed
 		if secret.Type == core.SecretTypeDockercfg || secret.Type == core.SecretTypeDockerConfigJson {
 			authConfig, err := d.resolveCredentialFromSecret(hostName, secret)
-			if err != nil && !errors.Is(err, ErrorNoMatchingCredential) {
+			if err != nil && !errors.Is(err, ratifyerrors.ErrorCodeNoMatchingCredential) {
 				return AuthConfig{}, err
 			}
 			// if a resolved AuthConfig is returned
@@ -180,17 +179,17 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 func (d *k8SecretAuthProvider) resolveCredentialFromSecret(hostName string, secret *core.Secret) (AuthConfig, error) {
 	dockercfg, exists := secret.Data[core.DockerConfigJsonKey]
 	if !exists {
-		return AuthConfig{}, fmt.Errorf("could not extract auth configs from docker config")
+		return AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithDetail("could not extract auth configs from docker config")
 	}
 
 	configFile, err := config.LoadFromReader(bytes.NewReader(dockercfg))
 	if err != nil {
-		return AuthConfig{}, err
+		return AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
 	}
 
 	authConfig, exist := configFile.AuthConfigs[hostName]
 	if !exist {
-		return AuthConfig{}, ErrorNoMatchingCredential
+		return AuthConfig{}, ratifyerrors.ErrorCodeNoMatchingCredential
 	}
 
 	return AuthConfig{

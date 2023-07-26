@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
 
@@ -72,12 +73,12 @@ func init() {
 func (f *notaryv2VerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
 	conf, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName)
 	}
 
 	verfiyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodePluginInitFailure.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
@@ -108,22 +109,22 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to resolve subject: %+v, err: %w", subjectReference, err)
+		return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeGetSubjectDescriptorFailure.WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(store.Name()).WithDetail(fmt.Sprintf("failed to resolve subject: %+v", subjectReference)).WithError(err)
 	}
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get reference manifest for reference: %s, err: %w", subjectReference.Original, err)
+		return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeGetReferenceManifestFailure.WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(store.Name()).WithDetail(fmt.Sprintf("failed to resolve reference manifest: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
-		return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String())
+		return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeSignatureNotFound.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()))
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get blob content of digest: %s, err: %w", blobDesc.Digest, err)
+			return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeGetBlobContentFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(store.Name()).WithDetail(fmt.Sprintf("failed to get blob content of digest: %s", blobDesc.Digest))
 		}
 
 		// TODO: notary verify API only accepts digested reference now.
@@ -131,7 +132,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, fmt.Errorf("failed to verify signature, err: %w", err)
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, ratifyerrors.ErrorCodeVerifySignatureFailure.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName).WithDetail("failed to verify signature of digest").WithError(err).WithLinkToDoc(ratifyerrors.NotationSpecLink)
 		}
 
 		// Note: notary verifier already validates certificate chain is not empty.
@@ -171,11 +172,11 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
-		return nil, err
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName)
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to notaryV2VerifierConfig from： %+v, err: %w", verifierConfig, err)
+		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("failed to unmarshal to notaryV2VerifierConfig from: %+v.", verifierConfig))
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
