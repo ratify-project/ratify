@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/instrument"
+	instrument "go.opentelemetry.io/otel/metric"
 )
 
 type MockInt64Histogram struct {
@@ -30,9 +30,10 @@ type MockInt64Histogram struct {
 	Attributes map[string]string
 }
 
-func (m *MockInt64Histogram) Record(_ context.Context, incr int64, attrs ...attribute.KeyValue) {
+func (m *MockInt64Histogram) Record(_ context.Context, incr int64, options ...instrument.RecordOption) {
 	m.Value = incr
-	for _, attr := range attrs {
+	opts := instrument.NewRecordConfig(options).Attributes()
+	for _, attr := range opts.ToSlice() {
 		setValue := attr.Value.AsString()
 		if attr.Value.Type() == attribute.BOOL {
 			setValue = fmt.Sprintf("%t", attr.Value.AsBool())
@@ -41,9 +42,10 @@ func (m *MockInt64Histogram) Record(_ context.Context, incr int64, attrs ...attr
 	}
 }
 
-func (m *MockInt64Counter) Add(_ context.Context, incr int64, attrs ...attribute.KeyValue) {
+func (m *MockInt64Counter) Add(_ context.Context, incr int64, options ...instrument.AddOption) {
 	m.Value = incr
-	for _, attr := range attrs {
+	opts := instrument.NewAddConfig(options).Attributes()
+	for _, attr := range opts.ToSlice() {
 		setValue := attr.Value.AsString()
 		if attr.Value.Type() == attribute.INT64 {
 			setValue = fmt.Sprintf("%d", attr.Value.AsInt64())
