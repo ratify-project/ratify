@@ -129,7 +129,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     
     ```bash
     az keyvault set-policy --name ${AKV_NAME} \
-    --certificate-permissions get \
+    --secret-permissions get \
     --object-id ${IDENTITY_OBJECT_ID}
     ```
 

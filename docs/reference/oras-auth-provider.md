@@ -209,7 +209,7 @@ az keyvault certificate import \
 
 # Grant permission to access the certificate.
 az keyvault set-policy --name ${KEYVAULT_NAME} \
-  --certificate-permissions get \
+  --secret-permission get \
   --object-id ${IDENTITY_OBJECT_ID}
 ```
 

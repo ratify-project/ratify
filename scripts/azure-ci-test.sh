@@ -33,6 +33,7 @@ TENANT_ID=$3
 export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
 export NOTARY_PEM_NAME="notary"
+export NOTARY_CHAIN_PEM_NAME="notarychain"
 TAG="test${SUFFIX}"
 REGISTRY="${ACR_NAME}.azurecr.io"
 
@@ -72,6 +73,7 @@ deploy_ratify() {
     --set akvCertConfig.enabled=true \
     --set akvCertConfig.vaultURI=${VAULT_URI} \
     --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+    --set akvCertConfig.cert2Name=${NOTARY_CHAIN_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
@@ -85,14 +87,27 @@ deploy_ratify() {
 }
 
 upload_cert_to_akv() {
+  
   rm -f notary.pem
   cat ~/.config/notation/localkeys/ratify-bats-test.key >>notary.pem
   cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notary.pem
 
+  echo "uploading notary.pem"
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
     -n ${NOTARY_PEM_NAME} \
     -f notary.pem
+
+  rm -f notarychain.pem
+  
+  cat .staging/notaryv2/leaf-test/leaf.key >>notarychain.pem
+  cat .staging/notaryv2/leaf-test/leaf.crt >>notarychain.pem   
+
+  echo "uploading notarychain.pem"
+  az keyvault certificate import \
+    --vault-name ${KEYVAULT_NAME} \
+    -n ${NOTARY_CHAIN_PEM_NAME} \
+    -f notarychain.pem
 }
 
 save_logs() {

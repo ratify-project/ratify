@@ -24,6 +24,7 @@ import (
 	"testing"
 	"time"
 
+	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
@@ -273,6 +274,26 @@ func TestGetKeyvaultRequestObj(t *testing.T) {
 	assert.Equal(t, "testversion", result[0].CertificateVersion)
 }
 
+func TestGetCertFromSecretBundle(t *testing.T) {
+
+	// PEM
+	secretForTesting := getSecretBundlePem()
+	cert, status, _ := getCertFromSecretBundle(secretForTesting, "certName")
+	assert.Equal(t, 2, len(cert))
+	assert.Equal(t, 2, len(status))
+
+	// PkcS
+	secretForTesting = getSecretBundlePkcs()
+	cert, status, _ = getCertFromSecretBundle(secretForTesting, "certName")
+	assert.Equal(t, len(cert), 1)
+	assert.Equal(t, len(status), 1)
+
+	// Other content
+	secretForTesting = getSecretBundleText()
+	cert, status, err := getCertFromSecretBundle(secretForTesting, "certName")
+	assert.Equal(t, err.Error(), "secret content type is invalid, expected type are application/x-pkcs12 or application/x-pem-file")
+}
+
 func TestGetKeyvaultRequestObj_error(t *testing.T) {
 	cases := []struct {
 		desc        string
@@ -305,4 +326,46 @@ func TestGetKeyvaultRequestObj_error(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getSecretBundlePkcs() kv.SecretBundle {
+
+	value := "-----BEGIN CERTIFICATE-----\nMIIDOjCCAiKgAwIBAgIQNd/dIJWDTl2vT/87QCN/QjANBgkqhkiG9w0BAQsFADAa\nMRgwFgYDVQQDEw9zdXNhbmRvbWFpbi5jb20wHhcNMjMwNjIxMDM1ODA2WhcNMjQw\nNjIxMDQwODA2WjAaMRgwFgYDVQQDEw9zdXNhbmRvbWFpbi5jb20wggEiMA0GCSqG\nSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCoaEzK1MSiNlQhyKXkXccmUJlVK81GND2J\nOMwhqIZbgctUMIEMHh/ici5o5LilNBcYw4/sO0wt0PSU2q8n4JIXsXSBj6wsAHS8\nHm+Llm7yz004YvFO70LzaaM5SZK8ZKroHw/6PQIo88SaYiZ888f/7rHR3/5V34tC\nnLyNIrJLZg+V3ds8EPPtVe+Y7AConZ4N6x9RwirL4L81ruAZyoC5fpoTKXHoqDlR\nbrOLmZf2nQ1EwdIpyLlb9Fnw+Wef9+fZFR0Ly/WI9kPghYC3fjtL+s/XRTGXOCKW\nWrGAWVgeVUqN+vnYxBJHwTKtPcKkvgXk8FBQlXWr283taCniNe5lAgMBAAGjfDB6\nMA4GA1UdDwEB/wQEAwIFoDAJBgNVHRMEAjAAMB0GA1UdJQQWMBQGCCsGAQUFBwMB\nBggrBgEFBQcDAjAfBgNVHSMEGDAWgBQFY45Xmcf23SDoBnpA+DBjKFMYYTAdBgNV\nHQ4EFgQUBWOOV5nH9t0g6AZ6QPgwYyhTGGEwDQYJKoZIhvcNAQELBQADggEBABpX\nrJCwD3AfNHkwlPK5f+3y7JDDbIxOiRbFi/d14S+MrDSHYdW/wpWurnhNmeOq3GWJ\nGU13PKMqI5s7lkMpSJ3k6ePlln2lq5Da+eQzyhw1XlMGgUIbf0hAjlifJ8OEcm8i\nJ9tSfbjQ04kN1fDABNRGTcBuEwGXMcxO3x9UTIDwtOSjmhlWhRVtxNm8Cm5UEgR3\nnjnYTcC+Q/nCSKN8WCEFCVJ1OAiVXXKlemJcwyqhatfZJfMqON5hmuckgtYmXsrV\nZAwTnamMAegQ7MPxKe2yKmLiqPypUv+1R2Wupjah1xUdajXiKQHR1gbaXwzAmBP4\n9tq6ty8IL8CuwARk3HY=\n-----END CERTIFICATE-----\n"
+	contentType := "application/x-pkcs12"
+	id := "https://notarycerts.vault.azure.net/secrets/TestCertCreatedFromPortal/87630e43dfc9465b857d65b930ed277f"
+	test := kv.SecretBundle{
+		Value:       &value,
+		ID:          &id,
+		ContentType: &contentType,
+	}
+
+	return test
+}
+
+func getSecretBundlePem() kv.SecretBundle {
+
+	value := "-----BEGIN CERTIFICATE-----\nMIIC8TCCAdmgAwIBAgIUaNrwbhs/I1ecqUYdzD2xuAVNdmowDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzdaFw0yNDA2MjAwMTIyMzdaMBkxFzAVBgNVBAMMDnJhdGlm\neS5kZWZhdWx0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtskG1BUt\n4Fw2lbm53KbwZb1hnLmWdwRotZyznhhk/yrUDcq3uF6klwpk/E2IKfUKIo6doHSk\nXaEZXR68UtXygvA4wdg7xZ6kKpXy0gu+RxGE6CGtDHTyDDzITu+NBjo21ZSsyGpQ\nJeIKftUCHdwdygKf0CdJx8A29GBRpHGCmJadmt7tTzOnYjmbuPVLeqJo/Ex9qXcG\nZbxoxnxr5NCocFeKx+EbLo+k/KjdFB2PKnhgzxAaMMMP6eXPr8l5AlzkC83EmPvN\ntveuaBbamdlFkD+53TZeZlxt3GIdq93Iw/UpbQ/pvhbrztMT+UVEkm15sShfX8Xn\nL2st5A4n0V+66QIDAQABoyAwHjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIH\ngDANBgkqhkiG9w0BAQsFAAOCAQEAGpOqozyfDSBjoTepsRroxxcZ4sq65gw45Bme\nm36BS6FG0WHIg3cMy6KIIBefTDSKrPkKNTtuF25AeGn9jM+26cnfDM78ZH0+Lnn7\n7hs0MA64WMPQaWs9/+89aM9NADV9vp2zdG4xMi6B7DruvKWyhJaNoRqK/qP6LdSQ\nw8M+21sAHvXgrRkQtJlVOzVhgwt36NOb1hzRlQiZB+nhv2Wbw7fbtAaADk3JAumf\nvM+YdPS1KfAFaYefm4yFd+9/C0KOkHico3LTbELO5hG0Mo/EYvtjM+Fljb42EweF\n3nAx1GSPe5Tn8p3h6RyJW5HIKozEKyfDuLS0ccB/nqT3oNjcTw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIDRTCCAi2gAwIBAgIUcC33VfaMhOnsl7avNTRVQozoVtUwDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzZaFw0yMzA2MjIwMTIyMzZaMCoxDzANBgNVBAoMBlJhdGlm\neTEXMBUGA1UEAwwOUmF0aWZ5IFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB\nDwAwggEKAoIBAQDDFhDnyPrVDZaeRu6Tbg1a/iTwus+IuX+h8aKhKS1yHz4EF/Lz\nxCy7lNSQ9srGMMVumWuNom/ydIphff6PejZM1jFKPU6OQR/0JX5epcVIjbKa562T\nDguUxJ+h5V3EIyM4RqOWQ2g/xZo86x5TzyNJXiVdHHRvmDvUNwPpMeDjr/EHVAni\n5YQObxkJRiiZ7XOa5zz3YztVm8sSZAwPWroY1HIfvtP+KHpiNDIKSymmuJkH4SEr\nJn++iqN8na18a9DFBPTTrLPe3CxATGrMfosCMZ6LP3iFLLc/FaSpwcnugWdewsUK\nYs+sUY7jFWR7x7/1nyFWyRrQviM4f4TY+K7NAgMBAAGjYzBhMB0GA1UdDgQWBBQH\nYePW7QPP2p1utr3r6gqzEkKs+DAfBgNVHSMEGDAWgBQHYePW7QPP2p1utr3r6gqz\nEkKs+DAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICBDANBgkqhkiG9w0B\nAQsFAAOCAQEAjKp4vx3bFaKVhAbQeTsDjWJgmXLK2vLgt74MiUwSF6t0wehlfszE\nIcJagGJsvs5wKFf91bnwiqwPjmpse/thPNBAxh1uEoh81tOklv0BN790vsVpq3t+\ncnUvWPiCZdRlAiGGFtRmKk3Keq4sM6UdiUki9s+wnxypHVb4wIpVxu5R271Lnp5I\n+rb2EQ48iblt4XZPczf/5QJdTgbItjBNbuO8WVPOqUIhCiFuAQziLtNUq3p81dHO\nQ2BPgmaitCpIUYHVYighLauBGCH8xOFzj4a4KbOxKdxyJTd0La/vRCKaUtJX67Lc\nfQYVR9HXQZ0YlmwPcmIG5v7wBfcW34NUvA==\n-----END CERTIFICATE-----\n"
+	contentType := "application/x-pem-file"
+	id := "https://notarycerts.vault.azure.net/secrets/testCert6212/431ad135165741dcb95a46cf3e6686fb"
+	test := kv.SecretBundle{
+		Value:       &value,
+		ID:          &id,
+		ContentType: &contentType,
+	}
+
+	return test
+}
+
+func getSecretBundleText() kv.SecretBundle {
+
+	value := "secretText"
+	contentType := "text"
+	id := "https://notarycerts.vault.azure.net/secrets/test/431ad135165741dcb95a46cf3e6686fb"
+	test := kv.SecretBundle{
+		Value:       &value,
+		ID:          &id,
+		ContentType: &contentType,
+	}
+
+	return test
 }
