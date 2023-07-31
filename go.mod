@@ -23,8 +23,8 @@ require (
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-containerregistry v0.15.2
 	github.com/gorilla/mux v1.8.0
-	github.com/notaryproject/notation-core-go v1.0.0-rc.4
-	github.com/notaryproject/notation-go v1.0.0-rc.6
+	github.com/notaryproject/notation-core-go v1.0.0
+	github.com/notaryproject/notation-go v1.0.0
 	github.com/open-policy-agent/cert-controller v0.8.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa
 	github.com/open-policy-agent/opa v0.52.0
@@ -88,7 +88,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.2 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.4 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
-	github.com/go-ldap/ldap/v3 v3.4.4 // indirect
+	github.com/go-ldap/ldap/v3 v3.4.5 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/go-github/v50 v50.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
@@ -228,14 +228,14 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.24.0 // indirect
-	golang.org/x/crypto v0.10.0 // indirect
+	golang.org/x/crypto v0.11.0 // indirect
 	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
-	golang.org/x/mod v0.11.0 // indirect
+	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/oauth2 v0.9.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
-	golang.org/x/term v0.9.0 // indirect
-	golang.org/x/text v0.10.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/term v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
