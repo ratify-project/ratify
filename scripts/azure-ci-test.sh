@@ -107,7 +107,7 @@ upload_cert_to_akv() {
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
     -n ${NOTARY_CHAIN_PEM_NAME} \
-    -f notarychain.pem
+    -f notarychain.pem \
     -p @./test/bats/tests/config/akvpolicy.json
 }
 
