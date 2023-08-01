@@ -22,7 +22,7 @@
     }
   ],
   "secretProperties": {
-    "contentType": "application/x-pkcs12"
+    "contentType": "application/x-pem-file"
   },
   "x509CertificateProperties": {
     "ekus": [],
