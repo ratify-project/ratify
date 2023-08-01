@@ -8,7 +8,7 @@
       "exportable": false,
       "keySize": 2048,
       "keyType": "RSA",
-      "reuseKey": true
+      "reuseKey": false
     },
     "lifetimeActions": [
       {
