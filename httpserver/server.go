@@ -23,8 +23,10 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/deislabs/ratify/config"
@@ -154,14 +156,9 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 			MinVersion:         tls.VersionTLS13,
 		}
 
-		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil {
-			logrus.Errorf("failed to start server: %v", err)
-			return err
-		}
-		return nil
+		return serverGracefulShutdown(true, svr, lsnr, certFile, keyFile)
 	}
-	logrus.Info("starting server without TLS")
-	return svr.Serve(lsnr)
+	return serverGracefulShutdown(false, svr, lsnr, "", "")
 }
 
 func (server *Server) register(method, path string, handler ContextHandler) {
@@ -191,4 +188,35 @@ type ServerAddrNotFoundError struct{}
 
 func (err ServerAddrNotFoundError) Error() string {
 	return "The http server address configuration is not set. Skipping server creation"
+}
+
+func serverGracefulShutdown(isTLSEnabled bool, svr *http.Server, lsnr net.Listener, certFile string, keyFile string) error {
+	connectionsClosed := make(chan struct{})
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+		<-sigint
+		logrus.Info("shutting down ratify server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second) // wait 6 seconds for existing connections to finish
+		defer cancel()
+		if err := svr.Shutdown(ctx); err != nil {
+			logrus.Errorf("failed to shutdown ratify server: %v", err)
+		}
+		close(connectionsClosed)
+	}()
+	if isTLSEnabled {
+		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil && err != http.ErrServerClosed { // http.ErrServerClosed is immediately returned when server.Shutdown() is called
+			logrus.Errorf("failed to start server: %v", err)
+			return err
+		}
+	} else {
+		if err := svr.Serve(lsnr); err != nil && err != http.ErrServerClosed { // http.ErrServerClosed is immediately returned when server.Shutdown() is called
+			logrus.Errorf("failed to start server: %v", err)
+			return err
+		}
+	}
+	<-connectionsClosed // wait for server to shutdown
+	logrus.Info("ratify server shutdown complete")
+	time.Sleep(5 * time.Second) // wait for controllers/manager to shutdown
+	return nil
 }
