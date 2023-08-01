@@ -37,11 +37,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type keyvaultObject struct {
-	content string
-	version string
-}
-
 const (
 	providerName string = "azurekeyvault"
 )
@@ -113,7 +108,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		temp, certProperty, err := getCertFromSecretBundle(secretBundle, keyVaultCert.CertificateName)
 
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to get certificates from secret bundle:%s", err)
+			return nil, nil, fmt.Errorf("failed to get certificates from secret bundle:%w", err)
 		}
 
 		metrics.ReportAKVCertificateDuration(ctx, time.Since(startTime).Milliseconds(), keyVaultCert.CertificateName)
@@ -255,7 +250,6 @@ func getCertFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*
 				certsStatus = append(certsStatus, certProperty)
 				logrus.Debugf("azurekeyvault cert provider: cert '%v', version '%v' added", certName, version)
 			}
-
 		default:
 			logrus.Warn("azure keyvualt certificate provider detected unknown block type", block.Type)
 		}
