@@ -20,7 +20,27 @@ export AZURE_SUBSCRIPTION_ID=${1}
 cleanup() {
   az account set -s ${AZURE_SUBSCRIPTION_ID}
   echo "Deleting resource group with ratifye2e tag"
-  az group list --tag ratifye2e --query [].name -o tsv | xargs -otl az group delete --yes  --no-wait  -n
+   
+  # Get list of resources with specific tag
+  resource_list=`az resource list --tag ratifye2e --subscription ${subscription}`
+
+  # Get number of resources to be deleted
+  num_resources=`echo $resource_list | jq length`
+  echo 'Found' $num_resources 'resources'
+
+  # Delete resources
+  for((i=0; i<$num_resources; i++)); do
+      # Get $i th resource name and type
+      name=`echo $resource_list | jq .[$i].name | tr -d '"'`
+      type=`echo $resource_list | jq .[$i].type | tr -d '"'`
+      
+      echo 'Deleting following resource ...'
+      echo 'resource name': $name
+      echo 'resource type': $type
+      
+      # Delete $i th resource
+      # az resource delete -g ${resource_group} -n ${name} --resource-type ${type}
+  done
 }
 
 cleanup
