@@ -5,13 +5,14 @@ metadata:
   labels:
     heritage: '{{ .Release.Service }}'
     release: '{{ .Release.Name }}'
-  name: ratify-manager-rolebinding
+  name: ratify-manager-cluster-rolebinding
 subjects:
 - kind: ServiceAccount
   name: {{ include "ratify.serviceAccountName" . }} 
   namespace: '{{ .Release.Namespace }}'
 roleRef:
   kind: ClusterRole
-  name: ratify-manager-role
+  name: ratify-manager-cluster-role
   apiGroup: rbac.authorization.k8s.io
-  {{- end }}
+
+{{- end }}
