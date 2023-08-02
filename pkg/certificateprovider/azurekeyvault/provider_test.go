@@ -290,7 +290,7 @@ func TestGetCertFromSecretBundle(t *testing.T) {
 	// Other content
 	secretForTesting = getSecretBundleText()
 	certs, status, err := getCertsFromSecretBundle(secretForTesting, "certName")
-	assert.Equal(t, err.Error(), "secret content type is invalid, expected type are application/x-pkcs12 or application/x-pem-file")
+	assert.Equal(t, "Unsupported secret content type text, expected type are application/x-pkcs12 and application/x-pem-file", err.Error())
 	assert.Equal(t, len(certs), 0)
 	assert.Equal(t, len(status), 0)
 }
