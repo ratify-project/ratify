@@ -1,7 +1,7 @@
 
 # Manual Quick Start Steps
 
-This document outlines the **manual** steps to install Ratify with Gatekeeper in admission control scenarios. Please refer to the [README.MD](../../README.md) for recommended install steps.
+This document outlines the **manual** production ready steps to install Ratify with Gatekeeper in admission control scenarios. Please refer to the [README.MD](../../README.md) for recommended install steps.
 
 <hr>
 

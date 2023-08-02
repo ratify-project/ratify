@@ -31,7 +31,7 @@ Try out ratify in Kubernetes through Gatekeeper as the admission controller.
 Prerequisites:
 - Kubernetes v1.20 or higher
 - OPA Gatekeeper v3.10 or higher
-- [helmfile](https://helmfile.readthedocs.io/en/latest/#installation) v0.14 or higher (See [ratify-quickstart-manual.md](docs/quickstarts/ratify-quickstart-manual.md) for manual install steps)
+- [helmfile](https://helmfile.readthedocs.io/en/latest/#installation) v0.14 or higher. For production use and if you would like to avoid automatic installation of resources using helmfile, please refer to [ratify-quickstart-manual.md](docs/quickstarts/ratify-quickstart-manual.md) for manual install steps.
 
 ### Step 1: Install Gatekeeper, Ratify, and Constraints
 
