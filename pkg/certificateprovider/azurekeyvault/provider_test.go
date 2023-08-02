@@ -300,7 +300,6 @@ func TestGetCertFromSecretBundle(t *testing.T) {
 	assert.True(t, strings.Contains(err.Error(), "Unsupported secret content type"))
 	assert.Equal(t, len(certs), 0)
 	assert.Equal(t, len(status), 0)
-
 }
 
 func TestGetKeyvaultRequestObj_error(t *testing.T) {
