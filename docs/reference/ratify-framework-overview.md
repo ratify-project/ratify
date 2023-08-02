@@ -577,12 +577,12 @@ verifiers:
   version: 1.0.0
   plugins:
   - name: notation
-    artifactTypes: application/vnd.cncf.notary
+    artifactTypes: application/vnd.cncf.notary.signature
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary
+    nestedReferences: application/vnd.cncf.notary.signature
 executor:
   cache: false
 policy:

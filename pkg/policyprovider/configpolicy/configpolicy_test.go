@@ -33,9 +33,9 @@ func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
 	configPolicyConfig := map[string]interface{}{
 		"name": "configPolicy",
 		"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-			"application/vnd.cncf.notary": "any",
-			"org.example.sbom.v0":         "all",
-			"default":                     "any",
+			"application/vnd.cncf.notary.signature": "any",
+			"org.example.sbom.v0":                   "all",
+			"default":                               "any",
 		},
 	}
 	config := pc.PoliciesConfig{
@@ -58,7 +58,7 @@ func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
 	}
 	referenceDesc := ocispecs.ReferenceDescriptor{
 		Descriptor:   oci.Descriptor{},
-		ArtifactType: "application/vnd.cncf.notary",
+		ArtifactType: "application/vnd.cncf.notary.signature",
 	}
 	result := vt.VerifyResult{
 		IsSuccess:       false,
@@ -113,7 +113,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    false,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 			},
 			output: false,
@@ -128,12 +128,12 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    false,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 			},
 			output: false,
@@ -150,12 +150,12 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    false,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 			},
 			output: true,
@@ -165,7 +165,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			configPolicyConfig: map[string]interface{}{
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-					"application/vnd.cncf.notary": "any",
+					"application/vnd.cncf.notary.signature": "any",
 				},
 			},
 			verifierReports: []interface{}{},
@@ -176,19 +176,19 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			configPolicyConfig: map[string]interface{}{
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-					"application/vnd.cncf.notary": "any",
+					"application/vnd.cncf.notary.signature": "any",
 				},
 			},
 			verifierReports: []interface{}{
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    false,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 			},
 			output: true,
@@ -198,19 +198,19 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			configPolicyConfig: map[string]interface{}{
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-					"application/vnd.cncf.notary": "all",
+					"application/vnd.cncf.notary.signature": "all",
 				},
 			},
 			verifierReports: []interface{}{
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    false,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 			},
 			output: false,
@@ -220,19 +220,19 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			configPolicyConfig: map[string]interface{}{
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-					"application/vnd.cncf.notary": "all",
+					"application/vnd.cncf.notary.signature": "all",
 				},
 			},
 			verifierReports: []interface{}{
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 			},
 			output: true,
@@ -242,15 +242,15 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			configPolicyConfig: map[string]interface{}{
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-					"application/vnd.cncf.notary": "any",
-					"org.example.sbom.v0":         "any",
+					"application/vnd.cncf.notary.signature": "any",
+					"org.example.sbom.v0":                   "any",
 				},
 			},
 			verifierReports: []interface{}{
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",
@@ -265,15 +265,15 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 			configPolicyConfig: map[string]interface{}{
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
-					"application/vnd.cncf.notary": "any",
-					"org.example.sbom.v0":         "all",
+					"application/vnd.cncf.notary.signature": "any",
+					"org.example.sbom.v0":                   "all",
 				},
 			},
 			verifierReports: []interface{}{
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "application/vnd.cncf.notary",
+					ArtifactType: "application/vnd.cncf.notary.signature",
 				},
 				vr.VerifierResult{
 					Subject:      "",

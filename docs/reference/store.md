@@ -205,12 +205,12 @@ verifiers:
   version: 1.0.0
   plugins:
   - name: notation
-    artifactTypes: application/vnd.cncf.notary
+    artifactTypes: application/vnd.cncf.notary.signature
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary
+    nestedReferences: application/vnd.cncf.notary.signature
 executor:
   cache: false
 policy:
@@ -223,13 +223,13 @@ policy:
         }
 ```
 
-2. An example subject ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb``` will be used to query for its referrers of type ```application/vnd.cncf.notary```.
+2. An example subject ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb``` will be used to query for its referrers of type ```application/vnd.cncf.notary.signature```.
 3. The framework calls the plugin ```ociregistry``` with the following environment variables
 
 - **RATIFY_STORE_COMMAND** : ```LISTREFERRERS```
 - **RATIFY_STORE_SUBJECT**: ```registry.wabbit-networks.io:5000/net-monitor:signed@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb```
 - **RATIFY_STORE_VERSION**: ```1.0.0```
-- **RATIFY_STORE_ARGS** : ```artifactTypes:application/vnd.cncf.notary```
+- **RATIFY_STORE_ARGS** : ```artifactTypes:application/vnd.cncf.notary.signature```
 
 5. It calls the plugin with the following JSON execution configuration
 
@@ -251,7 +251,7 @@ policy:
           "mediaType": "application/vnd.cncf.oras.artifact.manifest.v1+json",
           "digest": "sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270",
           "size": 7682,
-          "artifactType": "application/vnd.cncf.notary"
+          "artifactType": "application/vnd.cncf.notary.signature"
         }
     ],
     "nextToken":""

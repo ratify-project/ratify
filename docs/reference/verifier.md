@@ -68,12 +68,12 @@ verifiers:
   version: 1.0.0
   plugins:
   - name: notation
-    artifactTypes: application/vnd.cncf.notary
+    artifactTypes: application/vnd.cncf.notary.signature
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary
+    nestedReferences: application/vnd.cncf.notary.signature
 ```
 
 ### Section2 : Verifier Interface
@@ -185,12 +185,12 @@ verifiers:
   version: 1.0.0
   plugins:
   - name: notation
-    artifactTypes: application/vnd.cncf.notary
+    artifactTypes: application/vnd.cncf.notary.signature
     verificationCerts:
     - "/home/user/.notary/keys/wabbit-networks.crt"
   - name: sbom
     artifactTypes: application/x.example.sbom.v0
-    nestedReferences: application/vnd.cncf.notary
+    nestedReferences: application/vnd.cncf.notary.signature
 executor:
   cache: false
 policy:
@@ -210,7 +210,7 @@ policy:
   "mediaType": "application/vnd.cncf.oras.artifact.manifest.v1+json",
   "digest": "sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270",
   "size": 7682,
-  "artifactType": "application/vnd.cncf.notary"
+  "artifactType": "application/vnd.cncf.notary.signature"
 }
 ```
 
@@ -227,7 +227,7 @@ policy:
 {
 "config" : {
     "name" : "notation",
-    "artifactTypes": "[application/vnd.cncf.notary]",
+    "artifactTypes": "[application/vnd.cncf.notary.signature]",
     "verificationCerts": ["/home/user/.notary/keys/wabbit-networks.crt"]    
 },
 "storeConfig": {
@@ -238,7 +238,7 @@ policy:
   "mediaType": "application/vnd.cncf.oras.artifact.manifest.v1+json",
   "digest": "sha256:5b0bcabd1ed22e9fb1310cf6c2dec7cdef19f0ad69efa1f392e94a4333501270",
   "size": 7682,
-  "artifactType": "application/vnd.cncf.notary"
+  "artifactType": "application/vnd.cncf.notary.signature"
 }
 }
 ```
