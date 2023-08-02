@@ -5,7 +5,7 @@ The default Ratify installation relies on a single Ratify pod processing all req
 Ratify installation/upgrade for HA scenarios can be done via a `helmfile` or manual installation steps. Both options are outlined in this document.
 
 ## Automated Installation
-> Note: Helmfile does not have a stable release and thus is NOT recommended for production environements 
+> Note: Helmfile does not have a stable release and thus is NOT recommended for production environments 
 **Prerequisites**
 ```bash
 # Download and install yq
