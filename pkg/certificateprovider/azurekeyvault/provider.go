@@ -38,7 +38,9 @@ import (
 )
 
 const (
-	providerName string = "azurekeyvault"
+	providerName       string = "azurekeyvault"
+	PKCS12_ContentType string = "application/x-pkcs12"
+	PEM_ContentType    string = "application/x-pem-file"
 )
 
 type akvCertProvider struct{}
@@ -54,7 +56,7 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
-// get certificate only retrieve the leaf certificate in a cert chain
+// get certificate retrieve the entire cert chain using getSecret API call
 func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
 	keyvaultURI := types.GetKeyVaultURI(attrib)
 	cloudName := types.GetCloudName(attrib)
@@ -105,14 +107,14 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.CertificateName, keyVaultCert.CertificateVersion, err)
 		}
 
-		temp, certProperty, err := getCertFromSecretBundle(secretBundle, keyVaultCert.CertificateName)
+		certResult, certProperty, err := getCertsFromSecretBundle(secretBundle, keyVaultCert.CertificateName)
 
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get certificates from secret bundle:%w", err)
 		}
 
 		metrics.ReportAKVCertificateDuration(ctx, time.Since(startTime).Milliseconds(), keyVaultCert.CertificateName)
-		certs = append(certs, temp...)
+		certs = append(certs, certResult...)
 		certsStatus = append(certsStatus, certProperty...)
 	}
 
@@ -214,16 +216,19 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 	return &kvClient, nil
 }
 
-// Parse the secret bundle and return an array of certificates found
+// Parse the secret bundle and return an array of certificates
 // In a certificate chain scenario, all certificate including root and leaf certificate will be returned
-func getCertFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
-	if *secretBundle.ContentType != "application/x-pkcs12" &&
-		*secretBundle.ContentType != "application/x-pem-file" {
-		return nil, nil, errors.Errorf("secret content type is invalid, expected type are application/x-pkcs12 or application/x-pem-file")
+func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
+
+	// This aligns with the built in notary verifier implementation.
+	// Notary kv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
+	if *secretBundle.ContentType != PKCS12_ContentType &&
+		*secretBundle.ContentType != PEM_ContentType {
+		return nil, nil, errors.Errorf("Unsupported secret content type %s, expected type are %s and %s", *secretBundle.ContentType, PKCS12_ContentType, PEM_ContentType)
 	}
 
 	if secretBundle.Value == nil {
-		return nil, nil, errors.Errorf(" azure keyvualt certificate provider: secret value is nil")
+		return nil, nil, errors.Errorf("azure keyvualt certificate provider: secret value is nil")
 	}
 
 	version := getObjectVersion(*secretBundle.ID)
@@ -236,13 +241,13 @@ func getCertFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*
 	for block != nil {
 		switch block.Type {
 		case "PRIVATE KEY":
-			logrus.Warn(" azure keyvualt certificate provider private key skipped. Please configure your private key to be non exportable.")
+			logrus.Warn(" azure keyvualt certificate provider: private key skipped. Please configure your private key to be non exportable.")
 		case "CERTIFICATE":
 			var pemData []byte
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
 			decodedCerts, err := certificateprovider.DecodeCertificates(pemData)
 			if err != nil {
-				return nil, nil, fmt.Errorf("azure keyvualt certificate provider  failed to decode certificate %s, error: %w", certName, err)
+				return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode certificate %s, error: %w", certName, err)
 			}
 			for _, cert := range decodedCerts {
 				results = append(results, cert)
@@ -260,7 +265,6 @@ func getCertFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*
 		}
 	}
 	return results, certsStatus, nil
-
 }
 
 // getObjectVersion parses the id to retrieve the version
