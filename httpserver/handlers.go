@@ -24,6 +24,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/metrics"
@@ -84,12 +85,22 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 			logrus.Infof("verifying subject %v", resolvedSubjectReference)
 			var result types.VerifyResult
-			res := server.cache.get(resolvedSubjectReference)
-			if res != nil {
-				logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
-				result = *res
-			} else {
-				logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
+			found := false
+			cacheHit := false
+			var cacheResponse string
+			cacheProvider := cache.GetCacheProvider()
+			if cacheProvider != nil {
+				cacheResponse, found = cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference))
+			}
+			if found && cacheResponse != "" {
+				if err := json.Unmarshal([]byte(cacheResponse), &result); err != nil {
+					logrus.Warningf("unable to unmarshal cache entry for subject %v: %v", resolvedSubjectReference, err)
+				} else {
+					cacheHit = true
+					logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
+				}
+			}
+			if !cacheHit {
 				verifyParameters := executor.VerifyParameters{
 					Subject: resolvedSubjectReference,
 				}
@@ -98,7 +109,13 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 					returnItem.Error = err.Error()
 					return
 				}
-				server.cache.set(resolvedSubjectReference, &result)
+
+				if cacheProvider != nil {
+					logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
+					if !cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference), result, server.CacheTTL) {
+						logrus.Warnf("unable to insert cache entry for subject %v", resolvedSubjectReference)
+					}
+				}
 
 				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
 					fmt.Println(string(res))
