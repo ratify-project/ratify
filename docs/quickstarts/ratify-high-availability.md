@@ -77,12 +77,12 @@ kubectl apply -f dapr-redis.yaml -n gatekeeper-system
 
 ## Install Ratify
 ```bash
-# download the notary verification certificate
-curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
+# download the notation verification certificate
+curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./notary.crt \
+    --set-file notationCert=./notation.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true \
     --set featureFlags.RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY=true \
     --set replicaCount=3 \
@@ -98,7 +98,7 @@ kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
 kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 ```
 
-Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
+Once the installation is completed, you can test the deployment of an image that is signed using notation.
 
 - This will successfully create the pod `demo`
 

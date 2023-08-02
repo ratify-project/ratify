@@ -497,7 +497,7 @@ e2e-helm-deploy-redis: e2e-helm-deploy-dapr
 	kubectl apply -f test/testdata/dapr/dapr-redis-secret.yaml -n ${GATEKEEPER_NAMESPACE}
 	kubectl apply -f test/testdata/dapr/dapr-redis.yaml -n ${GATEKEEPER_NAMESPACE}
  
-e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notaryv2-setup e2e-build-crd-image e2e-build-local-ratify-image
+e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-build-crd-image e2e-build-local-ratify-image
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
@@ -512,7 +512,7 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notaryv2-setup e2e-bui
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
     --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set notationCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set oras.useHttp=true \
 	--set cosign.enabled=false \
 	--set-file dockerConfig="mount_config.json" \
