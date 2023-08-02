@@ -201,16 +201,18 @@ az keyvault create \
 
 export VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
 
-# Ratify requires secret permissions to retrieve the public certificates for the entire certificate chain,please set private keys to Non-exportable at certificate creation time. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys) Use get-default-policy to get a template for your certificate policy, please update `contentType`, `subject` to suit your certificate and most importantly update `exportable` to false. Save your policy into a local file, e.g. akvpolicy.json
+# Ratify requires secret permissions to retrieve the public certificates for the entire certificate chain, please set private keys to Non-exportable at certificate creation time to reduce security risk. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys) 
 
-az keyvault certificate get-default-policy  
+# Use get-default-policy to get a template for your certificate policy, please update `contentType`, `subject` to suit your certificate and most importantly update `exportable` to false.
+
+az keyvault certificate get-default-policy  > akvpolicy.json
 
 # Import your own private key and certificates. You can import it on the portal as well.
 az keyvault certificate import \
   --vault-name ${KEYVAULT_NAME} \
   -n <Certificate Name> \
   -f /path/to/certificate \
-  -p @/path/to/policy
+  -p @./akvpolicy.json
 
 # Grant permission to access the certificate.
 az keyvault set-policy --name ${KEYVAULT_NAME} \

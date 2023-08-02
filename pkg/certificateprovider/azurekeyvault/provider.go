@@ -217,10 +217,15 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 }
 
 // Parse the secret bundle and return an array of certificates
-// In a certificate chain scenario, all certificate including root and leaf certificate will be returned
+// In a certificate chain scenario, all certificate including root and leaf will be returned
 func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
-	// This aligns with the built in notary verifier implementation.
-	// Notary kv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
+	// validation
+	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
+		return nil, nil, errors.Errorf("invalid secret bundle, ContentType, value, and ID must not be nil")
+	}
+
+	// This aligns with notation akv implementation
+	// akv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
 	if *secretBundle.ContentType != PKCS12ContentType &&
 		*secretBundle.ContentType != PEMContentType {
 		return nil, nil, errors.Errorf("Unsupported secret content type %s, supported type are %s and %s", *secretBundle.ContentType, PKCS12ContentType, PEMContentType)
@@ -260,7 +265,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 
 		block, rest = pem.Decode(rest)
 		if block == nil && len(rest) > 0 {
-			return nil, nil, errors.Errorf("azure keyvualt certificate provider: unexpected block is nil and remaining block to parse > 0")
+			return nil, nil, errors.Errorf("azure keyvualt certificate provider error: block is nil and remaining block to parse > 0")
 		}
 	}
 	return results, certsStatus, nil

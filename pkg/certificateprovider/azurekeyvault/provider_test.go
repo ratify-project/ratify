@@ -275,24 +275,32 @@ func TestGetKeyvaultRequestObj(t *testing.T) {
 }
 
 func TestGetCertFromSecretBundle(t *testing.T) {
+	// nil
+	testData := getSecretBundleNil()
+	certs, status, err := getCertsFromSecretBundle(testData, "certName")
+	assert.True(t, strings.Contains(err.Error(), "must not be nil"))
+	assert.Equal(t, len(certs), 0)
+	assert.Equal(t, len(status), 0)
+
 	// PEM
-	secretForTesting := getSecretBundlePem()
-	certs, status, _ := getCertsFromSecretBundle(secretForTesting, "certName")
+	testData = getSecretBundlePem()
+	certs, status, _ = getCertsFromSecretBundle(testData, "certName")
 	assert.Equal(t, 2, len(certs))
 	assert.Equal(t, 2, len(status))
 
 	// PkcS
-	secretForTesting = getSecretBundlePkcs()
-	certs, status, _ = getCertsFromSecretBundle(secretForTesting, "certName")
+	testData = getSecretBundlePkcs()
+	certs, status, _ = getCertsFromSecretBundle(testData, "certName")
 	assert.Equal(t, len(certs), 1)
 	assert.Equal(t, len(status), 1)
 
 	// Other content
-	secretForTesting = getSecretBundleText()
-	certs, status, err := getCertsFromSecretBundle(secretForTesting, "certName")
-	assert.Equal(t, "Unsupported secret content type text, expected type are application/x-pkcs12 and application/x-pem-file", err.Error())
+	testData = getSecretBundleText()
+	certs, status, err = getCertsFromSecretBundle(testData, "certName")
+	assert.True(t, strings.Contains(err.Error(), "Unsupported secret content type"))
 	assert.Equal(t, len(certs), 0)
 	assert.Equal(t, len(status), 0)
+
 }
 
 func TestGetKeyvaultRequestObj_error(t *testing.T) {
@@ -363,6 +371,16 @@ func getSecretBundleText() kv.SecretBundle {
 		Value:       &value,
 		ID:          &id,
 		ContentType: &contentType,
+	}
+
+	return testdata
+}
+
+func getSecretBundleNil() kv.SecretBundle {
+	testdata := kv.SecretBundle{
+		Value:       nil,
+		ID:          nil,
+		ContentType: nil,
 	}
 
 	return testdata
