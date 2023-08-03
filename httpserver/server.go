@@ -106,7 +106,7 @@ func NewServer(context context.Context,
 	return server, server.registerHandlers()
 }
 
-func (server *Server) Run(tlsWatcherReady chan struct{}) error {
+func (server *Server) Run(certRotatorReady chan struct{}) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", server.Address)
 	if err != nil {
 		return err
@@ -132,6 +132,7 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 	}
 
 	if server.CertDirectory != "" {
+		<-certRotatorReady
 		certFile := filepath.Join(server.CertDirectory, certName)
 		keyFile := filepath.Join(server.CertDirectory, keyName)
 
@@ -145,9 +146,6 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 			return err
 		}
 		defer tlsCertWatcher.Stop()
-		if tlsWatcherReady != nil {
-			close(tlsWatcherReady)
-		}
 
 		svr.TLSConfig = &tls.Config{
 			GetConfigForClient: tlsCertWatcher.GetConfigForClient,
