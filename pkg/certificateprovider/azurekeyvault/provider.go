@@ -20,6 +20,7 @@ package azurekeyvault
 import (
 	"context"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"reflect"
@@ -220,7 +221,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 // Parse the secret bundle and return an array of certificates
 // In a certificate chain scenario, all certificate including root and leaf will be returned
 func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
-	// validation
+
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
 		return nil, nil, errors.Errorf("invalid secret bundle, ContentType, value, and ID must not be nil")
 	}
@@ -232,10 +233,6 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 		return nil, nil, errors.Errorf("Unsupported secret content type %s, supported type are %s and %s", *secretBundle.ContentType, PKCS12ContentType, PEMContentType)
 	}
 
-	if secretBundle.Value == nil {
-		return nil, nil, errors.Errorf("azure keyvualt certificate provider: secret value is nil")
-	}
-
 	version := getObjectVersion(*secretBundle.ID)
 
 	results := []*x509.Certificate{}
@@ -245,48 +242,49 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	data := []byte(*secretBundle.Value)
 
 	if *secretBundle.ContentType == PKCS12ContentType {
-		// TODO: decode assumes only 1 public cert and 1 private cert, i will need to switch to TOPEM
-		pkcsprivateCert, pkcsPublicCert, err := pkcs12.Decode(data, "")
-
+		p12, err := base64.StdEncoding.DecodeString(*secretBundle.Value)
 		if err != nil {
-			return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode PKCS12 certificate %s, error: %w", certName, err)
+			return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode PKCS12 Value. Certificate %s, error: %w", certName, err)
 		}
-		if pkcsprivateCert != nil {
+
+		blocks, err := pkcs12.ToPEM(p12, "")
+		if err != nil {
+			return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to convert PKCS12 Value to PEM. Certificate %s, error: %w", certName, err)
+		}
+
+		var pemData []byte
+		for _, b := range blocks {
+			pemData = append(pemData, pem.EncodeToMemory(b)...)
+		}
+		data = pemData
+	}
+
+	block, rest := pem.Decode(data)
+
+	for block != nil {
+		switch block.Type {
+		case "PRIVATE KEY":
 			logrus.Warn("azure keyvualt certificate provider: private key skipped. Please configure your private key to be non exportable.")
+		case "CERTIFICATE":
+			var pemData []byte
+			pemData = append(pemData, pem.EncodeToMemory(block)...)
+			decodedCerts, err := certificateprovider.DecodeCertificates(pemData)
+			if err != nil {
+				return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode certificate %s, error: %w", certName, err)
+			}
+			for _, cert := range decodedCerts {
+				results = append(results, cert)
+				certProperty := getCertStatusProperty(certName, version, lastRefreshed)
+				certsStatus = append(certsStatus, certProperty)
+				logrus.Debugf("azurekeyvault cert provider: cert '%v', version '%v' added", certName, version)
+			}
+		default:
+			logrus.Warn("azure keyvualt certificate provider detected unknown block type", block.Type)
 		}
 
-		results = append(results, pkcsPublicCert)
-		certProperty := getCertStatusProperty(certName, version, lastRefreshed)
-		certsStatus = append(certsStatus, certProperty)
-
-	} else {
-		block, rest := pem.Decode(data)
-
-		for block != nil {
-			switch block.Type {
-			case "PRIVATE KEY":
-				logrus.Warn("azure keyvualt certificate provider: private key skipped. Please configure your private key to be non exportable.")
-			case "CERTIFICATE":
-				var pemData []byte
-				pemData = append(pemData, pem.EncodeToMemory(block)...)
-				decodedCerts, err := certificateprovider.DecodeCertificates(pemData)
-				if err != nil {
-					return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode certificate %s, error: %w", certName, err)
-				}
-				for _, cert := range decodedCerts {
-					results = append(results, cert)
-					certProperty := getCertStatusProperty(certName, version, lastRefreshed)
-					certsStatus = append(certsStatus, certProperty)
-					logrus.Debugf("azurekeyvault cert provider: cert '%v', version '%v' added", certName, version)
-				}
-			default:
-				logrus.Warn("azure keyvualt certificate provider detected unknown block type", block.Type)
-			}
-
-			block, rest = pem.Decode(rest)
-			if block == nil && len(rest) > 0 {
-				return nil, nil, errors.Errorf("azure keyvualt certificate provider error: block is nil and remaining block to parse > 0")
-			}
+		block, rest = pem.Decode(rest)
+		if block == nil && len(rest) > 0 {
+			return nil, nil, errors.Errorf("azure keyvualt certificate provider error: block is nil and remaining block to parse > 0")
 		}
 	}
 	return results, certsStatus, nil
