@@ -79,6 +79,9 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				returnItem.Error = err.Error()
 				return
 			}
+			if subjectReference.Digest.String() == "" {
+				logrus.Warn("Digest should be used instead of tagged reference. The resolved digest may not point to the same signed artifact, since tags are mutable.")
+			}
 			resolvedSubjectReference := subjectReference.Original
 			unlock := server.keyMutex.Lock(resolvedSubjectReference)
 			defer unlock()
