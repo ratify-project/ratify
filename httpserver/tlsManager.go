@@ -71,9 +71,9 @@ func (t *TLSCertWatcher) Start() error {
 
 	{
 		var watchErr error
-		deadlineCtx, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
-		defer cancel()
-		if err := wait.PollUntilWithContext(deadlineCtx, 1*time.Second, func(ctx context.Context) (done bool, err error) {
+		pollInterval := 1 * time.Second
+		pollTimeout := 10 * time.Second
+		if err := wait.PollUntilContextTimeout(context.TODO(), pollInterval, pollTimeout, false, func(ctx context.Context) (done bool, err error) {
 			for f := range files {
 				if err := t.watcher.Add(f); err != nil {
 					watchErr = err

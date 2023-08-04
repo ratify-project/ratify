@@ -41,7 +41,6 @@ type PolicyStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
-// +kubebuilder:deprecatedversion:warning="v1alpha1 of the Policy API has been deprecated. Please migrate to v1beta1."
 // Policy is the Schema for the policies API
 type Policy struct {
 	metav1.TypeMeta   `json:",inline"`

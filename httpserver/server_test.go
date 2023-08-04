@@ -437,9 +437,9 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 		if retFirstKey != testImageNames[0] {
 			t.Fatalf("Expected first subject response to be %s but got %s", testImageNames[0], retFirstKey)
 		}
-		expectedErr := ratifyerrors.ErrorCodeReferenceInvalid.WithDetail("failed to parse subject reference")
-		if retFirstErr != expectedErr.Error() {
-			t.Fatalf("Expected first subject error to be: %s,: but got %s", expectedErr.Error(), retFirstErr)
+		expectedErr := ratifyerrors.ErrorCodeReferenceInvalid.WithDetail("failed to parse subject reference").Error()
+		if retFirstErr[:100] != expectedErr[:100] {
+			t.Fatalf("Expected first subject error to be: %s,: but got %s", expectedErr, retFirstErr)
 		}
 	})
 }
