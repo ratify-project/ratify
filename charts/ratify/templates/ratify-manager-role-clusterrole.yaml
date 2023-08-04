@@ -119,4 +119,11 @@ rules:
   - patch
   - update
   - watch
+# Secrets access is used for k8s auth provider to access secrets across namespaces.
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
 {{- end }}
