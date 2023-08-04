@@ -222,7 +222,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 // In a certificate chain scenario, all certificate including root and leaf will be returned
 func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
-		return nil, nil, errors.Errorf("found invalid secret bundle for certificate %s. contentType, value, and id must not be nil.", certName)
+		return nil, nil, errors.Errorf("found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", certName)
 	}
 
 	version := getObjectVersion(*secretBundle.ID)
