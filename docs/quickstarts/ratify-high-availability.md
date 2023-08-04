@@ -2,7 +2,36 @@
 
 The default Ratify installation relies on a single Ratify pod processing all requests. For higher performance and availability requirements, Ratify can be set to run with multiple replicas and a shared state store.
 
-## Add Helm Chart Dependencies
+Ratify installation/upgrade for HA scenarios can be done via a `helmfile` or manual installation steps. Both options are outlined in this document.
+
+## Automated Installation
+> Note: Helmfile does not have a stable release and thus is NOT recommended for production environments 
+**Prerequisites**
+```bash
+# Download and install yq
+	curl -L https://github.com/mikefarah/yq/releases/download/v4.34.2/yq_linux_amd64 --output /usr/bin/yq && chmod +x /usr/bin/yq
+```
+```bash
+# Download and install helmfile
+  curl -LO https://github.com/helmfile/helmfile/releases/download/v0.155.0/helmfile_0.155.0_linux_amd64.tar.gz
+  mkdir helmfile-install
+  tar -zxf helmfile*.tar.gz -C helmfile-install/
+  mv helmfile-install/helmfile /usr/bin
+  rm -rf helmfile*.tar.gz helmfile-install/
+```
+
+```bash
+# Sync helm chart resources defined with cluster
+curl -L https://raw.githubusercontent.com/deislabs/ratify/main/high-availability.helmfile.yaml | helmfile sync -f -
+```
+
+### Uninstall Steps
+```bash
+curl -L https://raw.githubusercontent.com/deislabs/ratify/main/high-availability.helmfile.yaml | helmfile destroy --skip-charts -f -
+```
+## Manual Installation Steps
+
+### Add Helm Chart Dependencies
 ```bash
 helm repo add dapr https://dapr.github.io/helm-charts/
 helm repo add bitnami https://charts.bitnami.com/bitnami
@@ -11,12 +40,12 @@ helm repo add ratify https://deislabs.github.io/ratify
 helm repo update
 ```
 
-## Install Dapr
+### Install Dapr
 ```bash
 helm upgrade --install dapr dapr/dapr --namespace dapr-system --create-namespace --wait
 ```
 
-## Install Gatekeeper
+### Install Gatekeeper
 ```bash
 helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
@@ -26,7 +55,7 @@ helm install gatekeeper/gatekeeper  \
     --set mutatingWebhookTimeoutSeconds=2
 ```
 
-## Install Redis
+### Install Redis
 ```bash
 helm upgrade --install redis bitnami/redis --namespace gatekeeper-system --set image.tag="7.0-debian-11" --wait
 ```
@@ -75,7 +104,7 @@ EOF
 kubectl apply -f dapr-redis.yaml -n gatekeeper-system
 ```
 
-## Install Ratify
+### Install Ratify
 ```bash
 # download the notary verification certificate
 curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
@@ -84,13 +113,13 @@ helm install ratify \
     --namespace gatekeeper-system \
     --set-file notaryCert=./notary.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true \
-    --set featureFlags.RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY=true \
+    --set featureFlags.RATIFY_DAPR_CACHE_PROVIDER=true \
     --set replicaCount=3 \
 	--set provider.cache.type="dapr" \
 	--set provider.cache.name="dapr-redis"
 ```
 
-## See Ratify in action
+### See Ratify in action
 
 - Deploy a `demo` constraint.
 ```
@@ -136,6 +165,3 @@ kubectl delete Component dapr-redis -n gatekeeper-system
 kubectl delete Secret ratify-dapr-signing-key -n gatekeeper-system
 helm delete gatekeeper -n gatekeeper-system
 ```
-
-
-
