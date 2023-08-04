@@ -263,7 +263,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	for block != nil {
 		switch block.Type {
 		case "PRIVATE KEY":
-			logrus.Warn("azure keyvualt certificate provider: certificate %s, version %s private key skipped. Please configure your private key to be non exportable. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)", certName, version)
+			logrus.Warnf("azure keyvualt certificate provider: certificate %s, version %s private key skipped. Please configure your private key to be non exportable. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)", certName, version)
 		case "CERTIFICATE":
 			var pemData []byte
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
@@ -278,7 +278,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 				logrus.Debugf("azurekeyvault cert provider: Certificate '%s', version '%s' added", certName, version)
 			}
 		default:
-			logrus.Warn("Certificate '%s', version '%s': azure keyvualt certificate provider detected unknown block type %s", certName, version, block.Type)
+			logrus.Warnf("Certificate '%s', version '%s': azure keyvualt certificate provider detected unknown block type %s", certName, version, block.Type)
 		}
 
 		block, rest = pem.Decode(rest)
