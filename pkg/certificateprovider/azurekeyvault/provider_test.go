@@ -337,7 +337,6 @@ func Test(t *testing.T) {
 			}
 		})
 	}
-
 }
 
 func TestGetKeyvaultRequestObj_error(t *testing.T) {

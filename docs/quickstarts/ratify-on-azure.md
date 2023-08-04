@@ -118,6 +118,8 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
  please set private keys to Non-exportable at certificate creation time to avoid security risk. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)
 
 Use get-default-policy to get a template for your certificate policy, please update `contentType`, `subject` to suit your certificate and most importantly update `exportable` to false. Save your policy into a local file.
+
+> Note: If you already have a certificate in keyvault, and were unable to configure certificate policy, please consider specifying the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider) to reduce risk of exposing private key.
 ```bash
 az keyvault certificate get-default-policy  > akvpolicy.json
 ```
