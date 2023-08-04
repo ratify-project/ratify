@@ -33,6 +33,7 @@ ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3
 REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
+SBOM_TOOL_VERSION ?=v1.2.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -335,7 +336,7 @@ e2e-sbom-setup:
 	mkdir -p .staging/sbom
 
 	# Install sbom-tool
-	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/download/${SBOM_TOOL_VERSION}/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
