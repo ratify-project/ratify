@@ -222,7 +222,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 // In a certificate chain scenario, all certificate including root and leaf will be returned
 func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
-		return nil, nil, errors.Errorf("Found invalid secret bundle for Certificate %s. ContentType, value, and ID must not be nil.", certName)
+		return nil, nil, errors.Errorf("found invalid secret bundle for certificate %s. contentType, value, and id must not be nil.", certName)
 	}
 
 	version := getObjectVersion(*secretBundle.ID)
@@ -231,7 +231,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	// akv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
 	if *secretBundle.ContentType != PKCS12ContentType &&
 		*secretBundle.ContentType != PEMContentType {
-		return nil, nil, errors.Errorf("Certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType)
+		return nil, nil, errors.Errorf("certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType)
 	}
 
 	results := []*x509.Certificate{}
@@ -278,12 +278,12 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 				logrus.Debugf("azurekeyvault cert provider: Certificate '%s', version '%s' added", certName, version)
 			}
 		default:
-			logrus.Warnf("Certificate '%s', version '%s': azure keyvualt certificate provider detected unknown block type %s", certName, version, block.Type)
+			logrus.Warnf("certificate '%s', version '%s': azure keyvualt certificate provider detected unknown block type %s", certName, version, block.Type)
 		}
 
 		block, rest = pem.Decode(rest)
 		if block == nil && len(rest) > 0 {
-			return nil, nil, errors.Errorf("Certificate '%s', version '%s': azure keyvualt certificate provider error, block is nil and remaining block to parse > 0", certName, version)
+			return nil, nil, errors.Errorf("certificate '%s', version '%s': azure keyvualt certificate provider error, block is nil and remaining block to parse > 0", certName, version)
 		}
 	}
 	return results, certsStatus, nil
