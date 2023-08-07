@@ -481,6 +481,24 @@ e2e-helm-deploy-ratify:
 
 	rm mount_config.json
 
+e2e-helm-deploy-ratify-without-tls-certs:
+	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
+
+	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
+    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+	--set image.repository=localbuild \
+	--set image.crdRepository=localbuildcrd \
+	--set image.tag=test \
+	--set gatekeeper.version=${GATEKEEPER_VERSION} \
+	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
+	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+	--set oras.useHttp=true \
+	--set-file dockerConfig="mount_config.json" \
+	--set logLevel=debug
+
+	rm mount_config.json
+
 e2e-helm-deploy-dapr:
 	helm repo add dapr https://dapr.github.io/helm-charts/
 	helm repo update

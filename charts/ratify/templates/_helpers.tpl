@@ -96,7 +96,7 @@ Choose the caBundle field for External Data Provider
 {{- define "ratify.providerCabundle" -}}
 {{- $top := index . 0 -}}
 {{- $ca := index . 1 -}}
-{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle }}
+{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle $top.Values.provider.tls.caCert $top.Values.provider.tls.caKey }}
 caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
 {{- else }}
 caBundle: {{ $ca.Cert | b64enc | replace "\n" "" }}
@@ -113,7 +113,7 @@ tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}
 tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
 ca.crt: {{ $top.Values.provider.tls.caCert | b64enc | quote }}
 ca.key: {{ $top.Values.provider.tls.caKey | b64enc | quote }}
-{{- else }}
+{{- else if not $top.Values.featureFlags.RATIFY_CERT_ROTATION }}
 {{- $cert := index . 1 -}}
 {{- $ca := index . 2 -}}
 tls.crt: {{ $cert.Cert | b64enc | quote }}
