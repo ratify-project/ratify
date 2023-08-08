@@ -1,4 +1,4 @@
-package notaryv2
+package notation
 
 import (
 	"context"

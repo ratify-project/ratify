@@ -12,7 +12,7 @@ See [docs](https://github.com/dgraph-io/ristretto).
 
 When to use Ristretto as the cache provider?
 - using the ratify quick start
-- only using ratify with notary verifier configured
+- only using ratify with notation verifier configured
 - using ratify as a single pod
 
 ### Dapr
