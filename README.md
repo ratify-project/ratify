@@ -15,26 +15,14 @@ by its developers, nor is it "supported" software.
 
 ## Table of Contents
 
-- [Community Meetings](#community-meetings)
 - [Quick Start](#quick-start)
+- [Community Meetings](#community-meetings)
+- [Pull Request Review Series](#pull-request-review-series)
 - [Documents](#documents)
 - [Code of Conduct](#code-of-conduct)
 - [Release Management](#release-management)
 - [Licensing](#licensing)
 - [Trademark](#trademark)
-
-## Community meetings
-
-- Agenda: <https://hackmd.io/ABueHjizRz2iFQpWnQrnNA>
-- We hold a weekly Ratify community meeting on Weds 4:30-5:30pm (Pacific Time)   
-Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
-- We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
-- Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).
-
-## Pull Request Review Series
-- We hold a weekly Ratify Pull Request Review Series on Mondays 5-6 pm PST.  
-- People are able to use this time to walk through any Pull Requests and seek feedback from others in the Community.  If there are no PR to review, the meeting will be cancelled during that week.
-- Reach out on Slack if you want to reserve a session for review or during our weekly community meetings.
 
 ## Quick Start
 
@@ -42,52 +30,18 @@ Try out ratify in Kubernetes through Gatekeeper as the admission controller.
 
 Prerequisites:
 - Kubernetes v1.20 or higher
-- OPA Gatekeeper v3.10 or higher  
+- OPA Gatekeeper v3.10 or higher
+- [helmfile](https://helmfile.readthedocs.io/en/latest/#installation) v0.14 or higher. For production use and if you would like to avoid automatic installation of resources using helmfile, please refer to [ratify-quickstart-manual.md](docs/quickstarts/ratify-quickstart-manual.md) for manual install steps.
 
-### Step 1: Setup Gatekeeper with [external data](https://open-policy-agent.github.io/gatekeeper/website/docs/externaldata)
+### Step 1: Install Gatekeeper, Ratify, and Constraints
 
 ```bash
 curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | helmfile sync -f - 
 ```
 
-### Step 2: Deploy ratify on gatekeeper in the default namespace.
+### Step 2: See Ratify in action
 
-- Option 1: Install the last released version of Ratify
-
-Note: if the crt/key/cabundle are NOT set under `provider.tls` in values.yaml, helm would generate a CA certificate and server key/certificate for you.
-
-```bash
-helm repo add ratify https://deislabs.github.io/ratify
-# download the notation verification certificate
-curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt
-helm install ratify \
-    ratify/ratify --atomic \
-    --namespace gatekeeper-system \
-    --set-file notationCert=./notation.crt \
-    --set featureFlags.RATIFY_CERT_ROTATION=true
-```
-
-- Option 2: Install ratify with charts from your local branch.  
-Note: Latest chart in main may not be compatible with the last released version of ratify image, learn more about weekly dev builds [here](RELEASES.md/#weekly-dev-release) 
-```bash
-git clone https://github.com/deislabs/ratify.git
-cd ratify
-helm install ratify \
-    ./charts/ratify --atomic \
-    --namespace gatekeeper-system \
-    --set-file notationCert=./test/testdata/notation.crt \
-    --set featureFlags.RATIFY_CERT_ROTATION=true
-```
-
-### Step 3: See Ratify in action
-
-- Deploy a `demo` constraint.
-```
-kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
-kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
-```
-
-Once the installation is completed, you can test the deployment of an image that is signed using Notation solution.
+Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
 
 - This will successfully create the pod `demo`
 
@@ -112,18 +66,27 @@ Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" deni
 
 You just validated the container images in your k8s cluster!
 
-### Step 4: Uninstall Ratify
-Notes: Helm does NOT support upgrading CRDs, so uninstalling Ratify will require you to delete the CRDs manually. Otherwise, you might fail to install CRDs of newer versions when installing Ratify.
+### Step 4: Uninstall
 ```bash
-kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
-kubectl delete -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
-helm delete ratify --namespace gatekeeper-system
-kubectl delete crd stores.config.ratify.deislabs.io verifiers.config.ratify.deislabs.io certificatestores.config.ratify.deislabs.io
+curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | helmfile destroy --skip-charts -f - 
 ```
 
 ### Notes
 
 If the image reference provided resolves to an OCI Index or a Docker Manifest List, validation will occur ONLY at the index or manifest list level. Ratify currently does NOT support image validation based on automatic platform selection. For more information, [see this issue](https://github.com/deislabs/ratify/issues/101).
+
+## Community meetings
+
+- Agenda: <https://hackmd.io/ABueHjizRz2iFQpWnQrnNA>
+- We hold a weekly Ratify community meeting on Weds 4:30-5:30pm (Pacific Time)   
+Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
+- We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
+- Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).
+
+## Pull Request Review Series
+- We hold a weekly Ratify Pull Request Review Series on Mondays 5-6 pm PST.  
+- People are able to use this time to walk through any Pull Requests and seek feedback from others in the Community.  If there are no PR to review, the meeting will be cancelled during that week.
+- Reach out on Slack if you want to reserve a session for review or during our weekly community meetings.
 
 ## Documents
 
