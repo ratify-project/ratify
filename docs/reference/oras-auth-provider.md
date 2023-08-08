@@ -81,58 +81,10 @@ Both the above modes uses a k8s secret of type ```dockerconfigjson``` that is de
 
 ### 2. Azure Workload Identity
 
-Ratify pulls artifacts from a private Azure Container Registry using Workload Federated Identity in an Azure Kubernetes Service cluster. For an overview on how workload identity operates in Azure, refer to the [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation). You can use workload identity federation to configure an Azure AD app registration or user-assgined managed identity. Please refer to quick start section [Configure workload identity for ACR](https://github.com/deislabs/ratify/blob/main/docs/quickstarts/ratify-on-azure.md#configure-workload-identity-for-acr)
+Ratify pulls artifacts from a private Azure Container Registry using Workload Federated Identity in an Azure Kubernetes Service cluster. For an overview on how workload identity operates in Azure, refer to the [documentation](https://docs.microsoft.com/en-us/azure/active-directory/develop/workload-identity-federation). You can use workload identity federation to configure an Azure AD app registration or user-assgined managed identity. 
 
-
+Please refer to [quick start](https://github.com/deislabs/ratify/blob/main/docs/quickstarts/ratify-on-azure.md#configure-workload-identity-for-acr) to configure workload identity for ACR.
 The official steps for setting up Workload Identity on AKS can be found [here](https://azure.github.io/azure-workload-identity/docs/quick-start.html).  
-
-1. Configure environment variables.
-```shell
-export IDENTITY_NAME=<Identity Name>
-export GROUP_NAME=<Azure Resource Group Name>
-export SUBSCRIPTION_ID=<Azure Subscription ID>
-export TENANT_ID=<Azure Tenant ID>
-export ACR_NAME=<Azure Container Registry Name>
-export AKS_NAME=<Azure Kubernetes Service Name>
-export KEYVAULT_NAME=<Azure Key Vault Name>
-export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
-export NOTATION_PEM_NAME=<Name of the certificate file uploaded to Azure Key Vault>
-```
-
-2. Create a Workload Federated Identity.
-
-
-
-<<<<<<< HEAD
-=======
-# Use get-default-policy to get a template for your certificate policy, please update `contentType`, `subject` to suit your certificate and most importantly update `exportable` to false.
-
-az keyvault certificate get-default-policy  > akvpolicy.json
-
-# Import your own private key and certificates. You can import it on the portal as well.
-az keyvault certificate import \
-  --vault-name ${KEYVAULT_NAME} \
-  -n <Certificate Name> \
-  -f /path/to/certificate \
-  -p @./akvpolicy.json
-
-# Grant permission to access the certificate.
-az keyvault set-policy --name ${KEYVAULT_NAME} \
-  --secret-permission get \
-  --object-id ${IDENTITY_OBJECT_ID}
-```
-
-8. Deploy from local helm chart. Follow the [Quick Start](https://github.com/deislabs/ratify/blob/main/README.md#quick-start) to deploy Gatekeeper and Ratify.
-
-Notes: add below options while installing Ratify
-```shell
---set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
---set akvCertConfig.enabled=true \
---set akvCertConfig.vaultURI=${VAULT_URI} \
---set akvCertConfig.cert1Name=${NOTATION_PEM_NAME} \
---set akvCertConfig.tenantId=${TENANT_ID}
-```
->>>>>>> 649e9af922f7c0e32ba57f3da6a5a75f89b6b577
 
 ### 3. Kubernetes Secrets
 

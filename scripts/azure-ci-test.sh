@@ -32,8 +32,8 @@ GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
 export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
-export NOTARY_PEM_NAME="notation"
-export NOTARY_CHAIN_PEM_NAME="notationchain"
+export NOTATION_PEM_NAME="notation"
+export NOTATION_CHAIN_PEM_NAME="notationchain"
 
 TAG="test${SUFFIX}"
 REGISTRY="${ACR_NAME}.azurecr.io"
@@ -92,7 +92,7 @@ upload_cert_to_akv() {
   cat ~/.config/notation/localkeys/ratify-bats-test.key >>notation.pem
   cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notation.pem
 
-  echo "uploading notary.pem"
+  echo "uploading notation.pem"
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
     -n ${NOTATION_PEM_NAME} \
@@ -100,10 +100,10 @@ upload_cert_to_akv() {
 
   rm -f notationchain.pem
   
-  cat .staging/notaryv2/leaf-test/leaf.key >>notationchain.pem
-  cat .staging/notaryv2/leaf-test/leaf.crt >>notationchain.pem   
+  cat .staging/notation/leaf-test/leaf.key >>notationchain.pem
+  cat .staging/notation/leaf-test/leaf.crt >>notationchain.pem   
 
-  echo "uploading notarychain.pem"
+  echo "uploading notationchain.pem"
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
     -n ${NOTATION_CHAIN_PEM_NAME} \
