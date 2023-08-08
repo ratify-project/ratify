@@ -102,6 +102,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		logrus.Debugf("fetching secret from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultURI)
 
 		// fetch the object from Key Vault
+		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/deislabs/ratify/issues/695 for details
 		startTime := time.Now()
 		secretBundle, err := kvClient.GetSecret(ctx, keyvaultURI, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion)
 
@@ -219,7 +220,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 }
 
 // Parse the secret bundle and return an array of certificates
-// In a certificate chain scenario, all certificate including root and leaf will be returned
+// In a certificate chain scenario, all certificates from root to leaf will be returned
 func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
 		return nil, nil, errors.Errorf("found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", certName)
@@ -263,7 +264,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	for block != nil {
 		switch block.Type {
 		case "PRIVATE KEY":
-			logrus.Warnf("azure keyvualt certificate provider: certificate %s, version %s private key skipped. Please configure your private key to be non exportable. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)", certName, version)
+			logrus.Warnf("azure keyvualt certificate provider: certificate %s, version %s private key skipped. Please see doc to learn how to create a new certificate in keyvault with non exportable keys. https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys", certName, version)
 		case "CERTIFICATE":
 			var pemData []byte
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
@@ -275,7 +276,6 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 				results = append(results, cert)
 				certProperty := getCertStatusProperty(certName, version, lastRefreshed)
 				certsStatus = append(certsStatus, certProperty)
-				logrus.Debugf("azurekeyvault cert provider: Certificate '%s', version '%s' added", certName, version)
 			}
 		default:
 			logrus.Warnf("certificate '%s', version '%s': azure keyvualt certificate provider detected unknown block type %s", certName, version, block.Type)
@@ -286,6 +286,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 			return nil, nil, errors.Errorf("certificate '%s', version '%s': azure keyvualt certificate provider error, block is nil and remaining block to parse > 0", certName, version)
 		}
 	}
+	logrus.Debugf("azurekeyvault certprovider getCertsFromSecretBundle: %v certificates parsed, Certificate '%s', version '%s'", len(results), certName, version)
 	return results, certsStatus, nil
 }
 

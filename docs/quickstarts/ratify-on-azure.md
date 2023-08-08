@@ -117,24 +117,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
 2. Ratify requires secret permissions to retrieve the public certificates for the entire certificate chain,
  please set private keys to Non-exportable at certificate creation time to avoid security risk. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)
 
-Use get-default-policy to get a template for your certificate policy, please update `contentType`, `subject` to suit your certificate and most importantly update `exportable` to false. Save your policy into a local file.
-
-> Note: If you already have a certificate in keyvault, and were unable to configure certificate policy, please consider specifying the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider) to reduce risk of exposing private key.
-```bash
-az keyvault certificate get-default-policy  > akvpolicy.json
-```
-3. Import your own private key and certificates. You can import it on the portal as well.  
- Specify the file path of the certificate policy created from step2 with the -p flag.
-    
-    ```bash
-    az keyvault certificate import \
-    --vault-name ${AKV_NAME} \
-    -n ${KEY_NAME} \
-    -f ${CERT_PATH} \
-    -p @./akvpolicy.json
-    ```
-   
-4. Configure policy for user-assigned managed identity:
+   Configure policy for user-assigned managed identity:
     
     ```bash
     az keyvault set-policy --name ${AKV_NAME} \
