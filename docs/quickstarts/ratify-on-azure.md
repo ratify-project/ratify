@@ -17,7 +17,7 @@ In this article:
 
 ## Prerequisite
 
-Complete the steps in [Build, sign, and verify container images using Notary and Azure Key Vault (Preview)](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-tutorial-sign-build-push#build-and-sign-a-container-image). Please note you need to have a signed image and configure the environment variables before getting started with the following steps.
+Complete the steps in [Build, sign, and verify container images using Notation and Azure Key Vault (Preview)](https://learn.microsoft.com/en-us/azure/container-registry/container-registry-tutorial-sign-build-push#build-and-sign-a-container-image). Please note you need to have a signed image and configure the environment variables before getting started with the following steps.
 
 ## Create and configure Azure Workload Identity
 
