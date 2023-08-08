@@ -34,8 +34,8 @@ spec:
         general_violation[{"result": result}] {
           subject_results := remote_data.responses[_]
           subject_result := subject_results[1]
-          notaryv2_results := [res | subject_result.verifierReports[i].name == "notaryv2"; res := subject_result.verifierReports[i]]
-          successful_result := [ notaryv2_result | notaryv2_result := notaryv2_results[_]; notaryv2_result["isSuccess"] == true]
+          notation_results := [res | subject_result.verifierReports[i].name == "notation"; res := subject_result.verifierReports[i]]
+          successful_result := [ notation_result | notation_result := notation_results[_]; notation_result["isSuccess"] == true]
           successful_result == []
           result = sprintf("signature verification failed for all signatures associated with %s", [subject_results[0]])
         }

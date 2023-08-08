@@ -19,7 +19,7 @@ status: # supported in version >= config.ratify.deislabs.io/v1beta1
 
 # Certificate Store Provider
 ## AzureKeyVault Certificate Provider
-See notary integration example [here](../../developer/verifier.md#section-6-built-in-verifiers)
+See notation integration example [here](../../developer/verifier.md#section-6-built-in-verifiers)
 ```yml
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore

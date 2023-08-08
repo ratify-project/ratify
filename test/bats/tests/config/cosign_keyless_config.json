@@ -35,7 +35,7 @@
                 "rekorURL": "https://rekor.sigstore.dev"
             },
             {
-                "name": "notaryv2",
+                "name": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/localkeys/ratify-bats-test.crt"

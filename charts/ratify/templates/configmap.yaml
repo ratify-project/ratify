@@ -64,14 +64,14 @@ data:
           "version": "1.0.0",
           "plugins": [
             {
-                "name":"notaryv2",
+                "name":"notation",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCertStores": {
                   "certs":[
                     {{- if .Values.akvCertConfig.enabled }}
                     "certstore-akv"
                     {{- else }}
-                    "{{ include "ratify.fullname" . }}-notary-inline-cert"
+                    "{{ include "ratify.fullname" . }}-notation-inline-cert"
                     {{- end }}
                    ]
                 },
