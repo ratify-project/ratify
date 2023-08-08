@@ -34,7 +34,7 @@ The `authProvider` section of configuration file specifies the authentication pr
         "version": "1.0.0",
         "plugins": [
             {
-                "name":"notaryv2",
+                "name":"notation",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "<cert folder>"
@@ -96,13 +96,43 @@ export ACR_NAME=<Azure Container Registry Name>
 export AKS_NAME=<Azure Kubernetes Service Name>
 export KEYVAULT_NAME=<Azure Key Vault Name>
 export RATIFY_NAMESPACE=<Namespace where Ratify deployed, defaults to "gatekeeper-system">
-export NOTARY_PEM_NAME=<Name of the certificate file uploaded to Azure Key Vault>
+export NOTATION_PEM_NAME=<Name of the certificate file uploaded to Azure Key Vault>
 ```
 
 2. Create a Workload Federated Identity.
 
 
 
+<<<<<<< HEAD
+=======
+# Use get-default-policy to get a template for your certificate policy, please update `contentType`, `subject` to suit your certificate and most importantly update `exportable` to false.
+
+az keyvault certificate get-default-policy  > akvpolicy.json
+
+# Import your own private key and certificates. You can import it on the portal as well.
+az keyvault certificate import \
+  --vault-name ${KEYVAULT_NAME} \
+  -n <Certificate Name> \
+  -f /path/to/certificate \
+  -p @./akvpolicy.json
+
+# Grant permission to access the certificate.
+az keyvault set-policy --name ${KEYVAULT_NAME} \
+  --secret-permission get \
+  --object-id ${IDENTITY_OBJECT_ID}
+```
+
+8. Deploy from local helm chart. Follow the [Quick Start](https://github.com/deislabs/ratify/blob/main/README.md#quick-start) to deploy Gatekeeper and Ratify.
+
+Notes: add below options while installing Ratify
+```shell
+--set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
+--set akvCertConfig.enabled=true \
+--set akvCertConfig.vaultURI=${VAULT_URI} \
+--set akvCertConfig.cert1Name=${NOTATION_PEM_NAME} \
+--set akvCertConfig.tenantId=${TENANT_ID}
+```
+>>>>>>> 649e9af922f7c0e32ba57f3da6a5a75f89b6b577
 
 ### 3. Kubernetes Secrets
 
@@ -129,7 +159,7 @@ kubectl create secret docker-registry ratify-regcred -n <ratify-namespace> --doc
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./notary.crt \
+    --set-file notationCert=./notation.crt \
     --set oras.authProviders.k8secretsEnabled=true
 ```
 

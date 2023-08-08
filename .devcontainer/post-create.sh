@@ -13,8 +13,8 @@ if [ ! -f ~/.ratify/config.json ]; then
 fi
 
 # create the sample cert so that the default launch task works by default
-mkdir -p ~/.ratify/ratify-certs/notary/truststore/x509/ca/certs
-cp ./test/bats/tests/certificates/wabbit-networks.io.crt ~/.ratify/ratify-certs/notary/truststore/x509/ca/certs/wabbit-networks.io.crt
+mkdir -p ~/.ratify/ratify-certs/notation/truststore/x509/ca/certs
+cp ./test/bats/tests/certificates/wabbit-networks.io.crt ~/.ratify/ratify-certs/notation/truststore/x509/ca/certs/wabbit-networks.io.crt
 
 mkdir -p ~/.ratify/ratify-certs/cosign
 cp ./test/bats/tests/certificates/cosign.pub ~/.ratify/ratify-certs/cosign/cosign.pub
