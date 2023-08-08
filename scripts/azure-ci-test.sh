@@ -32,7 +32,7 @@ GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
 export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
-export NOTARY_PEM_NAME="notary"
+export NOTATION_PEM_NAME="notation"
 TAG="test${SUFFIX}"
 REGISTRY="${ACR_NAME}.azurecr.io"
 
@@ -71,7 +71,7 @@ deploy_ratify() {
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
     --set akvCertConfig.enabled=true \
     --set akvCertConfig.vaultURI=${VAULT_URI} \
-    --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+    --set akvCertConfig.cert1Name=${NOTATION_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
@@ -85,14 +85,14 @@ deploy_ratify() {
 }
 
 upload_cert_to_akv() {
-  rm -f notary.pem
-  cat ~/.config/notation/localkeys/ratify-bats-test.key >>notary.pem
-  cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notary.pem
+  rm -f notation.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.key >>notation.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notation.pem
 
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
-    -n ${NOTARY_PEM_NAME} \
-    -f notary.pem
+    -n ${NOTATION_PEM_NAME} \
+    -f notation.pem
 }
 
 save_logs() {

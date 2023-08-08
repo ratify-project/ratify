@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package notaryv2
+package notation
 
 import (
 	"context"
@@ -35,18 +35,18 @@ import (
 	_ "github.com/notaryproject/notation-core-go/signature/cose" // register COSE signature
 	_ "github.com/notaryproject/notation-core-go/signature/jws"  // register JWS signature
 	"github.com/notaryproject/notation-go"
-	notaryVerifier "github.com/notaryproject/notation-go/verifier"
+	notationVerifier "github.com/notaryproject/notation-go/verifier"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
-	verifierName    = "notaryv2"
-	defaultCertPath = "ratify-certs/notary/truststore"
+	verifierName    = "notation"
+	defaultCertPath = "ratify-certs/notation/truststore"
 )
 
-// NotaryV2VerifierConfig describes the configuration of notation verifier
-type NotaryV2VerifierConfig struct { //nolint:revive // ignore linter to have unique type name
+// NotationPluginVerifierConfig describes the configuration of notation verifier
+type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to have unique type name
 	Name          string `json:"name"`
 	ArtifactTypes string `json:"artifactTypes"`
 
@@ -58,18 +58,18 @@ type NotaryV2VerifierConfig struct { //nolint:revive // ignore linter to have un
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
 
-type notaryV2Verifier struct {
+type notationPluginVerifier struct {
 	artifactTypes    []string
 	notationVerifier *notation.Verifier
 }
 
-type notaryv2VerifierFactory struct{}
+type notationPluginVerifierFactory struct{}
 
 func init() {
-	factory.Register(verifierName, &notaryv2VerifierFactory{})
+	factory.Register(verifierName, &notationPluginVerifierFactory{})
 }
 
-func (f *notaryv2VerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
+func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
 	conf, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
 		return nil, err
@@ -81,17 +81,17 @@ func (f *notaryv2VerifierFactory) Create(_ string, verifierConfig config.Verifie
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
-	return &notaryV2Verifier{
+	return &notationPluginVerifier{
 		artifactTypes:    artifactTypes,
 		notationVerifier: &verfiyService,
 	}, nil
 }
 
-func (v *notaryV2Verifier) Name() string {
+func (v *notationPluginVerifier) Name() string {
 	return verifierName
 }
 
-func (v *notaryV2Verifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
+func (v *notationPluginVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
 	for _, at := range v.artifactTypes {
 		if at == "*" || at == referenceDescriptor.ArtifactType {
 			return true
@@ -100,7 +100,7 @@ func (v *notaryV2Verifier) CanVerify(_ context.Context, referenceDescriptor ocis
 	return false
 }
 
-func (v *notaryV2Verifier) Verify(ctx context.Context,
+func (v *notationPluginVerifier) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	store referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
@@ -126,7 +126,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 			return verifier.VerifierResult{IsSuccess: false}, fmt.Errorf("failed to get blob content of digest: %s, err: %w", blobDesc.Digest, err)
 		}
 
-		// TODO: notary verify API only accepts digested reference now.
+		// TODO: notation verify API only accepts digested reference now.
 		// Pass in tagged reference instead once notation-go supports it.
 		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
@@ -134,7 +134,7 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, fmt.Errorf("failed to verify signature, err: %w", err)
 		}
 
-		// Note: notary verifier already validates certificate chain is not empty.
+		// Note: notation verifier already validates certificate chain is not empty.
 		cert := outcome.EnvelopeContent.SignerInfo.CertificateChain[0]
 		extensions["Issuer"] = cert.Issuer.String()
 		extensions["SN"] = cert.Subject.String()
@@ -148,16 +148,16 @@ func (v *notaryV2Verifier) Verify(ctx context.Context,
 	}, nil
 }
 
-func getVerifierService(conf *NotaryV2VerifierConfig, pluginDirectory string) (notation.Verifier, error) {
+func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string) (notation.Verifier, error) {
 	store := &trustStore{
 		certPaths:  conf.VerificationCerts,
 		certStores: conf.VerificationCertStores,
 	}
 
-	return notaryVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
+	return notationVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
 }
 
-func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
+func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef, mediaType string, subjectDesc oci.Descriptor, refBlob []byte) (*notation.VerificationOutcome, error) {
 	opts := notation.VerifierVerifyOptions{
 		SignatureMediaType: mediaType,
 		ArtifactReference:  subjectRef,
@@ -166,8 +166,8 @@ func (v *notaryV2Verifier) verifySignature(ctx context.Context, subjectRef, medi
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
-func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2VerifierConfig, error) {
-	conf := &NotaryV2VerifierConfig{}
+func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotationPluginVerifierConfig, error) {
+	conf := &NotationPluginVerifierConfig{}
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
@@ -175,7 +175,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal to notaryV2VerifierConfig from： %+v, err: %w", verifierConfig, err)
+		return nil, fmt.Errorf("failed to unmarshal to notationPluginVerifierConfig from： %+v, err: %w", verifierConfig, err)
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
@@ -184,6 +184,6 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotaryV2Verifie
 }
 
 // signatures should not have nested references
-func (v *notaryV2Verifier) GetNestedReferences() []string {
+func (v *notationPluginVerifier) GetNestedReferences() []string {
 	return []string{}
 }

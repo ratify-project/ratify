@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package notaryv2
+package notation
 
 import (
 	"context"

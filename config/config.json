@@ -22,10 +22,10 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "notaryv2",
+                "name": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs/notary/truststore"
+                    "/usr/local/ratify-certs/notation/truststore"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
