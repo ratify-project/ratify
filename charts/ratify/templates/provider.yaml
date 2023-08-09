@@ -2,9 +2,9 @@
 {{- $dns := printf "%s.%s" (include "ratify.fullname" .) .Release.Namespace -}}
 {{- $ca := genCA "/O=Ratify/CN=Ratify Root CA" 365 -}}
 {{- $cert := genSignedCert $subject nil (list $dns) 365 $ca -}}
+{{- $tlsSecretName := printf "%s-tls" (include "ratify.fullname" .) -}}
 
 ---
-
 {{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
@@ -15,11 +15,10 @@ metadata:
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
   timeout: {{ required "You must provide .Values.provider.timeout.validationTimeoutSeconds" .Values.provider.timeout.validationTimeoutSeconds }}
-  {{ include "ratify.providerCabundle" (list . $ca) | nindent 2}}
+  {{ include "ratify.providerCabundle" (list . $ca $tlsSecretName) | nindent 2}}
 
 {{- if .Values.provider.enableMutation }}
 ---
-
 {{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
@@ -30,10 +29,11 @@ metadata:
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/mutate
   timeout: {{ required "You must provide .Values.provider.timeout.mutationTimeoutSeconds" .Values.provider.timeout.mutationTimeoutSeconds }}
-  {{ include "ratify.providerCabundle" (list . $ca) | nindent 2}}
+  {{ include "ratify.providerCabundle" (list . $ca $tlsSecretName) | nindent 2}}
 {{- end }}
 ---
 
+{{- if or (not (lookup "v1" "Secret" .Release.Namespace $tlsSecretName)) (and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey) }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -42,4 +42,5 @@ metadata:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 data:
-  {{ include "ratify.tlsSecret" (list . $cert $ca) | nindent 2}}
+  {{ include "ratify.tlsSecret" (list . $cert $ca $tlsSecretName) | nindent 2 }}
+{{- end }}

@@ -96,8 +96,11 @@ Choose the caBundle field for External Data Provider
 {{- define "ratify.providerCabundle" -}}
 {{- $top := index . 0 -}}
 {{- $ca := index . 1 -}}
+{{- $tlsSecretName := index . 2 -}}
 {{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle $top.Values.provider.tls.caCert $top.Values.provider.tls.caKey }}
 caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
+{{- else if (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data }}
+caBundle: {{ index (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data "ca.crt" | replace "\n" "" }}
 {{- else }}
 caBundle: {{ $ca.Cert | b64enc | replace "\n" "" }}
 {{- end }}
@@ -108,12 +111,13 @@ Choose the certificate/key pair to enable TLS for HTTP server
 */}}
 {{- define "ratify.tlsSecret" -}}
 {{- $top := index . 0 -}}
+{{- $tlsSecretName := index . 3 -}}
 {{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle $top.Values.provider.tls.caCert $top.Values.provider.tls.caKey }}
 tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}  
 tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
 ca.crt: {{ $top.Values.provider.tls.caCert | b64enc | quote }}
 ca.key: {{ $top.Values.provider.tls.caKey | b64enc | quote }}
-{{- else if not $top.Values.featureFlags.RATIFY_CERT_ROTATION }}
+{{- else if and (not $top.Values.featureFlags.RATIFY_CERT_ROTATION) (not (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName)) }}
 {{- $cert := index . 1 -}}
 {{- $ca := index . 2 -}}
 tls.crt: {{ $cert.Cert | b64enc | quote }}

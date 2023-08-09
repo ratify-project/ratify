@@ -25,14 +25,14 @@ SLEEP_TIME=1
     run bash -c "kubectl -n gatekeeper-system logs $ratifyPod | grep '[cert-rotation]'"
     assert_failure
 
-    # tls certs not provided, and cert-rotation enabled
+    # tls certs not provided, ratify-tls Secret exists and cert-rotation enabled
     helm uninstall ratify --namespace gatekeeper-system
     make e2e-helm-deploy-ratify-without-tls-certs CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
     sleep 5
 
     ratifyPod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
     run bash -c "kubectl -n gatekeeper-system logs $ratifyPod | grep 'refreshing CA and server certs'"
-    assert_success
+    assert_failure
 }
 
 @test "cert rotator test" {
