@@ -85,7 +85,7 @@ releases:
       - name: logLevel
         value: debug
       - name: notaryCert
-        file: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
+        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: replicaCount
         value: 2
       - name: provider.cache.type
