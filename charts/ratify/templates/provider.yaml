@@ -17,6 +17,7 @@ spec:
   timeout: {{ required "You must provide .Values.provider.timeout.validationTimeoutSeconds" .Values.provider.timeout.validationTimeoutSeconds }}
   {{ include "ratify.providerCabundle" (list . $ca) | nindent 2}}
 
+{{- if .Values.provider.enableMutation }}
 ---
 
 {{ include "ratify.providerGKVersion" . }}
@@ -30,7 +31,7 @@ spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/mutate
   timeout: {{ required "You must provide .Values.provider.timeout.mutationTimeoutSeconds" .Values.provider.timeout.mutationTimeoutSeconds }}
   {{ include "ratify.providerCabundle" (list . $ca) | nindent 2}}
-
+{{- end }}
 ---
 
 apiVersion: v1

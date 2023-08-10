@@ -70,7 +70,7 @@ definitions:
         {
           "subject": "registry:5000/sbom@sha256:a59b9a5ee8ce41fed4be7f6b8d8619bd9e619bbda6b7b1feb591c3c85f6ab7af",
           "isSuccess": true,
-          "name": "notaryv2",
+          "name": "notation",
           "message": "signature verification success",
           "extensions": {
             "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
@@ -173,7 +173,7 @@ definitions:
             {
               "isSuccess": true,
               "message": "signature verification success",
-              "name": "notaryv2",
+              "name": "notation",
               "extensions": {
                 "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
                 "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"

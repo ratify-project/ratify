@@ -81,6 +81,6 @@ helm install ratify \
     --set image.repository=ghcr.io/deislabs/ratify-dev
     --set image.crdRepository=ghcr.io/deislabs/ratify-crds-dev
     --set image.tag=dev.<YYYYMMDD>.<ABBREVIATED_GIT_HASH_COMMIT>
-    --set-file notaryCert=./test/testdata/notary.crt
+    --set-file notationCert=./test/testdata/notation.crt
 ```
 NOTE: the tag field is the only value that will change when updating to newer dev build images
