@@ -156,9 +156,9 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 			MinVersion:         tls.VersionTLS13,
 		}
 
-		return serverGracefulShutdown(true, svr, lsnr, certFile, keyFile)
+		return startServerWithGracefulShutdown(true, svr, lsnr, certFile, keyFile)
 	}
-	return serverGracefulShutdown(false, svr, lsnr, "", "")
+	return startServerWithGracefulShutdown(false, svr, lsnr, "", "")
 }
 
 func (server *Server) register(method, path string, handler ContextHandler) {
@@ -190,8 +190,10 @@ func (err ServerAddrNotFoundError) Error() string {
 	return "The http server address configuration is not set. Skipping server creation"
 }
 
-func serverGracefulShutdown(isTLSEnabled bool, svr *http.Server, lsnr net.Listener, certFile string, keyFile string) error {
+// startServerWithGracefulShutdown starts the server and waits for SIGINT or SIGTERM to shutdown the server gracefully
+func startServerWithGracefulShutdown(isTLSEnabled bool, svr *http.Server, lsnr net.Listener, certFile string, keyFile string) error {
 	connectionsClosed := make(chan struct{})
+	// wait for SIGINT or SIGTERM to shutdown the server gracefully
 	go func() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)

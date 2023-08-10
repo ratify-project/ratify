@@ -458,7 +458,7 @@ func TestServer_serverGracefulShutdown(t *testing.T) {
 
 	// start the server
 	go func() {
-		_ = serverGracefulShutdown(false, ts.Config, ts.Listener, "", "")
+		_ = startServerWithGracefulShutdown(false, ts.Config, ts.Listener, "", "")
 	}()
 
 	// wait a second for server to come online
