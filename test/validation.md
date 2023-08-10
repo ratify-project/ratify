@@ -11,7 +11,7 @@ While we are working on improving our coverage, here is the list of scenarios th
 
 ### CLI
 - Verifier Scenarios
-    - Notation v2
+    - Notation
     - Cosign
         - Keyed
         - Keyless 
@@ -24,7 +24,7 @@ While we are working on improving our coverage, here is the list of scenarios th
     - Store Plugin
 ### Kubernetes
 - Verifier Scenarios
-    - Notation v2
+    - Notation
     - Cosign
     - SBOM
     - License Checker

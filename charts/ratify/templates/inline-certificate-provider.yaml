@@ -1,13 +1,13 @@
-{{- if .Values.notaryCert }} 
+{{- if .Values.notationCert }} 
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
 metadata:
-  name: {{ include "ratify.fullname" . }}-notary-inline-cert
+  name: {{ include "ratify.fullname" . }}-notation-inline-cert
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 spec:
   provider: inline
   parameters:
-    value: {{ .Values.notaryCert | quote }}
+    value: {{ .Values.notationCert | quote }}
 {{- end }}
