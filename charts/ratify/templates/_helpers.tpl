@@ -91,10 +91,12 @@ apiVersion: externaldata.gatekeeper.sh/v1alpha1
 {{- end }}
 
 {{- define "ratify.tlsCertsProvided" -}}
-{{- if and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey }}
+{{- if and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey -}}
 true
-{{- end }}
-{{- end }}
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}
 
 {{/*
 Choose the caBundle field for External Data Provider
@@ -103,8 +105,8 @@ Choose the caBundle field for External Data Provider
 {{- $top := index . 0 -}}
 {{- $ca := index . 1 -}}
 {{- $tlsSecretName := index . 2 -}}
-{{- if (include "ratify.tlsCertsProvided" $top) }}
-caBundle: "{{ $top.Values.provider.tls.cabundle | quote }}"
+{{- if eq (include "ratify.tlsCertsProvided" $top) "true" }}
+caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
 {{- else if (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data }}
 caBundle: {{ index (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data "ca.crt" | replace "\n" "" }}
 {{- else }}
@@ -116,20 +118,11 @@ caBundle: {{ $ca.Cert | b64enc | replace "\n" "" }}
 Choose the certificate/key pair to enable TLS for HTTP server
 */}}
 {{- define "ratify.tlsSecret" -}}
-{{- $top := index . 0 -}}
-{{- $tlsSecretName := index . 3 -}}
-{{- if (include "ratify.tlsCertsProvided" $top) }}
-tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}  
-tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
-ca.crt: {{ $top.Values.provider.tls.caCert | b64enc | quote }}
-ca.key: {{ $top.Values.provider.tls.caKey | b64enc | quote }}
-{{- else if and (not $top.Values.featureFlags.RATIFY_CERT_ROTATION) (not (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName)) }}
-{{- $cert := index . 1 -}}
-{{- $ca := index . 2 -}}
-tls.crt: {{ $cert.Cert | b64enc | quote }}
-tls.key: {{ $cert.Key | b64enc | quote }}
-ca.crt: {{ $ca.Cert | b64enc | quote }}
-ca.key: {{ $ca.Key | b64enc | quote }}
+{{- if eq (include "ratify.tlsCertsProvided" .) "true" }}
+tls.crt: {{ .Values.provider.tls.crt | b64enc | quote }}  
+tls.key: {{ .Values.provider.tls.key | b64enc | quote }}
+ca.crt: {{ .Values.provider.tls.caCert | b64enc | quote }}
+ca.key: {{ .Values.provider.tls.caKey | b64enc | quote }}
 {{- end }}
 {{- end }}
 

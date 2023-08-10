@@ -165,13 +165,6 @@ spec:
         - name: tls
           secret:
             secretName: {{ include "ratify.fullname" . }}-tls
-            {{- if or (not .Values.featureFlags.RATIFY_CERT_ROTATION) (include "ratify.tlsCertsProvided" .) (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data }}
-            items:
-              - key: tls.key
-                path: tls.key
-              - key: tls.crt
-                path: tls.crt
-            {{- end }}
         {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
         - name: client-ca-cert
           secret:
