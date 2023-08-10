@@ -90,6 +90,12 @@ apiVersion: externaldata.gatekeeper.sh/v1alpha1
 {{- end }}
 {{- end }}
 
+{{- define "ratify.tlsCertsProvided" -}}
+{{- if and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey }}
+true
+{{- end }}
+{{- end }}
+
 {{/*
 Choose the caBundle field for External Data Provider
 */}}
@@ -97,8 +103,8 @@ Choose the caBundle field for External Data Provider
 {{- $top := index . 0 -}}
 {{- $ca := index . 1 -}}
 {{- $tlsSecretName := index . 2 -}}
-{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle $top.Values.provider.tls.caCert $top.Values.provider.tls.caKey }}
-caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
+{{- if (include "ratify.tlsCertsProvided" $top) }}
+caBundle: "{{ $top.Values.provider.tls.cabundle | quote }}"
 {{- else if (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data }}
 caBundle: {{ index (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data "ca.crt" | replace "\n" "" }}
 {{- else }}
@@ -112,7 +118,7 @@ Choose the certificate/key pair to enable TLS for HTTP server
 {{- define "ratify.tlsSecret" -}}
 {{- $top := index . 0 -}}
 {{- $tlsSecretName := index . 3 -}}
-{{- if and $top.Values.provider.tls.crt $top.Values.provider.tls.key $top.Values.provider.tls.cabundle $top.Values.provider.tls.caCert $top.Values.provider.tls.caKey }}
+{{- if (include "ratify.tlsCertsProvided" $top) }}
 tls.crt: {{ $top.Values.provider.tls.crt | b64enc | quote }}  
 tls.key: {{ $top.Values.provider.tls.key | b64enc | quote }}
 ca.crt: {{ $top.Values.provider.tls.caCert | b64enc | quote }}

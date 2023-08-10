@@ -165,7 +165,7 @@ spec:
         - name: tls
           secret:
             secretName: {{ include "ratify.fullname" . }}-tls
-            {{- if or (not .Values.featureFlags.RATIFY_CERT_ROTATION) (and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey) (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data }}
+            {{- if or (not .Values.featureFlags.RATIFY_CERT_ROTATION) (include "ratify.tlsCertsProvided" .) (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data }}
             items:
               - key: tls.key
                 path: tls.key

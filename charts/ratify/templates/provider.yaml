@@ -33,7 +33,7 @@ spec:
 {{- end }}
 ---
 
-{{- if or (not (lookup "v1" "Secret" .Release.Namespace $tlsSecretName)) (and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey) }}
+{{- if or (not (lookup "v1" "Secret" .Release.Namespace $tlsSecretName)) (include "ratify.tlsCertsProvided" .) }}
 apiVersion: v1
 kind: Secret
 metadata:
