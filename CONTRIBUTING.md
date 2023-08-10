@@ -90,7 +90,7 @@ Sample launch json for debugging a plugin:
     "mode": "auto",
     "program": "${workspaceFolder}/plugins/verifier/cosign",
     "env": {
-      "RATIFY_DYNAMIC_PLUGINS": "1",
+      "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
       "RATIFY_LOG_LEVEL": "debug",
       "RATIFY_VERIFIER_COMMAND": "VERIFY",
       "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",

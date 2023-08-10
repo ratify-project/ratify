@@ -93,7 +93,7 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 }
 
 func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T) {
-	os.Setenv("RATIFY_DYNAMIC_PLUGINS", "1")
+	os.Setenv("RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS", "1")
 	featureflag.InitFeatureFlagsFromEnv()
 	storeConfig := map[string]interface{}{
 		"name": "plugin-store",
