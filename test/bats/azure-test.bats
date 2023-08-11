@@ -36,8 +36,8 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
-        # restore the original notary verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary_akv.yaml'
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_akv.yaml'
     }
 
     # configure the default template/constraint
@@ -52,8 +52,8 @@ SLEEP_TIME=1
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
-    # configure the notary verifier to use the inline certificate store
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary.yaml
+    # configure the notation verifier to use the inline certificate store
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # verify that the image can be run with a root cert
@@ -73,7 +73,7 @@ SLEEP_TIME=1
     assert_failure
 }
 
-@test "notary test" {
+@test "notation test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
@@ -232,18 +232,18 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod crdtest --namespace default --force --ignore-not-found=true'
     }
 
-    echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
+    echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
-    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=${TEST_REGISTRY}/notation:signed
     assert_failure
 
-    echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notary_certstore.yaml
+    echo "Add notation verifier and validate deployment succeeds"
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_certstore.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated

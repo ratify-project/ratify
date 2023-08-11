@@ -1,4 +1,4 @@
-package notaryv2
+package notation
 
 import (
 	"context"
@@ -59,8 +59,8 @@ var (
 	invalidRef = common.Reference{
 		Original: "invalid",
 	}
-	testNotaryVerifier notation.Verifier = mockNotaryVerifier{}
-	validBlobDesc                        = ocispec.Descriptor{
+	testNotationPluginVerifier notation.Verifier = mockNotationPluginVerifier{}
+	validBlobDesc                                = ocispec.Descriptor{
 		Digest: testDigest,
 	}
 	validBlobDesc2 = ocispec.Descriptor{
@@ -83,9 +83,9 @@ var (
 	}
 )
 
-type mockNotaryVerifier struct{}
+type mockNotationPluginVerifier struct{}
 
-func (v mockNotaryVerifier) Verify(_ context.Context, _ ocispec.Descriptor, signature []byte, _ notation.VerifierVerifyOptions) (*notation.VerificationOutcome, error) {
+func (v mockNotationPluginVerifier) Verify(_ context.Context, _ ocispec.Descriptor, signature []byte, _ notation.VerifierVerifyOptions) (*notation.VerificationOutcome, error) {
 	if reflect.DeepEqual(signature, testRefBlob2) {
 		return nil, fmt.Errorf("failed verification")
 	}
@@ -130,11 +130,11 @@ func (s mockStore) GetSubjectDescriptor(_ context.Context, _ common.Reference) (
 }
 
 func TestName(t *testing.T) {
-	v := &notaryV2Verifier{}
+	v := &notationPluginVerifier{}
 	name := v.Name()
 
-	if name != "notaryv2" {
-		t.Fatalf("expect name: notaryv2, got: %s", name)
+	if name != "notation" {
+		t.Fatalf("expect name: notation, got: %s", name)
 	}
 }
 
@@ -167,7 +167,7 @@ func TestCanVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := &notaryV2Verifier{
+			v := &notationPluginVerifier{
 				artifactTypes: tt.artifactTypes,
 			}
 			desc := ocispecs.ReferenceDescriptor{
@@ -187,10 +187,10 @@ func TestParseVerifierConfig(t *testing.T) {
 		name      string
 		configMap map[string]interface{}
 		expectErr bool
-		expect    *NotaryV2VerifierConfig
+		expect    *NotationPluginVerifierConfig
 	}{
 		{
-			name: "failed unmarshalling to notary config",
+			name: "failed unmarshalling to notation config",
 			configMap: map[string]interface{}{
 				"name": []string{test},
 			},
@@ -203,7 +203,7 @@ func TestParseVerifierConfig(t *testing.T) {
 				"name": test,
 			},
 			expectErr: false,
-			expect: &NotaryV2VerifierConfig{
+			expect: &NotationPluginVerifierConfig{
 				Name:              test,
 				VerificationCerts: []string{defaultCertDir},
 			},
@@ -215,7 +215,7 @@ func TestParseVerifierConfig(t *testing.T) {
 				"verificationCerts": []string{testPath},
 			},
 			expectErr: false,
-			expect: &NotaryV2VerifierConfig{
+			expect: &NotationPluginVerifierConfig{
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 			},
@@ -231,7 +231,7 @@ func TestParseVerifierConfig(t *testing.T) {
 				},
 			},
 			expectErr: false,
-			expect: &NotaryV2VerifierConfig{
+			expect: &NotationPluginVerifierConfig{
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: map[string][]string{
@@ -245,21 +245,21 @@ func TestParseVerifierConfig(t *testing.T) {
 	//TODO add new test for parseVerifierConfig
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			notaryConfig, err := parseVerifierConfig(tt.configMap)
+			notationPluginConfig, err := parseVerifierConfig(tt.configMap)
 
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
 			}
-			if !reflect.DeepEqual(notaryConfig, tt.expect) {
-				t.Errorf("expect %+v, got %+v", tt.expect, notaryConfig)
+			if !reflect.DeepEqual(notationPluginConfig, tt.expect) {
+				t.Errorf("expect %+v, got %+v", tt.expect, notationPluginConfig)
 			}
 		})
 	}
 }
 
 func TestVerifySignature(t *testing.T) {
-	v := &notaryV2Verifier{
-		notationVerifier: &testNotaryVerifier,
+	v := &notationPluginVerifier{
+		notationVerifier: &testNotationPluginVerifier,
 	}
 
 	outcome, err := v.verifySignature(context.Background(), testArtifactType1, testMediaType, testDesc1, testRefBlob)
@@ -305,7 +305,7 @@ func TestCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			f := &notaryv2VerifierFactory{}
+			f := &notationPluginVerifierFactory{}
 			_, err := f.Create(testVersion, tt.configMap, "")
 
 			if (err != nil) != tt.expectErr {
@@ -356,8 +356,8 @@ func TestVerify(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			v := &notaryV2Verifier{
-				notationVerifier: &testNotaryVerifier,
+			v := &notationPluginVerifier{
+				notationVerifier: &testNotationPluginVerifier,
 			}
 
 			store := &mockStore{
@@ -378,7 +378,7 @@ func TestVerify(t *testing.T) {
 }
 
 func TestGetNestedReferences(t *testing.T) {
-	verifier := &notaryV2Verifier{}
+	verifier := &notationPluginVerifier{}
 	nestedReferences := verifier.GetNestedReferences()
 
 	if len(nestedReferences) != 0 {

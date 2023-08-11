@@ -34,10 +34,10 @@ func TestMain(m *testing.M) {
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
 	var testVerifierSpec = configv1beta1.VerifierSpec{
-		Name:          "notaryv2",
+		Name:          "notation",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
 	}
-	var resource = "notaryv2"
+	var resource = "notation"
 
 	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
