@@ -8,7 +8,7 @@ nameOverride: ""
 fullnameOverride: ""
 logLevel: info
 replicaCount: 1
-notaryCert: ""
+notationCert: ""
 cosign:
   enabled: true
   key: ""

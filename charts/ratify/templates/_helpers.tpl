@@ -90,6 +90,9 @@ apiVersion: externaldata.gatekeeper.sh/v1alpha1
 {{- end }}
 {{- end }}
 
+{{/*
+Check if the TLS certificates are provided by the user
+*/}}
 {{- define "ratify.tlsCertsProvided" -}}
 {{- if and .Values.provider.tls.crt .Values.provider.tls.key .Values.provider.tls.cabundle .Values.provider.tls.caCert .Values.provider.tls.caKey -}}
 true
@@ -99,16 +102,22 @@ false
 {{- end -}}
 
 {{/*
+Generate the name of the TLS secret to use
+*/}}
+{{- define "ratify.tlsSecretName" -}}
+{{- printf "%s-tls" (include "ratify.fullname" .) -}}
+{{- end -}}
+
+{{/*
 Choose the caBundle field for External Data Provider
 */}}
 {{- define "ratify.providerCabundle" -}}
-{{- $top := index . 0 -}}
-{{- $ca := index . 1 -}}
-{{- $tlsSecretName := index . 2 -}}
-{{- if eq (include "ratify.tlsCertsProvided" $top) "true" }}
-caBundle: {{ $top.Values.provider.tls.cabundle | quote }}
-{{- else if (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data }}
-caBundle: {{ index (lookup "v1" "Secret" $top.Release.Namespace $tlsSecretName).data "ca.crt" | replace "\n" "" }}
+{{- $ca := genCA "/O=Ratify/CN=Ratify Root CA" 365 -}}
+{{- $tlsSecretName := (include "ratify.tlsSecretName" .) -}}
+{{- if eq (include "ratify.tlsCertsProvided" .) "true" }}
+caBundle: {{ .Values.provider.tls.cabundle | quote }}
+{{- else if (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data }}
+caBundle: {{ index (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data "ca.crt" | replace "\n" "" }}
 {{- else }}
 caBundle: {{ $ca.Cert | b64enc | replace "\n" "" }}
 {{- end }}

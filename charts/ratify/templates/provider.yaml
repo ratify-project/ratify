@@ -1,7 +1,3 @@
-{{- $ca := genCA "/O=Ratify/CN=Ratify Root CA" 365 -}}
-{{- $tlsSecretName := printf "%s-tls" (include "ratify.fullname" .) -}}
-
----
 {{ include "ratify.providerGKVersion" . }}
 kind: Provider
 metadata:
@@ -12,7 +8,7 @@ metadata:
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/verify
   timeout: {{ required "You must provide .Values.provider.timeout.validationTimeoutSeconds" .Values.provider.timeout.validationTimeoutSeconds }}
-  {{ include "ratify.providerCabundle" (list . $ca $tlsSecretName) | nindent 2}}
+  {{ include "ratify.providerCabundle" . | nindent 2}}
 
 {{- if .Values.provider.enableMutation }}
 ---
@@ -26,20 +22,5 @@ metadata:
 spec:
   url: https://{{ include "ratify.fullname" .}}.{{ .Release.Namespace }}:6001/ratify/gatekeeper/v1/mutate
   timeout: {{ required "You must provide .Values.provider.timeout.mutationTimeoutSeconds" .Values.provider.timeout.mutationTimeoutSeconds }}
-  {{ include "ratify.providerCabundle" (list . $ca $tlsSecretName) | nindent 2}}
-{{- end }}
----
-
-{{- if and (eq (include "ratify.tlsCertsProvided" .) "false") (not (lookup "v1" "Secret" .Release.Namespace $tlsSecretName)) (not .Values.featureFlags.RATIFY_CERT_ROTATION) }}
-{{- fail "You must provide a TLS certificate for Ratify to use or enable RATIFY_CERT_ROTATION to make Ratify generate its certificates."}}
-{{- else if or (eq (include "ratify.tlsCertsProvided" .) "true") (and (eq (include "ratify.tlsCertsProvided" .) "false") (not (lookup "v1" "Secret" .Release.Namespace $tlsSecretName)) (.Values.featureFlags.RATIFY_CERT_ROTATION))}}
-apiVersion: v1
-kind: Secret
-metadata:
-  name: {{ include "ratify.fullname" . }}-tls
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "5"
-data:
-  {{ include "ratify.tlsSecret" . | nindent 2 }}
+  {{ include "ratify.providerCabundle" . | nindent 2}}
 {{- end }}
