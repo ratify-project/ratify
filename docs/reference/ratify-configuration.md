@@ -23,6 +23,7 @@ Sample command:
 kubectl get stores.config.ratify.deislabs.io --namespace default
 kubectl get verifiers.config.ratify.deislabs.io --namespace default
 kubectl get certificatestores.config.ratify.deislabs.io --namespace default
+kubectl get policies.config.ratify.deislabs.io --namespace default
 ```
 ### Update Crds
 You can choose to add / remove / update crds. 
