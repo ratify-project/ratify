@@ -1,5 +1,4 @@
 {{- $dockerAuthMode := or .Values.dockerConfig .Values.registryCredsSecret -}}
-{{- $tlsSecretName := printf "%s-tls" (include "ratify.fullname" .) -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
