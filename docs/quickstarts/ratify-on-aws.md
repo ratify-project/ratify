@@ -215,7 +215,7 @@ notation cert list
 
 helm install ratify ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=path/to/wabbit-networks.io.crt
+    --set-file notationCert=path/to/wabbit-networks.io.crt
 ```
 
 After deploying Ratify, we can apply the default Gatekeeper policy and constraint:

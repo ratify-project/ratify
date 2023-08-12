@@ -67,5 +67,5 @@ releases:
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: notaryCert
-        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt") | quote }}
+      - name: notationCert
+        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}

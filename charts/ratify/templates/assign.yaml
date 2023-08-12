@@ -1,3 +1,4 @@
+{{- if .Values.provider.enableMutation -}}
 {{ include "ratify.assignGKVersion" . }}
 kind: Assign
 metadata:
@@ -63,4 +64,4 @@ spec:
     assign:
       externalData:
         provider: ratify-mutation-provider
- 
+{{- end }}
