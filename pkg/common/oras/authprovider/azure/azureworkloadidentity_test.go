@@ -78,13 +78,14 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	authProviderConfig := map[string]interface{}{
 		"name": "azureWorkloadIdentity",
 	}
+	authProviderConfigs := []authprovider.AuthProviderConfig{authProviderConfig}
 
 	err := os.Setenv("AZURE_TENANT_ID", "")
 	if err != nil {
 		t.Fatal("failed to set env variable AZURE_TENANT_ID")
 	}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = authprovider.CreateAuthProvidersFromConfig(authProviderConfigs)
 
 	expectedErr := fmt.Errorf("azure tenant id environment variable is empty")
 	if err == nil || err.Error() != expectedErr.Error() {
@@ -100,15 +101,16 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		"name":     "azureWorkloadIdentity",
 		"clientID": "client id from config",
 	}
+	authProviderConfigsWithClientID := []authprovider.AuthProviderConfig{authProviderConfigWithClientID}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfigWithClientID)
+	_, err = authprovider.CreateAuthProvidersFromConfig(authProviderConfigsWithClientID)
 
 	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
 	if err == nil || err.Error() != expectedErr.Error() {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = authprovider.CreateAuthProvidersFromConfig(authProviderConfigs)
 
 	expectedErr = fmt.Errorf("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
 	if err == nil || err.Error() != expectedErr.Error() {
@@ -123,7 +125,7 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	defer os.Unsetenv("AZURE_CLIENT_ID")
 	defer os.Unsetenv("AZURE_TENANT_ID")
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = authprovider.CreateAuthProvidersFromConfig(authProviderConfigs)
 
 	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
 	if err == nil || err.Error() != expectedErr.Error() {

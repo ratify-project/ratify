@@ -29,9 +29,9 @@ func TestParsePluginSource_HandlesJSON(t *testing.T) {
 	"nestedReferences": "application/vnd.cncf.notary.signature",
 	"source": {
 			"artifact": "wabbitnetworks.azurecr.io/test/sample-plugin:v1",
-			"authProvider": {
+			"authProviders": [{
 				"name": "dockerConfig"
-			}
+			}]
 	}
 }`
 
@@ -50,8 +50,8 @@ func TestParsePluginSource_HandlesJSON(t *testing.T) {
 		t.Fatalf("unexpected artifact: %s", source.Artifact)
 	}
 
-	if source.AuthProvider["name"] != "dockerConfig" {
-		t.Fatalf("unexpected auth provider: %s", source.AuthProvider["name"])
+	if source.AuthProviders[0]["name"] != "dockerConfig" {
+		t.Fatalf("unexpected auth provider: %s", source.AuthProviders[0]["name"])
 	}
 }
 

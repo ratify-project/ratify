@@ -58,6 +58,7 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	authProviderConfig := map[string]interface{}{
 		"name": "azureManagedIdentity",
 	}
+	authProviderConfigs := []authprovider.AuthProviderConfig{authProviderConfig}
 
 	err := os.Setenv("AZURE_TENANT_ID", "")
 	if err != nil {
@@ -69,7 +70,7 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatal("failed to set env variable AZURE_CLIENT_ID")
 	}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = authprovider.CreateAuthProvidersFromConfig(authProviderConfigs)
 
 	expectedErr := fmt.Errorf("AZURE_TENANT_ID environment variable is empty")
 	if err == nil || err.Error() != expectedErr.Error() {
@@ -81,7 +82,7 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatal("failed to set env variable AZURE_TENANT_ID")
 	}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = authprovider.CreateAuthProvidersFromConfig(authProviderConfigs)
 
 	expectedErr = fmt.Errorf("AZURE_CLIENT_ID environment variable is empty")
 	if err == nil || err.Error() != expectedErr.Error() {

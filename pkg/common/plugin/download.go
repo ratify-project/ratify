@@ -34,8 +34,8 @@ import (
 )
 
 type PluginSource struct { //nolint:revive // ignore linter to have unique type name
-	Artifact     string                          `json:"artifact"`
-	AuthProvider authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
+	Artifact      string                            `json:"artifact"`
+	AuthProviders []authprovider.AuthProviderConfig `json:"authProviders,omitempty"`
 }
 
 func ParsePluginSource(source interface{}) (PluginSource, error) {
@@ -71,11 +71,11 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 		},
 		Cache: auth.NewCache(),
 		Credential: func(ctx context.Context, registry string) (auth.Credential, error) {
-			authProvider, err := authprovider.CreateAuthProviderFromConfig(source.AuthProvider)
+			authProviders, err := authprovider.CreateAuthProvidersFromConfig(source.AuthProviders)
 			if err != nil {
 				return auth.EmptyCredential, err
 			}
-
+			authProvider := authProviders[0]
 			authConfig, err := authProvider.Provide(ctx, registry)
 			if err != nil {
 				return auth.EmptyCredential, err

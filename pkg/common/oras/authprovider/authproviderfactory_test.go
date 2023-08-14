@@ -35,12 +35,13 @@ func TestCreateAuthProvidersFromConfig_BuiltInAuthProviders_ReturnsExpected(t *t
 	authProviderConfig := map[string]interface{}{
 		"name": "testAuthProvider",
 	}
+	authProviderConfigs := []AuthProviderConfig{authProviderConfig}
 
-	authProvider, err := CreateAuthProviderFromConfig(authProviderConfig)
-
+	authProviders, err := CreateAuthProvidersFromConfig(authProviderConfigs)
 	if err != nil {
 		t.Fatalf("create auth provider failed with err %v", err)
 	}
+	authProvider := authProviders[0]
 
 	authConfig, err := authProvider.Provide(context.Background(), "test-artifact")
 	if err != nil {
@@ -61,8 +62,9 @@ func TestCreateAuthProvidersFromConfig_NonexistentAuthProviders_ReturnsExpected(
 	authProviderConfig := map[string]interface{}{
 		"name": "test-non-existent",
 	}
+	authProviderConfigs := []AuthProviderConfig{authProviderConfig}
 
-	_, err := CreateAuthProviderFromConfig(authProviderConfig)
+	_, err := CreateAuthProvidersFromConfig(authProviderConfigs)
 
 	if err == nil {
 		t.Fatalf("create auth provider should have failed for non existent provider")
@@ -76,11 +78,11 @@ func TestCreateAuthProvidersFromConfig_NullAuthProviders_ReturnsExpected(t *test
 		"dockerConfig": &defaultProviderFactory{},
 	}
 
-	authProvider, err := CreateAuthProviderFromConfig(nil)
-
+	authProviders, err := CreateAuthProvidersFromConfig(nil)
 	if err != nil {
 		t.Fatalf("create auth provider failed with err %v", err)
 	}
+	authProvider := authProviders[0]
 
 	providerType, isType := authProvider.(*defaultAuthProvider)
 	if !isType {

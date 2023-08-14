@@ -510,10 +510,13 @@ func Test_ORASRetryClient(t *testing.T) {
 }
 
 func TestORASCreate_CreateBaseStore_Failure(t *testing.T) {
+	mockListValue := map[string]interface{}{
+		"name": "mock",
+	}
 	conf := config.StorePluginConfig{
 		"name": "oras",
-		"authProvider": map[string]interface{}{
-			"name": "mock",
+		"authProviders": []map[string]interface{}{
+			mockListValue,
 		},
 	}
 	factory := orasStoreFactory{}

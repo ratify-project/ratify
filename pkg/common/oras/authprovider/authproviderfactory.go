@@ -43,12 +43,18 @@ func Register(name string, factory AuthProviderFactory) {
 
 // CreateAuthProvidersFromConfig creates the AuthProvider from the provided configuration.
 // If the AuthProviderConfig isn't specified, use the default auth provider
-func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
+func CreateAuthProvidersFromConfig(authProviderConfigs []AuthProviderConfig) ([]AuthProvider, error) {
 	// if auth provider not specified in config, return default provider
-	if authProviderConfig == nil {
+	if authProviderConfigs == nil {
 		logrus.Infof("selected default auth provider: %s", DefaultAuthProviderName)
-		return builtInAuthProviders[DefaultAuthProviderName].Create(authProviderConfig)
+		provider, err := builtInAuthProviders[DefaultAuthProviderName].Create(nil)
+		if err != nil {
+			return nil, err
+		}
+		return []AuthProvider{provider}, nil
 	}
+
+	authProviderConfig := authProviderConfigs[0]
 
 	err := validateAuthProviderConfig(authProviderConfig)
 	if err != nil {
@@ -72,7 +78,7 @@ func CreateAuthProviderFromConfig(authProviderConfig AuthProviderConfig) (AuthPr
 	}
 
 	logrus.Infof("selected auth provider: %s", providerNameStr)
-	return authProvider, nil
+	return []AuthProvider{authProvider}, nil
 }
 
 // TODO: add validation

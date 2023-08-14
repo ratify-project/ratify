@@ -72,11 +72,11 @@ const (
 
 // OrasStoreConf describes the configuration of ORAS store
 type OrasStoreConf struct { //nolint:revive // ignore linter to have unique type name
-	Name           string                          `json:"name"`
-	UseHTTP        bool                            `json:"useHttp,omitempty"`
-	CosignEnabled  bool                            `json:"cosignEnabled,omitempty"`
-	AuthProvider   authprovider.AuthProviderConfig `json:"authProvider,omitempty"`
-	LocalCachePath string                          `json:"localCachePath,omitempty"`
+	Name           string                            `json:"name"`
+	UseHTTP        bool                              `json:"useHttp,omitempty"`
+	CosignEnabled  bool                              `json:"cosignEnabled,omitempty"`
+	AuthProviders  []authprovider.AuthProviderConfig `json:"authProviders,omitempty"`
+	LocalCachePath string                            `json:"localCachePath,omitempty"`
 }
 
 type orasStoreFactory struct{}
@@ -128,10 +128,11 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 		return nil, fmt.Errorf("failed to parse oras store configuration: %w", err)
 	}
 
-	authenticationProvider, err := authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
+	authenticationProviders, err := authprovider.CreateAuthProvidersFromConfig(conf.AuthProviders)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create auth provider from configuration: %w", err)
 	}
+	authenticationProvider := authenticationProviders[0]
 
 	// Set up the local cache where content will land when we pull
 	if conf.LocalCachePath == "" {
