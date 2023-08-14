@@ -147,11 +147,27 @@ func (ec ErrorCode) WithPluginName(pluginName string) Error {
 	return newError(ec, ec.Message()).WithPluginName(pluginName)
 }
 
+func (ec ErrorCode) NewError(componentType ComponentType, pluginName, link string, err error, detail interface{}, printStackTrace bool) Error {
+	stack := ""
+	if printStackTrace {
+		stack = getStackTrace()
+	}
+	return Error{
+		Code:          ec,
+		Message:       ec.Message(),
+		OriginalError: err,
+		Detail:        detail,
+		ComponentType: componentType,
+		PluginName:    pluginName,
+		LinkToDoc:     link,
+		Stack:         stack,
+	}
+}
+
 func newError(code ErrorCode, message string) Error {
 	return Error{
 		Code:    code,
 		Message: message,
-		Stack:   getStackTrace(),
 	}
 }
 

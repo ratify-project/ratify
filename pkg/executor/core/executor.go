@@ -116,7 +116,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 			for {
 				referrersResult, err := referrerStore.ListReferrers(errCtx, subjectReference, verifyParameters.ReferenceTypes, continuationToken, desc)
 				if err != nil {
-					return errors.ErrorCodeListReferrersFailure.WithError(err).WithComponentType(errors.ReferrerStore).WithPluginName(referrerStore.Name())
+					return errors.ErrorCodeListReferrersFailure.NewError(errors.ReferrerStore, referrerStore.Name(), "", err, "", false)
 				}
 				continuationToken = referrersResult.NextToken
 				for _, reference := range referrersResult.Referrers {
@@ -173,7 +173,7 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Message:   errors.ErrorCodeVerifyReferenceFailure.WithError(err).WithComponentType(errors.Verifier).WithPluginName(verifier.Name()).Error()}
+					Message:   errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), "", err, "", false).Error()}
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
@@ -221,7 +221,7 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 				verifierReport = vt.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
-					Message:   errors.ErrorCodeVerifyReferenceFailure.WithError(err).WithComponentType(errors.Verifier).WithPluginName(verifier.Name()).Error()}
+					Message:   errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), "", err, "", false).Error()}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
 			}

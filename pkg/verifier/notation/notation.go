@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
 
@@ -73,12 +73,12 @@ func init() {
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
 	conf, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName)
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
 	verfiyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodePluginInitFailure.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName)
+		return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
@@ -109,22 +109,22 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeGetSubjectDescriptorFailure.WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(store.Name()).WithDetail(fmt.Sprintf("failed to resolve subject: %+v", subjectReference)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetSubjectDescriptorFailure.NewError(re.ReferrerStore, store.Name(), "", err, fmt.Sprintf("failed to resolve subject: %+v", subjectReference), false)
 	}
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeGetReferenceManifestFailure.WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(store.Name()).WithDetail(fmt.Sprintf("failed to resolve reference manifest: %+v", referenceDescriptor)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.NewError(re.ReferrerStore, store.Name(), "", err, fmt.Sprintf("failed to resolve reference manifest: %+v", referenceDescriptor), false)
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
-		return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeSignatureNotFound.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()))
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeSignatureNotFound.NewError(re.Verifier, verifierName, "", nil, fmt.Sprintf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()), false)
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, ratifyerrors.ErrorCodeGetBlobContentFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore).WithPluginName(store.Name()).WithDetail(fmt.Sprintf("failed to get blob content of digest: %s", blobDesc.Digest))
+			return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetBlobContentFailure.NewError(re.ReferrerStore, store.Name(), "", err, fmt.Sprintf("failed to get blob content of digest: %s", blobDesc.Digest), false)
 		}
 
 		// TODO: notation verify API only accepts digested reference now.
@@ -132,7 +132,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, ratifyerrors.ErrorCodeVerifySignatureFailure.WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName).WithDetail("failed to verify signature of digest").WithError(err).WithLinkToDoc(ratifyerrors.NotationSpecLink)
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifySignatureFailure.NewError(re.Verifier, verifierName, re.NotationSpecLink, err, "failed to verify signature of digest", false)
 		}
 
 		// Note: notation verifier already validates certificate chain is not empty.
@@ -172,11 +172,11 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotationPluginV
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, "", err, "", false)
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig))
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, "", err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), false)
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)

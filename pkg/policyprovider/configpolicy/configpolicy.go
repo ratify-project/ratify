@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -59,11 +59,11 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 	conf := configPolicyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodeDataEncodingFailure.WithComponentType(ratifyerrors.PolicyProvider).WithPluginName(vt.ConfigPolicy).WithDetail("failed to marshal policy config").WithError(err)
+		return nil, re.ErrorCodeDataEncodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to marshal policy config", false)
 	}
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
-		return nil, ratifyerrors.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(ratifyerrors.PolicyProvider).WithPluginName(vt.ConfigPolicy).WithDetail("failed to unmarshal policy config")
+		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to unmarshal policy config", false)
 	}
 
 	if conf.ArtifactVerificationPolicies == nil {

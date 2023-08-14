@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	re "github.com/deislabs/ratify/errors"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 )
@@ -76,11 +76,11 @@ func (s *defaultProviderFactory) Create(authProviderConfig AuthProviderConfig) (
 	conf := defaultAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
+		return nil, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider).WithDetail("failed to parse auth provider configuration")
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.AuthProviderLink, err, "failed to parse auth provider configuration", false)
 	}
 
 	return &defaultAuthProvider{
@@ -100,26 +100,26 @@ func (d *defaultAuthProvider) Provide(_ context.Context, artifact string) (AuthC
 	if d.configPath == "" {
 		var err error
 		if cfg, err = config.Load(config.Dir()); err != nil {
-			return AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 	} else {
 		cfg = configfile.New(d.configPath)
 		if _, err := os.Stat(d.configPath); err != nil {
-			return AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 		file, err := os.Open(d.configPath)
 		if err != nil {
-			return AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 		defer file.Close()
 		if err := cfg.LoadFromReader(file); err != nil {
-			return AuthConfig{}, ratifyerrors.ErrorCodeConfigInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 	}
 
 	artifactHostName, err := GetRegistryHostName(artifact)
 	if err != nil {
-		return AuthConfig{}, ratifyerrors.ErrorCodeHostNameInvalid.WithError(err).WithComponentType(ratifyerrors.AuthProvider)
+		return AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err).WithComponentType(re.AuthProvider)
 	}
 
 	dockerAuthConfig := cfg.AuthConfigs[artifactHostName]

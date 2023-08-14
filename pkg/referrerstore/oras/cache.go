@@ -62,7 +62,7 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 		val, found := cacheProvider.Get(ctx, cacheKey)
 		if val != "" && found {
 			if err = json.Unmarshal([]byte(val), &result); err != nil {
-				logrus.Warning(errors.ErrorCodeDataDecodingFailure.WithError(err).WithDetail(fmt.Sprintf("failed to unmarshal cache value for key %s: %s", cacheKey, val)).WithComponentType(errors.Cache))
+				logrus.Warning(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", "", err, fmt.Sprintf("failed to unmarshal cache value for key %s: %s", cacheKey, val), false))
 			} else {
 				logrus.Debug("cache hit for list referrers")
 				return result, nil
@@ -92,7 +92,7 @@ func (store *orasStoreWithInMemoryCache) GetSubjectDescriptor(ctx context.Contex
 		val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, subjectReference.Digest))
 		if val != "" && found {
 			if err = json.Unmarshal([]byte(val), result); err != nil {
-				logrus.Warning(errors.ErrorCodeDataDecodingFailure.WithError(err).WithDetail(fmt.Sprintf("failed to unmarshal cache value: %v", val)).WithComponentType(errors.Cache))
+				logrus.Warning(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", "", err, fmt.Sprintf("failed to unmarshal cache value: %v", val), false))
 			} else {
 				logrus.Debug("cache hit for subject descriptor")
 				return result, nil

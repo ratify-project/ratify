@@ -31,7 +31,7 @@ func ResolveSubjectDescriptor(ctx context.Context, stores *[]referrerstore.Refer
 		if err == nil {
 			return desc, nil
 		}
-		logrus.Warn(errors.ErrorCodeGetSubjectDescriptorFailure.WithError(err).WithComponentType(errors.ReferrerStore).WithPluginName(referrerStore.Name()).WithDetail("failed to resolve the subject descriptor"))
+		logrus.Warn(errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, referrerStore.Name(), "", err, "failed to resolve the subject descriptor", false))
 	}
 
 	return nil, errors.ErrorCodeReferrerStoreFailure.WithDetail("could not resolve descriptor for a subject from any stores").WithComponentType(errors.ReferrerStore)

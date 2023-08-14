@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -46,7 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 			return nil, nil
 		}
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, ratifyerrors.ErrorCodeRepositoryOperationFailure.WithError(err).WithComponentType(ratifyerrors.ReferrerStore)
+		return nil, re.ErrorCodeRepositoryOperationFailure.WithError(err).WithComponentType(re.ReferrerStore)
 	}
 
 	references = append(references, ocispecs.ReferenceDescriptor{
@@ -64,7 +64,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 func attachedImageTag(subjectReference common.Reference, tagSuffix string) (string, error) {
 	// sha256:d34db33f -> sha256-d34db33f.suffix
 	if subjectReference.Digest.String() == "" {
-		return "", ratifyerrors.ErrorCodeReferenceInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail("Cosign subject digest is empty")
+		return "", re.ErrorCodeReferenceInvalid.WithComponentType(re.ReferrerStore).WithDetail("Cosign subject digest is empty")
 	}
 	tagStr := strings.ReplaceAll(subjectReference.Digest.String(), ":", "-") + tagSuffix
 	return fmt.Sprintf("%s:%s", subjectReference.Path, tagStr), nil

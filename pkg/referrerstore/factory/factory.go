@@ -21,7 +21,7 @@ import (
 	"path"
 	"strings"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	re "github.com/deislabs/ratify/errors"
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -53,12 +53,12 @@ func Register(name string, factory StoreFactory) {
 func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion string, pluginBinDir []string) (referrerstore.ReferrerStore, error) {
 	storeName, ok := storeConfig[types.Name]
 	if !ok {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail(fmt.Sprintf("failed to find store name in the stores config with key %s", types.Name))
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.ReferrerStore).WithDetail(fmt.Sprintf("failed to find store name in the stores config with key %s", types.Name))
 	}
 
 	storeNameStr := fmt.Sprintf("%s", storeName)
 	if strings.ContainsRune(storeNameStr, os.PathSeparator) {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail(fmt.Sprintf("invalid plugin name for a store: %s", storeName))
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.ReferrerStore).WithDetail(fmt.Sprintf("invalid plugin name for a store: %s", storeName))
 	}
 
 	// if source is specified, download the plugin
@@ -66,13 +66,13 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 		if featureflag.DynamicPlugins.Enabled {
 			source, err := pluginCommon.ParsePluginSource(source)
 			if err != nil {
-				return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail("failed to parse plugin source")
+				return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.ReferrerStore).WithDetail("failed to parse plugin source")
 			}
 
 			targetPath := path.Join(pluginBinDir[0], storeNameStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
-				return nil, ratifyerrors.ErrorCodeDownloadPluginFailure.WithComponentType(ratifyerrors.ReferrerStore)
+				return nil, re.ErrorCodeDownloadPluginFailure.WithComponentType(re.ReferrerStore)
 			}
 			logrus.Infof("downloaded store plugin %s from %s to %s", storeNameStr, source.Artifact, targetPath)
 		} else {
@@ -95,11 +95,11 @@ func CreateStoresFromConfig(storesConfig config.StoresConfig, defaultPluginPath 
 
 	err := validateStoresConfig(&storesConfig)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.ReferrerStore).WithError(err)
 	}
 
 	if len(storesConfig.Stores) == 0 {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail("referrer store config should have at least one store")
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.ReferrerStore).WithDetail("referrer store config should have at least one store")
 	}
 
 	stores := make([]referrerstore.ReferrerStore, 0)

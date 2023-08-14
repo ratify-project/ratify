@@ -167,3 +167,11 @@ func TestError_Error(t *testing.T) {
 		t.Fatalf("expected string starts with: %s, but got: %s", testErrorString, result)
 	}
 }
+
+func TestNewError(t *testing.T) {
+	err := testEC.NewError(testComponentType, testPluginName, testLink, Error{}, testDetail, false)
+
+	if err.ComponentType != testComponentType || err.PluginName != testPluginName || err.LinkToDoc != testLink || err.Detail != testDetail {
+		t.Fatalf("expected component type: %s, plugin name: %s, link to doc: %s, detail: %s, but got: %s, %s, %s, %s", testComponentType, testPluginName, testLink, testDetail, err.ComponentType, err.PluginName, err.LinkToDoc, err.Detail)
+	}
+}

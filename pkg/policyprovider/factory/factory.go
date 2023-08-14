@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"strings"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	"github.com/deislabs/ratify/pkg/verifier/types"
@@ -49,24 +49,24 @@ func Register(name string, factory PolicyFactory) {
 // CreatePolicyProvidersFromConfig creates a policy provider from the provided configuration
 func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyprovider.PolicyProvider, error) {
 	if policyConfig.PolicyPlugin == nil {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config must be specified")
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.PolicyProvider).WithDetail("policy provider config must be specified")
 	}
 
 	policyProviderName, ok := policyConfig.PolicyPlugin[types.Name]
 	if !ok {
-		return nil, ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail(fmt.Sprintf("failed to find policy provider name in the policy config with key: %s", types.Name))
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.PolicyProvider).WithDetail(fmt.Sprintf("failed to find policy provider name in the policy config with key: %s", types.Name))
 	}
 
 	providerNameStr := strings.ToLower(fmt.Sprintf("%s", policyProviderName))
 
 	policyFactory, ok := builtInPolicyProviders[providerNameStr]
 	if !ok {
-		return nil, ratifyerrors.ErrorCodeProviderNotFound.WithComponentType(ratifyerrors.PolicyProvider).WithPluginName(providerNameStr).WithDetail("failed to find registered policy provider")
+		return nil, re.ErrorCodePolicyProviderNotFound.NewError(re.PolicyProvider, providerNameStr, "", nil, "failed to find registered policy provider", false)
 	}
 
 	policyProvider, err := policyFactory.Create(policyConfig.PolicyPlugin)
 	if err != nil {
-		return nil, ratifyerrors.ErrorCodePluginInitFailure.WithComponentType(ratifyerrors.PolicyProvider).WithPluginName(providerNameStr).WithDetail("failed to create policy provider").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.NewError(re.PolicyProvider, providerNameStr, re.PolicyProviderLink, err, "failed to create policy provider", false)
 	}
 
 	logrus.Infof("selected policy provider: %s", providerNameStr)
