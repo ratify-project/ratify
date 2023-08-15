@@ -147,6 +147,7 @@ func (ec ErrorCode) WithPluginName(pluginName string) Error {
 	return newError(ec, ec.Message()).WithPluginName(pluginName)
 }
 
+// NewError returns a new Error object.
 func (ec ErrorCode) NewError(componentType ComponentType, pluginName, link string, err error, detail interface{}, printStackTrace bool) Error {
 	stack := ""
 	if printStackTrace {
