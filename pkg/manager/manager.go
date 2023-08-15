@@ -74,7 +74,7 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, tlsWatcherReady chan struct{}) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, certRotatorReady chan struct{}) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
@@ -135,12 +135,12 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
-	if err := server.Run(tlsWatcherReady); err != nil {
+	if err := server.Run(certRotatorReady); err != nil {
 		os.Exit(1)
 	}
 }
 
-func StartManager(tlsWatcherReady chan struct{}) {
+func StartManager(certRotatorReady chan struct{}) {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -179,14 +179,12 @@ func StartManager(tlsWatcherReady chan struct{}) {
 	}
 
 	// Make sure certs are generated and valid if cert rotation is enabled.
-	setupFinished := make(chan struct{})
 	if featureflag.CertRotation.Enabled {
 		// Make sure TLS cert watcher is already set up.
-		if tlsWatcherReady == nil {
+		if certRotatorReady == nil {
 			setupLog.Error(err, "to use cert rotation, you must provide a channel to signal when the TLS watcher is ready")
 			os.Exit(1)
 		}
-		<-tlsWatcherReady
 		setupLog.Info("setting up cert rotation")
 
 		keyUsages := []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
@@ -212,7 +210,7 @@ func StartManager(tlsWatcherReady chan struct{}) {
 			CAName:         fmt.Sprintf("%s.%s", serviceName, namespace),
 			CAOrganization: caOrganization,
 			DNSName:        fmt.Sprintf("%s.%s", serviceName, namespace),
-			IsReady:        setupFinished,
+			IsReady:        certRotatorReady,
 			Webhooks:       webhooks,
 			ExtKeyUsages:   &keyUsages,
 		}); err != nil {
@@ -220,7 +218,7 @@ func StartManager(tlsWatcherReady chan struct{}) {
 			os.Exit(1)
 		}
 	} else {
-		close(setupFinished)
+		close(certRotatorReady)
 	}
 
 	if err = (&controllers.VerifierReconciler{
