@@ -548,6 +548,8 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-bui
 e2e-aks:
 	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
 
+e2e-cleanup:
+	./scripts/azure-ci-test-cleanup.sh ${AZURE_SUBSCRIPTION_ID}
 ##@ Development
 
 .PHONY: manifests

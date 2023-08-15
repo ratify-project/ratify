@@ -108,28 +108,22 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
 
 ## Configure access policy for AKV 
 
-> Note: Azure Key Vault integration currently only support self signed certificate, if you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider).
-
 1. Set the environmental variable for Azure Key Vault URI.
 
     ```bash
     export VAULT_URI=$(az keyvault show --name ${AKV_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
     ```
 
-2. Import your own private key and certificates. You can import it on the portal as well.
+2. Ratify requires secret permissions to retrieve the public certificates for the entire certificate chain,
+ please set private keys to Non-exportable at certificate creation time to avoid security risk. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)
+ 
+> Note: If you were unable to configure certificate policy, please consider specifying the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider) to reduce risk of exposing private key.
 
-    ```bash
-    az keyvault certificate import \
-    --vault-name ${AKV_NAME} \
-    -n ${KEY_NAME} \
-    -f ${CERT_PATH}
-    ```
-   
-3. Configure policy for user-assigned managed identity:
+   Configure policy for user-assigned managed identity:
     
     ```bash
     az keyvault set-policy --name ${AKV_NAME} \
-    --certificate-permissions get \
+    --secret-permissions get \
     --object-id ${IDENTITY_OBJECT_ID}
     ```
 
