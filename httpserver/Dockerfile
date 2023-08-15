@@ -1,4 +1,3 @@
-ARG BUILDPLATFORM
 ARG BUILDERIMAGE="golang:1.20"
 ARG BASEIMAGE="gcr.io/distroless/static:nonroot"
 
