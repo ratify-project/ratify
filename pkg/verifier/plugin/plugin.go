@@ -126,12 +126,12 @@ func (vp *VerifierPlugin) verifyReference(
 
 	verifierConfigBytes, err := json.Marshal(inputConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.Verifier).WithPluginName(vp.name)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, vp.name, "", err, nil, false)
 	}
 
 	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
-		return nil, re.ErrorCodeVerifySignatureFailure.WithError(err).WithComponentType(re.Verifier).WithPluginName(vp.name)
+		return nil, re.ErrorCodeVerifySignatureFailure.NewError(re.Verifier, vp.name, "", err, nil, true)
 	}
 
 	result, err := types.GetVerifierResult(stdoutBytes)

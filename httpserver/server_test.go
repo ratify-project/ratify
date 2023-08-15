@@ -20,8 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"syscall"
 	"testing"
 	"time"
 
@@ -442,4 +445,53 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 			t.Fatalf("Expected first subject error to be: %s,: but got %s", expectedErr, retFirstErr)
 		}
 	})
+}
+
+// TestServe_serverGracefulShutdown tests the case where the server is shutdown gracefully
+func TestServer_serverGracefulShutdown(t *testing.T) {
+	// create a server that sleeps for 5 seconds before responding
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(5 * time.Second)
+		fmt.Fprintln(w, "request succeeded")
+	}))
+
+	// start the server
+	go func() {
+		_ = startServerWithGracefulShutdown(false, ts.Config, ts.Listener, "", "")
+	}()
+
+	// wait a second for server to come online
+	time.Sleep(1 * time.Second)
+
+	// create a client that makes a request to the server and validates response
+	client := &http.Client{Transport: &http.Transport{}}
+	go func() {
+		url := "http://" + ts.Listener.Addr().String()
+		res, err := client.Get(url)
+		if err != nil {
+			fmt.Printf("Expected no error but got %v", err)
+		}
+
+		body, err := io.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			fmt.Printf("Expected no error but got %v", err)
+		}
+		if string(body) != "request succeeded\n" {
+			fmt.Printf("Expected response body to be 'request succeeded' but got %s", string(body))
+		}
+	}()
+	// wait a second for client to make request and reach server
+	time.Sleep(1 * time.Second)
+	// send SIGTERM to server
+	proc, err := os.FindProcess(os.Getpid())
+	if err != nil {
+		t.Fatalf("Expected no error but got %v", err)
+	}
+	err = proc.Signal(syscall.SIGTERM)
+	if err != nil {
+		t.Fatalf("Expected no error but got %v", err)
+	}
+	// wait some time to see shutdown logs
+	time.Sleep(5 * time.Second)
 }
