@@ -244,12 +244,12 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	if *secretBundle.ContentType == PKCS12ContentType {
 		p12, err := base64.StdEncoding.DecodeString(*secretBundle.Value)
 		if err != nil {
-			return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode PKCS12 Value. Certificate %s, version %s, error: %w", certName, version, err)
+			return nil, nil, fmt.Errorf("azure keyvault certificate provider: failed to decode PKCS12 Value. Certificate %s, version %s, error: %w", certName, version, err)
 		}
 
 		blocks, err := pkcs12.ToPEM(p12, "")
 		if err != nil {
-			return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s, error: %w", certName, version, err)
+			return nil, nil, fmt.Errorf("azure keyvault certificate provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s, error: %w", certName, version, err)
 		}
 
 		var pemData []byte
@@ -264,13 +264,13 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	for block != nil {
 		switch block.Type {
 		case "PRIVATE KEY":
-			logrus.Warnf("azure keyvualt certificate provider: certificate %s, version %s private key skipped. Please see doc to learn how to create a new certificate in keyvault with non exportable keys. https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys", certName, version)
+			logrus.Warnf("azure keyvault certificate provider: certificate %s, version %s private key skipped. Please see doc to learn how to create a new certificate in keyvault with non exportable keys. https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys", certName, version)
 		case "CERTIFICATE":
 			var pemData []byte
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
 			decodedCerts, err := certificateprovider.DecodeCertificates(pemData)
 			if err != nil {
-				return nil, nil, fmt.Errorf("azure keyvualt certificate provider: failed to decode Certificate %s, version %s, error: %w", certName, version, err)
+				return nil, nil, fmt.Errorf("azure keyvault certificate provider: failed to decode Certificate %s, version %s, error: %w", certName, version, err)
 			}
 			for _, cert := range decodedCerts {
 				results = append(results, cert)
@@ -278,12 +278,12 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 				certsStatus = append(certsStatus, certProperty)
 			}
 		default:
-			logrus.Warnf("certificate '%s', version '%s': azure keyvualt certificate provider detected unknown block type %s", certName, version, block.Type)
+			logrus.Warnf("certificate '%s', version '%s': azure keyvault certificate provider detected unknown block type %s", certName, version, block.Type)
 		}
 
 		block, rest = pem.Decode(rest)
 		if block == nil && len(rest) > 0 {
-			return nil, nil, errors.Errorf("certificate '%s', version '%s': azure keyvualt certificate provider error, block is nil and remaining block to parse > 0", certName, version)
+			return nil, nil, errors.Errorf("certificate '%s', version '%s': azure keyvault certificate provider error, block is nil and remaining block to parse > 0", certName, version)
 		}
 	}
 	logrus.Debugf("azurekeyvault certprovider getCertsFromSecretBundle: %v certificates parsed, Certificate '%s', version '%s'", len(results), certName, version)
