@@ -1,0 +1,45 @@
+{
+  "issuerParameters": {
+    "certificateTransparency": null,
+    "name": "Self"
+  },
+  "keyProperties": {
+    "curve": null,
+    "exportable": false,
+    "keySize": 2048,
+    "keyType": "RSA",
+    "reuseKey": true
+  },
+  "lifetimeActions": [
+    {
+      "action": {
+        "actionType": "AutoRenew"
+      },
+      "trigger": {
+        "daysBeforeExpiry": 90,
+        "lifetimePercentage": null
+      }
+    }
+  ],
+  "secretProperties": {
+    "contentType": "application/x-pem-file"
+  },
+  "x509CertificateProperties": {
+    "ekus": [],
+    "keyUsage": [
+      "cRLSign",
+      "dataEncipherment",
+      "digitalSignature",
+      "keyEncipherment",
+      "keyAgreement",
+      "keyCertSign"
+    ],
+    "subject": "CN=ratify.default",
+    "subjectAlternativeNames": {
+      "dnsNames": null,
+      "emails": null,
+      "upns": null
+    },
+    "validityInMonths": 12
+  }
+}
