@@ -164,11 +164,6 @@ spec:
         - name: tls
           secret:
             secretName: {{ include "ratify.fullname" . }}-tls
-            items:
-              - key: tls.key
-                path: tls.key
-              - key: tls.crt
-                path: tls.crt
         {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
         - name: client-ca-cert
           secret:

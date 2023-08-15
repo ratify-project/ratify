@@ -89,10 +89,10 @@ func serve(opts serveCmdOptions) error {
 	}
 	// in crd mode, the manager gets latest store/verifier from crd and pass on to the http server
 	if opts.enableCrdManager {
-		tlsWatcherReady := make(chan struct{})
+		certRotatorReady := make(chan struct{})
 		logrus.Infof("starting crd manager")
-		go manager.StartManager(tlsWatcherReady)
-		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort, tlsWatcherReady)
+		go manager.StartManager(certRotatorReady)
+		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort, certRotatorReady)
 
 		return nil
 	}
