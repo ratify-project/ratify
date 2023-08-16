@@ -17,7 +17,7 @@ oras push myregistry.azurecr.io/sample-plugin:v1 ./sample
 
 ## Ratify Configuration
 
-Now that you have a plugin available as an OCI artifact, it's time to enable the `RATIFY_DYNAMIC_PLUGINS` [feature flag](/docs/reference/usage.md#feature-flags). Here, we enable it via Helm chart parameter:
+Now that you have a plugin available as an OCI artifact, it's time to enable the `RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS` [feature flag](/docs/reference/usage.md#feature-flags). Here, we enable it via Helm chart parameter:
 
 ```shell
 # Option 1: to enable on a fresh install
@@ -26,13 +26,13 @@ helm install ratify \
     --set-file provider.tls.crt=${CERT_DIR}/server.crt \
     --set-file provider.tls.key=${CERT_DIR}/server.key \
     --set provider.tls.cabundle="$(cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-    --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true
+    --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true
 
 # Option 2: to enable on a previously-installed release
 helm upgrade ratify \
   ratify/ratify --atomic \
   --reuse-values \
-  --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true
+  --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true
 ```
 
 ## Plugin Configuration
@@ -65,7 +65,7 @@ This will generate output similar to below, which can be used for confirmation o
 
 ```text
 time="2023-01-18T16:44:46Z" level=info msg="Setting log level to info"
-time="2023-01-18T16:44:46Z" level=info msg="Feature flag DYNAMIC_PLUGINS is enabled"
+time="2023-01-18T16:44:46Z" level=info msg="Feature flag EXPERIMENTAL_DYNAMIC_PLUGINS is enabled"
 time="2023-01-18T16:44:46Z" level=info msg="starting crd manager"
 time="2023-01-18T16:44:46Z" level=info msg="initializing executor with config file at default config path"
 <snip>
