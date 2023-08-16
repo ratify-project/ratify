@@ -203,7 +203,7 @@ helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
     --set-file notationCert=./aws-signer-notation-root.cert \
-    --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true \
+    --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true \
     --set serviceAccount.create=false \
     --set oras.authProviders.awsEcrBasicEnabled=true
 ```
