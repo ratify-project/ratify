@@ -80,7 +80,7 @@ func (s *defaultProviderFactory) Create(authProviderConfig AuthProviderConfig) (
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.AuthProviderLink, err, "failed to parse auth provider configuration", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.AuthProviderLink, err, "failed to parse auth provider configuration", re.HideStackTrace)
 	}
 
 	return &defaultAuthProvider{

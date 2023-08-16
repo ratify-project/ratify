@@ -61,7 +61,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", "", err, "failed to parse auth provider configuration", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.EmptyLink, err, "failed to parse auth provider configuration", re.HideStackTrace)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
@@ -80,7 +80,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	// retrieve an AAD Access token
 	token, err := azureauth.GetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
-		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "", false)
+		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "", re.HideStackTrace)
 	}
 
 	return &azureWIAuthProvider{
@@ -120,7 +120,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
 		newToken, err := azureauth.GetAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
 		if err != nil {
-			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, nil, "could not refresh AAD token", false)
+			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, nil, "could not refresh AAD token", re.HideStackTrace)
 		}
 		d.aadToken = newToken
 		logrus.Info("successfully refreshed AAD token")
@@ -134,7 +134,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	startTime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
-		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to get refresh token for container registry", false)
+		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to get refresh token for container registry", re.HideStackTrace)
 	}
 	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 

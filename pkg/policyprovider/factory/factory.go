@@ -61,12 +61,12 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 
 	policyFactory, ok := builtInPolicyProviders[providerNameStr]
 	if !ok {
-		return nil, re.ErrorCodePolicyProviderNotFound.NewError(re.PolicyProvider, providerNameStr, "", nil, "failed to find registered policy provider", false)
+		return nil, re.ErrorCodePolicyProviderNotFound.NewError(re.PolicyProvider, providerNameStr, re.EmptyLink, nil, "failed to find registered policy provider", re.HideStackTrace)
 	}
 
 	policyProvider, err := policyFactory.Create(policyConfig.PolicyPlugin)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.NewError(re.PolicyProvider, providerNameStr, re.PolicyProviderLink, err, "failed to create policy provider", false)
+		return nil, re.ErrorCodePluginInitFailure.NewError(re.PolicyProvider, providerNameStr, re.PolicyProviderLink, err, "failed to create policy provider", re.HideStackTrace)
 	}
 
 	logrus.Infof("selected policy provider: %s", providerNameStr)

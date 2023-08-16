@@ -65,21 +65,21 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", "", err, "failed to marshal authentication provider config", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.EmptyLink, err, "failed to marshal authentication provider config", re.HideStackTrace)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", "", err, "failed to parse authentication provider configuration", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.EmptyLink, err, "failed to parse authentication provider configuration", re.HideStackTrace)
 	}
 
 	clusterConfig, err := rest.InClusterConfig()
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", "", err, "failed to generate cluster configuration", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.EmptyLink, err, "failed to generate cluster configuration", re.HideStackTrace)
 	}
 
 	clientSet, err := kubernetes.NewForConfig(clusterConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", "", err, "failed to create kubernetes client set from config", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.EmptyLink, err, "failed to create kubernetes client set from config", re.HideStackTrace)
 	}
 
 	if conf.ServiceAccountName == "" {
@@ -129,7 +129,7 @@ func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (Au
 
 		secret, err := d.clusterClientSet.CoreV1().Secrets(k8secret.Namespace).Get(ctx, k8secret.SecretName, meta.GetOptions{})
 		if err != nil {
-			return AuthConfig{}, re.ErrorCodeGetClusterResourceFailure.NewError(re.AuthProvider, "", "", err, fmt.Sprintf("failed to pull secret %s from cluster.", k8secret.SecretName), false)
+			return AuthConfig{}, re.ErrorCodeGetClusterResourceFailure.NewError(re.AuthProvider, "", re.EmptyLink, err, fmt.Sprintf("failed to pull secret %s from cluster.", k8secret.SecretName), re.HideStackTrace)
 		}
 
 		// only docker config json secret type allowed

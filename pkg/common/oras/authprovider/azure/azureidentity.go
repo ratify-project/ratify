@@ -62,7 +62,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to parse azure managed identity auth provider configuration.", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to parse azure managed identity auth provider configuration.", re.HideStackTrace)
 	}
 
 	tenant := os.Getenv("AZURE_TENANT_ID")
@@ -82,7 +82,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	// retrieve an AAD Access token
 	token, err := getManagedIdentityToken(context.Background(), client)
 	if err != nil {
-		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "", false)
+		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "", re.HideStackTrace)
 	}
 
 	return &azureManagedIdentityAuthProvider{
@@ -126,7 +126,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	if time.Now().Add(time.Minute * 5).After(d.identityToken.ExpiresOn) {
 		newToken, err := getManagedIdentityToken(ctx, d.clientID)
 		if err != nil {
-			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "could not refresh azure managed identity token", false)
+			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "could not refresh azure managed identity token", re.HideStackTrace)
 		}
 		d.identityToken = newToken
 		logrus.Info("successfully refreshed azure managed identity token")
@@ -138,7 +138,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
 	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
-		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to get refresh token for container registry by azure managed identity token", false)
+		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to get refresh token for container registry by azure managed identity token", re.HideStackTrace)
 	}
 
 	expiresOn := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)

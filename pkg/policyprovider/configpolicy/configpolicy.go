@@ -59,11 +59,11 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 	conf := configPolicyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
-		return nil, re.ErrorCodeDataEncodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to marshal policy config", false)
+		return nil, re.ErrorCodeDataEncodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to marshal policy config", re.HideStackTrace)
 	}
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to unmarshal policy config", false)
+		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to unmarshal policy config", re.HideStackTrace)
 	}
 
 	if conf.ArtifactVerificationPolicies == nil {

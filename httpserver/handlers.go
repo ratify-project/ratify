@@ -198,7 +198,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				}
 				descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
-					err = errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, selectedStore.Name(), "", err, fmt.Sprintf("failed to get subject descriptor for image %s", image), false)
+					err = errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, selectedStore.Name(), errors.EmptyLink, err, fmt.Sprintf("failed to get subject descriptor for image %s", image), errors.HideStackTrace)
 					returnItem.Error = err.Error()
 					return
 				}

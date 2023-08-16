@@ -61,11 +61,11 @@ func (f *Factory) Create(policyConfig config.PolicyPluginConfig) (policyprovider
 	conf := policyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.PolicyProviderLink, err, "failed to marshal policy config", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.PolicyProviderLink, err, "failed to marshal policy config", re.HideStackTrace)
 	}
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.PolicyProvider, policyTypes.RegoPolicy, "", err, "failed to parse policy provider configuration", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.EmptyLink, err, "failed to parse policy provider configuration", re.HideStackTrace)
 	}
 	if conf.Policy == "" {
 		body, err := os.ReadFile(conf.PolicyPath)
@@ -75,7 +75,7 @@ func (f *Factory) Create(policyConfig config.PolicyPluginConfig) (policyprovider
 		conf.Policy = string(body)
 	}
 	if conf.Policy == "" {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.PolicyProviderLink, nil, "policy is required for rego policy provider", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.PolicyProviderLink, nil, "policy is required for rego policy provider", re.HideStackTrace)
 	}
 
 	engine, err := policyengine.CreateEngineFromConfig(policyengine.Config{
@@ -84,7 +84,7 @@ func (f *Factory) Create(policyConfig config.PolicyPluginConfig) (policyprovider
 		Policy:        conf.Policy,
 	})
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.PolicyProviderLink, err, "failed to create OPA engine", false)
+		return nil, re.ErrorCodePluginInitFailure.NewError(re.PolicyProvider, policyTypes.RegoPolicy, re.PolicyProviderLink, err, "failed to create OPA engine", re.HideStackTrace)
 	}
 
 	policyEnforcer := &policyEnforcer{

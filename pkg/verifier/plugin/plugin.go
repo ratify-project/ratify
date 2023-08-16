@@ -109,7 +109,7 @@ func (vp *VerifierPlugin) verifyReference(
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
 	pluginPath, err := vp.executor.FindInPaths(vp.name, vp.path)
 	if err != nil {
-		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, vp.name, "", err, nil, false)
+		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 
 	pluginArgs := VerifierPluginArgs{
@@ -126,12 +126,12 @@ func (vp *VerifierPlugin) verifyReference(
 
 	verifierConfigBytes, err := json.Marshal(inputConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, vp.name, "", err, nil, false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 
 	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
-		return nil, re.ErrorCodeVerifySignatureFailure.NewError(re.Verifier, vp.name, "", err, nil, true)
+		return nil, re.ErrorCodeVerifySignatureFailure.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 
 	result, err := types.GetVerifierResult(stdoutBytes)

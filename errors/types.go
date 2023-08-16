@@ -23,6 +23,12 @@ import (
 	"sync"
 )
 
+const (
+	EmptyLink       = ""
+	PrintStackTrace = true
+	HideStackTrace  = false
+)
+
 var (
 	nextCode     = 1000
 	registerLock sync.Mutex

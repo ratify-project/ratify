@@ -23,7 +23,7 @@ var (
 	ErrorCodeVerifyReferenceFailure = Register("errcode", ErrorDescriptor{
 		Value:       "VERIFY_REFERENCE_FAILURE",
 		Message:     "verify reference failure",
-		Description: `Generic error returned when the verifier fails to verify the reference. Please check the error details for more information.`,
+		Description: `Verifier fails to verify the reference. Please check the error details for more information.`,
 	})
 
 	// ErrorCodeVerifySignatureFailure is returned when verifier plugin fails
@@ -48,7 +48,7 @@ var (
 	ErrorCodeListReferrersFailure = Register("errcode", ErrorDescriptor{
 		Value:       "LIST_REFERRERS_FAILURE",
 		Message:     "list referrers failure",
-		Description: `Generic error returned when the referrer store fails to list the referrers. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#listreferrers for more details.`,
+		Description: `Referrer store fails to list the referrers. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#listreferrers for more details.`,
 	})
 
 	// ErrorCodeGetSubjectDescriptorFailure is returned when GetSubjectDescriptor
@@ -56,7 +56,7 @@ var (
 	ErrorCodeGetSubjectDescriptorFailure = Register("errcode", ErrorDescriptor{
 		Value:       "GET_SUBJECT_DESCRIPTOR_FAILURE",
 		Message:     "get subject descriptor failure",
-		Description: `Generic error returned when the referrer store fails to get the subject descriptor. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getsubjectdescriptor for more details.`,
+		Description: `Referrer store fails to get the subject descriptor. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getsubjectdescriptor for more details.`,
 	})
 
 	// ErrorCodeGetReferenceManifestFailure is returned when GetReferenceManifest
@@ -64,14 +64,14 @@ var (
 	ErrorCodeGetReferenceManifestFailure = Register("errcode", ErrorDescriptor{
 		Value:       "GET_REFERRER_MANIFEST_FAILURE",
 		Message:     "get reference manifest failure",
-		Description: `Generic error returned when the referrer store fails to get the reference manifest. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getreferencemanifest for more details.`,
+		Description: `Referrer store fails to get the reference manifest. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getreferencemanifest for more details.`,
 	})
 
 	// ErrorCodeGetBlobContentFailure is returned when GetBlobContent API fails.
 	ErrorCodeGetBlobContentFailure = Register("errcode", ErrorDescriptor{
 		Value:       "GET_BLOB_CONTENT_FAILURE",
 		Message:     "get blob content failure",
-		Description: `Generic error returned when the referrer store fails to get the blob content. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getblobcontent for more details.`,
+		Description: `Referrer store fails to get the blob content. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getblobcontent for more details.`,
 	})
 
 	// ErrorCodeReferrerStoreFailure is returned when a generic error happen in
@@ -79,7 +79,7 @@ var (
 	ErrorCodeReferrerStoreFailure = Register("errcode", ErrorDescriptor{
 		Value:       "REFERRER_STORE_FAILURE",
 		Message:     "referrer store failure",
-		Description: `Generic error returned when the referrer store fails to perform an operation.`,
+		Description: `Referrer store fails to perform an operation.`,
 	})
 
 	// ErrorCodeCreateRepositoryFailure is returned when Referrer Store fails to

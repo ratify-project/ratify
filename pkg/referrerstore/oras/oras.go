@@ -126,12 +126,12 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 	}
 
 	if err := json.Unmarshal(storeConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.ReferrerStore, "", "", err, "failed to parse oras store configuration", false)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.ReferrerStore, "", re.EmptyLink, err, "failed to parse oras store configuration", re.HideStackTrace)
 	}
 
 	authenticationProvider, err := authprovider.CreateAuthProviderFromConfig(conf.AuthProvider)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.NewError(re.ReferrerStore, "", "", err, "failed to create auth provider from configuration", false)
+		return nil, re.ErrorCodePluginInitFailure.NewError(re.ReferrerStore, "", re.EmptyLink, err, "failed to create auth provider from configuration", re.HideStackTrace)
 	}
 
 	// Set up the local cache where content will land when we pull
@@ -296,7 +296,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, re.ErrorCodeCreateRepositoryFailure.NewError(re.ReferrerStore, storeName, "", err, "", false)
+		return ocispecs.ReferenceManifest{}, re.ErrorCodeCreateRepositoryFailure.NewError(re.ReferrerStore, storeName, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 	var manifestBytes []byte
 	// check if manifest exists in local ORAS cache
@@ -311,7 +311,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
 			evictOnError(ctx, err, subjectReference.Original)
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.NewError(re.ReferrerStore, storeName, "", err, "", false)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.NewError(re.ReferrerStore, storeName, re.EmptyLink, err, nil, re.HideStackTrace)
 		}
 
 		manifestBytes, err = io.ReadAll(manifestReader)
@@ -403,7 +403,7 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 	}
 	if cacheResponse != "" && found {
 		if err := json.Unmarshal([]byte(cacheResponse), &authConfig); err != nil {
-			logrus.Warning(re.ErrorCodeDataDecodingFailure.NewError(re.Cache, "", "", err, fmt.Sprintf("failed to unmarshal auth config cache value: %s", cacheResponse), false))
+			logrus.Warning(re.ErrorCodeDataDecodingFailure.NewError(re.Cache, "", re.EmptyLink, err, fmt.Sprintf("failed to unmarshal auth config cache value: %s", cacheResponse), re.HideStackTrace))
 		} else {
 			logrus.Debug("auth cache hit")
 			cacheHit = true
