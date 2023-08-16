@@ -29,6 +29,7 @@ import (
 	"time"
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	exconfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -64,7 +65,7 @@ func TestNewServer_Expected(t *testing.T) {
 	testMetricsType := "test-metrics"
 	testMetricsPort := 1010
 
-	server, err := NewServer(context.Background(), testAddress, testGetExecutor, testCertDir, testCACertFile, testCacheTTL, testMetricsEnabled, testMetricsType, testMetricsPort)
+	server, err := NewServer(context.Background(), testAddress, testGetExecutor, testCertDir, testCACertFile, testCacheTTL, testMetricsEnabled, testMetricsType, testMetricsPort, logger.Config{})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -151,7 +152,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -222,7 +223,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -295,7 +296,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
+			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true, logger.Config{}),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -375,7 +376,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -427,7 +428,7 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)

@@ -103,7 +103,12 @@ func serve(opts serveCmdOptions) error {
 	}
 
 	if opts.httpServerAddress != "" {
-		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort)
+		logConfig, err := config.GetLoggerConfig(opts.configFilePath)
+		if err != nil {
+			return err
+		}
+
+		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort, logConfig)
 		if err != nil {
 			return err
 		}

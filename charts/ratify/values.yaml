@@ -114,6 +114,11 @@ crds:
 policy:
   useRego: false # Set to true if Rego Policy would be used for evaluation.
 
+logger:
+  formatter: "text"
+  requestHeaders:
+    traceIDHeaderName: ""
+
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true

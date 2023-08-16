@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
@@ -35,7 +36,6 @@ import (
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	vt "github.com/deislabs/ratify/pkg/verifier/types"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -43,6 +43,10 @@ const (
 	defaultVerifyRequestTimeoutMilliseconds = 2900
 	defaultMutateRequestTimeoutMilliseconds = 950
 )
+
+var logOpt = logger.Option{
+	ComponentType: logger.Executor,
+}
 
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
@@ -56,6 +60,7 @@ type Executor struct {
 // TODO Logging within executor
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	logger.GetLogger(ctx, logOpt).Info("Verifying subject")
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
@@ -100,7 +105,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 		return nil, err
 	}
 
-	logrus.Infof("Resolve of the image completed successfully the digest is %s", desc.Digest)
+	logger.GetLogger(ctx, logOpt).Infof("Resolve of the image completed successfully the digest is %s", desc.Digest)
 
 	subjectReference.Digest = desc.Digest
 
@@ -128,7 +133,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 						if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.RegoPolicy {
 							verifyResult, err := executor.verifyReferenceForRegoPolicy(innerErrCtx, subjectReference, reference, referrerStore)
 							if err != nil {
-								logrus.Errorf("error while verifying reference %+v, err: %v", reference, err)
+								logger.GetLogger(ctx, logOpt).Errorf("error while verifying reference %+v, err: %v", reference, err)
 								return err
 							}
 							mu.Lock() // locks the verifierReports List for write safety

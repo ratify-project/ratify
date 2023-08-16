@@ -129,7 +129,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
+	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort, cf.LoggerConfig)
 
 	if err != nil {
 		os.Exit(1)

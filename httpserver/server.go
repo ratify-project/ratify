@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/metrics"
 
 	"github.com/gorilla/mux"
@@ -59,6 +60,8 @@ type Server struct {
 	MetricsType       string
 	MetricsPort       int
 	CacheTTL          time.Duration
+	LogConfig         logger.Config
+	LogOption         logger.Option
 
 	keyMutex keyMutex
 }
@@ -85,9 +88,14 @@ func NewServer(context context.Context,
 	cacheTTL time.Duration,
 	metricsEnabled bool,
 	metricsType string,
-	metricsPort int) (*Server, error) {
+	metricsPort int,
+	logConfig logger.Config) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
+	}
+
+	if err := logger.SetFormatter(logConfig.Formatter); err != nil {
+		return nil, err
 	}
 
 	server := &Server{
@@ -103,6 +111,8 @@ func NewServer(context context.Context,
 		MetricsPort:       metricsPort,
 		CacheTTL:          cacheTTL,
 		keyMutex:          keyMutex{},
+		LogConfig:         logConfig,
+		LogOption:         logger.Option{ComponentType: logger.Server},
 	}
 
 	return server, server.registerHandlers()
@@ -171,13 +181,13 @@ func (server *Server) registerHandlers() error {
 	if err != nil {
 		return err
 	}
-	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
+	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, server.LogConfig))
 
 	mutatePath, err := url.JoinPath(ServerRootURL, "mutate")
 	if err != nil {
 		return err
 	}
-	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
+	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true, server.LogConfig))
 
 	return nil
 }
