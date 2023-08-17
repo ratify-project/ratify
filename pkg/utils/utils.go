@@ -21,6 +21,7 @@ import (
 
 	_ "crypto/sha256" // required package for digest.Parse
 
+	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/docker/distribution/reference"
 	"github.com/opencontainers/go-digest"
@@ -40,7 +41,7 @@ func ParseDigest(digestStr string) (digest.Digest, error) {
 func ParseSubjectReference(subRef string) (common.Reference, error) {
 	parseResult, err := reference.ParseDockerRef(subRef)
 	if err != nil {
-		return common.Reference{}, fmt.Errorf("failed to parse subject reference: %w", err)
+		return common.Reference{}, errors.ErrorCodeReferenceInvalid.WithDetail("failed to parse subject reference")
 	}
 
 	var subjectRef common.Reference

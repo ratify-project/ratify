@@ -19,12 +19,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
 	"os"
 	"strings"
 	"time"
 
+	re "github.com/deislabs/ratify/errors"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 )
@@ -76,11 +76,11 @@ func (s *defaultProviderFactory) Create(authProviderConfig AuthProviderConfig) (
 	conf := defaultAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 	}
 
 	if err := json.Unmarshal(authProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse auth provider configuration: %w", err)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.AuthProvider, "", re.AuthProviderLink, err, "failed to parse auth provider configuration", re.HideStackTrace)
 	}
 
 	return &defaultAuthProvider{
@@ -100,26 +100,26 @@ func (d *defaultAuthProvider) Provide(_ context.Context, artifact string) (AuthC
 	if d.configPath == "" {
 		var err error
 		if cfg, err = config.Load(config.Dir()); err != nil {
-			return AuthConfig{}, err
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 	} else {
 		cfg = configfile.New(d.configPath)
 		if _, err := os.Stat(d.configPath); err != nil {
-			return AuthConfig{}, err
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 		file, err := os.Open(d.configPath)
 		if err != nil {
-			return AuthConfig{}, err
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 		defer file.Close()
 		if err := cfg.LoadFromReader(file); err != nil {
-			return AuthConfig{}, err
+			return AuthConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithComponentType(re.AuthProvider)
 		}
 	}
 
 	artifactHostName, err := GetRegistryHostName(artifact)
 	if err != nil {
-		return AuthConfig{}, err
+		return AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err).WithComponentType(re.AuthProvider)
 	}
 
 	dockerAuthConfig := cfg.AuthConfigs[artifactHostName]

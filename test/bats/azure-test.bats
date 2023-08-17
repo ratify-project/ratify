@@ -13,12 +13,12 @@ SLEEP_TIME=1
     teardown() {
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
         pod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
-        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
+        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=false ratify ./charts/ratify
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n gatekeeper-system delete $pod --force --grace-period=0'
     }
 
     # enable dynamic plugins
-    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
+    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true ratify ./charts/ratify
     sleep 5
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
@@ -45,9 +45,13 @@ SLEEP_TIME=1
     assert_success
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
+   
+    # verify that the image can be run with a root cert, root verification cert should have been configured on deployment
+    run kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned
+    assert_success
 
-    # add the root certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    # add the leaf certificate as an inline certificate store
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
@@ -55,16 +59,6 @@ SLEEP_TIME=1
     # configure the notation verifier to use the inline certificate store
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
     assert_success
-
-    # verify that the image can be run with a root cert
-    run kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned
-    assert_success
-
-    # add the root certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    assert_success
-    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
     # wait for the httpserver cache to be invalidated
     sleep 15

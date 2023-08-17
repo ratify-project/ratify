@@ -41,7 +41,7 @@ curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | h
 
 ### Step 2: See Ratify in action
 
-Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
+Once the installation is completed, you can test the deployment of an image that is signed using Notation solution.
 
 - This will successfully create the pod `demo`
 
