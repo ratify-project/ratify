@@ -85,7 +85,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
 	if err != nil {
-		logrus.Warnf("error initializing from config %v", err)
+		logrus.Errorf("error initializing from config %v", err)
 		os.Exit(1)
 	}
 
@@ -132,12 +132,12 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
-		logrus.Infof("exiting 1! ")
+		logrus.Errorf("exiting 1 , %v ", err)
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
 	if err := server.Run(certRotatorReady); err != nil {
-		logrus.Infof("exiting 2! ")
+		logrus.Errorf("exiting 2! %v", err)
 		os.Exit(1)
 	}
 }
