@@ -20,6 +20,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
+
+	"github.com/deislabs/ratify/errors"
 )
 
 // This is a map containing Cert store configuration including name, tenantID, and cert object information
@@ -56,20 +58,20 @@ func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
 	block, rest := pem.Decode(value)
 	if block == nil && len(rest) > 0 {
-		return nil, fmt.Errorf("failed to decode pem block")
+		return nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.CertProvider).WithDetail("failed to decode pem block")
 	}
 
 	for block != nil {
 		if block.Type == "CERTIFICATE" {
 			cert, err := x509.ParseCertificate(block.Bytes)
 			if err != nil {
-				return nil, fmt.Errorf("error parsing x509 certificate: %w", err)
+				return nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.CertProvider).WithDetail("error parsing x509 certificate")
 			}
 			certs = append(certs, cert)
 		}
 		block, rest = pem.Decode(rest)
 		if block == nil && len(rest) > 0 {
-			return nil, fmt.Errorf("failed to decode pem block")
+			return nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.CertProvider).WithDetail("failed to decode pem block")
 		}
 	}
 
