@@ -1,5 +1,5 @@
 ARG BUILDERIMAGE="golang:1.20"
-ARG BASEIMAGE="gcr.io/distroless/static:nonroot"
+ARG BASEIMAGE="gcr.io/distroless/static:debug"
 
 FROM --platform=$BUILDPLATFORM $BUILDERIMAGE as builder
 

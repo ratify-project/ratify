@@ -132,10 +132,12 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
+		logrus.Infof("exiting 1! ")
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
 	if err := server.Run(certRotatorReady); err != nil {
+		logrus.Infof("exiting 2! ")
 		os.Exit(1)
 	}
 }
@@ -234,6 +236,7 @@ func StartManager(certRotatorReady chan struct{}) {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
+		logrus.Infof("unable to create store controller", err)
 		setupLog.Error(err, "unable to create controller", "controller", "Store")
 		os.Exit(1)
 	}
@@ -241,6 +244,7 @@ func StartManager(certRotatorReady chan struct{}) {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
+		logrus.Infof("unable to create cert store controller", err)
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
 		os.Exit(1)
 	}
@@ -248,6 +252,7 @@ func StartManager(certRotatorReady chan struct{}) {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
+		logrus.Infof("unable to create policy controller", err)
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
@@ -262,9 +267,10 @@ func StartManager(certRotatorReady chan struct{}) {
 		os.Exit(1)
 	}
 
-	logrus.Infof("starting manager", err)
+	logrus.Infof("starting manager")
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		logrus.Infof("problem running manager", err)
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

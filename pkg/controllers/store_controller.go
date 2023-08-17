@@ -83,6 +83,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	logrus.Infof("store SetupWithManager called")
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.Store{}).
 		Complete(r)
