@@ -153,7 +153,7 @@ func StartManager(certRotatorReady chan struct{}) {
 
 	logrusSink := controllers.NewLogrusSink(logrus.StandardLogger())
 	ctrl.SetLogger(logr.New(logrusSink))
-
+	logrus.Infof("New manager coming")
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -174,6 +174,7 @@ func StartManager(certRotatorReady chan struct{}) {
 		// LeaderElectionReleaseOnCancel: true,
 	})
 	if err != nil {
+		logrus.Infof("unable to start manager", err)
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
@@ -225,6 +226,7 @@ func StartManager(certRotatorReady chan struct{}) {
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
+		logrus.Infof("unable to create controller", err)
 		setupLog.Error(err, "unable to create controller", "controller", "Verifier")
 		os.Exit(1)
 	}
@@ -260,6 +262,7 @@ func StartManager(certRotatorReady chan struct{}) {
 		os.Exit(1)
 	}
 
+	logrus.Infof("starting manager", err)
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
