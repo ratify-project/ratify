@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -58,11 +59,11 @@ func (f *configPolicyFactory) Create(policyConfig config.PolicyPluginConfig) (po
 	conf := configPolicyEnforcerConf{}
 	policyProviderConfigBytes, err := json.Marshal(policyConfig)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal policy config: %w", err)
+		return nil, re.ErrorCodeDataEncodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to marshal policy config", re.HideStackTrace)
 	}
 
 	if err := json.Unmarshal(policyProviderConfigBytes, &conf); err != nil {
-		return nil, fmt.Errorf("failed to parse policy provider configuration: %w", err)
+		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.PolicyProvider, vt.ConfigPolicy, re.PolicyProviderLink, err, "failed to unmarshal policy config", re.HideStackTrace)
 	}
 
 	if conf.ArtifactVerificationPolicies == nil {

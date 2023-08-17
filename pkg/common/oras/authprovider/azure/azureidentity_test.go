@@ -17,11 +17,12 @@ package azure
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 )
 
@@ -71,8 +72,8 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
-	expectedErr := fmt.Errorf("AZURE_TENANT_ID environment variable is empty")
-	if err == nil || err.Error() != expectedErr.Error() {
+	expectedErr := ratifyerrors.ErrorCodeAuthDenied.WithDetail("AZURE_TENANT_ID environment variable is empty")
+	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 
@@ -83,8 +84,8 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
-	expectedErr = fmt.Errorf("AZURE_CLIENT_ID environment variable is empty")
-	if err == nil || err.Error() != expectedErr.Error() {
+	expectedErr = ratifyerrors.ErrorCodeAuthDenied.WithDetail("AZURE_CLIENT_ID environment variable is empty")
+	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 }
