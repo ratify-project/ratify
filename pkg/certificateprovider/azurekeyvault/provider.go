@@ -27,6 +27,7 @@ import (
 	"strings"
 	"time"
 
+	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/deislabs/ratify/pkg/metrics"
@@ -34,7 +35,6 @@ import (
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -66,34 +66,34 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	workloadIdentityClientID := types.GetClientID(attrib)
 
 	if keyvaultURI == "" {
-		return nil, nil, fmt.Errorf("keyvaultUri is not set")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "keyvaultUri is not set", re.HideStackTrace)
 	}
 	if tenantID == "" {
-		return nil, nil, fmt.Errorf("tenantID is not set")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "tenantID is not set", re.HideStackTrace)
 	}
 	if workloadIdentityClientID == "" {
-		return nil, nil, fmt.Errorf("clientID is not set")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "clientID is not set", re.HideStackTrace)
 	}
 
 	azureCloudEnv, err := parseAzureEnvironment(cloudName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", cloudName), re.HideStackTrace)
 	}
 
 	keyVaultCerts, err := getKeyvaultRequestObj(attrib)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get keyvault request object from provider attributes, error: %w", err)
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault request object from provider attributes", re.HideStackTrace)
 	}
 
 	if len(keyVaultCerts) == 0 {
-		return nil, nil, fmt.Errorf("no keyvault certificate configured")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "no keyvault certificate configured", re.PrintStackTrace)
 	}
 
 	logrus.Debugf("vaultURI %s", keyvaultURI)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
+		return nil, nil, re.ErrorCodePluginInitFailure.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault client", re.HideStackTrace)
 	}
 
 	certs := []*x509.Certificate{}
@@ -137,21 +137,21 @@ func getKeyvaultRequestObj(attrib map[string]string) ([]types.KeyVaultCertificat
 
 	certificatesStrings := types.GetCertificates(attrib)
 	if certificatesStrings == "" {
-		return nil, fmt.Errorf("certificates is not set")
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "certificates is not set", re.HideStackTrace)
 	}
 
 	logrus.Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
 
 	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
-		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
+		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.CertProvider, providerName, re.EmptyLink, err, "failed to yaml unmarshal objects", re.HideStackTrace)
 	}
 	logrus.Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
 	for i, object := range objects.Array {
 		var keyVaultCert types.KeyVaultCertificate
 		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
-			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
+			return nil, re.ErrorCodeDataDecodingFailure.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("unmarshal failed for keyVaultCerts at index: %d", i), re.PrintStackTrace)
 		}
 		// remove whitespace from all fields in keyVaultCert
 		formatKeyVaultCertificate(&keyVaultCert)
@@ -209,12 +209,12 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
-		return nil, fmt.Errorf("failed to add user agent to keyvault client, error: %w", err)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to add user agent to keyvault client", re.PrintStackTrace)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get authorizer for keyvault client, error: %w", err)
+		return nil, re.ErrorCodeAuthDenied.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.PrintStackTrace)
 	}
 	return &kvClient, nil
 }
@@ -223,7 +223,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 // In a certificate chain scenario, all certificates from root to leaf will be returned
 func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
-		return nil, nil, errors.Errorf("found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", certName)
+		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
 	}
 
 	version := getObjectVersion(*secretBundle.ID)
@@ -232,7 +232,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	// akv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
 	if *secretBundle.ContentType != PKCS12ContentType &&
 		*secretBundle.ContentType != PEMContentType {
-		return nil, nil, errors.Errorf("certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType)
+		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType), re.HideStackTrace)
 	}
 
 	results := []*x509.Certificate{}
@@ -244,12 +244,12 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 	if *secretBundle.ContentType == PKCS12ContentType {
 		p12, err := base64.StdEncoding.DecodeString(*secretBundle.Value)
 		if err != nil {
-			return nil, nil, fmt.Errorf("azure keyvault certificate provider: failed to decode PKCS12 Value. Certificate %s, version %s, error: %w", certName, version, err)
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault certificate provider: failed to decode PKCS12 Value. Certificate %s, version %s", certName, version), re.HideStackTrace)
 		}
 
 		blocks, err := pkcs12.ToPEM(p12, "")
 		if err != nil {
-			return nil, nil, fmt.Errorf("azure keyvault certificate provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s, error: %w", certName, version, err)
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault certificate provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s", certName, version), re.HideStackTrace)
 		}
 
 		var pemData []byte
@@ -270,7 +270,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
 			decodedCerts, err := certificateprovider.DecodeCertificates(pemData)
 			if err != nil {
-				return nil, nil, fmt.Errorf("azure keyvault certificate provider: failed to decode Certificate %s, version %s, error: %w", certName, version, err)
+				return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault certificate provider: failed to decode Certificate %s, version %s", certName, version), re.HideStackTrace)
 			}
 			for _, cert := range decodedCerts {
 				results = append(results, cert)
@@ -283,7 +283,7 @@ func getCertsFromSecretBundle(secretBundle kv.SecretBundle, certName string) ([]
 
 		block, rest = pem.Decode(rest)
 		if block == nil && len(rest) > 0 {
-			return nil, nil, errors.Errorf("certificate '%s', version '%s': azure keyvault certificate provider error, block is nil and remaining block to parse > 0", certName, version)
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate '%s', version '%s': azure keyvault certificate provider error, block is nil and remaining block to parse > 0", certName, version), re.HideStackTrace)
 		}
 	}
 	logrus.Debugf("azurekeyvault certprovider getCertsFromSecretBundle: %v certificates parsed, Certificate '%s', version '%s'", len(results), certName, version)

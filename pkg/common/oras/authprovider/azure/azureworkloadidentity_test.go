@@ -17,12 +17,13 @@ package azure
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 )
 
@@ -86,8 +87,8 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
-	expectedErr := fmt.Errorf("azure tenant id environment variable is empty")
-	if err == nil || err.Error() != expectedErr.Error() {
+	expectedErr := ratifyerrors.ErrorCodeAuthDenied.WithDetail("azure tenant id environment variable is empty")
+	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 
@@ -103,15 +104,15 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfigWithClientID)
 
-	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
-	if err == nil || err.Error() != expectedErr.Error() {
+	expectedErr = ratifyerrors.ErrorCodeAuthDenied.WithDetail("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
+	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
-	expectedErr = fmt.Errorf("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
-	if err == nil || err.Error() != expectedErr.Error() {
+	expectedErr = ratifyerrors.ErrorCodeAuthDenied.WithDetail("no client ID provided and AZURE_CLIENT_ID environment variable is empty")
+	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 
@@ -125,8 +126,8 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 
 	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
 
-	expectedErr = fmt.Errorf("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
-	if err == nil || err.Error() != expectedErr.Error() {
+	expectedErr = ratifyerrors.ErrorCodeAuthDenied.WithDetail("required environment variables not set, AZURE_FEDERATED_TOKEN_FILE: , AZURE_AUTHORITY_HOST: ")
+	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
 }

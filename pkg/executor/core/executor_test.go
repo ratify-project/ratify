@@ -22,13 +22,13 @@ import (
 	"testing"
 	"time"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
-	exConfig "github.com/deislabs/ratify/pkg/executor/config"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-
 	e "github.com/deislabs/ratify/pkg/executor"
+	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/policyprovider"
 	policyConfig "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
 	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
@@ -184,7 +184,7 @@ func TestVerifySubjectInternal_ResolveSubjectDescriptor_Success(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
+	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ratifyerrors.ErrorCodeReferrersNotFound.WithDetail("")) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
@@ -210,7 +210,7 @@ func TestVerifySubjectInternal_Verify_NoReferrers(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ErrReferrersNotFound) {
+	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ratifyerrors.ErrorCodeReferrersNotFound.WithDetail("")) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
