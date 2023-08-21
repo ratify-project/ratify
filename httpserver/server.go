@@ -95,6 +95,7 @@ func NewServer(context context.Context,
 	}
 
 	if err := logger.SetFormatter(logConfig.Formatter); err != nil {
+		logrus.Error(err)
 		return nil, err
 	}
 

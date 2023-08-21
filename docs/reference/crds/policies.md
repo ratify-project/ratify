@@ -68,7 +68,7 @@ spec:
 ```
 | Name | Required | Description | Default Value |
 | ----------- | -------- | ----------- | ------------- |
-| passthroughEnabled | no | If set to true, the policy will return true if the verification result is not available. | false |
+| passthroughEnabled | no | If set to true, Ratify will NOT make the decision but pass verifier reports to Gatekeeper. | false |
 | policy | no | The policy language that defines the policy. | "" |
 | policyPath | no | The path to the policy file if policy is mounted as a volume | "" |
 

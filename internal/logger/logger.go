@@ -28,42 +28,54 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// ContextKey defines the key type used for the context.
 type ContextKey string
 
+// String returns the string representation of the context key.
 func (c ContextKey) String() string {
 	return string(c)
 }
 
 type componentType string
 
+// Option is used for each component to add customized fields to the logger.
 type Option struct {
 	ComponentType componentType
 }
 
+// Config is the configuration for the logger.
 type Config struct {
 	Formatter      string            `json:"formatter,omitempty"`
 	RequestHeaders map[string]string `json:"requestHeaders"`
 }
 
 const (
-	ContextKeyTraceID                     = ContextKey("trace-id")
-	ContextKeyComponentType               = ContextKey("component-type")
-	Executor                componentType = "executor"
-	Server                  componentType = "server"
-	ReferrerStore           componentType = "referrerStore"
+	// ContextKeyTraceID is the context key for the trace ID.
+	ContextKeyTraceID = ContextKey("trace-id")
+	// ContextKeyComponentType is the context key for the component type.
+	ContextKeyComponentType = ContextKey("component-type")
+	// Executor is the component type for the executor.
+	Executor componentType = "executor"
+	// Server is the component type for the Ratify http server.
+	Server componentType = "server"
+	// ReferrerStore is the component type for the referrer store.
+	ReferrerStore componentType = "referrerStore"
 
 	traceIDHeaderName = "traceIDHeaderName"
 )
 
+// InitLogger initializes the logger with the given configuration.
 func InitLogger(ctx context.Context, r *http.Request, config Config) context.Context {
 	return setTraceID(ctx, r, config.RequestHeaders)
 }
 
+// GetLogger returns a logger with provided values.
 func GetLogger(ctx context.Context, opt Option) dcontext.Logger {
 	ctx = context.WithValue(ctx, ContextKeyComponentType, opt.ComponentType)
 	return dcontext.GetLogger(ctx, ContextKeyComponentType)
 }
 
+// setTraceID sets the trace ID in the context. If the trace ID is not present in the request headers, a new one is generated.
 func setTraceID(ctx context.Context, r *http.Request, headers map[string]string) context.Context {
 	traceID := ""
 	if headers != nil {
@@ -79,6 +91,7 @@ func setTraceID(ctx context.Context, r *http.Request, headers map[string]string)
 	return dcontext.WithLogger(ctx, dcontext.GetLogger(ctx, ContextKeyTraceID))
 }
 
+// SetFormatter sets the formatter for the logger.
 func SetFormatter(formatter string) error {
 	switch formatter {
 	case "text", "":
@@ -87,15 +100,17 @@ func SetFormatter(formatter string) error {
 			DisableQuote:    true,
 		})
 	case "json":
-		logrus.SetFormatter(&logrus.JSONFormatter{})
+		logrus.SetFormatter(&logrus.JSONFormatter{
+			TimestampFormat: time.RFC3339Nano,
+		})
 	case "logstash":
 		logrus.SetFormatter(&logstash.LogstashFormatter{
-			Formatter: &logrus.JSONFormatter{},
+			Formatter: &logrus.JSONFormatter{
+				TimestampFormat: time.RFC3339Nano,
+			},
 		})
 	default:
-		err := re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("unsupported logging formatter: %s", formatter))
-		logrus.Error(err)
-		return err
+		return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("unsupported logging formatter: %s", formatter))
 	}
 	return nil
 }
