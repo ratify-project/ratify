@@ -64,6 +64,7 @@ deploy_ratify() {
   echo "deploying ratify"
   local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
   local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
+
   helm install ratify \
     ./charts/ratify --atomic \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
@@ -79,6 +80,7 @@ deploy_ratify() {
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
     --set-file cosign.key=".staging/cosign/cosign.pub" \
+    --set featureFlags.RATIFY_CERT_ROTATION=true \
     --set logLevel=debug
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
@@ -87,7 +89,7 @@ deploy_ratify() {
   kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
 }
 
-upload_cert_to_akv() { 
+upload_cert_to_akv() {
   rm -f notation.pem
   cat ~/.config/notation/localkeys/ratify-bats-test.key >>notation.pem
   cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notation.pem
@@ -99,9 +101,9 @@ upload_cert_to_akv() {
     -f notation.pem
 
   rm -f notationchain.pem
-  
+
   cat .staging/notation/leaf-test/leaf.key >>notationchain.pem
-  cat .staging/notation/leaf-test/leaf.crt >>notationchain.pem   
+  cat .staging/notation/leaf-test/leaf.crt >>notationchain.pem
 
   echo "uploading notationchain.pem"
   az keyvault certificate import \
