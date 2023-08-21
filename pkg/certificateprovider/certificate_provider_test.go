@@ -16,8 +16,10 @@ limitations under the License.
 package certificateprovider
 
 import (
+	"errors"
 	"testing"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -98,8 +100,8 @@ func TestDecodeCertificates_FailedToDecode(t *testing.T) {
 		t.Fatalf("DecodeCertificates should return an error")
 	}
 
-	expectedError := "failed to decode pem block"
-	if err.Error() != expectedError {
+	expectedError := ratifyerrors.ErrorCodeCertInvalid.WithDetail("failed to decode pem block")
+	if !errors.Is(err, expectedError) {
 		t.Fatalf("unexpected error, expected %+v, got %+v", expectedError, err.Error())
 	}
 }
@@ -114,8 +116,8 @@ func TestDecodeCertificates_FailedX509ParseError(t *testing.T) {
 		t.Fatalf("DecodeCertificates should return an error")
 	}
 
-	expectedError := "error parsing x509 certificate: x509: malformed issuer"
-	if err.Error() != expectedError {
+	expectedError := ratifyerrors.ErrorCodeCertInvalid.WithDetail("error parsing x509 certificate: x509: malformed issuer")
+	if !errors.Is(err, expectedError) {
 		t.Fatalf("unexpected error, expected %+v, got %+v", expectedError, err.Error())
 	}
 }

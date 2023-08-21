@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package core
+package errors
 
-import "errors"
-
-var (
-	// ErrReferrersNotFound is thrown when there aren't any references for an artifact
-	ErrReferrersNotFound = errors.New("no referrers found for this artifact")
+const (
+	AKVLink                   = "https://learn.microsoft.com/en-us/azure/key-vault/general/overview"
+	AzureWorkloadIdentityLink = "https://learn.microsoft.com/en-us/azure/aks/workload-identity-overview"
+	AzureManagedIdentityLink  = "https://learn.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/overview"
 )

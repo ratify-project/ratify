@@ -23,6 +23,7 @@ import (
 	"reflect"
 	"testing"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/cache"
 	_ "github.com/deislabs/ratify/pkg/cache/ristretto"
 	"github.com/deislabs/ratify/pkg/common"
@@ -58,13 +59,13 @@ func TestAttachedImageTag(t *testing.T) {
 				Path: "localhost:5000/net-monitor",
 				Tag:  "v1",
 			},
-			err: ErrNoCosignSubjectDigest,
+			err: ratifyerrors.ErrorCodeReferenceInvalid.WithDetail(""),
 		},
 	}
 
 	for _, testcase := range testcases {
 		mutated, err := attachedImageTag(testcase.input, CosignSignatureTagSuffix)
-		if err != nil && !errors.Is(err, ErrNoCosignSubjectDigest) {
+		if err != nil && !errors.Is(err, testcase.err) {
 			t.Fatalf("expected error to be %v, but got %v", testcase.err, err)
 		}
 		if mutated != testcase.output {
@@ -106,7 +107,7 @@ func TestGetCosignReferences(t *testing.T) {
 			},
 			repository: mocks.TestRepository{},
 			output:     nil,
-			err:        ErrNoCosignSubjectDigest,
+			err:        ratifyerrors.ErrorCodeReferenceInvalid.WithDetail(""),
 		},
 		{
 			name: "no cosign references",
@@ -160,7 +161,7 @@ func TestGetCosignReferences(t *testing.T) {
 				ResolveErr: nonStandardError,
 			},
 			output: nil,
-			err:    nonStandardError,
+			err:    ratifyerrors.ErrorCodeRepositoryOperationFailure.WithDetail(""),
 		},
 		{
 			name: "resolve error forbidden error code",
@@ -174,7 +175,7 @@ func TestGetCosignReferences(t *testing.T) {
 				ResolveErr: forbiddenError,
 			},
 			output: nil,
-			err:    forbiddenError,
+			err:    ratifyerrors.ErrorCodeRepositoryOperationFailure.WithDetail(""),
 		},
 		{
 			name: "resolve error unauthorized error code",
@@ -188,7 +189,7 @@ func TestGetCosignReferences(t *testing.T) {
 				ResolveErr: unauthorizedError,
 			},
 			output: nil,
-			err:    unauthorizedError,
+			err:    ratifyerrors.ErrorCodeRepositoryOperationFailure.WithDetail(""),
 		},
 	}
 	for _, testcase := range testcases {

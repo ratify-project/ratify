@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -61,7 +62,7 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 		val, found := cacheProvider.Get(ctx, cacheKey)
 		if val != "" && found {
 			if err = json.Unmarshal([]byte(val), &result); err != nil {
-				logrus.Warningf("failed to unmarshal cache value for key %+v: %v", cacheKey, err)
+				logrus.Warning(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value for key %s: %s", cacheKey, val), errors.HideStackTrace))
 			} else {
 				logrus.Debug("cache hit for list referrers")
 				return result, nil
@@ -91,7 +92,7 @@ func (store *orasStoreWithInMemoryCache) GetSubjectDescriptor(ctx context.Contex
 		val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, subjectReference.Digest))
 		if val != "" && found {
 			if err = json.Unmarshal([]byte(val), result); err != nil {
-				logrus.Warningf("failed to unmarshal cache value: %v", err)
+				logrus.Warning(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value: %v", val), errors.HideStackTrace))
 			} else {
 				logrus.Debug("cache hit for subject descriptor")
 				return result, nil
