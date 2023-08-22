@@ -39,7 +39,7 @@ curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./notation.crt \
+    --set-file notationCert=./notation.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true
 ```
 
@@ -51,7 +51,7 @@ cd ratify
 helm install ratify \
     ./charts/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./test/testdata/notation.crt \
+    --set-file notationCert=./test/testdata/notation.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true
 ```
 
