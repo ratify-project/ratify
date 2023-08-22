@@ -35,11 +35,11 @@ Note: if the crt/key/cabundle are NOT set under `provider.tls` in values.yaml, h
 ```bash
 helm repo add ratify https://deislabs.github.io/ratify
 # download the notary verification certificate
-curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notary.crt
+curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt
 helm install ratify \
     ratify/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./notary.crt \
+    --set-file notationCert=./notation.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true
 ```
 
@@ -51,7 +51,7 @@ cd ratify
 helm install ratify \
     ./charts/ratify --atomic \
     --namespace gatekeeper-system \
-    --set-file notaryCert=./test/testdata/notary.crt \
+    --set-file notationCert=./test/testdata/notation.crt \
     --set featureFlags.RATIFY_CERT_ROTATION=true
 ```
 
@@ -68,7 +68,7 @@ Once the installation is completed, you can test the deployment of an image that
 - This will successfully create the pod `demo`
 
 ```bash
-kubectl run demo --image=ghcr.io/deislabs/ratify/notary-image:signed
+kubectl run demo --namespace default --image=ghcr.io/deislabs/ratify/notary-image:signed
 kubectl get pods demo
 ```
 
@@ -77,7 +77,7 @@ Optionally you can see the output of the pod logs via: `kubectl logs demo`
 - Now deploy an unsigned image
 
 ```bash
-kubectl run demo1 --image=ghcr.io/deislabs/ratify/notary-image:unsigned
+kubectl run demo1 --namespace default --image=ghcr.io/deislabs/ratify/notary-image:unsigned
 ```
 
 You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
