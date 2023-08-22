@@ -455,6 +455,8 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 		Credential: credentialProvider,
 	}
 
+	repoClient.Header = logger.SetTraceIDHeader(ctx, repoClient.Header)
+
 	// enable insecure if specified in config
 	if isInsecureRegistry(targetRef.Original, store.config) {
 		repoClient.Client = store.httpClientInsecure

@@ -152,7 +152,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -223,7 +223,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -296,7 +296,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true, logger.Config{}),
+			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -376,7 +376,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -428,7 +428,7 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false, logger.Config{}),
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)

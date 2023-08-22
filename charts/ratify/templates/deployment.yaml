@@ -26,7 +26,7 @@ spec:
         {{- if and .Values.provider.cache.enabled  (eq .Values.provider.cache.type "dapr") }}
         dapr.io/enabled: "true"
         dapr.io/app-id: {{ include "ratify.fullname" . }}
-        {{- if eq (lower .Values.logLevel) "debug" }}
+        {{- if eq (lower .Values.logger.level) "debug" }}
         dapr.io/enable-api-logging: "true"
         {{- end }}
         {{- end }}
@@ -103,9 +103,9 @@ spec:
               readOnly: true
             {{- end }}
           env:
-          {{- if .Values.logLevel }}
+          {{- if .Values.logger.level }}
             - name: RATIFY_LOG_LEVEL
-              value: {{ .Values.logLevel }}
+              value: {{ .Values.logger.level }}
           {{- end }}
           {{- if $dockerAuthMode }}
             - name: DOCKER_CONFIG

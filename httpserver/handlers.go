@@ -35,7 +35,6 @@ import (
 	"github.com/deislabs/ratify/utils"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	"github.com/sirupsen/logrus"
 )
 
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
@@ -88,7 +87,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			unlock := server.keyMutex.Lock(resolvedSubjectReference)
 			defer unlock()
 
-			logrus.Infof("verifying subject %v", resolvedSubjectReference)
+			logger.GetLogger(ctx, server.LogOption).Infof("verifying subject %v", resolvedSubjectReference)
 			var result types.VerifyResult
 			found := false
 			cacheHit := false
@@ -134,7 +133,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
-	logrus.Debugf("verification: execution time for request: %dms", elapsedTime)
+	logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for request: %dms", elapsedTime)
 	metrics.ReportVerificationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, false)
 }
@@ -143,7 +142,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
-	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+	logger.GetLogger(ctx, server.LogOption).Infof("start request %s %s", sanitizedMethod, sanitizedURL)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -165,7 +164,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 		go func(image string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
-			logrus.Infof("mutating image %v", image)
+			logger.GetLogger(ctx, server.LogOption).Infof("mutating image %v", image)
 			returnItem := externaldata.Item{
 				Key:   image,
 				Value: image,
@@ -178,7 +177,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
 				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
-				logrus.Error(err)
+				logger.GetLogger(ctx, server.LogOption).Error(err)
 				returnItem.Error = err.Error()
 				return
 			}
@@ -193,7 +192,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				}
 				if selectedStore == nil {
 					err := errors.ErrorCodeReferrerStoreFailure.WithDetail(fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)).WithComponentType(errors.ReferrerStore)
-					logrus.Error(err)
+					logger.GetLogger(ctx, server.LogOption).Error(err)
 					returnItem.Error = err.Error()
 					return
 				}
@@ -205,12 +204,12 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				}
 				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 			}
-			logrus.Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
+			logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(image))
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
-	logrus.Debugf("mutation: execution time for request: %dms", elapsedTime)
+	logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for request: %dms", elapsedTime)
 	metrics.ReportMutationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, true)
 }
@@ -235,12 +234,12 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
-func processTimeout(h ContextHandler, duration time.Duration, isMutation bool, config logger.Config) ContextHandler {
+func processTimeout(h ContextHandler, duration time.Duration, isMutation bool) ContextHandler {
 	return func(handlerContext context.Context, w http.ResponseWriter, r *http.Request) error {
 		ctx, cancel := context.WithTimeout(r.Context(), duration)
 		defer cancel()
 
-		ctx = logger.InitLogger(ctx, r, config)
+		ctx = logger.InitContext(ctx, r)
 
 		r = r.WithContext(ctx)
 

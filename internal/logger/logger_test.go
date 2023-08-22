@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 
 	logstash "github.com/bshuster-repo/logrus-logstash-hook"
@@ -41,42 +42,27 @@ func init() {
 	testHeader.Set(traceIDName, testTraceID)
 }
 
-func TestInitLogger(t *testing.T) {
+func cleanup() {
+	traceIDHeaderNames = []string{}
+}
+
+func TestInitContext(t *testing.T) {
+	defer cleanup()
 	testCases := []struct {
 		name            string
-		config          Config
 		r               *http.Request
+		headerNames     []string
 		expectedTraceID string
 	}{
 		{
-			name:   "no headers set",
-			config: Config{},
-			r:      &http.Request{},
-		},
-		{
-			name: "headers do not contain traceIDHeader",
-			config: Config{
-				RequestHeaders: make(map[string]string),
-			},
-			r: &http.Request{},
-		},
-		{
-			name: "request does not contain traceIDHeader",
-			config: Config{
-				RequestHeaders: map[string]string{
-					traceIDHeaderName: traceIDName,
-				},
-			},
-			r: &http.Request{
-				Header: http.Header{},
-			},
+			name:        "no headers set",
+			headerNames: []string{},
+			r:           &http.Request{},
 		},
 		{
 			name: "request has its own traceIDHeader",
-			config: Config{
-				RequestHeaders: map[string]string{
-					traceIDHeaderName: traceIDName,
-				},
+			headerNames: []string{
+				traceIDName,
 			},
 			r: &http.Request{
 				Header: testHeader,
@@ -87,7 +73,8 @@ func TestInitLogger(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := InitLogger(context.Background(), tc.r, tc.config)
+			traceIDHeaderNames = tc.headerNames
+			ctx := InitContext(context.Background(), tc.r)
 			traceID := dcontext.GetStringValue(ctx, ContextKeyTraceID)
 			if traceID == "" {
 				t.Fatalf("expected non-empty traceID, but got empty one")
@@ -96,6 +83,24 @@ func TestInitLogger(t *testing.T) {
 				t.Fatalf("expected traceID %s, but got %s", tc.expectedTraceID, traceID)
 			}
 		})
+	}
+}
+
+func TestSetTraceIDHeader(t *testing.T) {
+	defer cleanup()
+
+	traceIDHeaderNames = []string{traceIDName}
+	header := http.Header{}
+	header = SetTraceIDHeader(context.Background(), header)
+	if header.Get(traceIDName) != "" {
+		t.Fatalf("expected empty traceID, but got %s", header.Get(traceIDName))
+	}
+
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, ContextKeyTraceID, testTraceID)
+	header = SetTraceIDHeader(ctx, header)
+	if header.Get(traceIDName) != testTraceID {
+		t.Fatalf("expected traceID %s, but got %s", testTraceID, header.Get(traceIDName))
 	}
 }
 
@@ -111,9 +116,48 @@ func TestGetLogger(t *testing.T) {
 	}
 }
 
+func TestInitTraceIDHeaders(t *testing.T) {
+	defer cleanup()
+
+	testCases := []struct {
+		name          string
+		headers       map[string]interface{}
+		expectedNames []string
+	}{
+		{
+			name:          "no headers set",
+			headers:       nil,
+			expectedNames: make([]string, 0),
+		},
+		{
+			name: "headers do not contain traceIDHeader",
+			headers: map[string]interface{}{
+				traceIDHeaderName: "test",
+			},
+			expectedNames: make([]string, 0),
+		},
+		{
+			name: "headers contain traceIDHeader",
+			headers: map[string]interface{}{
+				traceIDHeaderName: []string{traceIDName},
+			},
+			expectedNames: []string{traceIDName},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			initTraceIDHeaders(tc.headers)
+			if !reflect.DeepEqual(tc.expectedNames, traceIDHeaderNames) {
+				t.Fatalf("expected traceIDHeaderNames %v, but got %v", tc.expectedNames, traceIDHeaderNames)
+			}
+		})
+	}
+}
+
 func TestSetFormatter(t *testing.T) {
 	t.Run("TextFormatter", func(t *testing.T) {
-		err := SetFormatter("text")
+		err := setFormatter("text")
 		assert.NoError(t, err)
 
 		// Assert that the formatter is set to TextFormatter
@@ -121,7 +165,7 @@ func TestSetFormatter(t *testing.T) {
 	})
 
 	t.Run("JSONFormatter", func(t *testing.T) {
-		err := SetFormatter("json")
+		err := setFormatter("json")
 		assert.NoError(t, err)
 
 		// Assert that the formatter is set to JSONFormatter
@@ -129,7 +173,7 @@ func TestSetFormatter(t *testing.T) {
 	})
 
 	t.Run("LogstashFormatter", func(t *testing.T) {
-		err := SetFormatter("logstash")
+		err := setFormatter("logstash")
 		assert.NoError(t, err)
 
 		// Assert that the formatter is set to LogstashFormatter
@@ -138,11 +182,23 @@ func TestSetFormatter(t *testing.T) {
 	})
 
 	t.Run("UnsupportedFormatter", func(t *testing.T) {
-		err := SetFormatter("unsupported")
+		err := setFormatter("unsupported")
 		assert.Error(t, err)
 
 		// Assert that an error is returned for unsupported formatter
 		expectedErrMsg := "unsupported logging formatter: unsupported"
 		assert.Contains(t, err.Error(), expectedErrMsg)
 	})
+}
+
+func TestInitLogConfig(t *testing.T) {
+	config := Config{
+		Formatter: "text",
+		RequestHeaders: map[string]interface{}{
+			traceIDHeaderName: []string{traceIDName},
+		},
+	}
+	if err := InitLogConfig(config); err != nil {
+		t.Fatalf("expected no error, but got %v", err)
+	}
 }

@@ -105,7 +105,7 @@ func serve(opts serveCmdOptions) error {
 	if opts.httpServerAddress != "" {
 		logConfig, err := config.GetLoggerConfig(opts.configFilePath)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to retrieve logger configuration: %w", err)
 		}
 
 		server, err := httpserver.NewServer(context.Background(), opts.httpServerAddress, getExecutor, opts.certDirectory, opts.caCertFile, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort, logConfig)

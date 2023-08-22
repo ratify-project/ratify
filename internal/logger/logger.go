@@ -45,9 +45,11 @@ type Option struct {
 
 // Config is the configuration for the logger.
 type Config struct {
-	Formatter      string            `json:"formatter,omitempty"`
-	RequestHeaders map[string]string `json:"requestHeaders"`
+	Formatter      string                 `json:"formatter,omitempty"`
+	RequestHeaders map[string]interface{} `json:"requestHeaders"`
 }
+
+var traceIDHeaderNames = make([]string, 0)
 
 const (
 	// ContextKeyTraceID is the context key for the trace ID.
@@ -64,9 +66,15 @@ const (
 	traceIDHeaderName = "traceIDHeaderName"
 )
 
-// InitLogger initializes the logger with the given configuration.
-func InitLogger(ctx context.Context, r *http.Request, config Config) context.Context {
-	return setTraceID(ctx, r, config.RequestHeaders)
+// InitLogConfig initializes log configuration for the server.
+func InitLogConfig(config Config) error {
+	initTraceIDHeaders(config.RequestHeaders)
+	return setFormatter(config.Formatter)
+}
+
+// InitContext initializes the context with required loggers for a request.
+func InitContext(ctx context.Context, r *http.Request) context.Context {
+	return setTraceID(ctx, r)
 }
 
 // GetLogger returns a logger with provided values.
@@ -76,12 +84,11 @@ func GetLogger(ctx context.Context, opt Option) dcontext.Logger {
 }
 
 // setTraceID sets the trace ID in the context. If the trace ID is not present in the request headers, a new one is generated.
-func setTraceID(ctx context.Context, r *http.Request, headers map[string]string) context.Context {
+func setTraceID(ctx context.Context, r *http.Request) context.Context {
 	traceID := ""
-	if headers != nil {
-		if _, ok := headers[traceIDHeaderName]; ok {
-			label := headers[traceIDHeaderName]
-			traceID = r.Header.Get(label)
+	for _, headerName := range traceIDHeaderNames {
+		if traceID = r.Header.Get(headerName); traceID != "" {
+			break
 		}
 	}
 	if traceID == "" {
@@ -91,8 +98,31 @@ func setTraceID(ctx context.Context, r *http.Request, headers map[string]string)
 	return dcontext.WithLogger(ctx, dcontext.GetLogger(ctx, ContextKeyTraceID))
 }
 
-// SetFormatter sets the formatter for the logger.
-func SetFormatter(formatter string) error {
+// SetTraceIDHeader sets the trace ID in the http header.
+func SetTraceIDHeader(ctx context.Context, header http.Header) http.Header {
+	traceID := ctx.Value(ContextKeyTraceID)
+	if traceID != nil {
+		for _, headerName := range traceIDHeaderNames {
+			header.Set(headerName, traceID.(string))
+		}
+	}
+	return header
+}
+
+// initTraceIDHeaders initializes traceIDHeaderNames with the header names provided in the config.
+func initTraceIDHeaders(headers map[string]interface{}) {
+	if headers == nil {
+		return
+	}
+	if _, ok := headers[traceIDHeaderName]; ok {
+		if names, ok := headers[traceIDHeaderName].([]string); ok {
+			traceIDHeaderNames = append(traceIDHeaderNames, names...)
+		}
+	}
+}
+
+// setFormatter sets the formatter for the logger.
+func setFormatter(formatter string) error {
 	switch formatter {
 	case "text", "":
 		logrus.SetFormatter(&logrus.TextFormatter{

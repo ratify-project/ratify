@@ -6,7 +6,6 @@ image:
 
 nameOverride: ""
 fullnameOverride: ""
-logLevel: info
 replicaCount: 1
 notationCert: ""
 cosign:
@@ -116,8 +115,10 @@ policy:
 
 logger:
   formatter: "text"
+  level: "info"
   requestHeaders:
-    traceIDHeaderName: ""
+    traceIDHeaderName:
+      - ""
 
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:

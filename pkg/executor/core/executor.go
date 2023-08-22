@@ -60,7 +60,6 @@ type Executor struct {
 // TODO Logging within executor
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
-	logger.GetLogger(ctx, logOpt).Info("Verifying subject")
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.
