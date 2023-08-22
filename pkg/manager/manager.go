@@ -79,13 +79,13 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 
 	cf, err := config.Load(configFilePath)
 	if err != nil {
-		logrus.Warnf("error loading config %v", err)
+		logrus.Errorf("server start failed %v", fmt.Errorf("error loading config %w", err))
 		os.Exit(1)
 	}
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
 	if err != nil {
-		logrus.Warnf("error initializing from config %v", err)
+		logrus.Errorf("server start failed %v", fmt.Errorf("error initializing from config %w", err))
 		os.Exit(1)
 	}
 
@@ -132,10 +132,12 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
+		logrus.Errorf("initialize server failed with error %v, exiting..", err)
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
 	if err := server.Run(certRotatorReady); err != nil {
+		logrus.Errorf("starting server failed with error %v, exiting..", err)
 		os.Exit(1)
 	}
 }
@@ -153,7 +155,6 @@ func StartManager(certRotatorReady chan struct{}) {
 
 	logrusSink := controllers.NewLogrusSink(logrus.StandardLogger())
 	ctrl.SetLogger(logr.New(logrusSink))
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
