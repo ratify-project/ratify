@@ -176,8 +176,8 @@ jobs:
         with:
           use-quiet-mode: 'no'
           use-verbose-mode: 'yes'
-          check-modified-files-only: 'yes'
-      
+          config-file: '.github/workflows/markdown.links.config.json'
+          folder-path: 'docs/'
   test-cleanup:
     env:
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
