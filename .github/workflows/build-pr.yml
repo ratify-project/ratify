@@ -164,6 +164,12 @@ jobs:
           path: |
             logs-*.json
 
+  markdown-link-check:
+      runs-on: ubuntu-latest
+      steps:
+      - uses: actions/checkout@master
+      - uses: gaurav-nelson/github-action-markdown-link-check@v1\
+      
   test-cleanup:
     env:
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
