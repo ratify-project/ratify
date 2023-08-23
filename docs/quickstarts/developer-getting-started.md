@@ -31,7 +31,7 @@ alias k="kubectl"
 ```bash
 export RATIFY_NAMESPACE=gatekeeper-system
 export KUBERNETES_VERSION=1.25.4
-export GATEKEEPER_VERSION=3.11.0
+export GATEKEEPER_VERSION=3.13.0
 export IMAGE_PULL_POLICY=IfNotPresent
 export RATIFY_LOG_LEVEL=INFO
 ```
@@ -97,8 +97,8 @@ helm install gatekeeper/gatekeeper  \
     --name-template=gatekeeper \
     --namespace gatekeeper-system --create-namespace \
     --version=${GATEKEEPER_VERSION} \
-    --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=7    
+    --set validatingWebhookTimeoutSeconds=5 \
+    --set mutatingWebhookTimeoutSeconds=2    
 ```
 
 ## Ratify
