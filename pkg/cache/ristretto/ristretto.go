@@ -21,14 +21,17 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/cespare/xxhash/v2"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/dgraph-io/ristretto"
 	"github.com/dgraph-io/ristretto/z"
-	"github.com/sirupsen/logrus"
 )
 
 const RistrettoCacheType = "ristretto"
+var logOpt = logger.Option{
+	ComponentType: logger.Cache,
+}
 
 type factory struct {
 	once sync.Once
@@ -42,7 +45,7 @@ func init() {
 	cache.Register(RistrettoCacheType, &factory{})
 }
 
-func (f *factory) Create(_ context.Context, _ string, cacheSize int) (cache.CacheProvider, error) {
+func (f *factory) Create(ctx context.Context, _ string, cacheSize int) (cache.CacheProvider, error) {
 	var err error
 	var memoryCache *ristretto.Cache
 	f.once.Do(func() {
@@ -54,7 +57,7 @@ func (f *factory) Create(_ context.Context, _ string, cacheSize int) (cache.Cach
 		})
 	})
 	if err != nil {
-		logrus.Errorf("could not create cache, err: %v", err)
+		logger.GetLogger(ctx, logOpt).Errorf("could not create cache, err: %v", err)
 		return &ristrettoCache{}, err
 	}
 
@@ -72,19 +75,19 @@ func (r *ristrettoCache) Get(_ context.Context, key string) (string, bool) {
 	return returnValue, ok
 }
 
-func (r *ristrettoCache) Set(_ context.Context, key string, value interface{}) bool {
+func (r *ristrettoCache) Set(ctx context.Context, key string, value interface{}) bool {
 	bytes, err := json.Marshal(value)
 	if err != nil {
-		logrus.Error("Error marshalling value for ristretto: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for ristretto: ", err)
 		return false
 	}
 	return r.memoryCache.Set(key, string(bytes), 1)
 }
 
-func (r *ristrettoCache) SetWithTTL(_ context.Context, key string, value interface{}, ttl time.Duration) bool {
+func (r *ristrettoCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool {
 	bytes, err := json.Marshal(value)
 	if err != nil {
-		logrus.Error("Error marshalling value for ristretto: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for ristretto: ", err)
 		return false
 	}
 	return r.memoryCache.SetWithTTL(key, string(bytes), 1, ttl)
