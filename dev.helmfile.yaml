@@ -1,0 +1,82 @@
+repositories:
+  - name: gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/charts
+  - name: ratify
+    url: https://deislabs.github.io/ratify
+    
+releases:
+  - name: gatekeeper
+    namespace: gatekeeper-system
+    createNamespace: true
+    chart: gatekeeper/gatekeeper
+    version: 3.12.0
+    wait: true
+    set:
+      - name: enableExternalData
+        value: true
+      - name: validatingWebhookTimeoutSeconds
+        value: 5
+      - name: mutatingWebhookTimeoutSeconds
+        value: 2
+  - name: ratify
+    namespace: gatekeeper-system
+    chart: charts/ratify # CHANGE to 'ratify/ratify' before copying to helmfile.yaml
+    version: 1.8.0
+    wait: true
+    needs:
+      - gatekeeper
+    hooks:
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - "kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml && kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+      - events: ["postuninstall"]
+        showlogs: true
+        command: "kubectl"
+        args:
+          - "delete"
+          - "-f"
+          - "https://deislabs.github.io/ratify/library/default/template.yaml"
+          - "--ignore-not-found=true"
+      - events: ["postuninstall"]
+        showlogs: true
+        command: "kubectl"
+        args:
+          - "delete"
+          - "-f"
+          - "https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "--ignore-not-found=true"
+      - events: ["postuninstall"]
+        showlogs: true
+        command: "kubectl"
+        args:
+          - "delete"
+          - "crd"
+          - "stores.config.ratify.deislabs.io"
+          - "verifiers.config.ratify.deislabs.io"
+          - "certificatestores.config.ratify.deislabs.io"
+          - "policies.config.ratify.deislabs.io"
+      - events: ["postuninstall"]
+        showlogs: true
+        command: "kubectl"
+        args:
+          - "delete"
+          - "secret"
+          - "ratify-tls"
+          - "-n"
+          - "gatekeeper-system"
+    set:
+      - name: notationCert
+        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
+      - name: featureFlags.RATIFY_CERT_ROTATION
+        value: true
+      - name: image.repository # REMOVE before copying to helmfile.yaml
+        value: ghcr.io/deislabs/ratify-dev # REMOVE before copying to helmfile.yaml
+      - name: image.crdRepository # REMOVE before copying to helmfile.yaml
+        value: ghcr.io/deislabs/ratify-crds-dev # REMOVE before copying to helmfile.yaml
+      - name: image.tag # REMOVE before copying to helmfile.yaml
+        value: dev.20230822.cd81c6e # REMOVE before copying to helmfile.yaml
+      - name: image.pullPolicy # REMOVE before copying to helmfile.yaml
+        value: Always # REMOVE before copying to helmfile.yaml

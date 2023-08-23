@@ -31,7 +31,7 @@ releases:
         value: false
   - name: ratify
     namespace: gatekeeper-system
-    chart: charts/ratify/ # CHANGE to 'ratify/ratify' before copying to high-availability.helmfile.yaml
+    chart: charts/ratify/
     version: 1.8.0
     wait: true
     needs:
@@ -109,13 +109,15 @@ releases:
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: image.repository
-        value: ghcr.io/deislabs/ratify-dev
-      - name: image.crdRepository
-        value: ghcr.io/deislabs/ratify-crds-dev
-      - name: image.tag
-        value: dev.20230723.d81e305
+      - name: image.repository # REMOVE before copying to high-availability.helmfile.yaml
+        value: ghcr.io/deislabs/ratify-dev # REMOVE before copying to high-availability.helmfile.yaml
+      - name: image.crdRepository # REMOVE before copying to high-availability.helmfile.yaml
+        value: ghcr.io/deislabs/ratify-crds-dev # REMOVE before copying to high-availability.helmfile.yaml
+      - name: image.tag # REMOVE before copying to high-availability.helmfile.yaml
+        value: dev.20230822.cd81c6e # REMOVE before copying to high-availability.helmfile.yaml
       - name: featureFlags.RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY
+        value: true
+      - name: featureFlags.RATIFY_CERT_ROTATION
         value: true
       - name: logLevel
         value: debug
