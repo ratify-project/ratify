@@ -33,7 +33,7 @@ Once these resources are set up, you can deploy Ratify to Azure using Helm or ot
 | GitHub account       | [Get a free GitHub account](https://github.com/join) |
 | Azure account        | [Get a free Azure account](https://azure.microsoft.com/free) |
 | Azure CLI            | [Install Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli) |
-| Terraform            | [Install Terraform](https://learn.hashicorp.com/tutorials/terraform/install-cli) |
+| Terraform            | [Install Terraform](https://developer.hashicorp.com/terraform/tutorials/azure-get-started/install-cli) |
 
 <div class="info" data-title="Note">
 
