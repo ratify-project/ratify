@@ -50,7 +50,7 @@ This framework will use a plugin architecture to integrate custom stores & verif
 An artifact is defined by a manifest and identified by a reference as per the OCI `{DNS/IP}/{Repository}:[name|digest]`.
 A reference artifact is linked to another artifact through descriptor and enables forming a chain of artifacts as shown below. An artifact that has reference types is termed as ```subject``` against which verification can be triggered using this framework.
 
-![tree view of artifact hierarchy](/docs/imgs/artifact-hierarchy.svg)
+![tree view of artifact hierarchy](../imgs/artifact-hierarchy.svg)
 
 This new way of defining reference types to artifacts and creating relationships is described in the [spec](https://github.com/oras-project/artifacts-spec/releases/tag/v1.0.0-rc.2). This framework queries for this graph of reference types artifacts for a subject to verify it. For existing systems that do not support these reference types, there will be storage wrappers that can adapt the corresponding supply chain objects as reference types. The advantage  is to have a uniform data format that can be consumed by different components of the framework.
 
@@ -200,7 +200,7 @@ There could be a tree of references that needs to be traversed and verified befo
 
 ### Sample Data Flow for executor
 
-![Sample Data flow with gatekeeper](/docs/imgs/dataflow.svg)
+![Sample Data flow with gatekeeper](../imgs/dataflow.svg)
 
 ### Open Questions
 

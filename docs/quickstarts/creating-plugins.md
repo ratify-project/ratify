@@ -1,6 +1,6 @@
 # Creating Plugins
 
-Ratify supports plugins for [stores](../reference/store.md) and [verifiers](/docs/developer/verifier.md) so that users can add capabilities that aren't included in the core application. This document is a guide on creating your own plugins.
+Ratify supports plugins for [stores](../reference/store.md) and [verifiers](../reference/verifier.md) so that users can add capabilities that aren't included in the core application. This document is a guide on creating your own plugins.
 
 ## Overview
 
