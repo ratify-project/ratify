@@ -29,7 +29,6 @@ import (
 	"time"
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
 	exconfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -65,7 +64,7 @@ func TestNewServer_Expected(t *testing.T) {
 	testMetricsType := "test-metrics"
 	testMetricsPort := 1010
 
-	server, err := NewServer(context.Background(), testAddress, testGetExecutor, testCertDir, testCACertFile, testCacheTTL, testMetricsEnabled, testMetricsType, testMetricsPort, logger.Config{})
+	server, err := NewServer(context.Background(), testAddress, testGetExecutor, testCertDir, testCACertFile, testCacheTTL, testMetricsEnabled, testMetricsType, testMetricsPort)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

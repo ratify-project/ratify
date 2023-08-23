@@ -129,7 +129,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort, cf.LoggerConfig)
+	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
 		logrus.Errorf("initialize server failed with error %v, exiting..", err)

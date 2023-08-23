@@ -4,7 +4,7 @@
 Logging is a very important part of Ratify as it provides a way to debug and understand the behavior of the system. Ratify uses [Logrus](https://github.com/sirupsen/logrus) as the logging library.
 
 ## Usage
-Ratify exposed a few options for users to configure the behavior of the logger. The logger can be configured through the helm chart values or the configuration file.
+Ratify exposes a few options for users to configure the behaviors of the logger in the helm chart values or the configuration file below.
 
 ### Configuration
 When running Ratify as a K8s add-on, users could configure the logger by setting [helm chart values](../../charts/ratify/values.yaml), e.g.

@@ -60,7 +60,6 @@ type Server struct {
 	MetricsType       string
 	MetricsPort       int
 	CacheTTL          time.Duration
-	LogConfig         logger.Config
 	LogOption         logger.Option
 
 	keyMutex keyMutex
@@ -88,15 +87,9 @@ func NewServer(context context.Context,
 	cacheTTL time.Duration,
 	metricsEnabled bool,
 	metricsType string,
-	metricsPort int,
-	logConfig logger.Config) (*Server, error) {
+	metricsPort int) (*Server, error) {
 	if address == "" {
 		return nil, ServerAddrNotFoundError{}
-	}
-
-	if err := logger.InitLogConfig(logConfig); err != nil {
-		logrus.Error(err)
-		return nil, err
 	}
 
 	server := &Server{
@@ -112,7 +105,6 @@ func NewServer(context context.Context,
 		MetricsPort:       metricsPort,
 		CacheTTL:          cacheTTL,
 		keyMutex:          keyMutex{},
-		LogConfig:         logConfig,
 		LogOption:         logger.Option{ComponentType: logger.Server},
 	}
 
