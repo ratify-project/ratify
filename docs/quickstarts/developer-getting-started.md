@@ -132,7 +132,7 @@ helm install ratify ./charts/ratify \
     --set image.crdRepository=localbuildcrd \
     --set image.tag=test \
     --set image.pullPolicy=${IMAGE_PULL_POLICY} \
-    --set logLevel=info      
+    --set logger.level=info      
 ```
 
 ### Upgrade
@@ -149,7 +149,7 @@ helm upgrade -i ratify ./charts/ratify \
     --set image.crdRepository=localbuildcrd \
     --set image.tag=test \
     --set image.pullPolicy=${IMAGE_PULL_POLICY} \
-    --set logLevel=info    
+    --set logger.level=info    
 ```
 
 ### Uninstall
@@ -217,7 +217,7 @@ See [debugging Ratify with VSCode](../../CONTRIBUTING.md#debugging-ratify-with-v
 
 ### Ratify logs 
 
-When installing Ratify the log level can be specified by specifying the switch `--set logLevel=info`.
+When installing Ratify the log level can be specified by specifying the switch `--set logger.level=info`.
 
 The log level can also be configured by setting the env variable `RATIFY_LOG_LEVEL` with one of the follow values:
 
