@@ -82,6 +82,10 @@ resource "azurerm_key_vault_access_policy" "workload-identity" {
   certificate_permissions = [
     "Get"
   ]
+
+  secret_permissions = [
+    "Get"
+  ]
 }
 
 
