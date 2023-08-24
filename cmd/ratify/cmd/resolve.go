@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/logger"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -77,6 +78,10 @@ func resolve(opts resolveCmdOptions) error {
 
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
+		return err
+	}
+
+	if err := logger.InitLogConfig(cf.LoggerConfig); err != nil {
 		return err
 	}
 

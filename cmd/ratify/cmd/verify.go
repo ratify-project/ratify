@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/logger"
 	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
@@ -85,6 +86,10 @@ func verify(opts verifyCmdOptions) error {
 
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
+		return err
+	}
+
+	if err := logger.InitLogConfig(cf.LoggerConfig); err != nil {
 		return err
 	}
 

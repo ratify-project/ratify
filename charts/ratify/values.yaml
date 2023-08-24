@@ -6,7 +6,6 @@ image:
 
 nameOverride: ""
 fullnameOverride: ""
-logLevel: info
 replicaCount: 1
 notationCert: ""
 cosign:
@@ -113,6 +112,13 @@ crds:
 
 policy:
   useRego: false # Set to true if Rego Policy would be used for evaluation.
+
+logger:
+  formatter: "text" # Formatter can be set to `text`, `json` or `logstash`. Default to `text` if not specified.
+  level: "info" # Default to `info` if not specified.
+  requestHeaders:
+    traceIDHeaderName: # List of headers that include the trace ID in the external data requests to Ratify. The same headers will be passed to upstream services like remote registries.
+      - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
 
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:

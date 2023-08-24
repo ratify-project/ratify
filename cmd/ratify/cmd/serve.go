@@ -22,6 +22,7 @@ import (
 
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/manager"
 	"github.com/sirupsen/logrus"
@@ -87,6 +88,14 @@ func serve(opts serveCmdOptions) error {
 		}
 		logrus.Debugf("initialized cache of type %s", opts.cacheType)
 	}
+	logConfig, err := config.GetLoggerConfig(opts.configFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve logger configuration: %w", err)
+	}
+	if err := logger.InitLogConfig(logConfig); err != nil {
+		return fmt.Errorf("failed to initialize logger configuration: %w", err)
+	}
+
 	// in crd mode, the manager gets latest store/verifier from crd and pass on to the http server
 	if opts.enableCrdManager {
 		certRotatorReady := make(chan struct{})

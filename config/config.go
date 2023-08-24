@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/deislabs/ratify/internal/logger"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/policyprovider"
@@ -50,6 +51,7 @@ type Config struct {
 	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policy,omitempty"`
 	VerifiersConfig vfConfig.VerifiersConfig `json:"verifier,omitempty"`
 	ExecutorConfig  exConfig.ExecutorConfig  `json:"executor,omitempty"`
+	LoggerConfig    logger.Config            `json:"logger,omitempty"`
 	fileHash        string                   `json:"-"`
 }
 
@@ -134,6 +136,16 @@ func GetDefaultPluginPath() string {
 		initConfigDir.Do(InitDefaultPaths)
 	}
 	return defaultPluginsPath
+}
+
+// GetLoggerConfig returns logger configuration from config file at specified path.
+func GetLoggerConfig(configFilePath string) (logger.Config, error) {
+	config, err := Load(configFilePath)
+	if err != nil {
+		return logger.Config{}, fmt.Errorf("unable to load config: %w", err)
+	}
+
+	return config.LoggerConfig, nil
 }
 
 // if configFilePath is empty, return configuration path from environment variable
