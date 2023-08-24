@@ -23,6 +23,7 @@ import (
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	"github.com/deislabs/ratify/pkg/metrics"
+	"github.com/sirupsen/logrus"
 )
 
 // Source: https://github.com/Azure/azure-workload-identity/blob/d126293e3c7c669378b225ad1b1f29cf6af4e56d/examples/msal-go/token_credential.go#L25
@@ -71,5 +72,6 @@ func readJWTFromFS(tokenFilePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	logrus.Info("susan token %s", string(token))
 	return string(token), nil
 }
