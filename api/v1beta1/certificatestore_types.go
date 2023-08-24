@@ -50,6 +50,7 @@ type CertificateStoreStatus struct {
 	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
 	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// provider specific properties of the each individual certificate
 	// +optional
 	Properties runtime.RawExtension `json:"properties,omitempty"`
