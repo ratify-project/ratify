@@ -117,7 +117,7 @@ spec:
                   format: date-time
                   type: string
                 properties:
-                  description: provider specific parameters of the each individual certificate
+                  description: provider specific properties of the each individual certificate
                   type: object
                   x-kubernetes-preserve-unknown-fields: true
               required:
