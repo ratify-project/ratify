@@ -27,8 +27,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deislabs/ratify/internal/logger"
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/deislabs/ratify/pkg/metrics"

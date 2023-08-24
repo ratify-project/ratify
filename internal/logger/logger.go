@@ -66,6 +66,12 @@ const (
 	Cache componentType = "cache"
 	// CertProvider is the component type for certificate provider.
 	CertProvider componentType = "certificateProvider"
+	// AuthProvider is the component type for auth provider.
+	AuthProvider componentType = "authProvider"
+	// PolicyProvider is the component type for policy provider.
+	PolicyProvider componentType = "policyProvider"
+	// Verifier is the component type for verifier.
+	Verifier componentType = "verifier"
 
 	traceIDHeaderName = "traceIDHeaderName"
 )

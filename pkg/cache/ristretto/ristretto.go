@@ -21,14 +21,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/deislabs/ratify/internal/logger"
 	"github.com/cespare/xxhash/v2"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/dgraph-io/ristretto"
 	"github.com/dgraph-io/ristretto/z"
 )
 
 const RistrettoCacheType = "ristretto"
+
 var logOpt = logger.Option{
 	ComponentType: logger.Cache,
 }
