@@ -32,6 +32,19 @@ Ratify supports logging required headers from the external data request and pass
 Fields that Ratify supports logging are:
 - `traceIDHeaderName`: The trace ID header names in the request. Ratify will log the trace ID if it's set in the request header. Otherwise, it will generate a new trace ID and log it. Futhermore, since Ratify supports multiple oci-compatible registries, users could specify multiple traceID header names that are used by different registries. Note: 1. external data request MUST have at most one traceID in the header, if users specify multiple traceID header names, they MUST have the same traceID. 2. Http requests from Ratify to remote registries will always have all specified traceID names set to the same traceID in the header.
 
+Example:
+```
+logger:
+  formatter: "text"
+  level: "info"
+  requestHeaders:
+    traceIDHeaderName:
+      - "x-ms-correlation-request-id"
+```
+Add `"x-ms-correlation-request-id"` under `traceIDHeaderName` to support tracing requests across Azure and Ratify.
+In Ratify, users could see trace-id is appeneded to each log record.
+![](../imgs/trace-id-log.png)
+
 ## Contribution Guide
 ### Ratify Repo Contributor
 For Ratify contributors, you only need to follow 2 steps:
