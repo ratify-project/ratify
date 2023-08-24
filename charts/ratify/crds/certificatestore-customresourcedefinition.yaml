@@ -119,6 +119,7 @@ spec:
                 properties:
                   description: provider specific parameters of the each individual certificate
                   type: object
+                  x-kubernetes-preserve-unknown-fields: true
               required:
                 - issuccess
               type: object
