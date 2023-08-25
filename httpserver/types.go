@@ -17,9 +17,15 @@ package httpserver
 
 import (
 	"github.com/deislabs/ratify/pkg/executor/types"
+	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
 )
 
-const VerificationResultVersion = "0.1.0"
+const (
+	VerificationResultVersion = "0.1.0"
+	// Starting from this version, the verification result can be
+	// evaluated by Ratify embedded OPA engine.
+	ResultVersionSupportingRego = "1.0.0"
+)
 
 type VerificationResponse struct {
 	Version         string        `json:"version"`
@@ -27,9 +33,13 @@ type VerificationResponse struct {
 	VerifierReports []interface{} `json:"verifierReports,omitempty"`
 }
 
-func fromVerifyResult(res types.VerifyResult) VerificationResponse {
+func fromVerifyResult(res types.VerifyResult, policyType string) VerificationResponse {
+	version := VerificationResultVersion
+	if policyType == pt.RegoPolicy {
+		version = ResultVersionSupportingRego
+	}
 	return VerificationResponse{
-		Version:         VerificationResultVersion,
+		Version:         version,
 		IsSuccess:       res.IsSuccess,
 		VerifierReports: res.VerifierReports,
 	}

@@ -11,7 +11,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
-        "RATIFY_DYNAMIC_PLUGINS": "1",
+        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
         "RATIFY_LOG_LEVEL": "debug",
       },
       "args": [
@@ -29,7 +29,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
-        "RATIFY_DYNAMIC_PLUGINS": "1"
+        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1"
       },
       "args": [
         "serve",
@@ -46,7 +46,7 @@
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
         "RATIFY_LOG_LEVEL": "debug",
-        "RATIFY_DYNAMIC_PLUGINS": "1"
+        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1"
       },
       "args": [
         "serve",
@@ -65,7 +65,7 @@
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
         "RATIFY_LOG_LEVEL": "debug",
-        "RATIFY_DYNAMIC_PLUGINS": "1"
+        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1"
       },
       "args": [
         "serve",
@@ -82,7 +82,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}/plugins/verifier/cosign",
       "env": {
-        "RATIFY_DYNAMIC_PLUGINS": "1",
+        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
         "RATIFY_LOG_LEVEL": "debug",
         "RATIFY_VERIFIER_COMMAND": "VERIFY",
         "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",

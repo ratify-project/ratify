@@ -14,7 +14,7 @@
 #template created based on verbiage from https://github.com/oras-project/oras/blob/cc40e430ee0cc124250f9855a2e99f535f759221/.github/ISSUE_TEMPLATE/bug-report.yaml
 name: Bug Report
 description: File a bug report
-labels: [bug]
+labels: [bug, triage]
 body:
   - type: markdown
     id: preface
@@ -27,7 +27,7 @@ body:
       required: true
     attributes:
       label: What happened in your environment? 
-      description: "install ratify with debug logs by adding --set logLevel=debug to helm install command or set RATIFY_LOG_LEVEL=debug as an environment variable"
+      description: "install ratify with debug logs by adding --set logger.level=debug to helm install command or set RATIFY_LOG_LEVEL=debug as an environment variable"
   - type: textarea
     id: expect
     attributes:

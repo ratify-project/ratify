@@ -30,10 +30,12 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/featureflag"
+	"github.com/deislabs/ratify/pkg/policyprovider"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
+	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
 	"github.com/deislabs/ratify/pkg/utils"
-	_ "github.com/deislabs/ratify/pkg/verifier/notaryv2" // register notaryv2 verifier
+	_ "github.com/deislabs/ratify/pkg/verifier/notation" // register notation verifier
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
 	"github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // import additional authentication methods
@@ -72,18 +74,18 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheSize int, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, tlsWatcherReady chan struct{}) {
+func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile string, cacheTTL time.Duration, metricsEnabled bool, metricsType string, metricsPort int, certRotatorReady chan struct{}) {
 	logrus.Info("initializing executor with config file at default config path")
 
 	cf, err := config.Load(configFilePath)
 	if err != nil {
-		logrus.Warnf("error loading config %v", err)
+		logrus.Errorf("server start failed %v", fmt.Errorf("error loading config %w", err))
 		os.Exit(1)
 	}
 
 	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
 	if err != nil {
-		logrus.Warnf("error initializing from config %v", err)
+		logrus.Errorf("server start failed %v", fmt.Errorf("error initializing from config %w", err))
 		os.Exit(1)
 	}
 
@@ -91,6 +93,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
 		var activeVerifiers []vr.ReferenceVerifier
 		var activeStores []referrerstore.ReferrerStore
+		var activePolicyEnforcer policyprovider.PolicyProvider
 
 		// check if there are active verifiers from crd controller
 		// else use verifiers from configuration
@@ -112,26 +115,34 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 			activeStores = configStores
 		}
 
+		if !controllers.ActivePolicy.IsEmpty() {
+			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
+		} else {
+			activePolicyEnforcer = policy
+		}
+
 		// return executor with latest configuration
 		executor := ef.Executor{
 			Verifiers:      activeVerifiers,
 			ReferrerStores: activeStores,
-			PolicyEnforcer: policy,
+			PolicyEnforcer: activePolicyEnforcer,
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
-	}, certDirectory, caCertFile, cacheSize, cacheTTL, metricsEnabled, metricsType, metricsPort)
+	}, certDirectory, caCertFile, cacheTTL, metricsEnabled, metricsType, metricsPort)
 
 	if err != nil {
+		logrus.Errorf("initialize server failed with error %v, exiting..", err)
 		os.Exit(1)
 	}
 	logrus.Infof("starting server at" + httpServerAddress)
-	if err := server.Run(tlsWatcherReady); err != nil {
+	if err := server.Run(certRotatorReady); err != nil {
+		logrus.Errorf("starting server failed with error %v, exiting..", err)
 		os.Exit(1)
 	}
 }
 
-func StartManager(tlsWatcherReady chan struct{}) {
+func StartManager(certRotatorReady chan struct{}) {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
@@ -144,7 +155,6 @@ func StartManager(tlsWatcherReady chan struct{}) {
 
 	logrusSink := controllers.NewLogrusSink(logrus.StandardLogger())
 	ctrl.SetLogger(logr.New(logrusSink))
-
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
 		MetricsBindAddress:     metricsAddr,
@@ -170,14 +180,12 @@ func StartManager(tlsWatcherReady chan struct{}) {
 	}
 
 	// Make sure certs are generated and valid if cert rotation is enabled.
-	setupFinished := make(chan struct{})
 	if featureflag.CertRotation.Enabled {
 		// Make sure TLS cert watcher is already set up.
-		if tlsWatcherReady == nil {
+		if certRotatorReady == nil {
 			setupLog.Error(err, "to use cert rotation, you must provide a channel to signal when the TLS watcher is ready")
 			os.Exit(1)
 		}
-		<-tlsWatcherReady
 		setupLog.Info("setting up cert rotation")
 
 		keyUsages := []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
@@ -203,7 +211,7 @@ func StartManager(tlsWatcherReady chan struct{}) {
 			CAName:         fmt.Sprintf("%s.%s", serviceName, namespace),
 			CAOrganization: caOrganization,
 			DNSName:        fmt.Sprintf("%s.%s", serviceName, namespace),
-			IsReady:        setupFinished,
+			IsReady:        certRotatorReady,
 			Webhooks:       webhooks,
 			ExtKeyUsages:   &keyUsages,
 		}); err != nil {
@@ -211,7 +219,7 @@ func StartManager(tlsWatcherReady chan struct{}) {
 			os.Exit(1)
 		}
 	} else {
-		close(setupFinished)
+		close(certRotatorReady)
 	}
 
 	if err = (&controllers.VerifierReconciler{
@@ -233,6 +241,13 @@ func StartManager(tlsWatcherReady chan struct{}) {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
+		os.Exit(1)
+	}
+	if err = (&controllers.PolicyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

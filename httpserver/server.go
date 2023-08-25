@@ -23,11 +23,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/metrics"
 
 	"github.com/gorilla/mux"
@@ -41,12 +44,8 @@ const (
 	readHeaderTimeout                = 5 * time.Second
 	defaultMutationReferrerStoreName = "oras"
 
-	// DefaultCacheTTL is the default time-to-live for the cache entry.
-	DefaultCacheTTL = 10 * time.Second
-	// DefaultCacheMaxSize is the default maximum size of the cache.
-	DefaultCacheMaxSize = 100
-	DefaultMetricsType  = "prometheus"
-	DefaultMetricsPort  = 8888
+	DefaultMetricsType = "prometheus"
+	DefaultMetricsPort = 8888
 )
 
 type Server struct {
@@ -60,11 +59,10 @@ type Server struct {
 	MetricsEnabled    bool
 	MetricsType       string
 	MetricsPort       int
+	CacheTTL          time.Duration
+	LogOption         logger.Option
 
 	keyMutex keyMutex
-	// cache is a thread-safe expiring lru cache which caches external data item indexed
-	// by the subject
-	cache *simpleCache
 }
 
 // keyMutex is a thread-safe map of mutexes, indexed by key.
@@ -86,7 +84,6 @@ func NewServer(context context.Context,
 	getExecutor config.GetExecutor,
 	certDir string,
 	caCertFile string,
-	cacheSize int,
 	cacheTTL time.Duration,
 	metricsEnabled bool,
 	metricsType string,
@@ -106,14 +103,15 @@ func NewServer(context context.Context,
 		MetricsEnabled:    metricsEnabled,
 		MetricsType:       metricsType,
 		MetricsPort:       metricsPort,
+		CacheTTL:          cacheTTL,
 		keyMutex:          keyMutex{},
-		cache:             newSimpleCache(cacheTTL, cacheSize),
+		LogOption:         logger.Option{ComponentType: logger.Server},
 	}
 
 	return server, server.registerHandlers()
 }
 
-func (server *Server) Run(tlsWatcherReady chan struct{}) error {
+func (server *Server) Run(certRotatorReady chan struct{}) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp", server.Address)
 	if err != nil {
 		return err
@@ -139,6 +137,7 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 	}
 
 	if server.CertDirectory != "" {
+		<-certRotatorReady
 		certFile := filepath.Join(server.CertDirectory, certName)
 		keyFile := filepath.Join(server.CertDirectory, keyName)
 
@@ -152,23 +151,15 @@ func (server *Server) Run(tlsWatcherReady chan struct{}) error {
 			return err
 		}
 		defer tlsCertWatcher.Stop()
-		if tlsWatcherReady != nil {
-			close(tlsWatcherReady)
-		}
 
 		svr.TLSConfig = &tls.Config{
 			GetConfigForClient: tlsCertWatcher.GetConfigForClient,
 			MinVersion:         tls.VersionTLS13,
 		}
 
-		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil {
-			logrus.Errorf("failed to start server: %v", err)
-			return err
-		}
-		return nil
+		return startServerWithGracefulShutdown(true, svr, lsnr, certFile, keyFile)
 	}
-	logrus.Info("starting server without TLS")
-	return svr.Serve(lsnr)
+	return startServerWithGracefulShutdown(false, svr, lsnr, "", "")
 }
 
 func (server *Server) register(method, path string, handler ContextHandler) {
@@ -198,4 +189,37 @@ type ServerAddrNotFoundError struct{}
 
 func (err ServerAddrNotFoundError) Error() string {
 	return "The http server address configuration is not set. Skipping server creation"
+}
+
+// startServerWithGracefulShutdown starts the server and waits for SIGINT or SIGTERM to shutdown the server gracefully
+func startServerWithGracefulShutdown(isTLSEnabled bool, svr *http.Server, lsnr net.Listener, certFile string, keyFile string) error {
+	connectionsClosed := make(chan struct{})
+	// wait for SIGINT or SIGTERM to shutdown the server gracefully
+	go func() {
+		sigint := make(chan os.Signal, 1)
+		signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
+		<-sigint
+		logrus.Info("shutting down ratify server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second) // wait 6 seconds for existing connections to finish
+		defer cancel()
+		if err := svr.Shutdown(ctx); err != nil {
+			logrus.Errorf("failed to shutdown ratify server: %v", err)
+		}
+		close(connectionsClosed)
+	}()
+	if isTLSEnabled {
+		if err := svr.ServeTLS(lsnr, certFile, keyFile); err != nil && err != http.ErrServerClosed { // http.ErrServerClosed is immediately returned when server.Shutdown() is called
+			logrus.Errorf("failed to start server: %v", err)
+			return err
+		}
+	} else {
+		if err := svr.Serve(lsnr); err != nil && err != http.ErrServerClosed { // http.ErrServerClosed is immediately returned when server.Shutdown() is called
+			logrus.Errorf("failed to start server: %v", err)
+			return err
+		}
+	}
+	<-connectionsClosed // wait for server to shutdown
+	logrus.Info("ratify server shutdown complete")
+	time.Sleep(5 * time.Second) // wait for controllers/manager to shutdown
+	return nil
 }

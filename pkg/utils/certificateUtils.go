@@ -80,7 +80,7 @@ func GetCertificatesFromPath(path string) ([]*x509.Certificate, error) {
 		return nil, err
 	}
 
-	logrus.Infof("%v notary verification certificates loaded from path '%v'", len(certs), path)
+	logrus.Infof("%v notation verification certificates loaded from path '%v'", len(certs), path)
 	return certs, nil
 }
 

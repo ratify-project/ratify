@@ -19,6 +19,7 @@ import (
 	"errors"
 	"testing"
 
+	ratifyerrors "github.com/deislabs/ratify/errors"
 	core "k8s.io/api/core/v1"
 )
 
@@ -69,7 +70,7 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 
 	var k8secretprovider k8SecretAuthProvider
 
-	if _, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret); !errors.Is(err, ErrorNoMatchingCredential) {
-		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ErrorNoMatchingCredential, err)
+	if _, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret); !errors.Is(err, ratifyerrors.ErrorCodeNoMatchingCredential) {
+		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ratifyerrors.ErrorCodeNoMatchingCredential, err)
 	}
 }

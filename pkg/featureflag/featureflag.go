@@ -22,11 +22,12 @@ import (
 )
 
 // Feature flags are used to enable/disable experimental features.
-// They are activated via environment variables, starting with "RATIFY_", ex: RATIFY_DYNAMIC_PLUGINS=1
+// They are activated via environment variables, starting with "RATIFY_", ex: RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=1
 // Remember to capture changes in the usage guide and release notes.
 var (
-	DynamicPlugins = newFeatureFlag("DYNAMIC_PLUGINS", false)
-	CertRotation   = newFeatureFlag("CERT_ROTATION", false)
+	DynamicPlugins   = newFeatureFlag("EXPERIMENTAL_DYNAMIC_PLUGINS", false)
+	CertRotation     = newFeatureFlag("CERT_ROTATION", false)
+	HighAvailability = newFeatureFlag("EXPERIMENTAL_HIGH_AVAILABILITY", false)
 )
 
 var flags = make(map[string]*FeatureFlag)

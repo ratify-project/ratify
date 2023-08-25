@@ -24,6 +24,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/metrics"
@@ -32,7 +35,6 @@ import (
 	"github.com/deislabs/ratify/utils"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	"github.com/sirupsen/logrus"
 )
 
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
@@ -41,7 +43,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
-	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+	logger.GetLogger(ctx, server.LogOption).Infof("start request %s %s", sanitizedMethod, sanitizedURL)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -78,40 +80,60 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				returnItem.Error = err.Error()
 				return
 			}
+			if subjectReference.Digest.String() == "" {
+				logger.GetLogger(ctx, server.LogOption).Warn("Digest should be used instead of tagged reference. The resolved digest may not point to the same signed artifact, since tags are mutable.")
+			}
 			resolvedSubjectReference := subjectReference.Original
 			unlock := server.keyMutex.Lock(resolvedSubjectReference)
 			defer unlock()
 
-			logrus.Infof("verifying subject %v", resolvedSubjectReference)
+			logger.GetLogger(ctx, server.LogOption).Infof("verifying subject %v", resolvedSubjectReference)
 			var result types.VerifyResult
-			res := server.cache.get(resolvedSubjectReference)
-			if res != nil {
-				logrus.Debugf("cache hit for subject %v", resolvedSubjectReference)
-				result = *res
-			} else {
-				logrus.Debugf("cache miss for subject %v", resolvedSubjectReference)
+			found := false
+			cacheHit := false
+			var cacheResponse string
+			cacheProvider := cache.GetCacheProvider()
+			if cacheProvider != nil {
+				cacheResponse, found = cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference))
+			}
+			if found && cacheResponse != "" {
+				if err := json.Unmarshal([]byte(cacheResponse), &result); err != nil {
+					err = errors.ErrorCodeDataDecodingFailure.WithError(err).WithDetail(fmt.Sprintf("unable to unmarshal cache entry for subject %v", resolvedSubjectReference))
+					logger.GetLogger(ctx, server.LogOption).Warn(err)
+				} else {
+					cacheHit = true
+					logger.GetLogger(ctx, server.LogOption).Debugf("cache hit for subject %v", resolvedSubjectReference)
+				}
+			}
+			if !cacheHit {
 				verifyParameters := executor.VerifyParameters{
 					Subject: resolvedSubjectReference,
 				}
 
 				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
-					returnItem.Error = err.Error()
+					returnItem.Error = errors.ErrorCodeExecutorFailure.WithError(err).WithComponentType(errors.Executor).Error()
 					return
 				}
-				server.cache.set(resolvedSubjectReference, &result)
+
+				if cacheProvider != nil {
+					logger.GetLogger(ctx, server.LogOption).Debugf("cache miss for subject %v", resolvedSubjectReference)
+					if !cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyVerifyHandler, resolvedSubjectReference), result, server.CacheTTL) {
+						logger.GetLogger(ctx, server.LogOption).Warnf("unable to insert cache entry for subject %v", resolvedSubjectReference)
+					}
+				}
 
 				if res, err := json.MarshalIndent(result, "", "  "); err == nil {
-					fmt.Println(string(res))
+					logger.GetLogger(ctx, server.LogOption).Infof("verify result for subject %s: %s", resolvedSubjectReference, string(res))
 				}
 			}
 
-			returnItem.Value = fromVerifyResult(result)
-			logrus.Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
+			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
+			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(subject))
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
-	logrus.Debugf("verification: execution time for request: %dms", elapsedTime)
+	logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for request: %dms", elapsedTime)
 	metrics.ReportVerificationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, false)
 }
@@ -120,17 +142,17 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
-	logrus.Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+	logger.GetLogger(ctx, server.LogOption).Infof("start request %s %s", sanitizedMethod, sanitizedURL)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("unable to read request body: %w", err)
+		return errors.ErrorCodeBadRequest.WithError(err).WithDetail("unable to read request body")
 	}
 
 	// parse request body
 	var providerRequest externaldata.ProviderRequest
 	if err = json.Unmarshal(body, &providerRequest); err != nil {
-		return fmt.Errorf("unable to unmarshal request body: %w", err)
+		return errors.ErrorCodeBadRequest.WithError(err).WithDetail("unable to unmarshal request body")
 	}
 
 	results := make([]externaldata.Item, 0)
@@ -142,7 +164,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 		go func(image string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
-			logrus.Infof("mutating image %v", image)
+			logger.GetLogger(ctx, server.LogOption).Infof("mutating image %v", image)
 			returnItem := externaldata.Item{
 				Key:   image,
 				Value: image,
@@ -154,9 +176,9 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 			}()
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
-				errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
-				logrus.Error(errMessage)
-				returnItem.Error = errMessage
+				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
+				logger.GetLogger(ctx, server.LogOption).Error(err)
+				returnItem.Error = err.Error()
 				return
 			}
 
@@ -169,26 +191,25 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 					}
 				}
 				if selectedStore == nil {
-					errMessage := fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)
-					logrus.Error(errMessage)
-					returnItem.Error = errMessage
+					err := errors.ErrorCodeReferrerStoreFailure.WithDetail(fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)).WithComponentType(errors.ReferrerStore)
+					logger.GetLogger(ctx, server.LogOption).Error(err)
+					returnItem.Error = err.Error()
 					return
 				}
 				descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
-					errMessage := fmt.Sprintf("failed to mutate image reference %s: %v", image, err)
-					logrus.Error(errMessage)
-					returnItem.Error = errMessage
+					err = errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, selectedStore.Name(), errors.EmptyLink, err, fmt.Sprintf("failed to get subject descriptor for image %s", image), errors.HideStackTrace)
+					returnItem.Error = err.Error()
 					return
 				}
 				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 			}
-			logrus.Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
+			logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(image))
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
-	logrus.Debugf("mutation: execution time for request: %dms", elapsedTime)
+	logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for request: %dms", elapsedTime)
 	metrics.ReportMutationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, true)
 }
@@ -217,6 +238,8 @@ func processTimeout(h ContextHandler, duration time.Duration, isMutation bool) C
 	return func(handlerContext context.Context, w http.ResponseWriter, r *http.Request) error {
 		ctx, cancel := context.WithTimeout(r.Context(), duration)
 		defer cancel()
+
+		ctx = logger.InitContext(ctx, r)
 
 		r = r.WithContext(ctx)
 

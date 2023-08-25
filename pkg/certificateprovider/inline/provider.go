@@ -18,8 +18,8 @@ package inline
 import (
 	"context"
 	"crypto/x509"
-	"fmt"
 
+	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 )
 
@@ -45,10 +45,12 @@ func Create() certificateprovider.CertificateProvider {
 func (s *inlineCertProvider) GetCertificates(_ context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
 	value, ok := attrib[ValueParameter]
 	if !ok {
-		return nil, nil, fmt.Errorf("value parameter is not set")
+		return nil, nil, errors.ErrorCodeConfigInvalid.WithDetail("value parameter is not set").WithComponentType(errors.CertProvider)
 	}
 
 	certs, err := certificateprovider.DecodeCertificates([]byte(value))
-
-	return certs, nil, err
+	if err != nil {
+		return nil, nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.CertProvider)
+	}
+	return certs, nil, nil
 }

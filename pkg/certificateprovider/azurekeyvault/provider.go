@@ -20,31 +20,34 @@ package azurekeyvault
 import (
 	"context"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
+	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/deislabs/ratify/pkg/metrics"
+	"golang.org/x/crypto/pkcs12"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
-type keyvaultObject struct {
-	content string
-	version string
-}
-
 const (
-	providerName string = "azurekeyvault"
+	providerName      string = "azurekeyvault"
+	PKCS12ContentType string = "application/x-pkcs12"
+	PEMContentType    string = "application/x-pem-file"
 )
+
+var logOpt = logger.Option{
+	ComponentType: logger.CertProvider,
+}
 
 type akvCertProvider struct{}
 
@@ -59,6 +62,7 @@ func Create() certificateprovider.CertificateProvider {
 }
 
 // returns an array of certificates based on certificate properties defined in attrib map
+// get certificate retrieve the entire cert chain using getSecret API call
 func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
 	keyvaultURI := types.GetKeyVaultURI(attrib)
 	cloudName := types.GetCloudName(attrib)
@@ -66,62 +70,59 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	workloadIdentityClientID := types.GetClientID(attrib)
 
 	if keyvaultURI == "" {
-		return nil, nil, fmt.Errorf("keyvaultUri is not set")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "keyvaultUri is not set", re.HideStackTrace)
 	}
 	if tenantID == "" {
-		return nil, nil, fmt.Errorf("tenantID is not set")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "tenantID is not set", re.HideStackTrace)
 	}
 	if workloadIdentityClientID == "" {
-		return nil, nil, fmt.Errorf("clientID is not set")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "clientID is not set", re.HideStackTrace)
 	}
 
 	azureCloudEnv, err := parseAzureEnvironment(cloudName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cloudName %s is not valid, error: %w", cloudName, err)
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", cloudName), re.HideStackTrace)
 	}
 
-	keyVaultCerts, err := getKeyvaultRequestObj(attrib)
+	keyVaultCerts, err := getKeyvaultRequestObj(ctx, attrib)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get keyvault request object from provider attributes, error: %w", err)
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault request object from provider attributes", re.HideStackTrace)
 	}
 
 	if len(keyVaultCerts) == 0 {
-		return nil, nil, fmt.Errorf("no keyvault certificate configured")
+		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "no keyvault certificate configured", re.PrintStackTrace)
 	}
 
-	logrus.Debugf("vaultURI %s", keyvaultURI)
+	logger.GetLogger(ctx, logOpt).Debugf("vaultURI %s", keyvaultURI)
 
 	kvClient, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to get keyvault client, error: %w", err)
+		return nil, nil, re.ErrorCodePluginInitFailure.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault client", re.HideStackTrace)
 	}
 
 	certs := []*x509.Certificate{}
 	certsStatus := []map[string]string{}
-	lastRefreshed := time.Now().Format(time.RFC3339)
-
 	for _, keyVaultCert := range keyVaultCerts {
-		logrus.Debugf("fetching object from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultURI)
+		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultURI)
 
 		// fetch the object from Key Vault
+		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/deislabs/ratify/issues/695 for details
 		startTime := time.Now()
-		keyvaultResult, err := getCertificate(ctx, kvClient, keyvaultURI, keyVaultCert)
+		secretBundle, err := kvClient.GetSecret(ctx, keyvaultURI, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion)
+
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.CertificateName, keyVaultCert.CertificateVersion, err)
 		}
+
+		certResult, certProperty, err := getCertsFromSecretBundle(ctx, secretBundle, keyVaultCert.CertificateName)
+
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get certificates from secret bundle:%w", err)
+		}
+
 		metrics.ReportAKVCertificateDuration(ctx, time.Since(startTime).Milliseconds(), keyVaultCert.CertificateName)
-
-		// convert bytes to x509
-		decodedCerts, err := certificateprovider.DecodeCertificates([]byte(keyvaultResult.content))
-		if err != nil {
-			return nil, nil, fmt.Errorf("failed to decode certificate %s, error: %w", keyVaultCert.CertificateName, err)
-		}
-
-		certs = append(certs, decodedCerts...)
-		logrus.Debugf("cert '%v', version '%v' added", keyVaultCert.CertificateName, keyvaultResult.version)
-
-		certProperty := getCertStatusProperty(keyVaultCert.CertificateName, keyvaultResult.version, lastRefreshed)
-		certsStatus = append(certsStatus, certProperty)
+		certs = append(certs, certResult...)
+		certsStatus = append(certsStatus, certProperty...)
 	}
 
 	return certs, getCertStatusMap(certsStatus), nil
@@ -135,26 +136,26 @@ func getCertStatusMap(certsStatus []map[string]string) certificateprovider.Certi
 }
 
 // parse the requested keyvault cert object from the input attributes
-func getKeyvaultRequestObj(attrib map[string]string) ([]types.KeyVaultCertificate, error) {
+func getKeyvaultRequestObj(ctx context.Context, attrib map[string]string) ([]types.KeyVaultCertificate, error) {
 	keyVaultCerts := []types.KeyVaultCertificate{}
 
 	certificatesStrings := types.GetCertificates(attrib)
 	if certificatesStrings == "" {
-		return nil, fmt.Errorf("certificates is not set")
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "certificates is not set", re.HideStackTrace)
 	}
 
-	logrus.Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
+	logger.GetLogger(ctx, logOpt).Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
 
 	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
-		return nil, fmt.Errorf("failed to yaml unmarshal objects, error: %w", err)
+		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.CertProvider, providerName, re.EmptyLink, err, "failed to yaml unmarshal objects", re.HideStackTrace)
 	}
-	logrus.Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
+	logger.GetLogger(ctx, logOpt).Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
 	for i, object := range objects.Array {
 		var keyVaultCert types.KeyVaultCertificate
 		if err = yaml.Unmarshal([]byte(object), &keyVaultCert); err != nil {
-			return nil, fmt.Errorf("unmarshal failed for keyVaultCerts at index %d, error: %w", i, err)
+			return nil, re.ErrorCodeDataDecodingFailure.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("unmarshal failed for keyVaultCerts at index: %d", i), re.PrintStackTrace)
 		}
 		// remove whitespace from all fields in keyVaultCert
 		formatKeyVaultCertificate(&keyVaultCert)
@@ -162,7 +163,7 @@ func getKeyvaultRequestObj(attrib map[string]string) ([]types.KeyVaultCertificat
 		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
 	}
 
-	logrus.Debugf("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
+	logger.GetLogger(ctx, logOpt).Debugf("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 	return keyVaultCerts, nil
 }
 
@@ -212,37 +213,85 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
-		return nil, fmt.Errorf("failed to add user agent to keyvault client, error: %w", err)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to add user agent to keyvault client", re.PrintStackTrace)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get authorizer for keyvault client, error: %w", err)
+		return nil, re.ErrorCodeAuthDenied.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.PrintStackTrace)
 	}
 	return &kvClient, nil
 }
 
-// getCertificate retrieves the certificate from the vault
-func getCertificate(ctx context.Context, kvClient *kv.BaseClient, vaultURL string, kvObject types.KeyVaultCertificate) (keyvaultObject, error) {
-	certbundle, err := kvClient.GetCertificate(ctx, vaultURL, kvObject.CertificateName, kvObject.CertificateVersion)
-	if err != nil {
-		return keyvaultObject{}, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", kvObject.CertificateName, kvObject.CertificateVersion, err)
+// Parse the secret bundle and return an array of certificates
+// In a certificate chain scenario, all certificates from root to leaf will be returned
+func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
+	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
+		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
 	}
-	if certbundle.Cer == nil {
-		return keyvaultObject{}, errors.Errorf("certificate value is nil")
-	}
-	if certbundle.ID == nil {
-		return keyvaultObject{}, errors.Errorf("certificate id is nil")
-	}
-	version := getObjectVersion(*certbundle.ID)
 
-	certBlock := &pem.Block{
-		Type:  types.CertificateType,
-		Bytes: *certbundle.Cer,
+	version := getObjectVersion(*secretBundle.ID)
+
+	// This aligns with notation akv implementation
+	// akv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
+	if *secretBundle.ContentType != PKCS12ContentType &&
+		*secretBundle.ContentType != PEMContentType {
+		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType), re.HideStackTrace)
 	}
-	var pemData []byte
-	pemData = append(pemData, pem.EncodeToMemory(certBlock)...)
-	return keyvaultObject{content: string(pemData), version: version}, nil
+
+	results := []*x509.Certificate{}
+	certsStatus := []map[string]string{}
+	lastRefreshed := time.Now().Format(time.RFC3339)
+
+	data := []byte(*secretBundle.Value)
+
+	if *secretBundle.ContentType == PKCS12ContentType {
+		p12, err := base64.StdEncoding.DecodeString(*secretBundle.Value)
+		if err != nil {
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault certificate provider: failed to decode PKCS12 Value. Certificate %s, version %s", certName, version), re.HideStackTrace)
+		}
+
+		blocks, err := pkcs12.ToPEM(p12, "")
+		if err != nil {
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault certificate provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s", certName, version), re.HideStackTrace)
+		}
+
+		var pemData []byte
+		for _, b := range blocks {
+			pemData = append(pemData, pem.EncodeToMemory(b)...)
+		}
+		data = pemData
+	}
+
+	block, rest := pem.Decode(data)
+
+	for block != nil {
+		switch block.Type {
+		case "PRIVATE KEY":
+			logger.GetLogger(ctx, logOpt).Warnf("azure keyvault certificate provider: certificate %s, version %s private key skipped. Please see doc to learn how to create a new certificate in keyvault with non exportable keys. https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys", certName, version)
+		case "CERTIFICATE":
+			var pemData []byte
+			pemData = append(pemData, pem.EncodeToMemory(block)...)
+			decodedCerts, err := certificateprovider.DecodeCertificates(pemData)
+			if err != nil {
+				return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault certificate provider: failed to decode Certificate %s, version %s", certName, version), re.HideStackTrace)
+			}
+			for _, cert := range decodedCerts {
+				results = append(results, cert)
+				certProperty := getCertStatusProperty(certName, version, lastRefreshed)
+				certsStatus = append(certsStatus, certProperty)
+			}
+		default:
+			logger.GetLogger(ctx, logOpt).Warnf("certificate '%s', version '%s': azure keyvault certificate provider detected unknown block type %s", certName, version, block.Type)
+		}
+
+		block, rest = pem.Decode(rest)
+		if block == nil && len(rest) > 0 {
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate '%s', version '%s': azure keyvault certificate provider error, block is nil and remaining block to parse > 0", certName, version), re.HideStackTrace)
+		}
+	}
+	logger.GetLogger(ctx, logOpt).Debugf("azurekeyvault certprovider getCertsFromSecretBundle: %v certificates parsed, Certificate '%s', version '%s'", len(results), certName, version)
+	return results, certsStatus, nil
 }
 
 // getObjectVersion parses the id to retrieve the version

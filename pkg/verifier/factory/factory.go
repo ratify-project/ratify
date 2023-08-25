@@ -16,12 +16,12 @@ limitations under the License.
 package factory
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path"
 	"strings"
 
+	re "github.com/deislabs/ratify/errors"
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
 	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/verifier"
@@ -53,12 +53,12 @@ func Register(name string, factory VerifierFactory) {
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string) (verifier.ReferenceVerifier, error) {
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
-		return nil, fmt.Errorf("failed to find verifier name in the verifier config with key %s", "name")
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key %s", "name"))
 	}
 
 	verifierNameStr := fmt.Sprintf("%s", verifierName)
 	if strings.ContainsRune(verifierNameStr, os.PathSeparator) {
-		return nil, fmt.Errorf("invalid plugin name for a verifier: %s", verifierNameStr)
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("invalid plugin name for a verifier: %s", verifierNameStr))
 	}
 
 	// if source is specified, download the plugin
@@ -66,13 +66,13 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 		if featureflag.DynamicPlugins.Enabled {
 			source, err := pluginCommon.ParsePluginSource(source)
 			if err != nil {
-				return nil, fmt.Errorf("failed to parse plugin source: %w", err)
+				return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, "", re.EmptyLink, err, "failed to parse plugin source", re.HideStackTrace)
 			}
 
 			targetPath := path.Join(pluginBinDir[0], verifierNameStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
-				return nil, fmt.Errorf("failed to download plugin: %w", err)
+				return nil, re.ErrorCodeDownloadPluginFailure.NewError(re.Verifier, "", re.EmptyLink, err, "failed to download plugin", re.HideStackTrace)
 			}
 			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierNameStr, source.Artifact, targetPath)
 		} else {
@@ -96,11 +96,11 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 
 	err := validateVerifiersConfig(&verifiersConfig)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithError(err)
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, errors.New("verifiers config should have at least one verifier")
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail("verifiers config should have at least one verifier")
 	}
 
 	verifiers := make([]verifier.ReferenceVerifier, 0)
@@ -114,7 +114,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	for _, verifierConfig := range verifiersConfig.Verifiers {
 		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs)
 		if err != nil {
-			return nil, err
+			return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithError(err)
 		}
 		verifiers = append(verifiers, verifier)
 	}

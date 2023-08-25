@@ -6,10 +6,46 @@ BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
 
+@test "helm genCert test" {
+    # tls cert provided
+    helm uninstall ratify --namespace gatekeeper-system
+    make e2e-helm-deploy-ratify CERT_DIR=${CERT_DIR} CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
+    sleep 5
+
+    providedCert=$(cat ${CERT_DIR}/server.crt | base64 | tr -d '\n')
+    generatedCert=$(kubectl -n gatekeeper-system get Secret ratify-tls -o jsonpath="{.data.tls\\.crt}")
+    run [ "$generatedCert" == "$providedCert" ]
+    assert_success
+
+    # tls certs not provided, ratify-tls Secret exists and cert-rotation disabled
+    helm uninstall ratify --namespace gatekeeper-system
+    make e2e-helm-deploy-ratify-without-tls-certs CERT_ROTATION_ENABLED=false GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
+    sleep 5
+
+    generatedCert=$(kubectl -n gatekeeper-system get Secret ratify-tls -o jsonpath="{.data.tls\\.crt}")
+    run [ "$generatedCert" == "$providedCert" ]
+    assert_success
+
+    # tls certs not provided, ratify-tls Secret deleted and cert-rotation enabled
+    helm uninstall ratify --namespace gatekeeper-system
+    run kubectl delete --namespace gatekeeper-system secret ratify-tls
+    assert_success
+    make e2e-helm-deploy-ratify-without-tls-certs CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
+    sleep 5
+
+    ratifyPod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
+    run bash -c "kubectl -n gatekeeper-system logs $ratifyPod | grep 'refreshing CA and server certs'"
+    assert_success
+}
+
 @test "cert rotator test" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'helm uninstall ratify --namespace gatekeeper-system'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'make e2e-helm-deploy-ratify CERT_DIR=${CERT_DIR} CERT_ROTATION_ENABLED=false GATEKEEPER_VERSION=${GATEKEEPER_VERSION}'
+    }
     helm uninstall ratify --namespace gatekeeper-system
     make e2e-helm-deploy-ratify CERT_DIR=${EXPIRING_CERT_DIR} CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
-    sleep 120
+    sleep 10
     run [ "$(kubectl get secret ratify-tls -n gatekeeper-system -o json | jq '.data."ca.crt"')" != "$(cat ${EXPIRING_CERT_DIR}/ca.crt | base64 | tr -d '\n')" ]
     assert_success
 }
@@ -58,7 +94,6 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker2 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker-oci-image --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
     }
 
@@ -78,18 +113,12 @@ SLEEP_TIME=1
     sleep 15
     run kubectl run license-checker2 --namespace default --image=registry:5000/licensechecker:v0
     assert_success
-    # licensechecker artifact with OCI Artifact manifest format
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run kubectl run license-checker-oci-image --namespace default --image=registry:5000/licensechecker:ociartifact
-        assert_success
-    fi
 }
 
 @test "sbom verifier test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom-oci-image --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
     }
 
@@ -104,11 +133,6 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_success
-    # sbom with OCI Artifact manifest format
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run kubectl run sbom-oci-image --namespace default --image=registry:5000/sbom:ociartifact
-        assert_success
-    fi
 
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom
     assert_success
@@ -126,7 +150,6 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator-oci-image --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator2 --namespace default --force --ignore-not-found=true'
     }
 
@@ -141,11 +164,6 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run schemavalidator --namespace default --image=registry:5000/schemavalidator:v0
     assert_success
-    # schemavalidator with OCI Artifact manifest format
-    if [[ $IS_OCI_1_1 == "true" ]]; then
-        run kubectl run schemavalidator-oci-image --namespace default --image=registry:5000/schemavalidator:ociartifact
-        assert_success
-    fi
 
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
     assert_success
@@ -177,11 +195,8 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     sleep 5
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
-
-    # Skipping test for now until expected usage/configuration of this plugin can be verified
-    # sleep 5
-    # run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
-    # sleep 5
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
+    sleep 5
 
     # wait for the httpserver cache to be invalidated
     sleep 15
@@ -195,18 +210,18 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod crdtest --namespace default --force --ignore-not-found=true'
     }
 
-    echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
+    echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
-    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_failure
 
-    echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notary.yaml
+    echo "Add notation verifier and validate deployment succeeds"
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
