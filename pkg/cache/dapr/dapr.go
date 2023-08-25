@@ -23,12 +23,16 @@ import (
 	"time"
 
 	"github.com/dapr/go-sdk/client"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/sirupsen/logrus"
 )
 
 const DaprCacheType = "dapr"
+
+var logOpt = logger.Option{
+	ComponentType: logger.Cache,
+}
 
 type factory struct{}
 
@@ -67,11 +71,11 @@ func (d *daprCache) Get(ctx context.Context, key string) (string, bool) {
 func (d *daprCache) Set(ctx context.Context, key string, value interface{}) bool {
 	bytes, err := json.Marshal(value)
 	if err != nil {
-		logrus.Error("Error marshalling value for redis: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for redis: ", err)
 		return false
 	}
 	if err := d.daprClient.SaveState(ctx, d.cacheName, key, bytes, nil); err != nil {
-		logrus.Error("Error saving value to redis: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error saving value to redis: ", err)
 		return false
 	}
 	return true
@@ -80,13 +84,13 @@ func (d *daprCache) Set(ctx context.Context, key string, value interface{}) bool
 func (d *daprCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool {
 	bytes, err := json.Marshal(value)
 	if err != nil {
-		logrus.Error("Error marshalling value for redis: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for redis: ", err)
 		return false
 	}
 	ttlString := strconv.Itoa(int(ttl.Seconds()))
 	md := map[string]string{"ttlInSeconds": ttlString}
 	if err := d.daprClient.SaveState(ctx, d.cacheName, key, bytes, md); err != nil {
-		logrus.Error("Error saving value to redis: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error saving value to redis: ", err)
 		return false
 	}
 	return true
@@ -94,7 +98,7 @@ func (d *daprCache) SetWithTTL(ctx context.Context, key string, value interface{
 
 func (d *daprCache) Delete(ctx context.Context, key string) bool {
 	if err := d.daprClient.DeleteState(ctx, d.cacheName, key, nil); err != nil {
-		logrus.Error("Error deleting value from redis: ", err)
+		logger.GetLogger(ctx, logOpt).Error("Error deleting value from redis: ", err)
 		return false
 	}
 	return true

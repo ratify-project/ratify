@@ -23,8 +23,8 @@ import (
 	"time"
 
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	"github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
@@ -129,7 +129,7 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "could not refresh azure managed identity token", re.HideStackTrace)
 		}
 		d.identityToken = newToken
-		logrus.Info("successfully refreshed azure managed identity token")
+		logger.GetLogger(ctx, logOpt).Info("successfully refreshed azure managed identity token")
 	}
 	// add protocol to generate complete URI
 	serverURL := "https://" + artifactHostName
