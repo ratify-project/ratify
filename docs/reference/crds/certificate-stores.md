@@ -19,7 +19,7 @@ status: # supported in version >= config.ratify.deislabs.io/v1beta1
 
 # Certificate Store Provider
 ## AzureKeyVault Certificate Provider
-See notary integration example [here](../../developer/verifier.md#section-6-built-in-verifiers)
+See notation integration example [here](../../reference/verifier.md#section-6-built-in-verifiers)
 ```yml
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
@@ -57,9 +57,13 @@ status:
 Use command `kubectl get certificatestores.config.ratify.deislabs.io` to see a overview of `certificatestores` status.
 Use command `kubectl get certificatestores.config.ratify.deislabs.io/certstore-akv` to see full details on each certificate.
 ### Limitation
-Azure Key Vault integration currently only works for self signed certificate, we are following up on Azure Key Vault specific limitations so we could support certificate chains in the future, please use [issue 695](https://github.com/deislabs/ratify/issues/695) for tracking. If you are working with a certificate chain, please specify the public root certificate value inline using the [inline certificate provider](certificate-stores.md#inline-certificate-provider). 
+Azure keyvault Certificates are built on top of keys and secrets. When a certificate is created, an addressable key and secret are also created with the same name. Ratify requires secret permissions to retrieve the public certificates for the entire certificate chain, please set private keys to Non-exportable at certificate creation time to avoid security risk. Learn more about non-exportable keys [here](https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys)
 
 Please also ensure the certificate is in PEM format, PKCS12 format with nonexportable private keys can not be parsed due to limitation of Golang certificate library.
+
+Akv set up guide in ratify-on-azure [quick start](https://github.com/deislabs/ratify/blob/main/docs/quickstarts/ratify-on-azure.md#configure-access-policy-for-akv).
+
+> Note: If you were unable to configure certificate policy, please consider specifying the public root certificate value inline using the [inline certificate provider](../reference/crds/certificate-stores.md#inline-certificate-provider) to reduce risk of exposing private key.
 
 ## Inline Certificate Provider
 ```

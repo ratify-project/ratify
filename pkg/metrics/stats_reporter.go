@@ -20,7 +20,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric/instrument"
+	instrument "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/metric/aggregation"
@@ -204,7 +204,7 @@ func ReportMutationRequest(ctx context.Context, duration int64) {
 // isError: whether the verification failed due to an error
 func ReportVerifierDuration(ctx context.Context, duration int64, veriferName string, subjectReference string, success bool, isError bool) {
 	if verifierDuration != nil {
-		verifierDuration.Record(ctx, duration,
+		verifierDuration.Record(ctx, duration, instrument.WithAttributes(
 			attribute.KeyValue{
 				Key:   "verifier",
 				Value: attribute.StringValue(veriferName),
@@ -221,7 +221,7 @@ func ReportVerifierDuration(ctx context.Context, duration int64, veriferName str
 				Key:   "error",
 				Value: attribute.BoolValue(isError),
 			},
-		)
+		))
 	}
 }
 
@@ -230,7 +230,7 @@ func ReportVerifierDuration(ctx context.Context, duration int64, veriferName str
 // errorString: the error message
 func ReportSystemError(ctx context.Context, errorString string) {
 	if systemErrorCount != nil {
-		systemErrorCount.Add(ctx, 1, attribute.KeyValue{Key: "error", Value: attribute.StringValue(errorString)})
+		systemErrorCount.Add(ctx, 1, instrument.WithAttributes(attribute.KeyValue{Key: "error", Value: attribute.StringValue(errorString)}))
 	}
 }
 
@@ -240,7 +240,7 @@ func ReportSystemError(ctx context.Context, errorString string) {
 // registryHost: the host name of the registry
 func ReportRegistryRequestCount(ctx context.Context, statusCode int, registryHost string) {
 	if registryRequestCount != nil {
-		registryRequestCount.Add(ctx, 1, attribute.KeyValue{Key: "status_code", Value: attribute.IntValue(statusCode)}, attribute.KeyValue{Key: "registry_host", Value: attribute.StringValue(registryHost)})
+		registryRequestCount.Add(ctx, 1, instrument.WithAttributes(attribute.KeyValue{Key: "status_code", Value: attribute.IntValue(statusCode)}, attribute.KeyValue{Key: "registry_host", Value: attribute.StringValue(registryHost)}))
 	}
 }
 
@@ -249,7 +249,7 @@ func ReportRegistryRequestCount(ctx context.Context, statusCode int, registryHos
 // resourceType: the scope of resource being exchanged (AKV or ACR)
 func ReportAADExchangeDuration(ctx context.Context, duration int64, resourceType string) {
 	if aadExchangeDuration != nil {
-		aadExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "resource_type", Value: attribute.StringValue(resourceType)})
+		aadExchangeDuration.Record(ctx, duration, instrument.WithAttributes(attribute.KeyValue{Key: "resource_type", Value: attribute.StringValue(resourceType)}))
 	}
 }
 
@@ -258,7 +258,7 @@ func ReportAADExchangeDuration(ctx context.Context, duration int64, resourceType
 // repository: the repository being accessed
 func ReportACRExchangeDuration(ctx context.Context, duration int64, repository string) {
 	if acrExchangeDuration != nil {
-		acrExchangeDuration.Record(ctx, duration, attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)})
+		acrExchangeDuration.Record(ctx, duration, instrument.WithAttributes(attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)}))
 	}
 }
 
@@ -267,7 +267,7 @@ func ReportACRExchangeDuration(ctx context.Context, duration int64, repository s
 // certificateName: the object name of the certificate
 func ReportAKVCertificateDuration(ctx context.Context, duration int64, certificateName string) {
 	if akvCertificateDuration != nil {
-		akvCertificateDuration.Record(ctx, duration, attribute.KeyValue{Key: "certificate_name", Value: attribute.StringValue(certificateName)})
+		akvCertificateDuration.Record(ctx, duration, instrument.WithAttributes(attribute.KeyValue{Key: "certificate_name", Value: attribute.StringValue(certificateName)}))
 	}
 }
 
@@ -276,6 +276,6 @@ func ReportAKVCertificateDuration(ctx context.Context, duration int64, certifica
 // hit: whether the blob was found in the cache
 func ReportBlobCacheCount(ctx context.Context, hit bool) {
 	if cacheBlobCount != nil {
-		cacheBlobCount.Add(ctx, 1, attribute.KeyValue{Key: "hit", Value: attribute.BoolValue(hit)})
+		cacheBlobCount.Add(ctx, 1, instrument.WithAttributes(attribute.KeyValue{Key: "hit", Value: attribute.BoolValue(hit)}))
 	}
 }

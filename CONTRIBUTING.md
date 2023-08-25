@@ -90,7 +90,7 @@ Sample launch json for debugging a plugin:
     "mode": "auto",
     "program": "${workspaceFolder}/plugins/verifier/cosign",
     "env": {
-      "RATIFY_DYNAMIC_PLUGINS": "1",
+      "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
       "RATIFY_LOG_LEVEL": "debug",
       "RATIFY_VERIFIER_COMMAND": "VERIFY",
       "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",
@@ -220,7 +220,7 @@ Gatekeeper requires TLS for external data provider interactions. As such ratify 
     helm install ratify \
       ./charts/ratify --atomic \
       --namespace gatekeeper-system \
-      --set-file notaryCert=./test/testdata/notary.crt \
+      --set-file notationCert=./test/testdata/notation.crt \
       --set-file provider.tls.crt=./tls/certs/tls.crt \
       --set-file provider.tls.key=./tls/certs/tls.key \
       --set-file provider.tls.cabundle=./tls/certs/ca.crt

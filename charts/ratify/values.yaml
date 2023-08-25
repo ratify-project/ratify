@@ -6,8 +6,8 @@ image:
 
 nameOverride: ""
 fullnameOverride: ""
-logLevel: info
-notaryCert: ""
+replicaCount: 1
+notationCert: ""
 cosign:
   enabled: true
   key: ""
@@ -64,8 +64,6 @@ oras:
     # Please tune your cache parameters to get better performance on the Oras Store performance.
     enabled: true # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
     ttl: 10 # in seconds
-    capacity: 100 # capacity is the max size in megabytes of the full cache.
-    keyNumber: 10000 # keyNumber is the number of items you expect to keep in the cache when full. It makes a difference to the cache performance, please set it close to the item count.
 
 provider:
   tls:
@@ -79,8 +77,12 @@ provider:
     validationTimeoutSeconds: 5
     mutationTimeoutSeconds: 2
   cache:
+    enabled: true # enable ratify wide cache
+    type: ristretto # cache type, currently only ristretto(default) and redis are supported
+    cacheSizeMb: 256 # max size of the cache in MB
     ttl: 10s # cache ttl duration
-    size: 100 # number of items to be kept in cache. Set to 0 to disable cache.
+    name: "" # state-store name for dapr cache, defaults to redis
+  enableMutation: true # enableMutation allows ratify to mutate image tag to image digest. It is highly recommended to enable mutation since the verified digest may be different from the one run.
 
 podAnnotations: {}
 podLabels: {}
@@ -108,9 +110,21 @@ crds:
     runAsNonRoot: true
     runAsUser: 65532
 
+policy:
+  useRego: false # Set to true if Rego Policy would be used for evaluation.
+
+logger:
+  formatter: "text" # Formatter can be set to `text`, `json` or `logstash`. Default to `text` if not specified.
+  level: "info" # Default to `info` if not specified.
+  requestHeaders:
+    traceIDHeaderName: # List of headers that include the trace ID in the external data requests to Ratify. The same headers will be passed to upstream services like remote registries.
+      - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
+
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
 
   # RATIFY_CERT_ROTATION enables rotation for TLS certificates.
   RATIFY_CERT_ROTATION: false
+  # RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY enables high availability mode including distributed caching.
+  RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY: false

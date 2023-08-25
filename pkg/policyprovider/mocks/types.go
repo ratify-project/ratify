@@ -48,3 +48,7 @@ func (p *TestPolicyProvider) ErrorToVerifyResult(_ context.Context, subjectRefSt
 func (p *TestPolicyProvider) OverallVerifyResult(_ context.Context, _ []interface{}) bool {
 	return true
 }
+
+func (p *TestPolicyProvider) GetPolicyType(_ context.Context) string {
+	return ""
+}

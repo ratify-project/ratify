@@ -19,6 +19,8 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+const MediaTypeArtifactManifest = "application/vnd.oci.artifact.manifest.v1+json"
+
 // ReferenceDescriptor represents a descriptor for an artifact manifest
 type ReferenceDescriptor struct {
 	oci.Descriptor

@@ -19,41 +19,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"sync"
 	"time"
 
+	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
+	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-
-	"github.com/cespare/xxhash/v2"
-	"github.com/dgraph-io/ristretto"
-	"github.com/dgraph-io/ristretto/z"
-	"github.com/sirupsen/logrus"
 )
 
-var (
-	memoryCache *ristretto.Cache
-	once        sync.Once
-)
-
-// operation defines the API operations of ReferrerStore.
-type operation int
-
-const (
-	operationName operation = iota
-	operationGetConfig
-	operationListReferrers
-	operationGetBlobContent
-	operationGetReferenceManifest
-	operationGetSubjectDescriptor
-)
-
-const (
-	defaultTTL       = 10
-	defaultCapacity  = 100 * 1024 * 1024 // 100 Megabytes
-	defaultKeyNumber = 10000
-)
+const defaultTTL = 10
 
 type orasStoreWithInMemoryCache struct {
 	referrerstore.ReferrerStore
@@ -61,41 +37,13 @@ type orasStoreWithInMemoryCache struct {
 }
 
 type cacheConf struct {
-	Enabled   bool `json:"cacheEnabled"`
-	TTL       int  `json:"ttl"`
-	Capacity  int  `json:"capacity"`
-	KeyNumber int  `json:"keyNumber"`
-}
-
-func keyToHash(key interface{}) (uint64, uint64) {
-	if key == nil {
-		return 0, 0
-	}
-	switch k := key.(type) {
-	case string:
-		return z.MemHashString(k), xxhash.Sum64String(k)
-	default:
-		return 0, 0
-	}
+	Enabled bool `json:"cacheEnabled"`
+	TTL     int  `json:"ttl"`
 }
 
 // createCachedStore creates a new oras store decorated with in-memory cache to cache
 // results of ListReferrers API.
 func createCachedStore(storeBase referrerstore.ReferrerStore, cacheConf *cacheConf) (referrerstore.ReferrerStore, error) {
-	var err error
-	once.Do(func() {
-		memoryCache, err = ristretto.NewCache(&ristretto.Config{
-			NumCounters: int64(cacheConf.KeyNumber) * 10,         // number of keys to track frequency. Recommended to 10x the number of total item count in the cache.
-			MaxCost:     int64(cacheConf.Capacity) * 1024 * 1024, // Max size in Megabytes.
-			BufferItems: 64,                                      // number of keys per Get buffer. 64 is recommended by the ristretto library.
-			KeyToHash:   keyToHash,
-		})
-	})
-	if err != nil {
-		logrus.Errorf("could not create cache for referrers, err: %v", err)
-		return &orasStoreWithInMemoryCache{}, err
-	}
-
 	return &orasStoreWithInMemoryCache{
 		ReferrerStore: storeBase,
 		cacheConf:     cacheConf,
@@ -103,17 +51,61 @@ func createCachedStore(storeBase referrerstore.ReferrerStore, cacheConf *cacheCo
 }
 
 func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subjectReference common.Reference, artifactTypes []string, nextToken string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
-	val, found := memoryCache.Get(getCacheKey(operationListReferrers, subjectReference))
-	if found {
-		if result, ok := val.(referrerstore.ListReferrersResult); ok {
-			return result, nil
+	var err error
+	var result referrerstore.ListReferrersResult
+	cacheKey := fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original)
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		logger.GetLogger(ctx, logOpt).Warnf("failed to get cache provider")
+	} else {
+		val, found := cacheProvider.Get(ctx, cacheKey)
+		if val != "" && found {
+			if err = json.Unmarshal([]byte(val), &result); err != nil {
+				logger.GetLogger(ctx, logOpt).Warn(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value for key %s: %s", cacheKey, val), errors.HideStackTrace))
+			} else {
+				logger.GetLogger(ctx, logOpt).Debug("cache hit for list referrers")
+				return result, nil
+			}
+		}
+	}
+	logger.GetLogger(ctx, logOpt).Debugf("list referrers cache miss for value: %s", subjectReference.Original)
+	result, err = store.ReferrerStore.ListReferrers(ctx, subjectReference, artifactTypes, nextToken, subjectDesc)
+	if err == nil {
+		if cacheProvider != nil {
+			if added := cacheProvider.SetWithTTL(ctx, cacheKey, result, time.Duration(store.cacheConf.TTL)*time.Second); !added { // TODO: convert ttl to duration in helm values
+				logger.GetLogger(ctx, logOpt).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+			}
 		}
 	}
 
-	result, err := store.ReferrerStore.ListReferrers(ctx, subjectReference, artifactTypes, nextToken, subjectDesc)
+	return result, err
+}
+
+func (store *orasStoreWithInMemoryCache) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+	result := &ocispecs.SubjectDescriptor{}
+	var err error
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		logger.GetLogger(ctx, logOpt).Warnf("failed to get cache provider")
+	} else {
+		val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, subjectReference.Digest))
+		if val != "" && found {
+			if err = json.Unmarshal([]byte(val), result); err != nil {
+				logger.GetLogger(ctx, logOpt).Warn(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value: %v", val), errors.HideStackTrace))
+			} else {
+				logger.GetLogger(ctx, logOpt).Debug("cache hit for subject descriptor")
+				return result, nil
+			}
+		}
+	}
+	logger.GetLogger(ctx, logOpt).Debugf("subject descriptor cache miss for value: %s", subjectReference.Original)
+	result, err = store.ReferrerStore.GetSubjectDescriptor(ctx, subjectReference)
 	if err == nil {
-		if added := memoryCache.SetWithTTL(getCacheKey(operationListReferrers, subjectReference), result, 1, time.Duration(store.cacheConf.TTL)*time.Second); !added {
-			logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", subjectReference, result)
+		if cacheProvider != nil {
+			cacheKey := fmt.Sprintf(cache.CacheKeySubjectDescriptor, result.Digest)
+			if added := cacheProvider.Set(ctx, cacheKey, *result); !added {
+				logger.GetLogger(ctx, logOpt).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+			}
 		}
 	}
 
@@ -134,16 +126,6 @@ func toCacheConfig(storePluginConfig map[string]interface{}) (*cacheConf, error)
 	if cacheConf.TTL == 0 {
 		cacheConf.TTL = defaultTTL
 	}
-	if cacheConf.Capacity == 0 {
-		cacheConf.Capacity = defaultCapacity
-	}
-	if cacheConf.KeyNumber == 0 {
-		cacheConf.KeyNumber = defaultKeyNumber
-	}
 
 	return cacheConf, nil
-}
-
-func getCacheKey(op operation, ref common.Reference) string {
-	return fmt.Sprintf("%d+%s@%s", op, ref.Path, ref.Digest)
 }

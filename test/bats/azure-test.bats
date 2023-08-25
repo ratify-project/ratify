@@ -13,12 +13,12 @@ SLEEP_TIME=1
     teardown() {
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-dynamic --namespace default --ignore-not-found=true'
         pod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
-        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=false ratify ./charts/ratify
+        helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=false ratify ./charts/ratify
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl -n gatekeeper-system delete $pod --force --grace-period=0'
     }
 
     # enable dynamic plugins
-    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_DYNAMIC_PLUGINS=true ratify ./charts/ratify
+    helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true ratify ./charts/ratify
     sleep 5
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
@@ -36,8 +36,8 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
-        # restore the original notary verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary_akv.yaml'
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_akv.yaml'
     }
 
     # configure the default template/constraint
@@ -45,26 +45,20 @@ SLEEP_TIME=1
     assert_success
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-
-    # add the root certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    assert_success
-    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-
-    # configure the notary verifier to use the inline certificate store
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notary.yaml
-    assert_success
-
-    # verify that the image can be run with a root cert
+   
+    # verify that the image can be run with a root cert, root verification cert should have been configured on deployment
     run kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned
     assert_success
 
-    # add the root certificate as an inline certificate store
+    # add the leaf certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+
+    # configure the notation verifier to use the inline certificate store
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
+    assert_success
 
     # wait for the httpserver cache to be invalidated
     sleep 15
@@ -73,11 +67,10 @@ SLEEP_TIME=1
     assert_failure
 }
 
-@test "notary test" {
+@test "notation test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-artifact --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
     }
 
@@ -88,8 +81,6 @@ SLEEP_TIME=1
     assert_success
     sleep 5
     run kubectl run demo --namespace default --image=${TEST_REGISTRY}/notation:signed
-    assert_success
-    run kubectl run demo-artifact --namespace default --image=${TEST_REGISTRY}/notation:ociartifact
     assert_success
     run kubectl run demo1 --namespace default --image=${TEST_REGISTRY}/notation:unsigned
     assert_failure
@@ -120,7 +111,6 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker2 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker-artifact --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
     }
 
@@ -141,15 +131,12 @@ SLEEP_TIME=1
     sleep 15
     run kubectl run license-checker2 --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
     assert_success
-    run kubectl run license-checker-artifact --namespace default --image=${TEST_REGISTRY}/licensechecker:ociartifact
-    assert_success
 }
 
 @test "sbom verifier test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom-artifact --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
     }
 
@@ -163,8 +150,6 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     sleep 5
     run kubectl run sbom --namespace default --image=${TEST_REGISTRY}/sbom:v0
-    assert_success
-    run kubectl run sbom-artifact --namespace default --image=${TEST_REGISTRY}/sbom:ociartifact
     assert_success
 
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom
@@ -182,7 +167,6 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator-artifact --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator2 --namespace default --force --ignore-not-found=true'
     }
 
@@ -197,8 +181,6 @@ SLEEP_TIME=1
     sleep 5
 
     run kubectl run schemavalidator --namespace default --image=${TEST_REGISTRY}/schemavalidator:v0
-    assert_success
-    run kubectl run schemavalidator-artifact --namespace default --image=${TEST_REGISTRY}/schemavalidator:ociartifact
     assert_success
 
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
@@ -244,18 +226,18 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod crdtest --namespace default --force --ignore-not-found=true'
     }
 
-    echo "adding license checker, delete notary verifier and validate deployment fails due to missing notary verifier"
+    echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
-    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notary
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=${TEST_REGISTRY}/notation:signed
     assert_failure
 
-    echo "Add notary verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notary_certstore.yaml
+    echo "Add notation verifier and validate deployment succeeds"
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_certstore.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated

@@ -5,6 +5,12 @@ metadata:
 data:
   config.json: |
     {
+      "logger": {
+        "formatter": {{ .Values.logger.formatter | quote }},
+        "requestHeaders": {
+          "traceIDHeaderName": {{ .Values.logger.requestHeaders.traceIDHeaderName | quote }}
+        }
+      },
       "executor": {
         "verificationRequestTimeout": {{ .Values.provider.timeout.validationTimeoutSeconds | int | mul 1000 | add -100 }},
         "mutationRequestTimeout": {{ .Values.provider.timeout.mutationTimeoutSeconds | int | mul 1000 | add -50 }}
@@ -52,21 +58,26 @@ data:
       "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy"
+        {{- if .Values.policy.useRego }}
+          "name": "regoPolicy",
+          "policyPath": "/usr/local/ratify/policy/policy.rego"
+        {{- else }}
+          "name": "configPolicy"
+        {{- end }}
         }
       },
       "verifier": {
           "version": "1.0.0",
           "plugins": [
             {
-                "name":"notaryv2",
+                "name":"notation",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
                 "verificationCertStores": {
                   "certs":[
                     {{- if .Values.akvCertConfig.enabled }}
                     "certstore-akv"
                     {{- else }}
-                    "{{ include "ratify.fullname" . }}-notary-inline-cert"
+                    "{{ include "ratify.fullname" . }}-notation-inline-cert"
                     {{- end }}
                    ]
                 },

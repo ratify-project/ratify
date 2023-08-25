@@ -32,7 +32,9 @@ GATEKEEPER_VERSION=${2:-3.11.0}
 TENANT_ID=$3
 export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
-export NOTARY_PEM_NAME="notary"
+export NOTATION_PEM_NAME="notation"
+export NOTATION_CHAIN_PEM_NAME="notationchain"
+
 TAG="test${SUFFIX}"
 REGISTRY="${ACR_NAME}.azurecr.io"
 
@@ -62,6 +64,7 @@ deploy_ratify() {
   echo "deploying ratify"
   local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
   local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
+
   helm install ratify \
     ./charts/ratify --atomic \
     --namespace ${RATIFY_NAMESPACE} --create-namespace \
@@ -71,12 +74,14 @@ deploy_ratify() {
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
     --set akvCertConfig.enabled=true \
     --set akvCertConfig.vaultURI=${VAULT_URI} \
-    --set akvCertConfig.cert1Name=${NOTARY_PEM_NAME} \
+    --set akvCertConfig.cert1Name=${NOTATION_PEM_NAME} \
+    --set akvCertConfig.cert2Name=${NOTATION_CHAIN_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
     --set-file cosign.key=".staging/cosign/cosign.pub" \
-    --set logLevel=debug
+    --set featureFlags.RATIFY_CERT_ROTATION=true \
+    --set logger.level=debug
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
@@ -85,14 +90,27 @@ deploy_ratify() {
 }
 
 upload_cert_to_akv() {
-  rm -f notary.pem
-  cat ~/.config/notation/localkeys/ratify-bats-test.key >>notary.pem
-  cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notary.pem
+  rm -f notation.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.key >>notation.pem
+  cat ~/.config/notation/localkeys/ratify-bats-test.crt >>notation.pem
 
+  echo "uploading notation.pem"
   az keyvault certificate import \
     --vault-name ${KEYVAULT_NAME} \
-    -n ${NOTARY_PEM_NAME} \
-    -f notary.pem
+    -n ${NOTATION_PEM_NAME} \
+    -f notation.pem
+
+  rm -f notationchain.pem
+
+  cat .staging/notation/leaf-test/leaf.key >>notationchain.pem
+  cat .staging/notation/leaf-test/leaf.crt >>notationchain.pem
+
+  echo "uploading notationchain.pem"
+  az keyvault certificate import \
+    --vault-name ${KEYVAULT_NAME} \
+    -n ${NOTATION_CHAIN_PEM_NAME} \
+    -f notationchain.pem \
+    -p @./test/bats/tests/config/akvpolicy.json
 }
 
 save_logs() {

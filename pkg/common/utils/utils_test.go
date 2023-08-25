@@ -23,6 +23,8 @@ import (
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+const TestArtifactType = "application/vnd.test.artifacttype"
+
 func TestOciManifestToReferenceManifest(t *testing.T) {
 	type args struct {
 		ociManifest oci.Manifest
@@ -48,13 +50,29 @@ func TestOciManifestToReferenceManifest(t *testing.T) {
 				ociManifest: oci.Manifest{
 					MediaType: "application/vnd.oci.image.manifest.v1+json",
 					Config: oci.Descriptor{
-						MediaType: "application/vnd.oci.image.config.v1+json",
+						MediaType: TestArtifactType,
 					},
 				},
 			},
 			want: ocispecs.ReferenceManifest{
 				MediaType:    "application/vnd.oci.image.manifest.v1+json",
-				ArtifactType: "application/vnd.oci.image.config.v1+json",
+				ArtifactType: TestArtifactType,
+			},
+		},
+		{
+			name: "empty config media type",
+			args: args{
+				ociManifest: oci.Manifest{
+					MediaType: "application/vnd.oci.image.manifest.v1+json",
+					Config: oci.Descriptor{
+						MediaType: oci.DescriptorEmptyJSON.MediaType,
+					},
+					ArtifactType: TestArtifactType,
+				},
+			},
+			want: ocispecs.ReferenceManifest{
+				MediaType:    "application/vnd.oci.image.manifest.v1+json",
+				ArtifactType: TestArtifactType,
 			},
 		},
 		{
@@ -63,7 +81,7 @@ func TestOciManifestToReferenceManifest(t *testing.T) {
 				ociManifest: oci.Manifest{
 					MediaType: "application/vnd.oci.image.manifest.v1+json",
 					Config: oci.Descriptor{
-						MediaType: "application/vnd.oci.image.config.v1+json",
+						MediaType: TestArtifactType,
 					},
 					Layers: []oci.Descriptor{
 						{
@@ -74,7 +92,7 @@ func TestOciManifestToReferenceManifest(t *testing.T) {
 			},
 			want: ocispecs.ReferenceManifest{
 				MediaType:    "application/vnd.oci.image.manifest.v1+json",
-				ArtifactType: "application/vnd.oci.image.config.v1+json",
+				ArtifactType: TestArtifactType,
 				Blobs: []oci.Descriptor{
 					{
 						MediaType: "application/vnd.oci.image.layer.v1.tar+gzip",
