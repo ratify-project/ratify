@@ -264,7 +264,7 @@ func TestGetKeyvaultRequestObj(t *testing.T) {
 	attrib["tenantID"] = "TestIDABC"
 	attrib["certificates"] = "array:\n- |\n  certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n"
 
-	result, err := getKeyvaultRequestObj(attrib)
+	result, err := getKeyvaultRequestObj(context.Background(), attrib)
 
 	if err != nil {
 		logrus.Infof("err %v", err)
@@ -327,7 +327,7 @@ func Test(t *testing.T) {
 				ContentType: &tc.contentType,
 			}
 
-			certs, status, err := getCertsFromSecretBundle(testdata, "certName")
+			certs, status, err := getCertsFromSecretBundle(context.Background(), testdata, "certName")
 			if tc.expectedErr {
 				assert.NotNil(t, err)
 				assert.Nil(t, certs)
@@ -363,7 +363,7 @@ func TestGetKeyvaultRequestObj_error(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			_, err := getKeyvaultRequestObj(tc.attrib)
+			_, err := getKeyvaultRequestObj(context.Background(), tc.attrib)
 			if tc.expectedErr {
 				assert.NotNil(t, err)
 			} else {
