@@ -30,6 +30,7 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/metrics"
 
 	"github.com/gorilla/mux"
@@ -59,6 +60,7 @@ type Server struct {
 	MetricsType       string
 	MetricsPort       int
 	CacheTTL          time.Duration
+	LogOption         logger.Option
 
 	keyMutex keyMutex
 }
@@ -103,6 +105,7 @@ func NewServer(context context.Context,
 		MetricsPort:       metricsPort,
 		CacheTTL:          cacheTTL,
 		keyMutex:          keyMutex{},
+		LogOption:         logger.Option{ComponentType: logger.Server},
 	}
 
 	return server, server.registerHandlers()
