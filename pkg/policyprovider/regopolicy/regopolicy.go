@@ -22,6 +22,7 @@ import (
 	"os"
 
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -32,7 +33,6 @@ import (
 	opa "github.com/deislabs/ratify/pkg/policyprovider/policyengine/opaengine"
 	query "github.com/deislabs/ratify/pkg/policyprovider/policyquery/rego"
 	policyTypes "github.com/deislabs/ratify/pkg/policyprovider/types"
-	"github.com/sirupsen/logrus"
 )
 
 type policyEnforcer struct {
@@ -50,6 +50,10 @@ type policyEnforcerConf struct {
 
 // Factory is a factory for creating rego policy enforcers.
 type Factory struct{}
+
+var logOpt = logger.Option{
+	ComponentType: logger.PolicyProvider,
+}
 
 // init calls Register for our rego policy provider.
 func init() {
@@ -121,7 +125,7 @@ func (e *policyEnforcer) OverallVerifyResult(ctx context.Context, verifierReport
 	nestedReports["verifierReports"] = verifierReports
 	result, err := e.OpaEngine.Evaluate(ctx, nestedReports)
 	if err != nil {
-		logrus.Errorf("failed to evaluate policy: %v", err)
+		logger.GetLogger(ctx, logOpt).Errorf("failed to evaluate policy: %v", err)
 		return false
 	}
 	return result

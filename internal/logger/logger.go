@@ -62,6 +62,16 @@ const (
 	Server componentType = "server"
 	// ReferrerStore is the component type for the referrer store.
 	ReferrerStore componentType = "referrerStore"
+	// Cache is the component type for the cache.
+	Cache componentType = "cache"
+	// CertProvider is the component type for certificate provider.
+	CertProvider componentType = "certificateProvider"
+	// AuthProvider is the component type for auth provider.
+	AuthProvider componentType = "authProvider"
+	// PolicyProvider is the component type for policy provider.
+	PolicyProvider componentType = "policyProvider"
+	// Verifier is the component type for verifier.
+	Verifier componentType = "verifier"
 
 	traceIDHeaderName = "traceIDHeaderName"
 )
