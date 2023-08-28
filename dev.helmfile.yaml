@@ -20,8 +20,8 @@ releases:
         value: 2
   - name: ratify
     namespace: gatekeeper-system
-    chart: charts/ratify # CHANGE to 'ratify/ratify' before copying to helmfile.yaml
-    version: 1.8.0
+    chart: charts/ratify # PRERELEASE: Change to 'ratify/ratify' before copying to helmfile.yaml
+    version: 1.9.0
     wait: true
     needs:
       - gatekeeper
@@ -72,11 +72,11 @@ releases:
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: featureFlags.RATIFY_CERT_ROTATION
         value: true
-      - name: image.repository # REMOVE before copying to helmfile.yaml
-        value: ghcr.io/deislabs/ratify-dev # REMOVE before copying to helmfile.yaml
-      - name: image.crdRepository # REMOVE before copying to helmfile.yaml
-        value: ghcr.io/deislabs/ratify-crds-dev # REMOVE before copying to helmfile.yaml
-      - name: image.tag # REMOVE before copying to helmfile.yaml
-        value: dev.20230822.cd81c6e # REMOVE before copying to helmfile.yaml
-      - name: image.pullPolicy # REMOVE before copying to helmfile.yaml
-        value: Always # REMOVE before copying to helmfile.yaml
+      - name: image.repository # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: ghcr.io/deislabs/ratify-dev # PRERELEASE: REMOVE before copying to helmfile.yaml
+      - name: image.crdRepository # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: ghcr.io/deislabs/ratify-crds-dev # PRERELEASE: REMOVE before copying to helmfile.yaml
+      - name: image.tag # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: dev.20230822.cd81c6e # PRERELEASE: REMOVE before copying to helmfile.yaml
+      - name: image.pullPolicy # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: Always # PRERELEASE: REMOVE before copying to helmfile.yaml
