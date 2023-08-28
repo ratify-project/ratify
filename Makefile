@@ -442,7 +442,7 @@ e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-inli
 	--set oras.useHttp=true \
 	--set cosign.enabled=false \
 	--set-file dockerConfig="mount_config.json" \
-	--set logLevel=debug
+	--set logger.level=debug
 
 	rm mount_config.json
 
@@ -477,7 +477,7 @@ e2e-helm-deploy-ratify:
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
-	--set logLevel=debug
+	--set logger.level=debug
 
 	rm mount_config.json
 
@@ -495,7 +495,7 @@ e2e-helm-deploy-ratify-without-tls-certs:
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
-	--set logLevel=debug
+	--set logger.level=debug
 
 	rm mount_config.json
 
@@ -535,7 +535,7 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-bui
 	--set oras.useHttp=true \
 	--set cosign.enabled=false \
 	--set-file dockerConfig="mount_config.json" \
-	--set logLevel=debug \
+	--set logger.level=debug \
 	--set replicaCount=2 \
 	--set provider.cache.type="dapr" \
 	--set provider.cache.name="dapr-redis" \

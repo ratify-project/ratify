@@ -19,7 +19,7 @@ releases:
   - name: ratify
     namespace: gatekeeper-system
     chart: ratify/ratify
-    version: 1.8.0
+    version: 1.9.0
     wait: true
     needs:
       - gatekeeper
@@ -55,6 +55,7 @@ releases:
           - "stores.config.ratify.deislabs.io"
           - "verifiers.config.ratify.deislabs.io"
           - "certificatestores.config.ratify.deislabs.io"
+          - "policies.config.ratify.deislabs.io"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
@@ -67,3 +68,5 @@ releases:
     set:
       - name: notationCert
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
+      - name: featureFlags.RATIFY_CERT_ROTATION
+        value: true

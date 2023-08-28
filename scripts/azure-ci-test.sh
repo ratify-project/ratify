@@ -81,7 +81,7 @@ deploy_ratify() {
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
     --set-file cosign.key=".staging/cosign/cosign.pub" \
     --set featureFlags.RATIFY_CERT_ROTATION=true \
-    --set logLevel=debug
+    --set logger.level=debug
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
