@@ -31,8 +31,8 @@ releases:
         value: false
   - name: ratify
     namespace: gatekeeper-system
-    chart: charts/ratify/ # CHANGE to 'ratify/ratify' before copying to high-availability.helmfile.yaml
-    version: 1.8.0
+    chart: ratify/ratify
+    version: 1.9.0
     wait: true
     needs:
       - dapr-system/dapr
@@ -109,15 +109,11 @@ releases:
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: image.repository
-        value: ghcr.io/deislabs/ratify-dev
-      - name: image.crdRepository
-        value: ghcr.io/deislabs/ratify-crds-dev
-      - name: image.tag
-        value: dev.20230723.d81e305
       - name: featureFlags.RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY
         value: true
-      - name: logLevel
+      - name: featureFlags.RATIFY_CERT_ROTATION
+        value: true
+      - name: logger.level
         value: debug
       - name: notationCert
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
