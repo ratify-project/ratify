@@ -162,7 +162,7 @@ type ReferenceVerifier interface {
 
 ## Executor
 
-The executor is responsible for composing multiple verifiers with multiple stores to create a workflow of verification for an artifact. For a given subject, it fetches all referrers from multiple stores and ensures multiple verifiers can be chained and executed one after the other. It is also responsible for handling [**nested verification**](#Nested-Verification) as required for some artifact types.
+The executor is responsible for composing multiple verifiers with multiple stores to create a workflow of verification for an artifact. For a given subject, it fetches all referrers from multiple stores and ensures multiple verifiers can be chained and executed one after the other. It is also responsible for handling [**nested verification**](#nested-verification) as required for some artifact types.
 
 ### Sample Interface
 
@@ -179,7 +179,7 @@ type Executor interface {
 
 ### Requirements
 
-- The framework MUST provide a reference implementation for an executor interface. This will be the default executor in the framework. The initial version will not support [plugin](#Plugin-architecture) model for an executor but MAY be added in future.
+- The framework MUST provide a reference implementation for an executor interface. This will be the default executor in the framework. The initial version will not support [plugin](#plugin-architecture) model for an executor but MAY be added in future.
 - An executor composes multiple verifiers and a reference provider with underlying multiple stores.
 - For a given artifact type, all verifiers that support it's verification, will be invoked in the order that are registered in the configuration.
 - Verifiers MAY be registered with the executor dynamically at runtime.
@@ -217,7 +217,7 @@ There are two different models of execution for the artifact verification.
 
 #### Model 1: Standalone verifiers
 
-In this model, every verifier that is registered with the framework is standalone and is responsible for complete verification process including query of references using the [reference provider](#Referrer/Reference-Provider). The executor iterates through the registered verifiers in the given order and invokes each of them for verification of the subject. Every verifier will be invoked with the plugins configuration for the stores so that they can create a provider that helps with querying the reference types.
+In this model, every verifier that is registered with the framework is standalone and is responsible for complete verification process including query of references using the [reference provider](#referrer/Reference-Provider). The executor iterates through the registered verifiers in the given order and invokes each of them for verification of the subject. Every verifier will be invoked with the plugins configuration for the stores so that they can create a provider that helps with querying the reference types.
 
 - A verifier can choose to query the related supply chain objects in any format without the need for them to be represented as reference types. This allows for removing dependency on the artifacts specification.
 - A verifier will also be responsible for nested verification of its artifacts as needed.
@@ -229,7 +229,7 @@ In this model, every verifier that is registered with the framework is standalon
 *Cons*
 
 - This model will be good if registry supports artifact type filtering. If not, every verifier will query  all referrers and do the filtering on the client side which can be expensive (we have hard 3 second timeout for the admission controller in k8s)
-- How do we manage configuration without duplicating? For example, trust policy required to verify signatures of SBOM might be duplicated both under SBOM and notation verifier. If delegation model is used to support nested verification, then [model 2](#Model-2-Light-weight-verifiers) might be cleaner way to control the flow of verification.  
+- How do we manage configuration without duplicating? For example, trust policy required to verify signatures of SBOM might be duplicated both under SBOM and notation verifier. If delegation model is used to support nested verification, then [model 2](#model-2-Light-weight-verifiers) might be cleaner way to control the flow of verification.  
 
 #### Model 2: Light weight verifiers
 
