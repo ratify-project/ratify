@@ -414,6 +414,8 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
+	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then kubectl -n ${GATEKEEPER_NAMESPACE} patch deployment gatekeeper-controller-manager --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--external-data-provider-response-cache-ttl=1s"}]' && sleep 60; fi
+
 e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
