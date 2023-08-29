@@ -6,12 +6,12 @@ When Ratify runs in cli serve mode, configuration file can be dynamically update
 ## CRDs
 Ratify also supports configuration through K8 [CRDs](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/). The configuration can be updated using natively supported `kubectl` commands.
 
-When running Ratify in a pod, the `ConfigMap` will be mounted in the pod at the default configuration file path. Ratify will initialize with specifications from the configuration file. CRDs will override store and verifier defined in the configuration file if they exist at runtime. Our team is in the process of converting configuration components into Ratify CRDs to support a more native k8s experience. Please review ratify CRDs samples [here](../config/samples/).
+When running Ratify in a pod, the `ConfigMap` will be mounted in the pod at the default configuration file path. Ratify will initialize with specifications from the configuration file. CRDs will override store and verifier defined in the configuration file if they exist at runtime. Our team is in the process of converting configuration components into Ratify CRDs to support a more native k8s experience. Please review ratify CRDs samples [here](../../config/samples/).
 
 Currently supported components through CRDs are:
 
 - [Verifiers](../reference/crds/verifiers.md)
-- [Stores](../reference/crds/stores.md.md)
+- [Stores](../reference/crds/stores.md)
 - [Certificate Stores](../reference/crds/certificate-stores.md)
 - [Policy](../reference/crds/policies.md)
 
