@@ -127,7 +127,8 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     --object-id ${IDENTITY_OBJECT_ID}
     ```
 
-## Deploy Gatekeeper and Ratify on AKS 
+## Deploy Gatekeeper and Ratify on AKS
+### When Azure Policy Addon is not enabled
 
 1. Deploy Gatekeeper from helm chart:
 
@@ -152,6 +153,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     helm install ratify \
         ./charts/ratify --atomic \
         --namespace ${RATIFY_NAMESPACE} --create-namespace \
+        --set featureFlags.RATIFY_CERT_ROTATION=true \
         --set akvCertConfig.enabled=true \
         --set akvCertConfig.vaultURI=${VAULT_URI} \
         --set akvCertConfig.cert1Name=${KEY_NAME} \
@@ -165,6 +167,45 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     ```bash
     kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
     kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
+    ```
+### When Azure Policy Addon is enabled on AKS
+1. Ensure your AKS cluster is 1.26+
+2. `az feature register -n AKS-AzurePolicyExternalData --namespace Microsoft.ContainerService`. If the feature flag is first to register, you need to disable and re-enable azure policy addon.
+3. Install Ratify on AKS from helm chart:
+
+    ```bash
+    # Add a Helm repo
+    helm repo add ratify https://deislabs.github.io/ratify
+    helm repo update
+
+    # Install Ratify
+    helm install ratify \
+        ./charts/ratify --atomic \
+        --namespace gatekeeper-system --create-namespace \
+        --set provider.enableMutation=false \
+        --set featureFlags.RATIFY_CERT_ROTATION=true \
+        --set akvCertConfig.enabled=true \
+        --set akvCertConfig.vaultURI=${VAULT_URI} \
+        --set akvCertConfig.cert1Name=${KEY_NAME} \
+        --set akvCertConfig.tenantId=${TENANT_ID} \
+        --set oras.authProviders.azureWorkloadIdentityEnabled=true \
+        --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID}
+    ```
+
+4. Create and assign azure policy on your cluster:
+
+    ```bash
+    custom_policy=$(curl -L https://deislabs.github.io/ratify/library/default/customazurepolicy.yaml)
+    definition_name="ratify-default-custom-policy"
+    scope=$(az aks show -g "${GROUP_NAME}" -n "${AKS_NAME}" --query id -o tsv)
+
+    definition_id=$(az policy definition create --name "${definition_name}" --rules "$(echo "${custom_policy}" | jq .policyRule)" --params "$(echo "${custom_policy}" | jq .parameters)" --mode "Microsoft.Kubernetes.Data" --query id -o tsv)
+
+    assignment_id=$(az policy assignment create --policy "${definition_id}" --name "${definition_name}" --scope "${scope}" --query id -o tsv)
+
+    echo "Please wait policy assignmet with id ${assignment_id} taking effect"
+    echo "It often requires 15 min"
+    echo "You can run 'kubectl get constraintTemplate ratifyverification' to verify the policy takes effect"
     ```
 
 ## Deploy two sample image to AKS cluster
