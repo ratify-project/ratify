@@ -95,7 +95,7 @@ type ReferrerStore interface {
 
 ### Requirements
 
-- A referrer store SHOULD be a [plugin](#Plugin-architecture) that implements the interface. The plugin will be integrated in the framework using registration through configuration.
+- A referrer store SHOULD be a [plugin](#plugin-architecture) that implements the interface. The plugin will be integrated in the framework using registration through configuration.
 - Any specific settings required for a store SHOULD be embedded in the plugin configuration that is part of the framework. These settings SHOULD not conflict with reserved properties defined by the framework.
 - There is no ordinal sequencing for the referrers returned by the store.
 - The framework MAY provide a reference implementation for the interface as a builtin plugin. For example, store implementation using OCI registry APIs.
@@ -146,7 +146,7 @@ type ReferenceVerifier interface {
 
 ### Requirements
 
-- A verifier SHOULD either be an internal provider or a  [plugin](#Plugin-architecture) that implements the interface. The plugin will be integrated in the framework using registration through configuration.
+- A verifier SHOULD either be an internal provider or a  [plugin](#plugin-architecture) that implements the interface. The plugin will be integrated in the framework using registration through configuration.
 - Any specific settings required for a verifier SHOULD be embedded in the plugin configuration that is part of the framework. These settings SHOULD not conflict with reserved properties defined by the framework.
 - For a given artifact type, all verifiers that ```CanVerify```  will be invoked in the order that are registered in the configuration.
 - The verifier SHOULD return a result that contains all details of the verification for auditing purposes.
@@ -217,7 +217,7 @@ There are two different models of execution for the artifact verification.
 
 #### Model 1: Standalone verifiers
 
-In this model, every verifier that is registered with the framework is standalone and is responsible for complete verification process including query of references using the [reference provider](#referrer/Reference-Provider). The executor iterates through the registered verifiers in the given order and invokes each of them for verification of the subject. Every verifier will be invoked with the plugins configuration for the stores so that they can create a provider that helps with querying the reference types.
+In this model, every verifier that is registered with the framework is standalone and is responsible for complete verification process including query of references using the [store](store.md). The executor iterates through the registered verifiers in the given order and invokes each of them for verification of the subject. Every verifier will be invoked with the plugins configuration for the stores so that they can create a provider that helps with querying the reference types.
 
 - A verifier can choose to query the related supply chain objects in any format without the need for them to be represented as reference types. This allows for removing dependency on the artifacts specification.
 - A verifier will also be responsible for nested verification of its artifacts as needed.
@@ -229,7 +229,7 @@ In this model, every verifier that is registered with the framework is standalon
 *Cons*
 
 - This model will be good if registry supports artifact type filtering. If not, every verifier will query  all referrers and do the filtering on the client side which can be expensive (we have hard 3 second timeout for the admission controller in k8s)
-- How do we manage configuration without duplicating? For example, trust policy required to verify signatures of SBOM might be duplicated both under SBOM and notation verifier. If delegation model is used to support nested verification, then [model 2](#model-2-Light-weight-verifiers) might be cleaner way to control the flow of verification.  
+- How do we manage configuration without duplicating? For example, trust policy required to verify signatures of SBOM might be duplicated both under SBOM and notation verifier. If delegation model is used to support nested verification, then [model 2](#model-2-light-weight-verifiers) might be cleaner way to control the flow of verification.  
 
 #### Model 2: Light weight verifiers
 
