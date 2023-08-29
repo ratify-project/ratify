@@ -46,9 +46,9 @@ require (
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.31.0
-	k8s.io/api v0.27.4
+	k8s.io/api v0.27.5
 	k8s.io/apimachinery v0.27.5
-	k8s.io/client-go v0.27.4
+	k8s.io/client-go v0.27.5
 	oras.land/oras-go/v2 v2.2.1
 )
 
@@ -174,7 +174,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.15 // indirect
 	github.com/in-toto/in-toto-golang v0.9.0 // indirect
