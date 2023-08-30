@@ -3,7 +3,10 @@ module github.com/deislabs/ratify
 go 1.20
 
 // Accidentally published prior to 1.0.0 release
-retract v1.1.0-alpha.1
+retract (
+	v1.1.0-alpha.2 // contains retractions only
+	v1.1.0-alpha.1 // published in error
+)
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
