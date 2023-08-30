@@ -208,7 +208,7 @@ helm install ratify \
     --set oras.authProviders.awsEcrBasicEnabled=true
 ```
 
-After deploying Ratify, we will download the AWS Signer notation plugin to the Ratify pod using the [Dynamic Plugins feature](/docs/reference/dynamic-plugins.md):
+After deploying Ratify, we will download the AWS Signer notation plugin to the Ratify pod using the [Dynamic Plugins feature](../reference/dynamic-plugins.md):
 
 ```shell
 cat > aws-signer-plugin.yaml << EOF
