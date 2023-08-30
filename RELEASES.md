@@ -30,7 +30,7 @@ Validate that the format of the data returned for external data calls has not ch
 
 Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` packages. Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`).
 
-Copy contents from `dev.helmfile.yaml` to `helmfile.yaml` & `dev.high-availability.helmfile.yaml` to `high-availability.helmfile.yaml`. You MUST update/remove values marked by comments in the files.
+Copy contents from `dev.helmfile.yaml` to `helmfile.yaml` & `dev.high-availability.helmfile.yaml` to `high-availability.helmfile.yaml`. You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. 
 
 Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version
 ## Git Release Flow
