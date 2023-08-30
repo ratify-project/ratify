@@ -13,7 +13,7 @@ jobs:
     steps:            
       - name: Run e2e with config policy
         run: |
-          make e2e-deploy-helmfile
+          make e2e-helmfile-install
           make e2e-helmfile-deploy-released-ratify
           make test-quick-start
       - name: Save logs
