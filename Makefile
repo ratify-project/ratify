@@ -250,7 +250,7 @@ e2e-helm-install:
 e2e-helmfile-install:
 	rm -rf .staging/helmfilebin
 	mkdir -p .staging/helmfilebin
-	curl -L https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile${HELMFILE_VERSION}_linux_amd64.tar.gz --output .staging/helmfilebin/helmfilebin.tar.gz
+	curl -L https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz --output .staging/helmfilebin/helmfilebin.tar.gz
 	cd .staging/helmfilebin && tar -xvf helmfilebin.tar.gz
     
 e2e-docker-credential-store-setup:
