@@ -1,0 +1,40 @@
+name: quick-start
+
+on: 
+ workflow_dispatch:
+
+jobs:
+  test-quick-start:
+    name: "Run quick start test"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    strategy:
+      matrix:
+        KUBERNETES_VERSION: ["1.25.8", "1.26.3"]
+        GATEKEEPER_VERSION: ["3.11.0", "3.12.0"]
+    steps:            
+      - name: Bootstrap e2e
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+          make e2e-bootstrap KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }}
+          make generate-certs
+      - name: Run e2e with config policy
+        run: |
+          make e2e-deploy-helmfile
+          make e2e-helmfile-deploy-released-ratify
+          make test-e2e GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}
+      - name: Save logs
+        if: ${{ always() }}
+        run: |
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        if: ${{ always() }}
+        with:
+          name: e2e-logs
+          path: |
+            logs-*.json

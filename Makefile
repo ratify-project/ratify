@@ -241,6 +241,12 @@ e2e-helm-install:
 	cd .staging/helm && tar -xvf helmbin.tar.gz
 	./.staging/helm/linux-amd64/helm version --client
 
+e2e-helmfile-install:
+	rm -rf .staging/helm-file
+	mkdir .staging/helm-file
+	curl -LO https://github.com/helmfile/helmfile/releases/download/v0.155.0/helmfile_0.155.0_linux_amd64.tar.gz --output .staging/helm-file/helmfilebin.tar.gz
+	cd .staging/helm-file && tar -xvf helmfile*.tar.gz
+    
 e2e-docker-credential-store-setup:
 	rm -rf .staging/pass
 	mkdir -p .staging/pass
@@ -457,6 +463,9 @@ e2e-build-local-ratify-image:
 	-f ./httpserver/Dockerfile \
 	-t localbuild:test .
 	kind load docker-image --name kind localbuild:test
+
+e2e-helmfile-deploy-released-ratify:
+	curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | ./.staging/helm-file/helmfile sync -f - 
 
 e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
