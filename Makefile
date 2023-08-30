@@ -21,6 +21,7 @@ NOTATION_VERSION ?= 1.0.0-rc.7
 ORAS_VERSION ?= 1.0.0-rc.2
 
 HELM_VERSION ?= 3.9.2
+HELMFILE_VERSION ?= 0.155.0
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
 BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
@@ -247,10 +248,10 @@ e2e-helm-install:
 	./.staging/helm/linux-amd64/helm version --client
 
 e2e-helmfile-install:
-	rm -rf .staging/helmfile
-	mkdir -p .staging/helmfile
-	curl https://github.com/helmfile/helmfile/releases/download/v0.155.0/helmfile_0.155.0_linux_amd64.tar.gz --output .staging/helmfile/helmfilebin.tar.gz
-	cd .staging/helmfile && tar -xvf helmfilebin.tar.gz
+	rm -rf .staging/helmfilebin
+	mkdir -p .staging/helmfilebin
+	curl -L https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile${HELMFILE_VERSION}_linux_amd64.tar.gz --output .staging/helmfilebin/helmfilebin.tar.gz
+	cd .staging/helmfilebin && tar -xvf helmfilebin.tar.gz
     
 e2e-docker-credential-store-setup:
 	rm -rf .staging/pass
@@ -470,7 +471,7 @@ e2e-build-local-ratify-image:
 	kind load docker-image --name kind localbuild:test
 
 e2e-helmfile-deploy-released-ratify:
-	curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | ./.staging/helmfile/helmfile sync -f - 
+	curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | ./.staging/helmfilebin/helmfile sync -f - 
 
 e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
