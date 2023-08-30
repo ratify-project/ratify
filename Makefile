@@ -24,6 +24,7 @@ HELM_VERSION ?= 3.9.2
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
 BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
+BATS_QUICKSTART_TESTS_FILE ?= test/bats/quickstart-test.bats
 BATS_HA_TESTS_FILE ?= test/bats/high-availability.bats
 BATS_VERSION ?= 1.7.0
 SYFT_VERSION ?= v0.76.0
@@ -142,6 +143,10 @@ test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-
 	mkdir ${GOCOVERDIR} -p
 	RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
 	go tool covdata textfmt -i=${GOCOVERDIR} -o test/e2e/coverage.txt
+
+.PHONY: test-quick-start
+test-quick-start:
+	bats -t ${BATS_QUICKSTART_TESTS_FILE}
 
 .PHONY: test-high-availability
 test-high-availability:
