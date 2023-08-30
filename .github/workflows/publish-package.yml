@@ -42,6 +42,9 @@ jobs:
           echo ::set-output name=ref::${REPOSITORY}:${VERSION}
           echo ::set-output name=baseref::${REPOSITORYBASE}:${VERSION}
           echo ::set-output name=crdref::${REPOSITORYCRD}:${VERSION}
+      - name: Get tag
+        run: |
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
       - name: docker login
         uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
@@ -55,11 +58,25 @@ jobs:
       - name: docker build ratify base
         run: |
           docker buildx create --use         
-          docker buildx build -f ./httpserver/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.baseref }} --push .
+          docker buildx build -f ./httpserver/Dockerfile \
+            --platform linux/amd64,linux/arm64,linux/arm/v7 \
+            --build-arg LDFLAGS="-X github.com/deislabs/ratify/internal/version.Version=$(TAG)" \
+            --label org.opencontainers.image.revision=${{ github.sha }} \
+            -t ${{ steps.prepare.outputs.baseref }} \
+            --push .
       - name: docker build ratify with plugin
         run: |
           docker buildx create --use
-          docker buildx build -f ./httpserver/Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.ref }} --push .
+          docker buildx build -f ./httpserver/Dockerfile \
+            --platform linux/amd64,linux/arm64,linux/arm/v7 \
+            --build-arg build_cosign=true \
+            --build-arg build_sbom=true \
+            --build-arg build_licensechecker=true \
+            --build-arg build_schemavalidator=true \
+            --build-arg LDFLAGS="-X github.com/deislabs/ratify/internal/version.Version=$(TAG)" \
+            --label org.opencontainers.image.revision=${{ github.sha }} \
+            -t ${{ steps.prepare.outputs.ref }} \
+            --push .
       - name: clear
         if: always()
         run: |
