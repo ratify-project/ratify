@@ -14,6 +14,7 @@ SLEEP_TIME=1
     run kubectl run demo --image=ghcr.io/deislabs/ratify/notary-image:signed
     assert_success
  
-    # validate certificate store status property shows success
+    # validate unsigned fails
+    kubectl run demo1 --image=ghcr.io/deislabs/ratify/notary-image:unsigned
     assert_failure
 }
