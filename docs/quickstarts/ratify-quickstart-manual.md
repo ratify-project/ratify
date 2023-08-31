@@ -44,7 +44,7 @@ helm install ratify \
 ```
 
 - Option 2: Install ratify with charts from your local branch.  
-Note: Latest chart in main may not be compatible with the last released version of ratify image, learn more about weekly dev builds [here](RELEASES.md/#weekly-dev-release) 
+Note: Latest chart in main may not be compatible with the last released version of ratify image, learn more about weekly dev builds [here](../../RELEASES.md#weekly-dev-release) 
 ```bash
 git clone https://github.com/deislabs/ratify.git
 cd ratify

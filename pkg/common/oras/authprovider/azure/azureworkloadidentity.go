@@ -22,13 +22,13 @@ import (
 	"time"
 
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"github.com/sirupsen/logrus"
 )
 
 type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
@@ -123,7 +123,7 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, nil, "could not refresh AAD token", re.HideStackTrace)
 		}
 		d.aadToken = newToken
-		logrus.Info("successfully refreshed AAD token")
+		logger.GetLogger(ctx, logOpt).Info("successfully refreshed AAD token")
 	}
 
 	// add protocol to generate complete URI

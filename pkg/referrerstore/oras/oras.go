@@ -39,6 +39,7 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
@@ -52,7 +53,6 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/opencontainers/go-digest"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -70,6 +70,8 @@ const (
 	dockerConfigFileName  = "config.json"
 	ratifyUserAgent       = "ratify"
 )
+
+var logOpt = logger.Option{ComponentType: logger.ReferrerStore}
 
 // OrasStoreConf describes the configuration of ORAS store
 type OrasStoreConf struct { //nolint:revive // ignore linter to have unique type name
@@ -379,7 +381,7 @@ func evictOnError(ctx context.Context, err error, subjectReference string) {
 	if errors.As(err, &ec) && (ec.StatusCode == http.StatusForbidden || ec.StatusCode == http.StatusUnauthorized) {
 		artifactRef, err := registry.ParseReference(subjectReference)
 		if err != nil {
-			logrus.Warnf("failed to evict credential from cache for %s: %v", subjectReference, err)
+			logger.GetLogger(ctx, logOpt).Warnf("failed to evict credential from cache for %s: %v", subjectReference, err)
 		}
 		cacheProvider.Delete(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry))
 	}
@@ -403,23 +405,23 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 	}
 	if cacheResponse != "" && found {
 		if err := json.Unmarshal([]byte(cacheResponse), &authConfig); err != nil {
-			logrus.Warning(re.ErrorCodeDataDecodingFailure.NewError(re.Cache, "", re.EmptyLink, err, fmt.Sprintf("failed to unmarshal auth config cache value: %s", cacheResponse), re.HideStackTrace))
+			logger.GetLogger(ctx, logOpt).Warn(re.ErrorCodeDataDecodingFailure.NewError(re.Cache, "", re.EmptyLink, err, fmt.Sprintf("failed to unmarshal auth config cache value: %s", cacheResponse), re.HideStackTrace))
 		} else {
-			logrus.Debug("auth cache hit")
+			logger.GetLogger(ctx, logOpt).Debug("auth cache hit")
 			cacheHit = true
 		}
 	}
 	if !cacheHit {
-		logrus.Debug("auth cache miss")
+		logger.GetLogger(ctx, logOpt).Debug("auth cache miss")
 		authConfig, err = store.authProvider.Provide(ctx, targetRef.Original)
 		if err != nil {
-			logrus.Warningf("auth provider failed with err, %v", err)
-			logrus.Info("attempting to use anonymous credentials")
+			logger.GetLogger(ctx, logOpt).Warnf("auth provider failed with err, %v", err)
+			logger.GetLogger(ctx, logOpt).Info("attempting to use anonymous credentials")
 		} else {
 			if cacheProvider != nil {
 				success := cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry), authConfig, time.Until(authConfig.ExpiresOn))
 				if !success {
-					logrus.Warning(re.ErrorCodeCacheNotSet.WithComponentType(re.Cache).WithDetail(fmt.Sprintf("failed to set auth cache for %s", artifactRef.Registry)))
+					logger.GetLogger(ctx, logOpt).Warn(re.ErrorCodeCacheNotSet.WithComponentType(re.Cache).WithDetail(fmt.Sprintf("failed to set auth cache for %s", artifactRef.Registry)))
 				}
 			}
 		}
@@ -452,6 +454,8 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 		Cache:      auth.NewCache(),
 		Credential: credentialProvider,
 	}
+
+	repoClient.Header = logger.SetTraceIDHeader(ctx, repoClient.Header)
 
 	// enable insecure if specified in config
 	if isInsecureRegistry(targetRef.Original, store.config) {

@@ -19,11 +19,15 @@ import (
 	"context"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/sirupsen/logrus"
 )
+
+var logOpt = logger.Option{
+	ComponentType: logger.ReferrerStore,
+}
 
 func ResolveSubjectDescriptor(ctx context.Context, stores *[]referrerstore.ReferrerStore, subRef common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	for _, referrerStore := range *stores {
@@ -31,7 +35,7 @@ func ResolveSubjectDescriptor(ctx context.Context, stores *[]referrerstore.Refer
 		if err == nil {
 			return desc, nil
 		}
-		logrus.Warn(errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, referrerStore.Name(), errors.EmptyLink, err, "failed to resolve the subject descriptor", errors.HideStackTrace))
+		logger.GetLogger(ctx, logOpt).Warn(errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, referrerStore.Name(), errors.EmptyLink, err, "failed to resolve the subject descriptor", errors.HideStackTrace))
 	}
 
 	return nil, errors.ErrorCodeReferrerStoreFailure.WithDetail("could not resolve descriptor for a subject from any stores").WithComponentType(errors.ReferrerStore)

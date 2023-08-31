@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -138,6 +139,10 @@ func showBlob(opts referrerCmdOptions) error {
 
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
+		return err
+	}
+
+	if err := logger.InitLogConfig(cf.LoggerConfig); err != nil {
 		return err
 	}
 
