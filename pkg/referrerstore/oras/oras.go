@@ -40,6 +40,7 @@ import (
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/internal/logger"
+	"github.com/deislabs/ratify/internal/version"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
@@ -447,14 +448,13 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 
 	// set the repository client credentials
 	repoClient := &auth.Client{
-		Client: store.httpClient,
-		Header: http.Header{
-			"User-Agent": {ratifyUserAgent},
-		},
+		Client:     store.httpClient,
+		Header:     http.Header{},
 		Cache:      auth.NewCache(),
 		Credential: credentialProvider,
 	}
 
+	repoClient.SetUserAgent(version.UserAgent)
 	repoClient.Header = logger.SetTraceIDHeader(ctx, repoClient.Header)
 
 	// enable insecure if specified in config
