@@ -11,6 +11,6 @@ SLEEP_TIME=1
     assert_success
  
     # validate unsigned fails
-    kubectl run demo1 --image=ghcr.io/deislabs/ratify/notary-image:unsigned
+    run kubectl run demo1 --image=ghcr.io/deislabs/ratify/notary-image:unsigned
     assert_failure
 }
