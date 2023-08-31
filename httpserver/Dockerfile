@@ -24,7 +24,7 @@ WORKDIR /app
 
 COPY . .
 
-RUN go build -o /app/out/ /app/cmd/ratify
+RUN go build -ldflags "${LDFLAGS}" -o /app/out/ /app/cmd/ratify
 RUN mkdir /app/out/plugins
 RUN if [ "$build_sbom" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/sbom; fi
 RUN if [ "$build_cosign" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/cosign; fi
