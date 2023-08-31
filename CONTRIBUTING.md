@@ -150,6 +150,25 @@ docker build -f httpserver/Dockerfile -t yourregistry/deislabs/ratify:yourtag .
 docker push yourregistry/deislabs/ratify:yourtag
 ```
 
+### Deploy using Dev Helmfile
+#### Update dev.helmfile.yaml
+Replace `repository`, `crdRepository`, and `tag` with previously built images:
+```yaml
+- name: image.repository 
+  value: <YOUR RATIFY IMAGE REPOSITORY NAME>
+- name: image.crdRepository
+  value: <YOUR RATIFY CRD IMAGE REPOSITORY NAME>
+- name: image.tag
+  value: <YOUR IMAGES TAG NAME>
+```
+
+Deploy to cluster:
+```bash
+helmfile sync -f dev.helmfile.yaml
+```
+
+### Deploy from local helm chart
+
 #### Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
 
 ```json
@@ -158,8 +177,6 @@ image:
   tag: yourtag
   pullPolicy: Always
 ```
-
-### Deploy from local helm chart
 
 Deploy using one of the following deployments.
 Note: Ratify is compatible with Gatkeeper >= 3.11.0. Server auth is required to be enabled.
