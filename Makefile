@@ -14,7 +14,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.26.3
-GATEKEEPER_VERSION ?= 3.12.0
+GATEKEEPER_VERSION ?= 3.13.0
 DAPR_VERSION ?= 1.11.1
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.7
@@ -425,6 +425,8 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set validatingWebhookTimeoutSeconds=5 \
     --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
+
+	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then kubectl -n ${GATEKEEPER_NAMESPACE} patch deployment gatekeeper-controller-manager --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--external-data-provider-response-cache-ttl=1s"}]' && sleep 60; fi
 
 e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
