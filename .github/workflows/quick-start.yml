@@ -1,7 +1,17 @@
 name: quick-start
 
-on: 
- workflow_dispatch:
+on:
+  pull_request_target:
+    types: [labeled]
+  pull_request:
+    branches:
+      - main
+      - 1.0.0*
+  push:
+    branches:
+      - 1.0.0*
+      - main
+  workflow_dispatch:
 
 jobs:
   test-quick-start:
@@ -36,8 +46,8 @@ jobs:
       - name: Save logs
         if: ${{ always() }}
         run: |
-          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
-          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-config-policy.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-config-policy.json
       - name: Upload artifacts
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         if: ${{ always() }}
