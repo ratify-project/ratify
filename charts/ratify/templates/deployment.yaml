@@ -38,6 +38,14 @@ spec:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9090
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 9090
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -75,6 +83,9 @@ spec:
             {{- if .Values.instrumentation.metricsEnabled }}
             - containerPort: {{ required "You must provide .Values.instrumentation.metricsPort" .Values.instrumentation.metricsPort }}
             {{- end }}
+            - containerPort: 9090
+                name: healthz
+                protocol: TCP
           volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
