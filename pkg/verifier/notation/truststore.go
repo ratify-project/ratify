@@ -21,11 +21,15 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
-	"github.com/sirupsen/logrus"
 )
+
+var logOpt = logger.Option{
+	ComponentType: logger.Verifier,
+}
 
 type trustStore struct {
 	certPaths  []string
@@ -36,15 +40,15 @@ type trustStore struct {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
-func (s trustStore) GetCertificates(_ context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(namedStore, controllers.GetCertificatesMap())
+func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
 	if err != nil {
 		return nil, err
 	}
 	return s.filterValidCerts(certs)
 }
 
-func (s trustStore) getCertificatesInternal(namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
+func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
 	// certs configured for this namedStore overrides cert path
@@ -52,7 +56,7 @@ func (s trustStore) getCertificatesInternal(namedStore string, certificatesMap m
 		for _, certStore := range certGroup {
 			result := certificatesMap[certStore]
 			if len(result) == 0 {
-				logrus.Warnf("no certificate fetched for certStore %+v", certStore)
+				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
 			}
 			certs = append(certs, result...)
 		}

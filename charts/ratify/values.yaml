@@ -1,12 +1,11 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.0.0-rc.6
+  tag: v1.0.0-rc.7
   pullPolicy: IfNotPresent
 
 nameOverride: ""
 fullnameOverride: ""
-logLevel: info
 replicaCount: 1
 notationCert: ""
 cosign:
@@ -113,6 +112,13 @@ crds:
 
 policy:
   useRego: false # Set to true if Rego Policy would be used for evaluation.
+
+logger:
+  formatter: "text" # Formatter can be set to `text`, `json` or `logstash`. Default to `text` if not specified.
+  level: "info" # Default to `info` if not specified.
+  requestHeaders:
+    traceIDHeaderName: # List of headers that include the trace ID in the external data requests to Ratify. The same headers will be passed to upstream services like remote registries.
+      - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
 
 # See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
 featureFlags:

@@ -1,6 +1,6 @@
 # Dynamic Plugins
 
-While Ratify provides a number of built-in referrer stores and verifiers, there may be times that you need to add additional out-of-tree plugins to verify additional artifact types or check for specific conditions. Whether you've followed the [plugin authoring guide](./creating-plugins.md), or you want to use a plugin that's provided by a third party, the next step is to make your plugin available to be called at runtime.
+While Ratify provides a number of built-in referrer stores and verifiers, there may be times that you need to add additional out-of-tree plugins to verify additional artifact types or check for specific conditions. Whether you've followed the [plugin authoring guide](../quickstarts/creating-plugins.md), or you want to use a plugin that's provided by a third party, the next step is to make your plugin available to be called at runtime.
 
 Ratify includes an optional dynamic plugins feature to simplify plugin distribution. This removes the need to rebuild or maintain your own Ratify container image. When enabled, plugins are stored as OCI artifacts and pulled down at runtime when they are registered via CRD. This guide will show you how to activate and configure dynamic plugins.
 
@@ -17,7 +17,7 @@ oras push myregistry.azurecr.io/sample-plugin:v1 ./sample
 
 ## Ratify Configuration
 
-Now that you have a plugin available as an OCI artifact, it's time to enable the `RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS` [feature flag](/docs/reference/usage.md#feature-flags). Here, we enable it via Helm chart parameter:
+Now that you have a plugin available as an OCI artifact, it's time to enable the `RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS` [feature flag](../reference/usage.md#feature-flags). Here, we enable it via Helm chart parameter:
 
 ```shell
 # Option 1: to enable on a fresh install
@@ -37,7 +37,7 @@ helm upgrade ratify \
 
 ## Plugin Configuration
 
-The last step is to specify the optional `source` property to tell Ratify where to download the plugin from. Dynamic plugins use the same [auth providers](/docs/reference/oras-auth-provider.md) and options as the builtin ORAS store (ex: `azureWorkloadIdentity`, `awsEcrBasic`, `k8Secrets`) for authentication to the registry where your plugins are located.
+The last step is to specify the optional `source` property to tell Ratify where to download the plugin from. Dynamic plugins use the same [auth providers](../reference/oras-auth-provider.md) and options as the builtin ORAS store (ex: `azureWorkloadIdentity`, `awsEcrBasic`, `k8Secrets`) for authentication to the registry where your plugins are located.
 
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1beta1

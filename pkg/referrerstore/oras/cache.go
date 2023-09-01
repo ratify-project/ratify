@@ -22,12 +22,11 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-
-	"github.com/sirupsen/logrus"
 )
 
 const defaultTTL = 10
@@ -57,24 +56,24 @@ func (store *orasStoreWithInMemoryCache) ListReferrers(ctx context.Context, subj
 	cacheKey := fmt.Sprintf(cache.CacheKeyListReferrers, subjectReference.Original)
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
-		logrus.Warningf("failed to get cache provider")
+		logger.GetLogger(ctx, logOpt).Warnf("failed to get cache provider")
 	} else {
 		val, found := cacheProvider.Get(ctx, cacheKey)
 		if val != "" && found {
 			if err = json.Unmarshal([]byte(val), &result); err != nil {
-				logrus.Warning(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value for key %s: %s", cacheKey, val), errors.HideStackTrace))
+				logger.GetLogger(ctx, logOpt).Warn(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value for key %s: %s", cacheKey, val), errors.HideStackTrace))
 			} else {
-				logrus.Debug("cache hit for list referrers")
+				logger.GetLogger(ctx, logOpt).Debug("cache hit for list referrers")
 				return result, nil
 			}
 		}
 	}
-	logrus.Debugf("list referrers cache miss for value: %s", subjectReference.Original)
+	logger.GetLogger(ctx, logOpt).Debugf("list referrers cache miss for value: %s", subjectReference.Original)
 	result, err = store.ReferrerStore.ListReferrers(ctx, subjectReference, artifactTypes, nextToken, subjectDesc)
 	if err == nil {
 		if cacheProvider != nil {
 			if added := cacheProvider.SetWithTTL(ctx, cacheKey, result, time.Duration(store.cacheConf.TTL)*time.Second); !added { // TODO: convert ttl to duration in helm values
-				logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+				logger.GetLogger(ctx, logOpt).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
 			}
 		}
 	}
@@ -87,25 +86,25 @@ func (store *orasStoreWithInMemoryCache) GetSubjectDescriptor(ctx context.Contex
 	var err error
 	cacheProvider := cache.GetCacheProvider()
 	if cacheProvider == nil {
-		logrus.Warningf("failed to get cache provider")
+		logger.GetLogger(ctx, logOpt).Warnf("failed to get cache provider")
 	} else {
 		val, found := cacheProvider.Get(ctx, fmt.Sprintf(cache.CacheKeySubjectDescriptor, subjectReference.Digest))
 		if val != "" && found {
 			if err = json.Unmarshal([]byte(val), result); err != nil {
-				logrus.Warning(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value: %v", val), errors.HideStackTrace))
+				logger.GetLogger(ctx, logOpt).Warn(errors.ErrorCodeDataDecodingFailure.NewError(errors.Cache, "", errors.EmptyLink, err, fmt.Sprintf("failed to unmarshal cache value: %v", val), errors.HideStackTrace))
 			} else {
-				logrus.Debug("cache hit for subject descriptor")
+				logger.GetLogger(ctx, logOpt).Debug("cache hit for subject descriptor")
 				return result, nil
 			}
 		}
 	}
-	logrus.Debugf("subject descriptor cache miss for value: %s", subjectReference.Original)
+	logger.GetLogger(ctx, logOpt).Debugf("subject descriptor cache miss for value: %s", subjectReference.Original)
 	result, err = store.ReferrerStore.GetSubjectDescriptor(ctx, subjectReference)
 	if err == nil {
 		if cacheProvider != nil {
 			cacheKey := fmt.Sprintf(cache.CacheKeySubjectDescriptor, result.Digest)
 			if added := cacheProvider.Set(ctx, cacheKey, *result); !added {
-				logrus.WithContext(ctx).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
+				logger.GetLogger(ctx, logOpt).Warnf("failed to add cache with key: %+v, val: %+v", cacheKey, result)
 			}
 		}
 	}

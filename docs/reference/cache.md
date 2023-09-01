@@ -19,7 +19,7 @@ When to use Ristretto as the cache provider?
 
 Dapr (Distributed Application Runtime) supports many different state-stores both open source and cloud specific. Redis is the prefferred state-store implementation. Redis is a memory-based key-value distributed data-store. It is atomic and highly concurrent making it a good fit for distributed applications with multiple readers and writers. Ratify uses Redis as a centralized cache shared across multiple processes (each external plugin is run as a separate process) and across mutliple ratify replicas.
 
-Ratify REQUIRES that each Dapr state store be configured with a primary encryption key in order to guarantee confidentiality of the cached data at rest. Please see guide [here](../examples/ratify-high-availability.md) on installing Ratify with Dapr Redis integration.
+Ratify REQUIRES that each Dapr state store be configured with a primary encryption key in order to guarantee confidentiality of the cached data at rest. Please see guide [here](../quickstarts/ratify-high-availability.md) on installing Ratify with Dapr Redis integration.
 
 The Ratify chart does NOT come with built-in installation support for Dapr or Redis. User's must manage and configure on their own.
 
