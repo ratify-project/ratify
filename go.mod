@@ -49,7 +49,7 @@ require (
 	k8s.io/api v0.27.5
 	k8s.io/apimachinery v0.27.5
 	k8s.io/client-go v0.27.5
-	oras.land/oras-go/v2 v2.2.1
+	oras.land/oras-go/v2 v2.3.0
 )
 
 require (
