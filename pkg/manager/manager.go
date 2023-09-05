@@ -261,15 +261,16 @@ func StartManager(certRotatorReady chan struct{}) {
 		os.Exit(1)
 	}
 
+	sec, _ := time.ParseDuration("30s")
+	setupLog.Info("about to sleep for 30sec")
+	time.Sleep(sec)
+	setupLog.Info("exiting")
+	os.Exit(1)
+
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 
-	sec, _ := time.ParseDuration("30s")
-	setupLog.Info("about to sleep for 30sec")
-	time.Sleep(sec)
-	setupLog.Info("exiting")
-	os.Exit(1)
 }
