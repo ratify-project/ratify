@@ -46,6 +46,7 @@ const (
 
 	DefaultMetricsType = "prometheus"
 	DefaultMetricsPort = 8888
+	DefaultHealthPort  = ":9090"
 )
 
 type Server struct {
