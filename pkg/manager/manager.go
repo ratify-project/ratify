@@ -178,6 +178,9 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		os.Exit(1)
 	}
 
+	setupLog.Debugf("setting up probeAddr at %s", probeAddr)
+	setupLog.Infof("setting up probeAddr at ", probeAddr)
+
 	// Make sure certs are generated and valid if cert rotation is enabled.
 	if featureflag.CertRotation.Enabled {
 		// Make sure TLS cert watcher is already set up.
@@ -260,11 +263,13 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		os.Exit(1)
 	}
 
-	sec, _ := time.ParseDuration("30s")
-	setupLog.Info("about to sleep for 30sec")
-	time.Sleep(sec)
-	setupLog.Info("exiting")
-	os.Exit(1)
+	if logrus.GetLevel() == logrus.DebugLevel {
+		sec, _ := time.ParseDuration("30s")
+		setupLog.Info("about to sleep for 30sec")
+		time.Sleep(sec)
+		setupLog.Info("exiting")
+		os.Exit(1)
+	}
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
