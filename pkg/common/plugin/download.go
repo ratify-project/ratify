@@ -24,6 +24,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/deislabs/ratify/internal/version"
 	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
 	commonutils "github.com/deislabs/ratify/pkg/common/utils"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -67,7 +68,7 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 	repository.Client = &auth.Client{
 		Client: &http.Client{Timeout: 10 * time.Second, Transport: http.DefaultTransport.(*http.Transport).Clone()},
 		Header: http.Header{
-			"User-Agent": {"ratify"},
+			"User-Agent": {version.UserAgent},
 		},
 		Cache: auth.NewCache(),
 		Credential: func(ctx context.Context, registry string) (auth.Credential, error) {

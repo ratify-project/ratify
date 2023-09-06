@@ -152,7 +152,7 @@ Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" deni
 
 You just validated the container images in your k8s cluster!
 
-## Uninstall Ratify
+### Uninstall Ratify
 Notes: Helm does NOT support upgrading CRDs, so uninstalling Ratify will require you to delete the CRDs manually. Otherwise, you might fail to install CRDs of newer versions when installing Ratify.
 ```bash
 kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
@@ -164,4 +164,28 @@ helm delete dapr --namespace dapr-system
 kubectl delete Component dapr-redis -n gatekeeper-system
 kubectl delete Secret ratify-dapr-signing-key -n gatekeeper-system
 helm delete gatekeeper -n gatekeeper-system
+```
+
+## Development Testing with Helmfile (build your own images)
+While developing for HA scenarios, the `dev.high-availability.helmfile.yaml` can be useful.
+
+Prerequisites:
+- Install helmfile
+- Build your own images (follow instructions [here](../../CONTRIBUTING.md#build-an-image-with-your-local-changes))
+- Install Ratify + Gatekeeper on cluster with `dev.helmfile.yaml` (follow instructions [here](../../CONTRIBUTING.md#deploy-using-dev-helmfile))
+
+### Update `dev.high-availability.helmfile.yaml`
+Replace `repository`, `crdRepository`, and `tag` with previously built images:
+```yaml
+- name: image.repository 
+  value: <YOUR RATIFY IMAGE REPOSITORY NAME>
+- name: image.crdRepository
+  value: <YOUR RATIFY CRD IMAGE REPOSITORY NAME>
+- name: image.tag
+  value: <YOUR IMAGES TAG NAME>
+```
+
+Deploy to cluster:
+```bash
+helmfile sync -f dev.high-availability.helmfile.yaml
 ```

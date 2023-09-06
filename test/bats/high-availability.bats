@@ -28,7 +28,7 @@ SLEEP_TIME=1
     assert_success
     run bash -c "kubectl logs -l app.kubernetes.io/name=ratify -c ratify --tail=-1 -n gatekeeper-system | grep 'cache hit for subject descriptor'"
     assert_success
-
+    sleep 3
     # run a second pod to validate cache hit
     run kubectl run demo2 --namespace default --image=registry:5000/notation:signed
     assert_success
