@@ -267,5 +267,4 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
-
 }
