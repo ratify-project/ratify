@@ -41,11 +41,11 @@ spec:
           livenessProbe:
             httpGet:
               path: /healthz
-              port: 9090
+              port: {{ .Values.healthPort }}
           readinessProbe:
             httpGet:
               path: /readyz
-              port: 9090
+              port: {{ .Values.healthPort }}
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
@@ -78,14 +78,15 @@ spec:
             - --metrics-enabled={{ .Values.instrumentation.metricsEnabled }}
             - --metrics-type={{ .Values.instrumentation.metricsType }}
             - --metrics-port={{ .Values.instrumentation.metricsPort }}
+            - --health-port=:{{ .Values.healthPort }}
           ports:
             - containerPort: 6001
             {{- if .Values.instrumentation.metricsEnabled }}
             - containerPort: {{ required "You must provide .Values.instrumentation.metricsPort" .Values.instrumentation.metricsPort }}
             {{- end }}
-            - containerPort: 9090
-                name: healthz
-                protocol: TCP
+            - containerPort: {{ .Values.healthPort }}
+              name: healthz
+              protocol: TCP
           volumeMounts:             
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
