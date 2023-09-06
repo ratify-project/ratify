@@ -170,7 +170,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     ```
 ### When Azure Policy Addon is enabled on AKS
 1. Ensure your AKS cluster is 1.26+
-2. `az feature register -n AKS-AzurePolicyExternalData --namespace Microsoft.ContainerService`. If the feature flag is first to register, you need to disable and re-enable azure policy addon.
+2. `az feature register -n AKS-AzurePolicyExternalData --namespace Microsoft.ContainerService`
 3. Install Ratify on AKS from helm chart:
 
     ```bash
