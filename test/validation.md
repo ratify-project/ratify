@@ -1,5 +1,5 @@
 # Validation
-Our goal is to automate as much testing as possible with unit and integration tests. For all CLI test scenarios covered today, please see [cli-test.bats](bats/cli-test.bats). For all K8 supported test scenarios covered today, please see [test.bats](bats/test.bats). For all Azure supported test scenarios covered today, please see [azure-test.bats](bats/azure-test.bats).
+Our goal is to automate as much testing as possible with unit and integration tests. For all CLI test scenarios covered today, please see [cli-test.bats](bats/cli-test.bats). For all base ratify tests + notation tests, please see [base-test.bats](bats/base-test.bats). For all external plugin related tests, please see [plugin-test.bats](bats/plugin-test.bats). For all Azure supported test scenarios covered today, please see [azure-test.bats](bats/azure-test.bats).
 
 ## Unsupported Tests
 
@@ -41,3 +41,9 @@ While we are working on improving our coverage, here is the list of scenarios th
 - Mutation Provider
 - Dynamic OCI Plugins
     - Verifier Plugin
+- CertifacteProvider CRD Status
+- TLS Certificate
+    - TLS Certificate Watcher
+    - TLS Certificate Rotation
+- High Availability Tests
+    - 2 Replicas, Redis + Dapr, Notation

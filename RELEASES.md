@@ -22,13 +22,18 @@ Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc
 
 ## Pre Release Activity
 
-Most e2e-scenarios for cli, K8, and Azure are covered by the ratify e2e tests. Please refer to this [document](test/validation.md) for the current supported and unsupported tests. 
+1. Most e2e-scenarios for cli, K8s, and Azure are covered by the Ratify e2e tests. Please refer to this [document](test/validation.md) for the current supported and unsupported tests. Please perform manual prerelease validations for the unsupported tests list [here](test/validation.md#unsupported-tests)
 
-Please perform manual prerelease validations for the unsupported tests list [here](test/validation.md#unsupported-tests)
+2. Validate that the format of the data returned for external data calls has not changed. If it has changed update the version in `httpserver/types.go` to reflect a change in the format and document the update.
 
-Validate that the format of the data returned for external data calls has not changed. If it has changed update the version in `httpserver/types.go` to reflect a change in the format and document the update.
+3. Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` packages. Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`).
 
-Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` packages. Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`).
+4. Copy contents from `dev.helmfile.yaml` to `helmfile.yaml` & `dev.high-availability.helmfile.yaml` to `high-availability.helmfile.yaml`. You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version.
+
+## Post Release Activity
+
+After a successful release, please manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
+
 ## Git Release Flow
 
 This section deals with the practical considerations of versioning in Git, this repo's version control system.  See the semantic versioning specification for the scope of changes allowed for each release type.
