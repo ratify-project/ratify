@@ -84,7 +84,7 @@ spec:
             {{- if .Values.instrumentation.metricsEnabled }}
             - containerPort: {{ required "You must provide .Values.instrumentation.metricsPort" .Values.instrumentation.metricsPort }}
             {{- end }}
-            - containerPort: {{ .Values.healthPort }}
+            - containerPort: {{ required "You must provide .Values.healthPort"  .Values.healthPort }}
               name: healthz
               protocol: TCP
           volumeMounts:             

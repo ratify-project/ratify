@@ -14,13 +14,14 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
 KUBERNETES_VERSION ?= 1.26.3
-GATEKEEPER_VERSION ?= 3.12.0
+GATEKEEPER_VERSION ?= 3.13.0
 DAPR_VERSION ?= 1.11.1
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.7
 ORAS_VERSION ?= 1.0.0-rc.2
 
 HELM_VERSION ?= 3.9.2
+HELMFILE_VERSION ?= 0.155.0
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
 BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
@@ -247,10 +248,10 @@ e2e-helm-install:
 	./.staging/helm/linux-amd64/helm version --client
 
 e2e-helmfile-install:
-	rm -rf .staging/helm-file
-	mkdir .staging/helm-file
-	curl -LO https://github.com/helmfile/helmfile/releases/download/v0.155.0/helmfile_0.155.0_linux_amd64.tar.gz --output .staging/helm-file/helmfilebin.tar.gz
-	cd .staging/helm-file && tar -xvf helmfile*.tar.gz
+	rm -rf .staging/helmfilebin
+	mkdir -p .staging/helmfilebin
+	curl -L https://github.com/helmfile/helmfile/releases/download/v${HELMFILE_VERSION}/helmfile_${HELMFILE_VERSION}_linux_amd64.tar.gz --output .staging/helmfilebin/helmfilebin.tar.gz
+	cd .staging/helmfilebin && tar -xvf helmfilebin.tar.gz
     
 e2e-docker-credential-store-setup:
 	rm -rf .staging/pass
@@ -425,6 +426,8 @@ e2e-deploy-gatekeeper: e2e-helm-install
     --set mutatingWebhookTimeoutSeconds=2 \
     --set auditInterval=0
 
+	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then kubectl -n ${GATEKEEPER_NAMESPACE} patch deployment gatekeeper-controller-manager --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--external-data-provider-response-cache-ttl=1s"}]' && sleep 60; fi
+
 e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
@@ -470,7 +473,7 @@ e2e-build-local-ratify-image:
 	kind load docker-image --name kind localbuild:test
 
 e2e-helmfile-deploy-released-ratify:
-	curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | ./.staging/helm-file/helmfile sync -f - 
+	curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | ./.staging/helmfilebin/helmfile sync -f - 
 
 e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
