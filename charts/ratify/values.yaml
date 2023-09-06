@@ -87,7 +87,7 @@ provider:
 podAnnotations: {}
 podLabels: {}
 enableRuntimeDefaultSeccompProfile: true
-healthPort: 9091
+healthPort: 9090
 
 rbac:
   create: true

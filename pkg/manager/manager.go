@@ -179,7 +179,6 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 	}
 
 	setupLog.Debugf("setting up probeAddr at %s", probeAddr)
-	setupLog.Infof("setting up probeAddr at ", probeAddr)
 
 	// Make sure certs are generated and valid if cert rotation is enabled.
 	if featureflag.CertRotation.Enabled {
@@ -260,14 +259,6 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 	}
 	if err := mgr.AddReadyzCheck("readyz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up ready check")
-		os.Exit(1)
-	}
-
-	if logrus.GetLevel() == logrus.DebugLevel {
-		sec, _ := time.ParseDuration("30s")
-		setupLog.Info("about to sleep for 30sec")
-		time.Sleep(sec)
-		setupLog.Info("exiting")
 		os.Exit(1)
 	}
 
