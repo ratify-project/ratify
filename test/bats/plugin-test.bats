@@ -39,10 +39,6 @@ SLEEP_TIME=1
 }
 
 @test "cert rotator test" {
-    teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'helm uninstall ratify --namespace gatekeeper-system'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'make e2e-helm-deploy-ratify CERT_DIR=${CERT_DIR} CERT_ROTATION_ENABLED=false GATEKEEPER_VERSION=${GATEKEEPER_VERSION}'
-    }
     helm uninstall ratify --namespace gatekeeper-system
     make e2e-helm-deploy-ratify CERT_DIR=${EXPIRING_CERT_DIR} CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
     sleep 10
