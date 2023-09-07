@@ -47,6 +47,7 @@ type serveCmdOptions struct {
 	metricsEnabled    bool
 	metricsType       string
 	metricsPort       int
+	healthPort        string
 }
 
 func NewCmdServe(_ ...string) *cobra.Command {
@@ -77,6 +78,7 @@ func NewCmdServe(_ ...string) *cobra.Command {
 	flags.BoolVar(&opts.metricsEnabled, "metrics-enabled", false, "Enable metrics exporter if enabled (default: false)")
 	flags.StringVar(&opts.metricsType, "metrics-type", httpserver.DefaultMetricsType, fmt.Sprintf("Metrics exporter type to use (default: %s)", httpserver.DefaultMetricsType))
 	flags.IntVar(&opts.metricsPort, "metrics-port", httpserver.DefaultMetricsPort, fmt.Sprintf("Metrics exporter port to use (default: %d)", httpserver.DefaultMetricsPort))
+	flags.StringVar(&opts.healthPort, "health-port", httpserver.DefaultHealthPort, fmt.Sprintf("Health port to use (default: %s)", httpserver.DefaultHealthPort))
 	return cmd
 }
 
@@ -100,7 +102,7 @@ func serve(opts serveCmdOptions) error {
 	if opts.enableCrdManager {
 		certRotatorReady := make(chan struct{})
 		logrus.Infof("starting crd manager")
-		go manager.StartManager(certRotatorReady)
+		go manager.StartManager(certRotatorReady, opts.healthPort)
 		manager.StartServer(opts.httpServerAddress, opts.configFilePath, opts.certDirectory, opts.caCertFile, opts.cacheTTL, opts.metricsEnabled, opts.metricsType, opts.metricsPort, certRotatorReady)
 
 		return nil
