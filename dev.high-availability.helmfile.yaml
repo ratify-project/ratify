@@ -119,7 +119,7 @@ releases:
         value: true
       - name: featureFlags.RATIFY_CERT_ROTATION
         value: true
-      - name: logLevel
+      - name: logger.level
         value: debug
       - name: notationCert
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
