@@ -12,6 +12,8 @@ releases:
     version: 3.13.0
     wait: true
     set:
+      - name: enableExternalData
+        value: true
       - name: validatingWebhookTimeoutSeconds
         value: 5
       - name: mutatingWebhookTimeoutSeconds
