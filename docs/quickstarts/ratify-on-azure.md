@@ -128,7 +128,7 @@ Configure user-assigned managed identity and enable `AcrPull` role to the worklo
     ```
 
 ## Deploy Gatekeeper and Ratify on AKS
-run `az aks show -g "${GROUP_NAME}" -n "${AKS_NAME}" --query addonProfiles.azurepolicy` to verify if the AKS cluster has azure policy addon enabled, for more [details](https://learn.microsoft.com/en-us/azure/aks/use-azure-policy)
+run `az aks show -g "${GROUP_NAME}" -n "${AKS_NAME}" --query addonProfiles.azurepolicy` to verify if the AKS cluster has azure policy addon enabled, learn more at [use azure policy](https://learn.microsoft.com/en-us/azure/aks/use-azure-policy)
 ### When Azure Policy Addon is not enabled
 
 1. Deploy Gatekeeper from helm chart:
