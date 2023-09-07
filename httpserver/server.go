@@ -151,6 +151,9 @@ func (server *Server) Run(certRotatorReady chan struct{}) error {
 			return err
 		}
 		defer tlsCertWatcher.Stop()
+		if err = tlsCertWatcher.ReadCertificates(); err != nil {
+			return err
+		}
 
 		svr.TLSConfig = &tls.Config{
 			GetConfigForClient: tlsCertWatcher.GetConfigForClient,

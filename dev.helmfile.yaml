@@ -9,16 +9,18 @@ releases:
     namespace: gatekeeper-system
     createNamespace: true
     chart: gatekeeper/gatekeeper
-    version: 3.13.0
+    version: 3.12.0
     wait: true
     set:
+      - name: enableExternalData
+        value: true
       - name: validatingWebhookTimeoutSeconds
         value: 5
       - name: mutatingWebhookTimeoutSeconds
         value: 2
   - name: ratify
     namespace: gatekeeper-system
-    chart: ratify/ratify
+    chart: charts/ratify # PRERELEASE: Change to 'ratify/ratify' before copying to helmfile.yaml
     version: 1.9.0
     wait: true
     needs:
@@ -70,3 +72,11 @@ releases:
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: featureFlags.RATIFY_CERT_ROTATION
         value: true
+      - name: image.repository # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: ghcr.io/deislabs/ratify-dev # PRERELEASE: REMOVE before copying to helmfile.yaml
+      - name: image.crdRepository # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: ghcr.io/deislabs/ratify-crds-dev # PRERELEASE: REMOVE before copying to helmfile.yaml
+      - name: image.tag # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: dev.20230822.cd81c6e # PRERELEASE: REMOVE before copying to helmfile.yaml
+      - name: image.pullPolicy # PRERELEASE: REMOVE before copying to helmfile.yaml
+        value: Always # PRERELEASE: REMOVE before copying to helmfile.yaml
