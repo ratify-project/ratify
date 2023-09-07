@@ -24,11 +24,11 @@ Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc
 
 1. Most e2e-scenarios for cli, K8s, and Azure are covered by the Ratify e2e tests. Please refer to this [document](test/validation.md) for the current supported and unsupported tests. Please perform manual prerelease validations for the unsupported tests list [here](test/validation.md#unsupported-tests)
 
-2. Validate that the format of the data returned for external data calls has not changed. If it has changed update the version in `httpserver/types.go` to reflect a change in the format and document the update.
+2. If the format of the data returned for [external data calls](docs/reference/verification-result-version.md) has changed, validate change is also reflected in [`httpserver/types.go`](httpserver/types.go).
 
-3. Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` packages. Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`).
+3. Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` [packages](https://github.com/orgs/deislabs/packages?repo_name=ratify). Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`).
 
-4. Copy contents from `dev.helmfile.yaml` to `helmfile.yaml` & `dev.high-availability.helmfile.yaml` to `high-availability.helmfile.yaml`. You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version.
+4. Copy contents from [`dev.helmfile.yaml`](dev.helmfile.yaml) to [`helmfile.yaml`](helmfile.yaml) & [`dev.high-availability.helmfile.yaml`](dev.high-availability.helmfile.yaml) to [`high-availability.helmfile.yaml`](high-availability.helmfile.yaml). You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version.
 
 ## Post Release Activity
 
@@ -52,7 +52,7 @@ When a major release is required, the release commits should be merged with the 
 
 ### Tag and Release
 
-When the release branch is ready, a tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
+Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/files) to update the chart value.When the release branch is ready, a tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
 
 * The release will be marked as a draft to allow an final editing before publishing.
 * The release notes and other fields can edited after the action completes.  The description can be in Markdown.
