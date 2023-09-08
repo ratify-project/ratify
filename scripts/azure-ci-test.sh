@@ -49,15 +49,7 @@ build_push_to_acr() {
 
 deploy_gatekeeper() {
   echo "deploying gatekeeper"
-  helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
-  helm install gatekeeper/gatekeeper \
-    --version ${GATEKEEPER_VERSION} \
-    --name-template=gatekeeper \
-    --namespace gatekeeper-system --create-namespace \
-    --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=5 \
-    --set mutatingWebhookTimeoutSeconds=2 \
-    --set auditInterval=0
+  make e2e-deploy-gatekeeper GATEKEEPER_VERSION=${GATEKEEPER_VERSION} GATEKEEPER_NAMESPACE="gatekeeper-system"
 }
 
 deploy_ratify() {
