@@ -54,6 +54,8 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 	// certs configured for this namedStore overrides cert path
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
+			certStore := controllers.GetNamespacedCertStore(certStore)
+			logger.GetLogger(ctx, logOpt).Infof("namespace name is certStore %v", certStore)
 			result := certificatesMap[certStore]
 			if len(result) == 0 {
 				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)

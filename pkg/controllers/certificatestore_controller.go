@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
@@ -65,10 +66,10 @@ const maxBriefErrLength = 30
 func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logrus.WithContext(ctx)
 
-	var resource = req.Name
+	var resource = req.NamespacedName.String()
 	var certStore configv1beta1.CertificateStore
 
-	logger.Infof("reconciling certificate store '%v'", resource)
+	logger.Infof("reconciling certificate store '%v'", req.NamespacedName)
 
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -117,6 +118,17 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 // returns the internal certificate map
 func GetCertificatesMap() map[string][]*x509.Certificate {
 	return certificatesMap
+}
+
+// check if certStore is a reference to a namespaced certStore
+// if no namespace is not apart of the certStore name, use the default namespace
+func GetNamespacedCertStore(certStore string) string {
+	a := `/`
+	count := strings.Count(certStore, a)
+	if count == 0 {
+		certStore = "default/" + certStore
+	}
+	return certStore
 }
 
 // SetupWithManager sets up the controller with the Manager.

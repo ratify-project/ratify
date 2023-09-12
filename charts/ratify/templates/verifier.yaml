@@ -15,7 +15,7 @@ spec:
         {{- if .Values.akvCertConfig.enabled }}
         - certstore-akv
         {{- else }}
-        - {{ include "ratify.fullname" . }}-notation-inline-cert
+        - default/{{ include "ratify.fullname" . }}-notation-inline-cert
         {{- end }}
     trustPolicyDoc:
       version: "1.0"
