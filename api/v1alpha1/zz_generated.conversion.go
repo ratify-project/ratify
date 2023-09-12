@@ -399,6 +399,7 @@ func Convert_unversioned_PolicyList_To_v1alpha1_PolicyList(in *unversioned.Polic
 }
 
 func autoConvert_v1alpha1_PolicySpec_To_unversioned_PolicySpec(in *PolicySpec, out *unversioned.PolicySpec, s conversion.Scope) error {
+	out.Type = in.Type
 	out.Parameters = in.Parameters
 	return nil
 }
@@ -409,6 +410,7 @@ func Convert_v1alpha1_PolicySpec_To_unversioned_PolicySpec(in *PolicySpec, out *
 }
 
 func autoConvert_unversioned_PolicySpec_To_v1alpha1_PolicySpec(in *unversioned.PolicySpec, out *PolicySpec, s conversion.Scope) error {
+	out.Type = in.Type
 	out.Parameters = in.Parameters
 	return nil
 }

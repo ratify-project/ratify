@@ -145,30 +145,32 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 		expectProvider bool
 	}{
 		{
-			name:           "invalid spec",
-			policyName:     policyName1,
-			spec:           configv1alpha1.PolicySpec{},
-			expectErr:      true,
-			expectProvider: false,
-		},
-		{
-			name:       "non-supported policy",
+			name:       "invalid spec",
 			policyName: policyName1,
 			spec: configv1alpha1.PolicySpec{
-				Parameters: runtime.RawExtension{
-					Raw: []byte("{\"name\": \"policy1\"}"),
-				},
+				Type: policyName1,
 			},
 			expectErr:      true,
 			expectProvider: false,
 		},
 		{
-			name:       "valid spec",
-			policyName: "configpolicy",
+			name: "non-supported policy",
+			spec: configv1alpha1.PolicySpec{
+				Parameters: runtime.RawExtension{
+					Raw: []byte("{\"name\": \"policy1\"}"),
+				},
+				Type: policyName1,
+			},
+			expectErr:      true,
+			expectProvider: false,
+		},
+		{
+			name: "valid spec",
 			spec: configv1alpha1.PolicySpec{
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"configpolicy\"}"),
 				},
+				Type: "configpolicy",
 			},
 			expectErr:      false,
 			expectProvider: true,
@@ -177,7 +179,7 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			provider, err := specToPolicyEnforcer(tc.spec, tc.policyName)
+			provider, err := specToPolicyEnforcer(tc.spec)
 
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
@@ -197,10 +199,11 @@ func TestPolicyAddOrReplace(t *testing.T) {
 		expectErr  bool
 	}{
 		{
-			name:       "invalid spec",
-			spec:       configv1alpha1.PolicySpec{},
-			policyName: policyName1,
-			expectErr:  true,
+			name: "invalid spec",
+			spec: configv1alpha1.PolicySpec{
+				Type: policyName1,
+			},
+			expectErr: true,
 		},
 		{
 			name: "valid spec",
@@ -208,15 +211,15 @@ func TestPolicyAddOrReplace(t *testing.T) {
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"configpolicy\"}"),
 				},
+				Type: "configpolicy",
 			},
-			policyName: "configpolicy",
-			expectErr:  false,
+			expectErr: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := policyAddOrReplace(tc.spec, tc.policyName)
+			err := policyAddOrReplace(tc.spec)
 
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)

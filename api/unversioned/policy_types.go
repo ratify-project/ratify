@@ -25,6 +25,9 @@ import (
 type PolicySpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// Type of the polocy
+	Type string `json:"type,omitempty"`
+
 	// Parameters for this policy
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }

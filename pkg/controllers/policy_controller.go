@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const ratifyPolicy = "ratify-policy"
+
 // PolicyReconciler reconciles a Policy object
 type PolicyReconciler struct {
 	client.Client
@@ -74,33 +76,15 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := policyAddOrReplace(policy.Spec, resource); err != nil {
+	if resource != ratifyPolicy {
+		return ctrl.Result{}, nil
+	}
+
+	if err := policyAddOrReplace(policy.Spec); err != nil {
 		policyLogger.Error("unable to create policy from policy crd: ", err)
 		return ctrl.Result{}, err
 	}
 
-	// List all policies in the same namespace.
-	policyList := &configv1alpha1.PolicyList{}
-	if err := r.List(ctx, policyList, client.InNamespace(req.Namespace)); err != nil {
-		policyLogger.Error("failed to list Policies: ", err)
-		return ctrl.Result{}, err
-	}
-
-	// Delete all policies except the current one.
-	for _, item := range policyList.Items {
-		item := item
-		if item.Name != resource {
-			policyLogger.Infof("Deleting policy %s", item.Name)
-			err := r.Delete(ctx, &item)
-			if err != nil {
-				policyLogger.Error("failed to delete Policy: ", err)
-				return ctrl.Result{}, err
-			}
-			policyLogger.Info("Deleted policy", "name", item.Name)
-		}
-	}
-
-	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
 }
 
@@ -111,19 +95,19 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func policyAddOrReplace(spec configv1alpha1.PolicySpec, policyName string) error {
-	policyEnforcer, err := specToPolicyEnforcer(spec, policyName)
+func policyAddOrReplace(spec configv1alpha1.PolicySpec) error {
+	policyEnforcer, err := specToPolicyEnforcer(spec)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	ActivePolicy.Name = policyName
+	ActivePolicy.Name = spec.Type
 	ActivePolicy.Enforcer = policyEnforcer
 	return nil
 }
 
-func specToPolicyEnforcer(spec configv1alpha1.PolicySpec, policyName string) (policyprovider.PolicyProvider, error) {
-	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, policyName)
+func specToPolicyEnforcer(spec configv1alpha1.PolicySpec) (policyprovider.PolicyProvider, error) {
+	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse policy config: %w", err)
 	}

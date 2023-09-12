@@ -5,13 +5,14 @@ View more CRD samples [here](../../../config/samples/policy). The `metadata.name
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: Policy
 metadata:
-  name: "configpolicy"
+  name: "ratify-policy"
 spec:
+  type: required. Type of the policy.
   parameters: required. Parameters specific to this policy
 ```
-There would be exactly one CR existing in the cluster. That means if users apply a new CR, the old one would be replaced.
+Ratify would only accept a policy setting `metadata.name` as `ratify-policy` since there is at most one active policy for Ratify to use. That means if users apply a new CR with different `metadata.name`, Ratify will not update the existing policy.
 
-Note: `metadata.name` MUST be `configpolicy` or `regopolicy` per the usage.
+Note: `spec.name` MUST be `configpolicy` or `regopolicy` per the usage.
 
 ## configpolicy
 Sample spec:
@@ -19,8 +20,9 @@ Sample spec:
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: Policy
 metadata:
-  name: "configpolicy"
+  name: "ratify-policy"
 spec:
+  type: "configpolicy"
   parameters:
     artifactVerificationPolicies:
       "application/vnd.cncf.notary.signature": "any"
@@ -38,8 +40,9 @@ Sample spec:
 apiVersion: config.ratify.deislabs.io/v1alpha1
 kind: Policy
 metadata:
-  name: "regopolicy"
+  name: "ratify-policy"
 spec:
+  type: "regopolicy"
   parameters:
     passthroughEnabled: false
     policy: |
