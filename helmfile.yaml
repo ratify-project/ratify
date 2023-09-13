@@ -21,7 +21,7 @@ releases:
   - name: ratify
     namespace: gatekeeper-system
     chart: ratify/ratify
-    version: 1.9.0
+    version: 1.10.0 # Make sure this matches Chart.yaml
     wait: true
     needs:
       - gatekeeper
