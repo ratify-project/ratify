@@ -26,6 +26,10 @@ SLEEP_TIME=1
 
     run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
     assert_failure
+    run kubectl run demo1 --namespace default --image=registry:5000/notation:initContainersImg-unsigned
+    assert_failure
+    run kubectl run demo1 --namespace default --image=registry:5000/notation:ephemeralContainersImg-unsigned
+    assert_failure
 }
 
 @test "crd version test" {
