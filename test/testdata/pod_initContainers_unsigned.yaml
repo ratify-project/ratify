@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: myapp-pod
+  labels:
+    app.kubernetes.io/name: MyApp
+spec:
+  containers:
+  - name: myapp-container
+    image: ghcr.io/deislabs/ratify/notary-image:signed
+  initContainers:
+  - name: init-myservice
+    image: ghcr.io/deislabs/ratify/notary-image:unsigned
