@@ -7,7 +7,7 @@ metadata:
 spec:
   containers:
   - name: myapp-container
-    image: ghcr.io/deislabs/ratify/notary-image:signed
+    image: registry:5000/notation:signed
   initContainers:
   - name: init-myservice
-    image: ghcr.io/deislabs/ratify/notary-image:signed
+    image: registry:5000/notation:signed
