@@ -10,17 +10,17 @@ retract (
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.1
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.7.2
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.1
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1
 	github.com/aws/aws-sdk-go-v2 v1.21.0
-	github.com/aws/aws-sdk-go-v2/config v1.18.38
-	github.com/aws/aws-sdk-go-v2/credentials v1.13.36
+	github.com/aws/aws-sdk-go-v2/config v1.18.39
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.37
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.15.0
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/dapr/go-sdk v1.8.0
 	github.com/dgraph-io/ristretto v0.1.1
-	github.com/docker/cli v24.0.0+incompatible
+	github.com/docker/cli v24.0.6+incompatible
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/protobuf v1.5.3
@@ -46,9 +46,9 @@ require (
 	golang.org/x/sync v0.3.0
 	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.31.0
-	k8s.io/api v0.27.5
-	k8s.io/apimachinery v0.27.5
-	k8s.io/client-go v0.27.5
+	k8s.io/api v0.27.6
+	k8s.io/apimachinery v0.27.6
+	k8s.io/client-go v0.27.6
 	oras.land/oras-go/v2 v2.3.0
 )
 
@@ -135,7 +135,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.3.42 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.9.35 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.13.6 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.15.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.15.6 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.21.5 // indirect
 	github.com/aws/smithy-go v1.14.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
