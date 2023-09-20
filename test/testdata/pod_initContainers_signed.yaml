@@ -1,13 +1,11 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: myapp-pod
-  labels:
-    app.kubernetes.io/name: MyApp
+  name: initContainer-pod1
 spec:
   containers:
-  - name: myapp-container
+  - name: service-container
     image: registry:5000/notation:signed
   initContainers:
-  - name: init-myservice
+  - name: init-service
     image: registry:5000/notation:signed

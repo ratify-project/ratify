@@ -11,6 +11,8 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initContainer-pod --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initContainer-pod1 --namespace default --force --ignore-not-found=true'
     }
     run kubectl apply -f ./library/default/template.yaml
     assert_success
@@ -27,12 +29,14 @@ SLEEP_TIME=1
     run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
     assert_failure
 
+    # validate initContainers image
     run kubectl apply -f ./test/testdata/pod_initContainers_signed.yaml --namespace default
     assert_success
     
     run kubectl apply -f ./test/testdata/pod_initContainers_unsigned.yaml --namespace default
     assert_failure
 
+    # validate ephemeralContainers image
     run kubectl debug -it demo --image=registry:5000/notation:signed --target=demo
     assert_success
 
