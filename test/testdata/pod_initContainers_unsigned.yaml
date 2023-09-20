@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: initContainer-pod
+  name: initcontainer-pod
 spec:
   containers:
   - name: service-container

@@ -11,8 +11,8 @@ SLEEP_TIME=1
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initContainer-pod --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initContainer-pod1 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initcontainer-pod --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initcontainer-pod1 --namespace default --force --ignore-not-found=true'
     }
     run kubectl apply -f ./library/default/template.yaml
     assert_success
