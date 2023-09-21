@@ -141,13 +141,18 @@ Follow the steps below to build and deploy a Ratify image with your private chan
 #### build an image with your local changes
 
 ```bash
-docker build -f httpserver/Dockerfile -t yourregistry/deislabs/ratify:yourtag .
+export REGISTRY=yourregistry
+docker buildx create --use
+
+docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true -t ${REGISTRY}/deislabs/ratify:yourtag .
+docker build --progress=plain --build-arg KUBE_VERSION="1.25.0" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
 #### [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
 
 ```bash
-docker push yourregistry/deislabs/ratify:yourtag
+docker push ${REGISTRY}/deislabs/ratify:yourtag
+docker push ${REGISTRY}/localbuildcrd:yourtag
 ```
 
 ### Deploy using Dev Helmfile
