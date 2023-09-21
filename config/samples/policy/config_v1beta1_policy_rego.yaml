@@ -1,8 +1,9 @@
-apiVersion: config.ratify.deislabs.io/v1alpha1
+apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Policy
 metadata:
-  name: "regopolicy"
+  name: "ratify-policy"
 spec:
+  type: "rego-policy"
   parameters:
     passthroughEnabled: false
     policy: |
@@ -28,4 +29,3 @@ spec:
         path[count(path) - 1] == "verifierReports"
         count(value) == 0
       }
-    

@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
@@ -62,7 +62,7 @@ var ActivePolicy policy
 func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	policyLogger := logrus.WithContext(ctx)
 
-	var policy configv1alpha1.Policy
+	var policy configv1beta1.Policy
 	var resource = req.Name
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
@@ -77,11 +77,15 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if resource != ratifyPolicy {
+		errStr := fmt.Sprintf("metadata.name must be ratify-policy, got %s", resource)
+		policyLogger.Error(errStr)
+		writePolicyStatus(ctx, r, &policy, policyLogger, false, errStr)
 		return ctrl.Result{}, nil
 	}
 
 	if err := policyAddOrReplace(policy.Spec); err != nil {
 		policyLogger.Error("unable to create policy from policy crd: ", err)
+		writePolicyStatus(ctx, r, &policy, policyLogger, false, err.Error())
 		return ctrl.Result{}, err
 	}
 
@@ -91,11 +95,11 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1alpha1.Policy{}).
+		For(&configv1beta1.Policy{}).
 		Complete(r)
 }
 
-func policyAddOrReplace(spec configv1alpha1.PolicySpec) error {
+func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
 	policyEnforcer, err := specToPolicyEnforcer(spec)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
@@ -106,7 +110,7 @@ func policyAddOrReplace(spec configv1alpha1.PolicySpec) error {
 	return nil
 }
 
-func specToPolicyEnforcer(spec configv1alpha1.PolicySpec) (policyprovider.PolicyProvider, error) {
+func specToPolicyEnforcer(spec configv1beta1.PolicySpec) (policyprovider.PolicyProvider, error) {
 	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse policy config: %w", err)
@@ -147,4 +151,30 @@ func (p *policy) deletePolicy(resource string) {
 // IsEmpty returns true if there is no policy set up.
 func (p *policy) IsEmpty() bool {
 	return p.Name == "" && p.Enforcer == nil
+}
+
+func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.Policy, logger *logrus.Entry, isSuccess bool, errString string) {
+	if isSuccess {
+		updatePolicySuccessStatus(policy)
+	} else {
+		updatePolicyErrorStatus(policy, errString)
+	}
+	if statusErr := r.Status().Update(ctx, policy); statusErr != nil {
+		logger.Error(statusErr, ", unbale to update policy error status")
+	}
+}
+
+func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
+	policy.Status.IsSuccess = true
+	policy.Status.Error = ""
+}
+
+func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {
+	briefErr := errString
+	if len(errString) > maxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errString[:maxBriefErrLength])
+	}
+	policy.Status.IsSuccess = false
+	policy.Status.Error = errString
+	policy.Status.BriefError = briefErr
 }
