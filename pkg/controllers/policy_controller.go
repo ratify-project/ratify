@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
@@ -30,8 +31,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-const ratifyPolicy = "ratify-policy"
 
 // PolicyReconciler reconciles a Policy object
 type PolicyReconciler struct {
@@ -76,7 +75,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if resource != ratifyPolicy {
+	if resource != constants.RatifyPolicy {
 		errStr := fmt.Sprintf("metadata.name must be ratify-policy, got %s", resource)
 		policyLogger.Error(errStr)
 		writePolicyStatus(ctx, r, &policy, policyLogger, false, errStr)

@@ -30,7 +30,6 @@ type PolicySpec struct {
 
 	// Type of the policy
 	Type string `json:"type,omitempty"`
-
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this policy
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
@@ -42,7 +41,6 @@ type PolicyStatus struct {
 
 	// Is successful while applying the policy.
 	IsSuccess bool `json:"issuccess"`
-
 	// Error message if policy is not successfully applied.
 	// +optional
 	Error string `json:"error,omitempty"`
