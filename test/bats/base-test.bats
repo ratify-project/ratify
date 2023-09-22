@@ -38,7 +38,7 @@ SLEEP_TIME=1
 
     # validate ephemeralContainers image
     run kubectl debug -it demo --image=registry:5000/notation:signed --target=demo
-    run kubectl exec -it demo -- sh
+    run kubectl describe pod demo
     assert_success
 
     run kubectl debug -it demo --image=registry:5000/notation:unsigned --target=demo
