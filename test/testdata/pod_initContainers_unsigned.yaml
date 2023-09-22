@@ -6,6 +6,7 @@ spec:
   containers:
   - name: service-container
     image: registry:5000/notation:signed
+    command: ['sh', '-c', 'echo "logging"']
   initContainers:
   - name: init-service
     image: registry:5000/notation:unsigned
