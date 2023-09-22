@@ -35,6 +35,14 @@ SLEEP_TIME=1
     
     run kubectl apply -f ./test/testdata/pod_initContainers_unsigned.yaml --namespace default
     assert_failure
+
+    # validate ephemeralContainers image
+    run kubectl debug -it demo --image=registry:5000/notation:signed --target=demo
+    run kubectl exec -it demo -- sh
+    assert_success
+
+    run kubectl debug -it demo --image=registry:5000/notation:unsigned --target=demo
+    assert_failure
 }
 
 @test "crd version test" {
