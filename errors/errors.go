@@ -20,6 +20,7 @@ const (
 	OrasLink           = "https://oras.land/"
 	AuthProviderLink   = "https://github.com/deislabs/ratify/blob/main/docs/reference/oras-auth-provider.md"
 	PolicyProviderLink = "https://github.com/deislabs/ratify/blob/main/docs/reference/providers.md#policy-providers"
+	PolicyCRDLink      = "https://ratify.dev/docs/1.0.0-rc.6/reference/crds/policies"
 )
 
 var (

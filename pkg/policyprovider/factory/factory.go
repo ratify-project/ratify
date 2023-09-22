@@ -61,7 +61,7 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 
 	policyFactory, ok := builtInPolicyProviders[providerNameStr]
 	if !ok {
-		return nil, re.ErrorCodePolicyProviderNotFound.NewError(re.PolicyProvider, providerNameStr, re.EmptyLink, nil, fmt.Sprintf("policy type: %s is not registered policy provider", providerNameStr), re.HideStackTrace)
+		return nil, re.ErrorCodePolicyProviderNotFound.NewError(re.PolicyProvider, providerNameStr, re.PolicyCRDLink, nil, fmt.Sprintf("policy type: %s is not registered policy provider", providerNameStr), re.HideStackTrace)
 	}
 
 	policyProvider, err := policyFactory.Create(policyConfig.PolicyPlugin)
