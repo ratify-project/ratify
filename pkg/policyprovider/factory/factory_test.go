@@ -32,7 +32,7 @@ func (f *TestPolicyProviderFactory) Create(_ config.PolicyPluginConfig) (policyp
 // Checks the correct registered policy provider is invoked based on config
 func TestCreatePolicyProvidersFromConfig_BuiltInPolicyProviders_ReturnsExpected(t *testing.T) {
 	builtInPolicyProviders = map[string]PolicyFactory{
-		"test-policyprovider": &TestPolicyProviderFactory{},
+		"testpolicyprovider": &TestPolicyProviderFactory{},
 	}
 
 	configPolicyConfig := map[string]interface{}{

@@ -20,7 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
@@ -60,7 +61,7 @@ var ActivePolicy policy
 func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	policyLogger := logrus.WithContext(ctx)
 
-	var policy configv1alpha1.Policy
+	var policy configv1beta1.Policy
 	var resource = req.Name
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
@@ -74,56 +75,42 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := policyAddOrReplace(policy.Spec, resource); err != nil {
+	if resource != constants.RatifyPolicy {
+		errStr := fmt.Sprintf("metadata.name must be ratify-policy, got %s", resource)
+		policyLogger.Error(errStr)
+		writePolicyStatus(ctx, r, &policy, policyLogger, false, errStr)
+		return ctrl.Result{}, nil
+	}
+
+	if err := policyAddOrReplace(policy.Spec); err != nil {
 		policyLogger.Error("unable to create policy from policy crd: ", err)
+		writePolicyStatus(ctx, r, &policy, policyLogger, false, err.Error())
 		return ctrl.Result{}, err
 	}
 
-	// List all policies in the same namespace.
-	policyList := &configv1alpha1.PolicyList{}
-	if err := r.List(ctx, policyList, client.InNamespace(req.Namespace)); err != nil {
-		policyLogger.Error("failed to list Policies: ", err)
-		return ctrl.Result{}, err
-	}
-
-	// Delete all policies except the current one.
-	for _, item := range policyList.Items {
-		item := item
-		if item.Name != resource {
-			policyLogger.Infof("Deleting policy %s", item.Name)
-			err := r.Delete(ctx, &item)
-			if err != nil {
-				policyLogger.Error("failed to delete Policy: ", err)
-				return ctrl.Result{}, err
-			}
-			policyLogger.Info("Deleted policy", "name", item.Name)
-		}
-	}
-
-	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1alpha1.Policy{}).
+		For(&configv1beta1.Policy{}).
 		Complete(r)
 }
 
-func policyAddOrReplace(spec configv1alpha1.PolicySpec, policyName string) error {
-	policyEnforcer, err := specToPolicyEnforcer(spec, policyName)
+func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
+	policyEnforcer, err := specToPolicyEnforcer(spec)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	ActivePolicy.Name = policyName
+	ActivePolicy.Name = spec.Type
 	ActivePolicy.Enforcer = policyEnforcer
 	return nil
 }
 
-func specToPolicyEnforcer(spec configv1alpha1.PolicySpec, policyName string) (policyprovider.PolicyProvider, error) {
-	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, policyName)
+func specToPolicyEnforcer(spec configv1beta1.PolicySpec) (policyprovider.PolicyProvider, error) {
+	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse policy config: %w", err)
 	}
@@ -163,4 +150,30 @@ func (p *policy) deletePolicy(resource string) {
 // IsEmpty returns true if there is no policy set up.
 func (p *policy) IsEmpty() bool {
 	return p.Name == "" && p.Enforcer == nil
+}
+
+func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.Policy, logger *logrus.Entry, isSuccess bool, errString string) {
+	if isSuccess {
+		updatePolicySuccessStatus(policy)
+	} else {
+		updatePolicyErrorStatus(policy, errString)
+	}
+	if statusErr := r.Status().Update(ctx, policy); statusErr != nil {
+		logger.Error(statusErr, ", unbale to update policy error status")
+	}
+}
+
+func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
+	policy.Status.IsSuccess = true
+	policy.Status.Error = ""
+}
+
+func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {
+	briefErr := errString
+	if len(errString) > maxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errString[:maxBriefErrLength])
+	}
+	policy.Status.IsSuccess = false
+	policy.Status.Error = errString
+	policy.Status.BriefError = briefErr
 }
