@@ -16,19 +16,52 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"errors"
 	"reflect"
 	"testing"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/policyprovider/config"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	policyName1 = "policy1"
 	policyName2 = "policy2"
 )
+
+type mockResourceWriter struct {
+	updateFailed bool
+}
+
+func (w mockResourceWriter) Create(_ context.Context, _ client.Object, _ client.Object, _ ...client.SubResourceCreateOption) error {
+	return nil
+}
+
+func (w mockResourceWriter) Update(_ context.Context, _ client.Object, _ ...client.SubResourceUpdateOption) error {
+	if w.updateFailed {
+		return errors.New("update failed")
+	}
+	return nil
+}
+
+func (w mockResourceWriter) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+	return nil
+}
+
+type mockStatusClient struct {
+	updateFailed bool
+}
+
+func (c mockStatusClient) Status() client.SubResourceWriter {
+	writer := mockResourceWriter{}
+	writer.updateFailed = c.updateFailed
+	return writer
+}
 
 func TestDeletePolicy(t *testing.T) {
 	testCases := []struct {
@@ -140,35 +173,37 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 	testCases := []struct {
 		name           string
 		policyName     string
-		spec           configv1alpha1.PolicySpec
+		spec           configv1beta1.PolicySpec
 		expectErr      bool
 		expectProvider bool
 	}{
 		{
-			name:           "invalid spec",
-			policyName:     policyName1,
-			spec:           configv1alpha1.PolicySpec{},
-			expectErr:      true,
-			expectProvider: false,
-		},
-		{
-			name:       "non-supported policy",
+			name:       "invalid spec",
 			policyName: policyName1,
-			spec: configv1alpha1.PolicySpec{
-				Parameters: runtime.RawExtension{
-					Raw: []byte("{\"name\": \"policy1\"}"),
-				},
+			spec: configv1beta1.PolicySpec{
+				Type: policyName1,
 			},
 			expectErr:      true,
 			expectProvider: false,
 		},
 		{
-			name:       "valid spec",
-			policyName: "configpolicy",
-			spec: configv1alpha1.PolicySpec{
+			name: "non-supported policy",
+			spec: configv1beta1.PolicySpec{
+				Parameters: runtime.RawExtension{
+					Raw: []byte("{\"name\": \"policy1\"}"),
+				},
+				Type: policyName1,
+			},
+			expectErr:      true,
+			expectProvider: false,
+		},
+		{
+			name: "valid spec",
+			spec: configv1beta1.PolicySpec{
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"configpolicy\"}"),
 				},
+				Type: "configpolicy",
 			},
 			expectErr:      false,
 			expectProvider: true,
@@ -177,7 +212,7 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			provider, err := specToPolicyEnforcer(tc.spec, tc.policyName)
+			provider, err := specToPolicyEnforcer(tc.spec)
 
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
@@ -192,35 +227,75 @@ func TestSpecToPolicyEnforcer(t *testing.T) {
 func TestPolicyAddOrReplace(t *testing.T) {
 	testCases := []struct {
 		name       string
-		spec       configv1alpha1.PolicySpec
+		spec       configv1beta1.PolicySpec
 		policyName string
 		expectErr  bool
 	}{
 		{
-			name:       "invalid spec",
-			spec:       configv1alpha1.PolicySpec{},
-			policyName: policyName1,
-			expectErr:  true,
+			name: "invalid spec",
+			spec: configv1beta1.PolicySpec{
+				Type: policyName1,
+			},
+			expectErr: true,
 		},
 		{
 			name: "valid spec",
-			spec: configv1alpha1.PolicySpec{
+			spec: configv1beta1.PolicySpec{
 				Parameters: runtime.RawExtension{
 					Raw: []byte("{\"name\": \"configpolicy\"}"),
 				},
+				Type: "configpolicy",
 			},
-			policyName: "configpolicy",
-			expectErr:  false,
+			expectErr: false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := policyAddOrReplace(tc.spec, tc.policyName)
+			err := policyAddOrReplace(tc.spec)
 
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
 			}
+		})
+	}
+}
+
+func TestWritePolicyStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		policy     *configv1beta1.Policy
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			policy:     &configv1beta1.Policy{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			policy:     &configv1beta1.Policy{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			policy:    &configv1beta1.Policy{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writePolicyStatus(context.Background(), tc.reconciler, tc.policy, logger, tc.isSuccess, tc.errString)
 		})
 	}
 }
