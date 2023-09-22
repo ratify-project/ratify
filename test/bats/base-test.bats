@@ -37,10 +37,10 @@ SLEEP_TIME=1
     assert_failure
 
     # validate ephemeralContainers image
-    run kubectl debug -t demo --image=registry:5000/notation:signed --target=demo
+    run kubectl debug demo --image=registry:5000/notation:signed --target=demo
     assert_success
 
-    run kubectl debug -t demo --image=registry:5000/notation:unsigned --target=demo
+    run kubectl debug demo --image=registry:5000/notation:unsigned --target=demo
     assert_failure
 }
 
