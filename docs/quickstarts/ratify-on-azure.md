@@ -196,7 +196,7 @@ run `az aks show -g "${GROUP_NAME}" -n "${AKS_NAME}" --query addonProfiles.azure
 4. Create and assign azure policy on your cluster:
 
     ```bash
-    custom_policy=$(curl -L https://deislabs.github.io/ratify/library/default/customazurepolicy.yaml)
+    custom_policy=$(curl -L https://raw.githubusercontent.com/deislabs/ratify/main/library/default/customazurepolicy.json)
     definition_name="ratify-default-custom-policy"
     scope=$(az aks show -g "${GROUP_NAME}" -n "${AKS_NAME}" --query id -o tsv)
 
