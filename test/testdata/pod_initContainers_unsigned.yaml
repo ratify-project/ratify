@@ -9,3 +9,4 @@ spec:
   initContainers:
   - name: init-service
     image: registry:5000/notation:unsigned
+    command: ['sh', '-c', 'echo "logging"']
