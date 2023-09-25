@@ -27,54 +27,7 @@ by its developers, nor is it "supported" software.
 
 ## Quick Start
 
-Try out ratify in Kubernetes through Gatekeeper as the admission controller.
-
-Prerequisites:
-- Kubernetes v1.20 or higher
-- OPA Gatekeeper v3.10 or higher
-- [helmfile](https://helmfile.readthedocs.io/en/latest/#installation) v0.14 or higher. For production use and if you would like to avoid automatic installation of resources using helmfile, please refer to [ratify-quickstart-manual.md](docs/quickstarts/ratify-quickstart-manual.md) for manual install steps.
-
-### Step 1: Install Gatekeeper, Ratify, and Constraints
-
-```bash
-curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | helmfile sync -f - 
-```
-
-### Step 2: See Ratify in action
-
-Once the installation is completed, you can test the deployment of an image that is signed using Notation solution.
-
-- This will successfully create the pod `demo`
-
-```bash
-kubectl run demo --image=ghcr.io/deislabs/ratify/notary-image:signed
-kubectl get pods demo
-```
-
-Optionally you can see the output of the pod logs via: `kubectl logs demo`
-
-- Now deploy an unsigned image
-
-```bash
-kubectl run demo1 --image=ghcr.io/deislabs/ratify/notary-image:unsigned
-```
-
-You will see a deny message from Gatekeeper denying the request to create it as the image doesn't have any signatures.
-
-```bash
-Error from server (Forbidden): admission webhook "validation.gatekeeper.sh" denied the request: [ratify-constraint] Subject failed verification: wabbitnetworks.azurecr.io/test/net-monitor:unsigned
-```
-
-You just validated the container images in your k8s cluster!
-
-### Step 4: Uninstall
-```bash
-curl -L https://raw.githubusercontent.com/deislabs/ratify/main/helmfile.yaml | helmfile destroy --skip-charts -f - 
-```
-
-### Notes
-
-If the image reference provided resolves to an OCI Index or a Docker Manifest List, validation will occur ONLY at the index or manifest list level. Ratify currently does NOT support image validation based on automatic platform selection. For more information, [see this issue](https://github.com/deislabs/ratify/issues/101).
+Please see [Ratify website](https://ratify.dev/docs/1.0/quick-start) for a quick start demo.
 
 ## Community meetings
 
@@ -91,8 +44,7 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 
 ## Documents
 
-The [docs](docs/README.md) folder contains the beginnings of a formal
-specification for the Reference Artifact Verification framework and its plugin model.
+Please see the [Ratify website](https://ratify.dev/docs/1.0/what-is-ratify)  for more in-depth information.
 
 Meeting notes for weekly project syncs can be found [here](https://hackmd.io/ABueHjizRz2iFQpWnQrnNA?both)
 
