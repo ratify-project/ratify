@@ -121,7 +121,7 @@ logger:
     traceIDHeaderName: # List of headers that include the trace ID in the external data requests to Ratify. The same headers will be passed to upstream services like remote registries.
       - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
 
-# See https://github.com/deislabs/ratify/blob/main/docs/reference/usage.md for a list of available feature flags
+# See https://ratify.dev/docs/1.0/reference/usage#feature-flags for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
 
