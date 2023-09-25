@@ -14,12 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package unversioned
+package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
+
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
+// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
 // PolicySpec defines the desired state of Policy
 type PolicySpec struct {
@@ -27,13 +30,13 @@ type PolicySpec struct {
 
 	// Type of the policy
 	Type string `json:"type,omitempty"`
+	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this policy
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
 // PolicyStatus defines the observed state of Policy
 type PolicyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Is successful while applying the policy.
@@ -46,6 +49,12 @@ type PolicyStatus struct {
 	BriefError string `json:"brieferror,omitempty"`
 }
 
+// +kubebuilder:object:root=true
+// +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
+// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.brieferror`
 // Policy is the Schema for the policies API
 type Policy struct {
 	metav1.TypeMeta   `json:",inline"`
@@ -55,9 +64,15 @@ type Policy struct {
 	Status PolicyStatus `json:"status,omitempty"`
 }
 
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
 // PolicyList contains a list of Policy
 type PolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []Policy `json:"items"`
+}
+
+func init() {
+	SchemeBuilder.Register(&Policy{}, &PolicyList{})
 }

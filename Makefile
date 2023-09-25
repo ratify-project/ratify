@@ -118,7 +118,7 @@ delete-demo-constraints:
 
 .PHONY: deploy-rego-policy
 deploy-rego-policy:
-	kubectl apply -f ./config/samples/policy/config_v1alpha1_policy_rego.yaml
+	kubectl apply -f ./config/samples/policy/config_v1beta1_policy_rego.yaml
 
 .PHONY: deploy-gatekeeper
 deploy-gatekeeper:
@@ -135,7 +135,7 @@ delete-gatekeeper:
 
 .PHONY: test-e2e
 test-e2e: generate-rotation-certs
-	bats -t ${BATS_BASE_TESTS_FILE}
+	timeout 20m bats -t ${BATS_BASE_TESTS_FILE}
 	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs CERT_DIR=.staging/rotation GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
