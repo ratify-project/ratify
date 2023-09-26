@@ -18,9 +18,9 @@ package errors
 const (
 	NotationSpecLink   = "https://github.com/notaryproject/notaryproject/tree/main/specs"
 	OrasLink           = "https://oras.land/"
-	AuthProviderLink   = "https://github.com/deislabs/ratify/blob/main/docs/reference/oras-auth-provider.md"
-	PolicyProviderLink = "https://github.com/deislabs/ratify/blob/main/docs/reference/providers.md#policy-providers"
-	PolicyCRDLink      = "https://ratify.dev/docs/1.0.0-rc.6/reference/crds/policies"
+	AuthProviderLink   = "https://ratify.dev/docs/1.0/reference/oras-auth-provider"
+	PolicyProviderLink = "https://ratify.dev/docs/1.0/reference/providers"
+	PolicyCRDLink      = "https://ratify.dev/docs/1.0/reference/crds/policies"
 )
 
 var (

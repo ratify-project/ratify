@@ -48,7 +48,7 @@ var (
 	ErrorCodeListReferrersFailure = Register("errcode", ErrorDescriptor{
 		Value:       "LIST_REFERRERS_FAILURE",
 		Message:     "list referrers failure",
-		Description: `Referrer store fails to list the referrers. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#listreferrers for more details.`,
+		Description: `Referrer store fails to list the referrers. Refer to https://ratify.dev/docs/1.0/reference/store#listreferrers for more details.`,
 	})
 
 	// ErrorCodeGetSubjectDescriptorFailure is returned when GetSubjectDescriptor
@@ -56,7 +56,7 @@ var (
 	ErrorCodeGetSubjectDescriptorFailure = Register("errcode", ErrorDescriptor{
 		Value:       "GET_SUBJECT_DESCRIPTOR_FAILURE",
 		Message:     "get subject descriptor failure",
-		Description: `Referrer store fails to get the subject descriptor. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getsubjectdescriptor for more details.`,
+		Description: `Referrer store fails to get the subject descriptor. Refer to https://ratify.dev/docs/1.0/reference/store#getsubjectdescriptor for more details.`,
 	})
 
 	// ErrorCodeGetReferenceManifestFailure is returned when GetReferenceManifest
@@ -64,14 +64,14 @@ var (
 	ErrorCodeGetReferenceManifestFailure = Register("errcode", ErrorDescriptor{
 		Value:       "GET_REFERRER_MANIFEST_FAILURE",
 		Message:     "get reference manifest failure",
-		Description: `Referrer store fails to get the reference manifest. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getreferencemanifest for more details.`,
+		Description: `Referrer store fails to get the reference manifest. Refer to https://ratify.dev/docs/1.0/reference/store#getreferencemanifest for more details.`,
 	})
 
 	// ErrorCodeGetBlobContentFailure is returned when GetBlobContent API fails.
 	ErrorCodeGetBlobContentFailure = Register("errcode", ErrorDescriptor{
 		Value:       "GET_BLOB_CONTENT_FAILURE",
 		Message:     "get blob content failure",
-		Description: `Referrer store fails to get the blob content. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md#getblobcontent for more details.`,
+		Description: `Referrer store fails to get the blob content. Refer to https://ratify.dev/docs/1.0/reference/store#getblobcontent for more details.`,
 	})
 
 	// ErrorCodeReferrerStoreFailure is returned when a generic error happen in
@@ -109,7 +109,7 @@ var (
 	ErrorCodeReferrersNotFound = Register("errcode", ErrorDescriptor{
 		Value:       "REFERRERS_NOT_FOUND",
 		Message:     "referrers not found",
-		Description: "No referrers are found. Please verify the subject has attached expected artifacts and refer to https://github.com/deislabs/ratify/blob/main/docs/reference/store.md to investigate Referrer Store configuration.",
+		Description: "No referrers are found. Please verify the subject has attached expected artifacts and refer to https://ratify.dev/docs/1.0/reference/store/ to investigate Referrer Store configuration.",
 	})
 
 	// Generic errors happen in plugins
@@ -135,14 +135,14 @@ var (
 	ErrorCodeDownloadPluginFailure = Register("errcode", ErrorDescriptor{
 		Value:       "DOWNLOAD_PLUGIN_FAILURE",
 		Message:     "download plugin failure",
-		Description: "Failed to download plugin. Please verify the provided plugin configuration is correct and check the error details for further investigation. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/dynamic-plugins.md for more information.",
+		Description: "Failed to download plugin. Please verify the provided plugin configuration is correct and check the error details for further investigation. Refer to https://ratify.dev/docs/1.0/reference/dynamic-plugins for more information.",
 	})
 
 	// ErrorCodeCertInvalid is returned when provided certificates are invalid.
 	ErrorCodeCertInvalid = Register("errcode", ErrorDescriptor{
 		Value:       "CERT_INVALID",
 		Message:     "cert invalid",
-		Description: "The certificate is invalid. Please verify the provided inline certificates or certificates fetched from key vault are in valid format. Refer to https://github.com/deislabs/ratify/blob/main/docs/reference/crds/certificate-stores.md for more information.",
+		Description: "The certificate is invalid. Please verify the provided inline certificates or certificates fetched from key vault are in valid format. Refer to https://ratify.dev/docs/1.0/reference/crds/certificate-stores for more information.",
 	})
 
 	// ErrorCodePolicyProviderNotFound is returned when a policy provider cannot
