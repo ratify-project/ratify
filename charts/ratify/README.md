@@ -13,10 +13,10 @@ _See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation
 
 ```console
 # Helm install with gatekeeper-system namespace already created
-$ helm install [RELEASE_NAME] ratify/ratify --atomic --namespace gatekeeper-system
+$ helm install [RELEASE_NAME] ratify/ratify --atomic --namespace gatekeeper-system --set featureFlags.RATIFY_CERT_ROTATION=true
 
 # Helm install and create namespace
-$ helm install [RELEASE_NAME] ratify/ratify --atomic --namespace gatekeeper-system --create-namespace
+$ helm install [RELEASE_NAME] ratify/ratify --atomic --namespace gatekeeper-system --create-namespace --set featureFlags.RATIFY_CERT_ROTATION=true
 
 ```
 
@@ -36,7 +36,7 @@ $ helm upgrade -n gatekeeper-system [RELEASE_NAME] ratify/ratify
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
 | image.repository                                   | Ratify app image                                                                                                                                                                                                                    | `ghcr.io/deislabs/ratify`      |
 | image.crdrepository                                | Ratify CRD install Image                                                                                                                                                                                                            | `ghcr.io/deislabs/ratify-crds` |
-| image.tag                                          | Image tag                                                                                                                                                                                                                           | `v1.0.0`                       |
+| image.tag                                          | Image tag                                                                                                                                                                                                                           | `<INSERT THE LATEST RELEASE TAG>`                       |
 | image.pullPolicy                                   | Image pull policy                                                                                                                                                                                                                   | `IfNotPresent`                 |
 | nameOverride                                       | Overrides the ratify.name used to determine the ratify full name template                                                                                                                                                           | ``                             |
 | fullnameOverride                                   | Overrides the ratify applicaiton full name template                                                                                                                                                                                 | ``                             |
