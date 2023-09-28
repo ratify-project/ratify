@@ -82,6 +82,10 @@ func (d *daprCache) Set(ctx context.Context, key string, value interface{}) bool
 }
 
 func (d *daprCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool {
+	if ttl < 0 {
+		logger.GetLogger(ctx, logOpt).Errorf("Error saving value to redis: ttl provided is invalid: %v", ttl)
+		return false
+	}
 	bytes, err := json.Marshal(value)
 	if err != nil {
 		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for redis: ", err)
