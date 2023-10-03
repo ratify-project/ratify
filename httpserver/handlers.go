@@ -43,7 +43,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
-	logger.GetLogger(ctx, server.LogOption).Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+	logger.GetLogger(ctx, server.LogOption).Debugf("start request %s %s", sanitizedMethod, sanitizedURL)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -142,7 +142,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
-	logger.GetLogger(ctx, server.LogOption).Infof("start request %s %s", sanitizedMethod, sanitizedURL)
+	logger.GetLogger(ctx, server.LogOption).Debugf("start request %s %s", sanitizedMethod, sanitizedURL)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
