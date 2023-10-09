@@ -42,7 +42,7 @@ type contextHandler struct {
 func (ch *contextHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sanitizedMethod := utils.SanitizeString(r.Method)
 	sanitizedURL := utils.SanitizeURL(*r.URL)
-	logrus.Infof("received request %s %s ", sanitizedMethod, sanitizedURL)
+	logrus.Debugf("received request %s %s ", sanitizedMethod, sanitizedURL)
 	if err := ch.handler(ch.context, w, r); err != nil {
 		logrus.Errorf("request %s %s failed with error %v", sanitizedMethod, sanitizedURL, err)
 		if serveErr := errcode.ServeJSON(w, err); serveErr != nil {
