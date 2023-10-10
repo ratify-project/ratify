@@ -23,7 +23,7 @@ import (
 
 	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
-	"github.com/docker/distribution/reference"
+	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
 )
 
