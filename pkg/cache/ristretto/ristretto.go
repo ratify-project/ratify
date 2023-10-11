@@ -86,6 +86,10 @@ func (r *ristrettoCache) Set(ctx context.Context, key string, value interface{})
 }
 
 func (r *ristrettoCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool {
+	if ttl < 0 {
+		logger.GetLogger(ctx, logOpt).Errorf("Error saving value to ristretto: ttl provided must be >= 0: %v", ttl)
+		return false
+	}
 	bytes, err := json.Marshal(value)
 	if err != nil {
 		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for ristretto: ", err)

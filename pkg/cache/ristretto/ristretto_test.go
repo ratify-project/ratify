@@ -112,6 +112,25 @@ func TestSetWithTTL_Expected(t *testing.T) {
 	}
 }
 
+// TestSetWithTTL_InvalidTTL tests the SetWithTTL function with an invalid TTL
+func TestSetWithTTL_InvalidTTL(t *testing.T) {
+	ctx := context.Background()
+	var err error
+	// first attempt to get the cache provider if it's already been initialized
+	cacheProvider := cache.GetCacheProvider()
+	if cacheProvider == nil {
+		// if no cache provider has been initialized, initialize one
+		cacheProvider, err = cache.NewCacheProvider(ctx, RistrettoCacheType, cache.DefaultCacheName, cache.DefaultCacheSize)
+		if err != nil {
+			t.Errorf("Expected no error, but got %v", err)
+		}
+	}
+	ok := cacheProvider.SetWithTTL(ctx, "test_ttl", "test", -10)
+	if ok {
+		t.Errorf("Expected ok to be false")
+	}
+}
+
 // TestGet_Expected tests the Get function
 func TestGet_Expected(t *testing.T) {
 	ctx := context.Background()
