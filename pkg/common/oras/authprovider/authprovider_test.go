@@ -20,6 +20,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 const (
@@ -86,6 +87,10 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 
 	if authConfig.Username != testUserName || authConfig.Password != testPassword {
 		t.Fatalf("incorrect username %v or password %v returned", authConfig.Username, authConfig.Password)
+	}
+
+	if time.Now().Add(DefaultDockerAuthTTL - time.Minute).After(authConfig.ExpiresOn) {
+		t.Fatalf("incorrect expiration time %v returned", authConfig.ExpiresOn)
 	}
 }
 

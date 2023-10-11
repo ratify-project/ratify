@@ -417,7 +417,9 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 		authConfig, err = store.authProvider.Provide(ctx, targetRef.Original)
 		if err != nil {
 			logger.GetLogger(ctx, logOpt).Warnf("auth provider failed with err, %v", err)
-			logger.GetLogger(ctx, logOpt).Info("attempting to use anonymous credentials")
+			logger.GetLogger(ctx, logOpt).Debug("attempting to use anonymous credentials")
+		} else if authConfig == (authprovider.AuthConfig{}) {
+			logger.GetLogger(ctx, logOpt).Debug("no credentials found, attempting to use anonymous credentials")
 		} else {
 			if cacheProvider != nil {
 				success := cacheProvider.SetWithTTL(ctx, fmt.Sprintf(cache.CacheKeyOrasAuth, artifactRef.Registry), authConfig, time.Until(authConfig.ExpiresOn))
