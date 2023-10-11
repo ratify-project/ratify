@@ -169,6 +169,17 @@ func TestDaprCacheProvider_SetWithTTL_Error(t *testing.T) {
 	}
 }
 
+func TestDaprCacheProvider_SetWithTTL_InvalidTTL(t *testing.T) {
+	d := &daprCache{
+		daprClient: &TestDaprClient{},
+		cacheName:  testCacheName,
+	}
+	ok := d.SetWithTTL(context.Background(), testKey, testValue, -10)
+	if ok {
+		t.Errorf("expected ok to be false")
+	}
+}
+
 func TestDaprCacheProvider_Delete_Expected(t *testing.T) {
 	d := &daprCache{
 		daprClient: &TestDaprClient{
