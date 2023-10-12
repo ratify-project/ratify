@@ -71,6 +71,9 @@ $ ratify verify --config ~/.ratify/config.json --subject myregistry.io/example/h
 ## Keyless Verification
 This section outlines how to use `ratify` to verify the signatures signed using keyless signatures.
 
+> [!WARNING]
+> Cosign keyless verification may result in verification timeout due to Fulcio and Rekor server latencies
+
 ### Configuration
 
 ```json
