@@ -68,6 +68,7 @@ wait_for_process() {
       return 0
     else
       sleep "$sleep_time"
+      echo "# retrying $cmd" >&3
       wait_time=$((wait_time - sleep_time))
     fi
   done

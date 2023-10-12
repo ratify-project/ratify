@@ -81,8 +81,7 @@ SLEEP_TIME=1
     run kubectl replace -f ./config/samples/config_v1beta1_store_oras.yaml
     sleep 5
 
-    run kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless
-    assert_success
+    wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
 }
 
 @test "licensechecker test" {
