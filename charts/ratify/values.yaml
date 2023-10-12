@@ -7,6 +7,8 @@ image:
 nameOverride: ""
 fullnameOverride: ""
 replicaCount: 1
+affinity: {}
+tolerations: []
 notationCert: ""
 cosign:
   enabled: true
