@@ -83,3 +83,7 @@ type CertificateStoreList struct {
 func init() {
 	SchemeBuilder.Register(&CertificateStore{}, &CertificateStoreList{})
 }
+
+// func (c *CertificateStore) SetupWebhookWithManager(mgr ctrl.Manager) error {
+// 	return ctrl.(mgr).For(c).Complete()
+// }

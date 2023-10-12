@@ -125,7 +125,7 @@ func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 	// status updates will trigger a reconcile event
 	// if there are no changes to spec of CRD, this event should be filtered out by using the predicate
-	// see more discussions at https://github.com/kubernetes-sigs/kubebuilder/issues/618
+	// see more discussions at https://github.com/kubernetes-sigs/kubebuilder/issues/618NewWebhookManagedBy
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.CertificateStore{}).WithEventFilter(pred).
 		Complete(r)

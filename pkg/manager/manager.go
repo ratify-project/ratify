@@ -47,7 +47,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
+	"github.com/deislabs/ratify/api/v1alpha1"
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
+	"github.com/deislabs/ratify/api/v1beta1"
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
@@ -252,6 +254,39 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
+
+	if err := (&v1alpha1.CertificateStore{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "CertificateStore")
+		os.Exit(1)
+	}
+	if err := (&v1beta1.CertificateStore{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "CertificateStore")
+		os.Exit(1)
+	}
+	if err := (&v1alpha1.Policy{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Policy")
+		os.Exit(1)
+	}
+	if err := (&v1beta1.Policy{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Policy")
+		os.Exit(1)
+	}
+	if err := (&v1alpha1.Verifier{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Verifier")
+		os.Exit(1)
+	}
+	if err := (&v1beta1.Verifier{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Verifier")
+		os.Exit(1)
+	}
+	if err := (&v1alpha1.Store{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Store")
+		os.Exit(1)
+	}
+	if err := (&v1beta1.Store{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Store")
+		os.Exit(1)
+	}
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")

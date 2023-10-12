@@ -14,6 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package unversioned
+package v1beta1
 
-// +kubebuilder:object:generate=true
+import ctrl "sigs.k8s.io/controller-runtime"
+
+func (r *Policy) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		Complete()
+}

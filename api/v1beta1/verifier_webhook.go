@@ -14,5 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +k8s:conversion-gen=github.com/deislabs/ratify/api/v1beta1
-package v1alpha1
+package v1beta1
+
+import ctrl "sigs.k8s.io/controller-runtime"
+
+func (r *Verifier) SetupWebhookWithManager(mgr ctrl.Manager) error {
+	return ctrl.NewWebhookManagedBy(mgr).
+		For(r).
+		Complete()
+}

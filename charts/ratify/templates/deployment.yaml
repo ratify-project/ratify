@@ -10,6 +10,7 @@ spec:
   selector:
     matchLabels:
       {{- include "ratify.selectorLabels" . | nindent 6 }}
+      control-plane: controller-manager
   template:
     metadata:
       labels:
@@ -17,6 +18,7 @@ spec:
         {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
         azure.workload.identity/use: "true"
         {{- end }}
+        control-plane: controller-manager
       annotations:
         {{- if eq .Values.instrumentation.metricsType "prometheus" }}
         prometheus.io/scrape: "true"
@@ -87,7 +89,10 @@ spec:
             - containerPort: {{ required "You must provide .Values.healthPort"  .Values.healthPort }}
               name: healthz
               protocol: TCP
-          volumeMounts:             
+          volumeMounts:        
+            - mountPath: /tmp/k8s-webhook-server/serving-certs
+              name: cert
+              readOnly: true     
             {{- if .Values.cosign.enabled }}
             - mountPath: "/usr/local/ratify-certs/cosign"
               name: cosign-certs
@@ -150,6 +155,10 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
+        - name: cert
+          secret:
+            defaultMode: 420
+            secretName: webhook-server-cert
         {{- if .Values.cosign.enabled }}
         - name: cosign-certs
           secret:
