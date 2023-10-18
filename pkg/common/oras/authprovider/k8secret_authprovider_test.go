@@ -74,3 +74,10 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ratifyerrors.ErrorCodeNoMatchingCredential, err)
 	}
 }
+
+func TestK8SecretProviderFactoryEnabled_InvalidInput_ReturnsExpected(t *testing.T) {
+	var k8secretprovider k8SecretAuthProvider
+	if k8secretprovider.Enabled(nil) != false {
+		t.Fatalf("k8SecretProviderFactory.Enabled should have returned false")
+	}
+}
