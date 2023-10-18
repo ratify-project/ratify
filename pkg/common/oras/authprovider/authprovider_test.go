@@ -59,6 +59,36 @@ func (ap *TestAuthProvider) Provide(_ context.Context, _ string) (AuthConfig, er
 	}, nil
 }
 
+func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
+	var testProviderFactory defaultProviderFactory
+	invalidConfig1 := map[string]interface{}{
+		"key1": 42,
+		"key2": true,
+		"key3": make(chan int),
+	}
+	invalidConfig2 := map[string]interface{}{
+		"Name": 42,
+	}
+	validConfig1 := map[string]interface{}{
+		"Name":       "sample",
+		"ConfigPath": "/tmp",
+	}
+	_, err := testProviderFactory.Create(AuthProviderConfig(invalidConfig1))
+	if err == nil {
+		t.Errorf("Expected an ErrorCodeConfigInvalid, but got none")
+	}
+
+	_, err = testProviderFactory.Create(AuthProviderConfig(invalidConfig2))
+	if err == nil {
+		t.Errorf("Expected an ErrorCodeConfigInvalid, but got none")
+	}
+
+	_, err = testProviderFactory.Create(AuthProviderConfig(validConfig1))
+	if err != nil {
+		t.Errorf("Expected no error, but got %v", err)
+	}
+}
+
 // Checks for correct credential resolution when external docker config
 // path is provided
 func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
