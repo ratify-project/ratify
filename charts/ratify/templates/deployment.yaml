@@ -184,3 +184,8 @@ spec:
               - key: ca.crt
                 path: ca.crt
         {{- end }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+
