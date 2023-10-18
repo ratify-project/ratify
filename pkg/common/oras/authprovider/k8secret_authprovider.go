@@ -25,6 +25,8 @@ import (
 	"time"
 
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/pkg/utils"
+
 	"github.com/docker/cli/cli/config"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +53,6 @@ type k8SecretAuthProviderConf struct {
 }
 
 const defaultName = "default"
-const ratifyNamespaceEnv = "RATIFY_NAMESPACE"
 const secretTimeout = time.Hour * 12
 
 // init calls Register for our k8Secrets provider
@@ -87,9 +88,9 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	}
 
 	// get name of namespace ratify is running in
-	namespace := os.Getenv(ratifyNamespaceEnv)
+	namespace := os.Getenv(utils.RatifyNamespaceEnvVar)
 	if namespace == "" {
-		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.AuthProvider).WithDetail(fmt.Sprintf("environment variable %s not set", ratifyNamespaceEnv))
+		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.AuthProvider).WithDetail(fmt.Sprintf("environment variable %s not set", utils.RatifyNamespaceEnvVar))
 	}
 
 	return &k8SecretAuthProvider{

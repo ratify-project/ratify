@@ -52,7 +52,7 @@ func (s *TestVerifier) GetNestedReferences() []string {
 	return []string{}
 }
 
-func (f *TestVerifierFactory) Create(_ string, _ config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
+func (f *TestVerifierFactory) Create(_ string, _ config.VerifierConfig, pluginDirectory string, _ string) (verifier.ReferenceVerifier, error) {
 	return &TestVerifier{verifierDirectory: pluginDirectory}, nil
 }
 
@@ -68,7 +68,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		Verifiers: []config.VerifierConfig{verifierConfig},
 	}
 
-	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir")
+	emptyNamespace := ""
+	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir", emptyNamespace)
 
 	if err != nil {
 		t.Fatalf("create verifiers failed with err %v", err)
@@ -103,7 +104,7 @@ func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T)
 		Verifiers: []config.VerifierConfig{verifierConfig},
 	}
 
-	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "")
+	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "", "")
 
 	if err != nil {
 		t.Fatalf("create verifiers failed with err %v", err)

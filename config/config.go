@@ -91,7 +91,9 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 	}
 	logrus.Infof("stores successfully created. number of stores %d", len(stores))
 
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, GetDefaultPluginPath())
+	// in k8 , verifiers CR are deployed to specific namespace, namespace is not applicable in config file scenario
+	emptyNamespace := ""
+	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, GetDefaultPluginPath(), emptyNamespace)
 
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to load verifiers from config")

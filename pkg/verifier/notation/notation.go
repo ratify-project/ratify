@@ -26,6 +26,7 @@ import (
 	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
+	"github.com/sirupsen/logrus"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -42,8 +43,9 @@ import (
 )
 
 const (
-	verifierName    = "notation"
-	defaultCertPath = "ratify-certs/notation/truststore"
+	verifierName       = "notation"
+	defaultCertPath    = "ratify-certs/notation/truststore"
+	namespaceSeperator = "/"
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -70,8 +72,9 @@ func init() {
 	factory.Register(verifierName, &notationPluginVerifierFactory{})
 }
 
-func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error) {
-	conf, err := parseVerifierConfig(verifierConfig)
+func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
+	logrus.Debugf("notation create with config %v, namespace '%v'", verifierConfig, namespace)
+	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
@@ -167,7 +170,7 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
-func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotationPluginVerifierConfig, error) {
+func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
 	conf := &NotationPluginVerifierConfig{}
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
@@ -179,6 +182,16 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotationPluginV
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 
+	// append namespace to uniquely identify the certstore
+	if len(conf.VerificationCertStores) > 0 {
+		logrus.Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
+		conf.VerificationCertStores, err = appendNamespaceToCertStore(conf.VerificationCertStores, namespace)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
 	return conf, nil
@@ -187,4 +200,20 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*NotationPluginV
 // signatures should not have nested references
 func (v *notationPluginVerifier) GetNestedReferences() []string {
 	return []string{}
+}
+
+// append namespace to certStore so they are uniquely identifiable
+func appendNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
+	if namespace == "" {
+		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
+	}
+
+	for i, certStores := range verificationCertStore {
+		for j, certstore := range verificationCertStore[i] {
+			if !strings.Contains(certstore, namespaceSeperator) {
+				certStores[j] = namespace + namespaceSeperator + certstore
+			}
+		}
+	}
+	return verificationCertStore, nil
 }

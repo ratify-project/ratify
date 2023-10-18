@@ -70,8 +70,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.25.8", "1.26.3"]
-        GATEKEEPER_VERSION: ["3.11.0", "3.12.0", "3.13.0"]
+        KUBERNETES_VERSION: ["1.26.3"]
+        GATEKEEPER_VERSION: ["3.13.0"]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v4.1.0

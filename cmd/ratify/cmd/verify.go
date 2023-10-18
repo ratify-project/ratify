@@ -99,7 +99,8 @@ func verify(opts verifyCmdOptions) error {
 		return err
 	}
 
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath())
+	emptyNamespace := ""
+	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath(), emptyNamespace)
 
 	if err != nil {
 		return err
