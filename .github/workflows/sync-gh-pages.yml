@@ -16,7 +16,7 @@ jobs:
       pull-requests: write
       repository-projects: write
     steps:
-      - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       - uses: everlytic/branch-merge@c4a244dc23143f824ae6c022a10732566cb8e973
         with:
           github_token: ${{ github.token }}
