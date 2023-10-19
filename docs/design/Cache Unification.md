@@ -28,7 +28,7 @@ Ratify must:
 
 ## Overview
 
-Please reference this [doc](https://github.com/deislabs/ratify/blob/main/docs/reference/cache.md) for overview of current caching state in Ratify
+Please reference this [doc](https://ratify.dev/docs/1.0/reference/cache) for overview of current caching state in Ratify
 
 Ratify has two primary cache categories: in memory caches & blob store cache.
 There are 4 separate in-memory caches backed by 3 different cache types. This makes it very difficult to standardize cache interactions and emit uniform metrics. Furthermore, supporting multiple cache types will make it difficult to easily switch between in-memory and distributed caching for high availability scenarios.
