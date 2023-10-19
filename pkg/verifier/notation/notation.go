@@ -134,7 +134,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifySignatureFailure.NewError(re.Verifier, verifierName, re.NotationSpecLink, err, "failed to verify signature of digest", re.HideStackTrace)
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyPluginFailure.NewError(re.Verifier, verifierName, re.NotationSpecLink, err, "failed to verify signature of digest", re.HideStackTrace)
 		}
 
 		// Note: notation verifier already validates certificate chain is not empty.
