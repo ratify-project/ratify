@@ -23,6 +23,26 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
+// Checks invalid input and edge cases for k8SecretAuthProviderFactory
+func TestK8SecretProviderFactory_Create_ReturnsExpected(t *testing.T) {
+	authConfig := map[string]interface{}{
+		"Name":       "sample",
+		"ConfigPath": "/tmp",
+	}
+	var k8SecretProviderFactory k8SecretProviderFactory
+
+	if _, err := k8SecretProviderFactory.Create(authConfig); err != nil {
+		t.Fatalf("k8SecretProviderFactory.Create failed with error %v", err)
+	}
+}
+
+func TestK8SecretProviderFactory_Enabled_ReturnsExpected(t *testing.T) {
+	var k8secretprovider k8SecretAuthProvider
+	if k8secretprovider.Enabled(nil) != false {
+		t.Fatalf("k8SecretProviderFactory.Enabled should have returned false")
+	}
+}
+
 // Checks K8 Docker Json Config Secret is properly extracted and
 // credentials returned when Provide is called
 func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
@@ -72,12 +92,5 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 
 	if _, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret); !errors.Is(err, ratifyerrors.ErrorCodeNoMatchingCredential) {
 		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ratifyerrors.ErrorCodeNoMatchingCredential, err)
-	}
-}
-
-func TestK8SecretProviderFactoryEnabled_InvalidInput_ReturnsExpected(t *testing.T) {
-	var k8secretprovider k8SecretAuthProvider
-	if k8secretprovider.Enabled(nil) != false {
-		t.Fatalf("k8SecretProviderFactory.Enabled should have returned false")
 	}
 }
