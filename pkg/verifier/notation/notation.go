@@ -24,6 +24,7 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
 
@@ -32,6 +33,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
+	"github.com/notaryproject/notation-go/log"
 
 	_ "github.com/notaryproject/notation-core-go/signature/cose" // register COSE signature
 	_ "github.com/notaryproject/notation-core-go/signature/jws"  // register JWS signature
@@ -163,6 +165,7 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 		SignatureMediaType: mediaType,
 		ArtifactReference:  subjectRef,
 	}
+	ctx = log.WithLogger(ctx, logger.GetLogger(ctx, logOpt))
 
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
