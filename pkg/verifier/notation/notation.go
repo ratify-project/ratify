@@ -209,8 +209,8 @@ func appendNamespaceToCertStore(verificationCertStore map[string][]string, names
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
 
-	for _, certStores := range verificationCertStore {
-		for j, certstore := range certStores {
+	for i, certStores := range verificationCertStore {
+		for j, certstore := range verificationCertStore[i] {
 			if !isNamespacedNamed(certstore) {
 				certStores[j] = namespace + namespaceSeperator + certstore
 			}
