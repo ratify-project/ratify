@@ -26,12 +26,12 @@ var (
 		Description: `Verifier fails to verify the reference. Please check the error details for more information.`,
 	})
 
-	// ErrorCodeVerifySignatureFailure is returned when verifier plugin fails
-	// to verify attached signature.
-	ErrorCodeVerifySignatureFailure = Register("errcode", ErrorDescriptor{
-		Value:       "VERIFY_SIGNATURE_FAILURE",
-		Message:     "verify signature failure",
-		Description: "Verifier failed to verify signature. Please check the error details from the verifier plugin and refer to plugin's documentation for more details.",
+	// ErrorCodeVerifyPluginFailure is returned when verifier plugin fails
+	// to verify attached artifact.
+	ErrorCodeVerifyPluginFailure = Register("errcode", ErrorDescriptor{
+		Value:       "VERIFY_PLUGIN_FAILURE",
+		Message:     "verify plugin failure",
+		Description: "Verifier plugin failed to verify. Please check the error details from the verifier plugin and refer to plugin's documentation for more details.",
 	})
 
 	// ErrorCodeSignatureNotFound is returned when verifier cannot find a

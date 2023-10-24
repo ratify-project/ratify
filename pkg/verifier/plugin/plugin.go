@@ -131,7 +131,7 @@ func (vp *VerifierPlugin) verifyReference(
 
 	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
-		return nil, re.ErrorCodeVerifySignatureFailure.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
+		return nil, re.ErrorCodeVerifyPluginFailure.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 
 	result, err := types.GetVerifierResult(stdoutBytes)
