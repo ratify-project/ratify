@@ -18,6 +18,9 @@ List of implemented design and discussion documents. Please open a PR to update 
 * [Azure Kubernetes Workload Identity Support](design/Azure%20Kubernetes%20Workload%20Identity%20AuthProvider.md)
 * [K8s Authentication Provider](design/K8s%20Secrets%20AuthProvider.md)
 * [Authentication Provider Framework](design/Authentication%20Provider%20Support%20For%20ORAS%20Store.md)
+* [Ratify Error Refactor](design/Ratify%20Error%20Refactor.md)
+* [Config Policy Provider Refactor](design/Config%20Policy%20Provider%20Refactor.md)
+* [Verification Result Cache at Executor Level](design/Verification%20Result%20Cache%20at%20Executor%20Level.md)
 ### Discussion
 
 * [Gatekeeper Timeout Constraint](discussion/Gatekeeper%20Timeout%20Constraint.md)
