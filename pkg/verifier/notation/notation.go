@@ -24,9 +24,9 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
-	"github.com/sirupsen/logrus"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -73,7 +73,7 @@ func init() {
 }
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
-	logrus.Debugf("notation create with config %v, namespace '%v'", verifierConfig, namespace)
+	logger.GetLogger(context.Background(), logOpt).Debugf("creating notation with config %v, namespace '%v'", verifierConfig, namespace)
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
@@ -184,9 +184,8 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 
 	// append namespace to uniquely identify the certstore
 	if len(conf.VerificationCertStores) > 0 {
-		logrus.Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
+		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
 		conf.VerificationCertStores, err = appendNamespaceToCertStore(conf.VerificationCertStores, namespace)
-
 		if err != nil {
 			return nil, err
 		}
@@ -208,12 +207,20 @@ func appendNamespaceToCertStore(verificationCertStore map[string][]string, names
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
 
-	for i, certStores := range verificationCertStore {
-		for j, certstore := range verificationCertStore[i] {
-			if !strings.Contains(certstore, namespaceSeperator) {
+	for _, certStores := range verificationCertStore {
+		for j, certstore := range certStores {
+			if !isNamespacedNamed(certstore) {
 				certStores[j] = namespace + namespaceSeperator + certstore
 			}
 		}
 	}
 	return verificationCertStore, nil
+}
+
+// return true if string looks like a k8 namespaced resource. e.g. namespace/name
+func isNamespacedNamed(name string) bool {
+	if !strings.Contains(name, namespaceSeperator) {
+		return true
+	}
+	return false
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -68,8 +69,7 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		Verifiers: []config.VerifierConfig{verifierConfig},
 	}
 
-	emptyNamespace := ""
-	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir", emptyNamespace)
+	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir", constants.EmptyNamespace)
 
 	if err != nil {
 		t.Fatalf("create verifiers failed with err %v", err)

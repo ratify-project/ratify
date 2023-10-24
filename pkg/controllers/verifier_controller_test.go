@@ -20,12 +20,11 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	"k8s.io/apimachinery/pkg/runtime"
 )
-
-const emptyNamespace = ""
 
 func TestMain(m *testing.M) {
 	// make sure to reset verifierMap before each test run
@@ -42,7 +41,7 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	}
 	var resource = "notation"
 
-	if err := verifierAddOrReplace(testVerifierSpec, resource, emptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -58,7 +57,7 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
-	if err := verifierAddOrReplace(testVerifierSpec, "testObject", emptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -73,7 +72,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
 	// add a verifier
-	if err := verifierAddOrReplace(testVerifierSpec, resource, emptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -83,7 +82,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	// modify the verifier
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"GNU\"]}"
 	testVerifierSpec = getLicenseCheckerFromParam(parametersString)
-	if err := verifierAddOrReplace(testVerifierSpec, resource, emptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 

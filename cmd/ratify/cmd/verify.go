@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/ratify/config"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
 	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
@@ -99,8 +100,7 @@ func verify(opts verifyCmdOptions) error {
 		return err
 	}
 
-	emptyNamespace := ""
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath(), emptyNamespace)
+	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath(), constants.EmptyNamespace)
 
 	if err != nil {
 		return err
