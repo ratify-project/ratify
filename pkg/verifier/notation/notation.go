@@ -221,8 +221,5 @@ func appendNamespaceToCertStore(verificationCertStore map[string][]string, names
 
 // return true if string looks like a k8 namespaced resource. e.g. namespace/name
 func isNamespacedNamed(name string) bool {
-	if !strings.Contains(name, namespaceSeperator) {
-		return false
-	}
-	return true
+	return strings.Contains(name, namespaceSeperator)
 }
