@@ -187,7 +187,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	// append namespace to uniquely identify the certstore
 	if len(conf.VerificationCertStores) > 0 {
 		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
-		conf.VerificationCertStores, err = appendNamespaceToCertStore(conf.VerificationCertStores, namespace)
+		conf.VerificationCertStores, err = prependNamespaceToCertStore(conf.VerificationCertStores, namespace)
 		if err != nil {
 			return nil, err
 		}
@@ -204,7 +204,7 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 }
 
 // append namespace to certStore so they are uniquely identifiable
-func appendNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
+func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
 	if namespace == "" {
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
