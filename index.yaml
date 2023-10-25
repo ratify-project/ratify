@@ -3,9 +3,9 @@ entries:
   ratify:
   - apiVersion: v2
     appVersion: v1.0.0
-    created: "2023-09-26T17:32:38.880178679Z"
+    created: "2023-10-25T04:50:35.729367257Z"
     description: A Helm chart for Ratify
-    digest: 4fd42fb679d30edc753e97434f0e2003a321198f3414890e069bd80e5ebe0c58
+    digest: 179fbc84147e32abdb71d946d97771b27213e9e7e348804cc323262b6f3254aa
     home: https://github.com/deislabs/ratify
     name: ratify
     urls:
