@@ -61,7 +61,7 @@ func init() {
 }
 
 // Create returns a k8AuthProvider instance after parsing auth config and resolving
-// named K8 secrets
+// named K8s secrets
 func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
@@ -110,10 +110,10 @@ func (d *k8SecretAuthProvider) Enabled(_ context.Context) bool {
 }
 
 // Provide finds secret corresponding to artifact's registry host name, extracts
-// the authentication credentials from k8 secret, and returns AuthConfig
+// the authentication credentials from K8s secret, and returns AuthConfig
 func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
 	if !d.Enabled(ctx) {
-		return AuthConfig{}, fmt.Errorf("k8 auth provider not properly enabled")
+		return AuthConfig{}, fmt.Errorf("K8s auth provider not properly enabled")
 	}
 
 	hostName, err := GetRegistryHostName(artifact)

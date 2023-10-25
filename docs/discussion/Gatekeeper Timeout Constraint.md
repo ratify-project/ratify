@@ -106,7 +106,7 @@ Now in the simple case of a single image signature verification, Ratify complete
 
 ## Questions
 1. Can we extend the timeout?
-Gatekeeper team has advised that this is not feasible since the 3 second timeout is in place to mitigate a k8 leader election issue that occures with a higher timeout. https://github.com/open-policy-agent/gatekeeper/issues/870
+Gatekeeper team has advised that this is not feasible since the 3 second timeout is in place to mitigate a K8s leader election issue that occures with a higher timeout. https://github.com/open-policy-agent/gatekeeper/issues/870
 3. Can we add a retry? Where would we add the retry?
     - kubectl doesn't seem to have retry abilities built in
     - Helm might have something we can leverage? (/cc: Sajay)

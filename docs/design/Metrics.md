@@ -62,7 +62,7 @@ New Helm values:
 - `metricsType`: string, default: "prometheus"
 - `metricsPort`: int, default: 8888
 
-Corresponding flags for exporter and port will be added to the ratify `serve` command to enable metrics emission in non K8 scenarios. 
+Corresponding flags for exporter and port will be added to the ratify `serve` command to enable metrics emission in non K8s scenarios. 
 
 
 ## Proposed Metrics

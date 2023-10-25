@@ -154,7 +154,7 @@ RATIFY_NAMESPACE=gatekeeper-system
 }
 
 @test "configmap update test" {
-    skip "Skipping test for now as we are no longer watching for configfile update in a k8 environment. This test ensures we are watching config file updates in a non-kub scenario"
+    skip "Skipping test for now as we are no longer watching for configfile update in a K8s environment. This test ensures we are watching config file updates in a non-kub scenario"
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -233,7 +233,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 }
 
-@test "validate k8 secrets ORAS auth provider" {
+@test "validate K8s secrets ORAS auth provider" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
@@ -247,7 +247,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    # apply store CRD with k8 secret auth provier enabled
+    # apply store CRD with K8s secret auth provier enabled
     run kubectl apply -f ./config/samples/config_v1beta1_store_oras_k8secretAuth.yaml
     assert_success
     sleep 5

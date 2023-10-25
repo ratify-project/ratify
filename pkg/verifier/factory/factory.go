@@ -50,7 +50,7 @@ func Register(name string, factory VerifierFactory) {
 }
 
 // returns a single verifier from a verifierConfig
-// namespace is only applicable in k8 environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
+// namespace is only applicable in K8s environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string, namespace string) (verifier.ReferenceVerifier, error) {
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {

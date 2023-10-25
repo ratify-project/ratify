@@ -81,7 +81,7 @@ EOF
 
 ## AzureWIAuthProvider Implementation
 ```
-// AzureK8Conf describes the configuration of Azure K8 Auth Provider
+// AzureK8Conf describes the configuration of Azure K8s Auth Provider
 type AzureWIConf struct {
     Name           string     `json:"name"`
 }

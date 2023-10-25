@@ -219,7 +219,7 @@ func prependNamespaceToCertStore(verificationCertStore map[string][]string, name
 	return verificationCertStore, nil
 }
 
-// return true if string looks like a k8 namespaced resource. e.g. namespace/name
+// return true if string looks like a K8s namespaced resource. e.g. namespace/name
 func isNamespacedNamed(name string) bool {
 	return strings.Contains(name, namespaceSeperator)
 }
