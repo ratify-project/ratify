@@ -209,10 +209,10 @@ func appendNamespaceToCertStore(verificationCertStore map[string][]string, names
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
 
-	for i, certStores := range verificationCertStore {
-		for j, certstore := range verificationCertStore[i] {
+	for _, certStores := range verificationCertStore {
+		for i, certstore := range certStores {
 			if !isNamespacedNamed(certstore) {
-				certStores[j] = namespace + namespaceSeperator + certstore
+				certStores[i] = namespace + namespaceSeperator + certstore
 			}
 		}
 	}
@@ -222,7 +222,7 @@ func appendNamespaceToCertStore(verificationCertStore map[string][]string, names
 // return true if string looks like a k8 namespaced resource. e.g. namespace/name
 func isNamespacedNamed(name string) bool {
 	if !strings.Contains(name, namespaceSeperator) {
-		return true
+		return false
 	}
-	return false
+	return true
 }
