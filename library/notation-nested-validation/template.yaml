@@ -18,7 +18,7 @@ spec:
       rego: |
         package notationnestedvalidation
         import future.keywords.if
-        
+
         remote_data := response {
           images := [img | img = input.review.object.spec.containers[_].image]
           images_init := [img | img = input.review.object.spec.initContainers[_].image]
@@ -40,7 +40,7 @@ spec:
         }
         # Check if there are errors for any of the images
         general_violation[{"result": result}] {
-          count(remote_date.errors) > 0
+          count(remote_data.errors) > 0
           result := sprintf("Error validating one or more images: %s", remote_data.errors)
         }
 
