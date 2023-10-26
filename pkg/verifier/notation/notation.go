@@ -24,6 +24,7 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -44,9 +45,8 @@ import (
 )
 
 const (
-	verifierName       = "notation"
-	defaultCertPath    = "ratify-certs/notation/truststore"
-	namespaceSeperator = "/"
+	verifierName    = "notation"
+	defaultCertPath = "ratify-certs/notation/truststore"
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -212,7 +212,7 @@ func prependNamespaceToCertStore(verificationCertStore map[string][]string, name
 	for _, certStores := range verificationCertStore {
 		for i, certstore := range certStores {
 			if !isNamespacedNamed(certstore) {
-				certStores[i] = namespace + namespaceSeperator + certstore
+				certStores[i] = namespace + constants.NamespaceSeperator + certstore
 			}
 		}
 	}
@@ -221,5 +221,5 @@ func prependNamespaceToCertStore(verificationCertStore map[string][]string, name
 
 // return true if string looks like a K8s namespaced resource. e.g. namespace/name
 func isNamespacedNamed(name string) bool {
-	return strings.Contains(name, namespaceSeperator)
+	return strings.Contains(name, constants.NamespaceSeperator)
 }
