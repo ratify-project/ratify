@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	verifierName    = "notation"
+	verifierName    = "verifier-notation"
 	defaultCertPath = "ratify-certs/notation/truststore"
 )
 
