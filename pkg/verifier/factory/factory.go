@@ -34,7 +34,7 @@ import (
 var builtInVerifiers = make(map[string]VerifierFactory)
 
 type VerifierFactory interface {
-	Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string) (verifier.ReferenceVerifier, error)
+	Create(version string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error)
 }
 
 func Register(name string, factory VerifierFactory) {
@@ -50,7 +50,8 @@ func Register(name string, factory VerifierFactory) {
 }
 
 // returns a single verifier from a verifierConfig
-func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string) (verifier.ReferenceVerifier, error) {
+// namespace is only applicable in K8s environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
+func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string, namespace string) (verifier.ReferenceVerifier, error) {
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key %s", "name"))
@@ -82,14 +83,14 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 
 	verifierFactory, ok := builtInVerifiers[verifierNameStr]
 	if ok {
-		return verifierFactory.Create(configVersion, verifierConfig, pluginBinDir[0])
+		return verifierFactory.Create(configVersion, verifierConfig, pluginBinDir[0], namespace)
 	}
 	return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
 }
 
 // TODO pointer to avoid copy
 // returns an array of verifiers from VerifiersConfig
-func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPluginPath string) ([]verifier.ReferenceVerifier, error) {
+func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPluginPath string, namespace string) ([]verifier.ReferenceVerifier, error) {
 	if verifiersConfig.Version == "" {
 		verifiersConfig.Version = types.SpecVersion
 	}
@@ -112,7 +113,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 
 	// TODO: do we need to append defaultPlugin path?
 	for _, verifierConfig := range verifiersConfig.Verifiers {
-		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs)
+		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs, namespace)
 		if err != nil {
 			return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithError(err)
 		}

@@ -27,6 +27,8 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
+const RatifyNamespaceEnvVar = "RATIFY_NAMESPACE"
+
 // ParseDigest parses the given string and returns a validated Digest object.
 func ParseDigest(digestStr string) (digest.Digest, error) {
 	digest, err := digest.Parse(digestStr)

@@ -247,7 +247,7 @@ SLEEP_TIME=1
 }
 
 @test "configmap update test" {
-    skip "Skipping test for now as we are no longer watching for configfile update in a k8 environment.This test ensures we are watching config file updates in a non-kub scenario"
+    skip "Skipping test for now as we are no longer watching for configfile update in a K8s environment.This test ensures we are watching config file updates in a non-kub scenario"
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
