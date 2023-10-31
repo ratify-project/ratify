@@ -226,7 +226,7 @@ func TestParseVerifierConfig(t *testing.T) {
 				"name":              test,
 				"verificationCerts": []string{testPath},
 				"verificationCertStores": map[string][]string{
-					"certstore1": {"akv1", "akv2"},
+					"certstore1": {"defaultns/akv1", "akv2"},
 					"certstore2": {"akv3", "akv4"},
 				},
 			},
@@ -235,8 +235,8 @@ func TestParseVerifierConfig(t *testing.T) {
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: map[string][]string{
-					"certstore1": {"akv1", "akv2"},
-					"certstore2": {"akv3", "akv4"},
+					"certstore1": {"defaultns/akv1", "testns/akv2"},
+					"certstore2": {"testns/akv3", "testns/akv4"},
 				},
 			},
 		},
@@ -245,7 +245,7 @@ func TestParseVerifierConfig(t *testing.T) {
 	//TODO add new test for parseVerifierConfig
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			notationPluginConfig, err := parseVerifierConfig(tt.configMap)
+			notationPluginConfig, err := parseVerifierConfig(tt.configMap, "testns")
 
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
@@ -306,7 +306,7 @@ func TestCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			f := &notationPluginVerifierFactory{}
-			_, err := f.Create(testVersion, tt.configMap, "")
+			_, err := f.Create(testVersion, tt.configMap, "", "")
 
 			if (err != nil) != tt.expectErr {
 				t.Fatalf("error = %v, expectErr = %v", err, tt.expectErr)

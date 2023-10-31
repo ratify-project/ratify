@@ -19,13 +19,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/config"
+	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	vc "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/deislabs/ratify/pkg/verifier/types"
+
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,6 +66,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	var verifier configv1beta1.Verifier
 	var resource = req.Name
+
 	verifierLogger.Infof("reconciling verifier '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
@@ -75,7 +80,13 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := verifierAddOrReplace(verifier.Spec, resource); err != nil {
+	namespace, err := getCertStoreNamespace(req.Namespace)
+	if err != nil {
+		verifierLogger.Error(err, "unable to get default namespace for certstore specified in verifier crd")
+		return ctrl.Result{}, err
+	}
+
+	if err = verifierAddOrReplace(verifier.Spec, resource, namespace); err != nil {
 		verifierLogger.Error(err, "unable to create verifier from verifier crd")
 		return ctrl.Result{}, err
 	}
@@ -85,7 +96,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // creates a verifier reference from CRD spec and add store to map
-func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
+func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := specToVerifierConfig(spec)
 
 	if err != nil {
@@ -100,7 +111,7 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) er
 		spec.Address = config.GetDefaultPluginPath()
 		logrus.Infof("Address was empty, setting to default path: %v", spec.Address)
 	}
-	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address})
+	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address}, namespace)
 
 	if err != nil || verifierReference == nil {
 		logrus.Error(err, "unable to create verifier from verifier config")
@@ -142,4 +153,21 @@ func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.Verifier{}).
 		Complete(r)
+}
+
+// Historically certStore defined in trust policy only contains name which means the CertStore cannot be uniquely identified
+// If verifierNamesapce is not empty, this method returns the default cert store namespace else returns the ratify deployed namespace
+func getCertStoreNamespace(verifierNamesapce string) (string, error) {
+	// first, check if we can use the verifier namespace
+	if verifierNamesapce != "" {
+		return verifierNamesapce, nil
+	}
+
+	// next, return the ratify deployed namespace
+	ns, found := os.LookupEnv(utils.RatifyNamespaceEnvVar)
+	if !found {
+		return "", re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("environment variable %s not set", utils.RatifyNamespaceEnvVar))
+	}
+
+	return ns, nil
 }

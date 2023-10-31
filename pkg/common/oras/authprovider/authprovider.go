@@ -27,6 +27,7 @@ import (
 	re "github.com/deislabs/ratify/errors"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/config/types"
 )
 
 // This config represents the credentials that should be used
@@ -60,6 +61,7 @@ type defaultAuthProviderConf struct {
 }
 
 const DefaultAuthProviderName string = "dockerConfig"
+const DefaultDockerAuthTTL = 1 * time.Hour
 
 // init calls Register for our default provider, which simply reads the .dockercfg file.
 func init() {
@@ -123,10 +125,14 @@ func (d *defaultAuthProvider) Provide(_ context.Context, artifact string) (AuthC
 	}
 
 	dockerAuthConfig := cfg.AuthConfigs[artifactHostName]
+	if dockerAuthConfig == (types.AuthConfig{}) {
+		return AuthConfig{}, nil
+	}
 	authConfig := AuthConfig{
 		Username:      dockerAuthConfig.Username,
 		Password:      dockerAuthConfig.Password,
 		IdentityToken: dockerAuthConfig.IdentityToken,
+		ExpiresOn:     time.Now().Add(DefaultDockerAuthTTL),
 		Provider:      d,
 	}
 

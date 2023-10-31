@@ -20,6 +20,8 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
+	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -39,7 +41,7 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	}
 	var resource = "notation"
 
-	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -55,7 +57,7 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
-	if err := verifierAddOrReplace(testVerifierSpec, "testObject"); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -70,7 +72,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
 	// add a verifier
-	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -80,7 +82,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	// modify the verifier
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"GNU\"]}"
 	testVerifierSpec = getLicenseCheckerFromParam(parametersString)
-	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 
@@ -93,6 +95,31 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 
 	if len(VerifierMap) != 0 {
 		t.Fatalf("Verifier map should be 0 after deletion, actual %v", len(VerifierMap))
+	}
+}
+
+func TestGetCertStoreNamespace(t *testing.T) {
+	// error scenario, everything is empty, expect error
+	_, err := getCertStoreNamespace("")
+	if err.Error() == "environment variable" {
+		t.Fatalf("env not set should trigger an error")
+	}
+
+	ratifyDeployedNamespace := "sample"
+	os.Setenv(utils.RatifyNamespaceEnvVar, ratifyDeployedNamespace)
+	defer os.Unsetenv(utils.RatifyNamespaceEnvVar)
+
+	// scenario1, when default namespace is provided, then we should expect default
+	verifierNamespace := "verifierNamespace"
+	ns, _ := getCertStoreNamespace(verifierNamespace)
+	if ns != verifierNamespace {
+		t.Fatalf("default namespace expected")
+	}
+
+	// scenario2, default is empty, should return ratify installed namespace
+	ns, _ = getCertStoreNamespace("")
+	if ns != ratifyDeployedNamespace {
+		t.Fatalf("default namespace expected")
 	}
 }
 

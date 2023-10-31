@@ -25,6 +25,8 @@ import (
 	"time"
 
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/pkg/utils"
+
 	"github.com/docker/cli/cli/config"
 	core "k8s.io/api/core/v1"
 	meta "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,7 +53,6 @@ type k8SecretAuthProviderConf struct {
 }
 
 const defaultName = "default"
-const ratifyNamespaceEnv = "RATIFY_NAMESPACE"
 const secretTimeout = time.Hour * 12
 
 // init calls Register for our k8Secrets provider
@@ -60,7 +61,7 @@ func init() {
 }
 
 // Create returns a k8AuthProvider instance after parsing auth config and resolving
-// named K8 secrets
+// named K8s secrets
 func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
 	conf := k8SecretAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
@@ -87,9 +88,9 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 	}
 
 	// get name of namespace ratify is running in
-	namespace := os.Getenv(ratifyNamespaceEnv)
+	namespace := os.Getenv(utils.RatifyNamespaceEnvVar)
 	if namespace == "" {
-		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.AuthProvider).WithDetail(fmt.Sprintf("environment variable %s not set", ratifyNamespaceEnv))
+		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.AuthProvider).WithDetail(fmt.Sprintf("environment variable %s not set", utils.RatifyNamespaceEnvVar))
 	}
 
 	return &k8SecretAuthProvider{
@@ -109,10 +110,10 @@ func (d *k8SecretAuthProvider) Enabled(_ context.Context) bool {
 }
 
 // Provide finds secret corresponding to artifact's registry host name, extracts
-// the authentication credentials from k8 secret, and returns AuthConfig
+// the authentication credentials from K8s secret, and returns AuthConfig
 func (d *k8SecretAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
 	if !d.Enabled(ctx) {
-		return AuthConfig{}, fmt.Errorf("k8 auth provider not properly enabled")
+		return AuthConfig{}, fmt.Errorf("K8s auth provider not properly enabled")
 	}
 
 	hostName, err := GetRegistryHostName(artifact)
