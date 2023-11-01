@@ -23,7 +23,7 @@ import (
 	core "k8s.io/api/core/v1"
 )
 
-// Checks K8 Docker Json Config Secret is properly extracted and
+// Checks K8s Docker Json Config Secret is properly extracted and
 // credentials returned when Provide is called
 func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
