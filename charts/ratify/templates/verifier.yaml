@@ -1,3 +1,5 @@
+{{- $fullname := include "ratify.fullname" . -}}
+---
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
@@ -16,10 +18,10 @@ spec:
         - certstore-akv
         {{- else }}
           {{- if .Values.notationCert }}
-        - {{ include "ratify.fullname" . }}-notation-inline-cert
+        - {{$fullname}}-notation-inline-cert
           {{- end }} 
           {{-  range $i, $cert := .Values.notationCerts }}
-        - ratify-notation-inline-cert-{{$i}}
+        - {{$fullname}}-notation-inline-cert-{{$i}}
           {{- end }} 
         {{- end }}
     trustPolicyDoc:
