@@ -17,3 +17,5 @@ limitations under the License.
 package constants
 
 const RatifyPolicy = "ratify-policy"
+const EmptyNamespace = ""
+const NamespaceSeperator = "/"

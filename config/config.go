@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -91,7 +92,8 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 	}
 	logrus.Infof("stores successfully created. number of stores %d", len(stores))
 
-	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, GetDefaultPluginPath())
+	// in K8s , verifiers CR are deployed to specific namespace, namespace is not applicable in config file scenario
+	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, GetDefaultPluginPath(), constants.EmptyNamespace)
 
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to load verifiers from config")
