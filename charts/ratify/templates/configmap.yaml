@@ -72,14 +72,7 @@ data:
             {
                 "name":"notation",
                 "artifactTypes" : "application/vnd.cncf.notary.signature",
-                "verificationCertStores": {
-                  "certs":[
-                    {{- if .Values.akvCertConfig.enabled }}
-                    "certstore-akv"
-                    {{- else }}
-                    "{{ include "ratify.fullname" . }}-notation-inline-cert"
-                    {{- end }}
-                   ]
+                "verificationCertStores": {                 
                 },
                 "trustPolicyDoc": {
                   "version": "1.0",

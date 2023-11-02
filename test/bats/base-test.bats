@@ -5,6 +5,7 @@ load helpers
 BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
+RATIFY_NAMESPACE=gatekeeper-system
 
 @test "base test without cert rotator" {
     teardown() {
@@ -21,8 +22,8 @@ SLEEP_TIME=1
     assert_success
     sleep 5
     # validate certificate store status property shows success
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n gatekeeper-system -o yaml | grep 'issuccess: true'"
-    assert_success
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+   assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
 
@@ -72,9 +73,57 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
+
     # validate certificate store status property shows success
+<<<<<<< HEAD
     run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n gatekeeper-system -o yaml | grep 'issuccess: true'"
+=======
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
     assert_success
+    run kubectl run demo --namespace default --image=registry:5000/notation:signed
+    assert_success
+
+    run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
+    assert_failure
+}
+
+@test "notation test with certs across namespace" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
+        
+        # restore cert store in ratify namespace
+        run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -o yaml -n default > certStore.yaml"
+        run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n default
+        sed 's/default/gatekeeper-system/' certStore.yaml > certStoreNewNS.yaml
+        run kubectl apply -f certStoreNewNS.yaml        
+        assert_success
+
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+    }
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+>>>>>>> 7432ef939d976b14c29ffb9c4bc94c58cdc62b1a
+    assert_success
+    sleep 5
+    
+    # apply the certstore to default namespace
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -o yaml -n ${RATIFY_NAMESPACE} > certStore.yaml"    
+    assert_success
+    sed 's/gatekeeper-system/default/' certStore.yaml > certStoreNewNS.yaml    
+    run kubectl apply -f certStoreNewNS.yaml
+    assert_success
+    run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n ${RATIFY_NAMESPACE}
+    assert_success
+    
+    # configure the notation verifier to use inline certificate store with specific namespace
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_specificnscertstore.yaml
+    assert_success
+
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
 
@@ -109,7 +158,7 @@ SLEEP_TIME=1
 }
 
 @test "configmap update test" {
-    skip "Skipping test for now as we are no longer watching for configfile update in a k8 environment. This test ensures we are watching config file updates in a non-kub scenario"
+    skip "Skipping test for now as we are no longer watching for configfile update in a K8s environment. This test ensures we are watching config file updates in a non-kub scenario"
     run kubectl apply -f ./library/default/template.yaml
     assert_success
     sleep 5
@@ -119,10 +168,10 @@ SLEEP_TIME=1
     run kubectl run demo2 --image=registry:5000/notation:signed
     assert_success
 
-    run kubectl get configmaps ratify-configuration --namespace=gatekeeper-system -o yaml >currentConfig.yaml
+    run kubectl get configmaps ratify-configuration --namespace=${RATIFY_NAMESPACE} -o yaml >currentConfig.yaml
     run kubectl delete -f ./library/default/samples/constraint.yaml
 
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=gatekeeper-system -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=${RATIFY_NAMESPACE} -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
     echo "Waiting for 150 second for configuration update"
     sleep 150
 
@@ -132,7 +181,7 @@ SLEEP_TIME=1
     echo "Current time after validate : $(date +"%T")"
     assert_failure
 
-    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=gatekeeper-system -f currentConfig.yaml"
+    wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=${RATIFY_NAMESPACE} -f currentConfig.yaml"
 }
 
 @test "validate mutation tag to digest" {
@@ -174,7 +223,7 @@ SLEEP_TIME=1
 
     # add the alternate certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
@@ -188,7 +237,7 @@ SLEEP_TIME=1
     assert_success
 }
 
-@test "validate k8 secrets ORAS auth provider" {
+@test "validate K8s secrets ORAS auth provider" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
@@ -202,7 +251,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    # apply store CRD with k8 secret auth provier enabled
+    # apply store CRD with K8s secret auth provier enabled
     run kubectl apply -f ./config/samples/config_v1beta1_store_oras_k8secretAuth.yaml
     assert_success
     sleep 5
@@ -214,7 +263,7 @@ SLEEP_TIME=1
 
 @test "validate image signed by leaf cert" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
@@ -230,7 +279,7 @@ SLEEP_TIME=1
 
     # add the root certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
@@ -244,7 +293,7 @@ SLEEP_TIME=1
 
     # add the root certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
     sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
 
@@ -265,10 +314,10 @@ SLEEP_TIME=1
     run kubectl get Provider ratify-provider -o json | jq --arg ca "$(cat .staging/rotation/ca.crt | base64)" '.spec.caBundle=$ca' | kubectl replace -f -
 
     # update the ratify tls secret to use the new tls cert and key
-    run kubectl get secret ratify-tls -n gatekeeper-system -o json | jq --arg cert "$(cat .staging/rotation/server.crt | base64)" --arg key "$(cat .staging/rotation/server.key | base64)" '.data["tls.key"]=$key | .data["tls.crt"]=$cert' | kubectl replace -f -
+    run kubectl get secret ratify-tls -n ${RATIFY_NAMESPACE} -o json | jq --arg cert "$(cat .staging/rotation/server.crt | base64)" --arg key "$(cat .staging/rotation/server.key | base64)" '.data["tls.key"]=$key | .data["tls.crt"]=$cert' | kubectl replace -f -
 
     # update the gatekeeper webhook server tls secret to use the new cert bundle
-    run kubectl get Secret gatekeeper-webhook-server-cert -n gatekeeper-system -o json | jq --arg caCert "$(cat .staging/rotation/gatekeeper/ca.crt | base64)" --arg caKey "$(cat .staging/rotation/gatekeeper/ca.key | base64)" --arg tlsCert "$(cat .staging/rotation/gatekeeper/server.crt | base64)" --arg tlsKey "$(cat .staging/rotation/gatekeeper/server.key | base64)" '.data["ca.crt"]=$caCert | .data["ca.key"]=$caKey | .data["tls.crt"]=$tlsCert | .data["tls.key"]=$tlsKey' | kubectl replace -f -
+    run kubectl get Secret gatekeeper-webhook-server-cert -n ${RATIFY_NAMESPACE} -o json | jq --arg caCert "$(cat .staging/rotation/gatekeeper/ca.crt | base64)" --arg caKey "$(cat .staging/rotation/gatekeeper/ca.key | base64)" --arg tlsCert "$(cat .staging/rotation/gatekeeper/server.crt | base64)" --arg tlsKey "$(cat .staging/rotation/gatekeeper/server.key | base64)" '.data["ca.crt"]=$caCert | .data["ca.key"]=$caKey | .data["tls.crt"]=$tlsCert | .data["tls.key"]=$tlsKey' | kubectl replace -f -
 
     # volume projection can take up to 90 seconds
     sleep 100

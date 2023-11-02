@@ -16,7 +16,7 @@ limitations under the License.
 package errors
 
 const (
-	NotationSpecLink   = "https://github.com/notaryproject/notaryproject/tree/main/specs"
+	NotationTsgLink    = "https://ratify.dev/docs/1.0/troubleshoot/verifier/notation"
 	OrasLink           = "https://oras.land/"
 	AuthProviderLink   = "https://ratify.dev/docs/1.0/reference/oras-auth-provider"
 	PolicyProviderLink = "https://ratify.dev/docs/1.0/reference/providers"

@@ -32,8 +32,8 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 
 func TestGetCertificates_NamedStore(t *testing.T) {
 	certStore := map[string][]string{}
-	certStore["store1"] = []string{"kv1"}
-	certStore["store2"] = []string{"kv2"}
+	certStore["store1"] = []string{"default/kv1"}
+	certStore["store2"] = []string{"projecta/kv2"}
 
 	store := &trustStore{
 		certStores: certStore,
@@ -43,8 +43,8 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	kv2Cert := getCert(certStr2)
 
 	certificatesMap := map[string][]*x509.Certificate{}
-	certificatesMap["kv1"] = []*x509.Certificate{kv1Cert}
-	certificatesMap["kv2"] = []*x509.Certificate{kv2Cert}
+	certificatesMap["default/kv1"] = []*x509.Certificate{kv1Cert}
+	certificatesMap["projecta/kv2"] = []*x509.Certificate{kv2Cert}
 
 	// only the certificate in the specified namedStore should be returned
 	result, _ := store.getCertificatesInternal(context.Background(), "store1", certificatesMap)

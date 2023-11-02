@@ -65,14 +65,14 @@ const maxBriefErrLength = 30
 func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logrus.WithContext(ctx)
 
-	var resource = req.Name
+	var resource = req.NamespacedName.String()
 	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
-			logger.Infof("deletion detected, removing certificate store %v", req.Name)
+			logger.Infof("deletion detected, removing certificate store %v", resource)
 			delete(certificatesMap, resource)
 		} else {
 			logger.Error(err, "unable to fetch certificate store")

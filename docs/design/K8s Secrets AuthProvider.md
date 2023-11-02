@@ -1,7 +1,7 @@
 # K8s Secrets AuthProvider
 Author: Akash Singhal (@akashsinghal)
 
-Goal: Create a Kubernetes Secret Authentication Provider which will use K8 secrets to resolve registry credentials for an artifact. In the `auth-provider` section of the ORAS plugin configuration, the `k8s-secrets` auth-provider contains a list of `secrets` where each specifies the k8 secret name along with optional `namespace` where the secret resides (the namespace ratify is deployed in will be used as the default value). Along with named secrets being used from the config, the service account linked to the Ratify pod will be queried for associated imagePullSecrets and considered during credential resolution. 
+Goal: Create a Kubernetes Secret Authentication Provider which will use K8s secrets to resolve registry credentials for an artifact. In the `auth-provider` section of the ORAS plugin configuration, the `k8s-secrets` auth-provider contains a list of `secrets` where each specifies the K8s secret name along with optional `namespace` where the secret resides (the namespace ratify is deployed in will be used as the default value). Along with named secrets being used from the config, the service account linked to the Ratify pod will be queried for associated imagePullSecrets and considered during credential resolution. 
 
 The provider will support 2 types of k8s secrets: kubernetes.io/dockercfg, kubernetes.io/dockerconfigjson
 
@@ -111,7 +111,7 @@ type k8SecretAuthProviderConf struct {
 func init() // init calls Register for our k8s-secrets provider
 
 // Create returns a k8AuthProvider instance after parsing auth config and resolving
-// named K8 secrets
+// named K8s secrets
 func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) (AuthProvider, error) {
     // unmarshal the json config for auth provider
     
@@ -130,7 +130,7 @@ func (s *k8SecretProviderFactory) Create(authProviderConfig AuthProviderConfig) 
 func (d *k8SecretAuthProvider) Enabled() bool
 
 // Provide finds the secret corresponding to artifact's registryhost,
-// extracts the authentication credentials from k8 secret, and
+// extracts the authentication credentials from K8s secret, and
 // returns AuthConfig
 func (d *k8SecretAuthProvider) Provide(artifact string) (AuthConfig, error) {
     // check provider is properly Enabled

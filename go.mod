@@ -21,13 +21,13 @@ require (
 	github.com/dapr/go-sdk v1.8.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/distribution/reference v0.5.0
-	github.com/docker/cli v24.0.6+incompatible
+	github.com/docker/cli v24.0.7+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-containerregistry v0.16.1
 	github.com/gorilla/mux v1.8.0
-	github.com/notaryproject/notation-core-go v1.0.0
+	github.com/notaryproject/notation-core-go v1.0.1
 	github.com/notaryproject/notation-go v1.0.0
 	github.com/open-policy-agent/cert-controller v0.8.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa
@@ -36,7 +36,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc5
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.1.1
-	github.com/sigstore/sigstore v1.7.4
+	github.com/sigstore/sigstore v1.7.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spdx/tools-golang v0.5.3
 	github.com/spf13/cobra v1.7.0
@@ -44,13 +44,13 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
 	go.opentelemetry.io/otel/metric v1.16.0
 	go.opentelemetry.io/otel/sdk/metric v0.39.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.4.0
 	google.golang.org/grpc v1.56.3
 	google.golang.org/protobuf v1.31.0
 	k8s.io/api v0.27.7
 	k8s.io/apimachinery v0.27.7
 	k8s.io/client-go v0.27.7
-	oras.land/oras-go/v2 v2.3.0
+	oras.land/oras-go/v2 v2.3.1
 )
 
 require (
@@ -83,7 +83,7 @@ require (
 	github.com/clbanning/mxj/v2 v2.5.6 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/coreos/go-oidc/v3 v3.6.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.7.0 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20221212123742-001c36b64ec3 // indirect
 	github.com/digitorus/timestamp v0.0.0-20221019182153-ef3b63b79b31 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
@@ -145,10 +145,10 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20220623050100-57a0ce2678a7 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/docker v24.0.0+incompatible // indirect
+	github.com/docker/docker v24.0.7+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/fxamacker/cbor/v2 v2.4.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.5.0 // indirect
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-logr/logr v1.2.4
@@ -218,7 +218,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20220721030215-126854af5e6d // indirect
-	github.com/theupdateframework/go-tuf v0.5.2 // indirect
+	github.com/theupdateframework/go-tuf v0.6.1 // indirect
 	github.com/titanous/rocacheck v0.0.0-20171023193734-afe73141d399 // indirect
 	github.com/transparency-dev/merkle v0.0.2 // indirect
 	github.com/vbatts/tar-split v0.11.3 // indirect
@@ -244,18 +244,18 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	google.golang.org/appengine v1.6.8 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/apiextensions-apiserver v0.27.2 // indirect
-	k8s.io/component-base v0.27.2 // indirect
+	k8s.io/apiextensions-apiserver v0.27.7 // indirect
+	k8s.io/component-base v0.27.7 // indirect
 	k8s.io/klog/v2 v2.100.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 // indirect
-	sigs.k8s.io/controller-runtime v0.15.2
+	sigs.k8s.io/controller-runtime v0.15.3
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
