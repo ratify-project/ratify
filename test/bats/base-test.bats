@@ -26,7 +26,6 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
-
     run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
     assert_failure
 
@@ -91,8 +90,8 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
         
         # restore cert store in ratify namespace
-        run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -o yaml -n default > certStore.yaml"
-        run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n default
+        run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n default > certStore.yaml"
+        run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default
         sed 's/default/gatekeeper-system/' certStore.yaml > certStoreNewNS.yaml
         run kubectl apply -f certStoreNewNS.yaml        
         assert_success
@@ -109,12 +108,12 @@ RATIFY_NAMESPACE=gatekeeper-system
     sleep 5
     
     # apply the certstore to default namespace
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -o yaml -n ${RATIFY_NAMESPACE} > certStore.yaml"    
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n ${RATIFY_NAMESPACE} > certStore.yaml"    
     assert_success
     sed 's/gatekeeper-system/default/' certStore.yaml > certStoreNewNS.yaml    
     run kubectl apply -f certStoreNewNS.yaml
     assert_success
-    run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert -n ${RATIFY_NAMESPACE}
+    run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
     assert_success
     
     # configure the notation verifier to use inline certificate store with specific namespace
