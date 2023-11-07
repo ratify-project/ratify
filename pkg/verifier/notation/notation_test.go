@@ -133,8 +133,8 @@ func TestName(t *testing.T) {
 	v := &notationPluginVerifier{}
 	name := v.Name()
 
-	if name != "notation" {
-		t.Fatalf("expect name: notation, got: %s", name)
+	if name != "verifier-notation" {
+		t.Fatalf("expect name: verifier-notation, got: %s", name)
 	}
 }
 
