@@ -21,7 +21,7 @@
     "version": "1.0.0",
     "plugins": [
       {
-        "name": "notation",
+        "name": "verifier-notation",
         "artifactTypes": "application/vnd.cncf.notary.signature",
         "trustPolicyDoc": {
           "version": "1.0",

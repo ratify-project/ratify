@@ -36,7 +36,7 @@
                 "key": ".staging/cosign/cosign.pub"
             },
             {
-                "name": "notation",
+                "name": "verifier-notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/localkeys/ratify-bats-test.crt"
