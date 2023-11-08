@@ -11,13 +11,15 @@ spec:
   name: notation
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
-    
     verificationCertStores:
       certs:
         {{- if .Values.akvCertConfig.enabled }}
         - certstore-akv
         {{- else }}
           {{- if .Values.notationCert }}
+            {{- if .Values.notationCerts }}
+            {{- fail "please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert is deprecated, will soon be removed." }}
+            {{- end -}}
         - {{$fullname}}-notation-inline-cert
           {{- end }} 
           {{-  range $i, $cert := .Values.notationCerts }}
