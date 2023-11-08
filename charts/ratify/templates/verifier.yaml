@@ -18,7 +18,7 @@ spec:
         {{- else }}
           {{- if .Values.notationCert }}
             {{- if .Values.notationCerts }}
-            {{- fail "please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert is deprecated, will soon be removed." }}
+            {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
             {{- end -}}
         - {{$fullname}}-notation-inline-cert
           {{- end }} 
