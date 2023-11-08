@@ -10,6 +10,8 @@ replicaCount: 1
 affinity: {}
 tolerations: []
 notationCert: ""
+notationCerts: []
+
 cosign:
   enabled: true
   key: ""
