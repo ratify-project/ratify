@@ -77,7 +77,7 @@ type cosignExtension struct {
 }
 
 func main() {
-	skel.PluginMain("cosign", "1.1.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("verifier-cosign", "1.1.0", VerifyReference, []string{"1.0.0"})
 }
 
 func parseInput(stdin []byte) (*PluginInputConfig, error) {

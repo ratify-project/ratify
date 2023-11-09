@@ -36,7 +36,7 @@ type PluginInputConfig struct {
 }
 
 func main() {
-	skel.PluginMain("sample", "1.0.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("verifier-sample", "1.0.0", VerifyReference, []string{"1.0.0"})
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {

@@ -40,7 +40,7 @@ type PluginInputConfig struct {
 }
 
 func main() {
-	skel.PluginMain("licensechecker", "1.0.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("verifier-licensechecker", "1.0.0", VerifyReference, []string{"1.0.0"})
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {
