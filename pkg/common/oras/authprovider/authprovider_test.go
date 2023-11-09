@@ -62,13 +62,15 @@ func (ap *TestAuthProvider) Provide(_ context.Context, _ string) (AuthConfig, er
 
 func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 	var testProviderFactory defaultProviderFactory
+	// unsupported type for unmarshal
 	invalidConfig1 := map[string]interface{}{
-		"key1": 42,
+		"key1": 1,
 		"key2": true,
 		"key3": make(chan int),
 	}
+	// cannot unmarshal number into defaultAuthProviderConf.name of type string
 	invalidConfig2 := map[string]interface{}{
-		"Name": 42,
+		"Name": 1,
 	}
 	validConfig1 := map[string]interface{}{
 		"Name":       "sample",
@@ -76,12 +78,12 @@ func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 	}
 	_, err := testProviderFactory.Create(AuthProviderConfig(invalidConfig1))
 	if err == nil {
-		t.Errorf("Expected an ErrorCodeConfigInvalid, but got none")
+		t.Errorf("Expected an ErrorCodeConfigInvalid when input type for unmarshal is unsupported, but got none")
 	}
 
 	_, err = testProviderFactory.Create(AuthProviderConfig(invalidConfig2))
 	if err == nil {
-		t.Errorf("Expected an ErrorCodeConfigInvalid, but got none")
+		t.Errorf("Expected an ErrorCodeConfigInvalid when input type can not be transformed accordingly, but got none")
 	}
 
 	_, err = testProviderFactory.Create(AuthProviderConfig(validConfig1))
