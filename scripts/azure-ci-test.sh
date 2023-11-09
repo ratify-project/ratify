@@ -75,7 +75,7 @@ deploy_ratify() {
     --set featureFlags.RATIFY_CERT_ROTATION=true \
     --set logger.level=debug
 
-  kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
+  kubectl delete verifiers.config.ratify.deislabs.io/cosign
 
   kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
   kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml

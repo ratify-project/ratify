@@ -53,7 +53,7 @@ const (
 )
 
 func main() {
-	skel.PluginMain("verifier-sbom", "1.0.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("sbom", "1.0.0", VerifyReference, []string{"1.0.0"})
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {

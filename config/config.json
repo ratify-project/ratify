@@ -49,12 +49,12 @@
                 }
             },
             {
-                "name": "verifier-sbom",
+                "name": "sbom",
                 "artifactTypes": "org.example.sbom.v0",
                 "nestedReferences": "application/vnd.cncf.notary.signature"
             },
             {
-                "name": "verifier-licensechecker",
+                "name": "licensechecker",
                 "artifactTypes": "application/vnd.ratify.spdx.v0",
                 "allowedLicenses": [
                     "MIT"

@@ -1,7 +1,7 @@
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-dynamic
+  name: dynamic
 spec:
   name: dynamic
   artifactTypes: application/vnd.ratify.spdx.v0

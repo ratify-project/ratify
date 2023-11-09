@@ -1,7 +1,7 @@
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-cosign
+  name: cosign
 spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json

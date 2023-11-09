@@ -39,7 +39,7 @@ type PluginInputConfig struct {
 }
 
 func main() {
-	skel.PluginMain("verifier-schemavalidator", "1.0.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("schemavalidator", "1.0.0", VerifyReference, []string{"1.0.0"})
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {

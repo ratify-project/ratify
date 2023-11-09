@@ -20,7 +20,7 @@ Schemas can be configured in Ratify config.json or via CRD.
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: verifier-schemavalidator
+  name: schemavalidator
 spec:
   name: schemavalidator
   artifactTypes: vnd.aquasecurity.trivy.report.sarif.v1
