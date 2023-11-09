@@ -109,9 +109,9 @@ SLEEP_TIME=1
 @test "licensechecker test" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod license-checker2 --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/license-checker --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod licensechecker --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod licensechecker2 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/licensechecker --namespace default --ignore-not-found=true'
     }
 
     run kubectl apply -f ./library/default/template.yaml
@@ -123,13 +123,13 @@ SLEEP_TIME=1
 
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_partial_licensechecker.yaml
     sleep 5
-    run kubectl run license-checker --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
+    run kubectl run licensechecker --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
     assert_failure
 
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
-    run kubectl run license-checker2 --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
+    run kubectl run licensechecker2 --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
     assert_success
 }
 
@@ -163,7 +163,7 @@ SLEEP_TIME=1
 @test "schemavalidator verifier test" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/license-checker --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/licensechecker --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/schemavalidator --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator --namespace default --force --ignore-not-found=true'
@@ -193,7 +193,7 @@ SLEEP_TIME=1
 @test "sbom/notary/cosign/licensechecker/schemavalidator verifiers test" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/license-checker --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/licensechecker --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/sbom --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/schemavalidator --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/cosign --namespace default --ignore-not-found=true'

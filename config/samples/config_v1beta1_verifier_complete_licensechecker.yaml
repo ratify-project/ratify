@@ -1,7 +1,7 @@
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
-  name: license-checker
+  name: licensechecker
 spec:
   name: licensechecker
   artifactTypes: application/vnd.ratify.spdx.v0
