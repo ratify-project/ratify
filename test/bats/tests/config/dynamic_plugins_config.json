@@ -25,7 +25,7 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "dynamic",
+                "name": "verifier-dynamic",
                 "artifactTypes": "sbom/example",
                 "nestedReferences": "application/vnd.cncf.notary.signature",
                 "source": {

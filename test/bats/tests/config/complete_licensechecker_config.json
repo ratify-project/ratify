@@ -21,7 +21,7 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "licensechecker",
+                "name": "verifier-licensechecker",
                 "artifactTypes": "application/vnd.ratify.spdx.v0",
                 "allowedLicenses": [
                     "GPL-2.0-only",
