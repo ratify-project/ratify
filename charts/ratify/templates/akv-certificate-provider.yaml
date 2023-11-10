@@ -12,14 +12,23 @@ spec:
     vaultURI: {{ required "vaultURI must be provided when AKV cert config is enabled" .Values.akvCertConfig.vaultURI  }}
     certificates:  |
       array:
+        {{- if .Values.akvCertConfig.cert1Name }}
         - |
-          certificateName: {{ required "cert1Name must be provided when AKV cert config is enabled" .Values.akvCertConfig.cert1Name  }}
-          certificateVersion: {{ .Values.akvCertConfig.cert1Version  }}       
+          certificateName: {{ .Values.akvCertConfig.cert1Name  }}
+          certificateVersion: {{ .Values.akvCertConfig.cert1Version  }}
+        {{ end }}    
         {{- if .Values.akvCertConfig.cert2Name }}
         - |
           certificateName: {{ .Values.akvCertConfig.cert2Name  }}
           certificateVersion: {{ .Values.akvCertConfig.cert2Version  }}        
         {{ end }}
+        {{-  range .Values.akvCertConfig.certificates }}
+        {{- if .certificateName }}
+        - |
+          certificateName: {{ .certificateName  }}
+          certificateVersion: {{ .certificateName  }}
+        {{- end }}
+        {{- end }}
     tenantID: {{ required "tenantID must be provided when AKV cert config is enabled" .Values.akvCertConfig.tenantId  }}    
     clientID: {{ required "clientID must be provided when use workload identity in akv" .Values.azureWorkloadIdentity.clientId  }}
 {{ end }}

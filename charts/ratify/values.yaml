@@ -50,6 +50,7 @@ akvCertConfig:
   cert1Version:
   cert2Name:
   cert2Version:
+  certificates:
   tenantId:
 
 oras:
