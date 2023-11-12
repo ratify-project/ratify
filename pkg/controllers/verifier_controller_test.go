@@ -45,7 +45,7 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
 	}
-	if pluginName := VerifierMap[resource].Name(); pluginName != "verifier-notation" {
+	if pluginName := VerifierMap[resource].Name(); pluginName != resource {
 		t.Fatalf("verifierAddOrReplace() expected using plugin name from metadata, actual %v", pluginName)
 	}
 }
