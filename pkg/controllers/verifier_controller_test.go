@@ -37,13 +37,16 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 		Name:          "notation",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
 	}
-	var resource = "notation"
+	var resource = "verifier-notation"
 
 	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
+	}
+	if pluginName := VerifierMap[resource].Name(); pluginName != "verifier-notation" {
+		t.Fatalf("verifierAddOrReplace() expected using plugin name from metadata, actual %v", pluginName)
 	}
 }
 
