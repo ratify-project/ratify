@@ -82,7 +82,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 
 	verfiyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithPluginName(verifierName)
+		return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithPluginName(verifierName).WithError(err)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
