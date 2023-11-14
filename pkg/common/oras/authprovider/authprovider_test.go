@@ -21,6 +21,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	re "github.com/deislabs/ratify/errors"
 )
 
 const (
@@ -60,35 +62,50 @@ func (ap *TestAuthProvider) Provide(_ context.Context, _ string) (AuthConfig, er
 	}, nil
 }
 
+// Checks for creation of defaultAuthProvider with invalid config input
 func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 	var testProviderFactory defaultProviderFactory
-	// unsupported type for unmarshal
-	invalidConfig1 := map[string]interface{}{
-		"key1": 1,
-		"key2": true,
-		"key3": make(chan int),
-	}
-	// cannot unmarshal number into defaultAuthProviderConf.name of type string
-	invalidConfig2 := map[string]interface{}{
-		"Name": 1,
-	}
-	validConfig1 := map[string]interface{}{
-		"Name":       "sample",
-		"ConfigPath": "/tmp",
-	}
-	_, err := testProviderFactory.Create(AuthProviderConfig(invalidConfig1))
-	if err == nil {
-		t.Errorf("Expected an ErrorCodeConfigInvalid when input type for unmarshal is unsupported, but got none")
+	tests := []struct {
+		name       string
+		configMap  map[string]interface{}
+		isNegative bool
+		expect     error
+	}{
+		{
+			name: "input type for unmarshal is unsupported",
+			configMap: map[string]interface{}{
+				"key1": 1,
+				"key2": true,
+				"key3": make(chan int),
+			},
+			isNegative: true,
+			expect:     re.ErrorCodeConfigInvalid,
+		},
+		{
+			name: "input type can not be transformed accordingly",
+			configMap: map[string]interface{}{
+				"Name": 1,
+			},
+			isNegative: true,
+			expect:     re.ErrorCodeConfigInvalid,
+		},
+		{
+			name: "successfully creation of authProvider",
+			configMap: map[string]interface{}{
+				"Name":       "sample",
+				"ConfigPath": "/tmp",
+			},
+			isNegative: false,
+			expect:     nil,
+		},
 	}
 
-	_, err = testProviderFactory.Create(AuthProviderConfig(invalidConfig2))
-	if err == nil {
-		t.Errorf("Expected an ErrorCodeConfigInvalid when input type can not be transformed accordingly, but got none")
-	}
+	for _, testCase := range tests {
+		_, err := testProviderFactory.Create(AuthProviderConfig(testCase.configMap))
+		if testCase.isNegative != (err != nil) {
+			t.Errorf("Expected %v in case %v, but got %v", testCase.expect, testCase.name, err)
+		}
 
-	_, err = testProviderFactory.Create(AuthProviderConfig(validConfig1))
-	if err != nil {
-		t.Errorf("Expected no error, but got %v", err)
 	}
 }
 
