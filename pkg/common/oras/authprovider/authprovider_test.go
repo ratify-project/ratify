@@ -104,7 +104,6 @@ func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 		if testCase.isNegative != (err != nil) {
 			t.Errorf("Expected %v in case %v, but got %v", testCase.expect, testCase.name, err)
 		}
-
 	}
 }
 
