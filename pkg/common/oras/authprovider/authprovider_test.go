@@ -99,7 +99,6 @@ func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 			expect:     nil,
 		},
 	}
-
 	for _, testCase := range tests {
 		_, err := testProviderFactory.Create(AuthProviderConfig(testCase.configMap))
 		if testCase.isNegative != (err != nil) {
