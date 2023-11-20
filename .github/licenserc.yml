@@ -47,3 +47,7 @@ header:
 dependency:
   files:
     - go.mod
+  licenses:
+    - name: github.com/spdx/tools-golang
+      version: v0.5.3
+      license: Apache-2.0
