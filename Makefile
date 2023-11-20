@@ -13,7 +13,8 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
-KUBERNETES_VERSION ?= 1.26.3
+KUBERNETES_VERSION ?= 1.27.7
+KIND_KUBERNETES_VERSION ?= 1.27.3
 GATEKEEPER_VERSION ?= 3.13.0
 DAPR_VERSION ?= 1.11.1
 COSIGN_VERSION ?= 1.13.1
@@ -195,7 +196,7 @@ e2e-dependencies:
 	mv oras-install/oras ${GITHUB_WORKSPACE}/bin
 	rm -rf oras*.tar.gz oras-install/
 
-KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
+KIND_NODE_VERSION := kindest/node:v$(KIND_KUBERNETES_VERSION)
 
 e2e-create-local-registry: e2e-run-local-registry e2e-create-all-image
 
