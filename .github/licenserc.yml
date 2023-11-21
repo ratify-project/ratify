@@ -51,3 +51,9 @@ dependency:
     - name: github.com/spdx/tools-golang
       version: v0.5.3
       license: Apache-2.0
+    - name: github.com/alibabacloud-go/cr-20160607
+      version: v1.0.1
+      license: Apache-2.0
+    - name: github.com/rcrowley/go-metrics
+      version: v0.0.0-20201227073835-cf1acfcdf475
+      license: BSD-2-Clause

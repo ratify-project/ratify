@@ -1,6 +1,8 @@
 module github.com/deislabs/ratify
 
-go 1.20
+go 1.21
+
+toolchain go1.21.4
 
 // Accidentally published prior to 1.0.0 release
 retract (
