@@ -16,6 +16,22 @@ on:
 permissions: read-all
 
 jobs:
+  check-license:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Check license header
+        uses: apache/skywalking-eyes/header@a790ab8dd23a7f861c18bd6aaa9b012e3a234bce
+        with:
+          mode: check
+          config: .github/licenserc.yml
+      - name: Check dependencies license
+        uses: apache/skywalking-eyes/dependency@a790ab8dd23a7f861c18bd6aaa9b012e3a234bce
+        with:
+          config: .github/licenserc.yml
+          flags:
+            --weak-compatible=true
   build:
     runs-on: ubuntu-latest
     steps:
