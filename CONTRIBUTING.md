@@ -184,7 +184,7 @@ image:
 ```
 
 Deploy using one of the following deployments.
-Note: Ratify is compatible with Gatkeeper >= 3.11.0. Server auth is required to be enabled.
+Note: Ratify is compatible with Gatekeeper >= 3.12.0. Server auth is required to be enabled.
 
 **Option 1**
 Client auth disabled and server auth enabled using self signed certificate
