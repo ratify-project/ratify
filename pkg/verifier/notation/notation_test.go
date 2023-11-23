@@ -16,6 +16,8 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/verifier"
+	vc "github.com/deislabs/ratify/pkg/verifier/config"
+	"github.com/deislabs/ratify/pkg/verifier/factory"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
 	"github.com/opencontainers/go-digest"
@@ -130,11 +132,25 @@ func (s mockStore) GetSubjectDescriptor(_ context.Context, _ common.Reference) (
 }
 
 func TestName(t *testing.T) {
-	v := &notationPluginVerifier{}
-	name := v.Name()
+	verifierConfig0 := map[string]interface{}{
+		"name":     "notation-verifier-0",
+		"specName": "notation",
+	}
+	verifierConfig1 := map[string]interface{}{
+		"name":     "notation-verifier-1",
+		"specName": "notation",
+	}
+	verifiersConfig := vc.VerifiersConfig{
+		Verifiers: []vc.VerifierConfig{verifierConfig0, verifierConfig1},
+	}
+	verifiers, err := factory.CreateVerifiersFromConfig(verifiersConfig, "", "")
+	if err != nil {
+		t.Fatalf("create verifiers failed with err %v", err)
+	}
+	name0 := verifiers[0].Name()
 
-	if name != "notation" {
-		t.Fatalf("expect name: notation, got: %s", name)
+	if name0 != "notation-verifier-0" {
+		t.Fatalf("expect name: notation-verifier-0, got: %s", name0)
 	}
 }
 

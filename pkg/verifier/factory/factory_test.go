@@ -63,7 +63,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 	}
 
 	verifierConfig := map[string]interface{}{
-		"name": "test-verifier",
+		"name":     "test-verifier-0",
+		"specName": "test-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
@@ -79,8 +80,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		t.Fatalf("expected to have %d verifiers, actual count %d", 1, len(verifiers))
 	}
 
-	if verifiers[0].Name() != "test-verifier" {
-		t.Fatalf("expected to create test verifier")
+	if verifiers[0].Name() != "test-verifier-0" {
+		t.Fatalf("expected to create test verifier-0 for test case")
 	}
 
 	if _, ok := verifiers[0].(*plugin.VerifierPlugin); ok {
@@ -98,7 +99,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
 	verifierConfig := map[string]interface{}{
-		"name": "plugin-verifier",
+		"name":     "plugin-verifier-0",
+		"specName": "plugin-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
