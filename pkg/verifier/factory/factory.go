@@ -52,14 +52,14 @@ func Register(name string, factory VerifierFactory) {
 // returns a single verifier from a verifierConfig
 // namespace is only applicable in K8s environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string, namespace string) (verifier.ReferenceVerifier, error) {
-	verifierName, ok := verifierConfig[types.Name]
+	verifierSpecName, ok := verifierConfig[types.SpecName]
 	if !ok {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key %s", "name"))
 	}
 
-	verifierNameStr := fmt.Sprintf("%s", verifierName)
-	if strings.ContainsRune(verifierNameStr, os.PathSeparator) {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("invalid plugin name for a verifier: %s", verifierNameStr))
+	verifierTypeStr := fmt.Sprintf("%s", verifierSpecName)
+	if strings.ContainsRune(verifierTypeStr, os.PathSeparator) {
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("invalid plugin name for a verifier: %s", verifierTypeStr))
 	}
 
 	// if source is specified, download the plugin
@@ -70,18 +70,18 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 				return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, "", re.EmptyLink, err, "failed to parse plugin source", re.HideStackTrace)
 			}
 
-			targetPath := path.Join(pluginBinDir[0], verifierNameStr)
+			targetPath := path.Join(pluginBinDir[0], verifierTypeStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
 				return nil, re.ErrorCodeDownloadPluginFailure.NewError(re.Verifier, "", re.EmptyLink, err, "failed to download plugin", re.HideStackTrace)
 			}
-			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierNameStr, source.Artifact, targetPath)
+			logrus.Infof("downloaded verifier plugin type %s from %s to %s", verifierTypeStr, source.Artifact, targetPath)
 		} else {
-			logrus.Warnf("%s was specified for verifier plugin %s, but dynamic plugins are currently disabled", types.Source, verifierNameStr)
+			logrus.Warnf("%s was specified for verifier plugin type %s, but dynamic plugins are currently disabled", types.Source, verifierTypeStr)
 		}
 	}
 
-	verifierFactory, ok := builtInVerifiers[verifierNameStr]
+	verifierFactory, ok := builtInVerifiers[verifierTypeStr]
 	if ok {
 		return verifierFactory.Create(configVersion, verifierConfig, pluginBinDir[0], namespace)
 	}

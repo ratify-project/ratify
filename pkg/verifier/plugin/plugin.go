@@ -36,6 +36,7 @@ import (
 // VerifierPlugin describes a verifier that is implemented by invoking the plugins
 type VerifierPlugin struct {
 	name             string
+	specName         string
 	artifactTypes    []string
 	nestedReferences []string
 	version          string
@@ -49,6 +50,11 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key: %s", types.Name))
+	}
+
+	verifierSpecName, ok := verifierConfig[types.SpecName]
+	if !ok {
+		verifierSpecName = verifierName
 	}
 
 	var nestedReferences []string
@@ -67,6 +73,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 
 	return &VerifierPlugin{
 		name:             fmt.Sprintf("%s", verifierName),
+		specName:         fmt.Sprintf("%s", verifierSpecName),
 		version:          version,
 		path:             pluginPaths,
 		rawConfig:        verifierConfig,
@@ -107,7 +114,10 @@ func (vp *VerifierPlugin) verifyReference(
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
-	pluginPath, err := vp.executor.FindInPaths(vp.name, vp.path)
+	if vp.specName == "" {
+		vp.specName = vp.name
+	}
+	pluginPath, err := vp.executor.FindInPaths(vp.specName, vp.path)
 	if err != nil {
 		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
