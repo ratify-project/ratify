@@ -290,7 +290,8 @@ func TestCreate(t *testing.T) {
 		{
 			name: "failed parsing verifier config",
 			configMap: map[string]interface{}{
-				"name": []string{test},
+				"name":           test,
+				"trustPolicyDoc": 1,
 			},
 			expectErr: true,
 		},
