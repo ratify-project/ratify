@@ -54,7 +54,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 
 	verifierSpecName, ok := verifierConfig[types.SpecName]
 	if !ok {
-		verifierSpecName = verifierName
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("failed to find verifier spec name in the verifier config with key: %s", types.SpecName))
 	}
 
 	var nestedReferences []string
@@ -114,9 +114,6 @@ func (vp *VerifierPlugin) verifyReference(
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
-	if vp.specName == "" {
-		vp.specName = vp.name
-	}
 	pluginPath, err := vp.executor.FindInPaths(vp.specName, vp.path)
 	if err != nil {
 		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
