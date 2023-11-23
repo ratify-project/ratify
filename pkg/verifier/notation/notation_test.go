@@ -200,7 +200,9 @@ func TestParseVerifierConfig(t *testing.T) {
 		{
 			name: "failed unmarshalling to notation config",
 			configMap: map[string]interface{}{
-				"name": []string{test},
+				"key1": 1,
+				"key2": true,
+				"key3": make(chan int),
 			},
 			expectErr: true,
 			expect:    nil,
