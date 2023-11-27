@@ -9,7 +9,7 @@ releases:
     namespace: gatekeeper-system
     createNamespace: true
     chart: gatekeeper/gatekeeper
-    version: 3.13.0
+    version: 3.14.0
     wait: true
     set:
       - name: enableExternalData
@@ -18,6 +18,8 @@ releases:
         value: 5
       - name: mutatingWebhookTimeoutSeconds
         value: 2
+      - name: externaldataProviderResponseCacheTTL
+        value: 10s
   - name: ratify
     namespace: gatekeeper-system
     chart: charts/ratify # PRERELEASE: Change to 'ratify/ratify' before copying to helmfile.yaml

@@ -54,7 +54,7 @@ jobs:
       - name: docker build ratify-crds
         run: |
           docker buildx create --use
-          docker buildx build --build-arg KUBE_VERSION="1.25.4" -f crd.Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }} --push ./charts/ratify/crds
+          docker buildx build --build-arg KUBE_VERSION="1.27.7" -f crd.Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }} --push ./charts/ratify/crds
       - name: docker build ratify base
         run: |
           docker buildx create --use         
