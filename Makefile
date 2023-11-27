@@ -51,6 +51,7 @@ REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
 SBOM_TOOL_VERSION ?=v1.2.0
+TRIVY_VERSION ?= 0.47.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -398,7 +399,7 @@ e2e-schemavalidator-setup:
 	mkdir -p .staging/schemavalidator
 
 	# Install Trivy
-	curl -L https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
 	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
 
 	# Build/Push Images
@@ -422,7 +423,7 @@ e2e-vulnerabilityreport-setup:
 	mkdir -p .staging/vulnerabilityreport
 
 	# Install Trivy
-	curl -L https://github.com/aquasecurity/trivy/releases/download/v0.47.0/trivy_0.47.0_Linux-64bit.tar.gz --output .staging/vulnerabilityreport/trivy.tar.gz
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/vulnerabilityreport/trivy.tar.gz
 	tar -zxf .staging/vulnerabilityreport/trivy.tar.gz -C .staging/vulnerabilityreport
 
 	# Build/Push Image
