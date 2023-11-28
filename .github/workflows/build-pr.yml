@@ -16,6 +16,22 @@ on:
 permissions: read-all
 
 jobs:
+  check-license:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+      - name: Check license header
+        uses: apache/skywalking-eyes/header@a790ab8dd23a7f861c18bd6aaa9b012e3a234bce
+        with:
+          mode: check
+          config: .github/licenserc.yml
+      - name: Check dependencies license
+        uses: apache/skywalking-eyes/dependency@a790ab8dd23a7f861c18bd6aaa9b012e3a234bce
+        with:
+          config: .github/licenserc.yml
+          flags:
+            --weak-compatible=true
   build:
     runs-on: ubuntu-latest
     steps:
@@ -70,8 +86,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.25.8", "1.26.3"]
-        GATEKEEPER_VERSION: ["3.11.0", "3.12.0", "3.13.0"]
+        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -130,8 +146,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.25.6", "1.26.6"]
-        GATEKEEPER_VERSION: ["3.11.0", "3.12.0", "3.13.0"]
+        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -141,7 +157,7 @@ jobs:
           go-version: '1.20'
 
       - name: Az CLI login
-        uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2 # v1.4.7
+        uses: azure/login@4c88f01b0e3a5600e08a37889921afd060f75cf0 # v1.5.0
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
@@ -197,7 +213,7 @@ jobs:
           go-version: '1.20'
 
       - name: Az CLI login
-        uses: azure/login@92a5484dfaf04ca78a94597f4f19fea633851fa2 # v1.4.7
+        uses: azure/login@4c88f01b0e3a5600e08a37889921afd060f75cf0 # v1.5.0
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 

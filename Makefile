@@ -1,3 +1,16 @@
+# Copyright The Ratify Authors.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+	  
 BINARY_NAME		= ratify
 INSTALL_DIR		= ~/.ratify
 CERT_DIR        = ${GITHUB_WORKSPACE}/tls/certs
@@ -13,8 +26,9 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.14.0
-KUBERNETES_VERSION ?= 1.26.3
-GATEKEEPER_VERSION ?= 3.13.0
+KUBERNETES_VERSION ?= 1.27.7
+KIND_KUBERNETES_VERSION ?= 1.27.3
+GATEKEEPER_VERSION ?= 3.14.0
 DAPR_VERSION ?= 1.11.1
 COSIGN_VERSION ?= 1.13.1
 NOTATION_VERSION ?= 1.0.0-rc.7
@@ -195,7 +209,7 @@ e2e-dependencies:
 	mv oras-install/oras ${GITHUB_WORKSPACE}/bin
 	rm -rf oras*.tar.gz oras-install/
 
-KIND_NODE_VERSION := kindest/node:v$(KUBERNETES_VERSION)
+KIND_NODE_VERSION := kindest/node:v$(KIND_KUBERNETES_VERSION)
 
 e2e-create-local-registry: e2e-run-local-registry e2e-create-all-image
 
@@ -417,16 +431,10 @@ e2e-azure-setup: e2e-create-all-image e2e-notation-setup e2e-notation-leaf-cert-
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
-	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper  \
-	--version ${GATEKEEPER_VERSION} \
-    --name-template=gatekeeper \
-    --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
-    --set enableExternalData=true \
-    --set validatingWebhookTimeoutSeconds=5 \
-    --set mutatingWebhookTimeoutSeconds=2 \
-    --set auditInterval=0
-
+	if [ ${GATEKEEPER_VERSION} = "3.12.0" ] || [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then ./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0; fi
 	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then kubectl -n ${GATEKEEPER_NAMESPACE} patch deployment gatekeeper-controller-manager --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--external-data-provider-response-cache-ttl=1s"}]' && sleep 60; fi
+	# Gatekeeper versions >= 3.14.0 need a special helm value to override the default external data response cache ttl to 10s
+	if [ ${GATEKEEPER_VERSION} != "3.12.0" ] && [ ${GATEKEEPER_VERSION} != "3.13.0" ]; then ./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0 --set externaldataProviderResponseCacheTTL=1s; fi
 
 e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds

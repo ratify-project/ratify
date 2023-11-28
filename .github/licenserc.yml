@@ -1,0 +1,59 @@
+# Copyright The Ratify Authors.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+header:
+  license:
+    spdx-id: Apache-2.0
+    content: |
+      Copyright The Ratify Authors.
+      Licensed under the Apache License, Version 2.0 (the "License");
+      you may not use this file except in compliance with the License.
+      You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+      Unless required by applicable law or agreed to in writing, software
+      distributed under the License is distributed on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+      See the License for the specific language governing permissions and
+      limitations under the License.
+
+  paths-ignore:
+    - "**/*.{md,svg,yaml,crt,json,pub,yml,pb.go,proto}"
+    - "CODEOWNERS"
+    - "PROJECT"
+    - "NOTICE"
+    - "LICENSE"
+    - "MAINTAINERS"
+    - "go.mod"
+    - "go.sum"
+    - "**/testdata/**"
+    - "charts/**/*"
+    - ".gitignore"
+    - ".devcontainer/gatekeeper.http"
+
+  comment: on-failure
+
+dependency:
+  files:
+    - go.mod
+  licenses:
+    - name: github.com/spdx/tools-golang
+      version: v0.5.3
+      license: Apache-2.0
+    - name: github.com/alibabacloud-go/cr-20160607 # TODO: remove this when library is upgraded to v2.0.0
+      version: v1.0.1
+      license: Apache-2.0
+    - name: github.com/rcrowley/go-metrics # TODO: remove this when library is removed or under compatible license
+      version: v0.0.0-20201227073835-cf1acfcdf475
+      license: BSD-2-Clause
