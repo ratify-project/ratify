@@ -56,6 +56,6 @@ func New(use, short string) *cobra.Command {
 	root.AddCommand(NewCmdVersion(use, versionUse))
 	root.AddCommand(NewCmdResolve(use, resolveUse))
 
-	root.PersistentFlags().BoolVarP(&enableDebug, "debug", "d", false, "enable debug mode")
+	root.PersistentFlags().BoolVarP(&enableDebug, "debug", "d", false, "Enable debug mode. If enabled, set logger level to debug")
 	return root
 }
