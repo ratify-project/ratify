@@ -17,6 +17,14 @@ spec:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package notationnestedvalidation
+
+        # This template defines policy for notation nested validation.
+        # It checks the following:
+        # - If there are any system errors
+        # - If there are errors for any of the images
+        # - Each image has a valid notary project signature
+        # - Each nested artifact has a valid notary project signature 
+
         import future.keywords.if
 
         remote_data := response {
