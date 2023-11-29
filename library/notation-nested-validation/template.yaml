@@ -60,15 +60,15 @@ spec:
         has_subject_failed_verify(nestedReports) if {
           [path, value] := walk(nestedReports)
           path[count(path) - 1] == "nestedResults"
-          not notary_signature_pass_verify(value)
+          not notary_project_signature_pass_verify(value)
         }
 
-        notary_signature_pass_verify(nestedReports) if {
-          count_with_success := notary_signature_signature_count(nestedReports)
+        notary_project_signature_pass_verify(nestedReports) if {
+          count_with_success := notary_project_signature_count(nestedReports)
           count_with_success > 0
         }
 
-        notary_signature_signature_count(nestedReports) := number if {
+        notary_project_signature_count(nestedReports) := number if {
           sigs := [x |
               some i
               nestedReports[i].isSuccess == true
