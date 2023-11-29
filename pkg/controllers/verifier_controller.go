@@ -97,13 +97,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
-	verifierConfig, err := specToVerifierConfig(spec)
-	// add verifier name to verifier config
-	verifierConfig[types.Name] = objectName
-	if err != nil {
-		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
-	}
+	verifierConfig, err := verifierCreateConfig(spec, objectName)
 
 	// verifier factory only support a single version of configuration today
 	// when we support multi version verifier CRD, we will also pass in the corresponding config version so factory can create different version of the object
@@ -123,6 +117,17 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 	logrus.Infof("verifier '%v' added to verifier map", verifierReference.Name())
 
 	return nil
+}
+
+// create verifier config
+func verifierCreateConfig(verifierSpec configv1beta1.VerifierSpec, verifierName string) (vc.VerifierConfig, error) {
+	verifierConfig, err := specToVerifierConfig(verifierSpec)
+	if err != nil {
+		logrus.Error(err, "unable to convert crd specification to verifier config")
+		return nil, fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
+	}
+	verifierConfig[types.Name] = verifierName
+	return verifierConfig, nil
 }
 
 // remove verifier from map

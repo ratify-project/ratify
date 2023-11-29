@@ -53,9 +53,15 @@ func Register(name string, factory VerifierFactory) {
 // namespace is only applicable in K8s environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string, namespace string) (verifier.ReferenceVerifier, error) {
 	// in cli mode verifier type name can only read from Name property
-	verifierTypeStr := fmt.Sprintf("%s", verifierConfig[types.Name])
-	if _, ok := verifierConfig[types.Type]; ok {
-		verifierTypeStr = fmt.Sprintf("%s", verifierConfig[types.Type])
+	var verifierTypeStr string
+	if value, ok := verifierConfig[types.Name]; ok {
+		verifierTypeStr = value.(string)
+	} else {
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key %s", "name"))
+	}
+
+	if value, ok := verifierConfig[types.Type]; ok {
+		verifierTypeStr = value.(string)
 	}
 
 	if strings.ContainsRune(verifierTypeStr, os.PathSeparator) {
