@@ -134,6 +134,10 @@ func (v *mockVerifier) Name() string {
 	return "mockVerifier"
 }
 
+func (v *mockVerifier) TypeName() string {
+	return "mockVerifier"
+}
+
 func (v *mockVerifier) CanVerify(_ context.Context, _ ocispecs.ReferenceDescriptor) bool {
 	return v.canVerify
 }

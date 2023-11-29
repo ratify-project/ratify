@@ -28,6 +28,7 @@ type VerifierResult struct { //nolint:revive // ignore linter to have unique typ
 	Subject       string           `json:"subject,omitempty"`
 	IsSuccess     bool             `json:"isSuccess"`
 	Name          string           `json:"name,omitempty"`
+	Type          string           `json:"type,omitempty"`
 	Message       string           `json:"message,omitempty"`
 	Extensions    interface{}      `json:"extensions,omitempty"`
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
@@ -39,6 +40,9 @@ type VerifierResult struct { //nolint:revive // ignore linter to have unique typ
 type ReferenceVerifier interface {
 	// Name returns the name of the verifier
 	Name() string
+
+	// TypeName returns the type name of the verifier
+	TypeName() string
 
 	// CanVerify returns if the verifier can verify the given reference
 	CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool

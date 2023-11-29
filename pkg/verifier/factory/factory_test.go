@@ -38,6 +38,10 @@ func (s *TestVerifier) Name() string {
 	return "test-verifier-0"
 }
 
+func (s *TestVerifier) TypeName() string {
+	return "test-verifier"
+}
+
 func (s *TestVerifier) CanVerify(_ context.Context, _ ocispecs.ReferenceDescriptor) bool {
 	return true
 }

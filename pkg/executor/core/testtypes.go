@@ -34,6 +34,10 @@ func (s *TestVerifier) Name() string {
 	return "test-verifier"
 }
 
+func (s *TestVerifier) TypeName() string {
+	return "test-verifier"
+}
+
 func (s *TestVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
 	return s.CanVerifyFunc(referenceDescriptor.ArtifactType)
 }

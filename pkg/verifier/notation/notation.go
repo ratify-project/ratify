@@ -78,7 +78,11 @@ func init() {
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
 	logger.GetLogger(context.Background(), logOpt).Debugf("creating notation with config %v, namespace '%v'", verifierConfig, namespace)
-	verifierName := verifierConfig[types.Name].(string)
+	verifierName := fmt.Sprintf("%s", verifierConfig[types.Name])
+	verifierTypeStr := ""
+	if _, ok := verifierConfig[types.Type]; ok {
+		verifierTypeStr = fmt.Sprintf("%s", verifierConfig[types.Type])
+	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
@@ -92,7 +96,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
 	return &notationPluginVerifier{
 		name:             verifierName,
-		typeName:         verifierTypeName,
+		typeName:         verifierTypeStr,
 		artifactTypes:    artifactTypes,
 		notationVerifier: &verfiyService,
 	}, nil
@@ -100,6 +104,10 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 
 func (v *notationPluginVerifier) Name() string {
 	return v.name
+}
+
+func (v *notationPluginVerifier) TypeName() string {
+	return v.typeName
 }
 
 func (v *notationPluginVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
@@ -153,6 +161,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	return verifier.VerifierResult{
 		Name:       v.name,
+		Type:       v.typeName,
 		IsSuccess:  true,
 		Message:    "signature verification success",
 		Extensions: extensions,
