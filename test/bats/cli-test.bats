@@ -71,7 +71,7 @@ load helpers
     assert_success
 
     # dynamic plugins enabled with feature flag
-    run bash -c "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=1 bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s  $TEST_REGISTRY/all:v0 2>&1 >/dev/null | grep 'downloaded verifier plugin dynamic from .* to .*'"
+    run bash -c "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=1 bin/ratify verify -c $RATIFY_DIR/dynamic_plugins_config.json -s  $TEST_REGISTRY/all:v0 2>&1 >/dev/null | grep 'downloaded verifier plugin verifier-dynamic from .* to .*'"
     assert_success
 
     # ensure the plugin is downloaded and marked executable
