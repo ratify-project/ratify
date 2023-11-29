@@ -98,7 +98,10 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := verifierCreateConfig(spec, objectName)
-
+	if err != nil {
+		logrus.Error(err, "unable to convert crd specification to verifier config")
+		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
+	}
 	// verifier factory only support a single version of configuration today
 	// when we support multi version verifier CRD, we will also pass in the corresponding config version so factory can create different version of the object
 	verifierConfigVersion := "1.0.0" // TODO: move default values to defaulting webhook in the future #413
@@ -123,8 +126,7 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 func verifierCreateConfig(verifierSpec configv1beta1.VerifierSpec, verifierName string) (vc.VerifierConfig, error) {
 	verifierConfig, err := specToVerifierConfig(verifierSpec)
 	if err != nil {
-		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return nil, fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
+		return nil, err
 	}
 	verifierConfig[types.Name] = verifierName
 	return verifierConfig, nil
