@@ -132,7 +132,7 @@ func (s mockStore) GetSubjectDescriptor(_ context.Context, _ common.Reference) (
 func TestName(t *testing.T) {
 	verifierConfig := map[string]interface{}{
 		"name":           "notation-verifier-0",
-		"specName":       "notation",
+		"type":           "notation",
 		"trustPolicyDoc": testTrustPolicy,
 	}
 

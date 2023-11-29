@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	verifierSpecName = "notation"
+	verifierTypeName = "notation"
 	defaultCertPath  = "ratify-certs/notation/truststore"
 )
 
@@ -65,7 +65,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 type notationPluginVerifier struct {
 	name             string
-	specName         string
+	typeName         string
 	artifactTypes    []string
 	notationVerifier *notation.Verifier
 }
@@ -73,7 +73,7 @@ type notationPluginVerifier struct {
 type notationPluginVerifierFactory struct{}
 
 func init() {
-	factory.Register(verifierSpecName, &notationPluginVerifierFactory{})
+	factory.Register(verifierTypeName, &notationPluginVerifierFactory{})
 }
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
@@ -92,7 +92,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
 	return &notationPluginVerifier{
 		name:             verifierName,
-		specName:         verifierSpecName,
+		typeName:         verifierTypeName,
 		artifactTypes:    artifactTypes,
 		notationVerifier: &verfiyService,
 	}, nil

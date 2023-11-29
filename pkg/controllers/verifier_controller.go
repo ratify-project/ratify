@@ -112,6 +112,7 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		spec.Address = config.GetDefaultPluginPath()
 		logrus.Infof("Address was empty, setting to default path: %v", spec.Address)
 	}
+	// we may rename verifierReference to ReferenceVerifier in the future
 	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address}, namespace)
 
 	if err != nil || verifierReference == nil {
@@ -140,7 +141,7 @@ func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec) (vc.VerifierC
 		}
 	}
 
-	verifierConfig[types.SpecName] = verifierSpec.Name
+	verifierConfig[types.Type] = verifierSpec.Name
 	verifierConfig[types.ArtifactTypes] = verifierSpec.ArtifactTypes
 	if verifierSpec.Source != nil {
 		verifierConfig[types.Source] = verifierSpec.Source

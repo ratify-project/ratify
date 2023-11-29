@@ -63,8 +63,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 	}
 
 	verifierConfig := map[string]interface{}{
-		"name":     "test-verifier-0",
-		"specName": "test-verifier",
+		"name": "test-verifier-0",
+		"type": "test-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
@@ -99,8 +99,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
 	verifierConfig := map[string]interface{}{
-		"name":     "plugin-verifier-0",
-		"specName": "plugin-verifier",
+		"name": "plugin-verifier-0",
+		"type": "plugin-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
