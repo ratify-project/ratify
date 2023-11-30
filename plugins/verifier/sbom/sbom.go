@@ -84,9 +84,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}, err
 	}
 
-	var mediaType string
+	var artifactType string
 	for _, blobDesc := range referenceManifest.Blobs {
-		mediaType = blobDesc.MediaType
+		artifactType = blobDesc.ArtifactType
 		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 
 		if err != nil {
@@ -97,7 +97,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			}, err
 		}
 
-		switch mediaType {
+		switch artifactType {
 		case SpdxJSONMediaType:
 			return processSpdxJSONMediaType(input.Name, refBlob, input.DisallowedLicenses, input.DisallowedPackages)
 		default:
@@ -107,7 +107,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: false,
-		Message:   fmt.Sprintf("Unsupported mediaType: %s", mediaType),
+		Message:   fmt.Sprintf("Unsupported artifactType: %s", artifactType),
 	}, nil
 }
 
@@ -115,20 +115,23 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) ([]utils.PackageLicense, []utils.PackageLicense, error) {
 	packageLicenses := utils.GetPackageLicenses(*spdxDoc)
 	// load disallowed packageInfo into a map for easier existence check
-	packageMap := loadPackagesMap(disallowedPackages)
+	packageMap, packageNameMap := loadPackagesMap(disallowedPackages)
 
 	// detect violation
-	licenseViolation, packageViolation := filterDisallowedPackages(packageLicenses, disallowedLicenses, packageMap)
+	licenseViolation, packageViolation := filterDisallowedPackages(packageLicenses, disallowedLicenses, packageMap, packageNameMap)
 	return packageViolation, licenseViolation, nil
 }
 
-// load disallowed packageInfo into a map for easier existence check
-func loadPackagesMap(packages []utils.PackageInfo) map[utils.PackageInfo]struct{} {
-	output := map[utils.PackageInfo]struct{}{}
+// load disallowed packageInfo, and disallowed packageName into a map for easier existence check
+func loadPackagesMap(packages []utils.PackageInfo) (map[utils.PackageInfo]struct{}, map[string]struct{}) {
+	packagesInfo := map[utils.PackageInfo]struct{}{}
+	packagesName := map[string]struct{}{}
+
 	for _, item := range packages {
-		output[item] = struct{}{}
+		packagesInfo[item] = struct{}{}
+		packagesName[item.Name] = struct{}{}
 	}
-	return output
+	return packagesInfo, packagesName
 }
 
 // parse through the spdx blob and returns the verifier result
@@ -174,7 +177,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 
 // iterate through all package info and check against the deny list
 // return the violation packages
-func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowedLicense []string, disallowedPackage map[utils.PackageInfo]struct{}) ([]utils.PackageLicense, []utils.PackageLicense) {
+func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowedLicense []string, disallowedPackage map[utils.PackageInfo]struct{}, disallowedPackageName map[string]struct{}) ([]utils.PackageLicense, []utils.PackageLicense) {
 	var violationLicense []utils.PackageLicense
 	var violationPackage []utils.PackageLicense
 
@@ -187,14 +190,21 @@ func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowed
 			}
 		}
 
-		// package check
-		current := utils.PackageInfo{
-			Name:    packageInfo.PackageName,
-			Version: packageInfo.PackageVersion,
-		}
-		_, ok := disallowedPackage[current]
-		if ok {
-			violationPackage = append(violationPackage, packageInfo)
+		// if there is no version, check against package name
+		if len(packageInfo.PackageVersion) == 0 {
+			_, ok := disallowedPackageName[packageInfo.PackageName]
+			if ok {
+				violationPackage = append(violationPackage, packageInfo)
+			}
+		} else {
+			current := utils.PackageInfo{
+				Name:    packageInfo.PackageName,
+				Version: packageInfo.PackageVersion,
+			}
+			_, ok := disallowedPackage[current]
+			if ok {
+				violationPackage = append(violationPackage, packageInfo)
+			}
 		}
 	}
 	return violationLicense, violationPackage
