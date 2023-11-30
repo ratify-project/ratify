@@ -385,7 +385,7 @@ e2e-sbom-setup:
 	# -di (DockerImage) - The docker image that will be used to generate the SBOM manifest
 	# -m (ManifestPath) - The path to the SBOM manifest that will be generated
 	# -D (Debug) - Enable debug logging 
-	.staging/sbom/sbom-tool generate -b .staging/sbom -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
+	.staging/sbom/sbom-tool generate -b .staging/sbom -bc . -pn ratify -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
