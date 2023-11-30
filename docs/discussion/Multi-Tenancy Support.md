@@ -292,10 +292,12 @@ The comprehensive exploration of various aspects related to the multi-tenancy mo
 3. Which approach should we take for Redis deployment? Deploy per cluster or per namespace? [reference](#redis-deployment-and-ratify-deployment)
     - After recent discussions, we are currently leaning towards deploying a centralized Redis cluster.
 4. For cluster-wide CRs, should we consider making it clustered resource or namespaced resource under a reserved namespace, such as gatekeeper-system? [reference](#cluster-wide-image-validation)
-    - Clustered CR means users need to maintain 2 sets of CRs (both namespaced and clustered).
+    - Clustered CR means users need to maintain 2 sets of CRs which is the same as Kyverno. But it requires Ratify support 2 sets of CRs and corresponding controllers.
     - Namespaced CR requires a reserved namespace.
 5. Should we allow team admins download external plugins via applying CRs? [reference](#user-scenario-4)
     - Cluster admin has permission to download plugins for all teams.
+    - We could support global download firstly.
 6. Regarding cache isolation for "local_oras_cache," should we annotate the descriptor or create a new store for each namespace? [reference](#key-points)
 7. Should we allow team admins switch tag mutation feature? [reference](#mutation)
     - Cluster admin is able to enable/disable image tag mutation.
+    - We could support global image tag mutation firstly. And if there is a strong requirement for individual control, we could add it later.

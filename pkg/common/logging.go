@@ -23,10 +23,13 @@ import (
 
 const defaultLevel = logrus.InfoLevel
 
+// SetLoggingLevelFromEnv sets logrus level to the value of environment variable
+// RATIFY_LOG_LEVEL
 func SetLoggingLevelFromEnv(logger *logrus.Logger) {
 	SetLoggingLevel(os.Getenv("RATIFY_LOG_LEVEL"), logger)
 }
 
+// SetLoggingLevel sets logrus level with Info level as default
 func SetLoggingLevel(level string, logger *logrus.Logger) {
 	var logrusLevel logrus.Level
 	if level == "" {
