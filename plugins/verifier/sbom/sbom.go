@@ -84,9 +84,8 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}, err
 	}
 
-	var artifactType string
+	artifactType := referenceDescriptor.ArtifactType
 	for _, blobDesc := range referenceManifest.Blobs {
-		artifactType = blobDesc.ArtifactType
 		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 
 		if err != nil {
