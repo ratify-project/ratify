@@ -24,7 +24,7 @@
                 "name": "sbom",
                 "artifactTypes": "application/spdx+json",
                 "disallowedLicenses":["Zlib"],
-                "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}]
+                "disallowedPackages":[{"name":"zlib","versionInfo":"1.2.13-r0"}]
             }
         ]
     }
