@@ -39,8 +39,8 @@ import (
 // PluginConfig describes the configuration of the sbom verifier
 type PluginConfig struct {
 	Name               string              `json:"name"`
-	DisallowedLicenses []string            `json:"disallowedLicenses"`
-	DisallowedPackages []utils.PackageInfo `json:"disallowedPackages"`
+	DisallowedLicenses []string            `json:"disallowedLicenses,omitempty"`
+	DisallowedPackages []utils.PackageInfo `json:"disallowedPackages,omitempty"`
 }
 
 type PluginInputConfig struct {
