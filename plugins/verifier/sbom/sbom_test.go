@@ -47,22 +47,6 @@ func TestProcessInvalidSPDXJsonMediaType(t *testing.T) {
 	}
 }
 
-func TestFormatPackageLicense(t *testing.T) {
-	bash := utils.PackageLicense{
-		PackageName:    "bash",
-		PackageLicense: "License",
-		PackageVersion: "4.4.18-2ubuntu1.2",
-	}
-
-	testdata := []utils.PackageLicense{bash}
-
-	result :=
-		formatPackageLicense(testdata)
-	if result == "nil" {
-		t.Fatalf("expected to have an error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
-	}
-}
-
 func TestGetViolations(t *testing.T) {
 	disallowedPackage := utils.PackageInfo{
 		Name:    "libcrypto3",

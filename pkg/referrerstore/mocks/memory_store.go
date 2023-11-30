@@ -81,7 +81,7 @@ func CreateNewTestStoreForNestedSbom() referrerstore.ReferrerStore {
 
 const (
 	TestSubjectWithDigest = "localhost:5000/net-monitor:v1@sha256:b556844e6e59451caf4429eb1de50aa7c50e4b1cc985f9f5893affe4b73f9935"
-	SbomArtifactType      = "org.example.sbom.v0"
+	SbomArtifactType      = "application/spdx+json"
 	SignatureArtifactType = "application/vnd.cncf.notary.signature"
 	dockerMediaType       = "application/vnd.docker.distribution.manifest.v2+json"
 	artifactMediaType     = "application/vnd.oci.artifact.manifest.v1+json"

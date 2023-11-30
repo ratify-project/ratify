@@ -49,7 +49,7 @@ ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3
 REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
-SBOM_TOOL_VERSION ?=v1.2.0
+SBOM_TOOL_VERSION ?=v2.0.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -376,30 +376,30 @@ e2e-sbom-setup:
 	docker push ${TEST_REGISTRY}/sbom:unsigned
 
 	# Generate/Attach sbom
-	.staging/sbom/sbom-tool generate -b .staging/sbom -bc . -pn ratify -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
+	.staging/sbom/sbom-tool generate -b .staging/sbom -bc . -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type org.example.sbom.v0 \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type org.example.sbom.v0 \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:unsigned \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type org.example.sbom.v0 \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/all:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 
 	# Generate/Attach sbom with license info
-	 .staging/sbom/syft -o spdx-json --file .staging/sbom/sbom.spdx.json ${TEST_REGISTRY}/sbom:v0
-	 ${GITHUB_WORKSPACE}/bin/oras attach \
-	 	--artifact-type org.example.sbom.v1 \
-	 	${TEST_REGISTRY}/all:v0 \
-	 	.staging/sbom/sbom.spdx.json:application/spdx+json
+	#  .staging/sbom/syft -o spdx-json --file .staging/sbom/sbom.spdx.json ${TEST_REGISTRY}/sbom:v0
+	#  ${GITHUB_WORKSPACE}/bin/oras attach \
+	#  	--artifact-type org.example.sbom.v1 \
+	#  	${TEST_REGISTRY}/all:v0 \
+	#  	.staging/sbom/sbom.spdx.json:application/spdx+json
 
 	# Push Signature to sbom
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator

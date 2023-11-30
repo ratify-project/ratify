@@ -55,7 +55,7 @@ const (
 )
 
 func main() {
-	skel.PluginMain("sbom", "1.1.0-alpha.1", VerifyReference, []string{"1.0.0", "1.1.0-alpha.1"})
+	skel.PluginMain("sbom", "2.0.0-alpha.1", VerifyReference, []string{"1.0.0", "2.0.0-alpha.1"})
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {
@@ -111,15 +111,6 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}, nil
 }
 
-func formatPackageLicense(packages []utils.PackageLicense) string {
-	var result = "["
-	for _, p := range packages {
-		result = result + fmt.Sprintf("{PackageName: '%v', PackageVersion: '%v', PackageLicense: '%v' },", p.PackageName, p.PackageVersion, p.PackageLicense)
-	}
-	result += "]"
-	return result
-}
-
 // getViolations returns the package and license violations based on the deny list
 func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) ([]utils.PackageLicense, []utils.PackageLicense, error) {
 	packageLicenses := utils.GetPackageLicenses(*spdxDoc)
@@ -160,7 +151,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 						PackageViolation: packageViolation,
 						CreationInfo:     spdxDoc.CreationInfo,
 					},
-					Message: fmt.Sprintf("SBOM validation failed. License violation: %v, Package violation: %v", formatPackageLicense(licenseViolation), formatPackageLicense(packageViolation)),
+					Message: fmt.Sprintf("SBOM validation failed."),
 				}, err
 			}
 		}

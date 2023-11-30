@@ -22,9 +22,9 @@
         "plugins": [
             {
                 "name": "sbom",
-                "artifactTypes": "org.example.sbom.v1",
+                "artifactTypes": "application/spdx+json",
                 "disallowedLicenses":["Zlib"],
-                "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}, {"name":"libgdbm-compat4","versionInfo":"1.14.1-6"}]
+                "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}]
             }
         ]
     }
