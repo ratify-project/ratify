@@ -1,0 +1,31 @@
+{
+    "store": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "useHttp": true
+            }
+        ]
+    },
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/vnd.ratify.spdx.v0": "all"
+            }
+        }
+    },
+    "verifier": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "sbom",
+                "artifactTypes": "org.example.sbom.v1",
+                "disallowedLicenses":["Zlib"],
+                "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}, {"name":"libgdbm-compat4","versionInfo":"1.14.1-6"}]
+            }
+        ]
+    }
+}
