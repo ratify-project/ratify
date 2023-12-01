@@ -46,10 +46,12 @@ SYFT_VERSION ?= v0.76.0
 YQ_VERSION ?= v4.34.1
 YQ_BINARY ?= yq_linux_amd64
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
+ALPINE_IMAGE_VULNERABLE ?= alpine@sha256:25fad2a32ad1f6f510e528448ae1ec69a28ef81916a004d3629874104f8a7f70
 REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
 SBOM_TOOL_VERSION ?=v1.2.0
+TRIVY_VERSION ?= 0.47.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.24.2
@@ -82,6 +84,7 @@ build-plugins:
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sample/... -o ./bin/plugins/ ./plugins/verifier/sample
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sbom/... -o ./bin/plugins/ ./plugins/verifier/sbom
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/schemavalidator/... -o ./bin/plugins/ ./plugins/verifier/schemavalidator
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/vulnerabilityreport/... -o ./bin/plugins/ ./plugins/verifier/vulnerabilityreport
 
 .PHONY: install
 install:
@@ -153,7 +156,7 @@ test-e2e: generate-rotation-certs
 	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs CERT_DIR=.staging/rotation GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup
 	rm ${GOCOVERDIR} -rf
 	mkdir ${GOCOVERDIR} -p
 	RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
@@ -396,7 +399,7 @@ e2e-schemavalidator-setup:
 	mkdir -p .staging/schemavalidator
 
 	# Install Trivy
-	curl -L https://github.com/aquasecurity/trivy/releases/download/v0.35.0/trivy_0.35.0_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
 	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
 
 	# Build/Push Images
@@ -414,6 +417,26 @@ e2e-schemavalidator-setup:
 		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
 		${TEST_REGISTRY}/all:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
+
+e2e-vulnerabilityreport-setup:
+	rm -rf .staging/vulnerabilityreport
+	mkdir -p .staging/vulnerabilityreport
+
+	# Install Trivy
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/vulnerabilityreport/trivy.tar.gz
+	tar -zxf .staging/vulnerabilityreport/trivy.tar.gz -C .staging/vulnerabilityreport
+
+	# Build/Push Image
+	printf 'FROM ${ALPINE_IMAGE_VULNERABLE}\nCMD ["echo", "vulnerabilityreport image"]' > .staging/vulnerabilityreport/Dockerfile
+	docker build --no-cache -t ${TEST_REGISTRY}/vulnerabilityreport:v0 .staging/vulnerabilityreport
+	docker push ${TEST_REGISTRY}/vulnerabilityreport:v0
+
+	# Create/Attach Scan Result
+	.staging/vulnerabilityreport/trivy image --format sarif --output .staging/vulnerabilityreport/trivy-sarif.json ${TEST_REGISTRY}/vulnerabilityreport:v0
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type application/sarif+json \
+		${TEST_REGISTRY}/vulnerabilityreport:v0 \
+		.staging/vulnerabilityreport/trivy-sarif.json:application/sarif+json
 
 e2e-inlinecert-setup:
 	rm -rf .staging/inlinecert
@@ -468,7 +491,7 @@ e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-inli
 
 	rm mount_config.json
 
-e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
+e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
 
 e2e-build-local-ratify-image:
 	docker build --progress=plain --no-cache \
@@ -476,6 +499,7 @@ e2e-build-local-ratify-image:
 	--build-arg build_sbom=true \
 	--build-arg build_licensechecker=true \
 	--build-arg build_schemavalidator=true \
+	--build-arg build_vulnerabilityreport=true \
 	-f ./httpserver/Dockerfile \
 	-t localbuild:test .
 	kind load docker-image --name kind localbuild:test

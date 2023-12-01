@@ -57,3 +57,6 @@ dependency:
     - name: github.com/rcrowley/go-metrics # TODO: remove this when library is removed or under compatible license
       version: v0.0.0-20201227073835-cf1acfcdf475
       license: BSD-2-Clause
+    - name: github.com/owenrumney/go-sarif/v2 # TODO: remove this when library is under a compatible license
+      version: v2.3.0
+      license: Apache-2.0
