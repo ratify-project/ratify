@@ -147,7 +147,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 				return nil, fmt.Errorf("failed to get SBOM violation %w", err)
 			}
 
-			var extensionData map[string]interface{} = make(map[string]interface{})
+			var extensionData = make(map[string]interface{})
 			extensionData[CreationInfo] = spdxDoc.CreationInfo
 			if licenseViolation != nil {
 				extensionData[LicenseViolation] = licenseViolation
