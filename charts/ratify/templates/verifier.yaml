@@ -59,6 +59,9 @@ apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
   name: verifier-vulnerabilityreport
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
 spec:
   name: vulnerabilityreport
   artifactTypes: application/sarif+json
