@@ -53,3 +53,41 @@ spec:
   parameters:
     key: /usr/local/ratify-certs/cosign/cosign.pub
 {{- end }}
+---
+{{- if .Values.vulnerabilityreport.enabled }}
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-vulnerabilityreport
+spec:
+  name: vulnerabilityreport
+  artifactTypes: application/sarif+json
+  parameters:
+    {{- if .Values.vulnerabilityreport.notaryProjectSignatureRequired }}
+    nestedReferences: application/vnd.cncf.notary.signature
+    {{- end }}
+    {{- if .Values.vulnerabilityreport.passthrough }}
+    passthrough: {{ .Values.vulnerabilityreport.passthrough }}
+    {{- end }}
+    {{- if .Values.vulnerabilityreport.maximumAge }}
+    maximumAge: {{ .Values.vulnerabilityreport.maximumAge }}
+    {{- end }}
+    {{- if .Values.vulnerabilityreport.schemaURL }}
+    schemaURL: {{ .Values.vulnerabilityreport.schemaURL }}
+    {{- end }}
+    {{- if .Values.vulnerabilityreport.createdAnnotationName }}
+    createdAnnotationName: {{ .Values.vulnerabilityreport.createdAnnotationName }}
+    {{- end }}
+    {{- if gt (len .Values.vulnerabilityreport.disallowedSeverities) 0 }}
+    disallowedSeverities:
+      {{- range .Values.vulnerabilityreport.disallowedSeverities }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if gt (len .Values.vulnerabilityreport.denylistCVEs) 0 }}
+    denylistCVEs:
+      {{- range .Values.vulnerabilityreport.denylistCVEs }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+{{- end }}

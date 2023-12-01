@@ -15,6 +15,15 @@ notationCerts: []
 cosign:
   enabled: true
   key: ""
+vulnerabilityreport:
+  enabled: true
+  passthrough: false
+  schemaURL: ""
+  createdAnnotationName: ""
+  maximumAge: ""
+  notaryProjectSignatureRequired: false
+  disallowedSeverities: []
+  denylistCVEs: []
 resources:
   limits:
     cpu: 1000m
