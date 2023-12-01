@@ -81,7 +81,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 			if err != nil {
 				return nil, re.ErrorCodeDownloadPluginFailure.NewError(re.Verifier, "", re.EmptyLink, err, "failed to download plugin", re.HideStackTrace)
 			}
-			logrus.Infof("downloaded verifier plugin type %s from %s to %s", verifierTypeStr, source.Artifact, targetPath)
+			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierTypeStr, source.Artifact, targetPath)
 		} else {
 			logrus.Warnf("%s was specified for verifier plugin type %s, but dynamic plugins are currently disabled", types.Source, verifierTypeStr)
 		}
