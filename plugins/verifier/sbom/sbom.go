@@ -215,7 +215,6 @@ func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowed
 		if ok {
 			violationPackage = append(violationPackage, packageInfo)
 		}
-
 	}
 	return violationLicense, violationPackage
 }
