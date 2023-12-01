@@ -25,12 +25,14 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-type memoryTestStore struct {
+type MemoryTestStore struct {
 	Subjects  map[digest.Digest]*ocispecs.SubjectDescriptor
 	Referrers map[digest.Digest][]ocispecs.ReferenceDescriptor
+	Manifests map[digest.Digest]ocispecs.ReferenceManifest
+	Blobs     map[digest.Digest][]byte
 }
 
-func (store *memoryTestStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
+func (store *MemoryTestStore) ListReferrers(_ context.Context, _ common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	// assume subjectDesc is given and good
 
 	if item, ok := store.Referrers[subjectDesc.Digest]; ok {
@@ -43,23 +45,29 @@ func (store *memoryTestStore) ListReferrers(_ context.Context, _ common.Referenc
 	return referrerstore.ListReferrersResult{}, nil
 }
 
-func (store *memoryTestStore) Name() string {
+func (store *MemoryTestStore) Name() string {
 	return "memoryTestStore"
 }
 
-func (store *memoryTestStore) GetBlobContent(_ context.Context, _ common.Reference, _ digest.Digest) ([]byte, error) {
+func (store *MemoryTestStore) GetBlobContent(_ context.Context, _ common.Reference, digest digest.Digest) ([]byte, error) {
+	if item, ok := store.Blobs[digest]; ok {
+		return item, nil
+	}
 	return nil, nil
 }
 
-func (store *memoryTestStore) GetReferenceManifest(_ context.Context, _ common.Reference, _ ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+func (store *MemoryTestStore) GetReferenceManifest(_ context.Context, _ common.Reference, desc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
+	if item, ok := store.Manifests[desc.Digest]; ok {
+		return item, nil
+	}
 	return ocispecs.ReferenceManifest{}, nil
 }
 
-func (store *memoryTestStore) GetConfig() *config.StoreConfig {
+func (store *MemoryTestStore) GetConfig() *config.StoreConfig {
 	return &config.StoreConfig{}
 }
 
-func (store *memoryTestStore) GetSubjectDescriptor(_ context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
+func (store *MemoryTestStore) GetSubjectDescriptor(_ context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	if item, ok := store.Subjects[subjectReference.Digest]; ok {
 		return item, nil
 	}
@@ -67,8 +75,8 @@ func (store *memoryTestStore) GetSubjectDescriptor(_ context.Context, subjectRef
 	return nil, fmt.Errorf("subject not found for %s", subjectReference.Digest)
 }
 
-func createEmptyMemoryTestStore() *memoryTestStore {
-	return &memoryTestStore{Subjects: make(map[digest.Digest]*ocispecs.SubjectDescriptor), Referrers: make(map[digest.Digest][]ocispecs.ReferenceDescriptor)}
+func createEmptyMemoryTestStore() *MemoryTestStore {
+	return &MemoryTestStore{Subjects: make(map[digest.Digest]*ocispecs.SubjectDescriptor), Referrers: make(map[digest.Digest][]ocispecs.ReferenceDescriptor)}
 }
 
 func CreateNewTestStoreForNestedSbom() referrerstore.ReferrerStore {
@@ -87,7 +95,7 @@ const (
 	artifactMediaType     = "application/vnd.oci.artifact.manifest.v1+json"
 )
 
-func addSignedImageWithSignedSbomToStore(store *memoryTestStore) {
+func addSignedImageWithSignedSbomToStore(store *MemoryTestStore) {
 	imageDigest := digest.NewDigestFromEncoded("sha256", "b556844e6e59451caf4429eb1de50aa7c50e4b1cc985f9f5893affe4b73f9935")
 	sbomDigest := digest.NewDigestFromEncoded("sha256", "9393779549fca5758811d7cf0444ddb1b254cb24b44fe1cf80fac6fd3199817f")
 	sbomSignatureDigest := digest.NewDigestFromEncoded("sha256", "ace31a6d260ee372caaed757b3411b634b2cecc379c31fda979dba4470699227")
