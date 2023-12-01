@@ -379,6 +379,10 @@ e2e-sbom-setup:
 	.staging/sbom/sbom-tool generate -b .staging/sbom -bc . -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
+		 ${TEST_REGISTRY}/sbom:v0 \
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+	${GITHUB_WORKSPACE}/bin/oras attach \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:unsigned \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 	${GITHUB_WORKSPACE}/bin/oras attach \
