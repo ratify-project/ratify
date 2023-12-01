@@ -53,6 +53,15 @@ func TestGetViolations(t *testing.T) {
 		Version: "3.0.7-r2",
 	}
 
+	disallowedPackageNoName := utils.PackageInfo{
+		Name:    "",
+		Version: "3.0.7-r2",
+	}
+
+	disallowedPackageNoVersion := utils.PackageInfo{
+		Name: "libcrypto3",
+	}
+
 	packageViolation := utils.PackageLicense{
 		PackageName:    "libcrypto3",
 		PackageVersion: "3.0.7-r2",
@@ -90,11 +99,24 @@ func TestGetViolations(t *testing.T) {
 		enabled                   bool
 	}{
 		{
+			description:               "disallowed packages with no version",
+			disallowedPackages:        []utils.PackageInfo{disallowedPackageNoVersion},
+			expectedLicenseViolations: []utils.PackageLicense{},
+			expectedPackageViolations: []utils.PackageLicense{packageViolation},
+		},
+		{
 			description:               "package and license violation found",
 			disallowedLicenses:        []string{"BSD-3-Clause", "Zlib"},
 			disallowedPackages:        []utils.PackageInfo{disallowedPackage},
 			expectedLicenseViolations: []utils.PackageLicense{licenseViolation, violation2},
 			expectedPackageViolations: []utils.PackageLicense{packageViolation},
+		},
+		{
+			description:               "invalid disallow package",
+			disallowedLicenses:        []string{"BSD-3-Clause", "Zlib"},
+			disallowedPackages:        []utils.PackageInfo{disallowedPackageNoName},
+			expectedLicenseViolations: []utils.PackageLicense{},
+			expectedPackageViolations: []utils.PackageLicense{},
 		},
 		{
 			description:               "license violation found",
@@ -134,12 +156,16 @@ func TestGetViolations(t *testing.T) {
 				t.Fatalf("unexpected error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
 			}
 
-			if !report.IsSuccess {
-				violations := report.Extensions.(map[string]interface{})
-				packageViolation := violations[PackageViolation].([]utils.PackageLicense)
-				licensesViolation := violations[LicenseViolation].([]utils.PackageLicense)
-
+			extensionData := report.Extensions.(map[string]interface{})
+			if len(tc.expectedPackageViolations) != 0 {
+				packageViolation := extensionData[PackageViolation].([]utils.PackageLicense)
 				AssertEquals(tc.expectedPackageViolations, packageViolation, tc.description, t)
+			}
+
+			if len(tc.expectedLicenseViolations) != 0 {
+				extensionData := report.Extensions.(map[string]interface{})
+
+				licensesViolation := extensionData[LicenseViolation].([]utils.PackageLicense)
 				AssertEquals(tc.expectedLicenseViolations, licensesViolation, tc.description, t)
 			}
 		})

@@ -114,7 +114,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) ([]utils.PackageLicense, []utils.PackageLicense, error) {
 	packageLicenses := utils.GetPackageLicenses(*spdxDoc)
 	// load disallowed packageInfo into a map for easier existence check
-	packageMap, packageNameMap := loadPackagesMap(disallowedPackages)
+	packageMap, packageNameMap := loadDisallowedPackagesMap(disallowedPackages)
 
 	// detect violation
 	licenseViolation, packageViolation := filterDisallowedPackages(packageLicenses, disallowedLicenses, packageMap, packageNameMap)
@@ -122,13 +122,16 @@ func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallow
 }
 
 // load disallowed packageInfo, and disallowed packageName into a map for easier existence check
-func loadPackagesMap(packages []utils.PackageInfo) (map[utils.PackageInfo]struct{}, map[string]struct{}) {
+func loadDisallowedPackagesMap(packages []utils.PackageInfo) (map[utils.PackageInfo]struct{}, map[string]struct{}) {
 	packagesInfo := map[utils.PackageInfo]struct{}{}
 	packagesName := map[string]struct{}{}
 
 	for _, item := range packages {
+		// if the deny list item has no specific version, add to separate map
+		if len(item.Version) == 0 {
+			packagesName[item.Name] = struct{}{}
+		}
 		packagesInfo[item] = struct{}{}
-		packagesName[item.Name] = struct{}{}
 	}
 	return packagesInfo, packagesName
 }
@@ -144,16 +147,22 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 				return nil, fmt.Errorf("failed to get SBOM violation %w", err)
 			}
 
+			var extensionData map[string]interface{} = make(map[string]interface{})
+			extensionData[CreationInfo] = spdxDoc.CreationInfo
+			if licenseViolation != nil {
+				extensionData[LicenseViolation] = licenseViolation
+			}
+
+			if packageViolation != nil {
+				extensionData[PackageViolation] = packageViolation
+			}
+
 			if licenseViolation != nil || packageViolation != nil {
 				return &verifier.VerifierResult{
-					Name:      name,
-					IsSuccess: false,
-					Extensions: map[string]interface{}{
-						LicenseViolation: licenseViolation,
-						PackageViolation: packageViolation,
-						CreationInfo:     spdxDoc.CreationInfo,
-					},
-					Message: fmt.Sprintf("SBOM validation failed."),
+					Name:       name,
+					IsSuccess:  false,
+					Extensions: extensionData,
+					Message:    "SBOM validation failed.",
 				}, err
 			}
 		}
@@ -189,22 +198,24 @@ func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowed
 			}
 		}
 
-		// if there is no version, check against package name
-		if len(packageInfo.PackageVersion) == 0 {
-			_, ok := disallowedPackageName[packageInfo.PackageName]
-			if ok {
-				violationPackage = append(violationPackage, packageInfo)
-			}
-		} else {
-			current := utils.PackageInfo{
-				Name:    packageInfo.PackageName,
-				Version: packageInfo.PackageVersion,
-			}
-			_, ok := disallowedPackage[current]
-			if ok {
-				violationPackage = append(violationPackage, packageInfo)
-			}
+		current := utils.PackageInfo{
+			Name:    packageInfo.PackageName,
+			Version: packageInfo.PackageVersion,
 		}
+
+		// check if this package is in the deny list by package name
+
+		_, ok := disallowedPackageName[current.Name]
+		if ok {
+			violationPackage = append(violationPackage, packageInfo)
+		}
+
+		//  check if this package is in the deny list by matching name and version
+		_, ok = disallowedPackage[current]
+		if ok {
+			violationPackage = append(violationPackage, packageInfo)
+		}
+
 	}
 	return violationLicense, violationPackage
 }
