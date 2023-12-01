@@ -145,7 +145,7 @@ export REGISTRY=yourregistry
 docker buildx create --use
 
 docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true -t ${REGISTRY}/deislabs/ratify:yourtag .
-docker build --progress=plain --build-arg KUBE_VERSION="1.25.0" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
+docker build --progress=plain --build-arg KUBE_VERSION="1.27.7" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
 #### [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
@@ -184,7 +184,7 @@ image:
 ```
 
 Deploy using one of the following deployments.
-Note: Ratify is compatible with Gatkeeper >= 3.11.0. Server auth is required to be enabled.
+Note: Ratify is compatible with Gatekeeper >= 3.12.0. Server auth is required to be enabled.
 
 **Option 1**
 Client auth disabled and server auth enabled using self signed certificate

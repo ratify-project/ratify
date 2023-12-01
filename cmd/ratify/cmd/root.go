@@ -30,12 +30,18 @@ const (
 var Root = New(use, shortDesc)
 
 func New(use, short string) *cobra.Command {
-	common.SetLoggingLevelFromEnv(logrus.StandardLogger())
 	featureflag.InitFeatureFlagsFromEnv()
-
+	var enableDebug bool
 	root := &cobra.Command{
 		Use:   use,
 		Short: short,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if enableDebug {
+				common.SetLoggingLevel("debug", logrus.StandardLogger())
+			} else {
+				common.SetLoggingLevelFromEnv(logrus.StandardLogger())
+			}
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Usage()
 		},
@@ -50,6 +56,6 @@ func New(use, short string) *cobra.Command {
 	root.AddCommand(NewCmdVersion(use, versionUse))
 	root.AddCommand(NewCmdResolve(use, resolveUse))
 
-	// TODO debug logging
+	root.PersistentFlags().BoolVarP(&enableDebug, "debug", "d", false, "Enable debug mode. If enabled, set logger level to debug")
 	return root
 }
