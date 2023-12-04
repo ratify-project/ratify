@@ -181,6 +181,32 @@ SLEEP_TIME=1
     assert_failure
 }
 
+@test "vulnerabilityreport verifier test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-vulnerabilityreport --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod vulnerabilityreport --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod vulnerabilityreport2 --namespace default --force --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_vulnerabilityreport2.yaml
+    sleep 5
+    run kubectl run vulnerabilityreport --namespace default --image=registry:5000/vulnerabilityreport:v0
+    assert_success
+    sleep 15
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_vulnerabilityreport.yaml
+    sleep 5
+    run kubectl run vulnerabilityreport2 --namespace default --image=registry:5000/vulnerabilityreport:v0
+    assert_failure
+}
+
 @test "sbom/notary/cosign/licensechecker/schemavalidator verifiers test" {
     teardown() {
         echo "cleaning up"
