@@ -377,14 +377,14 @@ e2e-sbom-setup:
 	
 	# Generate/Attach sbom
 	# -b (BuildDropPath) - The folder to save the generated SPDX SBOM manifests to
-    # -nsb (NamespaceUriBase) - The base path that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
-    # -pn (PackageName) - The name of the package that will be used in the SBOM manifest
-    # -pv (PackageVersion) - The version of the package that will be used in the SBOM manifest
-    # -ps (PackageSupplier) - The supplier of the package that will be used in the SBOM manifest
-    # -nsu (NamespaceUri) - The namespace that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
-    # -di (DockerImage) - The docker image that will be used to generate the SBOM manifest
-    # -m (ManifestPath) - The path to the SBOM manifest that will be generated
-    # -D (Debug) - Enable debug logging 
+	# -nsb (NamespaceUriBase) - The base path that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
+	# -pn (PackageName) - The name of the package that will be used in the SBOM manifest
+	# -pv (PackageVersion) - The version of the package that will be used in the SBOM manifest
+	# -ps (PackageSupplier) - The supplier of the package that will be used in the SBOM manifest
+	# -nsu (NamespaceUri) - The namespace that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
+	# -di (DockerImage) - The docker image that will be used to generate the SBOM manifest
+	# -m (ManifestPath) - The path to the SBOM manifest that will be generated
+	# -D (Debug) - Enable debug logging 
 	.staging/sbom/sbom-tool generate -b .staging/sbom -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \

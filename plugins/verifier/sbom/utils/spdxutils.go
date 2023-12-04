@@ -24,9 +24,9 @@ func GetPackageLicenses(doc spdx.Document) []PackageLicense {
 	output := []PackageLicense{}
 	for _, p := range doc.Packages {
 		output = append(output, PackageLicense{
-			PackageName:    p.PackageName,
-			PackageVersion: p.PackageVersion,
-			PackageLicense: p.PackageLicenseConcluded,
+			Name:    p.PackageName,
+			Version: p.PackageVersion,
+			License: p.PackageLicenseConcluded,
 		})
 	}
 	return output

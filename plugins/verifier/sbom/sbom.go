@@ -49,9 +49,9 @@ type PluginInputConfig struct {
 
 const (
 	SpdxJSONMediaType string = "application/spdx+json"
-	CreationInfo      string = "CreationInfo"
-	LicenseViolation  string = "LicenseViolation"
-	PackageViolation  string = "PackageViolation"
+	CreationInfo      string = "creationInfo"
+	LicenseViolation  string = "licenseViolation"
+	PackageViolation  string = "packageViolation"
 )
 
 func main() {
@@ -111,14 +111,14 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 }
 
 // getViolations returns the package and license violations based on the deny list
-func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) ([]utils.PackageLicense, []utils.PackageLicense, error) {
+func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) ([]utils.PackageLicense, []utils.PackageLicense) {
 	packageLicenses := utils.GetPackageLicenses(*spdxDoc)
 	// load disallowed packageInfo into a map for easier existence check
 	packageMap, packageNameMap := loadDisallowedPackagesMap(disallowedPackages)
 
 	// detect violation
 	licenseViolation, packageViolation := filterDisallowedPackages(packageLicenses, disallowedLicenses, packageMap, packageNameMap)
-	return packageViolation, licenseViolation, nil
+	return packageViolation, licenseViolation
 }
 
 // load disallowed packageInfo, and disallowed packageName into a map for easier existence check
@@ -140,24 +140,21 @@ func loadDisallowedPackagesMap(packages []utils.PackageInfo) (map[utils.PackageI
 func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) (*verifier.VerifierResult, error) {
 	var err error
 	var spdxDoc *v2_3.Document
-	if spdxDoc, err = jsonLoader.Read(bytes.NewReader(refBlob)); spdxDoc != nil {
+	if spdxDoc, err = jsonLoader.Read(bytes.NewReader(refBlob)); spdxDoc != nil && err == nil {
 		if len(disallowedLicenses) != 0 || len(disallowedPackages) != 0 {
-			packageViolation, licenseViolation, err := getViolations(spdxDoc, disallowedLicenses, disallowedPackages)
-			if err != nil {
-				return nil, fmt.Errorf("failed to get SBOM violation %w", err)
-			}
+			packageViolation, licenseViolation := getViolations(spdxDoc, disallowedLicenses, disallowedPackages)
 
 			var extensionData = make(map[string]interface{})
 			extensionData[CreationInfo] = spdxDoc.CreationInfo
-			if licenseViolation != nil {
+			if len(licenseViolation) != 0 {
 				extensionData[LicenseViolation] = licenseViolation
 			}
 
-			if packageViolation != nil {
+			if len(packageViolation) != 0 {
 				extensionData[PackageViolation] = packageViolation
 			}
 
-			if licenseViolation != nil || packageViolation != nil {
+			if len(licenseViolation) != 0 || len(packageViolation) != 0 {
 				return &verifier.VerifierResult{
 					Name:       name,
 					IsSuccess:  false,
@@ -192,27 +189,24 @@ func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowed
 	for _, packageInfo := range packageLicenses {
 		// if license contains disallowed, add to violation
 		for _, disallowed := range disallowedLicense {
-			license := packageInfo.PackageLicense
+			license := packageInfo.License
 			if license != "" && strings.Contains(strings.ToLower(license), strings.ToLower(disallowed)) {
 				violationLicense = append(violationLicense, packageInfo)
 			}
 		}
 
 		current := utils.PackageInfo{
-			Name:    packageInfo.PackageName,
-			Version: packageInfo.PackageVersion,
+			Name:    packageInfo.Name,
+			Version: packageInfo.Version,
 		}
 
 		// check if this package is in the deny list by package name
-
-		_, ok := disallowedPackageName[current.Name]
-		if ok {
+		if _, ok := disallowedPackageName[current.Name]; ok {
 			violationPackage = append(violationPackage, packageInfo)
 		}
 
 		//  check if this package is in the deny list by matching name and version
-		_, ok = disallowedPackage[current]
-		if ok {
+		if _, ok := disallowedPackage[current]; ok {
 			violationPackage = append(violationPackage, packageInfo)
 		}
 	}

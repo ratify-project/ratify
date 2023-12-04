@@ -63,21 +63,21 @@ func TestGetViolations(t *testing.T) {
 	}
 
 	packageViolation := utils.PackageLicense{
-		PackageName:    "libcrypto3",
-		PackageVersion: "3.0.7-r2",
-		PackageLicense: "Apache-2.0",
+		Name:    "libcrypto3",
+		Version: "3.0.7-r2",
+		License: "Apache-2.0",
 	}
 
 	licenseViolation := utils.PackageLicense{
-		PackageName:    "libc-utils",
-		PackageVersion: "0.7.2-r3",
-		PackageLicense: "BSD-2-Clause AND LicenseRef-AND AND BSD-3-Clause",
+		Name:    "libc-utils",
+		Version: "0.7.2-r3",
+		License: "BSD-2-Clause AND LicenseRef-AND AND BSD-3-Clause",
 	}
 
 	violation2 := utils.PackageLicense{
-		PackageName:    "zlib",
-		PackageLicense: "Zlib",
-		PackageVersion: "1.2.13-r0",
+		Name:    "zlib",
+		License: "Zlib",
+		Version: "1.2.13-r0",
 	}
 
 	disallowedPackage2 := utils.PackageInfo{
@@ -156,15 +156,14 @@ func TestGetViolations(t *testing.T) {
 				t.Fatalf("unexpected error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
 			}
 
-			extensionData := report.Extensions.(map[string]interface{})
 			if len(tc.expectedPackageViolations) != 0 {
+				extensionData := report.Extensions.(map[string]interface{})
 				packageViolation := extensionData[PackageViolation].([]utils.PackageLicense)
 				AssertEquals(tc.expectedPackageViolations, packageViolation, tc.description, t)
 			}
 
 			if len(tc.expectedLicenseViolations) != 0 {
 				extensionData := report.Extensions.(map[string]interface{})
-
 				licensesViolation := extensionData[LicenseViolation].([]utils.PackageLicense)
 				AssertEquals(tc.expectedLicenseViolations, licensesViolation, tc.description, t)
 			}
@@ -178,14 +177,14 @@ func AssertEquals(expected []utils.PackageLicense, actual []utils.PackageLicense
 	}
 
 	for i, packageInfo := range expected {
-		if packageInfo.PackageName != actual[i].PackageName {
-			t.Fatalf("Test %s failed. Expected PackageName: %s, got: %s", description, packageInfo.PackageName, actual[i].PackageName)
+		if packageInfo.Name != actual[i].Name {
+			t.Fatalf("Test %s failed. Expected PackageName: %s, got: %s", description, packageInfo.Name, actual[i].Name)
 		}
-		if packageInfo.PackageVersion != actual[i].PackageVersion {
-			t.Fatalf("Test %s Failed. expected PackageVersion: %s, got: %s", description, packageInfo.PackageVersion, actual[i].PackageVersion)
+		if packageInfo.Version != actual[i].Version {
+			t.Fatalf("Test %s Failed. expected PackageVersion: %s, got: %s", description, packageInfo.Version, actual[i].Version)
 		}
-		if packageInfo.PackageLicense != actual[i].PackageLicense {
-			t.Fatalf("Test %s Failed. expected PackageLicense: %s, got: %s", description, packageInfo.PackageLicense, actual[i].PackageLicense)
+		if packageInfo.License != actual[i].License {
+			t.Fatalf("Test %s Failed. expected PackageLicense: %s, got: %s", description, packageInfo.License, actual[i].License)
 		}
 	}
 }
