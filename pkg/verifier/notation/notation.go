@@ -46,8 +46,8 @@ import (
 )
 
 const (
-	verifierType = "notation"
-	defaultCertPath  = "ratify-certs/notation/truststore"
+	verifierType    = "notation"
+	defaultCertPath = "ratify-certs/notation/truststore"
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -65,7 +65,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 type notationPluginVerifier struct {
 	name             string
-	verifierType         string
+	verifierType     string
 	artifactTypes    []string
 	notationVerifier *notation.Verifier
 }
