@@ -31,11 +31,11 @@ type TestVerifier struct {
 }
 
 func (s *TestVerifier) Name() string {
-	return "test-verifier"
+	return "verifier-testVerifier"
 }
 
-func (s *TestVerifier) TypeName() string {
-	return "test-verifier"
+func (s *TestVerifier) Type() string {
+	return "testVerifier"
 }
 
 func (s *TestVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {

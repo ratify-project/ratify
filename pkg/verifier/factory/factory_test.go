@@ -38,7 +38,7 @@ func (s *TestVerifier) Name() string {
 	return "test-verifier-0"
 }
 
-func (s *TestVerifier) TypeName() string {
+func (s *TestVerifier) Type() string {
 	return "test-verifier"
 }
 

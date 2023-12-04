@@ -46,7 +46,7 @@ import (
 )
 
 const (
-	verifierTypeName = "notation"
+	verifierType = "notation"
 	defaultCertPath  = "ratify-certs/notation/truststore"
 )
 
@@ -65,7 +65,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 type notationPluginVerifier struct {
 	name             string
-	typeName         string
+	verifierType         string
 	artifactTypes    []string
 	notationVerifier *notation.Verifier
 }
@@ -73,7 +73,7 @@ type notationPluginVerifier struct {
 type notationPluginVerifierFactory struct{}
 
 func init() {
-	factory.Register(verifierTypeName, &notationPluginVerifierFactory{})
+	factory.Register(verifierType, &notationPluginVerifierFactory{})
 }
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
@@ -96,7 +96,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
 	return &notationPluginVerifier{
 		name:             verifierName,
-		typeName:         verifierTypeStr,
+		verifierType:         verifierTypeStr,
 		artifactTypes:    artifactTypes,
 		notationVerifier: &verifyService,
 	}, nil
@@ -106,8 +106,8 @@ func (v *notationPluginVerifier) Name() string {
 	return v.name
 }
 
-func (v *notationPluginVerifier) TypeName() string {
-	return v.typeName
+func (v *notationPluginVerifier) Type() string {
+	return v.verifierType
 }
 
 func (v *notationPluginVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
@@ -161,7 +161,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	return verifier.VerifierResult{
 		Name:       v.name,
-		Type:       v.typeName,
+		Type:       v.verifierType,
 		IsSuccess:  true,
 		Message:    "signature verification success",
 		Extensions: extensions,

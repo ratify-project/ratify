@@ -41,8 +41,8 @@ type ReferenceVerifier interface {
 	// Name returns the name of the verifier
 	Name() string
 
-	// TypeName returns the type name of the verifier
-	TypeName() string
+	// Type returns the type name of the verifier
+	Type() string
 
 	// CanVerify returns if the verifier can verify the given reference
 	CanVerify(ctx context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool

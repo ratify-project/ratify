@@ -36,7 +36,7 @@ import (
 // VerifierPlugin describes a verifier that is implemented by invoking the plugins
 type VerifierPlugin struct {
 	name             string
-	typeName         string
+	verifierType         string
 	artifactTypes    []string
 	nestedReferences []string
 	version          string
@@ -51,9 +51,9 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 	if !ok {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key: %s", types.Name))
 	}
-	verifierTypeName := ""
+	verifierType := ""
 	if _, ok := verifierConfig[types.Type]; ok {
-		verifierTypeName = fmt.Sprintf("%s", verifierConfig[types.Type])
+		verifierType = fmt.Sprintf("%s", verifierConfig[types.Type])
 	}
 
 	var nestedReferences []string
@@ -72,7 +72,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 
 	return &VerifierPlugin{
 		name:             fmt.Sprintf("%s", verifierName),
-		typeName:         verifierTypeName,
+		verifierType:         verifierType,
 		version:          version,
 		path:             pluginPaths,
 		rawConfig:        verifierConfig,
@@ -95,8 +95,8 @@ func (vp *VerifierPlugin) Name() string {
 	return vp.name
 }
 
-func (vp *VerifierPlugin) TypeName() string {
-	return vp.typeName
+func (vp *VerifierPlugin) Type() string {
+	return vp.verifierType
 }
 
 func (vp *VerifierPlugin) Verify(ctx context.Context,
@@ -118,8 +118,8 @@ func (vp *VerifierPlugin) verifyReference(
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
 	verifierTypeStr := vp.name
-	if vp.typeName != "" {
-		verifierTypeStr = vp.typeName
+	if vp.verifierType != "" {
+		verifierTypeStr = vp.verifierType
 	}
 	pluginPath, err := vp.executor.FindInPaths(verifierTypeStr, vp.path)
 	if err != nil {

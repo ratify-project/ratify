@@ -52,7 +52,7 @@ func Register(name string, factory VerifierFactory) {
 // returns a single verifier from a verifierConfig
 // namespace is only applicable in K8s environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string, namespace string) (verifier.ReferenceVerifier, error) {
-	// in cli mode verifier type name can only read from Name property
+	// in cli mode both `type` and `name`` are read from config, if `type` is not specified, `name` is used as `type`
 	var verifierTypeStr string
 	if value, ok := verifierConfig[types.Name]; ok {
 		verifierTypeStr = value.(string)

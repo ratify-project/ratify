@@ -131,10 +131,10 @@ type mockVerifier struct {
 }
 
 func (v *mockVerifier) Name() string {
-	return "mockVerifier"
+	return "verifier-mockVerifier"
 }
 
-func (v *mockVerifier) TypeName() string {
+func (v *mockVerifier) Type() string {
 	return "mockVerifier"
 }
 

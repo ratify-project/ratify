@@ -97,7 +97,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
-	verifierConfig, err := verifierCreateConfig(spec, objectName)
+	verifierConfig, err := specToVerifierConfig(spec, objectName)
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
 		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
@@ -122,23 +122,13 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 	return nil
 }
 
-// create verifier config
-func verifierCreateConfig(verifierSpec configv1beta1.VerifierSpec, verifierName string) (vc.VerifierConfig, error) {
-	verifierConfig, err := specToVerifierConfig(verifierSpec)
-	if err != nil {
-		return nil, err
-	}
-	verifierConfig[types.Name] = verifierName
-	return verifierConfig, nil
-}
-
 // remove verifier from map
 func verifierRemove(objectName string) {
 	delete(VerifierMap, objectName)
 }
 
 // returns a verifier reference from spec
-func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec) (vc.VerifierConfig, error) {
+func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec, verifierName string) (vc.VerifierConfig, error) {
 	verifierConfig := vc.VerifierConfig{}
 
 	if string(verifierSpec.Parameters.Raw) != "" {
@@ -147,7 +137,7 @@ func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec) (vc.VerifierC
 			return vc.VerifierConfig{}, err
 		}
 	}
-
+	verifierConfig[types.Name] = verifierName
 	verifierConfig[types.Type] = verifierSpec.Name
 	verifierConfig[types.ArtifactTypes] = verifierSpec.ArtifactTypes
 	if verifierSpec.Source != nil {
