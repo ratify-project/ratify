@@ -36,7 +36,7 @@ import (
 // VerifierPlugin describes a verifier that is implemented by invoking the plugins
 type VerifierPlugin struct {
 	name             string
-	verifierType         string
+	verifierType     string
 	artifactTypes    []string
 	nestedReferences []string
 	version          string
@@ -72,7 +72,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 
 	return &VerifierPlugin{
 		name:             fmt.Sprintf("%s", verifierName),
-		verifierType:         verifierType,
+		verifierType:     verifierType,
 		version:          version,
 		path:             pluginPaths,
 		rawConfig:        verifierConfig,

@@ -96,7 +96,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
 	return &notationPluginVerifier{
 		name:             verifierName,
-		verifierType:         verifierTypeStr,
+		verifierType:     verifierTypeStr,
 		artifactTypes:    artifactTypes,
 		notationVerifier: &verifyService,
 	}, nil
