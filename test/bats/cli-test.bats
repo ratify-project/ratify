@@ -31,6 +31,16 @@ load helpers
     assert_cmd_verify_failure
 }
 
+@test "notation verifier with type test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_verifier_with_type.json -s $TEST_REGISTRY/notation:signed
+    assert_cmd_verify_success_with_type
+}
+
+@test "multiple notation verifiers test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_multiple_notation_verifier.json -s $TEST_REGISTRY/notation:leafSigned
+    assert_cmd_verify_success
+}
+
 @test "notation verifier leaf cert with rego policy" {
     run bin/ratify verify -c $RATIFY_DIR/config_rego_policy_notation_root_cert.json -s $TEST_REGISTRY/notation:leafSigned
     assert_cmd_verify_success

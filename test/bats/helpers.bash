@@ -41,6 +41,20 @@ assert_cmd_verify_success() {
   fi
 }
 
+assert_cmd_verify_success_with_type() {
+  if [[ "$status" != 0 ]]; then
+    return 1
+  fi
+  if [[ "$output" == *'"isSuccess": false,'* ]]; then
+    echo $output
+    return 1
+  fi
+  if [[ "$output" != *'"type": notation,'* ]]; then
+    echo $output
+    return 1
+  fi
+}
+
 assert_cmd_cosign_keyless_verify_bundle_success() {
   if [[ "$status" != 0 ]]; then
     return 1
