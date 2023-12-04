@@ -88,7 +88,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
-	verfiyService, err := getVerifierService(conf, pluginDirectory)
+	verifyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithPluginName(verifierName).WithError(err)
 	}
@@ -98,7 +98,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 		name:             verifierName,
 		typeName:         verifierTypeStr,
 		artifactTypes:    artifactTypes,
-		notationVerifier: &verfiyService,
+		notationVerifier: &verifyService,
 	}, nil
 }
 
