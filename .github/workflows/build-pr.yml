@@ -157,7 +157,7 @@ jobs:
           go-version: '1.20'
 
       - name: Az CLI login
-        uses: azure/login@4c88f01b0e3a5600e08a37889921afd060f75cf0 # v1.5.0
+        uses: azure/login@de95379fe4dadc2defb305917eaa7e5dde727294 # v1.5.1
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
@@ -213,7 +213,7 @@ jobs:
           go-version: '1.20'
 
       - name: Az CLI login
-        uses: azure/login@4c88f01b0e3a5600e08a37889921afd060f75cf0 # v1.5.0
+        uses: azure/login@de95379fe4dadc2defb305917eaa7e5dde727294 # v1.5.1
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
