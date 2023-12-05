@@ -50,8 +50,8 @@ type PluginInputConfig struct {
 const (
 	SpdxJSONMediaType string = "application/spdx+json"
 	CreationInfo      string = "creationInfo"
-	LicenseViolation  string = "licenseViolation"
-	PackageViolation  string = "packageViolation"
+	LicenseViolation  string = "licenseViolations"
+	PackageViolation  string = "packageViolations"
 )
 
 func main() {
@@ -118,8 +118,8 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
-		IsSuccess: false,
-		Message:   fmt.Sprintf("SBOM validation failed"),
+		IsSuccess: true,
+		Message:   "SBOM verification success. The schema is good.",
 	}, nil
 }
 
@@ -184,7 +184,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 				CreationInfo: spdxDoc.CreationInfo,
 			},
 			Message: "SBOM verification success. The schema is good.",
-		}, err
+		}, nil
 	}
 	return &verifier.VerifierResult{
 		Name:      name,
