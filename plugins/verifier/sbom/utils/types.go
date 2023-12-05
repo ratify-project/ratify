@@ -26,7 +26,7 @@ package utils
 // This will translate to a PackageLicense obj with the following fields:
 // Name: alpine-baselayout
 // Version: 3.4.0-r0
-// License: GPL-2.0-only
+// License: GPL-2.0-only (maps to licenseConcluded)
 type PackageLicense struct {
 	Name    string
 	Version string
