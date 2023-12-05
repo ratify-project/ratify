@@ -15,13 +15,37 @@ limitations under the License.
 
 package utils
 
+// Internal types that stores extracted SBOM information
+// "name": "alpine-baselayout",
+// "SPDXID": "SPDXRef-Package-apk-alpine-baselayout-92b19c7750fb559d",
+// "versionInfo": "3.4.0-r0",
+// "originator": "Person: Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+// "downloadLocation": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+// "sourceInfo": "acquired package info from APK DB: /lib/apk/db/installed",
+// "licenseConcluded": "GPL-2.0-only",
+// This will translate to a PackageLicense obj with the following fields:
+// Name: alpine-baselayout
+// Version: 3.4.0-r0
+// License: GPL-2.0-only
 type PackageLicense struct {
 	Name    string
 	Version string
 	License string
 }
 
+// Internal types that stores extracted Name and Version of package
+// "name": "alpine-baselayout",
+// "SPDXID": "SPDXRef-Package-apk-alpine-baselayout-92b19c7750fb559d",
+// "versionInfo": "3.4.0-r0",
+// "originator": "Person: Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+// "downloadLocation": "https://git.alpinelinux.org/cgit/aports/tree/main/alpine-baselayout",
+// "sourceInfo": "acquired package info from APK DB: /lib/apk/db/installed",
+// "licenseConcluded": "GPL-2.0-only",
+// This will translate to a PackageInfo obj with the following fields:
+// Name: alpine-baselayout
+// Version: 3.4.0-r0
+
 type PackageInfo struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"versionInfo,omitempty"`
+	Name    string
+	Version string
 }

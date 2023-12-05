@@ -84,6 +84,14 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}, err
 	}
 
+	if len(referenceManifest.Blobs) == 0 {
+		return &verifier.VerifierResult{
+			Name:      input.Name,
+			IsSuccess: false,
+			Message:   fmt.Sprintf("SBOMfailed: no layers found in manifest for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
+		}, nil
+	}
+
 	artifactType := referenceDescriptor.ArtifactType
 	for _, blobDesc := range referenceManifest.Blobs {
 		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
@@ -100,13 +108,18 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		case SpdxJSONMediaType:
 			return processSpdxJSONMediaType(input.Name, refBlob, input.DisallowedLicenses, input.DisallowedPackages)
 		default:
+			return &verifier.VerifierResult{
+				Name:      input.Name,
+				IsSuccess: false,
+				Message:   fmt.Sprintf("Unsupported artifactType: %s", artifactType),
+			}, nil
 		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: false,
-		Message:   fmt.Sprintf("Unsupported artifactType: %s", artifactType),
+		Message:   fmt.Sprintf("SBOM validation failed"),
 	}, nil
 }
 
