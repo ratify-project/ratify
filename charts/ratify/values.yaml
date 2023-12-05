@@ -16,7 +16,7 @@ cosign:
   enabled: true
   key: ""
 vulnerabilityreport:
-  enabled: true
+  enabled: false
   passthrough: false
   schemaURL: ""
   createdAnnotationName: ""
