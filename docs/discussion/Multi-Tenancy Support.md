@@ -134,6 +134,7 @@ The storage and handling of data by Ratify, particularly with considerations for
 4. Plugin Directory Isolation:
     - The downloaded dynamic plugins should also be isolated by namespace. In this case, we can store plugins in different directories where the path is identified by namespace. However, since Ratify does not listen to namespace events, Ratify cannot delete the directory for a deleted namespace. 
 5. Local_oras_cache
+    - Theoretically, it's impossible for different tenants to access different blobs with the same descriptor. But if we really want to isolate oras_cache between tenants, there are 2 options.
     - In local_oras_cache, the descriptor acts as cache key. If we divide a single cache by namespace, then Ratify has to add a namespace annotation to the descriptor.
     - On the other hand, if we make a new store for each namespace, then we do not need to split the cache or modify the descriptor.
 6. Potential Consideration for PVC (Persistent Volume Claim):
@@ -293,11 +294,10 @@ The comprehensive exploration of various aspects related to the multi-tenancy mo
     - After recent discussions, we are currently leaning towards deploying a centralized Redis cluster.
 4. For cluster-wide CRs, should we consider making it clustered resource or namespaced resource under a reserved namespace, such as gatekeeper-system? [reference](#cluster-wide-image-validation)
     - Clustered CR means users need to maintain 2 sets of CRs which is the same as Kyverno. But it requires Ratify support 2 sets of CRs and corresponding controllers.
-    - Namespaced CR requires a reserved namespace.
+    - Namespaced CR requires a reserved namespace. And it might be confusing to users to distinguish between namespaced CRs and cluster-wide CRs.
 5. Should we allow team admins download external plugins via applying CRs? [reference](#user-scenario-4)
     - Cluster admin has permission to download plugins for all teams.
     - We could support global download firstly.
-6. Regarding cache isolation for "local_oras_cache," should we annotate the descriptor or create a new store for each namespace? [reference](#key-points)
-7. Should we allow team admins switch tag mutation feature? [reference](#mutation)
+6. Should we allow team admins switch tag mutation feature? [reference](#mutation)
     - Cluster admin is able to enable/disable image tag mutation.
     - We could support global image tag mutation firstly. And if there is a strong requirement for individual control, we could add it later.
