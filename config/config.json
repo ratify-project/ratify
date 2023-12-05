@@ -59,6 +59,13 @@
                 "allowedLicenses": [
                     "MIT"
                 ]
+            },
+            {
+                "name": "vulnerabilityreport",
+                "artifactTypes": "application/sarif+json",
+                "maximumAge": "24h",
+                "disallowedSeverities": ["high", "critical"],
+                "denylistCVEs": ["CVE-2021-44228"]
             }
         ]
     }
