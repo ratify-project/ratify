@@ -5,7 +5,8 @@
         "plugins": [
             {
                 "name": "oras",
-                "cosignEnabled": true
+                "cosignEnabled": true,
+                "useHttp": true
             }
         ]
     },
