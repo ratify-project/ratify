@@ -23,7 +23,7 @@
             {
                 "name": "sbom",
                 "artifactTypes": "application/spdx+json",
-                "disallowedPackages":[{"name":"zlib","version":"1.2.13-r1"}]
+                "disallowedPackages":[{"name":"zlib","version":"1.2.13-r0"}]
             }
         ]
     }
