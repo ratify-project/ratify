@@ -49,7 +49,7 @@ assert_cmd_verify_success_with_type() {
     echo $output
     return 1
   fi
-  if [[ "$output" != *'"type": "notation",'* ]]; then
+  if [[ "$output" != *'"type":'* ]]; then
     echo $output
     return 1
   fi

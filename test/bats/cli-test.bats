@@ -69,6 +69,11 @@ load helpers
     assert_cmd_verify_failure
 }
 
+@test "licensechecker verifier with type test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_external_verifier_with_type.json -s $TEST_REGISTRY/licensechecker:v0
+    assert_cmd_verify_success_with_type
+}
+
 @test "sbom verifier test" {
     # Notes: test would fail if sbom/notary types are explicitly specified in the policy
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/sbom:v0

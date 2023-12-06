@@ -19,23 +19,6 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "schemavalidator",
-                "artifactTypes": "vnd.aquasecurity.trivy.report.sarif.v1",
-                "schemas": {
-                    "application/sarif+json": "file:///home/runner/.ratify/schemas/sarif-2.1.0-rtm.5.json"
-                }
-            },
-            {
-                "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
-            },
-            {
-                "name": "cosign",
-                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
-                "key": ".staging/cosign/cosign.pub"
-            },
-            {
                 "name": "verifier-notation",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
@@ -62,32 +45,6 @@
                         }
                     ]
                 }
-            },
-            {
-                "name": "schemavalidator",
-                "artifactTypes": "vnd.aquasecurity.trivy.report.sarif.v1",
-                "schemas": {
-                    "application/sarif+json": "https://json.schemastore.org/sarif-2.1.0-rtm.5.json"
-                }
-            },
-            {
-                "name": "licensechecker",
-                "artifactTypes": "application/vnd.ratify.spdx.v0",
-                "allowedLicenses": [
-                    "GPL-2.0-only",
-                    "MIT",
-                    "OpenSSL",
-                    "BSD-2-Clause AND BSD-3-Clause",
-                    "Zlib",
-                    "MPL-2.0 AND MIT",
-                    "ISC",
-                    "Apache-2.0",
-                    "MIT AND BSD-2-Clause AND GPL-2.0-or-later",
-                    "MIT AND LicenseRef-AND AND BSD-2-Clause AND LicenseRef-AND AND GPL-2.0-or-later",
-                    "MPL-2.0 AND LicenseRef-AND AND MIT",
-                    "BSD-2-Clause AND LicenseRef-AND AND BSD-3-Clause",
-                    "NONE"
-                ]
             }
         ]
     }

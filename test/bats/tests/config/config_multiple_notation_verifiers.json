@@ -47,7 +47,7 @@
                 }
             },
             {
-                "name": "verifier-notation-root",
+                "name": "verifier-notation-leaf",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
