@@ -111,33 +111,33 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	if keyRef != "" {
 		ecdsaVerifier, err = loadPublicKey(ctx, keyRef)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to load public key: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to load public key: %w", err)), nil
 		}
 		cosignOpts.SigVerifier = ecdsaVerifier
 	} else {
 		roots, err = fulcio.GetRoots()
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get fulcio roots: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to get fulcio roots: %w", err)), nil
 		}
 		cosignOpts.RootCerts = roots
 		if cosignOpts.RootCerts == nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to initialize root certificates")), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to initialize root certificates")), nil
 		}
 	}
 
 	if rekorURL != "" {
 		cosignOpts.RekorClient, err = rekor.NewClient(rekorURL)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to create Rekor client from URL %s: %w", rekorURL, err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to create Rekor client from URL %s: %w", rekorURL, err)), nil
 		}
 		cosignOpts.CTLogPubKeys, err = cosign.GetCTLogPubs(ctx)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to set Certificate Transparency Log public keys: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to set Certificate Transparency Log public keys: %w", err)), nil
 		}
 		// Fetches the Rekor public keys from the Rekor server
 		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to set Rekor public keys: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to set Rekor public keys: %w", err)), nil
 		}
 	} else {
 		// if no rekor url is provided, turn off transparency log verification and ignore SCTs
@@ -147,17 +147,17 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get reference manifest: %w", err)), nil
+		return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to get reference manifest: %w", err)), nil
 	}
 
 	// manifest must be an OCI Image
 	if referenceManifest.MediaType != imgspec.MediaTypeImageManifest {
-		return errorToVerifyResult(input.Config.Name, fmt.Errorf("reference manifest is not an image")), nil
+		return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("reference manifest is not an image")), nil
 	}
 
 	subjectDesc, err := referrerStore.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to create subject hash: %w", err)), nil
+		return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to create subject hash: %w", err)), nil
 	}
 	subjectDescHash := v1.Hash{
 		Algorithm: subjectDesc.Digest.Algorithm().String(),
@@ -169,15 +169,15 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	for _, blob := range referenceManifest.Blobs {
 		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to get blob content: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to get blob content: %w", err)), nil
 		}
 		staticOpts, err := staticLayerOpts(blob)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to parse static signature opts: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to parse static signature opts: %w", err)), nil
 		}
 		sig, err := static.NewSignature(blobBytes, blob.Annotations[static.SignatureAnnotationKey], staticOpts...)
 		if err != nil {
-			return errorToVerifyResult(input.Config.Name, fmt.Errorf("failed to generate static signature: %w", err)), nil
+			return errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("failed to generate static signature: %w", err)), nil
 		}
 		// The verification will return an error if the signature is not valid.
 		bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
@@ -205,7 +205,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}, nil
 	}
 
-	errorResult := errorToVerifyResult(input.Config.Name, fmt.Errorf("no valid signatures found"))
+	errorResult := errorToVerifyResult(input.Config.Name, verifierType, fmt.Errorf("no valid signatures found"))
 	errorResult.Extensions = Extension{SignatureExtension: sigExtensions}
 	return errorResult, nil
 }
@@ -244,10 +244,11 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 	return options, nil
 }
 
-func errorToVerifyResult(name string, err error) *verifier.VerifierResult {
+func errorToVerifyResult(name string, verifierType string, err error) *verifier.VerifierResult {
 	return &verifier.VerifierResult{
 		IsSuccess: false,
 		Name:      name,
+		Type:      verifierType,
 		Message:   errors.Wrap(err, "cosign verification failed").Error(),
 	}
 }

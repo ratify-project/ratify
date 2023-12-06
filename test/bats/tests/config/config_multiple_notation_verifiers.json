@@ -19,11 +19,11 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "verifier-notation-root",
+                "name": "verifier-notation-leaf",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "~/.config/notation/truststore/x509/ca/leaf-test/root.crt"
+                    "~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
@@ -47,11 +47,11 @@
                 }
             },
             {
-                "name": "verifier-notation-leaf",
+                "name": "verifier-notation-root",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt"
+                    "~/.config/notation/truststore/x509/ca/leaf-test/root.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
