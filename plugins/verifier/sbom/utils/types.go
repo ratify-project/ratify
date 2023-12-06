@@ -46,6 +46,6 @@ type PackageLicense struct {
 // Version: 3.4.0-r0
 
 type PackageInfo struct {
-	Name    string
-	Version string
+	Name    string `json:"name,omitempty"`
+	Version string `json:"version,omitempty"`
 }
