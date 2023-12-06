@@ -15,7 +15,7 @@
         "plugin": {
             "name": "regoPolicy",
             "policyPath": "",
-            "policy": "package ratify.policy\ndefault valid := false\nvalid {\n  not failed_verify(input)\n}\nfailed_verify(reports) {\n  [path, value] := walk(reports)\n  value == false\n  path[count(path) - 1] == \"isSuccess\"\n}"
+            "policy": "package ratify.policy\ndefault valid := false\nvalid {\n failed_verify(input)\n}\nfailed_verify(reports) {\n  [path, value] := walk(reports)\n  value == true\n  path[count(path) - 1] == \"isSuccess\"\n}"
         }
     },
     "verifier": {
