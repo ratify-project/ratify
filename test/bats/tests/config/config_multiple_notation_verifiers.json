@@ -22,56 +22,11 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "schemavalidator",
-                "artifactTypes": "vnd.aquasecurity.trivy.report.sarif.v1",
-                "schemas": {
-                    "application/sarif+json": "file:///home/runner/.ratify/schemas/sarif-2.1.0-rtm.5.json"
-                }
-            },
-            {
-                "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
-            },
-            {
-                "name": "cosign",
-                "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
-                "key": ".staging/cosign/cosign.pub"
-            },
-            {
                 "name": "verifier-notation",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/localkeys/ratify-bats-test.crt"
-                ],
-                "trustPolicyDoc": {
-                    "version": "1.0",
-                    "trustPolicies": [
-                        {
-                            "name": "default",
-                            "registryScopes": [
-                                "*"
-                            ],
-                            "signatureVerification": {
-                                "level": "strict"
-                            },
-                            "trustStores": [
-                                "ca:certs"
-                            ],
-                            "trustedIdentities": [
-                                "*"
-                            ]
-                        }
-                    ]
-                }
-            },
-            {
-                "name": "verifier-notation-leaf",
-                "type": "notation",
-                "artifactTypes": "application/vnd.cncf.notary.signature",
-                "verificationCerts": [
-                    "~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
