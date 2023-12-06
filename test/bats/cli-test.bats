@@ -61,6 +61,22 @@ load helpers
 
 @test "sbom verifier test" {
     # run with deny license config should fail
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_licensematch.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_failure
+
+    # run with deny package with unmatched version should succeed
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_nomatch.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_success
+
+    # run with deny package with matched name and version should fail
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_packagematch.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_failure
+
+    # run with deny license config should fail
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_failure
+
+    # run with deny license config should fail
     run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config.json -s $TEST_REGISTRY/sbom:v0
     assert_cmd_verify_failure
 
