@@ -22,11 +22,11 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "verifier-notation-root",
+                "name": "verifier-notation",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "~/.config/notation/truststore/x509/ca/leaf-test/root.crt"
+                    "~/.config/notation/localkeys/ratify-bats-test.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
