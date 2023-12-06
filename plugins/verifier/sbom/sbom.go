@@ -88,7 +88,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		return &verifier.VerifierResult{
 			Name:      input.Name,
 			IsSuccess: false,
-			Message:   fmt.Sprintf("SBOMfailed: no layers found in manifest for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
+			Message:   fmt.Sprintf("SBOM validation failed: no layers found in manifest for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
 		}, nil
 	}
 
