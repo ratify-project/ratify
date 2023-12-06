@@ -1,0 +1,88 @@
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: notationnestedvalidation
+spec:
+  crd:
+    spec:
+      names:
+        kind: NotationNestedValidation
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            issuer:
+              type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package notationnestedvalidation
+
+        # This template defines policy for notation nested validation.
+        # It checks the following:
+        # - If there are any system errors
+        # - If there are errors for any of the images
+        # - Each image has a valid notary project signature
+        # - Each nested artifact has a valid notary project signature 
+
+        import future.keywords.if
+
+        remote_data := response {
+          images := [img | img = input.review.object.spec.containers[_].image]
+          images_init := [img | img = input.review.object.spec.initContainers[_].image]
+          images_ephemeral := [img | img = input.review.object.spec.ephemeralContainers[_].image]
+          other_images := array.concat(images_init, images_ephemeral)
+          all_images := array.concat(other_images, images)
+          response := external_data({"provider": "ratify-provider", "keys": all_images})
+        }
+
+        violation[{"msg": msg}] {
+          general_violation[{"result": msg}]
+        }
+
+        # Check if there are any system errors
+        general_violation[{"result": result}] {
+          err := remote_data.system_error
+          err != ""
+          result := sprintf("System error calling external data provider: %s", [err])
+        }
+        # Check if there are errors for any of the images
+        general_violation[{"result": result}] {
+          count(remote_data.errors) > 0
+          result := sprintf("Error validating one or more images: %s", remote_data.errors)
+        }
+
+        # Check if the success criteria is true
+        general_violation[{"result": result}] {
+          subject_validation := remote_data.responses[_]
+          subject_result := subject_validation[1]
+          failed_verify(subject_result)
+          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+        }
+
+        failed_verify(reports) if {
+          newReports := {"nestedResults": reports.verifierReports}
+          has_subject_failed_verify(newReports)
+        }
+
+        has_subject_failed_verify(nestedReports) if {
+          [path, value] := walk(nestedReports)
+          path[count(path) - 1] == "nestedResults"
+          not notary_project_signature_pass_verify(value)
+        }
+
+        notary_project_signature_pass_verify(nestedReports) if {
+          count_with_success := notary_project_signature_count(nestedReports)
+          count_with_success > 0
+        }
+
+        notary_project_signature_count(nestedReports) := number if {
+          sigs := [x |
+              some i
+              nestedReports[i].isSuccess == true
+              nestedReports[i].artifactType == "application/vnd.cncf.notary.signature"
+              x := nestedReports[i].subject
+          ]
+          number := count(sigs)
+        }
+        

@@ -88,6 +88,11 @@ load helpers
     assert_cmd_verify_success
 }
 
+@test "vulnerabilityreport verifier test" {
+    run bin/ratify verify -c $RATIFY_DIR/vulnerabilityreport_config.json -s $TEST_REGISTRY/vulnerabilityreport:v0
+    assert_cmd_verify_success
+}
+
 @test "sbom/notary/cosign/licensechecker verifiers test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/all:v0
     assert_cmd_verify_success
