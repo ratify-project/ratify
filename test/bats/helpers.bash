@@ -41,6 +41,16 @@ assert_cmd_verify_success() {
   fi
 }
 
+assert_cmd_multi_verifier_success() {
+  if [[ "$status" != 0 ]]; then
+    return 1
+  fi
+  if [[ "$output" == *'{ "isSuccess": true, "verifierReports"'* ]]; then
+    echo $output
+    return 1
+  fi
+}
+
 assert_cmd_verify_success_with_type() {
   if [[ "$status" != 0 ]]; then
     return 1

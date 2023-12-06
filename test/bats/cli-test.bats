@@ -38,7 +38,7 @@ load helpers
 
 @test "multiple notation verifiers test" {
     run bin/ratify verify -c $RATIFY_DIR/config_multiple_notation_verifiers.json -s $TEST_REGISTRY/notation:leafSigned
-    assert_cmd_verify_success
+    assert_cmd_multi_verifier_success
 }
 
 @test "notation verifier leaf cert with rego policy" {
