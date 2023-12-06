@@ -119,7 +119,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		IsSuccess: true,
-		Message:   "SBOM verification success. The schema is good.",
+		Message:   "SBOM verification success. No license or package violation found.",
 	}, nil
 }
 
@@ -183,7 +183,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 			Extensions: map[string]interface{}{
 				CreationInfo: spdxDoc.CreationInfo,
 			},
-			Message: "SBOM verification success. The schema is good.",
+			Message: "SBOM verification success. No license or package violation found.",
 		}, nil
 	}
 	return &verifier.VerifierResult{
