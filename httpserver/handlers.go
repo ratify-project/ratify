@@ -62,20 +62,21 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	mu := sync.Mutex{}
 
 	// iterate over all keys
-	for _, subject := range providerRequest.Request.Keys {
+	for _, key := range providerRequest.Request.Keys {
 		wg.Add(1)
-		go func(subject string) {
+		go func(key string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
 			returnItem := externaldata.Item{
-				Key: subject,
+				Key: key,
 			}
 			defer func() {
 				mu.Lock()
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
-			subjectReference, err := pkgUtils.ParseSubjectReference(subject)
+			requestKey := pkgUtils.ParseRequestKey(key)
+			subjectReference, err := pkgUtils.ParseSubjectReference(requestKey.Subject)
 			if err != nil {
 				returnItem.Error = err.Error()
 				return
@@ -129,7 +130,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
 			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
-		}(utils.SanitizeString(subject))
+		}(utils.SanitizeString(key))
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
