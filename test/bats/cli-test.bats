@@ -37,7 +37,7 @@ load helpers
 }
 
 @test "multiple notation verifiers test" {
-    run bin/ratify verify -c $RATIFY_DIR/config_multiple_notation_verifier.json -s $TEST_REGISTRY/notation:signed
+    run bin/ratify verify -c $RATIFY_DIR/config_multiple_notation_verifiers.json -s $TEST_REGISTRY/notation:signed
     assert_cmd_verify_success
 }
 
