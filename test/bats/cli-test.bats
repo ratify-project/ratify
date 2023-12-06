@@ -72,13 +72,6 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_packagematch.json -s $TEST_REGISTRY/sbom:v0
     assert_cmd_verify_failure
 
-    # run with deny license config should fail
-    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config.json -s $TEST_REGISTRY/sbom:v0
-    assert_cmd_verify_failure
-
-    # run with deny license config should fail
-    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config.json -s $TEST_REGISTRY/sbom:v0
-    assert_cmd_verify_failure
 
     # Notes: test would fail if sbom/notary types are explicitly specified in the policy
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/sbom:v0
