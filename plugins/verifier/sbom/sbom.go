@@ -37,6 +37,7 @@ import (
 // PluginConfig describes the configuration of the sbom verifier
 type PluginConfig struct {
 	Name string `json:"name"`
+	Type string `json:"type"`
 }
 
 type PluginInputConfig struct {
@@ -71,12 +72,17 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	if err != nil {
 		return nil, err
 	}
+	verifierType := ""
+	if input.Type != "" {
+		verifierType = input.Type
+	}
 
 	ctx := context.Background()
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
 		return &verifier.VerifierResult{
 			Name:      input.Name,
+			Type:      verifierType,
 			IsSuccess: false,
 			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor),
 		}, err
@@ -90,6 +96,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		if err != nil {
 			return &verifier.VerifierResult{
 				Name:      input.Name,
+				Type:      verifierType,
 				IsSuccess: false,
 				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s", subjectReference, blobDesc.Digest),
 			}, err
@@ -97,24 +104,26 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		switch mediaType {
 		case SpdxJSONMediaType:
-			return processSpdxJSONMediaType(input.Name, refBlob)
+			return processSpdxJSONMediaType(input.Name, verifierType, refBlob)
 		default:
 		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
+		Type:      verifierType,
 		IsSuccess: false,
 		Message:   fmt.Sprintf("Unsupported mediaType: %s", mediaType),
 	}, nil
 }
 
-func processSpdxJSONMediaType(name string, refBlob []byte) (*verifier.VerifierResult, error) {
+func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte) (*verifier.VerifierResult, error) {
 	var err error
 	var doc *v2_3.Document
 	if doc, err = jsonLoader.Read(bytes.NewReader(refBlob)); doc != nil {
 		return &verifier.VerifierResult{
 			Name:       name,
+			Type:       verifierType,
 			IsSuccess:  true,
 			Extensions: doc.CreationInfo,
 			Message:    "SBOM verification success. The schema is good.",
@@ -122,6 +131,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte) (*verifier.VerifierRe
 	}
 	return &verifier.VerifierResult{
 		Name:      name,
+		Type:      verifierType,
 		IsSuccess: false,
 		Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
 	}, err

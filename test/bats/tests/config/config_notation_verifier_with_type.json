@@ -19,11 +19,11 @@
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "verifier-notation",
+                "name": "verifier-notation-root",
                 "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "~/.config/notation/localkeys/ratify-bats-test.crt"
+                    "~/.config/notation/truststore/x509/ca/leaf-test/root.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",

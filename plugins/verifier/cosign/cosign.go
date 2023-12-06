@@ -47,6 +47,7 @@ import (
 
 type PluginConfig struct {
 	Name     string `json:"name"`
+	Type     string `json:"type"`
 	KeyRef   string `json:"key"`
 	RekorURL string `json:"rekorURL"`
 	// config specific to the plugin
@@ -94,6 +95,10 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	input, err := parseInput(args.StdinData)
 	if err != nil {
 		return nil, err
+	}
+	verifierType := ""
+	if input.Config.Type != "" {
+		verifierType = input.Config.Type
 	}
 	keyRef := input.Config.KeyRef
 	rekorURL := input.Config.RekorURL
@@ -193,6 +198,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	if len(signatures) > 0 {
 		return &verifier.VerifierResult{
 			Name:       input.Config.Name,
+			Type:       verifierType,
 			IsSuccess:  true,
 			Message:    "cosign verification success. valid signatures found",
 			Extensions: Extension{SignatureExtension: sigExtensions},
