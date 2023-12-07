@@ -94,3 +94,31 @@ spec:
       {{- end }}
     {{- end }}
 {{- end }}
+
+---
+{{- if .Values.sbom.enabled }}
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-sbom
+spec:
+  name: sbom
+  artifactTypes: application/spdx+json
+  parameters:
+    {{- if gt (len .Values.sbom.disallowedPackages) 0 }}
+    disallowedPackages:
+      {{- range .Values.sbom.disallowedPackages }}
+      - name: {{ .name }}
+        version: {{ .version }}
+      {{- end }}
+    {{- end }}
+    {{- if gt (len .Values.sbom.disallowedLicenses) 0 }}
+    disallowedLicenses:
+      {{- range .Values.sbom.disallowedLicenses }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.sbom.notaryProjectSignatureRequired }}
+    nestedReferences: application/vnd.cncf.notary.signature
+    {{- end }}
+{{- end }}
