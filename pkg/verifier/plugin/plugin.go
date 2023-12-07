@@ -36,6 +36,7 @@ import (
 // VerifierPlugin describes a verifier that is implemented by invoking the plugins
 type VerifierPlugin struct {
 	name             string
+	verifierType     string
 	artifactTypes    []string
 	nestedReferences []string
 	version          string
@@ -49,6 +50,10 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 	verifierName, ok := verifierConfig[types.Name]
 	if !ok {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key: %s", types.Name))
+	}
+	verifierType := ""
+	if _, ok := verifierConfig[types.Type]; ok {
+		verifierType = fmt.Sprintf("%s", verifierConfig[types.Type])
 	}
 
 	var nestedReferences []string
@@ -67,6 +72,7 @@ func NewVerifier(version string, verifierConfig config.VerifierConfig, pluginPat
 
 	return &VerifierPlugin{
 		name:             fmt.Sprintf("%s", verifierName),
+		verifierType:     verifierType,
 		version:          version,
 		path:             pluginPaths,
 		rawConfig:        verifierConfig,
@@ -89,6 +95,10 @@ func (vp *VerifierPlugin) Name() string {
 	return vp.name
 }
 
+func (vp *VerifierPlugin) Type() string {
+	return vp.verifierType
+}
+
 func (vp *VerifierPlugin) Verify(ctx context.Context,
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
@@ -107,7 +117,11 @@ func (vp *VerifierPlugin) verifyReference(
 	subjectReference common.Reference,
 	referenceDescriptor ocispecs.ReferenceDescriptor,
 	referrerStoreConfig *rc.StoreConfig) (*verifier.VerifierResult, error) {
-	pluginPath, err := vp.executor.FindInPaths(vp.name, vp.path)
+	verifierTypeStr := vp.name
+	if vp.verifierType != "" {
+		verifierTypeStr = vp.verifierType
+	}
+	pluginPath, err := vp.executor.FindInPaths(verifierTypeStr, vp.path)
 	if err != nil {
 		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}

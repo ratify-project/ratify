@@ -27,7 +27,7 @@ func TestProcessSPDXJsonMediaType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading %s", filepath.Join("testdata", "bom.json"))
 	}
-	vr, err := processSpdxJSONMediaType("test", b, nil, nil)
+	vr, err := processSpdxJSONMediaType("test", "", b, nil, nil)
 	if err != nil {
 		t.Fatalf("expected to process spdx json file: %s", filepath.Join("testdata", "bom.json"))
 	}
@@ -41,7 +41,7 @@ func TestProcessInvalidSPDXJsonMediaType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading %s", filepath.Join("testdata", "invalid-bom.json"))
 	}
-	_, err = processSpdxJSONMediaType("test", b, nil, nil)
+	_, err = processSpdxJSONMediaType("test", "", b, nil, nil)
 	if err == nil {
 		t.Fatalf("expected to have an error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
 	}
@@ -151,7 +151,7 @@ func TestGetViolations(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("test scenario", func(t *testing.T) {
-			report, err := processSpdxJSONMediaType("test", b, tc.disallowedLicenses, tc.disallowedPackages)
+			report, err := processSpdxJSONMediaType("test", "", b, tc.disallowedLicenses, tc.disallowedPackages)
 			if err != nil {
 				t.Fatalf("unexpected error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
 			}

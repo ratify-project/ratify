@@ -97,13 +97,11 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
-	verifierConfig, err := specToVerifierConfig(spec)
-
+	verifierConfig, err := specToVerifierConfig(spec, objectName)
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
 		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
 	}
-
 	// verifier factory only support a single version of configuration today
 	// when we support multi version verifier CRD, we will also pass in the corresponding config version so factory can create different version of the object
 	verifierConfigVersion := "1.0.0" // TODO: move default values to defaulting webhook in the future #413
@@ -111,14 +109,15 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		spec.Address = config.GetDefaultPluginPath()
 		logrus.Infof("Address was empty, setting to default path: %v", spec.Address)
 	}
-	verifierReference, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address}, namespace)
 
-	if err != nil || verifierReference == nil {
+	referenceVerifier, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address}, namespace)
+
+	if err != nil || referenceVerifier == nil {
 		logrus.Error(err, "unable to create verifier from verifier config")
 		return err
 	}
-	VerifierMap[objectName] = verifierReference
-	logrus.Infof("verifier '%v' added to verifier map", verifierReference.Name())
+	VerifierMap[objectName] = referenceVerifier
+	logrus.Infof("verifier '%v' added to verifier map", referenceVerifier.Name())
 
 	return nil
 }
@@ -129,7 +128,7 @@ func verifierRemove(objectName string) {
 }
 
 // returns a verifier reference from spec
-func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec) (vc.VerifierConfig, error) {
+func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec, verifierName string) (vc.VerifierConfig, error) {
 	verifierConfig := vc.VerifierConfig{}
 
 	if string(verifierSpec.Parameters.Raw) != "" {
@@ -138,8 +137,8 @@ func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec) (vc.VerifierC
 			return vc.VerifierConfig{}, err
 		}
 	}
-
-	verifierConfig[types.Name] = verifierSpec.Name
+	verifierConfig[types.Name] = verifierName
+	verifierConfig[types.Type] = verifierSpec.Name
 	verifierConfig[types.ArtifactTypes] = verifierSpec.ArtifactTypes
 	if verifierSpec.Source != nil {
 		verifierConfig[types.Source] = verifierSpec.Source
