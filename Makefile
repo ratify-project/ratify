@@ -50,7 +50,7 @@ ALPINE_IMAGE_VULNERABLE ?= alpine@sha256:25fad2a32ad1f6f510e528448ae1ec69a28ef81
 REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
-SBOM_TOOL_VERSION ?=v1.2.0
+SBOM_TOOL_VERSION ?=v2.0.0
 TRIVY_VERSION ?= 0.47.0
 
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
@@ -366,6 +366,9 @@ e2e-sbom-setup:
 
 	# Install sbom-tool
 	curl -Lo .staging/sbom/sbom-tool https://github.com/microsoft/sbom-tool/releases/download/${SBOM_TOOL_VERSION}/sbom-tool-linux-x64 && chmod +x .staging/sbom/sbom-tool
+	
+	# Install syft
+	curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b .staging/sbom ${SYFT_VERSION}
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
@@ -374,25 +377,34 @@ e2e-sbom-setup:
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
 	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
 	docker push ${TEST_REGISTRY}/sbom:unsigned
-
+	
 	# Generate/Attach sbom
-	.staging/sbom/sbom-tool generate -b .staging/sbom -bc . -pn ratify -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
+	# -b (BuildDropPath) - The folder to save the generated SPDX SBOM manifests to
+	# -nsb (NamespaceUriBase) - The base path that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
+	# -pn (PackageName) - The name of the package that will be used in the SBOM manifest
+	# -pv (PackageVersion) - The version of the package that will be used in the SBOM manifest
+	# -ps (PackageSupplier) - The supplier of the package that will be used in the SBOM manifest
+	# -nsu (NamespaceUri) - The namespace that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
+	# -di (DockerImage) - The docker image that will be used to generate the SBOM manifest
+	# -m (ManifestPath) - The path to the SBOM manifest that will be generated
+	# -D (Debug) - Enable debug logging 
+	.staging/sbom/sbom-tool generate -b .staging/sbom -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type org.example.sbom.v0 \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type org.example.sbom.v0 \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:unsigned \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type org.example.sbom.v0 \
+		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/all:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
 
 	# Push Signature to sbom
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type org.example.sbom.v0 ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
