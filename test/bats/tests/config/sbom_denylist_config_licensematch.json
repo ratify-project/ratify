@@ -1,0 +1,30 @@
+{
+    "store": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "oras",
+                "useHttp": true
+            }
+        ]
+    },
+    "policy": {
+        "version": "1.0.0",
+        "plugin": {
+            "name": "configPolicy",
+            "artifactVerificationPolicies": {
+                "application/spdx+json": "all"
+            }
+        }
+    },
+    "verifier": {
+        "version": "1.0.0",
+        "plugins": [
+            {
+                "name": "sbom",
+                "artifactTypes": "application/spdx+json",
+                "disallowedLicenses": ["NOASSERTION"]                 
+            }
+        ]
+    }
+}

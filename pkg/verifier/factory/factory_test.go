@@ -35,6 +35,10 @@ type TestVerifier struct {
 type TestVerifierFactory struct{}
 
 func (s *TestVerifier) Name() string {
+	return "test-verifier-0"
+}
+
+func (s *TestVerifier) Type() string {
 	return "test-verifier"
 }
 
@@ -63,7 +67,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 	}
 
 	verifierConfig := map[string]interface{}{
-		"name": "test-verifier",
+		"name": "test-verifier-0",
+		"type": "test-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
@@ -79,8 +84,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		t.Fatalf("expected to have %d verifiers, actual count %d", 1, len(verifiers))
 	}
 
-	if verifiers[0].Name() != "test-verifier" {
-		t.Fatalf("expected to create test verifier")
+	if nameResult := verifiers[0].Name(); nameResult != "test-verifier-0" {
+		t.Fatalf("expected to create test-verifier-0 for test case but got %v", nameResult)
 	}
 
 	if _, ok := verifiers[0].(*plugin.VerifierPlugin); ok {
@@ -98,7 +103,8 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
 	verifierConfig := map[string]interface{}{
-		"name": "plugin-verifier",
+		"name": "plugin-verifier-0",
+		"type": "plugin-verifier",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
@@ -114,8 +120,8 @@ func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T)
 		t.Fatalf("expected to have %d verifiers, actual count %d", 1, len(verifiers))
 	}
 
-	if verifiers[0].Name() != "plugin-verifier" {
-		t.Fatalf("expected to create plugin verifier")
+	if verifiers[0].Name() != "plugin-verifier-0" {
+		t.Fatalf("expected to create plugin-verifier-0")
 	}
 
 	if _, ok := verifiers[0].(*plugin.VerifierPlugin); !ok {

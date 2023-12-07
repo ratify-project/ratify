@@ -31,6 +31,16 @@ load helpers
     assert_cmd_verify_failure
 }
 
+@test "notation verifier with type test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_verifier_with_type.json -s $TEST_REGISTRY/notation:leafSigned
+    assert_cmd_verify_success_with_type
+}
+
+@test "multiple notation verifiers test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_multiple_notation_verifiers.json -s $TEST_REGISTRY/notation:leafSigned
+    assert_cmd_multi_verifier_success
+}
+
 @test "notation verifier leaf cert with rego policy" {
     run bin/ratify verify -c $RATIFY_DIR/config_rego_policy_notation_root_cert.json -s $TEST_REGISTRY/notation:leafSigned
     assert_cmd_verify_success
@@ -59,7 +69,25 @@ load helpers
     assert_cmd_verify_failure
 }
 
+@test "licensechecker verifier with type test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_external_verifier_with_type.json -s $TEST_REGISTRY/licensechecker:v0
+    assert_cmd_verify_success_with_type
+}
+
 @test "sbom verifier test" {
+    # run with deny license config should fail
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_licensematch.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_failure
+
+    # run with deny package with unmatched version should succeed
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_nomatch.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_success
+
+    # run with deny package with matched name and version should fail
+    run bin/ratify verify -c $RATIFY_DIR/sbom_denylist_config_packagematch.json -s $TEST_REGISTRY/sbom:v0
+    assert_cmd_verify_failure
+
+
     # Notes: test would fail if sbom/notary types are explicitly specified in the policy
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/sbom:v0
     assert_cmd_verify_success

@@ -27,8 +27,11 @@
             },
             {
                 "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
+                "artifactTypes": "application/spdx+json",
+                "nestedReferences": "application/vnd.cncf.notary.signature",
+                "disallowedLicenses":["AGPL"],
+                "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}]
+            
             },
             {
                 "name": "cosign",

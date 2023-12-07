@@ -1,31 +1,29 @@
 {
-    "executor": {
-    },
     "store": {
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "oras"
+                "name": "oras",
+                "cosignEnabled": true,
+                "useHttp": true
             }
         ]
     },
     "policy": {
         "version": "1.0.0",
         "plugin": {
-            "name": "configPolicy",
-            "artifactVerificationPolicies": {
-                "application/vnd.cncf.notary.signature": "any"
-            }
+            "name": "configPolicy"
         }
     },
     "verifier": {
         "version": "1.0.0",
         "plugins": [
             {
-                "name": "notation",
+                "name": "verifier-notation-root",
+                "type": "notation",
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
-                    "/usr/local/ratify-certs/notation/truststore"
+                    "~/.config/notation/truststore/x509/ca/leaf-test/root.crt"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
@@ -47,25 +45,6 @@
                         }
                     ]
                 }
-            },
-            {
-                "name": "sbom",
-                "artifactTypes": "application/spdx+json",
-                "nestedReferences": "application/vnd.cncf.notary.signature"
-            },
-            {
-                "name": "licensechecker",
-                "artifactTypes": "application/vnd.ratify.spdx.v0",
-                "allowedLicenses": [
-                    "MIT"
-                ]
-            },
-            {
-                "name": "vulnerabilityreport",
-                "artifactTypes": "application/sarif+json",
-                "maximumAge": "24h",
-                "disallowedSeverities": ["high", "critical"],
-                "denylistCVEs": ["CVE-2021-44228"]
             }
         ]
     }
