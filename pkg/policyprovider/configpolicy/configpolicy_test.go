@@ -34,7 +34,7 @@ func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
 		"name": "configPolicy",
 		"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
 			"application/vnd.cncf.notary.signature": "any",
-			"org.example.sbom.v0":                   "all",
+			"application/spdx+json":                 "all",
 			"default":                               "any",
 		},
 	}
@@ -71,7 +71,7 @@ func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {
 		t.Fatalf("For policy of 'any' PolicyEnforcer should allow continuing on verify failure")
 	}
 
-	referenceDesc.ArtifactType = "org.example.sbom.v0"
+	referenceDesc.ArtifactType = "application/spdx+json"
 
 	check = policyEnforcer.ContinueVerifyOnFailure(ctx, subjectReference, referenceDesc, result)
 
@@ -243,7 +243,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
 					"application/vnd.cncf.notary.signature": "any",
-					"org.example.sbom.v0":                   "any",
+					"application/spdx+json":                 "any",
 				},
 			},
 			verifierReports: []interface{}{
@@ -255,7 +255,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    false,
-					ArtifactType: "org.example.sbom.v0",
+					ArtifactType: "application/spdx+json",
 				},
 			},
 			output: false,
@@ -266,7 +266,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				"name": "configPolicy",
 				"artifactVerificationPolicies": map[string]types.ArtifactTypeVerifyPolicy{
 					"application/vnd.cncf.notary.signature": "any",
-					"org.example.sbom.v0":                   "all",
+					"application/spdx+json":                 "all",
 				},
 			},
 			verifierReports: []interface{}{
@@ -278,7 +278,7 @@ func TestPolicyEnforcer_OverallVerifyResult(t *testing.T) {
 				vr.VerifierResult{
 					Subject:      "",
 					IsSuccess:    true,
-					ArtifactType: "org.example.sbom.v0",
+					ArtifactType: "application/spdx+json",
 				},
 			},
 			output: true,

@@ -50,7 +50,7 @@
             },
             {
                 "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
+                "artifactTypes": "application/spdx+json",
                 "nestedReferences": "application/vnd.cncf.notary.signature"
             },
             {

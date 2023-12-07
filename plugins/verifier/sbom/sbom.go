@@ -20,41 +20,43 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/plugins/verifier/sbom/utils"
 
 	// This import is required to utilize the oras built-in referrer store
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
-
 	jsonLoader "github.com/spdx/tools-golang/json"
+	"github.com/spdx/tools-golang/spdx"
 	"github.com/spdx/tools-golang/spdx/v2/v2_3"
 )
 
 // PluginConfig describes the configuration of the sbom verifier
 type PluginConfig struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
+	Name               string              `json:"name"`
+	Type               string              `json:"type"`
+	DisallowedLicenses []string            `json:"disallowedLicenses,omitempty"`
+	DisallowedPackages []utils.PackageInfo `json:"disallowedPackages,omitempty"`
 }
 
 type PluginInputConfig struct {
 	Config PluginConfig `json:"config"`
 }
 
-type PackageInfo struct {
-	Name    string `json:"name,omitempty"`
-	Version string `json:"versionInfo,omitempty"`
-}
-
 const (
 	SpdxJSONMediaType string = "application/spdx+json"
+	CreationInfo      string = "creationInfo"
+	LicenseViolation  string = "licenseViolations"
+	PackageViolation  string = "packageViolations"
 )
 
 func main() {
-	skel.PluginMain("sbom", "1.0.0", VerifyReference, []string{"1.0.0"})
+	skel.PluginMain("sbom", "2.0.0-alpha.1", VerifyReference, []string{"1.0.0", "2.0.0-alpha.1"})
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {
@@ -88,9 +90,16 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		}, err
 	}
 
-	var mediaType string
+	if len(referenceManifest.Blobs) == 0 {
+		return &verifier.VerifierResult{
+			Name:      input.Name,
+			IsSuccess: false,
+			Message:   fmt.Sprintf("SBOM validation failed: no layers found in manifest for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
+		}, nil
+	}
+
+	artifactType := referenceDescriptor.ArtifactType
 	for _, blobDesc := range referenceManifest.Blobs {
-		mediaType = blobDesc.MediaType
 		refBlob, err := referrerStore.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 
 		if err != nil {
@@ -102,32 +111,90 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			}, err
 		}
 
-		switch mediaType {
+		switch artifactType {
 		case SpdxJSONMediaType:
-			return processSpdxJSONMediaType(input.Name, verifierType, refBlob)
+			return processSpdxJSONMediaType(input.Name, verifierType, refBlob, input.DisallowedLicenses, input.DisallowedPackages)
 		default:
+			return &verifier.VerifierResult{
+				Name:      input.Name,
+				Type:      verifierType,
+				IsSuccess: false,
+				Message:   fmt.Sprintf("Unsupported artifactType: %s", artifactType),
+			}, nil
 		}
 	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
 		Type:      verifierType,
-		IsSuccess: false,
-		Message:   fmt.Sprintf("Unsupported mediaType: %s", mediaType),
+		IsSuccess: true,
+		Message:   "SBOM verification success. No license or package violation found.",
 	}, nil
 }
 
-func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte) (*verifier.VerifierResult, error) {
+// getViolations returns the package and license violations based on the deny list
+func getViolations(spdxDoc *spdx.Document, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) ([]utils.PackageLicense, []utils.PackageLicense) {
+	packageLicenses := utils.GetPackageLicenses(*spdxDoc)
+	// load disallowed packageInfo into a map for easier existence check
+	packageMap, packageNameMap := loadDisallowedPackagesMap(disallowedPackages)
+
+	// detect violation
+	licenseViolation, packageViolation := filterDisallowedPackages(packageLicenses, disallowedLicenses, packageMap, packageNameMap)
+	return packageViolation, licenseViolation
+}
+
+// load disallowed packageInfo, and disallowed packageName into a map for easier existence check
+func loadDisallowedPackagesMap(packages []utils.PackageInfo) (map[utils.PackageInfo]struct{}, map[string]struct{}) {
+	packagesInfo := map[utils.PackageInfo]struct{}{}
+	packagesName := map[string]struct{}{}
+
+	for _, item := range packages {
+		// if the deny list item has no specific version, add to separate map
+		if len(item.Version) == 0 {
+			packagesName[item.Name] = struct{}{}
+		}
+		packagesInfo[item] = struct{}{}
+	}
+	return packagesInfo, packagesName
+}
+
+// parse through the spdx blob and returns the verifier result
+func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) (*verifier.VerifierResult, error) {
 	var err error
-	var doc *v2_3.Document
-	if doc, err = jsonLoader.Read(bytes.NewReader(refBlob)); doc != nil {
+	var spdxDoc *v2_3.Document
+	if spdxDoc, err = jsonLoader.Read(bytes.NewReader(refBlob)); spdxDoc != nil && err == nil {
+		if len(disallowedLicenses) != 0 || len(disallowedPackages) != 0 {
+			packageViolation, licenseViolation := getViolations(spdxDoc, disallowedLicenses, disallowedPackages)
+
+			var extensionData = make(map[string]interface{})
+			extensionData[CreationInfo] = spdxDoc.CreationInfo
+			if len(licenseViolation) != 0 {
+				extensionData[LicenseViolation] = licenseViolation
+			}
+
+			if len(packageViolation) != 0 {
+				extensionData[PackageViolation] = packageViolation
+			}
+
+			if len(licenseViolation) != 0 || len(packageViolation) != 0 {
+				return &verifier.VerifierResult{
+					Name:       name,
+					IsSuccess:  false,
+					Extensions: extensionData,
+					Message:    "SBOM validation failed.",
+				}, err
+			}
+		}
+
 		return &verifier.VerifierResult{
-			Name:       name,
-			Type:       verifierType,
-			IsSuccess:  true,
-			Extensions: doc.CreationInfo,
-			Message:    "SBOM verification success. The schema is good.",
-		}, err
+			Name:      name,
+			Type:      verifierType,
+			IsSuccess: true,
+			Extensions: map[string]interface{}{
+				CreationInfo: spdxDoc.CreationInfo,
+			},
+			Message: "SBOM verification success. No license or package violation found.",
+		}, nil
 	}
 	return &verifier.VerifierResult{
 		Name:      name,
@@ -135,4 +202,37 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte) 
 		IsSuccess: false,
 		Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
 	}, err
+}
+
+// iterate through all package info and check against the deny list
+// return the violation packages
+func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowedLicense []string, disallowedPackage map[utils.PackageInfo]struct{}, disallowedPackageName map[string]struct{}) ([]utils.PackageLicense, []utils.PackageLicense) {
+	var violationLicense []utils.PackageLicense
+	var violationPackage []utils.PackageLicense
+
+	for _, packageInfo := range packageLicenses {
+		// if license contains disallowed, add to violation
+		for _, disallowed := range disallowedLicense {
+			license := packageInfo.License
+			if license != "" && strings.Contains(strings.ToLower(license), strings.ToLower(disallowed)) {
+				violationLicense = append(violationLicense, packageInfo)
+			}
+		}
+
+		current := utils.PackageInfo{
+			Name:    packageInfo.Name,
+			Version: packageInfo.Version,
+		}
+
+		// check if this package is in the deny list by package name
+		if _, ok := disallowedPackageName[current.Name]; ok {
+			violationPackage = append(violationPackage, packageInfo)
+		}
+
+		//  check if this package is in the deny list by matching name and version
+		if _, ok := disallowedPackage[current]; ok {
+			violationPackage = append(violationPackage, packageInfo)
+		}
+	}
+	return violationLicense, violationPackage
 }
