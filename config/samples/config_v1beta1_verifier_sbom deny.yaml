@@ -1,0 +1,12 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-sbom
+spec:
+  name: sbom
+  artifactTypes: application/spdx+json
+  parameters: 
+    disallowedPackages:
+    - name: musl-utils
+      version: 1.2.3-r4
+    nestedReferences: application/vnd.cncf.notary.signature
