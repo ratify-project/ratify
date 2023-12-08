@@ -18,10 +18,10 @@ Given that Ratify primarily operates within a singular cluster, the chosen model
 The overarching use case involves facilitating diverse cluster users in employing Ratify for the application of validation to target images using their individual configurations. However, to enhance the overall user experience, it is imperative to take into account several sub-scenarios.
 
 ## User Group
-There could be several user groups/roles that have different access to the cluster.
+There could be several user groups/roles that have different access to the cluster in an [enterprise environment](https://cloud.google.com/kubernetes-engine/docs/concepts/multitenancy-overview#enterprise_multi-tenancy).
 - **Cluster admin**: This role is for administrator of the entire cluster. Cluster admins could CRUD all resources and create namespace and assign to teams.
-- **Team admin**: This role is intended for team-specific administrators. A team admin has the authority to manage users within their team. It's possible for a team to be associated with multiple namespaces.
-- **Team dev**: Developers in each team. They have the ability to CRUD workloads within their assigned namespaces.
+- **Team admin**: This role is intended for team-specific administrators. A team admin has the authority to manage users within their team. Additionaly team admin can CRUD resources under its namespace. It's possible for a team to be associated with multiple namespaces.
+- **Team dev**: Developers in each team. They have the ability to CRUD workloads within their assigned namespaces. But they have no access to Ratify-specific resources, like Ratify CRs.
 
 ## Scenarios
 1. Cluster administrators have the access to create or delete namespaces and manage team roles.
