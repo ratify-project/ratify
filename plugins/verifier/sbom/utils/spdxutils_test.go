@@ -69,7 +69,6 @@ func TestContainsLicense(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("test scenario", func(t *testing.T) {
-
 			result := ContainsLicense(tt.spdxLicenseExpression, tt.disallowed)
 			if result != tt.expected {
 				t.Fatalf("expected %t, got %t", tt.expected, result)

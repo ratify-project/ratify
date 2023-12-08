@@ -180,7 +180,6 @@ func TestGetViolations(t *testing.T) {
 				licensesViolation := extensionData[LicenseViolation].([]utils.PackageLicense)
 				AssertEquals(tc.expectedLicenseViolations, licensesViolation, tc.description, t)
 			}
-
 		})
 	}
 }

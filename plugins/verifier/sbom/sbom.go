@@ -86,7 +86,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			Name:      input.Name,
 			Type:      verifierType,
 			IsSuccess: false,
-			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor),
+			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v, err: %v", subjectReference, referenceDescriptor.Descriptor, err),
 		}, nil
 	}
 
@@ -107,7 +107,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 				Name:      input.Name,
 				Type:      verifierType,
 				IsSuccess: false,
-				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s", subjectReference, blobDesc.Digest),
+				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s, err: %v", subjectReference, blobDesc.Digest, err),
 			}, nil
 		}
 
