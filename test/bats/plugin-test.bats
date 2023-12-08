@@ -137,6 +137,11 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom_deny.yaml
+    sleep 5
+    run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
+    assert_failure
+   
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
