@@ -87,7 +87,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			Type:      verifierType,
 			IsSuccess: false,
 			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor),
-		}, err
+		}, nil
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
@@ -108,7 +108,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 				Type:      verifierType,
 				IsSuccess: false,
 				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s", subjectReference, blobDesc.Digest),
-			}, err
+			}, nil
 		}
 
 		switch artifactType {
@@ -201,7 +201,7 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, 
 		Type:      verifierType,
 		IsSuccess: false,
 		Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
-	}, err
+	}, nil
 }
 
 // iterate through all package info and check against the deny list
