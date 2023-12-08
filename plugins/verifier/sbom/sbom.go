@@ -213,8 +213,7 @@ func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowed
 	for _, packageInfo := range packageLicenses {
 		// if license contains disallowed, add to violation
 		for _, disallowed := range disallowedLicense {
-			license := packageInfo.License
-			if license != "" && strings.Contains(strings.ToLower(license), strings.ToLower(disallowed)) {
+			if utils.ContainsLicense(strings.ToLower(packageInfo.License), strings.ToLower(disallowed)) {
 				violationLicense = append(violationLicense, packageInfo)
 			}
 		}

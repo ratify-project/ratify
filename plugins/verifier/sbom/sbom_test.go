@@ -99,6 +99,12 @@ func TestGetViolations(t *testing.T) {
 	}{
 		{
 			description:               "disallowed packages with no version",
+			disallowedLicenses:        []string{"MPL"},
+			expectedLicenseViolations: nil,
+			expectedPackageViolations: nil,
+		},
+		{
+			description:               "disallowed packages with no version",
 			disallowedPackages:        []utils.PackageInfo{disallowedPackageNoVersion},
 			expectedLicenseViolations: []utils.PackageLicense{},
 			expectedPackageViolations: []utils.PackageLicense{packageViolation},
@@ -112,7 +118,6 @@ func TestGetViolations(t *testing.T) {
 		},
 		{
 			description:               "invalid disallow package",
-			disallowedLicenses:        []string{"BSD-3-Clause", "Zlib"},
 			disallowedPackages:        []utils.PackageInfo{disallowedPackageNoName},
 			expectedLicenseViolations: []utils.PackageLicense{},
 			expectedPackageViolations: []utils.PackageLicense{},
@@ -152,6 +157,18 @@ func TestGetViolations(t *testing.T) {
 		t.Run("test scenario", func(t *testing.T) {
 			report := processSpdxJSONMediaType("test", "", b, tc.disallowedLicenses, tc.disallowedPackages)
 
+			if len(tc.expectedPackageViolations) != 0 || len(tc.expectedLicenseViolations) != 0 {
+				if report.IsSuccess {
+					t.Fatalf("Test %s failed. Expected IsSuccess: true, got: false", tc.description)
+				}
+			}
+
+			if len(tc.expectedPackageViolations) == 0 && len(tc.expectedLicenseViolations) == 0 {
+				if !report.IsSuccess {
+					t.Fatalf("Test %s failed. Expected IsSuccess: false, got: true", tc.description)
+				}
+			}
+
 			if len(tc.expectedPackageViolations) != 0 {
 				extensionData := report.Extensions.(map[string]interface{})
 				packageViolation := extensionData[PackageViolation].([]utils.PackageLicense)
@@ -163,6 +180,7 @@ func TestGetViolations(t *testing.T) {
 				licensesViolation := extensionData[LicenseViolation].([]utils.PackageLicense)
 				AssertEquals(tc.expectedLicenseViolations, licensesViolation, tc.description, t)
 			}
+
 		})
 	}
 }
