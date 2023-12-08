@@ -34,6 +34,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
+	"github.com/deislabs/ratify/pkg/verifier/types"
 	"github.com/notaryproject/notation-go/log"
 
 	_ "github.com/notaryproject/notation-core-go/signature/cose" // register COSE signature
@@ -45,7 +46,7 @@ import (
 )
 
 const (
-	verifierName    = "notation"
+	verifierType    = "notation"
 	defaultCertPath = "ratify-certs/notation/truststore"
 )
 
@@ -63,6 +64,8 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 }
 
 type notationPluginVerifier struct {
+	name             string
+	verifierType     string
 	artifactTypes    []string
 	notationVerifier *notation.Verifier
 }
@@ -70,30 +73,41 @@ type notationPluginVerifier struct {
 type notationPluginVerifierFactory struct{}
 
 func init() {
-	factory.Register(verifierName, &notationPluginVerifierFactory{})
+	factory.Register(verifierType, &notationPluginVerifierFactory{})
 }
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
 	logger.GetLogger(context.Background(), logOpt).Debugf("creating notation with config %v, namespace '%v'", verifierConfig, namespace)
+	verifierName := fmt.Sprintf("%s", verifierConfig[types.Name])
+	verifierTypeStr := ""
+	if _, ok := verifierConfig[types.Type]; ok {
+		verifierTypeStr = fmt.Sprintf("%s", verifierConfig[types.Type])
+	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
-	verfiyService, err := getVerifierService(conf, pluginDirectory)
+	verifyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithPluginName(verifierName).WithError(err)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
 	return &notationPluginVerifier{
+		name:             verifierName,
+		verifierType:     verifierTypeStr,
 		artifactTypes:    artifactTypes,
-		notationVerifier: &verfiyService,
+		notationVerifier: &verifyService,
 	}, nil
 }
 
 func (v *notationPluginVerifier) Name() string {
-	return verifierName
+	return v.name
+}
+
+func (v *notationPluginVerifier) Type() string {
+	return v.verifierType
 }
 
 func (v *notationPluginVerifier) CanVerify(_ context.Context, referenceDescriptor ocispecs.ReferenceDescriptor) bool {
@@ -122,7 +136,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeSignatureNotFound.NewError(re.Verifier, verifierName, re.EmptyLink, nil, fmt.Sprintf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()), re.HideStackTrace)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeSignatureNotFound.NewError(re.Verifier, v.name, re.EmptyLink, nil, fmt.Sprintf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()), re.HideStackTrace)
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
@@ -136,7 +150,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyPluginFailure.NewError(re.Verifier, verifierName, re.NotationTsgLink, err, "failed to verify signature of digest", re.HideStackTrace)
+			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyPluginFailure.NewError(re.Verifier, v.name, re.NotationTsgLink, err, "failed to verify signature of digest", re.HideStackTrace)
 		}
 
 		// Note: notation verifier already validates certificate chain is not empty.
@@ -146,7 +160,8 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	}
 
 	return verifier.VerifierResult{
-		Name:       verifierName,
+		Name:       v.name,
+		Type:       v.verifierType,
 		IsSuccess:  true,
 		Message:    "signature verification success",
 		Extensions: extensions,
@@ -173,6 +188,7 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 }
 
 func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
+	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)

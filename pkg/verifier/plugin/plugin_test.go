@@ -46,6 +46,7 @@ func (e *TestExecutor) FindInPaths(plugin string, paths []string) (string, error
 func TestNewVerifier_Expected(t *testing.T) {
 	verifierConfig := map[string]interface{}{
 		"name":             "test-verifier",
+		"type":             "test-verifier",
 		"artifactTypes":    "test1,test2",
 		"nestedReferences": "ref1,ref2",
 	}

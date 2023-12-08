@@ -143,11 +143,19 @@ func (s mockStore) GetSubjectDescriptor(_ context.Context, _ common.Reference) (
 }
 
 func TestName(t *testing.T) {
-	v := &notationPluginVerifier{}
-	name := v.Name()
+	verifierConfig := map[string]interface{}{
+		"name":           "notation-verifier-0",
+		"type":           "notation",
+		"trustPolicyDoc": testTrustPolicy,
+	}
 
-	if name != "notation" {
-		t.Fatalf("expect name: notation, got: %s", name)
+	f := &notationPluginVerifierFactory{}
+	verifier, err := f.Create(testVersion, verifierConfig, "", "")
+	if err != nil {
+		t.Fatalf("failed create notation verifier got error = %v", err)
+	}
+	if name := verifier.Name(); name != "notation-verifier-0" {
+		t.Fatalf("expect name: notation-verifier-0, got: %s", name)
 	}
 }
 
@@ -205,7 +213,8 @@ func TestParseVerifierConfig(t *testing.T) {
 		{
 			name: "failed unmarshalling to notation config",
 			configMap: map[string]interface{}{
-				"name": []string{test},
+				"name":              test,
+				"verificationCerts": test,
 			},
 			expectErr: true,
 			expect:    nil,
@@ -294,7 +303,8 @@ func TestCreate(t *testing.T) {
 		{
 			name: "failed parsing verifier config",
 			configMap: map[string]interface{}{
-				"name": []string{test},
+				"name":           test,
+				"trustPolicyDoc": 1,
 			},
 			expectErr: true,
 		},

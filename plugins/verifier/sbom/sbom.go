@@ -39,6 +39,7 @@ import (
 // PluginConfig describes the configuration of the sbom verifier
 type PluginConfig struct {
 	Name               string              `json:"name"`
+	Type               string              `json:"type"`
 	DisallowedLicenses []string            `json:"disallowedLicenses,omitempty"`
 	DisallowedPackages []utils.PackageInfo `json:"disallowedPackages,omitempty"`
 }
@@ -73,12 +74,17 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	if err != nil {
 		return nil, err
 	}
+	verifierType := ""
+	if input.Type != "" {
+		verifierType = input.Type
+	}
 
 	ctx := context.Background()
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
 		return &verifier.VerifierResult{
 			Name:      input.Name,
+			Type:      verifierType,
 			IsSuccess: false,
 			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor),
 		}, err
@@ -99,6 +105,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		if err != nil {
 			return &verifier.VerifierResult{
 				Name:      input.Name,
+				Type:      verifierType,
 				IsSuccess: false,
 				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s", subjectReference, blobDesc.Digest),
 			}, err
@@ -106,10 +113,11 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		switch artifactType {
 		case SpdxJSONMediaType:
-			return processSpdxJSONMediaType(input.Name, refBlob, input.DisallowedLicenses, input.DisallowedPackages)
+			return processSpdxJSONMediaType(input.Name, verifierType, refBlob, input.DisallowedLicenses, input.DisallowedPackages)
 		default:
 			return &verifier.VerifierResult{
 				Name:      input.Name,
+				Type:      verifierType,
 				IsSuccess: false,
 				Message:   fmt.Sprintf("Unsupported artifactType: %s", artifactType),
 			}, nil
@@ -118,6 +126,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
+		Type:      verifierType,
 		IsSuccess: true,
 		Message:   "SBOM verification success. No license or package violation found.",
 	}, nil
@@ -150,7 +159,7 @@ func loadDisallowedPackagesMap(packages []utils.PackageInfo) (map[utils.PackageI
 }
 
 // parse through the spdx blob and returns the verifier result
-func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) (*verifier.VerifierResult, error) {
+func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) (*verifier.VerifierResult, error) {
 	var err error
 	var spdxDoc *v2_3.Document
 	if spdxDoc, err = jsonLoader.Read(bytes.NewReader(refBlob)); spdxDoc != nil && err == nil {
@@ -179,6 +188,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 
 		return &verifier.VerifierResult{
 			Name:      name,
+			Type:      verifierType,
 			IsSuccess: true,
 			Extensions: map[string]interface{}{
 				CreationInfo: spdxDoc.CreationInfo,
@@ -188,6 +198,7 @@ func processSpdxJSONMediaType(name string, refBlob []byte, disallowedLicenses []
 	}
 	return &verifier.VerifierResult{
 		Name:      name,
+		Type:      verifierType,
 		IsSuccess: false,
 		Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
 	}, err

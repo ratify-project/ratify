@@ -57,7 +57,7 @@ spec:
         general_violation[{"result": result}] {
           subject_results := remote_data.responses[_]
           subject_result := subject_results[1]
-          notation_results := [res | subject_result.verifierReports[i].name == "notation"; res := subject_result.verifierReports[i]]
+          notation_results := [res | subject_result.verifierReports[i].type == "notation"; res := subject_result.verifierReports[i]]
           issuer_results := [res | notation_results[i].extensions.Issuer == input.parameters.issuer; res := notation_results[i]]
           count(issuer_results) == 0
           result := sprintf("Subject %s has no signatures for certificate with Issuer: %s", [subject_results[0], input.parameters.issuer])
@@ -67,7 +67,7 @@ spec:
         general_violation[{"result": result}] {
           subject_results := remote_data.responses[_]
           subject_result := subject_results[1]
-          notation_results := [res | subject_result.verifierReports[i].name == "notation"; res := subject_result.verifierReports[i]]
+          notation_results := [res | subject_result.verifierReports[i].type == "notation"; res := subject_result.verifierReports[i]]
           notation_result := notation_results[_]
           notation_result.isSuccess == false
           notation_result.extensions.Issuer == input.parameters.issuer

@@ -28,6 +28,7 @@ import (
 
 type PluginConfig struct {
 	Name string `json:"name"`
+	Type string `json:"type"`
 	// config specific to the plugin
 }
 
@@ -54,9 +55,14 @@ func VerifyReference(args *skel.CmdArgs, _ common.Reference, referenceDescriptor
 	if err != nil {
 		return nil, err
 	}
+	verifierType := ""
+	if input.Type != "" {
+		verifierType = input.Type
+	}
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
+		Type:      verifierType,
 		IsSuccess: referenceDescriptor.Size > 0,
 		Message:   "Sample verification success",
 	}, nil

@@ -177,6 +177,7 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 				verifyResult = vr.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
+					Type:      verifier.Type(),
 					Message:   errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
 			}
 
@@ -225,6 +226,7 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 				verifierReport = vt.VerifierResult{
 					IsSuccess: false,
 					Name:      verifier.Name(),
+					Type:      verifier.Type(),
 					Message:   errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
