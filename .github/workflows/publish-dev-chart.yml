@@ -45,7 +45,7 @@ jobs:
             helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversion }}
       - name: helm push
         run: |
-          helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz ${{ steps.prepare.outputs.repo }}
+          helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.repo }}
       - name: clear
         if: always()
         run: |
