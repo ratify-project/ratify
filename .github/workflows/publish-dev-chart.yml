@@ -31,8 +31,8 @@ jobs:
           echo ::set-output name=repo::${REPOSITORY}
       - name: replace version
         run: |
-          sed -i '/^  repository:/c\  repository: ghcr.io/akashsinghal/ratify-dev' charts/ratify/values.yaml
-          sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/akashsinghal/ratify-crds-dev' charts/ratify/values.yaml
+          sed -i '/^  repository:/c\  repository: ghcr.io/deislabs/ratify-dev' charts/ratify/values.yaml
+          sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/deislabs/ratify-crds-dev' charts/ratify/values.yaml
           sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml 
       - name: docker login
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
