@@ -24,6 +24,11 @@ vulnerabilityreport:
   notaryProjectSignatureRequired: false
   disallowedSeverities: []
   denylistCVEs: []
+sbom:
+  enabled: false
+  notaryProjectSignatureRequired: false
+  disallowedLicenses: []
+  disallowedPackages: []
 resources:
   limits:
     cpu: 1000m
