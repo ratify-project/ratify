@@ -78,11 +78,14 @@ func TrimSpaceAndToLower(input string) string {
 }
 
 // ParseRequestKey parses key string to a structured RequestKey object.
-func ParseRequestKey(key string) RequestKey {
+func ParseRequestKey(key string) (RequestKey, error) {
 	re := regexp.MustCompile(subjectPattern)
 	match := re.FindStringSubmatch(key)
+	if match == nil || len(match) < 4 {
+		return RequestKey{}, fmt.Errorf("invalid request key: %s", key)
+	}
 	return RequestKey{
 		Namespace: match[2],
 		Subject:   match[3],
-	}
+	}, nil
 }

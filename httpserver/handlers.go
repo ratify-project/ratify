@@ -42,7 +42,7 @@ const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
 // verify validates provided images against the configured policy.
 // The image key could be either a standalone image(repo:tag) or an image within a specific namespace([namespace]repo:tag).
 // e.g.
-// 1. docker.io/library/nginx:latest an image without a namespace would be evaludated by cluster-wide policy.
+// 1. docker.io/library/nginx:latest an image without a namespace would be evaluated by cluster-wide policy.
 // 2. [ratify]docker.io/library/nginx:latest an image with a namespace would be evaluated by namespaced policy.
 func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	startTime := time.Now()
@@ -80,7 +80,11 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
-			requestKey := pkgUtils.ParseRequestKey(key)
+			requestKey, err := pkgUtils.ParseRequestKey(key)
+			if err != nil {
+				returnItem.Error = err.Error()
+				return
+			}
 			subjectReference, err := pkgUtils.ParseSubjectReference(requestKey.Subject)
 			if err != nil {
 				returnItem.Error = err.Error()

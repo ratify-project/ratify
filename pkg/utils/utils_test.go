@@ -152,38 +152,48 @@ func TestTrimSpaceAndToLower_ReturnsExpected(t *testing.T) {
 
 func TestParseRequestKey(t *testing.T) {
 	testCases := []struct {
+		name   string
 		key    string
 		result RequestKey
 	}{
 		{
-			key: fmt.Sprintf("[%s]%s", testNamespace, testRepo),
+			name: "namespaced image",
+			key:  fmt.Sprintf("[%s]%s", testNamespace, testRepo),
 			result: RequestKey{
 				Subject:   testRepo,
 				Namespace: testNamespace,
 			},
 		},
 		{
-			key: testRepo,
+			name: "clustered image",
+			key:  testRepo,
 			result: RequestKey{
 				Subject:   testRepo,
 				Namespace: "",
 			},
 		},
 		{
-			key: fmt.Sprintf("[%s]", testNamespace),
+			name: "no valid image",
+			key:  fmt.Sprintf("[%s]", testNamespace),
 			result: RequestKey{
 				Subject:   "",
 				Namespace: testNamespace,
 			},
 		},
 		{
+			name:   "empty string",
 			key:    "",
+			result: RequestKey{},
+		},
+		{
+			name:   "invalid key",
+			key:    "\n",
 			result: RequestKey{},
 		},
 	}
 
 	for _, tc := range testCases {
-		result := ParseRequestKey(tc.key)
+		result, _ := ParseRequestKey(tc.key)
 		if result.Subject != tc.result.Subject {
 			t.Fatalf("ParseRequestKey output expected %v actual %v", tc.result.Subject, result.Subject)
 		}
