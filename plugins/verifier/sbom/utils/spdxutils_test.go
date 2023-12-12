@@ -33,3 +33,46 @@ func TestGetPackageLicenses(t *testing.T) {
 		t.Fatalf("unexpected packages count, expected 16")
 	}
 }
+
+func TestContainsLicense(t *testing.T) {
+	tests := []struct {
+		name                  string
+		spdxLicenseExpression string
+		disallowed            string
+		expected              bool
+	}{
+		{
+			name:                  "exact match",
+			spdxLicenseExpression: "MIT",
+			disallowed:            "MIT",
+			expected:              true,
+		},
+		{
+			name:                  "exact match with space",
+			spdxLicenseExpression: "MPL-2.0 AND LicenseRef-AND AND MIT",
+			disallowed:            "MPL",
+			expected:              false,
+		},
+		{
+			name:                  "exact match with space",
+			spdxLicenseExpression: "MPL-2.0 AND LicenseRef-AND AND MIT",
+			disallowed:            "MPL-2.0",
+			expected:              true,
+		},
+		{
+			name:                  "exact match with space",
+			spdxLicenseExpression: "MIT AND LicenseRef-AND AND MPL-2.0",
+			disallowed:            "MPL-2.0",
+			expected:              true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run("test scenario", func(t *testing.T) {
+			result := ContainsLicense(tt.spdxLicenseExpression, tt.disallowed)
+			if result != tt.expected {
+				t.Fatalf("expected %t, got %t", tt.expected, result)
+			}
+		})
+	}
+}

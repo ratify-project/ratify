@@ -6,6 +6,7 @@ List of implemented design and discussion documents. Please open a PR to update 
 
 ### Implemented
 
+* [Vulnerability Report Verifier](design/Ratify%20Vulnerability%20Report%20Verifier.md)
 * [Load Testing Pipeline](design/Load%20Testing%20Pipeline.md)
 * [TLS Certificate Rotation](design/TLS%20Certificate%20Rotation.md)
 * [Registry Credential Caching](design/Registry%20Credential%20Caching.md)
