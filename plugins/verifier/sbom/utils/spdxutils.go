@@ -16,6 +16,8 @@ limitations under the License.
 package utils
 
 import (
+	"strings"
+
 	"github.com/spdx/tools-golang/spdx"
 )
 
@@ -30,4 +32,27 @@ func GetPackageLicenses(doc spdx.Document) []PackageLicense {
 		})
 	}
 	return output
+}
+
+// returns true if the licenseExpression contains the disallowed license
+// this implements a whole word match
+func ContainsLicense(spdxLicenseExpression string, disallowed string) bool {
+	if len(spdxLicenseExpression) == 0 {
+		return false
+	}
+
+	// if the licenseExpression is exactly the same as the disallowed license, return true
+	if spdxLicenseExpression == disallowed {
+		return true
+	}
+
+	disallowed1 := disallowed + " "
+	disallowed2 := " " + disallowed
+
+	// look for whole word match
+	if strings.Contains(spdxLicenseExpression, disallowed1) || strings.Contains(spdxLicenseExpression, disallowed2) {
+		return true
+	}
+
+	return false
 }

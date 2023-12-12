@@ -392,15 +392,15 @@ e2e-sbom-setup:
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:v0 \
-		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/sbom:unsigned \
-		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
 		 ${TEST_REGISTRY}/all:v0 \
-		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json:application/spdx+json
+		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json
 
 	# Push Signature to sbom
 	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`

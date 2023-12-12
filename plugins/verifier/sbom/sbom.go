@@ -86,8 +86,8 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			Name:      input.Name,
 			Type:      verifierType,
 			IsSuccess: false,
-			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor),
-		}, err
+			Message:   fmt.Sprintf("Error fetching reference manifest for subject: %s reference descriptor: %v, err: %v", subjectReference, referenceDescriptor.Descriptor, err),
+		}, nil
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
@@ -107,13 +107,13 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 				Name:      input.Name,
 				Type:      verifierType,
 				IsSuccess: false,
-				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s", subjectReference, blobDesc.Digest),
-			}, err
+				Message:   fmt.Sprintf("Error fetching blob for subject: %s digest: %s, err: %v", subjectReference, blobDesc.Digest, err),
+			}, nil
 		}
 
 		switch artifactType {
 		case SpdxJSONMediaType:
-			return processSpdxJSONMediaType(input.Name, verifierType, refBlob, input.DisallowedLicenses, input.DisallowedPackages)
+			return processSpdxJSONMediaType(input.Name, verifierType, refBlob, input.DisallowedLicenses, input.DisallowedPackages), nil
 		default:
 			return &verifier.VerifierResult{
 				Name:      input.Name,
@@ -159,7 +159,7 @@ func loadDisallowedPackagesMap(packages []utils.PackageInfo) (map[utils.PackageI
 }
 
 // parse through the spdx blob and returns the verifier result
-func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) (*verifier.VerifierResult, error) {
+func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, disallowedLicenses []string, disallowedPackages []utils.PackageInfo) *verifier.VerifierResult {
 	var err error
 	var spdxDoc *v2_3.Document
 	if spdxDoc, err = jsonLoader.Read(bytes.NewReader(refBlob)); spdxDoc != nil && err == nil {
@@ -181,8 +181,8 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, 
 					Name:       name,
 					IsSuccess:  false,
 					Extensions: extensionData,
-					Message:    "SBOM validation failed.",
-				}, err
+					Message:    "SBOM validation failed. Please review extensions data for license and package violation found.",
+				}
 			}
 		}
 
@@ -194,14 +194,14 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, 
 				CreationInfo: spdxDoc.CreationInfo,
 			},
 			Message: "SBOM verification success. No license or package violation found.",
-		}, nil
+		}
 	}
 	return &verifier.VerifierResult{
 		Name:      name,
 		Type:      verifierType,
 		IsSuccess: false,
 		Message:   fmt.Sprintf("SBOM failed to parse: %v", err),
-	}, err
+	}
 }
 
 // iterate through all package info and check against the deny list
@@ -213,8 +213,7 @@ func filterDisallowedPackages(packageLicenses []utils.PackageLicense, disallowed
 	for _, packageInfo := range packageLicenses {
 		// if license contains disallowed, add to violation
 		for _, disallowed := range disallowedLicense {
-			license := packageInfo.License
-			if license != "" && strings.Contains(strings.ToLower(license), strings.ToLower(disallowed)) {
+			if utils.ContainsLicense(strings.ToLower(packageInfo.License), strings.ToLower(disallowed)) {
 				violationLicense = append(violationLicense, packageInfo)
 			}
 		}
