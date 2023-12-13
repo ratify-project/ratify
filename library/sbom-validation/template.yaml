@@ -51,7 +51,7 @@ spec:
         general_violation[{"result": result}] {
           subject_results := remote_data.responses[_]
           subject_result := subject_results[1]
-          sbom_results := [res | subject_result.verifierReports[i].name == "sbom"; res := subject_result.verifierReports[i]]
+          sbom_results := [res | subject_result.verifierReports[i].type == "sbom"; res := subject_result.verifierReports[i]]
           sbom_result := sbom_results[_]
           sbom_result.isSuccess == false
           result = sprintf("Subject %s failed sbom validation: %s", [subject_results[0], sbom_result.message])
