@@ -78,6 +78,12 @@ func TrimSpaceAndToLower(input string) string {
 }
 
 // ParseRequestKey parses key string to a structured RequestKey object.
+// Example 1:
+// key: [gatekeeper-system]docker.io/test/hello:v1
+// match slice: ["[gatekeeper-system]docker.io/test/hello:v1" "[gatekeeper-system]" "gatekeeper-system" "docker.io/test/hello:v1"]
+// Example 2:
+// key: docker.io/test/hello:v1
+// match slice: ["docker.io/test/hello:v1" "" "" "docker.io/test/hello:v1"]
 func ParseRequestKey(key string) (RequestKey, error) {
 	re := regexp.MustCompile(subjectPattern)
 	match := re.FindStringSubmatch(key)
