@@ -115,6 +115,13 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
+              version:
+                description: Version of the verifier plugin
+                type: string
+            required:
+            - artifactTypes
+            - name
+            - version
             type: object
           status:
             description: VerifierStatus defines the observed state of Verifier

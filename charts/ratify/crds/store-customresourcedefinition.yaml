@@ -15,7 +15,7 @@ spec:
   scope: Cluster
   versions:
   - deprecated: true
-    deprecationWarning: v1alpha1 of the eraser API has been deprecated. Please migrate
+    deprecationWarning: v1alpha1 of the Store API has been deprecated. Please migrate
       to v1beta1.
     name: v1alpha1
     schema:
@@ -108,6 +108,12 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
+              version:
+                description: Version of the store plugin
+                type: string
+            required:
+            - name
+            - version
             type: object
           status:
             description: StoreStatus defines the observed state of Store

@@ -7,6 +7,7 @@ metadata:
     helm.sh/hook-weight: "5"
 spec:
   name: oras
+  version: 1.0.0
   parameters:
     {{- if .Values.oras.useHttp }}
     useHttp: true

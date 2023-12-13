@@ -26,10 +26,13 @@ type VerifierSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Name of the verifier
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
+
+	// Version of the verifier plugin
+	Version string `json:"version"`
 
 	// The type of artifact this verifier handles
-	ArtifactTypes string `json:"artifactTypes,omitempty"`
+	ArtifactTypes string `json:"artifactTypes"`
 
 	// # Optional. URL/file path
 	Address string `json:"address,omitempty"`
