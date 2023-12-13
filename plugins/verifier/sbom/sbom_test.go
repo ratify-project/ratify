@@ -17,6 +17,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/deislabs/ratify/plugins/verifier/sbom/utils"
@@ -27,10 +28,7 @@ func TestProcessSPDXJsonMediaType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading %s", filepath.Join("testdata", "bom.json"))
 	}
-	vr, err := processSpdxJSONMediaType("test", "", b, nil, nil)
-	if err != nil {
-		t.Fatalf("expected to process spdx json file: %s", filepath.Join("testdata", "bom.json"))
-	}
+	vr := processSpdxJSONMediaType("test", "", b, nil, nil)
 	if !vr.IsSuccess {
 		t.Fatalf("expected to successfully verify schema")
 	}
@@ -41,8 +39,9 @@ func TestProcessInvalidSPDXJsonMediaType(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error reading %s", filepath.Join("testdata", "invalid-bom.json"))
 	}
-	_, err = processSpdxJSONMediaType("test", "", b, nil, nil)
-	if err == nil {
+	report := processSpdxJSONMediaType("test", "", b, nil, nil)
+
+	if !strings.Contains(report.Message, "SBOM failed to parse") {
 		t.Fatalf("expected to have an error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
 	}
 }
@@ -100,6 +99,12 @@ func TestGetViolations(t *testing.T) {
 	}{
 		{
 			description:               "disallowed packages with no version",
+			disallowedLicenses:        []string{"MPL"},
+			expectedLicenseViolations: nil,
+			expectedPackageViolations: nil,
+		},
+		{
+			description:               "disallowed packages with no version",
 			disallowedPackages:        []utils.PackageInfo{disallowedPackageNoVersion},
 			expectedLicenseViolations: []utils.PackageLicense{},
 			expectedPackageViolations: []utils.PackageLicense{packageViolation},
@@ -113,7 +118,6 @@ func TestGetViolations(t *testing.T) {
 		},
 		{
 			description:               "invalid disallow package",
-			disallowedLicenses:        []string{"BSD-3-Clause", "Zlib"},
 			disallowedPackages:        []utils.PackageInfo{disallowedPackageNoName},
 			expectedLicenseViolations: []utils.PackageLicense{},
 			expectedPackageViolations: []utils.PackageLicense{},
@@ -151,9 +155,18 @@ func TestGetViolations(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("test scenario", func(t *testing.T) {
-			report, err := processSpdxJSONMediaType("test", "", b, tc.disallowedLicenses, tc.disallowedPackages)
-			if err != nil {
-				t.Fatalf("unexpected error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
+			report := processSpdxJSONMediaType("test", "", b, tc.disallowedLicenses, tc.disallowedPackages)
+
+			if len(tc.expectedPackageViolations) != 0 || len(tc.expectedLicenseViolations) != 0 {
+				if report.IsSuccess {
+					t.Fatalf("Test %s failed. Expected IsSuccess: true, got: false", tc.description)
+				}
+			}
+
+			if len(tc.expectedPackageViolations) == 0 && len(tc.expectedLicenseViolations) == 0 {
+				if !report.IsSuccess {
+					t.Fatalf("Test %s failed. Expected IsSuccess: false, got: true", tc.description)
+				}
 			}
 
 			if len(tc.expectedPackageViolations) != 0 {
