@@ -114,7 +114,6 @@ spec:
                 type: string
             required:
             - name
-            - version
             type: object
           status:
             description: StoreStatus defines the observed state of Store

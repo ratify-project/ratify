@@ -120,7 +120,6 @@ spec:
             required:
             - artifactTypes
             - name
-            - version
             type: object
           status:
             description: VerifierStatus defines the observed state of Verifier

@@ -23,13 +23,13 @@ import (
 
 // VerifierSpec defines the desired state of Verifier
 type VerifierSpec struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make install-crds" to regenerate code after modifying this file
 
 	// Name of the verifier
 	Name string `json:"name"`
 
 	// Version of the verifier plugin
-	Version string `json:"version"`
+	Version string `json:"version,omitempty"`
 
 	// The type of artifact this verifier handles
 	ArtifactTypes string `json:"artifactTypes"`

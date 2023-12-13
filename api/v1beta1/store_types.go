@@ -28,7 +28,7 @@ type StoreSpec struct {
 	// Name of the store
 	Name string `json:"name"`
 	// Version of the store plugin
-	Version string `json:"version"`
+	Version string `json:"version,omitempty"`
 	// Plugin path, optional
 	Address string `json:"address,omitempty"`
 	// OCI Artifact source to download the plugin from, optional
