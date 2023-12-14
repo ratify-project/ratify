@@ -23,7 +23,7 @@ releases:
   - name: ratify
     namespace: gatekeeper-system
     chart: charts/ratify # PRERELEASE: Change to 'ratify/ratify' before copying to helmfile.yaml
-    version: 1.11.0 # ATTENTION: Needs to match latest in Chart.yaml
+    version: 1.12.0 # ATTENTION: Needs to match latest in Chart.yaml
     wait: true
     needs:
       - gatekeeper
