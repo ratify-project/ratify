@@ -106,7 +106,7 @@ metadata:
   name: verifier-sbom
 spec:
   name: sbom
-  version: 2.0.0-alpha.1
+  version: 2.0.0-alpha.2
   artifactTypes: application/spdx+json
   parameters:
     {{- if gt (len .Values.sbom.disallowedPackages) 0 }}

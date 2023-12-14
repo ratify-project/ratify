@@ -98,6 +98,9 @@ spec:
               name:
                 description: Name of the verifier
                 type: string
+              version:
+                description: Version of the verifier plugin
+                type: string
               parameters:
                 description: Parameters for this verifier
                 type: object
@@ -114,9 +117,6 @@ spec:
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
                 type: object
-              version:
-                description: Version of the verifier plugin
-                type: string
             required:
             - artifactTypes
             - name

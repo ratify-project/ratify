@@ -92,6 +92,9 @@ spec:
               name:
                 description: Name of the store
                 type: string
+              version:
+                description: Version of the store plugin
+                type: string
               parameters:
                 description: Parameters of the store
                 type: object
@@ -107,10 +110,7 @@ spec:
                       source, optional
                     type: object
                     x-kubernetes-preserve-unknown-fields: true
-                type: object
-              version:
-                description: Version of the store plugin
-                type: string
+                type: object              
             required:
             - name
             type: object
