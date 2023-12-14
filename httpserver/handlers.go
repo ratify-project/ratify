@@ -91,6 +91,11 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				returnItem.Error = err.Error()
 				return
 			}
+			subjectReference, err := pkgUtils.ParseSubjectReference(requestKey.Subject)
+			if err != nil {
+				returnItem.Error = err.Error()
+				return
+			}
 			ctx = ctxUtils.SetContextWithNamespace(ctx, requestKey.Namespace)
 
 			if subjectReference.Digest.String() == "" {
