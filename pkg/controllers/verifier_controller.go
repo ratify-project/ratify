@@ -158,8 +158,9 @@ func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // Historically certStore defined in trust policy only contains name which means the CertStore cannot be uniquely identified
-// If verifierNamesapce is not empty, this method returns the default cert store namespace else returns the ratify deployed namespace
+// If verifierNamespace is not empty, this method returns the default cert store namespace else returns the ratify deployed namespace
 func getCertStoreNamespace(verifierNamespace string) (string, error) {
+	// first, check if we can use the verifier namespace as the cert store namespace
 	if verifierNamespace != "" {
 		return verifierNamespace, nil
 	}
