@@ -39,6 +39,11 @@ import (
 
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
 
+// verify validates provided images against the configured policy.
+// The image key could be either a standalone image(repo:tag) or an image within a specific namespace([namespace]repo:tag).
+// e.g.
+// 1. docker.io/library/nginx:latest an image without a namespace would be evaluated by cluster-wide policy.
+// 2. [ratify]docker.io/library/nginx:latest an image with a namespace would be evaluated by namespaced policy.
 func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	startTime := time.Now()
 	sanitizedMethod := utils.SanitizeString(r.Method)
@@ -62,20 +67,25 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	mu := sync.Mutex{}
 
 	// iterate over all keys
-	for _, subject := range providerRequest.Request.Keys {
+	for _, key := range providerRequest.Request.Keys {
 		wg.Add(1)
-		go func(subject string) {
+		go func(key string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
 			returnItem := externaldata.Item{
-				Key: subject,
+				Key: key,
 			}
 			defer func() {
 				mu.Lock()
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
-			subjectReference, err := pkgUtils.ParseSubjectReference(subject)
+			requestKey, err := pkgUtils.ParseRequestKey(key)
+			if err != nil {
+				returnItem.Error = err.Error()
+				return
+			}
+			subjectReference, err := pkgUtils.ParseSubjectReference(requestKey.Subject)
 			if err != nil {
 				returnItem.Error = err.Error()
 				return
@@ -129,7 +139,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
 			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
-		}(utils.SanitizeString(subject))
+		}(utils.SanitizeString(key))
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
