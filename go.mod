@@ -14,7 +14,7 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.0
 	github.com/aws/aws-sdk-go-v2 v1.24.0
-	github.com/aws/aws-sdk-go-v2/config v1.25.11
+	github.com/aws/aws-sdk-go-v2/config v1.25.12
 	github.com/aws/aws-sdk-go-v2/credentials v1.16.12
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.20.2
 	github.com/cespare/xxhash/v2 v2.2.0
