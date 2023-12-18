@@ -104,8 +104,15 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 }
 
 func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
+	var stdOutBuffer bytes.Buffer
+	var stdErrBuffer bytes.Buffer
+
+	// writing them to buffer to avoid lint error
+	stdOutBuffer.Write(stdout)
+	stdErrBuffer.Write(stderr)
+
 	errCombined := Error{}
-	errCombined.Msg = fmt.Sprintf("plugin failed with error: '%v', msg from stError '%v', msg from stdOut '%v'", err.Error(), string(stderr), string(stdout))
+	errCombined.Msg = fmt.Sprintf("plugin failed with error: '%v', msg from stError '%v', msg from stdOut '%v'", err.Error(), stdErrBuffer.String(), stdOutBuffer.String())
 	return &errCombined
 }
 
