@@ -1,23 +1,31 @@
-apiVersion: v1
-kind: ConfigMap
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Policy
 metadata:
-  name: {{ include "ratify.fullname" . }}-rego-policy
-data:
-  policy.rego: |
-    package ratify.policy
-    default valid := false
-    valid {
-      not failed_verify(input)
-    }
-    # The verification requires all reports to have isSuccess as true.
-    failed_verify(reports) {
-      [path, value] := walk(reports)
-      value == false
-      path[count(path) - 1] == "isSuccess"
-    }
-    # The verification requires at least one report for each artifact.
-    failed_verify(reports) {
-      [path, value] := walk(reports)
-      path[count(path) - 1] == "verifierReports"
-      count(value) == 0
-    }
+  name: "ratify-policy"
+spec:
+  type: "rego-policy"
+  parameters:
+    passthroughEnabled: false
+    policy: |
+      package ratify.policy
+
+      default valid := false
+
+      # all artifacts MUST be valid
+      valid {
+        not failed_verify(input)
+      }
+
+      # all reports MUST pass the verification
+      failed_verify(reports) {
+        [path, value] := walk(reports)
+        value == false
+        path[count(path) - 1] == "isSuccess"
+      }
+
+      # each artifact MUST have at least one report
+      failed_verify(reports) {
+        [path, value] := walk(reports)
+        path[count(path) - 1] == "verifierReports"
+        count(value) == 0
+      }

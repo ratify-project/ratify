@@ -170,9 +170,6 @@ spec:
         - name: config
           configMap:
             name: {{ include "ratify.fullname" . }}-configuration
-        - name: policy
-          configMap:
-            name: {{ include "ratify.fullname" . }}-rego-policy
         - name: tls
           secret:
             secretName: {{ include "ratify.fullname" . }}-tls
