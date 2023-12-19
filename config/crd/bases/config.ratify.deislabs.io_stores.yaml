@@ -94,8 +94,8 @@ spec:
                 description: Name of the store
                 type: string
               version:
-                description: Version of the store plugin
-                type: string
+                description: Version of the store plugin. Optional
+                type: string                
               parameters:
                 description: Parameters of the store
                 type: object

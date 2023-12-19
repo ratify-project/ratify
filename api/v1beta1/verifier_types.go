@@ -28,7 +28,7 @@ type VerifierSpec struct {
 	// Name of the verifier
 	Name string `json:"name"`
 
-	// Version of the verifier plugin
+	// Version of the verifier plugin. Optional
 	Version string `json:"version,omitempty"`
 
 	// The type of artifact this verifier handles

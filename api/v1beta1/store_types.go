@@ -27,7 +27,7 @@ type StoreSpec struct {
 
 	// Name of the store
 	Name string `json:"name"`
-	// Version of the store plugin
+	// Version of the store plugin. Optional
 	Version string `json:"version,omitempty"`
 	// Plugin path, optional
 	Address string `json:"address,omitempty"`

@@ -95,6 +95,7 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
 	}
 
+	// if the default version is not suitable, the plugin configuration should specify the desired version
 	if len(spec.Version) == 0 {
 		spec.Version = config.GetDefaultPluginVersion()
 		logrus.Infof("Version was empty, setting to default version: %v", spec.Version)
