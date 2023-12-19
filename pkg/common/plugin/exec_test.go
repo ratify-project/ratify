@@ -43,5 +43,4 @@ func TestPluginErr(t *testing.T) {
 	if !strings.Contains(err.Error(), string(stdErr)) {
 		t.Fatalf("error msg should contain stdErr msg, actual '%v'", err.Error())
 	}
-	// check error contains the plugin error message
 }
