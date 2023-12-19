@@ -65,13 +65,19 @@ func TestContainsLicense(t *testing.T) {
 			disallowed:            "MPL-2.0",
 			expected:              true,
 		},
+		{
+			name:                  "license partial match",
+			spdxLicenseExpression: "MIT AND LicenseRef-BSD AND GPL-2.0-or-later",
+			disallowed:            "GPL-2.0",
+			expected:              false,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run("test scenario", func(t *testing.T) {
 			result := ContainsLicense(tt.spdxLicenseExpression, tt.disallowed)
 			if result != tt.expected {
-				t.Fatalf("expected %t, got %t", tt.expected, result)
+				t.Fatalf("Looking for %v in %v , expected %t, got %t", tt.disallowed, tt.spdxLicenseExpression, tt.expected, result)
 			}
 		})
 	}

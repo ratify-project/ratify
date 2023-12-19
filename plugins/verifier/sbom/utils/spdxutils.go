@@ -16,7 +16,7 @@ limitations under the License.
 package utils
 
 import (
-	"strings"
+	"regexp"
 
 	"github.com/spdx/tools-golang/spdx"
 )
@@ -37,22 +37,11 @@ func GetPackageLicenses(doc spdx.Document) []PackageLicense {
 // returns true if the licenseExpression contains the disallowed license
 // this implements a whole word match
 func ContainsLicense(spdxLicenseExpression string, disallowed string) bool {
-	if len(spdxLicenseExpression) == 0 {
-		return false
-	}
+	// https://pkg.go.dev/github.com/google/licensecheck#section-readme
+	// options: https://stackoverflow.com/questions/10196462/regex-word-boundary-excluding-the-hyphen?rq=3
 
-	// if the licenseExpression is exactly the same as the disallowed license, return true
-	if spdxLicenseExpression == disallowed {
-		return true
-	}
-
-	disallowed1 := disallowed + " "
-	disallowed2 := " " + disallowed
-
-	// look for whole word match
-	if strings.Contains(spdxLicenseExpression, disallowed1) || strings.Contains(spdxLicenseExpression, disallowed2) {
-		return true
-	}
-
-	return false
+	expression := "\\b(" + disallowed + ")\\b" //(?:^|\s|$)(MIT)(?:^|\s|$)
+	r := regexp.MustCompile(expression)
+	//r, _ := regexp.Compile(`\b(MIT)\b`)
+	return r.MatchString(spdxLicenseExpression)
 }
