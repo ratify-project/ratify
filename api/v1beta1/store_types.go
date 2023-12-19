@@ -23,10 +23,12 @@ import (
 
 // StoreSpec defines the desired state of Store
 type StoreSpec struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make install-crds" to regenerate code after modifying this file
 
 	// Name of the store
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
+	// Version of the store plugin. Optional
+	Version string `json:"version,omitempty"`
 	// Plugin path, optional
 	Address string `json:"address,omitempty"`
 	// OCI Artifact source to download the plugin from, optional
