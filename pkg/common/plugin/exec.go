@@ -99,7 +99,6 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 		_, _ = stderr.WriteTo(e.Stderr)
 	}
 	// TODO stdout reader
-	logrus.Debugf("plugin command succeeded, stdout `%v`", string(stdout.Bytes()))
 	return stdout.Bytes(), nil
 }
 
