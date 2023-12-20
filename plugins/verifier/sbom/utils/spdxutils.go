@@ -43,10 +43,8 @@ func ContainsLicense(spdxLicenseExpression string, disallowed string) bool {
 	// 2. \\s, a whitespace
 	// 3. \\(, a left bracket
 	// 4. \\), a right bracket
-
 	escapedLicense := regexp.QuoteMeta(disallowed)
 	expression := "(?:^|\\(|\\s)(" + escapedLicense + ")(?:$|\\)|\\s)"
 	r := regexp.MustCompile(expression)
-	//r, _ := regexp.Compile(`\b(MIT)\b`)
 	return r.MatchString(spdxLicenseExpression)
 }
