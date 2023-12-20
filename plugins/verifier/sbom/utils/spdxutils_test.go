@@ -83,6 +83,12 @@ func TestContainsLicense(t *testing.T) {
 			disallowed:            "GPL-2.0-or-later",
 			expected:              true,
 		},
+		{
+			name:                  "license partial match",
+			spdxLicenseExpression: "MIT AND (LicenseRef-BSD OR GPL-2.0-or-later)",
+			disallowed:            "(LicenseRef-BSD OR GPL-2.0-or-later)",
+			expected:              true,
+		},
 	}
 
 	for _, tt := range tests {
