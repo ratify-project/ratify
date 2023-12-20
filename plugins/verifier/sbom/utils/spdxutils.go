@@ -37,10 +37,14 @@ func GetPackageLicenses(doc spdx.Document) []PackageLicense {
 // returns true if the licenseExpression contains the disallowed license
 // this implements a whole word match
 func ContainsLicense(spdxLicenseExpression string, disallowed string) bool {
-	// https://pkg.go.dev/github.com/google/licensecheck#section-readme
-	// options: https://stackoverflow.com/questions/10196462/regex-word-boundary-excluding-the-hyphen?rq=3
+	// match the disallowed license as a whole word
+	// the word boundary can be:
+	// 1. ^/$ , the beginning/ending of the line
+	// 2. \\s, a whitespace
+	// 3. \\(, a left bracket
+	// 4. \\), a right bracket
 
-	expression := "\\b(" + disallowed + ")\\b" //(?:^|\s|$)(MIT)(?:^|\s|$)
+	expression := "(?:^|\\(|\\s)(" + disallowed + ")(?:$|\\)|\\s)"
 	r := regexp.MustCompile(expression)
 	//r, _ := regexp.Compile(`\b(MIT)\b`)
 	return r.MatchString(spdxLicenseExpression)

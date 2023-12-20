@@ -48,6 +48,12 @@ func TestContainsLicense(t *testing.T) {
 			expected:              true,
 		},
 		{
+			name:                  "brackets",
+			spdxLicenseExpression: "(MIT)",
+			disallowed:            "MIT",
+			expected:              true,
+		},
+		{
 			name:                  "exact match with space",
 			spdxLicenseExpression: "MPL-2.0 AND LicenseRef-AND AND MIT",
 			disallowed:            "MPL",
@@ -70,6 +76,12 @@ func TestContainsLicense(t *testing.T) {
 			spdxLicenseExpression: "MIT AND LicenseRef-BSD AND GPL-2.0-or-later",
 			disallowed:            "GPL-2.0",
 			expected:              false,
+		},
+		{
+			name:                  "license partial match",
+			spdxLicenseExpression: "MIT AND (LicenseRef-BSD OR GPL-2.0-or-later)",
+			disallowed:            "GPL-2.0-or-later",
+			expected:              true,
 		},
 	}
 
