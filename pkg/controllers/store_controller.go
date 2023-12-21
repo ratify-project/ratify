@@ -59,7 +59,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	var store configv1beta1.Store
 	var resource = req.Name
-	storeLogger.Infof("reconciling store '%v'", resource)
+	storeLogger.Infof("start reconcile store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -71,6 +71,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+	storeLogger.Infof("reconciling store '%v'", store)
 
 	if err := storeAddOrReplace(store.Spec, resource); err != nil {
 		storeLogger.Error(err, "unable to create store from store crd")
