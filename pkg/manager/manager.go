@@ -218,6 +218,7 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Verifier")
 		os.Exit(1)
 	}
+	logrus.Infof("loaded verifier CR")
 	if err = (&controllers.StoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -225,6 +226,7 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Store")
 		os.Exit(1)
 	}
+	logrus.Infof("loaded store CR")
 	if err = (&controllers.CertificateStoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -239,6 +241,7 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
+	logrus.Infof("loaded policy provider CR")
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
