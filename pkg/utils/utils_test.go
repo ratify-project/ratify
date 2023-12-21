@@ -16,11 +16,17 @@ limitations under the License.
 package utils
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/opencontainers/go-digest"
+)
+
+const (
+	testRepo      = "docker.io/test/hello:v1"
+	testNamespace = "test"
 )
 
 func TestParseDigest_ReturnsExpected(t *testing.T) {
@@ -140,6 +146,56 @@ func TestTrimSpaceAndToLower_ReturnsExpected(t *testing.T) {
 		actual := TrimSpaceAndToLower(testcase.input)
 		if testcase.output != actual {
 			t.Fatalf("TrimSpaceAndToLower output expected %v actual %v", testcase.input, actual)
+		}
+	}
+}
+
+func TestParseRequestKey(t *testing.T) {
+	testCases := []struct {
+		name   string
+		key    string
+		result RequestKey
+	}{
+		{
+			name: "namespaced image",
+			key:  fmt.Sprintf("[%s]%s", testNamespace, testRepo),
+			result: RequestKey{
+				Subject:   testRepo,
+				Namespace: testNamespace,
+			},
+		},
+		{
+			name: "clustered image",
+			key:  testRepo,
+			result: RequestKey{
+				Subject:   testRepo,
+				Namespace: "",
+			},
+		},
+		{
+			name: "no valid image",
+			key:  fmt.Sprintf("[%s]", testNamespace),
+			result: RequestKey{
+				Subject:   "",
+				Namespace: testNamespace,
+			},
+		},
+		{
+			name:   "empty string",
+			key:    "",
+			result: RequestKey{},
+		},
+		{
+			name:   "invalid key",
+			key:    "\n",
+			result: RequestKey{},
+		},
+	}
+
+	for _, tc := range testCases {
+		result, _ := ParseRequestKey(tc.key)
+		if result.Subject != tc.result.Subject {
+			t.Fatalf("ParseRequestKey output expected %v actual %v", tc.result.Subject, result.Subject)
 		}
 	}
 }

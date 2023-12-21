@@ -94,14 +94,18 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 	if err != nil {
 		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
 	}
-	// factory only support a single version of configuration today
-	// when we support multi version store CRD, we will also pass in the corresponding config version so factory can create different version of the object
-	storeConfigVersion := "1.0.0"
+
+	// if the default version is not suitable, the plugin configuration should specify the desired version
+	if len(spec.Version) == 0 {
+		spec.Version = config.GetDefaultPluginVersion()
+		logrus.Infof("Version was empty, setting to default version: %v", spec.Version)
+	}
+
 	if spec.Address == "" {
 		spec.Address = config.GetDefaultPluginPath()
 		logrus.Infof("Address was empty, setting to default path %v", spec.Address)
 	}
-	storeReference, err := sf.CreateStoreFromConfig(storeConfig, storeConfigVersion, []string{spec.Address})
+	storeReference, err := sf.CreateStoreFromConfig(storeConfig, spec.Version, []string{spec.Address})
 
 	if err != nil || storeReference == nil {
 		logrus.Error(err, "store factory failed to create store from store config")

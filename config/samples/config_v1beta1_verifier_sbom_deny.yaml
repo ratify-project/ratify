@@ -4,6 +4,7 @@ metadata:
   name: verifier-sbom
 spec:
   name: sbom
+  version: 2.0.0-alpha.1
   artifactTypes: application/spdx+json
   parameters:
     disallowedLicenses:

@@ -10,12 +10,12 @@ retract (
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.9.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.4.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.0
-	github.com/aws/aws-sdk-go-v2 v1.23.5
-	github.com/aws/aws-sdk-go-v2/config v1.25.11
-	github.com/aws/aws-sdk-go-v2/credentials v1.16.9
+	github.com/aws/aws-sdk-go-v2 v1.24.0
+	github.com/aws/aws-sdk-go-v2/config v1.25.12
+	github.com/aws/aws-sdk-go-v2/credentials v1.16.12
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.20.2
 	github.com/cespare/xxhash/v2 v2.2.0
 	github.com/dapr/go-sdk v1.8.0
@@ -79,7 +79,7 @@ require (
 	github.com/aliyun/credentials-go v1.3.1 // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ecrpublic v1.18.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.10.4 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20231024185945-8841054dbdb8 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
@@ -126,7 +126,7 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.23.3 // indirect
-	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.0 // indirect
+	github.com/Azure/azure-sdk-for-go/sdk/internal v1.5.1 // indirect
 	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
 	github.com/Azure/go-autorest/autorest v0.11.29
 	github.com/Azure/go-autorest/autorest/adal v0.9.23
@@ -135,15 +135,15 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/OneOfOne/xxhash v1.2.8 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
-	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.14.9 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/configsources v1.2.8 // indirect
-	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.5.8 // indirect
+	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.14.10 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/configsources v1.2.9 // indirect
+	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.5.9 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.7.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.10.8 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.18.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.2 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.26.2 // indirect
-	github.com/aws/smithy-go v1.18.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.10.9 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.18.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.5 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.26.5 // indirect
+	github.com/aws/smithy-go v1.19.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
 	github.com/bshuster-repo/logrus-logstash-hook v1.1.0
@@ -231,7 +231,7 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.26.0 // indirect
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
