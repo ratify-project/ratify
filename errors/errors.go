@@ -16,11 +16,11 @@ limitations under the License.
 package errors
 
 const (
-	NotationTsgLink    = "https://ratify.dev/docs/1.0/troubleshoot/verifier/notation"
+	NotationTsgLink    = "https://ratify.dev/docs/troubleshoot/verifier/notation"
 	OrasLink           = "https://oras.land/"
-	AuthProviderLink   = "https://ratify.dev/docs/1.0/reference/oras-auth-provider"
-	PolicyProviderLink = "https://ratify.dev/docs/1.0/reference/providers"
-	PolicyCRDLink      = "https://ratify.dev/docs/1.0/reference/crds/policies"
+	AuthProviderLink   = "https://ratify.dev/docs/reference/oras-auth-provider"
+	PolicyProviderLink = "https://ratify.dev/docs/reference/providers"
+	PolicyCRDLink      = "https://ratify.dev/docs/reference/crds/policies"
 )
 
 var (

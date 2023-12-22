@@ -13,18 +13,20 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
 
 ## Table of Contents
 
-- [Quick Start](#quick-start)
-- [Community Meetings](#community-meetings)
-- [Pull Request Review Series](#pull-request-review-series)
-- [Documents](#documents)
-- [Code of Conduct](#code-of-conduct)
-- [Release Management](#release-management)
-- [Licensing](#licensing)
-- [Trademark](#trademark)
+- [Ratify](#ratify)
+  - [Table of Contents](#table-of-contents)
+  - [Quick Start](#quick-start)
+  - [Community meetings](#community-meetings)
+  - [Pull Request Review Series](#pull-request-review-series)
+  - [Documents](#documents)
+  - [Code of Conduct](#code-of-conduct)
+  - [Release Management](#release-management)
+  - [Licensing](#licensing)
+  - [Trademark](#trademark)
 
 ## Quick Start
 
-Please see [Ratify website](https://ratify.dev/docs/1.0/quick-start) for a quick start demo.
+Please see [Ratify website](https://ratify.dev/docs/quick-start) for a quick start demo.
 
 ## Community meetings
 
@@ -41,7 +43,7 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 
 ## Documents
 
-Please see the [Ratify website](https://ratify.dev/docs/1.0/what-is-ratify)  for more in-depth information.
+Please see the [Ratify website](https://ratify.dev/docs/what-is-ratify)  for more in-depth information.
 
 Meeting notes for weekly project syncs can be found [here](https://hackmd.io/ABueHjizRz2iFQpWnQrnNA?both)
 

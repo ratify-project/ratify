@@ -9,6 +9,7 @@ metadata:
     helm.sh/hook-weight: "5"
 spec:
   name: notation
+  version: 1.0.0
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:
@@ -49,6 +50,7 @@ metadata:
     helm.sh/hook-weight: "5"
 spec:
   name: cosign
+  version: 1.0.0
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
     key: /usr/local/ratify-certs/cosign/cosign.pub
@@ -64,6 +66,7 @@ metadata:
     helm.sh/hook-weight: "5"
 spec:
   name: vulnerabilityreport
+  version: 1.0.0
   artifactTypes: application/sarif+json
   parameters:
     {{- if .Values.vulnerabilityreport.notaryProjectSignatureRequired }}
@@ -92,5 +95,34 @@ spec:
       {{- range .Values.vulnerabilityreport.denylistCVEs }}
       - {{ . }}
       {{- end }}
+    {{- end }}
+{{- end }}
+
+---
+{{- if .Values.sbom.enabled }}
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-sbom
+spec:
+  name: sbom
+  version: 2.0.0-alpha.1
+  artifactTypes: application/spdx+json
+  parameters:
+    {{- if gt (len .Values.sbom.disallowedPackages) 0 }}
+    disallowedPackages:
+      {{- range .Values.sbom.disallowedPackages }}
+      - name: {{ .name }}
+        version: {{ .version }}
+      {{- end }}
+    {{- end }}
+    {{- if gt (len .Values.sbom.disallowedLicenses) 0 }}
+    disallowedLicenses:
+      {{- range .Values.sbom.disallowedLicenses }}
+      - {{ . }}
+      {{- end }}
+    {{- end }}
+    {{- if .Values.sbom.notaryProjectSignatureRequired }}
+    nestedReferences: application/vnd.cncf.notary.signature
     {{- end }}
 {{- end }}
