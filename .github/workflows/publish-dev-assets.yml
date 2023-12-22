@@ -44,7 +44,7 @@ jobs:
       - name: docker build ratify-crds
         run: |
           docker buildx create --use
-          docker buildx build --build-arg KUBE_VERSION="1.27.7" -f crd.Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }},${{ steps.prepare.outputs.crdref }} --push ./charts/ratify/crds
+          docker buildx build --build-arg KUBE_VERSION="1.27.7" -f crd.Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }} -t ${{ steps.prepare.outputs.crdref }} --push ./charts/ratify/crds
       - name: docker build ratify base
         run: |
           docker buildx create --use         
@@ -52,7 +52,8 @@ jobs:
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
             --build-arg LDFLAGS="-X github.com/deislabs/ratify/internal/version.Version=$(TAG)" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
-            -t ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }},${{ steps.prepare.outputs.baseref }} \
+            -t ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }} \
+            -t ${{ steps.prepare.outputs.baseref }} \
             --push .
       - name: docker build ratify with plugin
         run: |
@@ -66,7 +67,8 @@ jobs:
             --build-arg build_vulnerabilityreport=true \
             --build-arg LDFLAGS="-X github.com/deislabs/ratify/internal/version.Version=$(TAG)" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
-            -t ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }},${{ steps.prepare.outputs.ref }} \
+            -t ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }} \
+            -t ${{ steps.prepare.outputs.ref }} \
             --push .
       - name: replace version
         run: |
