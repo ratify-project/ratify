@@ -67,7 +67,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	var verifier configv1beta1.Verifier
 	var resource = req.Name
 
-	verifierLogger.Infof("start reconcile verifier '%v'", resource)
+	verifierLogger.Infof("start reconciling verifier '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -79,7 +79,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	verifierLogger.Infof("reconciling verifier '%v'", verifier)
+	verifierLogger.Infof("reconciled verifier '%v'", verifier.ObjectMeta)
 	namespace, err := getCertStoreNamespace(req.Namespace)
 	if err != nil {
 		verifierLogger.Error(err, "unable to get default namespace for certstore specified in verifier crd")
