@@ -4,6 +4,7 @@ on:
   schedule:
     - cron: '30 8 * * 0'  # early morning (08:30 UTC) every Sunday
   workflow_dispatch:
+  push:
 
 permissions: read-all
 
