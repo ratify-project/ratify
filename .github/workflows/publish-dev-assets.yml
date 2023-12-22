@@ -1,4 +1,4 @@
-name: publish-dev-chart
+name: publish-dev-assets
 
 on:
   schedule:
