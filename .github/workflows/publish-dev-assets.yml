@@ -26,11 +26,13 @@ jobs:
           CHART_REPOSITORY=${REPOSITORY}-chart-dev
           VERSION=dev.${DATE}.${COMMIT:0:7}
           SEM_VERSION=0-${VERSION}
+          SEM_VERSION_ROLLING=0-dev
           REPOSITORY_PLUGINS=${REPOSITORY}-dev
           REPOSITORYBASE=${REPOSITORY}-base-dev
           REPOSITORYCRD=${REPOSITORY}-crds-dev
           echo ::set-output name=version::${VERSION}
           echo ::set-output name=semversion::${SEM_VERSION}
+          echo ::set-output name=semversionrolling::${SEM_VERSION_ROLLING}
           echo ::set-output name=chartrepo::${CHART_REPOSITORY}
           echo ::set-output name=ref::${REPOSITORY_PLUGINS}
           echo ::set-output name=baseref::${REPOSITORYBASE}
@@ -78,9 +80,11 @@ jobs:
       - name: helm package
         run: |
             helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversion }}
+            helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversionrolling }}
       - name: helm push
         run: |
           helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
+          helm push ratify-${{ steps.prepare.outputs.semversionrolling }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
       - name: clear
         if: always()
         run: |
