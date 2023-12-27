@@ -119,7 +119,18 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				verifyParameters := executor.VerifyParameters{
 					Subject: resolvedSubjectReference,
 				}
-
+				if server.GetExecutor().PolicyEnforcer == nil {
+					err := errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
+					logger.GetLogger(ctx, server.LogOption).Error(err)
+					returnItem.Error = err.Error()
+					return
+				}
+				if len(server.GetExecutor().Verifiers) == 0 {
+					err := errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")
+					logger.GetLogger(ctx, server.LogOption).Error(err)
+					returnItem.Error = err.Error()
+					return
+				}
 				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
 					returnItem.Error = errors.ErrorCodeExecutorFailure.WithError(err).WithComponentType(errors.Executor).Error()
 					return
@@ -136,7 +147,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 					logger.GetLogger(ctx, server.LogOption).Infof("verify result for subject %s: %s", resolvedSubjectReference, string(res))
 				}
 			}
-
 			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
 			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(key))
@@ -193,6 +203,12 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 			}
 
 			if parsedReference.Digest == "" {
+				if len(server.GetExecutor().ReferrerStores) == 0 {
+					err := errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
+					logger.GetLogger(ctx, server.LogOption).Error(err)
+					returnItem.Error = err.Error()
+					return
+				}
 				var selectedStore referrerstore.ReferrerStore
 				for _, store := range server.GetExecutor().ReferrerStores {
 					if store.Name() == server.MutationStoreName {
