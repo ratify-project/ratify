@@ -6,7 +6,7 @@ repositories:
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
   - name: ratify
-    url: ghcr.io/akashsinghal/ratify-chart-dev # PRERELEASE: Change to 'https://deislabs.github.io/ratify' before copying to helmfile.yaml
+    url: ghcr.io/deislabs/ratify-chart-dev # PRERELEASE: Change to 'https://deislabs.github.io/ratify' before copying to helmfile.yaml
     oci: true # PRERELEASE: Remove before copying to helmfile.yaml
     
 releases:
