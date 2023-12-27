@@ -63,7 +63,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	var policy configv1beta1.Policy
 	var resource = req.Name
-	policyLogger.Infof("start reconciling policy %s", resource)
+	policyLogger.Infof("Reconciling Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
 		if apierrors.IsNotFound(err) && resource == ActivePolicy.Name {
@@ -74,7 +74,6 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	policyLogger.Infof("reconciled policy %v", policy.ObjectMeta)
 
 	if resource != constants.RatifyPolicy {
 		errStr := fmt.Sprintf("metadata.name must be ratify-policy, got %s", resource)
