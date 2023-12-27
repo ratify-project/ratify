@@ -48,8 +48,8 @@ require (
 	golang.org/x/sync v0.5.0
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
-	k8s.io/api v0.28.4
-	k8s.io/apimachinery v0.28.4
+	k8s.io/api v0.28.5
+	k8s.io/apimachinery v0.28.5
 	k8s.io/client-go v0.28.4
 	oras.land/oras-go/v2 v2.3.1
 )
