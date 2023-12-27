@@ -156,16 +156,8 @@ docker push ${REGISTRY}/localbuildcrd:yourtag
 ```
 
 ### Deploy using Dev Helmfile
-#### Update dev.helmfile.yaml
-Replace `repository`, `crdRepository`, and `tag` with previously built images:
-```yaml
-- name: image.repository 
-  value: <YOUR RATIFY IMAGE REPOSITORY NAME>
-- name: image.crdRepository
-  value: <YOUR RATIFY CRD IMAGE REPOSITORY NAME>
-- name: image.tag
-  value: <YOUR IMAGES TAG NAME>
-```
+
+Development charts + images are published weekly and latest versions are tagged with rolling tags referenced in dev helmfile.
 
 Deploy to cluster:
 ```bash

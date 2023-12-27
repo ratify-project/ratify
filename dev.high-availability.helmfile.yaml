@@ -1,10 +1,13 @@
 repositories:
+  - name: gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/charts
   - name: dapr
     url: https://dapr.github.io/helm-charts/
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
   - name: ratify
-    url: https://deislabs.github.io/ratify
+    url: ghcr.io/akashsinghal/ratify-chart-dev # PRERELEASE: Change to 'https://deislabs.github.io/ratify' before copying to helmfile.yaml
+    oci: true # PRERELEASE: Remove before copying to helmfile.yaml
     
 releases:
   - name: dapr
@@ -13,8 +16,24 @@ releases:
     chart: dapr/dapr
     version: 1.11.1
     wait: true
+  - name: gatekeeper
+    namespace: gatekeeper-system
+    createNamespace: true
+    chart: gatekeeper/gatekeeper
+    version: 3.14.0
+    wait: true
+    set:
+      - name: enableExternalData
+        value: true
+      - name: validatingWebhookTimeoutSeconds
+        value: 5
+      - name: mutatingWebhookTimeoutSeconds
+        value: 2
+      - name: externaldataProviderResponseCacheTTL
+        value: 10s
   - name: redis
     namespace: gatekeeper-system
+    createNamespace: true
     chart: bitnami/redis
     version: 17.11.6
     wait: true
@@ -31,12 +50,13 @@ releases:
         value: false
   - name: ratify
     namespace: gatekeeper-system
-    chart: charts/ratify/
-    version: 1.12.0 # ATTENTION: Needs to match latest in Chart.yaml
+    chart: ratify/ratify
+    version: 0-dev # ATTENTION: Needs to match latest in Chart.yaml
     wait: true
     needs:
       - dapr-system/dapr
       - gatekeeper-system/redis
+      - gatekeeper-system/gatekeeper
     hooks:
       - events: ["presync"]
         showlogs: true
@@ -53,6 +73,12 @@ releases:
           - "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/dapr/dapr-redis.yaml"
           - "-n"
           - "gatekeeper-system"
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - "kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml && kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
@@ -109,12 +135,6 @@ releases:
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: image.repository # REMOVE before copying to high-availability.helmfile.yaml
-        value: ghcr.io/deislabs/ratify-dev # REMOVE before copying to high-availability.helmfile.yaml
-      - name: image.crdRepository # REMOVE before copying to high-availability.helmfile.yaml
-        value: ghcr.io/deislabs/ratify-crds-dev # REMOVE before copying to high-availability.helmfile.yaml
-      - name: image.tag # REMOVE before copying to high-availability.helmfile.yaml
-        value: dev.20230822.cd81c6e # REMOVE before copying to high-availability.helmfile.yaml
       - name: featureFlags.RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY
         value: true
       - name: featureFlags.RATIFY_CERT_ROTATION
