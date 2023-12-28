@@ -21,11 +21,9 @@ Add a OverallVerifySuccess method to the interface. This will allow the policy p
 ```
 type VerifierResult struct {
 	Subject       string           `json:"subject,omitempty"`
-	IsSuccess     bool             `json:"isSuccess"`
+	IsSuccess     bool             `json:"isSuccess,omitempty"`
 	Name          string           `json:"name,omitempty"`
-	Type          string           `json:"type,omitempty"`
-	Message       string           `json:"message,omitempty"`
-	Extensions    interface{}      `json:"extensions,omitempty"`
+	Results       []string         `json:"results,omitempty"`
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
 	ArtifactType  string           `json:"artifactType,omitempty"`
 }
