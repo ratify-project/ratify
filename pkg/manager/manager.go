@@ -90,7 +90,6 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		var activePolicyEnforcer policyprovider.PolicyProvider
 
 		// check if there are active verifiers from crd controller
-		// else use verifiers from configuration
 		if len(controllers.VerifierMap) > 0 {
 			for _, value := range controllers.VerifierMap {
 				activeVerifiers = append(activeVerifiers, value)
@@ -98,7 +97,6 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		}
 
 		// check if there are active stores from crd controller
-		// else use stores from configuration
 		if len(controllers.StoreMap) > 0 {
 			for _, value := range controllers.StoreMap {
 				activeStores = append(activeStores, value)
