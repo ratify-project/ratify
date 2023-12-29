@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/dgraph-io/ristretto"
@@ -67,8 +68,8 @@ func (f *factory) Create(ctx context.Context, _ string, cacheSize int) (cache.Ca
 	}, nil
 }
 
-func (r *ristrettoCache) Get(_ context.Context, key string) (string, bool) {
-	cacheValue, found := r.memoryCache.Get(key)
+func (r *ristrettoCache) Get(ctx context.Context, key string) (string, bool) {
+	cacheValue, found := r.memoryCache.Get(ctxUtils.CreateCacheKey(ctx, key))
 	if !found {
 		return "", false
 	}
@@ -82,7 +83,7 @@ func (r *ristrettoCache) Set(ctx context.Context, key string, value interface{})
 		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for ristretto: ", err)
 		return false
 	}
-	return r.memoryCache.Set(key, string(bytes), 1)
+	return r.memoryCache.Set(ctxUtils.CreateCacheKey(ctx, key), string(bytes), 1)
 }
 
 func (r *ristrettoCache) SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool {
@@ -95,11 +96,11 @@ func (r *ristrettoCache) SetWithTTL(ctx context.Context, key string, value inter
 		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for ristretto: ", err)
 		return false
 	}
-	return r.memoryCache.SetWithTTL(key, string(bytes), 1, ttl)
+	return r.memoryCache.SetWithTTL(ctxUtils.CreateCacheKey(ctx, key), string(bytes), 1, ttl)
 }
 
-func (r *ristrettoCache) Delete(_ context.Context, key string) bool {
-	r.memoryCache.Del(key)
+func (r *ristrettoCache) Delete(ctx context.Context, key string) bool {
+	r.memoryCache.Del(ctxUtils.CreateCacheKey(ctx, key))
 	// Note: ristretto does not return a bool for delete.
 	// Delete ops are eventually consistent and we don't want to block on them.
 	return true
