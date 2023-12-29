@@ -44,6 +44,7 @@ import (
 )
 
 const testArtifactType string = "test-type1"
+const testImageNameTagged string = "localhost:5000/net-monitor:v1"
 
 func testGetExecutor() *core.Executor {
 	return &core.Executor{
@@ -99,11 +100,10 @@ func TestNewServer_Expected(t *testing.T) {
 
 func TestServer_Timeout_Failed(t *testing.T) {
 	timeoutDuration := 6
-	testImageName := "localhost:5000/net-monitor:v1"
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
-		_ = json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageName}))
+		_ = json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageNameTagged}))
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
 		logrus.Infof("policies successfully created. %s", body.Bytes())
 
@@ -239,7 +239,6 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 func TestServer_Mutation_Success(t *testing.T) {
 	timeoutDuration := 6
-	testImageNameTagged := "localhost:5000/net-monitor:v1"
 	testDigest := digest.FromString("test")
 	testImageNameDigested := fmt.Sprintf("localhost:5000/net-monitor@%s", testDigest)
 	t.Run("server_timeout_fail", func(t *testing.T) {
@@ -317,7 +316,6 @@ func TestServer_Mutation_Success(t *testing.T) {
 // TestServer_Mutation_ReferrerStoreConfigInvalid_Failure tests the case where the ReferrerStoreConfig is not provide
 func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 	timeoutDuration := 6
-	testImageNameTagged := "localhost:5000/net-monitor:v1"
 	testDigest := digest.FromString("test")
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
