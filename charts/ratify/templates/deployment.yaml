@@ -96,7 +96,6 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
-            {{- end }}
               {{- if $dockerAuthMode }}
             - mountPath: "/usr/local/docker"
               name: dockerconfig
