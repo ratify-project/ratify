@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/dapr/go-sdk/client"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/featureflag"
@@ -61,7 +62,7 @@ func (factory *factory) Create(_ context.Context, cacheName string, _ int) (cach
 }
 
 func (d *daprCache) Get(ctx context.Context, key string) (string, bool) {
-	item, err := d.daprClient.GetState(ctx, d.cacheName, key, nil)
+	item, err := d.daprClient.GetState(ctx, d.cacheName, ctxUtils.CreateCacheKey(ctx, key), nil)
 	if err != nil {
 		return "", false
 	}
@@ -74,7 +75,7 @@ func (d *daprCache) Set(ctx context.Context, key string, value interface{}) bool
 		logger.GetLogger(ctx, logOpt).Error("Error marshalling value for redis: ", err)
 		return false
 	}
-	if err := d.daprClient.SaveState(ctx, d.cacheName, key, bytes, nil); err != nil {
+	if err := d.daprClient.SaveState(ctx, d.cacheName, ctxUtils.CreateCacheKey(ctx, key), bytes, nil); err != nil {
 		logger.GetLogger(ctx, logOpt).Error("Error saving value to redis: ", err)
 		return false
 	}
@@ -93,7 +94,7 @@ func (d *daprCache) SetWithTTL(ctx context.Context, key string, value interface{
 	}
 	ttlString := strconv.Itoa(int(ttl.Seconds()))
 	md := map[string]string{"ttlInSeconds": ttlString}
-	if err := d.daprClient.SaveState(ctx, d.cacheName, key, bytes, md); err != nil {
+	if err := d.daprClient.SaveState(ctx, d.cacheName, ctxUtils.CreateCacheKey(ctx, key), bytes, md); err != nil {
 		logger.GetLogger(ctx, logOpt).Error("Error saving value to redis: ", err)
 		return false
 	}
@@ -101,7 +102,7 @@ func (d *daprCache) SetWithTTL(ctx context.Context, key string, value interface{
 }
 
 func (d *daprCache) Delete(ctx context.Context, key string) bool {
-	if err := d.daprClient.DeleteState(ctx, d.cacheName, key, nil); err != nil {
+	if err := d.daprClient.DeleteState(ctx, d.cacheName, ctxUtils.CreateCacheKey(ctx, key), nil); err != nil {
 		logger.GetLogger(ctx, logOpt).Error("Error deleting value from redis: ", err)
 		return false
 	}

@@ -140,6 +140,11 @@ func GetDefaultPluginPath() string {
 	return defaultPluginsPath
 }
 
+// returns default plugin version of 1.0.0
+func GetDefaultPluginVersion() string {
+	return "1.0.0"
+}
+
 // GetLoggerConfig returns logger configuration from config file at specified path.
 func GetLoggerConfig(configFilePath string) (logger.Config, error) {
 	config, err := Load(configFilePath)
