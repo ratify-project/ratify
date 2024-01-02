@@ -21,12 +21,12 @@ package ratify.policy
 # - There is at least one SBOM report that was verified
 # - Only considers ONE SBOM report
 # - The SBOM is valid (isSuccess = true)
-# - The SBOM has a valid notary project signature (if require_signature = true)s
+# - The SBOM has a valid notary project signature (if require_signature = true)
 
 import future.keywords.if
 import future.keywords.in
 
-default require_signature := false # change to true to require notary project signature on vulnerability report
+default require_signature := false # change to true to require notary project signature on SBOM
 default valid := false
 
 valid {
@@ -39,7 +39,7 @@ failed_verify(reports) {
 
 process_sboms(subject_result) if {
     # collect verifier reports from sbom verifier
-    sbom_results := [res | subject_result.verifierReports[i].verifierReports[j].name == "sbom"; res := subject_result.verifierReports[i].verifierReports[j]]
+    sbom_results := [res | subject_result.verifierReports[i].verifierReports[j].type == "sbom"; res := subject_result.verifierReports[i].verifierReports[j]]
     count(sbom_results) > 0
     # validate SBOM contents for ONLY the first report found
     process_sbom(sbom_results[0])
