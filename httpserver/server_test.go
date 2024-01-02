@@ -145,30 +145,30 @@ func TestServe_NewServer_Error(t *testing.T) {
 			return true
 		},
 	}
-	ex_no_store := &core.Executor{
+	exNoStore := &core.Executor{
 		PolicyEnforcer: configPolicy,
 		ReferrerStores: []referrerstore.ReferrerStore{},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 	}
-	ex_no_policy := &core.Executor{
+	exNoPolicy := &core.Executor{
 		PolicyEnforcer: nil,
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{ver},
 	}
-	ex_no_ver := &core.Executor{
+	exNoVer := &core.Executor{
 		PolicyEnforcer: configPolicy,
 		ReferrerStores: []referrerstore.ReferrerStore{store},
 		Verifiers:      []verifier.ReferenceVerifier{},
 	}
 
 	testGetExecutorStoreErr := func() *core.Executor {
-		return ex_no_store
+		return exNoStore
 	}
 	testGetExecutorPolicyErr := func() *core.Executor {
-		return ex_no_policy
+		return exNoPolicy
 	}
 	testGetExecutorVerErr := func() *core.Executor {
-		return ex_no_ver
+		return exNoVer
 	}
 
 	_, err := NewServer(context.Background(), testAddress, testGetExecutorStoreErr, testCertDir, testCACertFile, testCacheTTL, testMetricsEnabled, testMetricsType, testMetricsPort)
