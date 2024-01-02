@@ -107,8 +107,9 @@ time=2023-09-20T13:08:43.696147959Z level=error msg=Error: plugin init failure, 
       "verifierReports": [
         {
           "isSuccess": false,
-          "message": "Original Error: (Original Error: (artifact \"ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b\" has no applicable trust policy. Trust policy applicability for a given artifact is determined by registryScopes. To create a trust policy, see: https://notaryproject.dev/docs/quickstart/#create-a-trust-policy), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
-          "name": "notation",
+          "message": "Original Error: (Original Error: (artifact \"ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b\" has no applicable trust policy. Trust policy applicability for a given artifact is determined by registryScopes. To create a trust policy, see: https://notaryproject.dev/docs/quickstart/#create-a-trust-policy), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
+          "name": "verifier-notation",
+          "type": "notation",
           "extensions": null
         }
       ],
@@ -131,8 +132,9 @@ The image verification fails.
       "verifierReports": [
         {
           "isSuccess": false,
-          "message": "Original Error: (Original Error: (error while loading the trust store, valid certificates must be provided, only CA certificates or self-signed signing certificates are supported), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
-          "name": "notation",
+          "message": "Original Error: (Original Error: (error while loading the trust store, valid certificates must be provided, only CA certificates or self-signed signing certificates are supported), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
+          "name": "verifier-notation",
+          "type": "notation",
           "extensions": null
         }
       ],
@@ -149,8 +151,9 @@ time=2023-09-22T13:50:40.440640495Z level=info msg=verify result for subject ghc
   "verifierReports": [
     {
       "isSuccess": false,
-      "name": "notation",
-      "message": "Original Error: (Original Error: (error while parsing the certificate subject from the digital signature. error : \"distinguished name (DN) \\\"CN=ratify.default\\\" has no mandatory RDN attribute for \\\"C\\\", it must contain 'C', 'ST', and 'O' RDN attributes at a minimum\"), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
+      "name": "verifier-notation",
+      "type": "notation",
+      "message": "Original Error: (Original Error: (error while parsing the certificate subject from the digital signature. error : \"distinguished name (DN) \\\"CN=ratify.default\\\" has no mandatory RDN attribute for \\\"C\\\", it must contain 'C', 'ST', and 'O' RDN attributes at a minimum\"), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
       "artifactType": "application/vnd.cncf.notary.signature"
     }
   ]
@@ -184,8 +187,9 @@ time=2023-09-21T17:11:38.904404237Z level=info msg=verify result for subject ghc
       "verifierReports": [
         {
           "isSuccess": false,
-          "message": "Original Error: (Original Error: (signature is not produced by a trusted signer), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
-          "name": "notation",
+          "message": "Original Error: (Original Error: (signature is not produced by a trusted signer), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
+          "name": "verifier-notation",
+          "type": "notation",
           "extensions": null
         }
       ],
@@ -208,8 +212,9 @@ time=2023-09-21T16:49:39.101904574Z level=info msg=verify result for subject ghc
   "verifierReports": [
     {
       "isSuccess": false,
-      "name": "notation",
-      "message": "Original Error: (Original Error: (signature is not produced by a trusted signer), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
+      "name": "verifier-notation",
+      "type": "notation",
+      "message": "Original Error: (Original Error: (signature is not produced by a trusted signer), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
       "artifactType": "application/vnd.cncf.notary.signature"
     }
   ]
@@ -247,8 +252,9 @@ time=2023-09-21T16:42:38.878372465Z level=info msg=verify result for subject ghc
   "verifierReports": [
     {
       "isSuccess": false,
-      "name": "notation",
-      "message": "Original Error: (Original Error: (signature is not produced by a trusted signer), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
+      "name": "verifier-notation",
+      "type": "notation",
+      "message": "Original Error: (Original Error: (signature is not produced by a trusted signer), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
       "artifactType": "application/vnd.cncf.notary.signature"
     }
   ]
@@ -339,15 +345,16 @@ time=2023-09-21T22:17:50.216846963Z level=error msg=Error saving value to redis:
 
 ### From Xinhe
 
-```
+```json
 level=error msg=Reconciler error CertificateStore=default/certstore-incorrect-cert controller=certificatestore controllerGroup=config.ratify.deislabs.io controllerKind=CertificateStore error=Error fetching certificates in store certstore-incorrect-cert with inline provider, error: Error: cert invalid, Code: CERT_INVALID, Component Type: certProvider name=certstore-incorrect-cert namespace=default reconcileID=6a444f61-fed0-4d0a-b6e1-08bedbe90712
 time=2023-09-22T01:55:54.866028606Z level=warning msg=no certificate fetched for certStore certstore-incorrect-cert component-type=verifier go.version=go1.20.8 trace-id=4b6580f6-8b08-4c0b-a1ab-d4264298a6c9
 time=2023-09-22T01:55:54.866327608Z level=info msg=verify result for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
   "verifierReports": [
     {
       "isSuccess": false,
-      "name": "notation",
-      "message": "Original Error: (Original Error: (error while loading the trust store, unable to fetch certificates for namedStore: certs), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: notation, Component Type: verifier",
+      "name": "verifier-notation",
+      "type": "notation",
+      "message": "Original Error: (Original Error: (error while loading the trust store, unable to fetch certificates for namedStore: certs), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
       "artifactType": "application/vnd.cncf.notary.signature"
     }
   ]
