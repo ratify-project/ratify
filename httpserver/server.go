@@ -174,9 +174,6 @@ func (server *Server) register(method, path string, handler ContextHandler) {
 }
 
 func (server *Server) registerHandlers() error {
-	if err := server.componentsValidation(); err != nil {
-		return err
-	}
 	verifyPath, err := url.JoinPath(ServerRootURL, "verify")
 	if err != nil {
 		return err

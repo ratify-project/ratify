@@ -34,7 +34,6 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	pkgUtils "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/utils"
-	"github.com/sirupsen/logrus"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 )
@@ -102,6 +101,11 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 			defer unlock()
 
 			logger.GetLogger(ctx, server.LogOption).Infof("verifying subject %v", resolvedSubjectReference)
+			if err := server.componentsValidation("verify"); err != nil {
+				logger.GetLogger(ctx, server.LogOption).Error(err)
+				returnItem.Error = err.Error()
+				return
+			}
 			var result types.VerifyResult
 			found := false
 			cacheHit := false
@@ -186,6 +190,11 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
+			if err := server.componentsValidation("mutate"); err != nil {
+				logger.GetLogger(ctx, server.LogOption).Error(err)
+				returnItem.Error = err.Error()
+				return
+			}
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
 				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
@@ -226,17 +235,19 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	return sendResponse(&results, "", w, http.StatusOK, true)
 }
 
-func (server *Server) componentsValidation() error {
-	logrus.Info("starting validating handlers")
-	defer logrus.Info("stopped validating handlers")
-	if len(server.GetExecutor().ReferrerStores) == 0 {
-		return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
+func (server *Server) componentsValidation(handler string) error {
+	if handler == "mutate" {
+		if len(server.GetExecutor().ReferrerStores) == 0 {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
+		}
 	}
-	if server.GetExecutor().PolicyEnforcer == nil {
-		return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
-	}
-	if len(server.GetExecutor().Verifiers) == 0 {
-		return errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")
+	if handler == "verify" {
+		if server.GetExecutor().PolicyEnforcer == nil {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
+		}
+		if len(server.GetExecutor().Verifiers) == 0 {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")
+		}
 	}
 	return nil
 }
