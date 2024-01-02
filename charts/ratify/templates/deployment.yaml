@@ -96,10 +96,6 @@ spec:
             - mountPath: "/usr/local/ratify"
               name: config
               readOnly: true
-            {{- if .Values.policy.useRego }}
-            - mountPath: "/usr/local/ratify/policy"
-              name: policy
-              readOnly: true
             {{- end }}
               {{- if $dockerAuthMode }}
             - mountPath: "/usr/local/docker"
