@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.0.0
+  tag: v1.1.0
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -15,6 +15,20 @@ notationCerts: []
 cosign:
   enabled: true
   key: ""
+vulnerabilityreport:
+  enabled: false
+  passthrough: false
+  schemaURL: ""
+  createdAnnotationName: ""
+  maximumAge: ""
+  notaryProjectSignatureRequired: false
+  disallowedSeverities: []
+  denylistCVEs: []
+sbom:
+  enabled: false
+  notaryProjectSignatureRequired: false
+  disallowedLicenses: []
+  disallowedPackages: []
 resources:
   limits:
     cpu: 1000m
@@ -126,7 +140,7 @@ logger:
     traceIDHeaderName: # List of headers that include the trace ID in the external data requests to Ratify. The same headers will be passed to upstream services like remote registries.
       - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
 
-# See https://ratify.dev/docs/1.0/reference/usage#feature-flags for a list of available feature flags
+# See https://ratify.dev/docs/reference/usage#feature-flags for a list of available feature flags
 featureFlags:
   # RATIFY_FEATURE_NAME: true
 

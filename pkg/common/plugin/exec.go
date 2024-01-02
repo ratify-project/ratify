@@ -18,7 +18,6 @@ package plugin
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os/exec"
@@ -46,6 +45,7 @@ type DefaultExecutor struct {
 	Stderr io.Writer
 }
 
+// return the command output and the error
 func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -83,6 +83,7 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 		// If the plugin is about to be completed, then we wait a
 		// second and try it again
 		if strings.Contains(err.Error(), "text file busy") {
+			logrus.Debugf("command returned text file busy, retrying after %v", waitDuration)
 			time.Sleep(waitDuration)
 			continue
 		}
@@ -102,17 +103,16 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 }
 
 func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
-	errMsg := Error{}
-	if len(stdout) == 0 {
-		if len(stderr) == 0 {
-			errMsg.Msg = fmt.Sprintf("plugin failed with no proper error message: %v", err)
-		} else {
-			errMsg.Msg = fmt.Sprintf("plugin failed with error: %q", string(stderr))
-		}
-	} else if perr := json.Unmarshal(stdout, &errMsg); perr != nil {
-		errMsg.Msg = fmt.Sprintf("plugin failed and parsing its error message also failed with error %q: %v", string(stdout), perr)
-	}
-	return &errMsg
+	var stdOutBuffer bytes.Buffer
+	var stdErrBuffer bytes.Buffer
+
+	// writing them to buffer to avoid lint error
+	stdOutBuffer.Write(stdout)
+	stdErrBuffer.Write(stderr)
+
+	errCombined := Error{}
+	errCombined.Msg = fmt.Sprintf("plugin failed with error: '%v', msg from stError '%v', msg from stdOut '%v'", err.Error(), stdErrBuffer.String(), stdOutBuffer.String())
+	return &errCombined
 }
 
 func (e *DefaultExecutor) FindInPaths(plugin string, paths []string) (string, error) {

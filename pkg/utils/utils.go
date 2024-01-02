@@ -17,6 +17,7 @@ package utils
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	_ "crypto/sha256" // required package for digest.Parse
@@ -27,7 +28,18 @@ import (
 	"github.com/opencontainers/go-digest"
 )
 
-const RatifyNamespaceEnvVar = "RATIFY_NAMESPACE"
+const (
+	RatifyNamespaceEnvVar = "RATIFY_NAMESPACE"
+	subjectPattern        = `(\[(.*?)\])?(.*)`
+)
+
+// RequestKey is a structured external data request key.
+type RequestKey struct {
+	// Subject is image name in the request key.
+	Subject string
+	// Namespace is the scope of the image.
+	Namespace string
+}
 
 // ParseDigest parses the given string and returns a validated Digest object.
 func ParseDigest(digestStr string) (digest.Digest, error) {
@@ -63,4 +75,23 @@ func ParseSubjectReference(subRef string) (common.Reference, error) {
 // returns the string in lower case without leading and trailing space
 func TrimSpaceAndToLower(input string) string {
 	return strings.ToLower(strings.TrimSpace(input))
+}
+
+// ParseRequestKey parses key string to a structured RequestKey object.
+// Example 1:
+// key: [gatekeeper-system]docker.io/test/hello:v1
+// match slice: ["[gatekeeper-system]docker.io/test/hello:v1" "[gatekeeper-system]" "gatekeeper-system" "docker.io/test/hello:v1"]
+// Example 2:
+// key: docker.io/test/hello:v1
+// match slice: ["docker.io/test/hello:v1" "" "" "docker.io/test/hello:v1"]
+func ParseRequestKey(key string) (RequestKey, error) {
+	re := regexp.MustCompile(subjectPattern)
+	match := re.FindStringSubmatch(key)
+	if match == nil || len(match) < 4 {
+		return RequestKey{}, fmt.Errorf("invalid request key: %s", key)
+	}
+	return RequestKey{
+		Namespace: match[2],
+		Subject:   match[3],
+	}, nil
 }

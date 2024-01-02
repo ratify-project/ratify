@@ -31,6 +31,7 @@ import (
 
 type PluginConfig struct {
 	Name    string            `json:"name"`
+	Type    string            `json:"type"`
 	Schemas map[string]string `json:"schemas"`
 }
 
@@ -54,11 +55,13 @@ func parseInput(stdin []byte) (*PluginConfig, error) {
 
 func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
 	input, err := parseInput(args.StdinData)
-
 	if err != nil {
 		return nil, err
 	}
-
+	verifierType := ""
+	if input.Type != "" {
+		verifierType = input.Type
+	}
 	schemaMap := input.Schemas
 	ctx := context.Background()
 
@@ -70,6 +73,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	if len(referenceManifest.Blobs) == 0 {
 		return &verifier.VerifierResult{
 			Name:      input.Name,
+			Type:      verifierType,
 			IsSuccess: false,
 			Message:   fmt.Sprintf("schema validation failed: no blobs found for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
 		}, nil
@@ -85,6 +89,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 		if err != nil {
 			return &verifier.VerifierResult{
 				Name:      input.Name,
+				Type:      verifierType,
 				IsSuccess: false,
 				Message:   fmt.Sprintf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blobDesc.Digest, blobDesc.MediaType, err.Error()),
 			}, nil
@@ -93,6 +98,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 	return &verifier.VerifierResult{
 		Name:      input.Name,
+		Type:      verifierType,
 		IsSuccess: true,
 		Message:   "schema validation passed for configured media types",
 	}, nil

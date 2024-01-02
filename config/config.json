@@ -50,7 +50,7 @@
             },
             {
                 "name": "sbom",
-                "artifactTypes": "org.example.sbom.v0",
+                "artifactTypes": "application/spdx+json",
                 "nestedReferences": "application/vnd.cncf.notary.signature"
             },
             {
@@ -59,6 +59,13 @@
                 "allowedLicenses": [
                     "MIT"
                 ]
+            },
+            {
+                "name": "vulnerabilityreport",
+                "artifactTypes": "application/sarif+json",
+                "maximumAge": "24h",
+                "disallowedSeverities": ["high", "critical"],
+                "denylistCVEs": ["CVE-2021-44228"]
             }
         ]
     }
