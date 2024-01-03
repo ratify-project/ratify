@@ -80,13 +80,14 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	// trying to get a default namespace if verifiers contains certificate stores references
 	namespace, err := getCertStoreNamespace(req.Namespace)
 	if err != nil {
 		verifierLogger.Error(err, "unable to get default namespace for certstore specified in verifier crd")
 		return ctrl.Result{}, err
 	}
 
-	if err = verifierAddOrReplace(verifier.Spec, resource, namespace); err != nil {
+	if err = verifierAddOrReplace(ctx, verifier.Spec, resource, namespace); err != nil {
 		verifierLogger.Error(err, "unable to create verifier from verifier crd")
 		return ctrl.Result{}, err
 	}
@@ -96,7 +97,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // creates a verifier reference from CRD spec and add store to map
-func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
+func verifierAddOrReplace(ctx context.Context, spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := specToVerifierConfig(spec, objectName)
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
@@ -119,6 +120,12 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		logrus.Error(err, "unable to create verifier from verifier config")
 		return err
 	}
+
+	if err := referenceVerifier.ValidateConfig(ctx); err != nil {
+		// TODO: populate the status of the verifier
+		return err
+	}
+
 	VerifierMap[objectName] = referenceVerifier
 	logrus.Infof("verifier '%v' added to verifier map", referenceVerifier.Name())
 

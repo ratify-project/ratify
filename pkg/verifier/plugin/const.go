@@ -16,8 +16,9 @@ limitations under the License.
 package plugin
 
 const (
-	VerifyCommand = "VERIFY"
-	CommandEnvKey = "RATIFY_VERIFIER_COMMAND"
-	SubjectEnvKey = "RATIFY_VERIFIER_SUBJECT"
-	VersionEnvKey = "RATIFY_VERIFIER_VERSION"
+	VerifyCommand   = "VERIFY"
+	ValidateCommand = "VALIDATE"
+	CommandEnvKey   = "RATIFY_VERIFIER_COMMAND"
+	SubjectEnvKey   = "RATIFY_VERIFIER_SUBJECT"
+	VersionEnvKey   = "RATIFY_VERIFIER_VERSION"
 )

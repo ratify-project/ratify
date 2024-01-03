@@ -219,6 +219,13 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 	return []string{}
 }
 
+// currently we only support plugin path validation and version validation.
+// This is a no opt for notation as this is a built in verifier
+func (v *notationPluginVerifier) ValidateConfig(ctx context.Context) error {
+	// TODO: maybe we want to validation more verifier specific config later
+	return nil
+}
+
 // append namespace to certStore so they are uniquely identifiable
 func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
 	if namespace == "" {

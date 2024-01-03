@@ -112,6 +112,11 @@ func (vp *VerifierPlugin) Verify(ctx context.Context,
 	return *vr, nil
 }
 
+// returns an error if configuration contains errors like the plugin not being found or unsupported version
+func (vp *VerifierPlugin) ValidateConfig(ctx context.Context) error {
+	return vp.validateConfig(ctx)
+}
+
 func (vp *VerifierPlugin) verifyReference(
 	ctx context.Context,
 	subjectReference common.Reference,
@@ -154,6 +159,46 @@ func (vp *VerifierPlugin) verifyReference(
 	}
 
 	return result, nil
+}
+
+func (vp *VerifierPlugin) validateConfig(
+	ctx context.Context) error {
+
+	verifierTypeStr := vp.name
+	if vp.verifierType != "" {
+		verifierTypeStr = vp.verifierType
+	}
+
+	pluginPath, err := vp.executor.FindInPaths(verifierTypeStr, vp.path)
+	if err != nil {
+		return re.ErrorCodePluginNotFound.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
+	}
+
+	pluginArgs := VerifierPluginArgs{
+		Command: ValidateCommand,
+		Version: vp.version,
+	}
+
+	inputConfig := config.PluginInputConfig{
+		Config: vp.rawConfig,
+	}
+
+	verifierConfigBytes, err := json.Marshal(inputConfig)
+	if err != nil {
+		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
+	}
+
+	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
+	if err != nil {
+		return re.ErrorCodeValidatePluginFailure.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
+	}
+
+	_, err = types.GetVerifierResult(stdoutBytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (vp *VerifierPlugin) GetNestedReferences() []string {

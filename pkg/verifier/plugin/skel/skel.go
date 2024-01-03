@@ -74,11 +74,7 @@ func (pc *pcontext) pluginMainCore(_, version string, verifyReference VerifyRefe
 		return err
 	}
 
-	if err = validateVersion(cmdArgs.Version, supportedVersions); err != nil {
-		return err
-	}
-
-	input, err := validateAndGetConfig(cmdArgs.StdinData)
+	input, err := validateAndGetConfig(cmdArgs.StdinData, supportedVersions)
 	if err != nil {
 		return err
 	}
@@ -113,11 +109,12 @@ func (pc *pcontext) pluginMainCore(_, version string, verifyReference VerifyRefe
 		if err != nil {
 			return plugin.NewError(types.ErrIOFailure, "failed to write plugin output", err.Error())
 		}
-
+	case vp.ValidateCommand:
 		return nil
 	default:
 		return plugin.NewError(types.ErrUnknownCommand, fmt.Sprintf("unknown %s: %v", vp.CommandEnvKey, cmd), "")
 	}
+	return nil
 }
 
 func (pc *pcontext) getCmdArgsFromEnv() (string, *CmdArgs, *plugin.Error) {
@@ -177,7 +174,7 @@ func validateVersion(version string, supportedVersions []string) *plugin.Error {
 	return plugin.NewError(types.ErrVersionNotSupported, fmt.Sprintf("plugin doesn't support version %s", version), "")
 }
 
-func validateAndGetConfig(jsonBytes []byte) (*config.PluginInputConfig, *plugin.Error) {
+func validateAndGetConfig(jsonBytes []byte, supportedVersions []string) (*config.PluginInputConfig, *plugin.Error) {
 	var input config.PluginInputConfig
 
 	if err := json.Unmarshal(jsonBytes, &input); err != nil {
@@ -187,5 +184,16 @@ func validateAndGetConfig(jsonBytes []byte) (*config.PluginInputConfig, *plugin.
 	if input.Config[types.Name] == "" || input.Config[types.Name] == nil {
 		return nil, plugin.NewError(types.ErrInvalidVerifierConfig, "missing verifier name", "")
 	}
+
+	version := input.Config[types.Version].(string)
+	if version == "" {
+		//version = config.getDefaultVersion()
+		version = "1.0.0"
+	}
+
+	if err := validateVersion(version, supportedVersions); err != nil {
+		return nil, err
+	}
+
 	return &input, nil
 }

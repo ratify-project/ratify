@@ -53,5 +53,8 @@ type ReferenceVerifier interface {
 		referenceDescriptor ocispecs.ReferenceDescriptor,
 		referrerStore referrerstore.ReferrerStore) (VerifierResult, error)
 
+	// ValidateConfig return error if plugin is not found or version is not supported
+	ValidateConfig(ctx context.Context) error
+
 	GetNestedReferences() []string
 }

@@ -34,6 +34,14 @@ var (
 		Description: "Verifier plugin failed to verify. Please check the error details from the verifier plugin and refer to plugin's documentation for more details.",
 	})
 
+	// ErrorCodeVerifyPluginFailure is returned when verifier plugin fails
+	// to verify attached artifact.
+	ErrorCodeValidatePluginFailure = Register("errcode", ErrorDescriptor{
+		Value:       "VALIDATE_PLUGIN_FAILURE",
+		Message:     "validate plugin failure",
+		Description: "Verifier plugin config invalid. Please check the error details from the verifier plugin and refer to plugin's documentation for more details.",
+	})
+
 	// ErrorCodeSignatureNotFound is returned when verifier cannot find a
 	// signature.
 	ErrorCodeSignatureNotFound = Register("errcode", ErrorDescriptor{
