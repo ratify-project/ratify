@@ -155,8 +155,14 @@ docker push ${REGISTRY}/deislabs/ratify:yourtag
 docker push ${REGISTRY}/localbuildcrd:yourtag
 ```
 
-### Deploy using Dev Helmfile
 #### Update dev.helmfile.yaml
+Replace Ratify `chart` and `version` with local values:
+```yaml
+...
+chart: chart/ratify
+version: <INSERT VERSION> # ATTENTION: Needs to match latest in Chart.yaml
+...
+```
 Replace `repository`, `crdRepository`, and `tag` with previously built images:
 ```yaml
 - name: image.repository 
@@ -167,9 +173,13 @@ Replace `repository`, `crdRepository`, and `tag` with previously built images:
   value: <YOUR IMAGES TAG NAME>
 ```
 
+### Deploy using Dev Helmfile
+
+Development charts + images are published weekly and latest versions are tagged with rolling tags referenced in dev helmfile.
+
 Deploy to cluster:
 ```bash
-helmfile sync -f dev.helmfile.yaml
+helmfile sync -f git::https://github.com/deislabs/ratify.git@dev.helmfile.yaml
 ```
 
 ### Deploy from local helm chart
