@@ -1,4 +1,5 @@
 # Negative test cases for Ratify
+
 Author: Feynman Zhou (@FeynmanZhou)
 
 ## Overview
@@ -13,9 +14,9 @@ This document summarizes necessary negative test cases for Ratify.
 2. Verifier - Notation (Assignee: Binbin )
 3. Certificate store (Assignee: Juncheng)
 4. Policy (Assignee: @Feynman )
-5. HA (Assignee: @akashsinghal  ) 
+5. HA (Assignee: @akashsinghal  )
 
-**OS Arch**
+### OS Arch
 
 Linux OS
 
@@ -34,7 +35,7 @@ Linux OS
 |  TC-6   | Verifier | `registryScope` is not set or misconfigured in Trust policy                    | pass |
 |  TC-7   | Verifier | Trust policy matches incorrectly and fails due to wrong certificate        | pass |
 |  TC-8   | Verifier | The image signed by an untrusted identities or `trustedIdentities` was misconfigured    | pass |
-|  TC-9   | Cert Store | Certificate expired  | pass |                                                | 
+|  TC-9   | Cert Store | Certificate expired  | pass |                                                |
 |  TC-10   | Cert Store | Certificate revoked                                                  | pass |
 | TC-11 | Cert Store | Ratify can't access AKV | pass |
 | TC-12 | Cert Store | An invalid certificate is filled out in the cert store CRD (inline) | failed |
@@ -56,49 +57,51 @@ Gather the Ratify logs for each test case.
 
 #### TC1
 
-```
+```stdout
 Error from server: admission webhook "mutation.gatekeeper.sh" denied the request: failed to resolve external data placeholders: failed to retrieve external data item from provider ratify-mutation-provider: Original Error: (Original Error: (HEAD "http://registry:5000/v2/notation/manifests/signed": response status code 401: Unauthorized), Error: repository operation failure, Code: REPOSITORY_OPERATION_FAILURE, Plugin Name: oras), Error: get subject descriptor failure, Code: GET_SUBJECT_DESCRIPTOR_FAILURE, Plugin Name: oras, Component Type: referrerStore, Detail: failed to get subject descriptor for image registry:5000/notation:signed
 ```
 
 #### TC2
 
-```
+```stdout
 Error from server: admission webhook "mutation.gatekeeper.sh" denied the request: failed to resolve external data placeholders: failed to retrieve external data item from provider ratify-mutation-provider: Original Error: (Original Error: (Head "https://huishwabbit2.azurecr.io/v2/net-monitor/manifests/v1": dial tcp: lookup huishwabbit2.azurecr.io on 10.0.0.10:53: no such host), Error: repository operation failure, Code: REPOSITORY_OPERATION_FAILURE, Plugin Name: oras), Error: get subject descriptor failure, Code: GET_SUBJECT_DESCRIPTOR_FAILURE, Plugin Name: oras, Component Type: referrerStore, Detail: failed to get subject descriptor for image huishwabbit2.azurecr.io/net-monitor:v1
 ```
 
 #### TC3
 
-```
+```stdout
 Error from server: admission webhook "mutation.gatekeeper.sh" denied the request: failed to resolve external data placeholders: failed to retrieve external data item from provider ratify-mutation-provider: Original Error: (Original Error: (Head "https://registry:5000/v2/notation/manifests/signed": http: server gave HTTP response to HTTPS client), Error: repository operation failure, Code: REPOSITORY_OPERATION_FAILURE, Plugin Name: oras), Error: get subject descriptor failure, Code: GET_SUBJECT_DESCRIPTOR_FAILURE, Plugin Name: oras, Component Type: referrerStore, Detail: failed to get subject descriptor for image registry:5000/notation:signed
 ```
 
-
 #### TC4
 
-```
+```stdout
 Error from server: admission webhook "mutation.gatekeeper.sh" denied the request: failed to resolve external data placeholders: failed to retrieve external data item from provider ratify-mutation-provider: Original Error: (Original Error: (HEAD "https://huishwabbit1.azurecr.io/v2/net-monitor/manifests/v1": response status code 401: Unauthorized), Error: repository operation failure, Code: REPOSITORY_OPERATION_FAILURE, Plugin Name: oras), Error: get subject descriptor failure, Code: GET_SUBJECT_DESCRIPTOR_FAILURE, Plugin Name: oras, Component Type: referrerStore, Detail: failed to get subject descriptor for image huishwabbit1.azurecr.io/net-monitor:v1
 ```
 
 #### TC5
-1. If users applied a CR without the trustPolicy, Ratify will log an error while reconciling it:
 
-```
+1.If users applied a CR without the trustPolicy, Ratify will log an error while reconciling it:
+
+```stdout
 time=2023-09-20T12:47:29.879027432Z level=error msg=Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: notation, Component Type: verifierunable to create verifier from verifier crd
 ```
 
-2. If the trustPolicy is not set in ConfigMap of charts, Ratify will fail deployment.
+2.If the trustPolicy is not set in ConfigMap of charts, Ratify will fail deployment.
 
 #### TC6
-1. If users applied a CR without registryScope, Ratify will log an error while reconciling it:
-```json
+
+1.If users applied a CR without registryScope, Ratify will log an error while reconciling it:
+
+```stdout
 time=2023-09-20T13:08:43.696147959Z level=error msg=Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: notation, Component Type: verifierunable to create verifier from verifier crd
 ```
 
-2. If the registryScope is not set in ConfigMap of charts, Ratify will fail deployment.
+2.If the registryScope is not set in ConfigMap of charts, Ratify will fail deployment.
 
-3. If users applied a CR with misconfigured registryScope, the verification would fail:
+3.If users applied a CR with misconfigured registryScope, the verification would fail:
 
-```json
+```stdout
 "verifierReports": [
     {
       "subject": "ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
@@ -123,7 +126,7 @@ time=2023-09-20T13:08:43.696147959Z level=error msg=Error: plugin init failure, 
 
 The image verification fails.
 
-```json
+```stdout
 "verifierReports": [
     {
       "subject": "ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
@@ -144,9 +147,10 @@ The image verification fails.
 ```
 
 #### TC8
+
 The image verification fails:
 
-```json
+```stdout
 time=2023-09-22T13:50:40.440640495Z level=info msg=verify result for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
   "verifierReports": [
     {
@@ -162,13 +166,15 @@ time=2023-09-22T13:50:40.440640495Z level=info msg=verify result for subject ghc
 
 #### TC10
 
+```stdout
 time=2023-09-22T08:58:54.288013215Z level=error msg=Reconciler error CertificateStore=gatekeeper-system/certstore-akv controller=certificatestore controllerGroup=config.ratify.deislabs.io controllerKind=CertificateStore error=Error fetching certificates in store certstore-akv with azurekeyvault provider, error: failed to get secret objectName:wabbit-network-io, objectVersion:, error: keyvault.BaseClient#GetSecret: Failure responding to request: StatusCode=404 -- Original Error: autorest/azure: Service returned an error. Status=404 Code="SecretNotFound" Message="A secret with (name/id) wabbit-network-io was not found in this key vault. If you recently deleted this secret you may be able to recover it using the correct recovery command. For help resolving this issue, please see https://go.microsoft.com/fwlink/?linkid=2125182" name=certstore-akv namespace=gatekeeper-system reconcileID=28eac175-4f3b-4353-88df-df5bdc3ae6de
+```
 
 #### TC12
 
 The inline cert is invalid and has an error but Ratify logs doesn't mentioned the root cause.
 
-```json 
+```stdout
 time=2023-09-21T17:11:38.097617136Z level=info msg=received request POST /ratify/gatekeeper/v1/verify
 time=2023-09-21T17:11:38.097677237Z level=info msg=start request POST /ratify/gatekeeper/v1/verify component-type=server go.version=go1.20.8 trace-id=8c82c679-037d-4973-9d3b-ba955c8a73a0
 time=2023-09-21T17:11:38.097999243Z level=info msg=verifying subject ghcr.io/feynmanzhou/net-monitor@sha256:27c0290c485140c3c998e92c6ef23fba2bd9f09c8a1c7adb24a1d2d274ce3e8e component-type=server go.version=go1.20.8 trace-id=8c82c679-037d-4973-9d3b-ba955c8a73a0
@@ -201,13 +207,13 @@ time=2023-09-21T17:11:38.904404237Z level=info msg=verify result for subject ghc
 
 #### TC13
 
-```json
+```stdout
  Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: azurekeyvault, Component Type: certProvider, Documentation: https://learn.microsoft.com/en-us/azure/key-vault/general/overview, Detail: failed to get keyvault client name=certstore-akv namespace=default reconcileID=a68577aa-af1f-4e87-8f3a-2296d6680934
  ```
 
 #### TC14
 
-```json
+```stdout
 time=2023-09-21T16:49:39.101904574Z level=info msg=verify result for subject ghcr.io/feynmanzhou/net-monitor@sha256:27c0290c485140c3c998e92c6ef23fba2bd9f09c8a1c7adb24a1d2d274ce3e8e: {
   "verifierReports": [
     {
@@ -233,14 +239,15 @@ time=2023-09-21T16:49:49.266880934Z level=warning msg=Error: cache not set, Code
 
 #### TC15
 
-```json
+```stdout
 time=2023-09-21T16:24:03.422952769Z level=error msg=Reconciler error Policy=regopolicy controller=policy controllerGroup=config.ratify.deislabs.io controllerKind=Policy error=failed to create policy enforcer: failed to create policy provider: Original Error: (Original Error: (failed to create policy engine: failed to create policy query, err: failed to prepare rego query, err: 1 error occurred: policy.rego:13: rego_unsafe_var_error: var fals is unsafe), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: regopolicy, Component Type: policyProvider, Documentation: https://github.com/deislabs/ratify/blob/main/docs/reference/providers.md#policy-providers, Detail: failed to create OPA engine), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: regopolicy, Component Type: policyProvider, Documentation: https://github.com/deislabs/ratify/blob/main/docs/reference/providers.md#policy-providers, Detail: failed to create policy provider name=regopolicy namespace= reconcileID=71adeaf9-a6f0-4974-88cf-34bd2be47a99
 ```
+
 #### TC16
 
 I misconfigured the config policy but the Ratify logs don't point this root cause out.
 
-```json
+```stdout
 time=2023-09-21T16:42:38.410494337Z level=info msg=received request POST /ratify/gatekeeper/v1/verify
 time=2023-09-21T16:42:38.410757342Z level=info msg=start request POST /ratify/gatekeeper/v1/verify component-type=server go.version=go1.20.8 trace-id=96f67e50-2bbe-42c6-98ac-fb0c7e41be96
 time=2023-09-21T16:42:38.411028347Z level=info msg=verifying subject ghcr.io/feynmanzhou/net-monitor@sha256:27c0290c485140c3c998e92c6ef23fba2bd9f09c8a1c7adb24a1d2d274ce3e8e component-type=server go.version=go1.20.8 trace-id=96f67e50-2bbe-42c6-98ac-fb0c7e41be96
@@ -265,7 +272,7 @@ time=2023-09-21T16:42:38.878372465Z level=info msg=verify result for subject ghc
 
 SSH into one of the nodes that has a ratify replica scheduled on it. Manually `reboot` the node. Immediately execute pod creation commands.
 
-```
+```stdout
 Error from server: admission webhook "mutation.gatekeeper.sh" denied the request: failed to resolve external data placeholders: failed to send external data request to provider ratify-mutation-provider: failed to send external data request: Post "https://ratify.gatekeeper-system:6001/ratify/gatekeeper/v1/mutate": dial tcp 10.0.254.84:6001: connect: no route to host
 ```
 
@@ -276,11 +283,14 @@ There's a short period of time when the node health is not known to be degraded 
 The Redis stateful sets (master + replica) were drained to 0
 
 Error from `kubectl run` output:
-```
+
+```stdout
 Error from server: admission webhook "mutation.gatekeeper.sh" denied the request: failed to resolve external data placeholders: failed to validate external data response from provider ratify-mutation-provider: non-empty system error: operation failed with error operation timed out after duration 1.95s
 ```
+
 Ratify Logs:
-```json
+
+```stdout
 time=2023-09-21T20:49:55.965807677Z level=info msg=received request POST /ratify/gatekeeper/v1/mutate 
 time=2023-09-21T20:49:55.965917879Z level=info msg=start request POST /ratify/gatekeeper/v1/mutate component-type=server go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
 time=2023-09-21T20:49:55.966001082Z level=info msg=mutating image ghcr.io/deislabs/ratify/notary-image:signed component-type=server go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
@@ -292,7 +302,8 @@ time=2023-09-21T20:49:57.917228968Z level=debug msg=mutation: execution time for
 ```
 
 Audit also begins to fail with timeout of 4.9 second.
-```json
+
+```stdout
 time=2023-09-21T20:52:45.703791311Z level=info msg=received request POST /ratify/gatekeeper/v1/verify 
 time=2023-09-21T20:52:45.703840611Z level=info msg=start request POST /ratify/gatekeeper/v1/verify component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
 time=2023-09-21T20:52:45.703937712Z level=info msg=verifying subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
@@ -318,34 +329,37 @@ time=2023-09-21T20:52:50.60490018Z level=info msg=verify result for subject ghcr
 The original `mutation exceeded 1.95s` error does not immediately point to what the root cause. Scanning through logs, you eventually see `context deadline exceeded` errors for cache writes which points to underlying cache being unavailable.
 
 #### TC19
+
 N/A
 
 #### TC20
 
-Scale dapr-side-car inject deployment to 0. Scale ratify deployment to 0. Scale ratify deployment back up to 2. Now the daprd sidecar containers will not be present on each pod. 
+Scale dapr-side-car inject deployment to 0. Scale ratify deployment to 0. Scale ratify deployment back up to 2. Now the daprd sidecar containers will not be present on each pod.
 
 Ratify pod will fail to startup if no daprd pod is enabled. This is due to cache intialization failure which is currently a blocking error.
 
 Logs
-```
+
+```stdout
 dapr client initializing for: 127.0.0.1:50001
 Error: error initializing cache of type dapr: error creating default client: error creating connection to '127.0.0.1:50001': context deadline exceeded
 ```
 
 #### TC21
 
-Force a Dapr installation misconfiguration by not applying the redis StateStore CR. 
+Force a Dapr installation misconfiguration by not applying the redis StateStore CR.
 
-User will not see any errors when applying pods/deployment. Perf will be degraded an may lead to more timeouts. 
+User will not see any errors when applying pods/deployment. Perf will be degraded an may lead to more timeouts.
 
 From logs, cache errors:
-```
+
+```stdout
 time=2023-09-21T22:17:50.216846963Z level=error msg=Error saving value to redis: error saving state: rpc error: code = FailedPrecondition desc = state store is not configured component-type=cache go.version=go1.20.8 trace-id=99e8aed9-e944-4e6f-8588-d7be7d16f940
 ```
 
 ### From Xinhe
 
-```json
+```stdout
 level=error msg=Reconciler error CertificateStore=default/certstore-incorrect-cert controller=certificatestore controllerGroup=config.ratify.deislabs.io controllerKind=CertificateStore error=Error fetching certificates in store certstore-incorrect-cert with inline provider, error: Error: cert invalid, Code: CERT_INVALID, Component Type: certProvider name=certstore-incorrect-cert namespace=default reconcileID=6a444f61-fed0-4d0a-b6e1-08bedbe90712
 time=2023-09-22T01:55:54.866028606Z level=warning msg=no certificate fetched for certStore certstore-incorrect-cert component-type=verifier go.version=go1.20.8 trace-id=4b6580f6-8b08-4c0b-a1ab-d4264298a6c9
 time=2023-09-22T01:55:54.866327608Z level=info msg=verify result for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
