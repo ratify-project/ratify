@@ -161,7 +161,7 @@ Development charts + images are published weekly and latest versions are tagged 
 
 Deploy to cluster:
 ```bash
-helmfile sync -f dev.helmfile.yaml
+helmfile sync -f git::https://github.com/deislabs/ratify.git@dev.helmfile.yaml
 ```
 
 ### Deploy from local helm chart
