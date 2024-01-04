@@ -22,12 +22,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       - name: Check license header
-        uses: apache/skywalking-eyes/header@ee81ff786927ea6ffa48b1e29c48e5289f4753aa
+        uses: apache/skywalking-eyes/header@ed436a5593c63a25f394ea29da61b0ac3731a9fe
         with:
           mode: check
           config: .github/licenserc.yml
       - name: Check dependencies license
-        uses: apache/skywalking-eyes/dependency@ee81ff786927ea6ffa48b1e29c48e5289f4753aa
+        uses: apache/skywalking-eyes/dependency@ed436a5593c63a25f394ea29da61b0ac3731a9fe
         with:
           config: .github/licenserc.yml
           flags:
@@ -81,10 +81,10 @@ jobs:
     name: "Build and run e2e Test"
     runs-on: ubuntu-latest
     timeout-minutes: 35
-    continue-on-error: true
     permissions:
       contents: read
     strategy:
+      fail-fast: false
       matrix:
         KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
         GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
@@ -140,11 +140,11 @@ jobs:
     runs-on: ubuntu-latest
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     timeout-minutes: 30
-    continue-on-error: true
     permissions:
       id-token: write
       contents: read
     strategy:
+      fail-fast: false
       matrix:
         KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
         GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
@@ -176,7 +176,7 @@ jobs:
         uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
         if: ${{ always() }}
         with:
-          name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
+          name: e2e-logs-aks-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
           path: |
             logs-*.json
 

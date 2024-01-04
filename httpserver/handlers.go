@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/deislabs/ratify/pkg/executor"
@@ -69,7 +70,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 	// iterate over all keys
 	for _, key := range providerRequest.Request.Keys {
 		wg.Add(1)
-		go func(key string) {
+		go func(key string, ctx context.Context) {
 			defer wg.Done()
 			routineStartTime := time.Now()
 			returnItem := externaldata.Item{
@@ -90,6 +91,8 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				returnItem.Error = err.Error()
 				return
 			}
+			ctx = ctxUtils.SetContextWithNamespace(ctx, requestKey.Namespace)
+
 			if subjectReference.Digest.String() == "" {
 				logger.GetLogger(ctx, server.LogOption).Warn("Digest should be used instead of tagged reference. The resolved digest may not point to the same signed artifact, since tags are mutable.")
 			}
@@ -139,7 +142,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 
 			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
 			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
-		}(utils.SanitizeString(key))
+		}(utils.SanitizeString(key), ctx)
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()

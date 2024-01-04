@@ -16,7 +16,7 @@ limitations under the License.
 package utils
 
 import (
-	"strings"
+	"regexp"
 
 	"github.com/spdx/tools-golang/spdx"
 )
@@ -37,22 +37,14 @@ func GetPackageLicenses(doc spdx.Document) []PackageLicense {
 // returns true if the licenseExpression contains the disallowed license
 // this implements a whole word match
 func ContainsLicense(spdxLicenseExpression string, disallowed string) bool {
-	if len(spdxLicenseExpression) == 0 {
-		return false
-	}
-
-	// if the licenseExpression is exactly the same as the disallowed license, return true
-	if spdxLicenseExpression == disallowed {
-		return true
-	}
-
-	disallowed1 := disallowed + " "
-	disallowed2 := " " + disallowed
-
-	// look for whole word match
-	if strings.Contains(spdxLicenseExpression, disallowed1) || strings.Contains(spdxLicenseExpression, disallowed2) {
-		return true
-	}
-
-	return false
+	// match the disallowed license as a whole word
+	// the word boundary can be:
+	// 1. ^/$ , the beginning/ending of the line
+	// 2. \\s, a whitespace
+	// 3. \\(, a left bracket
+	// 4. \\), a right bracket
+	escapedLicense := regexp.QuoteMeta(disallowed)
+	expression := "(?:^|\\(|\\s)(" + escapedLicense + ")(?:$|\\)|\\s)"
+	r := regexp.MustCompile(expression)
+	return r.MatchString(spdxLicenseExpression)
 }
