@@ -16,8 +16,6 @@ package ratify.policy
 
 # This template defines policy for SBOM validation.
 # It checks the following:
-# - If there are any system errors
-# - If there are errors for any of the images
 # - There is at least one SBOM report that was verified
 # - Only considers ONE SBOM report
 # - The SBOM is valid (isSuccess = true)
