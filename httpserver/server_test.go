@@ -44,6 +44,7 @@ import (
 )
 
 const testArtifactType string = "test-type1"
+const testImageNameTagged string = "localhost:5000/net-monitor:v1"
 
 func testGetExecutor() *core.Executor {
 	return &core.Executor{
@@ -99,11 +100,10 @@ func TestNewServer_Expected(t *testing.T) {
 
 func TestServer_Timeout_Failed(t *testing.T) {
 	timeoutDuration := 6
-	testImageName := "localhost:5000/net-monitor:v1"
 	t.Run("server_timeout_fail", func(t *testing.T) {
 		body := new(bytes.Buffer)
 
-		_ = json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageName}))
+		_ = json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageNameTagged}))
 		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
 		logrus.Infof("policies successfully created. %s", body.Bytes())
 
@@ -239,7 +239,6 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 func TestServer_Mutation_Success(t *testing.T) {
 	timeoutDuration := 6
-	testImageNameTagged := "localhost:5000/net-monitor:v1"
 	testDigest := digest.FromString("test")
 	testImageNameDigested := fmt.Sprintf("localhost:5000/net-monitor@%s", testDigest)
 	t.Run("server_timeout_fail", func(t *testing.T) {
@@ -310,6 +309,84 @@ func TestServer_Mutation_Success(t *testing.T) {
 		retFirstValue := respBody.Response.Items[0].Value
 		if retFirstValue != testImageNameDigested {
 			t.Fatalf("Expected mutation response to be %s but got %s", testImageNameDigested, retFirstValue)
+		}
+	})
+}
+
+// TestServer_Mutation_ReferrerStoreConfigInvalid_Failure tests the case where the ReferrerStoreConfig is not provide
+func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
+	timeoutDuration := 6
+	testDigest := digest.FromString("test")
+	t.Run("server_timeout_fail", func(t *testing.T) {
+		body := new(bytes.Buffer)
+
+		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest([]string{testImageNameTagged})); err != nil {
+			t.Fatalf("failed to encode request body: %v", err)
+		}
+		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/mutate", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
+		responseRecorder := httptest.NewRecorder()
+
+		configPolicy := config.PolicyEnforcer{
+			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+				testArtifactType: types.AnyVerifySuccess,
+			}}
+		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
+			{
+				ArtifactType: testArtifactType,
+			}},
+			ResolveMap: map[string]digest.Digest{
+				"v1": testDigest,
+			},
+		}
+		ver := &core.TestVerifier{
+			CanVerifyFunc: func(at string) bool {
+				return at == testArtifactType
+			},
+			VerifyResult: func(artifactType string) bool {
+				time.Sleep(time.Duration(timeoutDuration) * time.Second)
+				return true
+			},
+		}
+
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
+		server := &Server{
+			GetExecutor:       getExecutor,
+			Context:           request.Context(),
+			MutationStoreName: store.Name(),
+
+			keyMutex: keyMutex{},
+		}
+
+		handler := contextHandler{
+			context: server.Context,
+			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
+		}
+
+		handler.ServeHTTP(responseRecorder, request)
+		logrus.Infof("response: %v", responseRecorder)
+		if responseRecorder.Code != http.StatusOK {
+			t.Errorf("Want status '%d', got '%d'", http.StatusOK, responseRecorder.Code)
+		}
+
+		var respBody externaldata.ProviderResponse
+		if err := json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody); err != nil {
+			t.Fatalf("failed to decode response body: %v", err)
+		}
+		retFirstErr := respBody.Response.Items[0].Error
+		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.ReferrerStore).WithDetail("referrer store config should have at least one store").Error()
+		if retFirstErr != expectedErr {
+			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr, retFirstErr)
 		}
 	})
 }
@@ -443,6 +520,150 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 		expectedErr := ratifyerrors.ErrorCodeReferenceInvalid.WithDetail("failed to parse subject reference").Error()
 		if retFirstErr != expectedErr {
 			t.Fatalf("Expected first subject error to be: %s,: but got %s", expectedErr, retFirstErr)
+		}
+	})
+}
+
+// TestServer_Verify_PolicyEnforcerConfigInvalid_Failure tests the case where the PolicyEnforcer CR is not provide
+func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
+	timeoutDuration := 6
+	testImageNames := []string{"net-monitor"}
+	testDigest := digest.FromString("test")
+	t.Run("server_timeout_fail", func(t *testing.T) {
+		body := new(bytes.Buffer)
+
+		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames)); err != nil {
+			t.Fatalf("failed to encode request body: %v", err)
+		}
+		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
+		responseRecorder := httptest.NewRecorder()
+
+		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
+			{
+				ArtifactType: testArtifactType,
+			}},
+			ResolveMap: map[string]digest.Digest{
+				"v1": testDigest,
+			},
+		}
+		ver := &core.TestVerifier{
+			CanVerifyFunc: func(at string) bool {
+				return at == testArtifactType
+			},
+			VerifyResult: func(artifactType string) bool {
+				time.Sleep(time.Duration(timeoutDuration) * time.Second)
+				return true
+			},
+		}
+
+		ex := &core.Executor{
+			PolicyEnforcer: nil,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
+		server := &Server{
+			GetExecutor:       getExecutor,
+			Context:           request.Context(),
+			MutationStoreName: store.Name(),
+
+			keyMutex: keyMutex{},
+		}
+
+		handler := contextHandler{
+			context: server.Context,
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+		}
+
+		handler.ServeHTTP(responseRecorder, request)
+		logrus.Infof("response: %v", responseRecorder)
+		if responseRecorder.Code != http.StatusOK {
+			t.Errorf("Want status '%d', got '%d'", http.StatusOK, responseRecorder.Code)
+		}
+
+		var respBody externaldata.ProviderResponse
+		if err := json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody); err != nil {
+			t.Fatalf("failed to decode response body: %v", err)
+		}
+		retFirstErr := respBody.Response.Items[0].Error
+		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config must be specified").Error()
+		if retFirstErr != expectedErr {
+			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr, retFirstErr)
+		}
+	})
+}
+
+// TestServer_Verify_VerifierConfig_Failure tests the case where the VerifierConfig CR is not provide
+func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
+	testImageNames := []string{"net-monitor"}
+	testDigest := digest.FromString("test")
+	t.Run("server_timeout_fail", func(t *testing.T) {
+		body := new(bytes.Buffer)
+
+		if err := json.NewEncoder(body).Encode(externaldata.NewProviderRequest(testImageNames)); err != nil {
+			t.Fatalf("failed to encode request body: %v", err)
+		}
+		request := httptest.NewRequest(http.MethodPost, "/ratify/gatekeeper/v1/verify", bytes.NewReader(body.Bytes()))
+		logrus.Infof("policies successfully created. %s", body.Bytes())
+
+		responseRecorder := httptest.NewRecorder()
+
+		configPolicy := config.PolicyEnforcer{
+			ArtifactTypePolicies: map[string]types.ArtifactTypeVerifyPolicy{
+				testArtifactType: types.AnyVerifySuccess,
+			}}
+		store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
+			{
+				ArtifactType: testArtifactType,
+			}},
+			ResolveMap: map[string]digest.Digest{
+				"v1": testDigest,
+			},
+		}
+
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{},
+		}
+
+		getExecutor := func() *core.Executor {
+			return ex
+		}
+
+		server := &Server{
+			GetExecutor:       getExecutor,
+			Context:           request.Context(),
+			MutationStoreName: store.Name(),
+
+			keyMutex: keyMutex{},
+		}
+
+		handler := contextHandler{
+			context: server.Context,
+			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+		}
+
+		handler.ServeHTTP(responseRecorder, request)
+		logrus.Infof("response: %v", responseRecorder)
+		if responseRecorder.Code != http.StatusOK {
+			t.Errorf("Want status '%d', got '%d'", http.StatusOK, responseRecorder.Code)
+		}
+
+		var respBody externaldata.ProviderResponse
+		if err := json.NewDecoder(responseRecorder.Result().Body).Decode(&respBody); err != nil {
+			t.Fatalf("failed to decode response body: %v", err)
+		}
+		retFirstErr := respBody.Response.Items[0].Error
+		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.Verifier).WithDetail("verifiers config should have at least one verifier").Error()
+		if retFirstErr != expectedErr {
+			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr, retFirstErr)
 		}
 	})
 }

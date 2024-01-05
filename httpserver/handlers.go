@@ -39,6 +39,8 @@ import (
 )
 
 const apiVersion = "externaldata.gatekeeper.sh/v1alpha1"
+const verifyComponents string = "verify"
+const mutateComponents string = "mutate"
 
 // verify validates provided images against the configured policy.
 // The image key could be either a standalone image(repo:tag) or an image within a specific namespace([namespace]repo:tag).
@@ -81,6 +83,11 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
+			if err := server.componentsValidation(verifyComponents); err != nil {
+				logger.GetLogger(ctx, server.LogOption).Error(err)
+				returnItem.Error = err.Error()
+				return
+			}
 			requestKey, err := pkgUtils.ParseRequestKey(key)
 			if err != nil {
 				returnItem.Error = err.Error()
@@ -122,7 +129,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				verifyParameters := executor.VerifyParameters{
 					Subject: resolvedSubjectReference,
 				}
-
 				if result, err = server.GetExecutor().VerifySubject(ctx, verifyParameters); err != nil {
 					returnItem.Error = errors.ErrorCodeExecutorFailure.WithError(err).WithComponentType(errors.Executor).Error()
 					return
@@ -139,7 +145,6 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 					logger.GetLogger(ctx, server.LogOption).Infof("verify result for subject %s: %s", resolvedSubjectReference, string(res))
 				}
 			}
-
 			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
 			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(key), ctx)
@@ -187,6 +192,11 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
+			if err := server.componentsValidation(mutateComponents); err != nil {
+				logger.GetLogger(ctx, server.LogOption).Error(err)
+				returnItem.Error = err.Error()
+				return
+			}
 			parsedReference, err := pkgUtils.ParseSubjectReference(image)
 			if err != nil {
 				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
@@ -225,6 +235,26 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for request: %dms", elapsedTime)
 	metrics.ReportMutationRequest(ctx, elapsedTime)
 	return sendResponse(&results, "", w, http.StatusOK, true)
+}
+
+func (server *Server) componentsValidation(handlerComponents string) error {
+	if handlerComponents == mutateComponents {
+		if len(server.GetExecutor().ReferrerStores) == 0 {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
+		}
+	}
+	if handlerComponents == verifyComponents {
+		if len(server.GetExecutor().ReferrerStores) == 0 {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
+		}
+		if server.GetExecutor().PolicyEnforcer == nil {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
+		}
+		if len(server.GetExecutor().Verifiers) == 0 {
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")
+		}
+	}
+	return nil
 }
 
 func sendResponse(results *[]externaldata.Item, systemErr string, w http.ResponseWriter, respCode int, isMutation bool) error {

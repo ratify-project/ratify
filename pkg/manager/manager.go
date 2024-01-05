@@ -83,12 +83,6 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		os.Exit(1)
 	}
 
-	configStores, configVerifiers, policy, err := config.CreateFromConfig(cf)
-	if err != nil {
-		logrus.Errorf("server start failed %v", fmt.Errorf("error initializing from config %w", err))
-		os.Exit(1)
-	}
-
 	// initialize server
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
 		var activeVerifiers []vr.ReferenceVerifier
@@ -96,29 +90,21 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		var activePolicyEnforcer policyprovider.PolicyProvider
 
 		// check if there are active verifiers from crd controller
-		// else use verifiers from configuration
 		if len(controllers.VerifierMap) > 0 {
 			for _, value := range controllers.VerifierMap {
 				activeVerifiers = append(activeVerifiers, value)
 			}
-		} else {
-			activeVerifiers = configVerifiers
 		}
 
 		// check if there are active stores from crd controller
-		// else use stores from configuration
 		if len(controllers.StoreMap) > 0 {
 			for _, value := range controllers.StoreMap {
 				activeStores = append(activeStores, value)
 			}
-		} else {
-			activeStores = configStores
 		}
 
 		if !controllers.ActivePolicy.IsEmpty() {
 			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
-		} else {
-			activePolicyEnforcer = policy
 		}
 
 		// return executor with latest configuration
