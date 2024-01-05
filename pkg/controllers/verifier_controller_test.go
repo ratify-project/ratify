@@ -16,6 +16,7 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -36,12 +37,12 @@ func TestMain(m *testing.M) {
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
 	var testVerifierSpec = configv1beta1.VerifierSpec{
-		Name:          "notation",
+		Name:          "cosign",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
 	}
-	var resource = "notation"
+	var resource = "cosign"
 
-	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(context.Background(), testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -57,7 +58,7 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
-	if err := verifierAddOrReplace(testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(context.Background(), testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -72,7 +73,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	var testVerifierSpec = getDefaultLicenseCheckerSpec()
 
 	// add a verifier
-	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(context.Background(), testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -82,7 +83,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	// modify the verifier
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"GNU\"]}"
 	testVerifierSpec = getLicenseCheckerFromParam(parametersString)
-	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(context.Background(), testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 

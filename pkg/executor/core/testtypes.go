@@ -51,6 +51,10 @@ func (s *TestVerifier) Verify(_ context.Context,
 	}, nil
 }
 
+func (s *TestVerifier) ValidateConfig(_ context.Context) error {
+	return nil // no error
+}
+
 func (s *TestVerifier) GetNestedReferences() []string {
 	return s.nestedReferences
 }

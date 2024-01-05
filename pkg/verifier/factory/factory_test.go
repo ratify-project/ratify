@@ -53,6 +53,10 @@ func (s *TestVerifier) Verify(_ context.Context,
 	return verifier.VerifierResult{IsSuccess: false}, nil
 }
 
+func (s *TestVerifier) ValidateConfig(_ context.Context) error {
+	return nil // no error
+}
+
 func (s *TestVerifier) GetNestedReferences() []string {
 	return []string{}
 }

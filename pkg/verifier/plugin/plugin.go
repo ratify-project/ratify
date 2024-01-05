@@ -188,16 +188,12 @@ func (vp *VerifierPlugin) validateConfig(
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 
-	stdoutBytes, err := vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
+	_, err = vp.executor.ExecutePlugin(ctx, pluginPath, nil, verifierConfigBytes, pluginArgs.AsEnviron())
 	if err != nil {
 		return re.ErrorCodeValidatePluginFailure.NewError(re.Verifier, vp.name, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
 
-	_, err = types.GetVerifierResult(stdoutBytes)
-	if err != nil {
-		return err
-	}
-
+	// if no error returned, there is no validation error
 	return nil
 }
 

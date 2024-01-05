@@ -152,6 +152,10 @@ func (v *mockVerifier) Verify(_ context.Context,
 	return v.verifierResult, nil
 }
 
+func (s *mockVerifier) ValidateConfig(_ context.Context) error {
+	return nil // no error
+}
+
 func (v *mockVerifier) GetNestedReferences() []string {
 	return nil
 }

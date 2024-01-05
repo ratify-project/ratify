@@ -97,6 +97,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // creates a verifier reference from CRD spec and add store to map
+// this method also validate the existence and supported version and the verifier
 func verifierAddOrReplace(ctx context.Context, spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := specToVerifierConfig(spec, objectName)
 	if err != nil {
