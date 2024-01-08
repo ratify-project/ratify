@@ -52,7 +52,7 @@ type VerifierStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:storageversion
 // Verifier is the Schema for the verifiers API
 type Verifier struct {

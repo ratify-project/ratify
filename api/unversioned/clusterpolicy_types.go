@@ -14,7 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// +kubebuilder:skip
 package unversioned
 
 import (
@@ -22,47 +21,43 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// VerifierSpec defines the desired state of Verifier
-type VerifierSpec struct {
+// ClusterPolicySpec defines the desired state of ClusterPolicy
+type ClusterPolicySpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the verifier
-	Name string `json:"name,omitempty"`
-
-	// Version of the verifier plugin. Optional
-	Version string `json:"version,omitempty"`
-
-	// The type of artifact this verifier handles
-	ArtifactTypes string `json:"artifactTypes,omitempty"`
-
-	// # Optional. URL/file path
-	Address string `json:"address,omitempty"`
-
-	// OCI Artifact source to download the plugin from, optional
-	Source *PluginSource `json:"source,omitempty"`
-
-	// Parameters for this verifier
+	// Type of the cluster policy
+	Type string `json:"type,omitempty"`
+	// Parameters for this cluster policy
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// VerifierStatus defines the observed state of Verifier
-type VerifierStatus struct {
+// ClusterPolicyStatus defines the observed state of ClusterPolicy
+type ClusterPolicyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Is successful while applying the cluster policy.
+	IsSuccess bool `json:"issuccess"`
+	// Error message if cluster policy is not successfully applied.
+	// +optional
+	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 }
 
-// Verifier is the Schema for the verifiers API
-type Verifier struct {
+// ClusterPolicy is the Schema for the clusterpolicies API
+type ClusterPolicy struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   VerifierSpec   `json:"spec,omitempty"`
-	Status VerifierStatus `json:"status,omitempty"`
+	Spec   ClusterPolicySpec   `json:"spec,omitempty"`
+	Status ClusterPolicyStatus `json:"status,omitempty"`
 }
 
-// VerifierList contains a list of Verifier
-type VerifierList struct {
+// ClusterPolicyList contains a list of ClusterPolicy
+type ClusterPolicyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Verifier `json:"items"`
+	Items           []ClusterPolicy `json:"items"`
 }

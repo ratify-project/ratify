@@ -43,7 +43,7 @@ type StoreStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:deprecatedversion:warning="v1alpha1 of the Store API has been deprecated. Please migrate to v1beta1."
 
 // Store is the Schema for the stores API

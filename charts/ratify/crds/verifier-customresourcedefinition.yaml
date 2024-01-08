@@ -12,7 +12,7 @@ spec:
     listKind: VerifierList
     plural: verifiers
     singular: verifier
-  scope: Cluster
+  scope: Namespaced
   versions:
   - deprecated: true
     deprecationWarning: v1alpha1 of the Verifier API has been deprecated. Please migrate

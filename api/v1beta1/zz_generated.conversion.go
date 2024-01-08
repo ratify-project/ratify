@@ -76,6 +76,166 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStore)(nil), (*unversioned.ClusterCertificateStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(a.(*ClusterCertificateStore), b.(*unversioned.ClusterCertificateStore), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStore)(nil), (*ClusterCertificateStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(a.(*unversioned.ClusterCertificateStore), b.(*ClusterCertificateStore), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStoreList)(nil), (*unversioned.ClusterCertificateStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(a.(*ClusterCertificateStoreList), b.(*unversioned.ClusterCertificateStoreList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStoreList)(nil), (*ClusterCertificateStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(a.(*unversioned.ClusterCertificateStoreList), b.(*ClusterCertificateStoreList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStoreSpec)(nil), (*unversioned.ClusterCertificateStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(a.(*ClusterCertificateStoreSpec), b.(*unversioned.ClusterCertificateStoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStoreSpec)(nil), (*ClusterCertificateStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(a.(*unversioned.ClusterCertificateStoreSpec), b.(*ClusterCertificateStoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStoreStatus)(nil), (*unversioned.ClusterCertificateStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(a.(*ClusterCertificateStoreStatus), b.(*unversioned.ClusterCertificateStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStoreStatus)(nil), (*ClusterCertificateStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(a.(*unversioned.ClusterCertificateStoreStatus), b.(*ClusterCertificateStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterPolicy)(nil), (*unversioned.ClusterPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterPolicy_To_unversioned_ClusterPolicy(a.(*ClusterPolicy), b.(*unversioned.ClusterPolicy), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterPolicy)(nil), (*ClusterPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterPolicy_To_v1beta1_ClusterPolicy(a.(*unversioned.ClusterPolicy), b.(*ClusterPolicy), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterPolicyList)(nil), (*unversioned.ClusterPolicyList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterPolicyList_To_unversioned_ClusterPolicyList(a.(*ClusterPolicyList), b.(*unversioned.ClusterPolicyList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterPolicyList)(nil), (*ClusterPolicyList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterPolicyList_To_v1beta1_ClusterPolicyList(a.(*unversioned.ClusterPolicyList), b.(*ClusterPolicyList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterPolicySpec)(nil), (*unversioned.ClusterPolicySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterPolicySpec_To_unversioned_ClusterPolicySpec(a.(*ClusterPolicySpec), b.(*unversioned.ClusterPolicySpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterPolicySpec)(nil), (*ClusterPolicySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterPolicySpec_To_v1beta1_ClusterPolicySpec(a.(*unversioned.ClusterPolicySpec), b.(*ClusterPolicySpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterPolicyStatus)(nil), (*unversioned.ClusterPolicyStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterPolicyStatus_To_unversioned_ClusterPolicyStatus(a.(*ClusterPolicyStatus), b.(*unversioned.ClusterPolicyStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterPolicyStatus)(nil), (*ClusterPolicyStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterPolicyStatus_To_v1beta1_ClusterPolicyStatus(a.(*unversioned.ClusterPolicyStatus), b.(*ClusterPolicyStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterStore)(nil), (*unversioned.ClusterStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterStore_To_unversioned_ClusterStore(a.(*ClusterStore), b.(*unversioned.ClusterStore), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterStore)(nil), (*ClusterStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterStore_To_v1beta1_ClusterStore(a.(*unversioned.ClusterStore), b.(*ClusterStore), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterStoreList)(nil), (*unversioned.ClusterStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterStoreList_To_unversioned_ClusterStoreList(a.(*ClusterStoreList), b.(*unversioned.ClusterStoreList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterStoreList)(nil), (*ClusterStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterStoreList_To_v1beta1_ClusterStoreList(a.(*unversioned.ClusterStoreList), b.(*ClusterStoreList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterStoreSpec)(nil), (*unversioned.ClusterStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterStoreSpec_To_unversioned_ClusterStoreSpec(a.(*ClusterStoreSpec), b.(*unversioned.ClusterStoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterStoreSpec)(nil), (*ClusterStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec(a.(*unversioned.ClusterStoreSpec), b.(*ClusterStoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterStoreStatus)(nil), (*unversioned.ClusterStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(a.(*ClusterStoreStatus), b.(*unversioned.ClusterStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterStoreStatus)(nil), (*ClusterStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus(a.(*unversioned.ClusterStoreStatus), b.(*ClusterStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterVerifier)(nil), (*unversioned.ClusterVerifier)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterVerifier_To_unversioned_ClusterVerifier(a.(*ClusterVerifier), b.(*unversioned.ClusterVerifier), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterVerifier)(nil), (*ClusterVerifier)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterVerifier_To_v1beta1_ClusterVerifier(a.(*unversioned.ClusterVerifier), b.(*ClusterVerifier), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterVerifierList)(nil), (*unversioned.ClusterVerifierList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterVerifierList_To_unversioned_ClusterVerifierList(a.(*ClusterVerifierList), b.(*unversioned.ClusterVerifierList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterVerifierList)(nil), (*ClusterVerifierList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterVerifierList_To_v1beta1_ClusterVerifierList(a.(*unversioned.ClusterVerifierList), b.(*ClusterVerifierList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterVerifierSpec)(nil), (*unversioned.ClusterVerifierSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterVerifierSpec_To_unversioned_ClusterVerifierSpec(a.(*ClusterVerifierSpec), b.(*unversioned.ClusterVerifierSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterVerifierSpec)(nil), (*ClusterVerifierSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec(a.(*unversioned.ClusterVerifierSpec), b.(*ClusterVerifierSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*ClusterVerifierStatus)(nil), (*unversioned.ClusterVerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(a.(*ClusterVerifierStatus), b.(*unversioned.ClusterVerifierStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterVerifierStatus)(nil), (*ClusterVerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(a.(*unversioned.ClusterVerifierStatus), b.(*ClusterVerifierStatus), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*PluginSource)(nil), (*unversioned.PluginSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_PluginSource_To_unversioned_PluginSource(a.(*PluginSource), b.(*unversioned.PluginSource), scope)
 	}); err != nil {
@@ -313,6 +473,412 @@ func Convert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatu
 	return autoConvert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatus(in, out, s)
 }
 
+func autoConvert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(in *ClusterCertificateStore, out *unversioned.ClusterCertificateStore, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore is an autogenerated conversion function.
+func Convert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(in *ClusterCertificateStore, out *unversioned.ClusterCertificateStore, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(in *unversioned.ClusterCertificateStore, out *ClusterCertificateStore, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore is an autogenerated conversion function.
+func Convert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(in *unversioned.ClusterCertificateStore, out *ClusterCertificateStore, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(in *ClusterCertificateStoreList, out *unversioned.ClusterCertificateStoreList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.ClusterCertificateStore)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList is an autogenerated conversion function.
+func Convert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(in *ClusterCertificateStoreList, out *unversioned.ClusterCertificateStoreList, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(in *unversioned.ClusterCertificateStoreList, out *ClusterCertificateStoreList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]ClusterCertificateStore)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList is an autogenerated conversion function.
+func Convert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(in *unversioned.ClusterCertificateStoreList, out *ClusterCertificateStoreList, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(in *ClusterCertificateStoreSpec, out *unversioned.ClusterCertificateStoreSpec, s conversion.Scope) error {
+	out.Provider = in.Provider
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec is an autogenerated conversion function.
+func Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(in *ClusterCertificateStoreSpec, out *unversioned.ClusterCertificateStoreSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(in *unversioned.ClusterCertificateStoreSpec, out *ClusterCertificateStoreSpec, s conversion.Scope) error {
+	out.Provider = in.Provider
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec is an autogenerated conversion function.
+func Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(in *unversioned.ClusterCertificateStoreSpec, out *ClusterCertificateStoreSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(in *ClusterCertificateStoreStatus, out *unversioned.ClusterCertificateStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
+	return nil
+}
+
+// Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus is an autogenerated conversion function.
+func Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(in *ClusterCertificateStoreStatus, out *unversioned.ClusterCertificateStoreStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(in *unversioned.ClusterCertificateStoreStatus, out *ClusterCertificateStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
+	return nil
+}
+
+// Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus is an autogenerated conversion function.
+func Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(in *unversioned.ClusterCertificateStoreStatus, out *ClusterCertificateStoreStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterPolicy_To_unversioned_ClusterPolicy(in *ClusterPolicy, out *unversioned.ClusterPolicy, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_ClusterPolicySpec_To_unversioned_ClusterPolicySpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_ClusterPolicyStatus_To_unversioned_ClusterPolicyStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_ClusterPolicy_To_unversioned_ClusterPolicy is an autogenerated conversion function.
+func Convert_v1beta1_ClusterPolicy_To_unversioned_ClusterPolicy(in *ClusterPolicy, out *unversioned.ClusterPolicy, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterPolicy_To_unversioned_ClusterPolicy(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterPolicy_To_v1beta1_ClusterPolicy(in *unversioned.ClusterPolicy, out *ClusterPolicy, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_ClusterPolicySpec_To_v1beta1_ClusterPolicySpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_ClusterPolicyStatus_To_v1beta1_ClusterPolicyStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_ClusterPolicy_To_v1beta1_ClusterPolicy is an autogenerated conversion function.
+func Convert_unversioned_ClusterPolicy_To_v1beta1_ClusterPolicy(in *unversioned.ClusterPolicy, out *ClusterPolicy, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterPolicy_To_v1beta1_ClusterPolicy(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterPolicyList_To_unversioned_ClusterPolicyList(in *ClusterPolicyList, out *unversioned.ClusterPolicyList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.ClusterPolicy)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_ClusterPolicyList_To_unversioned_ClusterPolicyList is an autogenerated conversion function.
+func Convert_v1beta1_ClusterPolicyList_To_unversioned_ClusterPolicyList(in *ClusterPolicyList, out *unversioned.ClusterPolicyList, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterPolicyList_To_unversioned_ClusterPolicyList(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterPolicyList_To_v1beta1_ClusterPolicyList(in *unversioned.ClusterPolicyList, out *ClusterPolicyList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]ClusterPolicy)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_ClusterPolicyList_To_v1beta1_ClusterPolicyList is an autogenerated conversion function.
+func Convert_unversioned_ClusterPolicyList_To_v1beta1_ClusterPolicyList(in *unversioned.ClusterPolicyList, out *ClusterPolicyList, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterPolicyList_To_v1beta1_ClusterPolicyList(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterPolicySpec_To_unversioned_ClusterPolicySpec(in *ClusterPolicySpec, out *unversioned.ClusterPolicySpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_ClusterPolicySpec_To_unversioned_ClusterPolicySpec is an autogenerated conversion function.
+func Convert_v1beta1_ClusterPolicySpec_To_unversioned_ClusterPolicySpec(in *ClusterPolicySpec, out *unversioned.ClusterPolicySpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterPolicySpec_To_unversioned_ClusterPolicySpec(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterPolicySpec_To_v1beta1_ClusterPolicySpec(in *unversioned.ClusterPolicySpec, out *ClusterPolicySpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_ClusterPolicySpec_To_v1beta1_ClusterPolicySpec is an autogenerated conversion function.
+func Convert_unversioned_ClusterPolicySpec_To_v1beta1_ClusterPolicySpec(in *unversioned.ClusterPolicySpec, out *ClusterPolicySpec, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterPolicySpec_To_v1beta1_ClusterPolicySpec(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterPolicyStatus_To_unversioned_ClusterPolicyStatus(in *ClusterPolicyStatus, out *unversioned.ClusterPolicyStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	return nil
+}
+
+// Convert_v1beta1_ClusterPolicyStatus_To_unversioned_ClusterPolicyStatus is an autogenerated conversion function.
+func Convert_v1beta1_ClusterPolicyStatus_To_unversioned_ClusterPolicyStatus(in *ClusterPolicyStatus, out *unversioned.ClusterPolicyStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterPolicyStatus_To_unversioned_ClusterPolicyStatus(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterPolicyStatus_To_v1beta1_ClusterPolicyStatus(in *unversioned.ClusterPolicyStatus, out *ClusterPolicyStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	return nil
+}
+
+// Convert_unversioned_ClusterPolicyStatus_To_v1beta1_ClusterPolicyStatus is an autogenerated conversion function.
+func Convert_unversioned_ClusterPolicyStatus_To_v1beta1_ClusterPolicyStatus(in *unversioned.ClusterPolicyStatus, out *ClusterPolicyStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterPolicyStatus_To_v1beta1_ClusterPolicyStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterStore_To_unversioned_ClusterStore(in *ClusterStore, out *unversioned.ClusterStore, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_ClusterStoreSpec_To_unversioned_ClusterStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_ClusterStore_To_unversioned_ClusterStore is an autogenerated conversion function.
+func Convert_v1beta1_ClusterStore_To_unversioned_ClusterStore(in *ClusterStore, out *unversioned.ClusterStore, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterStore_To_unversioned_ClusterStore(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterStore_To_v1beta1_ClusterStore(in *unversioned.ClusterStore, out *ClusterStore, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_ClusterStore_To_v1beta1_ClusterStore is an autogenerated conversion function.
+func Convert_unversioned_ClusterStore_To_v1beta1_ClusterStore(in *unversioned.ClusterStore, out *ClusterStore, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterStore_To_v1beta1_ClusterStore(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterStoreList_To_unversioned_ClusterStoreList(in *ClusterStoreList, out *unversioned.ClusterStoreList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.ClusterStore)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_ClusterStoreList_To_unversioned_ClusterStoreList is an autogenerated conversion function.
+func Convert_v1beta1_ClusterStoreList_To_unversioned_ClusterStoreList(in *ClusterStoreList, out *unversioned.ClusterStoreList, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterStoreList_To_unversioned_ClusterStoreList(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterStoreList_To_v1beta1_ClusterStoreList(in *unversioned.ClusterStoreList, out *ClusterStoreList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]ClusterStore)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_ClusterStoreList_To_v1beta1_ClusterStoreList is an autogenerated conversion function.
+func Convert_unversioned_ClusterStoreList_To_v1beta1_ClusterStoreList(in *unversioned.ClusterStoreList, out *ClusterStoreList, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterStoreList_To_v1beta1_ClusterStoreList(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterStoreSpec_To_unversioned_ClusterStoreSpec(in *ClusterStoreSpec, out *unversioned.ClusterStoreSpec, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.Address = in.Address
+	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_ClusterStoreSpec_To_unversioned_ClusterStoreSpec is an autogenerated conversion function.
+func Convert_v1beta1_ClusterStoreSpec_To_unversioned_ClusterStoreSpec(in *ClusterStoreSpec, out *unversioned.ClusterStoreSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterStoreSpec_To_unversioned_ClusterStoreSpec(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec(in *unversioned.ClusterStoreSpec, out *ClusterStoreSpec, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.Address = in.Address
+	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec is an autogenerated conversion function.
+func Convert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec(in *unversioned.ClusterStoreSpec, out *ClusterStoreSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(in *ClusterStoreStatus, out *unversioned.ClusterStoreStatus, s conversion.Scope) error {
+	return nil
+}
+
+// Convert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus is an autogenerated conversion function.
+func Convert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(in *ClusterStoreStatus, out *unversioned.ClusterStoreStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus(in *unversioned.ClusterStoreStatus, out *ClusterStoreStatus, s conversion.Scope) error {
+	return nil
+}
+
+// Convert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus is an autogenerated conversion function.
+func Convert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus(in *unversioned.ClusterStoreStatus, out *ClusterStoreStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterVerifier_To_unversioned_ClusterVerifier(in *ClusterVerifier, out *unversioned.ClusterVerifier, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_ClusterVerifierSpec_To_unversioned_ClusterVerifierSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_ClusterVerifier_To_unversioned_ClusterVerifier is an autogenerated conversion function.
+func Convert_v1beta1_ClusterVerifier_To_unversioned_ClusterVerifier(in *ClusterVerifier, out *unversioned.ClusterVerifier, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterVerifier_To_unversioned_ClusterVerifier(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterVerifier_To_v1beta1_ClusterVerifier(in *unversioned.ClusterVerifier, out *ClusterVerifier, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_ClusterVerifier_To_v1beta1_ClusterVerifier is an autogenerated conversion function.
+func Convert_unversioned_ClusterVerifier_To_v1beta1_ClusterVerifier(in *unversioned.ClusterVerifier, out *ClusterVerifier, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterVerifier_To_v1beta1_ClusterVerifier(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterVerifierList_To_unversioned_ClusterVerifierList(in *ClusterVerifierList, out *unversioned.ClusterVerifierList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.ClusterVerifier)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_ClusterVerifierList_To_unversioned_ClusterVerifierList is an autogenerated conversion function.
+func Convert_v1beta1_ClusterVerifierList_To_unversioned_ClusterVerifierList(in *ClusterVerifierList, out *unversioned.ClusterVerifierList, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterVerifierList_To_unversioned_ClusterVerifierList(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterVerifierList_To_v1beta1_ClusterVerifierList(in *unversioned.ClusterVerifierList, out *ClusterVerifierList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]ClusterVerifier)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_ClusterVerifierList_To_v1beta1_ClusterVerifierList is an autogenerated conversion function.
+func Convert_unversioned_ClusterVerifierList_To_v1beta1_ClusterVerifierList(in *unversioned.ClusterVerifierList, out *ClusterVerifierList, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterVerifierList_To_v1beta1_ClusterVerifierList(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterVerifierSpec_To_unversioned_ClusterVerifierSpec(in *ClusterVerifierSpec, out *unversioned.ClusterVerifierSpec, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.ArtifactTypes = in.ArtifactTypes
+	out.Address = in.Address
+	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_ClusterVerifierSpec_To_unversioned_ClusterVerifierSpec is an autogenerated conversion function.
+func Convert_v1beta1_ClusterVerifierSpec_To_unversioned_ClusterVerifierSpec(in *ClusterVerifierSpec, out *unversioned.ClusterVerifierSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterVerifierSpec_To_unversioned_ClusterVerifierSpec(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec(in *unversioned.ClusterVerifierSpec, out *ClusterVerifierSpec, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.ArtifactTypes = in.ArtifactTypes
+	out.Address = in.Address
+	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec is an autogenerated conversion function.
+func Convert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec(in *unversioned.ClusterVerifierSpec, out *ClusterVerifierSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec(in, out, s)
+}
+
+func autoConvert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(in *ClusterVerifierStatus, out *unversioned.ClusterVerifierStatus, s conversion.Scope) error {
+	return nil
+}
+
+// Convert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus is an autogenerated conversion function.
+func Convert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(in *ClusterVerifierStatus, out *unversioned.ClusterVerifierStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(in, out, s)
+}
+
+func autoConvert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(in *unversioned.ClusterVerifierStatus, out *ClusterVerifierStatus, s conversion.Scope) error {
+	return nil
+}
+
+// Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus is an autogenerated conversion function.
+func Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(in *unversioned.ClusterVerifierStatus, out *ClusterVerifierStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(in, out, s)
+}
+
 func autoConvert_v1beta1_PluginSource_To_unversioned_PluginSource(in *PluginSource, out *unversioned.PluginSource, s conversion.Scope) error {
 	out.Artifact = in.Artifact
 	out.AuthProvider = in.AuthProvider
@@ -491,6 +1057,7 @@ func Convert_unversioned_StoreList_To_v1beta1_StoreList(in *unversioned.StoreLis
 
 func autoConvert_v1beta1_StoreSpec_To_unversioned_StoreSpec(in *StoreSpec, out *unversioned.StoreSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.Address = in.Address
 	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
 	out.Parameters = in.Parameters
@@ -504,6 +1071,7 @@ func Convert_v1beta1_StoreSpec_To_unversioned_StoreSpec(in *StoreSpec, out *unve
 
 func autoConvert_unversioned_StoreSpec_To_v1beta1_StoreSpec(in *unversioned.StoreSpec, out *StoreSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.Address = in.Address
 	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
 	out.Parameters = in.Parameters
@@ -589,6 +1157,7 @@ func Convert_unversioned_VerifierList_To_v1beta1_VerifierList(in *unversioned.Ve
 
 func autoConvert_v1beta1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec, out *unversioned.VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
 	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
@@ -603,6 +1172,7 @@ func Convert_v1beta1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec, 
 
 func autoConvert_unversioned_VerifierSpec_To_v1beta1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
 	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))

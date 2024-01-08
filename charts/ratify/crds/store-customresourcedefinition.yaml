@@ -12,7 +12,7 @@ spec:
     listKind: StoreList
     plural: stores
     singular: store
-  scope: Cluster
+  scope: Namespaced
   versions:
   - deprecated: true
     deprecationWarning: v1alpha1 of the Store API has been deprecated. Please migrate

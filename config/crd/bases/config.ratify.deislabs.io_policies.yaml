@@ -13,7 +13,7 @@ spec:
     listKind: PolicyList
     plural: policies
     singular: policy
-  scope: Cluster
+  scope: Namespaced
   versions:
   - deprecated: true
     deprecationWarning: v1alpha1 of the Policy API has been deprecated. Please migrate

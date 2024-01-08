@@ -21,50 +21,57 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
-// StoreSpec defines the desired state of Store
-type StoreSpec struct {
+// ClusterVerifierSpec defines the desired state of ClusterVerifier
+type ClusterVerifierSpec struct {
 	// Important: Run "make install-crds" to regenerate code after modifying this file
 
-	// Name of the store
+	// Name of the cluster verifier
 	Name string `json:"name"`
-	// Version of the store plugin. Optional
+
+	// Version of the cluster verifier plugin. Optional
 	Version string `json:"version,omitempty"`
-	// Plugin path, optional
+
+	// The type of artifact this cluster verifier handles
+	ArtifactTypes string `json:"artifactTypes"`
+
+	// # Optional. URL/file path
 	Address string `json:"address,omitempty"`
+
 	// OCI Artifact source to download the plugin from, optional
 	Source *PluginSource `json:"source,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// Parameters of the store
+	// Parameters for this cluster verifier
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// StoreStatus defines the observed state of Store
-type StoreStatus struct {
+// ClusterVerifierStatus defines the observed state of ClusterVerifier
+type ClusterVerifierStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:storageversion
-// Store is the Schema for the stores API
-type Store struct {
+// ClusterVerifier is the Schema for the clusterverifiers API
+type ClusterVerifier struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   StoreSpec   `json:"spec,omitempty"`
-	Status StoreStatus `json:"status,omitempty"`
+	Spec   ClusterVerifierSpec   `json:"spec,omitempty"`
+	Status ClusterVerifierStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
-// StoreList contains a list of Store
-type StoreList struct {
+// ClusterVerifierList contains a list of ClusterVerifier
+type ClusterVerifierList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []Store `json:"items"`
+	Items           []ClusterVerifier `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&Store{}, &StoreList{})
+	SchemeBuilder.Register(&ClusterVerifier{}, &ClusterVerifierList{})
 }

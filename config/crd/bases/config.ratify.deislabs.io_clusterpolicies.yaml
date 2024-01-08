@@ -1,0 +1,72 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.9.2
+  creationTimestamp: null
+  name: clusterpolicies.config.ratify.deislabs.io
+spec:
+  group: config.ratify.deislabs.io
+  names:
+    kind: ClusterPolicy
+    listKind: ClusterPolicyList
+    plural: clusterpolicies
+    singular: clusterpolicy
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.issuccess
+      name: IsSuccess
+      type: boolean
+    - jsonPath: .status.brieferror
+      name: Error
+      type: string
+    name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: ClusterPolicy is the Schema for the clusterpolicies API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterPolicySpec defines the desired state of ClusterPolicy
+            properties:
+              parameters:
+                description: Parameters for this cluster policy
+                type: object
+                x-kubernetes-preserve-unknown-fields: true
+              type:
+                description: Type of the cluster policy
+                type: string
+            type: object
+          status:
+            description: ClusterPolicyStatus defines the observed state of ClusterPolicy
+            properties:
+              brieferror:
+                description: Truncated error message if the message is too long
+                type: string
+              error:
+                description: Error message if cluster policy is not successfully applied.
+                type: string
+              issuccess:
+                description: Is successful while applying the cluster policy.
+                type: boolean
+            required:
+            - issuccess
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}

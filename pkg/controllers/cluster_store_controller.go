@@ -34,37 +34,37 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// StoreReconciler reconciles a Store object
-type StoreReconciler struct {
+// ClusterStoreReconciler reconciles a Store object
+type ClusterStoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
 
 var (
-	// a map to track active stores
-	NamespacedStoreMap = map[string]map[string]referrerstore.ReferrerStore{}
+	// a map to track active cluster stores
+	ClusterStoreMap = map[string]referrerstore.ReferrerStore{}
 )
 
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores/finalizers,verbs=update
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=clusterstores,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=clusterstores/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=clusterstores/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *ClusterStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	storeLogger := logrus.WithContext(ctx)
 
-	var store configv1beta1.Store
+	var store configv1beta1.ClusterStore
 	var resource = req.Name
 	storeLogger.Infof("reconciling store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
-			storeRemove(resource, req.Namespace)
+			clusterStoreRemove(resource)
 		} else {
 			storeLogger.Error(err, "unable to fetch store")
 		}
@@ -72,7 +72,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := storeAddOrReplace(store.Spec, resource, req.Namespace); err != nil {
+	if err := clusterStoreAddOrReplace(store.Spec, resource); err != nil {
 		storeLogger.Error(err, "unable to create store from store crd")
 		return ctrl.Result{}, err
 	}
@@ -82,15 +82,15 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *ClusterStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.Store{}).
 		Complete(r)
 }
 
 // Creates a store reference from CRD spec and add store to map
-func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname, namespace string) error {
-	storeConfig, err := specToStoreConfig(spec)
+func clusterStoreAddOrReplace(spec configv1beta1.ClusterStoreSpec, fullname string) error {
+	storeConfig, err := clusterSpecToStoreConfig(spec)
 	if err != nil {
 		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
 	}
@@ -111,37 +111,20 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname, namespace string)
 		logrus.Error(err, "store factory failed to create store from store config")
 		return fmt.Errorf("store factory failed to create store from store config, err: %w", err)
 	}
-	addStore(fullname, namespace, storeReference)
+
+	ClusterStoreMap[fullname] = storeReference
 	logrus.Infof("store '%v' added to store map", storeReference.Name())
 
 	return nil
 }
 
 // Remove store from map
-func storeRemove(resourceName, namespace string) {
-	var stores map[string]referrerstore.ReferrerStore
-	var ok bool
-	if stores, ok = NamespacedStoreMap[namespace]; !ok {
-		return
-	}
-	delete(stores, resourceName)
-	if len(stores) == 0 {
-		delete(NamespacedStoreMap, namespace)
-	}
-}
-
-func addStore(resourceName, namespace string, store referrerstore.ReferrerStore) {
-	var stores map[string]referrerstore.ReferrerStore
-	var ok bool
-	if stores, ok = NamespacedStoreMap[namespace]; !ok {
-		stores = map[string]referrerstore.ReferrerStore{}
-	}
-	stores[resourceName] = store
-	NamespacedStoreMap[namespace] = stores
+func clusterStoreRemove(resourceName string) {
+	delete(ClusterStoreMap, resourceName)
 }
 
 // Returns a store reference from spec
-func specToStoreConfig(storeSpec configv1beta1.StoreSpec) (rc.StorePluginConfig, error) {
+func clusterSpecToStoreConfig(storeSpec configv1beta1.ClusterStoreSpec) (rc.StorePluginConfig, error) {
 	storeConfig := rc.StorePluginConfig{}
 
 	if string(storeSpec.Parameters.Raw) != "" {

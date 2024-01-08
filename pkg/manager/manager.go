@@ -107,12 +107,15 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 
 		// check if there are active stores from crd controller
 		// else use stores from configuration
-		if len(controllers.StoreMap) > 0 {
-			for _, value := range controllers.StoreMap {
+		if len(controllers.NamespacedStoreMap) > 0 {
+			for _, value := range controllers.NamespacedStoreMap {
 				activeStores = append(activeStores, value)
 			}
 		} else {
 			activeStores = configStores
+		}
+		if len(controllers.ClusterStoreMap) > 0 {
+			for _, value := range controllers.
 		}
 
 		if !controllers.ActivePolicy.IsEmpty() {
