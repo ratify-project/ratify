@@ -63,7 +63,7 @@ func VerifyReference(args *skel.CmdArgs, _ common.Reference, referenceDescriptor
 	if err != nil {
 		return nil, err
 	}
-	verifierType := ""
+	verifierType := input.Name
 	if input.Type != "" {
 		verifierType = input.Type
 	}

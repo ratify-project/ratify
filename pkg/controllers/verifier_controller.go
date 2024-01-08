@@ -102,15 +102,18 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		logrus.Error(err, "unable to convert crd specification to verifier config")
 		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
 	}
-	// verifier factory only support a single version of configuration today
-	// when we support multi version verifier CRD, we will also pass in the corresponding config version so factory can create different version of the object
-	verifierConfigVersion := "1.0.0" // TODO: move default values to defaulting webhook in the future #413
+
+	if len(spec.Version) == 0 {
+		spec.Version = config.GetDefaultPluginVersion()
+		logrus.Infof("Version was empty, setting to default version: %v", spec.Version)
+	}
+
 	if spec.Address == "" {
 		spec.Address = config.GetDefaultPluginPath()
 		logrus.Infof("Address was empty, setting to default path: %v", spec.Address)
 	}
 
-	referenceVerifier, err := vf.CreateVerifierFromConfig(verifierConfig, verifierConfigVersion, []string{spec.Address}, namespace)
+	referenceVerifier, err := vf.CreateVerifierFromConfig(verifierConfig, spec.Version, []string{spec.Address}, namespace)
 
 	if err != nil || referenceVerifier == nil {
 		logrus.Error(err, "unable to create verifier from verifier config")
@@ -155,11 +158,11 @@ func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 // Historically certStore defined in trust policy only contains name which means the CertStore cannot be uniquely identified
-// If verifierNamesapce is not empty, this method returns the default cert store namespace else returns the ratify deployed namespace
-func getCertStoreNamespace(verifierNamesapce string) (string, error) {
-	// first, check if we can use the verifier namespace
-	if verifierNamesapce != "" {
-		return verifierNamesapce, nil
+// If verifierNamespace is not empty, this method returns the default cert store namespace else returns the ratify deployed namespace
+func getCertStoreNamespace(verifierNamespace string) (string, error) {
+	// first, check if we can use the verifier namespace as the cert store namespace
+	if verifierNamespace != "" {
+		return verifierNamespace, nil
 	}
 
 	// next, return the ratify deployed namespace
