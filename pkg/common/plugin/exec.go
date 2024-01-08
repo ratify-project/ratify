@@ -99,8 +99,6 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 	// stdout and stderr for some reason. Ignore failures as stderr is
 	// only informational.
 	if e.Stderr != nil && stderr.Len() > 0 {
-		//TODO remove (testing stderr msgs)
-		//TODO: use bufio to read logs line by line
 		scanner := bufio.NewScanner(stderr)
 		for scanner.Scan() {
 			line := scanner.Text()
