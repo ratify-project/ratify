@@ -16,11 +16,13 @@ limitations under the License.
 package plugin
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -87,6 +89,8 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 			continue
 		}
 
+		// TODO: Maybe move stderr scanner here?
+
 		// For all other errors return failed.
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
@@ -95,10 +99,53 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 	// stdout and stderr for some reason. Ignore failures as stderr is
 	// only informational.
 	if e.Stderr != nil && stderr.Len() > 0 {
-		_, _ = stderr.WriteTo(e.Stderr)
+		//TODO remove (testing stderr msgs)
+		//TODO: use bufio to read logs line by line
+		scanner := bufio.NewScanner(stderr)
+		for scanner.Scan() {
+			line := scanner.Text()
+
+			switch {
+			case strings.HasPrefix(strings.ToLower(line), "info"):
+				line = strings.Replace(line, "info: ", "", -1)
+				logrus.Infof("[Plugin] %s", line)
+			case strings.HasPrefix(strings.ToLower(line), "warn"):
+				line = strings.Replace(line, "warn: ", "", -1)
+				logrus.Warnf("[Plugin] %s", line)
+			case strings.HasPrefix(strings.ToLower(line), "debug"):
+				line = strings.Replace(line, "debug: ", "", -1)
+				logrus.Debugf("[Plugin] %s", line)
+			default:
+				fmt.Fprintf(os.Stderr, "[Plugin] %s,", line)
+			}
+		}
+		// TODO: Review, should this be removed since the msgs are processed?
+		//_, _ = stderr.WriteTo(e.Stderr)
 	}
+
+	var obj interface{}
+	var resultsBuffer bytes.Buffer
+
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "{") {
+
+			err := json.NewDecoder(strings.NewReader(line)).Decode(&obj)
+			if err != nil {
+				continue
+			}
+
+			jsonString, _ := json.Marshal(obj)
+			resultsBuffer.WriteString(string(jsonString))
+
+		} else {
+			fmt.Printf("[Plugin] %s \n", line)
+		}
+	}
+
 	// TODO stdout reader
-	return stdout.Bytes(), nil
+	return resultsBuffer.Bytes(), nil
 }
 
 func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
