@@ -83,7 +83,7 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
-			if err := server.componentsValidation(verifyComponents); err != nil {
+			if err := server.validateComponents(verifyComponents); err != nil {
 				logger.GetLogger(ctx, server.LogOption).Error(err)
 				returnItem.Error = err.Error()
 				return
@@ -192,7 +192,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				results = append(results, returnItem)
 				mu.Unlock()
 			}()
-			if err := server.componentsValidation(mutateComponents); err != nil {
+			if err := server.validateComponents(mutateComponents); err != nil {
 				logger.GetLogger(ctx, server.LogOption).Error(err)
 				returnItem.Error = err.Error()
 				return
@@ -237,7 +237,7 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	return sendResponse(&results, "", w, http.StatusOK, true)
 }
 
-func (server *Server) componentsValidation(handlerComponents string) error {
+func (server *Server) validateComponents(handlerComponents string) error {
 	if handlerComponents == mutateComponents {
 		if len(server.GetExecutor().ReferrerStores) == 0 {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
