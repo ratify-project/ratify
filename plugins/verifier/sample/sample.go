@@ -18,6 +18,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/ocispecs"
@@ -37,7 +38,14 @@ type PluginInputConfig struct {
 }
 
 func main() {
+	// send info and debug messages to stderr
+	fmt.Fprintln(os.Stderr, "info: initialized plugin")
+	fmt.Fprintf(os.Stderr, "debug: plugin %s %s \n", "sample", "1.0.0")
+
 	skel.PluginMain("sample", "1.0.0", VerifyReference, []string{"1.0.0"})
+
+	// send message to stdout
+	fmt.Fprintln(os.Stdout, "finished executing plugin...")
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {
