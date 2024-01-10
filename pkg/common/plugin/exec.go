@@ -128,7 +128,6 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, "{") {
-
 			err := json.NewDecoder(strings.NewReader(line)).Decode(&obj)
 			if err != nil {
 				continue
@@ -136,7 +135,6 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 
 			jsonString, _ := json.Marshal(obj)
 			resultsBuffer.WriteString(string(jsonString))
-
 		} else {
 			fmt.Printf("[Plugin] %s \n", line)
 		}
@@ -144,7 +142,6 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 
 	// TODO stdout reader
 	return resultsBuffer.Bytes(), nil
-
 }
 
 func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
