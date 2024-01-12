@@ -177,7 +177,7 @@ func getLicenseCheckerFromParam(parametersString string) configv1beta1.VerifierS
 	var allowedLicenses = []byte(parametersString)
 
 	return configv1beta1.VerifierSpec{
-		Name:          "licensechecker",
+		Name:          "sbom",
 		ArtifactTypes: "application/vnd.ratify.spdx.v0",
 		Parameters: runtime.RawExtension{
 			Raw: allowedLicenses,
