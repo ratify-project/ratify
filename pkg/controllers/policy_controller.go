@@ -159,7 +159,7 @@ func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *confi
 		updatePolicyErrorStatus(policy, errString)
 	}
 	if statusErr := r.Status().Update(ctx, policy); statusErr != nil {
-		logger.Error(statusErr, ", unbale to update policy error status")
+		logger.Error(statusErr, ", unable to update policy error status")
 	}
 }
 

@@ -91,6 +91,11 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	if ok {
 		return verifierFactory.Create(configVersion, verifierConfig, pluginBinDir[0], namespace)
 	}
+
+	if _, err := pluginCommon.FindInPaths(verifierTypeStr, []string{pluginBinDir[0]}); err != nil {
+		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, "", re.EmptyLink, err, "plugin not found", re.HideStackTrace)
+	}
+
 	return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
 }
 

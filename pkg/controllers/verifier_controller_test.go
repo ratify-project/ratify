@@ -16,14 +16,18 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestMain(m *testing.M) {
@@ -35,11 +39,14 @@ func TestMain(m *testing.M) {
 
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins"))
 	var testVerifierSpec = configv1beta1.VerifierSpec{
-		Name:          "notation",
+		Name:          "sample",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
+		Address:       pluginDir,
 	}
-	var resource = "notation"
+	var resource = "sample"
 
 	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
@@ -95,6 +102,45 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 
 	if len(VerifierMap) != 0 {
 		t.Fatalf("Verifier map should be 0 after deletion, actual %v", len(VerifierMap))
+	}
+}
+
+func TestWriteVerifierStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		verifier   *configv1beta1.Verifier
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			verifier:   &configv1beta1.Verifier{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			verifier:   &configv1beta1.Verifier{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			verifier:  &configv1beta1.Verifier{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeVerifierStatus(context.Background(), tc.reconciler, tc.verifier, logger, tc.isSuccess, tc.errString)
+		})
 	}
 }
 
