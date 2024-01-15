@@ -96,7 +96,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	if err != nil {
 		return nil, err
 	}
-	verifierType := ""
+	verifierType := input.Config.Name
 	if input.Config.Type != "" {
 		verifierType = input.Config.Type
 	}
