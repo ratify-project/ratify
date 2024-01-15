@@ -42,6 +42,7 @@ import (
 	"github.com/notaryproject/notation-go"
 	notationVerifier "github.com/notaryproject/notation-go/verifier"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
+	"github.com/notaryproject/notation-go/verifier/truststore"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -58,7 +59,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
 	// VerificationCerts is map defining which keyvault certificates belong to which trust store
-	VerificationCertStores map[string][]string `json:"verificationCertStores"`
+	VerificationCertStores map[truststore.Type]map[string][]string `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
@@ -80,11 +81,16 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	logger.GetLogger(context.Background(), logOpt).Debugf("creating notation with config %v, namespace '%v'", verifierConfig, namespace)
 	verifierName := fmt.Sprintf("%s", verifierConfig[types.Name])
 	verifierTypeStr := ""
+	logger.GetLogger(context.Background(), logOpt).Debugf("Entra create")
 	if _, ok := verifierConfig[types.Type]; ok {
 		verifierTypeStr = fmt.Sprintf("%s", verifierConfig[types.Type])
+	} else {
+		logger.GetLogger(context.Background(), logOpt).Debugf("Err in get Type %v", ok)
 	}
+	logger.GetLogger(context.Background(), logOpt).Debugf("Going Entra parse")
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
+		logger.GetLogger(context.Background(), logOpt).Debugf("Err in parseVerifierConfig, %v", err)
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
@@ -170,8 +176,8 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string) (notation.Verifier, error) {
 	store := &trustStore{
-		certPaths:  conf.VerificationCerts,
-		certStores: conf.VerificationCertStores,
+		certPaths:        conf.VerificationCerts,
+		certStoresByType: conf.VerificationCertStores,
 	}
 
 	return notationVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
@@ -190,16 +196,14 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
-
+	logger.GetLogger(context.Background(), logOpt).Debugf("Entra parseVerifierConfig")
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, nil, re.HideStackTrace)
 	}
-
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
-
 	// append namespace to uniquely identify the certstore
 	if len(conf.VerificationCertStores) > 0 {
 		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
@@ -220,15 +224,16 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 }
 
 // append namespace to certStore so they are uniquely identifiable
-func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
+func prependNamespaceToCertStore(verificationCertStore map[truststore.Type]map[string][]string, namespace string) (map[truststore.Type]map[string][]string, error) {
 	if namespace == "" {
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
-
-	for _, certStores := range verificationCertStore {
-		for i, certstore := range certStores {
-			if !isNamespacedNamed(certstore) {
-				certStores[i] = namespace + constants.NamespaceSeperator + certstore
+	for _, trustStoreType := range truststore.Types {
+		for _, certStores := range verificationCertStore[trustStoreType] {
+			for i, certstore := range certStores {
+				if !isNamespacedNamed(certstore) {
+					certStores[i] = namespace + constants.NamespaceSeperator + certstore
+				}
 			}
 		}
 	}

@@ -31,6 +31,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/verifier/truststore"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -247,18 +248,22 @@ func TestParseVerifierConfig(t *testing.T) {
 			configMap: map[string]interface{}{
 				"name":              test,
 				"verificationCerts": []string{testPath},
-				"verificationCertStores": map[string][]string{
-					"certstore1": {"defaultns/akv1", "akv2"},
-					"certstore2": {"akv3", "akv4"},
+				"verificationCertStores": map[truststore.Type]map[string][]string{
+					"ca": {
+						"certstore1": {"defaultns/akv1", "akv2"},
+						"certstore2": {"akv3", "akv4"},
+					},
 				},
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
-				VerificationCertStores: map[string][]string{
-					"certstore1": {"defaultns/akv1", "testns/akv2"},
-					"certstore2": {"testns/akv3", "testns/akv4"},
+				VerificationCertStores: map[truststore.Type]map[string][]string{
+					"ca": {
+						"certstore1": {"defaultns/akv1", "testns/akv2"},
+						"certstore2": {"testns/akv3", "testns/akv4"},
+					},
 				},
 			},
 		},

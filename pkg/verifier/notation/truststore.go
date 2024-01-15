@@ -32,27 +32,31 @@ var logOpt = logger.Option{
 }
 
 type trustStore struct {
-	certPaths  []string
-	certStores map[string][]string
+	certPaths        []string
+	certStoresByType map[truststore.Type]map[string][]string
 }
 
 // trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v1.0.0-rc.3/verifier/truststore#X509TrustStore]
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
-func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
-	if err != nil {
-		return nil, err
+func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	var certs []*x509.Certificate
+	for _, trustStoreType := range truststore.Types {
+		certsByType, err := s.getCertificatesInternal(ctx, trustStoreType, namedStore, controllers.GetCertificatesMap())
+		if err != nil {
+			return nil, err
+		}
+		certs = append(certs, certsByType...)
 	}
 	return s.filterValidCerts(certs)
 }
 
-func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
+func (s trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
 	// certs configured for this namedStore overrides cert path
-	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
+	if certGroup := s.certStoresByType[storeType][namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
 			result := certificatesMap[certStore]
