@@ -19,6 +19,10 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
+	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	vfConfig "github.com/deislabs/ratify/pkg/verifier/config"
 )
 
 const (
@@ -178,5 +182,91 @@ func TestGetHomeDir(t *testing.T) {
 	testOutput := getHomeDir()
 	if testOutput != homeDir {
 		t.Fatalf("mismatch of home directory: expected %s, actual %s", homeDir, testOutput)
+	}
+}
+
+func TestCreateFromConfig(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      Config
+		expectedErr bool
+	}{
+		{
+			name:        "empty config",
+			config:      Config{},
+			expectedErr: true,
+		},
+		{
+			name: "missing verifier config",
+			config: Config{
+				StoresConfig: config.StoresConfig{
+					Stores: []config.StorePluginConfig{
+						{
+							"name": "oras",
+						},
+					},
+				},
+				PoliciesConfig: pcConfig.PoliciesConfig{
+					PolicyPlugin: pcConfig.PolicyPluginConfig{
+						"name": "configpolicy",
+					},
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "missing policy config",
+			config: Config{
+				StoresConfig: config.StoresConfig{
+					Stores: []config.StorePluginConfig{
+						{
+							"name": "oras",
+						},
+					},
+				},
+				VerifiersConfig: vfConfig.VerifiersConfig{
+					Verifiers: []vfConfig.VerifierConfig{
+						{
+							"name": "cosign",
+						},
+					},
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "valid config",
+			config: Config{
+				StoresConfig: config.StoresConfig{
+					Stores: []config.StorePluginConfig{
+						{
+							"name": "oras",
+						},
+					},
+				},
+				VerifiersConfig: vfConfig.VerifiersConfig{
+					Verifiers: []vfConfig.VerifierConfig{
+						{
+							"name": "cosign",
+						},
+					},
+				},
+				PoliciesConfig: pcConfig.PoliciesConfig{
+					PolicyPlugin: pcConfig.PolicyPluginConfig{
+						"name": "configpolicy",
+					},
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, _, err := CreateFromConfig(tt.config)
+			if tt.expectedErr != (err != nil) {
+				t.Fatalf("expected error %v, actual %v", tt.expectedErr, err)
+			}
+		})
 	}
 }

@@ -22,14 +22,17 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/customresources/policies"
+	"github.com/deislabs/ratify/pkg/customresources/referrerstores"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
 	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
@@ -51,22 +54,30 @@ var logOpt = logger.Option{
 // Executor describes an execution engine that queries the stores for the supply chain content,
 // runs them through the verifiers as governed by the policy enforcer
 type Executor struct {
-	ReferrerStores []referrerstore.ReferrerStore
-	PolicyEnforcer policyprovider.PolicyProvider
-	Verifiers      []vr.ReferenceVerifier
-	Config         *config.ExecutorConfig
+	referrerstores.ReferrerStores
+	policies.Policies
+	verifiers.Verifiers
+	Config *config.ExecutorConfig
 }
 
 // TODO Logging within executor
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	policyEnforcer := executor.GetPolicy(ctxUtils.GetNamespace(ctx))
+	if policyEnforcer == nil {
+		return types.VerifyResult{}, errors.ErrorCodePolicyProviderNotFound.WithComponentType(errors.Executor)
+	}
+
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
+	if policyEnforcer == nil {
+		return result, err
+	}
 	if err != nil {
 		// get the result for the error based on the policy.
 		// Do we need to consider no referrers as success or failure?
-		result = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
+		result = policyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
-	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
+	if policyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
 		return result, nil
 	}
 	return result, err
@@ -78,7 +89,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	if err != nil {
 		return types.VerifyResult{}, err
 	}
-	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
+	if executor.GetPolicy(ctxUtils.GetNamespace(ctx)).GetPolicyType(ctx) == pt.ConfigPolicy {
 		if len(verifierReports) == 0 {
 			return types.VerifyResult{}, errors.ErrorCodeReferrersNotFound.WithComponentType(errors.Executor)
 		}
@@ -87,7 +98,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	// OverallVerifyResult to evaluate the overall result based on the policy.
 	// NOTE: if Passthrough Mode is enabled, executor will just return the
 	// VerifierReports without evaluating the policy.
-	overallVerifySuccess := executor.PolicyEnforcer.OverallVerifyResult(ctx, verifierReports)
+	overallVerifySuccess := executor.GetPolicy(ctxUtils.GetNamespace(ctx)).OverallVerifyResult(ctx, verifierReports)
 	return types.VerifyResult{IsSuccess: overallVerifySuccess, VerifierReports: verifierReports}, nil
 }
 
@@ -99,7 +110,8 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 		return nil, err
 	}
 
-	desc, err := su.ResolveSubjectDescriptor(ctx, &executor.ReferrerStores, subjectReference)
+	stores := executor.GetStores(ctxUtils.GetNamespace(ctx))
+	desc, err := su.ResolveSubjectDescriptor(ctx, &stores, subjectReference)
 	if err != nil {
 		return nil, err
 	}
@@ -112,7 +124,7 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 	eg, errCtx := errgroup.WithContext(ctx)
 	var mu sync.Mutex
 
-	for _, referrerStore := range executor.ReferrerStores {
+	for _, referrerStore := range stores {
 		referrerStore := referrerStore
 		eg.Go(func() error {
 			var continuationToken string
@@ -124,12 +136,12 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 				}
 				continuationToken = referrersResult.NextToken
 				for _, reference := range referrersResult.Referrers {
-					if !executor.PolicyEnforcer.VerifyNeeded(innerErrCtx, subjectReference, reference) {
+					if !executor.GetPolicy(ctxUtils.GetNamespace(ctx)).VerifyNeeded(innerErrCtx, subjectReference, reference) {
 						continue
 					}
 					reference := reference
 					innerGroup.Go(func() error {
-						if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.RegoPolicy {
+						if executor.GetPolicy(ctxUtils.GetNamespace(ctx)).GetPolicyType(ctx) == pt.RegoPolicy {
 							verifyResult, err := executor.verifyReferenceForRegoPolicy(innerErrCtx, subjectReference, reference, referrerStore)
 							if err != nil {
 								logger.GetLogger(ctx, logOpt).Errorf("error while verifying reference %+v, err: %v", reference, err)
@@ -167,8 +179,8 @@ func (executor Executor) verifySubjectInternalWithoutDecision(ctx context.Contex
 func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subjectRef common.Reference, referenceDesc ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) types.VerifyResult {
 	var verifyResults []interface{}
 	var isSuccess = true
+	for _, verifier := range executor.GetVerifiers(ctxUtils.GetNamespace(ctx)) {
 
-	for _, verifier := range executor.Verifiers {
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
@@ -213,7 +225,7 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 		return executor.addNestedReports(errCtx, referenceDesc, subjectRef, &nestedReport)
 	})
 
-	for _, verifier := range executor.Verifiers {
+	for _, verifier := range executor.GetVerifiers(ctxUtils.GetNamespace(ctx)) {
 		if !verifier.CanVerify(ctx, referenceDesc) {
 			continue
 		}
@@ -257,7 +269,7 @@ func (executor Executor) addNestedVerifierResult(ctx context.Context, referenceD
 
 	nestedVerifyResult, err := executor.VerifySubject(ctx, verifyParameters)
 	if err != nil {
-		nestedVerifyResult = executor.PolicyEnforcer.ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
+		nestedVerifyResult = executor.GetPolicy(ctxUtils.GetNamespace(ctx)).ErrorToVerifyResult(ctx, verifyParameters.Subject, err)
 	}
 
 	for _, report := range nestedVerifyResult.VerifierReports {

@@ -1,7 +1,7 @@
 {{- $fullname := include "ratify.fullname" . -}}
 ---
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: Verifier
+kind: ClusterVerifier
 metadata:
   name: verifier-notation
   annotations:
@@ -42,7 +42,7 @@ spec:
 ---
 {{- if .Values.cosign.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: Verifier
+kind: ClusterVerifier
 metadata:
   name: verifier-cosign
   annotations:
@@ -58,7 +58,7 @@ spec:
 ---
 {{- if .Values.vulnerabilityreport.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: Verifier
+kind: ClusterVerifier
 metadata:
   name: verifier-vulnerabilityreport
   annotations:
@@ -101,7 +101,7 @@ spec:
 ---
 {{- if .Values.sbom.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: Verifier
+kind: ClusterVerifier
 metadata:
   name: verifier-sbom
 spec:

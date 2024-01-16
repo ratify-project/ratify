@@ -109,7 +109,7 @@ func addSignedImageWithSignedSbomToStore(store *MemoryTestStore) {
 		},
 	}
 
-	// Add image refeerrers
+	// Add image referrers
 	store.Referrers[imageDigest] = []ocispecs.ReferenceDescriptor{
 		{
 			Descriptor: v1.Descriptor{
@@ -135,7 +135,7 @@ func addSignedImageWithSignedSbomToStore(store *MemoryTestStore) {
 		},
 	}
 
-	// Add sbom refeerrers
+	// Add sbom referrers
 	store.Referrers[sbomDigest] = []ocispecs.ReferenceDescriptor{
 		{
 			Descriptor: v1.Descriptor{

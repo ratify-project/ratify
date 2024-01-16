@@ -26,15 +26,16 @@ import (
 
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
+	"github.com/deislabs/ratify/pkg/customresources/policies"
+	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/homedir"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
+	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	"github.com/deislabs/ratify/pkg/referrerstore"
 	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/verifier"
 	vfConfig "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/pkg/errors"
@@ -84,13 +85,13 @@ func getHomeDir() string {
 }
 
 // Returns created referer store, verifier, policyprovider objects from config
-func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
+func CreateFromConfig(cf Config) (rs.ReferrerStores, verifiers.Verifiers, policies.Policies, error) {
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
-
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to load store from config")
 	}
 	logrus.Infof("stores successfully created. number of stores %d", len(stores))
+	activeStores := rs.NewActiveStoresWithoutNames(stores)
 
 	// in K8s , verifiers CR are deployed to specific namespace, namespace is not applicable in config file scenario
 	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, GetDefaultPluginPath(), constants.EmptyNamespace)
@@ -99,17 +100,18 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 		return nil, nil, nil, errors.Wrap(err, "failed to load verifiers from config")
 	}
 
-	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
+	logrus.Info("verifiers successfully created.")
 
 	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
-
 	if err != nil {
 		return nil, nil, nil, errors.Wrap(err, "failed to load policy provider from config")
 	}
+	policies := policies.NewActivePolicies()
+	policies.AddPolicy("", "", policyEnforcer)
 
 	logrus.Infof("policies successfully created.")
 
-	return stores, verifiers, policyEnforcer, nil
+	return &activeStores, verifiers, &policies, nil
 }
 
 // Load the config from file path provided, read from default path if configFilePath is empty

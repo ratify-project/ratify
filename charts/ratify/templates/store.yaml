@@ -1,5 +1,5 @@
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: Store
+kind: ClusterStore
 metadata:
   name: store-oras
   annotations:

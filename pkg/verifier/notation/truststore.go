@@ -20,9 +20,12 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/deislabs/ratify/internal/constants"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/controllers"
+	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
 )
@@ -41,7 +44,7 @@ type trustStore struct {
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
+	certs, err := s.getCertificatesInternal(ctx, namedStore, cutils.GetCertificatesMap(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -55,6 +58,10 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
+			if !inCompatibleNamespace(ctx, certStore) {
+				logger.GetLogger(ctx, logOpt).Warnf("verifier in namespace: %s cannot access certStore: %s in different namespace.", ctxUtils.GetNamespace(ctx), certStore)
+				continue
+			}
 			result := certificatesMap[certStore]
 			if len(result) == 0 {
 				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
@@ -93,4 +100,21 @@ func (s trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certifi
 		return nil, errors.New("valid certificates must be provided, only CA certificates or self-signed signing certificates are supported")
 	}
 	return filteredCerts, nil
+}
+
+// Namespaced verifiers could access both cluster-scoped and namespaced certStores.
+// But cluster-wide verifiers could only access cluster-scoped certStores.
+func inCompatibleNamespace(ctx context.Context, certStore string) bool {
+	namespace := ctxUtils.GetNamespace(ctx)
+	certStoreNamespace := extractNamespace(certStore)
+
+	return certStoreNamespace == namespace || certStoreNamespace == constants.EmptyNamespace
+}
+
+func extractNamespace(certStore string) string {
+	index := strings.Index(certStore, constants.NamespaceSeperator)
+	if index == -1 {
+		return ""
+	}
+	return certStore[:index]
 }

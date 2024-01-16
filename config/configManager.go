@@ -43,7 +43,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 
 	configHash = cf.fileHash
 
-	stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
+	stores, verifiers, policies, err := CreateFromConfig(cf)
 
 	if err != nil {
 		return func() *ef.Executor { return &ef.Executor{} }, err
@@ -52,7 +52,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	executor = ef.Executor{
 		Verifiers:      verifiers,
 		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
+		Policies:       policies,
 		Config:         &cf.ExecutorConfig,
 	}
 
@@ -76,12 +76,12 @@ func reloadExecutor(configFilePath string) {
 	}
 
 	if configHash != cf.fileHash {
-		stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
+		stores, verifiers, policies, err := CreateFromConfig(cf)
 
 		newExecutor := ef.Executor{
 			Verifiers:      verifiers,
 			ReferrerStores: stores,
-			PolicyEnforcer: policyEnforcer,
+			Policies:       policies,
 			Config:         &cf.ExecutorConfig,
 		}
 

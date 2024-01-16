@@ -57,6 +57,7 @@ type ClusterCertificateStoreStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope="Cluster"
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // ClusterCertificateStore is the Schema for the certificatestores API

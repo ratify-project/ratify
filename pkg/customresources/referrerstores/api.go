@@ -19,11 +19,17 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 )
 
-type ReferrrerStores interface {
+type ReferrerStores interface {
 	// Stores returns the list of referrer stores for the given scope.
 	// For K8s users, scope can be either the namespace or empty string("") for cluster-wide scope.
 	// For CLI users, scope is always empty string("") as there is no namespace specified.
-	Stores(scope string) []referrerstore.ReferrerStore
+	GetStores(scope string) []referrerstore.ReferrerStore
 
-	AddStores(scope string, stores []referrerstore.ReferrerStore)
+	AddStore(scope, storeName string, store referrerstore.ReferrerStore)
+
+	DeleteStore(scope, storeName string)
+
+	IsEmpty() bool
+
+	GetStoreCount() int
 }

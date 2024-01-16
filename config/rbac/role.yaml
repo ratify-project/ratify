@@ -34,6 +34,84 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - clusterpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterstores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterstores/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterstores/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterverifiers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterverifiers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - clusterverifiers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - policies
   verbs:
   - create

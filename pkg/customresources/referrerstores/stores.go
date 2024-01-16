@@ -15,24 +15,76 @@ limitations under the License.
 
 package referrerstores
 
-import "github.com/deislabs/ratify/pkg/referrerstore"
+import (
+	"fmt"
 
-type stores struct {
-	GlobalStores     []referrerstore.ReferrerStore
-	NamespacedStores []referrerstore.ReferrerStore
+	"github.com/deislabs/ratify/internal/constants"
+	"github.com/deislabs/ratify/pkg/referrerstore"
+)
+
+type ActiveStores struct {
+	NamespacedStores map[string]map[string]referrerstore.ReferrerStore
 }
 
-func (s *stores) Stores(scope string) []referrerstore.ReferrerStore {
-	if scope == "" {
-		return s.GlobalStores
+func NewActiveStores() ActiveStores {
+	return ActiveStores{
+		NamespacedStores: make(map[string]map[string]referrerstore.ReferrerStore),
 	}
-	return s.NamespacedStores
 }
 
-func (s *stores) AddStores(scope string, stores []referrerstore.ReferrerStore) {
-	if scope == "" {
-		s.GlobalStores = append(s.GlobalStores, stores...)
-	} else {
-		s.NamespacedStores = append(s.NamespacedStores, stores...)
+func NewActiveStoresWithoutNames(stores []referrerstore.ReferrerStore) ActiveStores {
+	activeStores := make(map[string]map[string]referrerstore.ReferrerStore)
+	activeStores[""] = make(map[string]referrerstore.ReferrerStore)
+
+	for index, store := range stores {
+		activeStores[""][fmt.Sprintf("%d", index)] = store
 	}
+
+	return ActiveStores{
+		NamespacedStores: activeStores,
+	}
+}
+
+// GetStores implements the Stores interface.
+// It returns all the stores in the ActiveStores for the given scope. If no stores are found for the given scope, it returns cluster-wide stores.
+func (s *ActiveStores) GetStores(scope string) []referrerstore.ReferrerStore {
+	stores := []referrerstore.ReferrerStore{}
+	for _, store := range s.NamespacedStores[scope] {
+		stores = append(stores, store)
+	}
+
+	if len(stores) == 0 && scope != constants.EmptyNamespace {
+		for _, store := range s.NamespacedStores[constants.EmptyNamespace] {
+			stores = append(stores, store)
+		}
+	}
+	return stores
+}
+
+func (s *ActiveStores) AddStore(scope, storeName string, store referrerstore.ReferrerStore) {
+	if _, ok := s.NamespacedStores[scope]; !ok {
+		s.NamespacedStores[scope] = make(map[string]referrerstore.ReferrerStore)
+	}
+	s.NamespacedStores[scope][storeName] = store
+}
+
+func (s *ActiveStores) DeleteStore(scope, storeName string) {
+	if stores, ok := s.NamespacedStores[scope]; ok {
+		delete(stores, storeName)
+		if len(stores) == 0 {
+			delete(s.NamespacedStores, scope)
+		}
+	}
+}
+
+func (s *ActiveStores) IsEmpty() bool {
+	return len(s.NamespacedStores) == 0
+}
+
+func (s *ActiveStores) GetStoreCount() int {
+	count := 0
+	for _, stores := range s.NamespacedStores {
+		count += len(stores)
+	}
+	return count
 }

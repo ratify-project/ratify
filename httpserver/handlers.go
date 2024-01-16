@@ -145,7 +145,9 @@ func (server *Server) verify(ctx context.Context, w http.ResponseWriter, r *http
 					logger.GetLogger(ctx, server.LogOption).Infof("verify result for subject %s: %s", resolvedSubjectReference, string(res))
 				}
 			}
-			returnItem.Value = fromVerifyResult(result, server.GetExecutor().PolicyEnforcer.GetPolicyType(ctx))
+			if policy := server.GetExecutor().GetPolicy(requestKey.Namespace); policy != nil {
+				returnItem.Value = fromVerifyResult(result, policy.GetPolicyType(ctx))
+			}
 			logger.GetLogger(ctx, server.LogOption).Debugf("verification: execution time for image %s: %dms", resolvedSubjectReference, time.Since(routineStartTime).Milliseconds())
 		}(utils.SanitizeString(key), ctx)
 	}
@@ -177,15 +179,15 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 	wg := sync.WaitGroup{}
 	mu := sync.Mutex{}
 
-	for _, image := range providerRequest.Request.Keys {
+	for _, key := range providerRequest.Request.Keys {
 		wg.Add(1)
-		go func(image string) {
+		go func(key string) {
 			defer wg.Done()
 			routineStartTime := time.Now()
-			logger.GetLogger(ctx, server.LogOption).Infof("mutating image %v", image)
+			logger.GetLogger(ctx, server.LogOption).Infof("mutating image %v", key)
 			returnItem := externaldata.Item{
-				Key:   image,
-				Value: image,
+				Key:   key,
+				Value: key,
 			}
 			defer func() {
 				mu.Lock()
@@ -197,38 +199,44 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				returnItem.Error = err.Error()
 				return
 			}
-			parsedReference, err := pkgUtils.ParseSubjectReference(image)
+			requestKey, err := pkgUtils.ParseRequestKey(key)
 			if err != nil {
-				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
+				returnItem.Error = err.Error()
+				return
+			}
+			parsedReference, err := pkgUtils.ParseSubjectReference(requestKey.Subject)
+			if err != nil {
+				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", key))
 				logger.GetLogger(ctx, server.LogOption).Error(err)
 				returnItem.Error = err.Error()
 				return
 			}
+			ctx = ctxUtils.SetContextWithNamespace(ctx, requestKey.Namespace)
 
 			if parsedReference.Digest == "" {
 				var selectedStore referrerstore.ReferrerStore
-				for _, store := range server.GetExecutor().ReferrerStores {
+				for _, store := range server.GetExecutor().GetStores(requestKey.Namespace) {
 					if store.Name() == server.MutationStoreName {
 						selectedStore = store
 						break
 					}
 				}
 				if selectedStore == nil {
-					err := errors.ErrorCodeReferrerStoreFailure.WithDetail(fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", image, server.MutationStoreName)).WithComponentType(errors.ReferrerStore)
+					err := errors.ErrorCodeReferrerStoreFailure.WithDetail(fmt.Sprintf("failed to mutate image reference %s: could not find matching store %s", key, server.MutationStoreName)).WithComponentType(errors.ReferrerStore)
 					logger.GetLogger(ctx, server.LogOption).Error(err)
 					returnItem.Error = err.Error()
 					return
 				}
 				descriptor, err := selectedStore.GetSubjectDescriptor(ctx, parsedReference)
 				if err != nil {
-					err = errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, selectedStore.Name(), errors.EmptyLink, err, fmt.Sprintf("failed to get subject descriptor for image %s", image), errors.HideStackTrace)
+					err = errors.ErrorCodeGetSubjectDescriptorFailure.NewError(errors.ReferrerStore, selectedStore.Name(), errors.EmptyLink, err, fmt.Sprintf("failed to get subject descriptor for image %s", key), errors.HideStackTrace)
 					returnItem.Error = err.Error()
 					return
 				}
 				returnItem.Value = fmt.Sprintf("%s@%s", parsedReference.Path, descriptor.Digest.String())
 			}
-			logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for image %s: %dms", image, time.Since(routineStartTime).Milliseconds())
-		}(utils.SanitizeString(image))
+			logger.GetLogger(ctx, server.LogOption).Debugf("mutation: execution time for image %s: %dms", key, time.Since(routineStartTime).Milliseconds())
+		}(utils.SanitizeString(key))
 	}
 	wg.Wait()
 	elapsedTime := time.Since(startTime).Milliseconds()
@@ -239,18 +247,18 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 
 func (server *Server) validateComponents(handlerComponents string) error {
 	if handlerComponents == mutateComponents {
-		if len(server.GetExecutor().ReferrerStores) == 0 {
+		if server.GetExecutor().ReferrerStores.IsEmpty() {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
 		}
 	}
 	if handlerComponents == verifyComponents {
-		if len(server.GetExecutor().ReferrerStores) == 0 {
+		if server.GetExecutor().ReferrerStores.IsEmpty() {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
 		}
-		if server.GetExecutor().PolicyEnforcer == nil {
+		if server.GetExecutor().Policies.IsEmpty() {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
 		}
-		if len(server.GetExecutor().Verifiers) == 0 {
+		if server.GetExecutor().Verifiers.IsEmpty() {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")
 		}
 	}

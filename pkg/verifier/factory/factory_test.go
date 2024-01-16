@@ -80,19 +80,21 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 		t.Fatalf("create verifiers failed with err %v", err)
 	}
 
-	if len(verifiers) != 1 {
-		t.Fatalf("expected to have %d verifiers, actual count %d", 1, len(verifiers))
+	if verifiers.GetVerifierCount() != 1 {
+		t.Fatalf("expected to have %d verifiers, actual count %d", 1, verifiers.GetVerifierCount())
 	}
 
-	if nameResult := verifiers[0].Name(); nameResult != "test-verifier-0" {
+	verifiers.GetVerifiers(constants.EmptyNamespace)[0].Name()
+
+	if nameResult := verifiers.GetVerifiers(constants.EmptyNamespace)[0].Name(); nameResult != "test-verifier-0" {
 		t.Fatalf("expected to create test-verifier-0 for test case but got %v", nameResult)
 	}
 
-	if _, ok := verifiers[0].(*plugin.VerifierPlugin); ok {
+	if _, ok := verifiers.GetVerifiers(constants.EmptyNamespace)[0].(*plugin.VerifierPlugin); ok {
 		t.Fatalf("type assertion failed expected a built in verifier")
 	}
 
-	if verifierTest, ok := verifiers[0].(*TestVerifier); !ok {
+	if verifierTest, ok := verifiers.GetVerifiers(constants.EmptyNamespace)[0].(*TestVerifier); !ok {
 		t.Fatalf("type assertion failed expected a test verifier")
 	} else {
 		if verifierTest.verifierDirectory != "test/dir" {
@@ -116,15 +118,15 @@ func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T)
 		t.Fatalf("create verifiers failed with err %v", err)
 	}
 
-	if len(verifiers) != 1 {
-		t.Fatalf("expected to have %d verifiers, actual count %d", 1, len(verifiers))
+	if verifiers.GetVerifierCount() != 1 {
+		t.Fatalf("expected to have %d verifiers, actual count %d", 1, verifiers.GetVerifierCount())
 	}
 
-	if verifiers[0].Name() != "plugin-verifier-0" {
+	if verifiers.GetVerifiers(constants.EmptyNamespace)[0].Name() != "plugin-verifier-0" {
 		t.Fatalf("expected to create plugin-verifier-0")
 	}
 
-	if _, ok := verifiers[0].(*plugin.VerifierPlugin); !ok {
+	if _, ok := verifiers.GetVerifiers(constants.EmptyNamespace)[0].(*plugin.VerifierPlugin); !ok {
 		t.Fatalf("type assertion failed expected a plugin in verifier")
 	}
 }

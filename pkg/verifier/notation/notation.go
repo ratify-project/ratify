@@ -85,7 +85,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithError(err)
 	}
 
 	verifyService, err := getVerifierService(conf, pluginDirectory)
@@ -221,10 +221,6 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 
 // append namespace to certStore so they are uniquely identifiable
 func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
-	if namespace == "" {
-		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
-	}
-
 	for _, certStores := range verificationCertStore {
 		for i, certstore := range certStores {
 			if !isNamespacedNamed(certstore) {

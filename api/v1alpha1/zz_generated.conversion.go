@@ -125,11 +125,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.StoreSpec)(nil), (*StoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(a.(*unversioned.StoreSpec), b.(*StoreSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*StoreStatus)(nil), (*unversioned.StoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_StoreStatus_To_unversioned_StoreStatus(a.(*StoreStatus), b.(*unversioned.StoreStatus), scope)
 	}); err != nil {
@@ -165,11 +160,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.VerifierSpec)(nil), (*VerifierSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(a.(*unversioned.VerifierSpec), b.(*VerifierSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*VerifierStatus)(nil), (*unversioned.VerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_VerifierStatus_To_unversioned_VerifierStatus(a.(*VerifierStatus), b.(*unversioned.VerifierStatus), scope)
 	}); err != nil {
@@ -197,6 +187,16 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddConversionFunc((*unversioned.Policy)(nil), (*Policy)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_unversioned_Policy_To_v1alpha1_Policy(a.(*unversioned.Policy), b.(*Policy), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*unversioned.StoreSpec)(nil), (*StoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(a.(*unversioned.StoreSpec), b.(*StoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*unversioned.VerifierSpec)(nil), (*VerifierSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(a.(*unversioned.VerifierSpec), b.(*VerifierSpec), scope)
 	}); err != nil {
 		return err
 	}

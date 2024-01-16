@@ -1,30 +1,33 @@
-// Copyright The Ratify Authors.
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
+/*
+Copyright The Ratify Authors.
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
 
-// http://www.apache.org/licenses/LICENSE-2.0
+http://www.apache.org/licenses/LICENSE-2.0
 
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 
-package controllers
+package clustered
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
-	"github.com/deislabs/ratify/pkg/utils"
 
+	"github.com/deislabs/ratify/pkg/controllers"
+	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -39,13 +42,6 @@ type CertificateStoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-var (
-	// a map between CertificateStore name to array of x509 certificates
-	certificatesMap = map[string][]*x509.Certificate{}
-)
-
-const maxBriefErrLength = 30
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/status,verbs=get;update;patch
@@ -63,14 +59,14 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	logger := logrus.WithContext(ctx)
 
 	var resource = req.NamespacedName.String()
-	var certStore configv1beta1.CertificateStore
+	var certStore configv1beta1.ClusterCertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", resource)
-			delete(certificatesMap, resource)
+			controllers.CertificatesMap.DeleteStore("", resource)
 		} else {
 			logger.Error(err, "unable to fetch certificate store")
 		}
@@ -79,7 +75,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// get cert provider attributes
-	attributes, err := getCertStoreConfig(certStore.Spec)
+	attributes, err := cutils.GetCertStoreConfig(certStore.Spec.Parameters.Raw)
 	lastFetchedTime := metav1.Now()
 	isFetchSuccessful := false
 
@@ -88,7 +84,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, err
 	}
 
-	provider, err := getCertificateProvider(certificateprovider.GetCertificateProviders(), certStore.Spec.Provider)
+	provider, err := cutils.GetCertificateProvider(certificateprovider.GetCertificateProviders(), certStore.Spec.Provider)
 	if err != nil {
 		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
@@ -100,7 +96,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
-	certificatesMap[resource] = certificates
+	controllers.CertificatesMap.AddStore("", resource, certificates)
 	isFetchSuccessful = true
 	emptyErrorString := ""
 	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
@@ -111,11 +107,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	return ctrl.Result{}, nil
 }
 
-// returns the internal certificate map
-func GetCertificatesMap() map[string][]*x509.Certificate {
-	return certificatesMap
-}
-
 // SetupWithManager sets up the controller with the Manager.
 func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	pred := predicate.GenerationChangedPredicate{}
@@ -124,26 +115,11 @@ func (r *CertificateStoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	// if there are no changes to spec of CRD, this event should be filtered out by using the predicate
 	// see more discussions at https://github.com/kubernetes-sigs/kubebuilder/issues/618
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.CertificateStore{}).WithEventFilter(pred).
+		For(&configv1beta1.ClusterCertificateStore{}).WithEventFilter(pred).
 		Complete(r)
 }
 
-func getCertStoreConfig(spec configv1beta1.CertificateStoreSpec) (map[string]string, error) {
-	attributes := map[string]string{}
-
-	if string(spec.Parameters.Raw) == "" {
-		return nil, fmt.Errorf("received empty parameters")
-	}
-
-	if err := json.Unmarshal(spec.Parameters.Raw, &attributes); err != nil {
-		logrus.Error(err, ",unable to decode cert store parameters", "Parameters.Raw", spec.Parameters.Raw)
-		return attributes, err
-	}
-
-	return attributes, nil
-}
-
-func writeCertStoreStatus(ctx context.Context, r *CertificateStoreReconciler, certStore configv1beta1.CertificateStore, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, certStatus certificateprovider.CertificatesStatus) {
+func writeCertStoreStatus(ctx context.Context, r client.StatusClient, certStore configv1beta1.ClusterCertificateStore, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, certStatus certificateprovider.CertificatesStatus) {
 	if isSuccess {
 		updateSuccessStatus(&certStore, &operationTime, certStatus)
 	} else {
@@ -154,11 +130,11 @@ func writeCertStoreStatus(ctx context.Context, r *CertificateStoreReconciler, ce
 	}
 }
 
-func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime *metav1.Time) {
+func updateErrorStatus(certStore *configv1beta1.ClusterCertificateStore, errorString string, operationTime *metav1.Time) {
 	// truncate brief error string to maxBriefErrLength
 	briefErr := errorString
-	if len(errorString) > maxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+	if len(errorString) > constants.MaxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
 	}
 	certStore.Status.IsSuccess = false
 	certStore.Status.Error = errorString
@@ -166,7 +142,7 @@ func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString st
 	certStore.Status.LastFetchedTime = operationTime
 }
 
-func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperationTime *metav1.Time, certStatus certificateprovider.CertificatesStatus) {
+func updateSuccessStatus(certStore *configv1beta1.ClusterCertificateStore, lastOperationTime *metav1.Time, certStatus certificateprovider.CertificatesStatus) {
 	certStore.Status.IsSuccess = true
 	certStore.Status.Error = ""
 	certStore.Status.BriefError = ""
@@ -180,14 +156,4 @@ func updateSuccessStatus(certStore *configv1beta1.CertificateStore, lastOperatio
 		}
 		certStore.Status.Properties = raw
 	}
-}
-
-// given the name of the target provider, returns the provider from the providers map
-func getCertificateProvider(providers map[string]certificateprovider.CertificateProvider, providerName string) (certificateprovider.CertificateProvider, error) {
-	providerName = utils.TrimSpaceAndToLower(providerName)
-	provider, registered := providers[providerName]
-	if !registered {
-		return nil, fmt.Errorf("Unknown provider value '%v' defined", provider)
-	}
-	return provider, nil
 }

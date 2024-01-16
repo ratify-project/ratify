@@ -1,6 +1,6 @@
 {{- if .Values.akvCertConfig.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
+kind: ClusterCertificateStore
 metadata:
   name: certstore-akv
   annotations:

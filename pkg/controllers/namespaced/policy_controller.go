@@ -13,18 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package namespaced
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
+	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,17 +35,6 @@ type PolicyReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-type policy struct {
-	// The name of the policy.
-	Name string
-	// The policy enforcer making a decision.
-	Enforcer policyprovider.PolicyProvider
-}
-
-// ActivePolicy is the active policy generated from CRD. There would be exactly
-// one active policy at any given time.
-var ActivePolicy policy
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies/status,verbs=get;update;patch
@@ -66,9 +53,9 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
-		if apierrors.IsNotFound(err) && resource == ActivePolicy.Name {
+		if apierrors.IsNotFound(err) {
 			policyLogger.Infof("delete event detected, removing policy %s", resource)
-			ActivePolicy.deletePolicy(resource)
+			controllers.ActivePolicies.DeletePolicy(req.Namespace, resource)
 		} else {
 			policyLogger.Error("failed to get Policy: ", err)
 		}
@@ -82,7 +69,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, nil
 	}
 
-	if err := policyAddOrReplace(policy.Spec); err != nil {
+	if err := policyAddOrReplace(policy.Spec, req.Namespace); err != nil {
 		policyLogger.Error("unable to create policy from policy crd: ", err)
 		writePolicyStatus(ctx, r, &policy, policyLogger, false, err.Error())
 		return ctrl.Result{}, err
@@ -98,58 +85,14 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
-	policyEnforcer, err := specToPolicyEnforcer(spec)
+func policyAddOrReplace(spec configv1beta1.PolicySpec, namespace string) error {
+	policyEnforcer, err := utils.SpecToPolicyEnforcer(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	ActivePolicy.Name = spec.Type
-	ActivePolicy.Enforcer = policyEnforcer
+	controllers.ActivePolicies.AddPolicy(namespace, constants.RatifyPolicy, policyEnforcer)
 	return nil
-}
-
-func specToPolicyEnforcer(spec configv1beta1.PolicySpec) (policyprovider.PolicyProvider, error) {
-	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, spec.Type)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse policy config: %w", err)
-	}
-
-	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(policyConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create policy provider: %w", err)
-	}
-
-	return policyEnforcer, nil
-}
-
-func rawToPolicyConfig(raw []byte, policyName string) (config.PoliciesConfig, error) {
-	pluginConfig := config.PolicyPluginConfig{}
-
-	if string(raw) == "" {
-		return config.PoliciesConfig{}, fmt.Errorf("no policy parameters provided")
-	}
-	if err := json.Unmarshal(raw, &pluginConfig); err != nil {
-		return config.PoliciesConfig{}, fmt.Errorf("unable to decode policy parameters.Raw: %s, err: %w", raw, err)
-	}
-
-	pluginConfig["name"] = policyName
-
-	return config.PoliciesConfig{
-		PolicyPlugin: pluginConfig,
-	}, nil
-}
-
-func (p *policy) deletePolicy(resource string) {
-	if p.Name == resource {
-		p.Name = ""
-		p.Enforcer = nil
-	}
-}
-
-// IsEmpty returns true if there is no policy set up.
-func (p *policy) IsEmpty() bool {
-	return p.Name == "" && p.Enforcer == nil
 }
 
 func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.Policy, logger *logrus.Entry, isSuccess bool, errString string) {
@@ -170,8 +113,8 @@ func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
 
 func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {
 	briefErr := errString
-	if len(errString) > maxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errString[:maxBriefErrLength])
+	if len(errString) > constants.MaxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errString[:constants.MaxBriefErrLength])
 	}
 	policy.Status.IsSuccess = false
 	policy.Status.Error = errString

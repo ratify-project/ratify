@@ -13,18 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package clustered
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
+	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,22 +30,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// ClusterPolicyReconciler reconciles a Policy object
-type ClusterPolicyReconciler struct {
+// PolicyReconciler reconciles a Policy object
+type PolicyReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-type clusterPolicy struct {
-	// The name of the policy.
-	Name string
-	// The policy enforcer making a decision.
-	Enforcer policyprovider.PolicyProvider
-}
-
-// ActiveClusterPolicy is the active cluster policy generated from CRD. There would be exactly
-// one active policy at any given time.
-var ActiveClusterPolicy clusterPolicy
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=clusterpolicies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=clusterpolicies/status,verbs=get;update;patch
@@ -58,17 +45,17 @@ var ActiveClusterPolicy clusterPolicy
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.12.2/pkg/reconcile
-func (r *ClusterPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	policyLogger := logrus.WithContext(ctx)
 
-	var policy configv1beta1.Policy
+	var policy configv1beta1.ClusterPolicy
 	var resource = req.Name
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
-		if apierrors.IsNotFound(err) && resource == ActivePolicy.Name {
+		if apierrors.IsNotFound(err) {
 			policyLogger.Infof("delete event detected, removing policy %s", resource)
-			ActivePolicy.deletePolicy(resource)
+			controllers.ActivePolicies.DeletePolicy("", resource)
 		} else {
 			policyLogger.Error("failed to get Policy: ", err)
 		}
@@ -92,67 +79,23 @@ func (r *ClusterPolicyReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ClusterPolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.Policy{}).
+		For(&configv1beta1.ClusterPolicy{}).
 		Complete(r)
 }
 
-func clusterPolicyAddOrReplace(spec configv1beta1.PolicySpec) error {
-	policyEnforcer, err := specToPolicyEnforcer(spec)
+func policyAddOrReplace(spec configv1beta1.ClusterPolicySpec) error {
+	policyEnforcer, err := utils.SpecToPolicyEnforcer(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	ActivePolicy.Name = spec.Type
-	ActivePolicy.Enforcer = policyEnforcer
+	controllers.ActivePolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)
 	return nil
 }
 
-func specToPolicyEnforcer(spec configv1beta1.PolicySpec) (policyprovider.PolicyProvider, error) {
-	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, spec.Type)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse policy config: %w", err)
-	}
-
-	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(policyConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create policy provider: %w", err)
-	}
-
-	return policyEnforcer, nil
-}
-
-func rawToPolicyConfig(raw []byte, policyName string) (config.PoliciesConfig, error) {
-	pluginConfig := config.PolicyPluginConfig{}
-
-	if string(raw) == "" {
-		return config.PoliciesConfig{}, fmt.Errorf("no policy parameters provided")
-	}
-	if err := json.Unmarshal(raw, &pluginConfig); err != nil {
-		return config.PoliciesConfig{}, fmt.Errorf("unable to decode policy parameters.Raw: %s, err: %w", raw, err)
-	}
-
-	pluginConfig["name"] = policyName
-
-	return config.PoliciesConfig{
-		PolicyPlugin: pluginConfig,
-	}, nil
-}
-
-func (p *policy) deletePolicy(resource string) {
-	if p.Name == resource {
-		p.Name = ""
-		p.Enforcer = nil
-	}
-}
-
-// IsEmpty returns true if there is no policy set up.
-func (p *policy) IsEmpty() bool {
-	return p.Name == "" && p.Enforcer == nil
-}
-
-func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.Policy, logger *logrus.Entry, isSuccess bool, errString string) {
+func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.ClusterPolicy, logger *logrus.Entry, isSuccess bool, errString string) {
 	if isSuccess {
 		updatePolicySuccessStatus(policy)
 	} else {
@@ -163,15 +106,15 @@ func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *confi
 	}
 }
 
-func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
+func updatePolicySuccessStatus(policy *configv1beta1.ClusterPolicy) {
 	policy.Status.IsSuccess = true
 	policy.Status.Error = ""
 }
 
-func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {
+func updatePolicyErrorStatus(policy *configv1beta1.ClusterPolicy, errString string) {
 	briefErr := errString
-	if len(errString) > maxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errString[:maxBriefErrLength])
+	if len(errString) > constants.MaxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errString[:constants.MaxBriefErrLength])
 	}
 	policy.Status.IsSuccess = false
 	policy.Status.Error = errString

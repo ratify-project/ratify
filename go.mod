@@ -90,6 +90,7 @@ require (
 	github.com/digitorus/timestamp v0.0.0-20230902153158-687734543647 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
+	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.5 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect

@@ -30,7 +30,6 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
 	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
@@ -50,9 +49,9 @@ import (
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/clustered"
+	"github.com/deislabs/ratify/pkg/controllers/namespaced"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	vr "github.com/deislabs/ratify/pkg/verifier"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -85,33 +84,11 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 
 	// initialize server
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
-		var activeVerifiers []vr.ReferenceVerifier
-		var activeStores []referrerstore.ReferrerStore
-		var activePolicyEnforcer policyprovider.PolicyProvider
-
-		// check if there are active verifiers from crd controller
-		if len(controllers.VerifierMap) > 0 {
-			for _, value := range controllers.VerifierMap {
-				activeVerifiers = append(activeVerifiers, value)
-			}
-		}
-
-		// check if there are active stores from crd controller
-		if len(controllers.StoreMap) > 0 {
-			for _, value := range controllers.StoreMap {
-				activeStores = append(activeStores, value)
-			}
-		}
-
-		if !controllers.ActivePolicy.IsEmpty() {
-			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
-		}
-
 		// return executor with latest configuration
 		executor := ef.Executor{
-			Verifiers:      activeVerifiers,
-			ReferrerStores: activeStores,
-			PolicyEnforcer: activePolicyEnforcer,
+			Verifiers:      &(controllers.VerifierMap),
+			ReferrerStores: &(controllers.StoreMap),
+			Policies:       &(controllers.ActivePolicies),
 			Config:         &cf.ExecutorConfig,
 		}
 		return &executor
@@ -209,32 +186,60 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		close(certRotatorReady)
 	}
 
-	if err = (&controllers.VerifierReconciler{
+	if err = (&namespaced.VerifierReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Verifier")
 		os.Exit(1)
 	}
-	if err = (&controllers.StoreReconciler{
+	if err = (&namespaced.StoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Store")
 		os.Exit(1)
 	}
-	if err = (&controllers.CertificateStoreReconciler{
+	if err = (&namespaced.CertificateStoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
 		os.Exit(1)
 	}
-	if err = (&controllers.PolicyReconciler{
+	if err = (&namespaced.PolicyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
+		os.Exit(1)
+	}
+	if err = (&clustered.VerifierReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Verifier")
+		os.Exit(1)
+	}
+	if err = (&clustered.StoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Store")
+		os.Exit(1)
+	}
+	if err = (&clustered.CertificateStoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Certificate Store")
+		os.Exit(1)
+	}
+	if err = (&clustered.PolicyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Policy")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

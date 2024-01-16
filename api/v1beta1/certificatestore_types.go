@@ -57,6 +57,7 @@ type CertificateStoreStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // CertificateStore is the Schema for the certificatestores API

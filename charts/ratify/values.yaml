@@ -1,8 +1,8 @@
 image:
-  repository: ghcr.io/deislabs/ratify
-  crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.1.0
-  pullPolicy: IfNotPresent
+  repository: libinbinacr.azurecr.io/deislabs/ratify
+  crdRepository: libinbinacr.azurecr.io/localbuildcrd
+  tag: v1
+  pullPolicy: Always
 
 nameOverride: ""
 fullnameOverride: ""

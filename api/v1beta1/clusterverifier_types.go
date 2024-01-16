@@ -52,7 +52,7 @@ type ClusterVerifierStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Namespaced"
+// +kubebuilder:resource:scope="Cluster"
 // +kubebuilder:storageversion
 // ClusterVerifier is the Schema for the clusterverifiers API
 type ClusterVerifier struct {

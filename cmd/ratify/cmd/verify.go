@@ -23,6 +23,8 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
+	"github.com/deislabs/ratify/pkg/customresources/policies"
+	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	e "github.com/deislabs/ratify/pkg/executor"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
@@ -95,10 +97,10 @@ func verify(opts verifyCmdOptions) error {
 	}
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
-
 	if err != nil {
 		return err
 	}
+	activeStores := rs.NewActiveStoresWithoutNames(stores)
 
 	verifiers, err := vf.CreateVerifiersFromConfig(cf.VerifiersConfig, config.GetDefaultPluginPath(), constants.EmptyNamespace)
 
@@ -107,15 +109,16 @@ func verify(opts verifyCmdOptions) error {
 	}
 
 	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
-
 	if err != nil {
 		return err
 	}
+	policies := policies.NewActivePolicies()
+	policies.AddPolicy("", "", policyEnforcer)
 
 	executor := ef.Executor{
 		Verifiers:      verifiers,
-		ReferrerStores: stores,
-		PolicyEnforcer: policyEnforcer,
+		ReferrerStores: &activeStores,
+		Policies:       &policies,
 		Config:         &cf.ExecutorConfig,
 	}
 
