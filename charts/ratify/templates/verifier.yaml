@@ -13,20 +13,26 @@ spec:
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:
-      certs:
-        {{- if .Values.akvCertConfig.enabled }}
-        - certstore-akv
-        {{- else }}
+      ca:
+        certs-ca:
+          {{- if .Values.akvCertConfig.enabled }}
+          - certstore-akv
+          {{- else }}
+            {{- if .Values.notationCert }}
+              {{- if .Values.notationCerts }}
+              {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
+              {{- end }}
+          - {{$fullname}}-notation-inline-cert
+            {{- end }} 
+            {{- range $i, $cert := .Values.notationCerts }}
+          - {{$fullname}}-notation-inline-cert-{{$i}}
+            {{- end }} 
+          {{- end }}
+      signingAuthority:
+        certs-sa:
           {{- if .Values.notationCert }}
-            {{- if .Values.notationCerts }}
-            {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
-            {{- end }}
-        - {{$fullname}}-notation-inline-cert
-          {{- end }} 
-          {{- range $i, $cert := .Values.notationCerts }}
-        - {{$fullname}}-notation-inline-cert-{{$i}}
-          {{- end }} 
-        {{- end }}
+          - {{$fullname}}-notation-inline-cert
+          {{- end }}
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
@@ -36,7 +42,8 @@ spec:
           signatureVerification:
             level: strict
           trustStores:
-            - ca:certs
+            - ca:certs-ca
+            - signingAuthority:certs-sa
           trustedIdentities:
             - "*"
 ---

@@ -250,8 +250,12 @@ func TestParseVerifierConfig(t *testing.T) {
 				"verificationCerts": []string{testPath},
 				"verificationCertStores": map[truststore.Type]map[string][]string{
 					"ca": {
-						"certstore1": {"defaultns/akv1", "akv2"},
-						"certstore2": {"akv3", "akv4"},
+						"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+						"cert-ca2": {"testns/akv3", "testns/akv4"},
+					},
+					"signingAuthority": {
+						"cert-sa":  {"defaultns/akv5", "testns/akv6"},
+						"cert-sa2": {"testns/akv7", "testns/akv8"},
 					},
 				},
 			},
@@ -261,8 +265,12 @@ func TestParseVerifierConfig(t *testing.T) {
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: map[truststore.Type]map[string][]string{
 					"ca": {
-						"certstore1": {"defaultns/akv1", "testns/akv2"},
-						"certstore2": {"testns/akv3", "testns/akv4"},
+						"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+						"cert-ca2": {"testns/akv3", "testns/akv4"},
+					},
+					"signingAuthority": {
+						"cert-sa":  {"defaultns/akv5", "testns/akv6"},
+						"cert-sa2": {"testns/akv7", "testns/akv8"},
 					},
 				},
 			},

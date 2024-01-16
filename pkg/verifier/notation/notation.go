@@ -81,16 +81,11 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	logger.GetLogger(context.Background(), logOpt).Debugf("creating notation with config %v, namespace '%v'", verifierConfig, namespace)
 	verifierName := fmt.Sprintf("%s", verifierConfig[types.Name])
 	verifierTypeStr := ""
-	logger.GetLogger(context.Background(), logOpt).Debugf("Entra create")
 	if _, ok := verifierConfig[types.Type]; ok {
 		verifierTypeStr = fmt.Sprintf("%s", verifierConfig[types.Type])
-	} else {
-		logger.GetLogger(context.Background(), logOpt).Debugf("Err in get Type %v", ok)
 	}
-	logger.GetLogger(context.Background(), logOpt).Debugf("Going Entra parse")
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		logger.GetLogger(context.Background(), logOpt).Debugf("Err in parseVerifierConfig, %v", err)
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
@@ -196,7 +191,6 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
-	logger.GetLogger(context.Background(), logOpt).Debugf("Entra parseVerifierConfig")
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, nil, re.HideStackTrace)
