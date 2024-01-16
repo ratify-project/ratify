@@ -88,6 +88,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	writePolicyStatus(ctx, r, &policy, policyLogger, true, "")
 	return ctrl.Result{}, nil
 }
 

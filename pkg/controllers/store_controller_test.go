@@ -16,11 +16,14 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
@@ -53,6 +56,44 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	}
 }
 
+func TestWriteStoreStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		store      *configv1beta1.Store
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			store:      &configv1beta1.Store{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			store:      &configv1beta1.Store{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			store:     &configv1beta1.Store{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeStoreStatus(context.Background(), tc.reconciler, tc.store, logger, tc.isSuccess, tc.errString)
+		})
+	}
+}
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
 	// add a Store

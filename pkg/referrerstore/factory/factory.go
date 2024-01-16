@@ -81,6 +81,7 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 	}
 
 	storeFactory, ok := builtInStores[storeNameStr]
+	// TODO: validate path
 	if ok {
 		return storeFactory.Create(configVersion, storeConfig)
 	}

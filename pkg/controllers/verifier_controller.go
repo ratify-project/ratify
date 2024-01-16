@@ -179,7 +179,6 @@ func getCertStoreNamespace(verifierNamespace string) (string, error) {
 
 func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.Verifier, logger *logrus.Entry, isSuccess bool, errorString string) {
 
-	// TODO, write unit test for this method
 	if isSuccess {
 		verifier.Status.IsSuccess = true
 	} else {
