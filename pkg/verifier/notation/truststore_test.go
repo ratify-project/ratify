@@ -20,8 +20,6 @@ import (
 	"os"
 	"reflect"
 	"testing"
-
-	"github.com/notaryproject/notation-go/verifier/truststore"
 )
 
 const (
@@ -32,9 +30,8 @@ const (
 )
 
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
-	certStore := map[truststore.Type]map[string][]string{}
-	certStore["ca"]["store1"] = []string{"kv1"}
-	certStore["ca"]["store2"] = []string{"kv2"}
+	certStore := make(map[string]interface{})
+	certStore["ca"] = map[string][]string{"store1": {"kv1"}, "store2": {"kv2"}}
 	store := &trustStore{
 		certStoresByType: certStore,
 	}
@@ -46,9 +43,8 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 }
 
 func TestGetCertificates_NamedStore(t *testing.T) {
-	certStore := map[truststore.Type]map[string][]string{}
-	certStore["ca"]["store1"] = []string{"default/kv1"}
-	certStore["ca"]["store2"] = []string{"projecta/kv2"}
+	certStore := make(map[string]interface{})
+	certStore["ca"] = map[string][]string{"store1": {"default/kv1"}, "store2": {"projecta/kv2"}}
 
 	store := &trustStore{
 		certStoresByType: certStore,

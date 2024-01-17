@@ -33,7 +33,7 @@ var logOpt = logger.Option{
 
 type trustStore struct {
 	certPaths        []string
-	certStoresByType map[truststore.Type]map[string][]string
+	certStoresByType map[string]interface{}
 }
 
 // trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v1.0.0-rc.3/verifier/truststore#X509TrustStore]
@@ -56,25 +56,27 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, storeType trust
 	certs := make([]*x509.Certificate, 0)
 
 	// certs configured for this namedStore overrides cert path
-	if certGroup := s.certStoresByType[storeType][namedStore]; len(certGroup) > 0 {
-		for _, certStore := range certGroup {
-			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-			result := certificatesMap[certStore]
-			if len(result) == 0 {
-				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+	if mapValue, ok := s.certStoresByType[string(storeType)].(map[string][]string); ok {
+		if certGroup := mapValue[namedStore]; len(certGroup) > 0 {
+			for _, certStore := range certGroup {
+				logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
+				result := certificatesMap[certStore]
+				if len(result) == 0 {
+					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+				}
+				certs = append(certs, result...)
 			}
-			certs = append(certs, result...)
-		}
-		if len(certs) == 0 {
-			return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
-		}
-	} else {
-		for _, path := range s.certPaths {
-			bundledCerts, err := utils.GetCertificatesFromPath(path)
-			if err != nil {
-				return nil, err
+			if len(certs) == 0 {
+				return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
 			}
-			certs = append(certs, bundledCerts...)
+		} else {
+			for _, path := range s.certPaths {
+				bundledCerts, err := utils.GetCertificatesFromPath(path)
+				if err != nil {
+					return nil, err
+				}
+				certs = append(certs, bundledCerts...)
+			}
 		}
 	}
 	logger.GetLogger(ctx, logOpt).Debugf("Trust store getCertificatesInternal , %v certs retrieved", len(certs))

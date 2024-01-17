@@ -31,7 +31,6 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
-	"github.com/notaryproject/notation-go/verifier/truststore"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -205,6 +204,15 @@ func TestCanVerify(t *testing.T) {
 }
 
 func TestParseVerifierConfig(t *testing.T) {
+	verificationCertStoresSample := make(map[string]interface{})
+	verificationCertStoresSample["ca"] = map[string][]string{
+		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": {"testns/akv3", "testns/akv4"},
+	}
+	verificationCertStoresSample["signingAuthority"] = map[string][]string{
+		"cert-sa":  {"defaultns/akv5", "testns/akv6"},
+		"cert-sa2": {"testns/akv7", "testns/akv8"},
+	}
 	tests := []struct {
 		name      string
 		configMap map[string]interface{}
@@ -246,33 +254,15 @@ func TestParseVerifierConfig(t *testing.T) {
 		{
 			name: "successfully parsed with specified cert stores",
 			configMap: map[string]interface{}{
-				"name":              test,
-				"verificationCerts": []string{testPath},
-				"verificationCertStores": map[truststore.Type]map[string][]string{
-					"ca": {
-						"cert-ca":  {"defaultns/akv1", "testns/akv2"},
-						"cert-ca2": {"testns/akv3", "testns/akv4"},
-					},
-					"signingAuthority": {
-						"cert-sa":  {"defaultns/akv5", "testns/akv6"},
-						"cert-sa2": {"testns/akv7", "testns/akv8"},
-					},
-				},
+				"name":                   test,
+				"verificationCerts":      []string{testPath},
+				"verificationCertStores": verificationCertStoresSample,
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
-				Name:              test,
-				VerificationCerts: []string{testPath, defaultCertDir},
-				VerificationCertStores: map[truststore.Type]map[string][]string{
-					"ca": {
-						"cert-ca":  {"defaultns/akv1", "testns/akv2"},
-						"cert-ca2": {"testns/akv3", "testns/akv4"},
-					},
-					"signingAuthority": {
-						"cert-sa":  {"defaultns/akv5", "testns/akv6"},
-						"cert-sa2": {"testns/akv7", "testns/akv8"},
-					},
-				},
+				Name:                   test,
+				VerificationCerts:      []string{testPath, defaultCertDir},
+				VerificationCertStores: verificationCertStoresSample,
 			},
 		},
 	}
