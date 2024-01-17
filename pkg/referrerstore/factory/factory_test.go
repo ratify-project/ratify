@@ -47,7 +47,7 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, getReferrerstorePluginsDir())
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
@@ -74,7 +74,7 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, getReferrerstorePluginsDir())
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
