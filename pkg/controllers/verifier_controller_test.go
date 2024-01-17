@@ -42,7 +42,7 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	var testVerifierSpec = configv1beta1.VerifierSpec{
 		Name:          "sample",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
-		Address:       getPluginsDir(),
+		Address:       getVerifierPluginsDir(),
 	}
 	var resource = "sample"
 
@@ -177,7 +177,7 @@ func getLicenseCheckerFromParam(parametersString string) configv1beta1.VerifierS
 	return configv1beta1.VerifierSpec{
 		Name:          "licensechecker",
 		ArtifactTypes: "application/vnd.ratify.spdx.v0",
-		Address:       getPluginsDir(),
+		Address:       getVerifierPluginsDir(),
 		Parameters: runtime.RawExtension{
 			Raw: allowedLicenses,
 		},
@@ -189,7 +189,7 @@ func getDefaultLicenseCheckerSpec() configv1beta1.VerifierSpec {
 	return getLicenseCheckerFromParam(parametersString)
 }
 
-func getPluginsDir() string {
+func getVerifierPluginsDir() string {
 	workingDir, _ := os.Getwd()
 	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins"))
 	return pluginDir
