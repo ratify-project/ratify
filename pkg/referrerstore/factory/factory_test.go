@@ -19,6 +19,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/featureflag"
@@ -67,7 +68,7 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 
 func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 	storeConfig := map[string]interface{}{
-		"name": "plugin-store",
+		"name": "sample",
 	}
 	storesConfig := config.StoresConfig{
 		Stores: []config.StorePluginConfig{storeConfig},
@@ -83,7 +84,7 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
 	}
 
-	if stores[0].Name() != "plugin-store" {
+	if stores[0].Name() != "sample" {
 		t.Fatalf("expected to create plugin store")
 	}
 
@@ -96,7 +97,7 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 	os.Setenv("RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS", "1")
 	featureflag.InitFeatureFlagsFromEnv()
 	storeConfig := map[string]interface{}{
-		"name": "plugin-store",
+		"name": "sample",
 		"source": map[string]interface{}{
 			"artifact": "wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1",
 		},
@@ -106,7 +107,7 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, getReferrerstorePluginsDir())
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
@@ -116,7 +117,7 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
 	}
 
-	if stores[0].Name() != "plugin-store" {
+	if stores[0].Name() != "sample" {
 		t.Fatalf("expected to create plugin store")
 	}
 
@@ -128,4 +129,10 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 	if _, err := os.Stat(pluginPath); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("downloaded plugin not found in path")
 	}
+}
+
+func getReferrerstorePluginsDir() string {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../../../", "./bin/plugins/referrerstore/"))
+	return pluginDir
 }
