@@ -40,7 +40,7 @@ type trustStore struct {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
-func (s trustStore) GetCertificates(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
 	for _, trustStoreType := range truststore.Types {
 		certsByType, err := s.getCertificatesInternal(ctx, trustStoreType, namedStore, controllers.GetCertificatesMap())
