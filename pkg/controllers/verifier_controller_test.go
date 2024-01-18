@@ -115,6 +115,7 @@ func TestWriteVerifierStatus(t *testing.T) {
 		{
 			name:       "success status",
 			isSuccess:  true,
+			errString:  "",
 			verifier:   &configv1beta1.Verifier{},
 			reconciler: &mockStatusClient{},
 		},

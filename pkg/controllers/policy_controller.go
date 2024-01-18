@@ -167,6 +167,7 @@ func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *confi
 func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
 	policy.Status.IsSuccess = true
 	policy.Status.Error = ""
+	policy.Status.BriefError = ""
 }
 
 func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {

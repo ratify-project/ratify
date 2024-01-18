@@ -166,6 +166,34 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 }
 
+@test "verifier crd status check" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker'
+    }
+
+    # apply a valid verifier, validate status property shows success
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
+    assert_success
+
+    # apply a invalid verifier CR, validate status with error
+    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml > invalidVerifier.yaml
+    run kubectl apply -f invalidVerifier.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    assert_success
+
+    # apply a valid verifier, validate status property shows success
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    assert_failure
+}
+
 @test "configmap update test" {
     skip "Skipping test for now as we are no longer watching for configfile update in a K8s environment. This test ensures we are watching config file updates in a non-kub scenario"
     run kubectl apply -f ./library/default/template.yaml

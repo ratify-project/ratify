@@ -180,6 +180,8 @@ func getCertStoreNamespace(verifierNamespace string) (string, error) {
 func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.Verifier, logger *logrus.Entry, isSuccess bool, errorString string) {
 	if isSuccess {
 		verifier.Status.IsSuccess = true
+		verifier.Status.Error = ""
+		verifier.Status.BriefError = ""
 	} else {
 		verifier.Status.IsSuccess = false
 		verifier.Status.Error = errorString
