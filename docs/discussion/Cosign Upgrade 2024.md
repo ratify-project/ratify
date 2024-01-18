@@ -161,6 +161,7 @@ Cons:
   - Should we have a separate local directory cert store provider that gets configured like other cert stores or should we scope it only to the cosign plugin?
     - In K8s scenarios, it will not be an encouraged pattern to specify local directory. This is why implementing directory cert reading as a cert store provider may not make  sense.
     - However, if a user decides to do a mixture of cert stores + local directory then they would need to specify in 2 different sections (cosign plugin config + cert store)
+    - **UPDATE 1/18/24**: We will mirror notation experience with a `verificationKeys` field in the cosign verifier config
 
 ## Support Multiple keys for cosign verification
 
