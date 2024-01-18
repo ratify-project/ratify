@@ -215,7 +215,7 @@ func TestParseVerifierConfig(t *testing.T) {
 		"defaultns/akv1", "testns/akv2",
 	}
 	verificationCertStoresSample2Expected := make(map[string]interface{})
-	verificationCertStoresSample2Expected["ca"] = map[string][]string{
+	verificationCertStoresSample2Expected["ca"] = map[string][]interface{}{
 		"certs": {"defaultns/akv1", "testns/akv2"},
 	}
 	tests := []struct {

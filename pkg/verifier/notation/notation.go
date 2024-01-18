@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	paths "path/filepath"
-	"reflect"
 	"strings"
 
 	ratifyconfig "github.com/deislabs/ratify/config"
@@ -50,6 +49,7 @@ import (
 const (
 	verifierType    = "notation"
 	defaultCertPath = "ratify-certs/notation/truststore"
+	typeCA          = "ca"
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -189,6 +189,15 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
+func isValidTrustStoreType(trustStoreType string) bool {
+	for _, t := range truststore.Types {
+		if string(t) == trustStoreType {
+			return true
+		}
+	}
+	return false
+}
+
 func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
@@ -199,15 +208,12 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
-	// would optimize when have both ca and certs
-	if _, ok := conf.VerificationCertStores["certs"]; ok {
-		conf.VerificationCertStores["ca"] =
-			map[string][]interface{}{
-				"certs": conf.VerificationCertStores["certs"].([]interface{}),
-			}
-		delete(conf.VerificationCertStores, "certs")
+	for nestedKey, nestedValue := range conf.VerificationCertStores {
+		if _, ok := conf.VerificationCertStores[nestedKey]; ok && !isValidTrustStoreType(nestedKey) {
+			conf.VerificationCertStores[typeCA].(map[string]interface{})[nestedKey] = nestedValue.([]interface{})
+			delete(conf.VerificationCertStores, nestedKey)
+		}
 	}
-	logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is empty %+v", conf.VerificationCertStores)
 	// append namespace to uniquely identify the certstore
 	if len(conf.VerificationCertStores) > 0 {
 		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
@@ -241,9 +247,6 @@ func prependNamespaceToCertStore(verificationCertStore map[string]interface{}, n
 					}
 				}
 			}
-		} else {
-			logger.GetLogger(context.Background(), logOpt).Debugf("truststore type %v is not a map[string][]string, skipping", trustStoreType)
-			logger.GetLogger(context.Background(), logOpt).Debugf("verificationCertStore type is %v", reflect.TypeOf(verificationCertStore[string(trustStoreType)]))
 		}
 	}
 	return verificationCertStore, nil
