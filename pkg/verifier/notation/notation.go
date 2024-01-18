@@ -249,11 +249,11 @@ func prependNamespaceToCertStore(verificationCertStores map[string]interface{}, 
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
 	for _, trustStoreType := range trustStoreTypes {
-		if mapValue, ok := verificationCertStores[trustStoreType].(map[string][]interface{}); ok {
+		if mapValue, ok := verificationCertStores[trustStoreType].(map[string]interface{}); ok {
 			for _, certStores := range mapValue {
-				for i, certstore := range certStores {
+				for i, certstore := range certStores.([]interface{}) {
 					if !isNamespacedNamed(certstore.(string)) {
-						certStores[i] = namespace + constants.NamespaceSeperator + certstore.(string)
+						certStores.([]interface{})[i] = namespace + constants.NamespaceSeperator + certstore.(string)
 					}
 				}
 			}
