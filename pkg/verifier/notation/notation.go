@@ -213,13 +213,16 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 	for nestedKey, nestedValue := range conf.VerificationCertStores {
-		if _, ok := conf.VerificationCertStores[nestedKey]; ok && !isValidTrustStoreType(nestedKey) {
-			conf.VerificationCertStores[typeCA].(map[string]interface{})[nestedKey] = nestedValue.([]string)
+		if _, ok := conf.VerificationCertStores[nestedKey].([]interface{}); ok && !isValidTrustStoreType(nestedKey) {
+			if _, ok := conf.VerificationCertStores[typeCA]; !ok {
+				conf.VerificationCertStores[typeCA] = map[string]interface{}{
+					nestedKey: nestedValue,
+				}
+			} else {
+				conf.VerificationCertStores[typeCA].(map[string]interface{})[nestedKey] = nestedValue.([]interface{})
+			}
 			delete(conf.VerificationCertStores, nestedKey)
 		}
-	}
-	for _, trustStoreType := range trustStoreTypes {
-		conf.VerificationCertStores[trustStoreType] = conf.VerificationCertStores[trustStoreType].(map[string][]string)
 	}
 	// append namespace to uniquely identify the certstore
 	if len(conf.VerificationCertStores) > 0 {
@@ -246,11 +249,11 @@ func prependNamespaceToCertStore(verificationCertStores map[string]interface{}, 
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
 	for _, trustStoreType := range trustStoreTypes {
-		if mapValue, ok := verificationCertStores[trustStoreType].(map[string][]string); ok {
+		if mapValue, ok := verificationCertStores[trustStoreType].(map[string][]interface{}); ok {
 			for _, certStores := range mapValue {
 				for i, certstore := range certStores {
-					if !isNamespacedNamed(certstore) {
-						certStores[i] = namespace + constants.NamespaceSeperator + certstore
+					if !isNamespacedNamed(certstore.(string)) {
+						certStores[i] = namespace + constants.NamespaceSeperator + certstore.(string)
 					}
 				}
 			}
