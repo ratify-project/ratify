@@ -89,55 +89,55 @@ spec:
 - Can we promote Cosign to be a built-in verifier like Notation is?
   - This would allow us to use `CertificateStore` without having to build support for external plugins accessing certificates.
   - It will also be slightly more performant if it can share the in-memory ORAS store cache.
-- How do we share certificates and keys with external plugins?
-  - All certs are loaded in an in-memory map currently. The map cannot be shared with external processes.
-  - External plugins should NOT be pulling certificates/keys per invocation (external KMS would be stressed. result in very expensive calls)
-  - Option 1: Serialize and add `Certificates` & `Keys` map into the external plugin json input
-    - Embed each map during plugin invocation
-      - namespace context aware for multi-tenancy
-      - Is security a concern for embedding certs + keys to invoke plugins not related to signature verification?
-    - Cosign verifier will be updated to deserialize and consume the maps
-  - Option 2: Store certs + keys on disk at well-known path
-    -  `CertificateStore` will be refactored to store fetched certs from providers in a directory on disk
+  - **UPDATE 1/18/24: Cosign verifier will be built-in**
+- ~~How do we share certificates and keys with external plugins?~~
+  - ~~All certs are loaded in an in-memory map currently. The map cannot be shared with external processes.~~
+  - ~~External plugins should NOT be pulling certificates/keys per invocation (external KMS would be stressed. result in very expensive calls)~~
+  - ~~Option 1: Serialize and add `Certificates` & `Keys` map into the external plugin json input~~
+    - ~~Embed each map during plugin invocation~~
+      - ~~namespace context aware for multi-tenancy~~
+      - ~~Is security a concern for embedding certs + keys to invoke plugins not related to signature verification?~~
+    - ~~Cosign verifier will be updated to deserialize and consume the maps~~
+  - ~~Option 2: Store certs + keys on disk at well-known path~~
+    -  ~~`CertificateStore` will be refactored to store fetched certs from providers in a directory on disk~~
+      ```diff
+      - .ratify/certificate_store/
+      - <provider_name>-<namespace>/
+      -   keys/
+      -     key1.rsa
+      -   certificates/
+      -     cert1.pem
+      -     cert2.pem
       ```
-      .ratify/certificate_store/
-        <provider_name>-<namespace>/
-          keys/
-            key1.rsa
-          certificates/
-            cert1.pem
-            cert2.pem
-      ```
-    - Configuration loading from JSON (CLI) or CRD reconcile loop will be responsible for deleting the directories of cert providers as they are removed
-    - External plugins will have to have the `CertificateStore` config passed in as JSON input in order to create instance of the cert provider objects
-    - External plugins will need to be namespace aware in order to know which directory to access
-    - Pros:
-      - Cosign plugin can manage accessing its own keys + certificates without executor having to coordinate
-      - Other external plugins will not get unnecessary keys + certs provided in json input 
-    - Cons:
-      - Keys + certs must be added/deleted off disk
-        - What happens if keys + certs are left on disk due to Ratify failure?
-        - Keys + certs will be able to be accessed by any process with filesystem access
-        - CLI scenario will require fetching + deleting certs + keys off disk per invocation
-      - Existing cert providers used by notation will need to be updated to read/write certs from disk
-      - External plugins will need to be aware of namespace context in order to only access resources in namespaced directory
-  - Option 3 (NOT recommended): Add certificates + keys to shared cache
-    - Define two new cache keys partitioned by namespace
-    - CANNOT use the ristretto in-memory cache as it is since external cosign process must be able to access it
-      - This would require hard dependency on HA mode which is a bad experience. Why should a user need HA distributed cache just for Cosign?
-      - Implement a new cache provider for cache sharing between processes on same host
-        - NOT trivial
-        - Require a new http cache server and clients
-    - Cache provider initialization in cosign plugin implementation
-    - One advantage is that not only will cert + key sharing be solved but also oras store credentials can easily shared which is currently not possible for external plugins
+    - ~~Configuration loading from JSON (CLI) or CRD reconcile loop will be responsible for deleting the directories of cert providers as they are removed~~
+    - ~~External plugins will have to have the `CertificateStore` config passed in as JSON input in order to create instance of the cert provider objects~~
+    - ~~External plugins will need to be namespace aware in order to know which directory to access~~
+    - ~~Pros:~~
+      - ~~Cosign plugin can manage accessing its own keys + certificates without executor having to coordinate~~
+      - ~~Other external plugins will not get unnecessary keys + certs provided in json input~~ 
+    - ~~Cons:~~
+      - ~~Keys + certs must be added/deleted off disk~~
+        - ~~What happens if keys + certs are left on disk due to Ratify failure?~~
+        - ~~Keys + certs will be able to be accessed by any process with filesystem access~~
+        - ~~CLI scenario will require fetching + deleting certs + keys off disk per invocation~~
+      - ~~Existing cert providers used by notation will need to be updated to read/write certs from disk~~
+      - ~~External plugins will need to be aware of namespace context in order to only access resources in namespaced directory~~
+  - ~~Option 3 (NOT recommended): Add certificates + keys to shared cache~~
+    - ~~Define two new cache keys partitioned by namespace~~
+    - ~~CANNOT use the ristretto in-memory cache as it is since external cosign process must be able to access it~~
+      - ~~This would require hard dependency on HA mode which is a bad experience. Why should a user need HA distributed cache just for Cosign?~~
+      - ~~Implement a new cache provider for cache sharing between processes on same host~~
+        - ~~NOT trivial~~
+        - ~~Require a new http cache server and clients~~
+    - ~~Cache provider initialization in cosign plugin implementation~~
+    - ~~One advantage is that not only will cert + key sharing be solved but also oras store credentials can easily shared which is currently not possible for external plugins~~
 - Extend Inline Certificate Provider
   - add new `type` field to spec: "key" or "certificate". If not provided, default to "certificate" for backwards compatability. 
 - Extend Azure Key Vault Certificate Provider
   - use `GetKeys` API to fetch keys from configured key vault
   - add new `keys` field to spec
 - Multitenancy considerations
-  - It is the Ratify's plugin executor's responsibility to provide the external plugin ONLY the certificates that match that verifier's namespace
-  
+  - Need a separate keys map for namespaced and global certificate store keys
 #### Renaming CertificateStore to KeyStore
 - Is the existing name confusing enough to warrant changing to KeyStore?
 - How would we support CRD name change?
