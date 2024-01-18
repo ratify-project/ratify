@@ -19,12 +19,12 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
-	"fmt"
 
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	"github.com/sirupsen/logrus"
 )
 
 var logOpt = logger.Option{
@@ -54,7 +54,7 @@ func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, name
 
 func (s trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
-
+	logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", s.certStoresByType)
 	// certs configured for this namedStore overrides cert path
 	if mapValue, ok := s.certStoresByType[string(storeType)].(map[string][]string); ok {
 		if certGroup := mapValue[namedStore]; len(certGroup) > 0 {
@@ -67,7 +67,8 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, storeType trust
 				certs = append(certs, result...)
 			}
 			if len(certs) == 0 {
-				return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
+				logger.GetLogger(ctx, logOpt).Warnf("unable to fetch certificates for namedStore: %+v", namedStore)
+				// return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
 			}
 		} else {
 			for _, path := range s.certPaths {
@@ -96,7 +97,9 @@ func (s trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certifi
 		filteredCerts = append(filteredCerts, cert)
 	}
 	if len(filteredCerts) == 0 {
+		logrus.Debugf("start filteredCerts")
 		return nil, errors.New("valid certificates must be provided, only CA certificates or self-signed signing certificates are supported")
 	}
+	logrus.Debugf("end filteredCerts")
 	return filteredCerts, nil
 }
