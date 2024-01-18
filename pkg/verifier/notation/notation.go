@@ -28,6 +28,7 @@ import (
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
+	"golang.org/x/exp/slices"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -47,9 +48,17 @@ import (
 )
 
 const (
-	verifierType    = "notation"
-	defaultCertPath = "ratify-certs/notation/truststore"
-	typeCA          = "ca"
+	verifierType         = "notation"
+	defaultCertPath      = "ratify-certs/notation/truststore"
+	typeCA               = string(truststore.TypeCA)
+	typeSigningAuthority = string(truststore.TypeSigningAuthority)
+)
+
+var (
+	trustStoreTypes = []string{
+		typeCA,
+		typeSigningAuthority,
+	}
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -59,7 +68,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-	// VerificationCerts is map defining which keyvault certificates belong to which trust store type and trust store name.
+	// VerificationCerts is map defining which keyvault certificates belong to which trust store name and its trust store type.
 	VerificationCertStores map[string]interface{} `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
@@ -189,13 +198,8 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
-func isValidTrustStoreType(trustStoreType string) bool {
-	for _, t := range truststore.Types {
-		if string(t) == trustStoreType {
-			return true
-		}
-	}
-	return false
+func isValidTrustStoreType(storeType string) bool {
+	return slices.Contains(trustStoreTypes, storeType)
 }
 
 func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
@@ -210,9 +214,12 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	}
 	for nestedKey, nestedValue := range conf.VerificationCertStores {
 		if _, ok := conf.VerificationCertStores[nestedKey]; ok && !isValidTrustStoreType(nestedKey) {
-			conf.VerificationCertStores[typeCA].(map[string]interface{})[nestedKey] = nestedValue.([]interface{})
+			conf.VerificationCertStores[typeCA].(map[string]interface{})[nestedKey] = nestedValue.([]string)
 			delete(conf.VerificationCertStores, nestedKey)
 		}
+	}
+	for _, trustStoreType := range trustStoreTypes {
+		conf.VerificationCertStores[trustStoreType] = conf.VerificationCertStores[trustStoreType].(map[string][]string)
 	}
 	// append namespace to uniquely identify the certstore
 	if len(conf.VerificationCertStores) > 0 {
@@ -234,12 +241,12 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 }
 
 // append namespace to certStore so they are uniquely identifiable
-func prependNamespaceToCertStore(verificationCertStore map[string]interface{}, namespace string) (map[string]interface{}, error) {
+func prependNamespaceToCertStore(verificationCertStores map[string]interface{}, namespace string) (map[string]interface{}, error) {
 	if namespace == "" {
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
-	for _, trustStoreType := range truststore.Types {
-		if mapValue, ok := verificationCertStore[string(trustStoreType)].(map[string][]string); ok {
+	for _, trustStoreType := range trustStoreTypes {
+		if mapValue, ok := verificationCertStores[trustStoreType].(map[string][]string); ok {
 			for _, certStores := range mapValue {
 				for i, certstore := range certStores {
 					if !isNamespacedNamed(certstore) {
@@ -249,7 +256,7 @@ func prependNamespaceToCertStore(verificationCertStore map[string]interface{}, n
 			}
 		}
 	}
-	return verificationCertStore, nil
+	return verificationCertStores, nil
 }
 
 // return true if string looks like a K8s namespaced resource. e.g. namespace/name

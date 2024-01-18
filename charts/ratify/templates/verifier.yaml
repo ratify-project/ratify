@@ -28,11 +28,6 @@ spec:
           - {{$fullname}}-notation-inline-cert-{{$i}}
             {{- end }} 
           {{- end }}
-      signingAuthority:
-        certs-sa:
-          {{- if .Values.notationCert }}
-          - {{$fullname}}-notation-inline-cert
-          {{- end }}
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
