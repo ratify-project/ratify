@@ -124,7 +124,7 @@ jobs:
           kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
           kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
       - name: Upload artifacts
-        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
         if: ${{ always() }}
         with:
           name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
@@ -157,7 +157,7 @@ jobs:
           go-version: '1.20'
 
       - name: Az CLI login
-        uses: azure/login@de95379fe4dadc2defb305917eaa7e5dde727294 # v1.5.1
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
@@ -173,7 +173,7 @@ jobs:
           make e2e-aks KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }} GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }} TENANT_ID=${{ env.AZURE_TENANT_ID }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        uses: actions/upload-artifact@1eb3cb2b3e0f29609092a73eb033bb759a334595 # v4.1.0
         if: ${{ always() }}
         with:
           name: e2e-logs-aks-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
@@ -213,7 +213,7 @@ jobs:
           go-version: '1.20'
 
       - name: Az CLI login
-        uses: azure/login@de95379fe4dadc2defb305917eaa7e5dde727294 # v1.5.1
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
