@@ -330,7 +330,7 @@ spec:
 Bob has a container image that is produced from a build pipeline and tested via a testing pipeline. After each pipeline, the image is signed with cosign using a SEPARATE key. Now the image has 2 cosign signatures. Bob trusts both keys and requires BOTH keys to be used. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature from his build AND test pipeline.
 
 - Bob installs Ratify on the cluster
-- Bob applies a new inline `CertificateStore` CR onto the cluster, `inline-key-buid` & `inline-key-test`
+- Bob applies a new inline `CertificateStore` CR onto the cluster, `inline-key-build` & `inline-key-test`
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: CertificateStore
@@ -432,9 +432,9 @@ Verification flow per key:
   - update Inline cert provider with `type` field
   - update AKV cert provider for `key` fetching logic
   - update controllers to add a new key map
-- Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))
-  - Option 1 or 2 depending on what's decided
-  - NOTE: If we make cosign a built-in verifier, we will NOT have to do this.
+- ~~Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))~~
+  - ~~Option 1 or 2 depending on what's decided~~
+  - ~~NOTE: If we make cosign a built-in verifier, we will NOT have to do this.~~
 - Cosign verifier multi key support
   - support cert store specification
   - add `keyEnforcement` config
