@@ -212,16 +212,19 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
-	for nestedKey, nestedValue := range conf.VerificationCertStores {
-		if _, ok := conf.VerificationCertStores[nestedKey].([]interface{}); ok && !isValidTrustStoreType(nestedKey) {
-			if _, ok := conf.VerificationCertStores[typeCA]; !ok {
-				conf.VerificationCertStores[typeCA] = map[string]interface{}{
-					nestedKey: nestedValue,
-				}
-			} else {
-				conf.VerificationCertStores[typeCA].(map[string]interface{})[nestedKey] = nestedValue.([]interface{})
-			}
-			delete(conf.VerificationCertStores, nestedKey)
+
+	// convert <store>:<certs> to ca:<store><certs>
+	// if have both types of store struct, then throw err
+	needConvert := true
+	for _, storeType := range trustStoreTypes {
+		if _, ok := conf.VerificationCertStores[storeType]; ok {
+			needConvert = false
+			break
+		}
+	}
+	if needConvert && len(conf.VerificationCertStores) > 0 {
+		conf.VerificationCertStores = map[string]any{
+			typeCA: conf.VerificationCertStores,
 		}
 	}
 	// append namespace to uniquely identify the certstore

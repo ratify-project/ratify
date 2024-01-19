@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/controllers"
@@ -30,6 +31,7 @@ var logOpt = logger.Option{
 	ComponentType: logger.Verifier,
 }
 
+// need switch pointer receiver
 type trustStore struct {
 	certPaths        []string
 	certStoresByType map[string]interface{}
@@ -39,14 +41,14 @@ type trustStore struct {
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
-func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+func (s trustStore) GetCertificates(ctx context.Context, trustStoreTypeInput truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
-	for _, trustStoreType := range truststore.Types {
-		certsByType, err := s.getCertificatesInternal(ctx, trustStoreType, namedStore, controllers.GetCertificatesMap())
-		if err != nil {
-			return nil, err
-		}
-		certs = append(certs, certsByType...)
+	if !isValidTrustStoreType(string(trustStoreTypeInput)) {
+		trustStoreTypeInput = truststore.TypeCA
+	}
+	certs, err := s.getCertificatesInternal(ctx, trustStoreTypeInput, namedStore, controllers.GetCertificatesMap())
+	if err != nil {
+		return nil, err
 	}
 	return s.filterValidCerts(certs)
 }
@@ -65,9 +67,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, storeType trust
 				certs = append(certs, result...)
 			}
 			if len(certs) == 0 {
-				// return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
-				// got senario where certs are not found in the map, e.g. signAuthority exist but the namedStore is empty
-				logger.GetLogger(ctx, logOpt).Warnf("unable to fetch certificates for namedStore: %+v", namedStore)
+				return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
 			}
 		} else {
 			for _, path := range s.certPaths {
