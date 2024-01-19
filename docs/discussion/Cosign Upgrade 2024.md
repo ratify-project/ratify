@@ -138,10 +138,10 @@ spec:
   - add new `keys` field to spec
 - Multitenancy considerations
   - Need a separate keys map for namespaced and global certificate store keys
-#### Renaming CertificateStore to KeyStore
-- Is the existing name confusing enough to warrant changing to KeyStore?
+#### Renaming CertificateStore to KeyManagementSystem
+- Is the existing name confusing enough to warrant changing to KeyManagementSystem?
 - How would we support CRD name change?
-  - Introduce new KeyStore CRD resource and then deprecate certificate store?
+  - Introduce new `KeyManagementSystem` CRD resource and then deprecate `CertificateStore`
 
 ### Option 2: Introduce new CRD `KeyStore` separate from `CertificateStore`
 
@@ -224,10 +224,10 @@ Currently, there is only support for a single key per cosign verifier.
 Bob has a container image he built. His trusted pool contains 2 self-managed keys to sign the image using `cosign`. Only ONE of the keys is used for signing at a time. There is only ONE signature. Bob's organization utilizes and trusts both keys. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature using AT LEAST one key from a trusted pool.
 
 - Bob installs Ratify on the cluster
-- Bob applies 2 new inline `CertificateStore` CR onto the cluster, `inline-key-1` & `inline-key-2`. Each CR will have a key Bob's organization trusts.
+- Bob applies 2 new inline `KeyManagementSystem` CR onto the cluster, `inline-key-1` & `inline-key-2`. Each CR will have a key Bob's organization trusts.
 ```yaml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: KeyManagementSystem
 metadata:
   name: inline-key-1
   annotations:
@@ -244,8 +244,8 @@ spec:
     
 ```
 ```yaml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: KeyManagementSystem
 metadata:
   name: inline-key-2
   annotations:
@@ -274,12 +274,12 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    keyStores:
+    keyManagementSystems:
       - inline-key-1
       - inline-key-2
 ```
-- Bob attempts to deploy a pod from an image that has cosign signature signed with key in CertificateStore `inline-key-1`. Pod is verified and created successfully.
-- Bob attempts to deploy a pod from an image that has cosign signature signed with key in CertificateStore `inline-key-2`. Pod is verified and created successfully.
+- Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementSystem `inline-key-1`. Pod is verified and created successfully.
+- Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementSystem `inline-key-2`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature signed with key NOT in `inline-key-1` or `inline-key-2`. Pod FAILS verification and blocked.
 
 #### 2 Signatures but only 1 is from a key that he trusts
@@ -287,10 +287,10 @@ spec:
 Bob has a container image that he imported from another registry. An existing cosign signature, signed by an entity he doesn't trust, is already associated with the image. After vetting the image, he utilizes 1 self-managed key to sign the image using `cosign`. Now the image has 2 cosign signatures. Bob only trusts his key. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature using only HIS key that he trusts.
 
 - Bob installs Ratify on the cluster
-- Bob applies a new inline `CertificateStore` CR onto the cluster, `inline-key`
+- Bob applies a new inline `KeyManagementSystem` CR onto the cluster, `inline-key`
 ```yaml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: KeyManagementSystem
 metadata:
   name: inline-key
   annotations:
@@ -320,10 +320,10 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    keyStores:
+    keyManagementSystems:
       - inline-key
 ```
-- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, one of which is signed with key in CertificateStore `inline-key`. Pod is verified and created successfully.
+- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, one of which is signed with key in KeyManagementSystem `inline-key`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature(s) signed with a different key in `inline-key`. Pod FAILS verification and blocked.
 
 #### 2 Signatures 2 Keys: both keys must be used
@@ -331,10 +331,10 @@ spec:
 Bob has a container image that is produced from a build pipeline and tested via a testing pipeline. After each pipeline, the image is signed with cosign using a SEPARATE key. Now the image has 2 cosign signatures. Bob trusts both keys and requires BOTH keys to be used. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature from his build AND test pipeline.
 
 - Bob installs Ratify on the cluster
-- Bob applies a new inline `CertificateStore` CR onto the cluster, `inline-key-build` & `inline-key-test`
+- Bob applies a new inline `KeyManagementSystem` CR onto the cluster, `inline-key-build` & `inline-key-test`
 ```yaml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: KeyManagementSystem
 metadata:
   name: inline-key-build
   annotations:
@@ -351,8 +351,8 @@ spec:
     
 ```
 ```yaml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: CertificateStore
+apiVersion: config.ratify.deislabs.io/v1alpha1
+kind: KeyManagementSystem
 metadata:
   name: inline-key-test
   annotations:
@@ -382,13 +382,13 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    keyStores:
+    keyManagementSystems:
       - inline-key-build
       - inline-key-test
     keyEnforcement: all
 ```
-- Bob attempts to deploy a pod from the vetted image that has 1 cosign signature, which is signed with key in CertificateStore `inline-key-build`. Pod FAILS verification and blocked.
-- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, which is signed with keys in CertificateStore `inline-key-build` & `inline-key-test`. Pod passes verification and is created.
+- Bob attempts to deploy a pod from the vetted image that has 1 cosign signature, which is signed with key in KeyManagementSystem `inline-key-build`. Pod FAILS verification and blocked.
+- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, which is signed with keys in KeyManagementSystem `inline-key-build` & `inline-key-test`. Pod passes verification and is created.
 
 > **NOTE**: Based on Cosign's own verification implementation, there does not seem to be a way to enforce that ALL signatures found are valid. This behavior is unchartered as far as we can tell and would require Ratify to determine if we want to support this directly. For that reason, the strict ALL signature scenario is not yet included.
 
@@ -426,7 +426,7 @@ Verification flow per key:
 - Verifier is then passed to cosign's `VerifySignature()` method as a verification option
 
 ## Dev Work Items (WIP)
-- Introduce new `KeyManagementSystem` CRD to replace `CertificateStore`
+- Introduce new `KeyManagementSystem` CRD to replace `CertificateStore` (~ 3 weeks)
   - maintain old `CertificateStore` controllers and source code for backwards compat
   - deprecate CRD version for `CertificateStore`
   - define new `KeyManagementSystem` CRD + controllers
@@ -434,7 +434,7 @@ Verification flow per key:
   - refactor to factory paradigm
   - refactor to define rigid config schema (currently, only a generic map of attributes passed)
   - add plugin support?
-- Add Key support to `KeyManagementSystem`
+- Add Key support to `KeyManagementSystem` (~ 2 weeks)
   - update API
   - update Inline provider with `type` field
   - update AKV provider for `key` fetching logic
@@ -443,17 +443,17 @@ Verification flow per key:
 - ~~Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))~~
   - ~~Option 1 or 2 depending on what's decided~~
   - ~~NOTE: If we make cosign a built-in verifier, we will NOT have to do this.~~
-- Cosign verifier multi key support
+- Cosign verifier multi key support (~ 1.5 weeks)
   - support key management system specification
   - add `keyEnforcement` config
   - add multi key verification logic including concurrent signature verification using routines
-- Add RSA and ED25519 key support
+- Add RSA and ED25519 key support (~ 0.5 week)
   - auto detect key type based on parsing library
   - pick cosign verifier according to format
-- Add docs and walkthroughs
+- Add docs and walkthroughs (~ 1 week)
   - redo cosign walk through
-- New e2e tests for different scenarios
-- Add `KeyManagementSystem` support to CLI
+- New e2e tests for different scenarios (~ 1 week)
+- Add `KeyManagementSystem` support to CLI (~ 1.5 weeks)
 
 ## Future Considerations
 - Support attestations with cosign signature embedded
