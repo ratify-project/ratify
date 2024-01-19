@@ -19,6 +19,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
@@ -97,6 +98,19 @@ func TestWriteStoreStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
+	resetStoreMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var spec = getInvalidStoreSpec()
+	err := storeAddOrReplace(spec, resource)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestStoreAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
 	// add a Store
@@ -155,4 +169,11 @@ func getStorePluginsDir() string {
 	workingDir, _ := os.Getwd()
 	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins/referrerstore/"))
 	return pluginDir
+}
+
+func getInvalidStoreSpec() configv1beta1.StoreSpec {
+	return configv1beta1.StoreSpec{
+		Name:    "pluginnotfound",
+		Address: getStorePluginsDir(),
+	}
 }

@@ -19,6 +19,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
@@ -67,6 +68,18 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 	}
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
+	}
+}
+
+func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
+	resetVerifierMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var testVerifierSpec = getInvalidVerifierSpec()
+	err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestVerifierAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
 	}
 }
 
@@ -182,6 +195,14 @@ func getLicenseCheckerFromParam(parametersString string) configv1beta1.VerifierS
 		Parameters: runtime.RawExtension{
 			Raw: allowedLicenses,
 		},
+	}
+}
+
+func getInvalidVerifierSpec() configv1beta1.VerifierSpec {
+	return configv1beta1.VerifierSpec{
+		Name:          "pluginnotfound",
+		ArtifactTypes: "application/vnd.ratify.spdx.v0",
+		Address:       getVerifierPluginsDir(),
 	}
 }
 
