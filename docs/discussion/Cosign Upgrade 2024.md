@@ -426,18 +426,25 @@ Verification flow per key:
 - Verifier is then passed to cosign's `VerifySignature()` method as a verification option
 
 ## Dev Work Items (WIP)
-- Add `CertificateStore` support to CLI
-- Rename `CertificateStore` CRD to `KeyStore` CRD (maintain backwards compatability)
-- Add Key support to `CertificateStore`
+- Introduce new `KeyManagementSystem` CRD to replace `CertificateStore`
+  - maintain old `CertificateStore` controllers and source code for backwards compat
+  - deprecate CRD version for `CertificateStore`
+  - define new `KeyManagementSystem` CRD + controllers
+  - port certificate providers implementation to new `KMS` object
+  - refactor to factory paradigm
+  - refactor to define rigid config schema (currently, only a generic map of attributes passed)
+  - add plugin support?
+- Add Key support to `KeyManagementSystem`
   - update API
-  - update Inline cert provider with `type` field
-  - update AKV cert provider for `key` fetching logic
-  - update controllers to add a new key map
+  - update Inline provider with `type` field
+  - update AKV provider for `key` fetching logic
+  - update controllers to add new key maps for global + namespaced keys
+  - update controllers to add new certs maps for namespaced certs
 - ~~Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))~~
   - ~~Option 1 or 2 depending on what's decided~~
   - ~~NOTE: If we make cosign a built-in verifier, we will NOT have to do this.~~
 - Cosign verifier multi key support
-  - support cert store specification
+  - support key management system specification
   - add `keyEnforcement` config
   - add multi key verification logic including concurrent signature verification using routines
 - Add RSA and ED25519 key support
@@ -446,6 +453,7 @@ Verification flow per key:
 - Add docs and walkthroughs
   - redo cosign walk through
 - New e2e tests for different scenarios
+- Add `KeyManagementSystem` support to CLI
 
 ## Future Considerations
 - Support attestations with cosign signature embedded
