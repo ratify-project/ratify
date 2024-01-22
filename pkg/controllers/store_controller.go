@@ -147,6 +147,8 @@ func specToStoreConfig(storeSpec configv1beta1.StoreSpec) (rc.StorePluginConfig,
 func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.Store, logger *logrus.Entry, isSuccess bool, errorString string) {
 	if isSuccess {
 		store.Status.IsSuccess = true
+		store.Status.Error = ""
+		store.Status.BriefError = ""
 	} else {
 		store.Status.IsSuccess = false
 		store.Status.Error = errorString
