@@ -17,7 +17,6 @@ import (
 	"context"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/json"
 	"fmt"
 	paths "path/filepath"
 	"reflect"
@@ -206,17 +205,17 @@ func TestCanVerify(t *testing.T) {
 
 func TestParseVerifierConfig(t *testing.T) {
 	verificationCertStoresSample := make(map[string]interface{})
-	verificationCertStoresSample["ca"] = map[string][]interface{}{
-		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": {"testns/akv3", "testns/akv4"},
+	verificationCertStoresSample["ca"] = map[string]interface{}{
+		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
 	}
 	verificationCertStoresSample2 := make(map[string]interface{})
 	verificationCertStoresSample2["certs"] = []string{
 		"defaultns/akv1", "testns/akv2",
 	}
 	verificationCertStoresSample2Expected := make(map[string]interface{})
-	verificationCertStoresSample2Expected["ca"] = map[string][]interface{}{
-		"certs": {"defaultns/akv1", "testns/akv2"},
+	verificationCertStoresSample2Expected["ca"] = map[string]interface{}{
+		"certs": []interface{}{"defaultns/akv1", "testns/akv2"},
 	}
 	tests := []struct {
 		name      string
@@ -271,7 +270,7 @@ func TestParseVerifierConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "successfully parsed with specified cert stores",
+			name: "successfully parsed with specified cert stores with storeType conversion",
 			configMap: map[string]interface{}{
 				"name":                   test,
 				"verificationCerts":      []string{testPath},
@@ -290,12 +289,6 @@ func TestParseVerifierConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notationPluginConfig, err := parseVerifierConfig(tt.configMap, "testns")
-			verifierConfigBytes, _ := json.Marshal(tt.expect)
-			json.Unmarshal(verifierConfigBytes, &tt.expect)
-
-			verifierConfigBytes, _ = json.Marshal(notationPluginConfig)
-			json.Unmarshal(verifierConfigBytes, &notationPluginConfig)
-
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
 			}
