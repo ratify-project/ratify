@@ -14,7 +14,7 @@ spec:
   parameters:
     verificationCertStores:
       ca:
-        certs-ca:
+        certs:
           {{- if .Values.akvCertConfig.enabled }}
           - certstore-akv
           {{- else }}
@@ -37,8 +37,7 @@ spec:
           signatureVerification:
             level: strict
           trustStores:
-            - ca:certs-ca
-            - signingAuthority:certs-sa
+            - ca:certs
           trustedIdentities:
             - "*"
 ---
