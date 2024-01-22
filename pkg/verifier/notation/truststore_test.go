@@ -31,7 +31,7 @@ const (
 
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	certStore := make(map[string]interface{})
-	certStore["ca"] = map[string]interface{}{"store1": []string{"default/kv1"}, "store2": []string{"projecta/kv2"}}
+	certStore["ca"] = map[string]interface{}{"store1": []interface{}{"default/kv1"}, "store2": []interface{}{"projecta/kv2"}}
 	store := &trustStore{
 		certStoresByType: certStore,
 	}
@@ -44,7 +44,7 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 
 func TestGetCertificates_NamedStore(t *testing.T) {
 	certStore := make(map[string]interface{})
-	certStore["ca"] = map[string]interface{}{"store1": []string{"default/kv1"}, "store2": []string{"projecta/kv2"}}
+	certStore["ca"] = map[string]interface{}{"store1": []interface{}{"default/kv1"}, "store2": []interface{}{"projecta/kv2"}}
 
 	store := &trustStore{
 		certStoresByType: certStore,
