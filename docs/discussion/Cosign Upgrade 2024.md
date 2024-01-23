@@ -138,12 +138,14 @@ spec:
   - add new `keys` field to spec
 - Multitenancy considerations
   - Need a separate keys map for namespaced and global certificate store keys
-#### Renaming CertificateStore to KeyManagementSystem
+
+### Option 2: Renaming CertificateStore to KeyManagementSystem
+- Same as Option 1 except we introduce a new CRD that will replace `CertificateStore` due to potential naming confusion
 - Is the existing name confusing enough to warrant changing to KeyManagementSystem?
 - How would we support CRD name change?
   - Introduce new `KeyManagementSystem` CRD resource and then deprecate `CertificateStore`
 
-### Option 2: Introduce new CRD `KeyStore` separate from `CertificateStore`
+### Option 3: Introduce new CRD `KeyStore` separate from `CertificateStore`
 
 All of the same considerations as Option 1. It will be a completely new CRD with an inline and AKV provider equivalent.
 
