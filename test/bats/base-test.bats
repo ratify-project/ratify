@@ -203,6 +203,8 @@ RATIFY_NAMESPACE=gatekeeper-system
     # apply a valid verifier, validate status property shows success
     run kubectl apply -f ./config/samples/config_v1beta1_store_dynamic.yaml
     assert_success
+    # wait for download of image
+    sleep 30 
     run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
     assert_success
 
@@ -210,12 +212,16 @@ RATIFY_NAMESPACE=gatekeeper-system
     sed 's/:v1/:invalid/' ./config/samples/config_v1beta1_store_dynamic.yaml > invalidstore.yaml
     run kubectl apply -f invalidstore.yaml
     assert_success
+    # wait for download of image
+    sleep 30 
     run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
     assert_success
 
      # apply a valid verifier, validate status property shows success
     run kubectl apply -f ./config/samples/config_v1beta1_store_dynamic.yaml
     assert_success
+    # wait for download of image
+    sleep 30 
     run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
     assert_success
     run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
