@@ -204,7 +204,8 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl apply -f ./config/samples/config_v1beta1_store_dynamic.yaml
     assert_success
     run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    
+    assert_success
+
     # apply a invalid verifier CR, validate status with error
     sed 's/:v1/:invalid/' ./config/samples/config_v1beta1_store_dynamic.yaml > invalidstore.yaml
     run kubectl apply -f invalidstore.yaml
