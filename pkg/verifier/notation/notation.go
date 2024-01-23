@@ -214,7 +214,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	}
 
 	// convert <store>:<certs> to ca:<store><certs>
-	// if have both types of store struct, then throw err
+	// TBD if have both legacy and new types of store struct, then throw err
 	needConvert := true
 	for _, storeType := range trustStoreTypes {
 		if _, ok := conf.VerificationCertStores[storeType]; ok {

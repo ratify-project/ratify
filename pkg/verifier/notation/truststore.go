@@ -56,8 +56,8 @@ func (s trustStore) GetCertificates(ctx context.Context, trustStoreTypeInput tru
 func (s trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 	// certs configured for this namedStore overrides cert path
-	if mapValue, ok := s.certStoresByType[string(storeType)].(map[string]interface{}); ok {
-		if certGroup := mapValue[namedStore].([]any); len(certGroup) > 0 {
+	if certStores, ok := s.certStoresByType[string(storeType)].(map[string]interface{}); ok {
+		if certGroup := certStores[namedStore].([]any); len(certGroup) > 0 {
 			for _, certStore := range certGroup {
 				logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
 				result := certificatesMap[certStore.(string)]
@@ -70,7 +70,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, storeType trust
 				return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
 			}
 		} else {
-			logger.GetLogger(ctx, logOpt).Debugf("Trust store getCertificatesInternal truststore %+v type invalid", mapValue[namedStore])
+			logger.GetLogger(ctx, logOpt).Debugf("unable to fetch certGroup from collection: %+v in type: %v", certStores[namedStore], storeType)
 		}
 	} else {
 		for _, path := range s.certPaths {

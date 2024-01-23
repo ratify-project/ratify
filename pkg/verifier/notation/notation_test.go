@@ -204,17 +204,17 @@ func TestCanVerify(t *testing.T) {
 }
 
 func TestParseVerifierConfig(t *testing.T) {
-	verificationCertStoresSample := make(map[string]interface{})
-	verificationCertStoresSample["ca"] = map[string]interface{}{
+	certStoresSample := make(map[string]interface{})
+	certStoresSample["ca"] = map[string]interface{}{
 		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
 		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
 	}
-	verificationCertStoresSample2 := make(map[string]interface{})
-	verificationCertStoresSample2["certs"] = []string{
+	certStoresSampleNeedConvert := make(map[string]interface{})
+	certStoresSampleNeedConvert["certs"] = []string{
 		"defaultns/akv1", "testns/akv2",
 	}
-	verificationCertStoresSample2Expected := make(map[string]interface{})
-	verificationCertStoresSample2Expected["ca"] = map[string]interface{}{
+	certStoresSampleNeedConvertExpected := make(map[string]interface{})
+	certStoresSampleNeedConvertExpected["ca"] = map[string]interface{}{
 		"certs": []interface{}{"defaultns/akv1", "testns/akv2"},
 	}
 	tests := []struct {
@@ -260,13 +260,13 @@ func TestParseVerifierConfig(t *testing.T) {
 			configMap: map[string]interface{}{
 				"name":                   test,
 				"verificationCerts":      []string{testPath},
-				"verificationCertStores": verificationCertStoresSample,
+				"verificationCertStores": certStoresSample,
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
 				Name:                   test,
 				VerificationCerts:      []string{testPath, defaultCertDir},
-				VerificationCertStores: verificationCertStoresSample,
+				VerificationCertStores: certStoresSample,
 			},
 		},
 		{
@@ -274,13 +274,13 @@ func TestParseVerifierConfig(t *testing.T) {
 			configMap: map[string]interface{}{
 				"name":                   test,
 				"verificationCerts":      []string{testPath},
-				"verificationCertStores": verificationCertStoresSample2,
+				"verificationCertStores": certStoresSampleNeedConvert,
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
 				Name:                   test,
 				VerificationCerts:      []string{testPath, defaultCertDir},
-				VerificationCertStores: verificationCertStoresSample2Expected,
+				VerificationCertStores: certStoresSampleNeedConvertExpected,
 			},
 		},
 	}
@@ -289,6 +289,7 @@ func TestParseVerifierConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			notationPluginConfig, err := parseVerifierConfig(tt.configMap, "testns")
+
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
 			}
