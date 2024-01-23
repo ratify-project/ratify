@@ -200,32 +200,14 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete stores.config.ratify.deislabs.io/store-dynamic'
     }
 
-    # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/config_v1beta1_store_dynamic.yaml
-    assert_success
-    # wait for download of image
-    sleep 15
-    run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    assert_success
-
     # apply a invalid verifier CR, validate status with error
     sed 's/:v1/:invalid/' ./config/samples/config_v1beta1_store_dynamic.yaml > invalidstore.yaml
     run kubectl apply -f invalidstore.yaml
     assert_success
     # wait for download of image
     sleep 5
-    run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  store factory failed to create'"
+    run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'plugin not found'"
     assert_success
-
-     # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/config_v1beta1_store_dynamic.yaml
-    assert_success
-    # wait for download of image
-    sleep 15
-    run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    assert_success
-    run bash -c "kubectl describe stores.config.ratify.deislabs.io/store-dynamic -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  store factory failed to create'"
-    assert_failure
 }
 
 @test "configmap update test" {

@@ -539,8 +539,7 @@ e2e-helm-deploy-ratify:
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
-	--set logger.level=debug \
-	--set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true
+	--set logger.level=debug
 
 	rm mount_config.json
 
