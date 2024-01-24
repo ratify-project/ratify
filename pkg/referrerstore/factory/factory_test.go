@@ -146,5 +146,4 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 			}
 		})
 	}
-
 }
