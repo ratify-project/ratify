@@ -127,7 +127,8 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 	}
 
 	// download the first blob to the target path
-	blobReference := fmt.Sprintf("%s@%s", source, referenceManifest.Blobs[0].Digest)
+	blobReference := fmt.Sprintf("%s", referenceManifest.Blobs[0].Digest)
+
 	logrus.Debugf("Downloading blob %s", blobReference)
 	_, blobReader, err := repository.Blobs().FetchReference(ctx, blobReference)
 	if err != nil {
