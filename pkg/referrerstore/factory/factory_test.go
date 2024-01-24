@@ -105,7 +105,7 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 		},
 		{
 			name:     "image specified by digest",
-			artifact: "wabbitnetworks.azurecr.io/test/sample-verifier-plugin@sha256:294c517b9432a59f2d829f6d04912833a256560e4128aca86efa0c6b4ba6d44d",
+			artifact: "wabbitnetworks.azurecr.io/test/sample-store-plugin@sha256:96ba9f9636cde32df87d62dcad4e430d055e708b9f173475c5d7468b732d6566",
 		},
 	}
 
