@@ -72,6 +72,8 @@ const (
 	PolicyProvider componentType = "policyProvider"
 	// Verifier is the component type for verifier.
 	Verifier componentType = "verifier"
+	// Plugin is the component type for plugin.
+	Plugin componentType = "plugin"
 
 	traceIDHeaderName = "traceIDHeaderName"
 )
