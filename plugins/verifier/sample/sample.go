@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/common/plugin/logger"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/verifier"
@@ -38,14 +39,18 @@ type PluginInputConfig struct {
 }
 
 func main() {
-	// send info and debug messages to stderr
-	fmt.Fprintln(os.Stderr, "info: initialized plugin")
-	fmt.Fprintf(os.Stderr, "debug: plugin %s %s \n", "sample", "1.0.0")
+	// create a plugin logger
+	pluginlogger := logger.NewLogger()
+
+	// output to stderr
+	pluginlogger.Info("initialized plugin")
+	pluginlogger.Debugf("plugin %s %s", "sample", "1.0.0")
 
 	skel.PluginMain("sample", "1.0.0", VerifyReference, []string{"1.0.0"})
 
-	// send message to stdout
-	fmt.Fprintln(os.Stdout, "finished executing plugin...")
+	// set output to stdout
+	pluginlogger.SetOutput(os.Stdout)
+	pluginlogger.Warn("example warning message...")
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {
