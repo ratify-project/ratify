@@ -256,7 +256,6 @@ spec:
         keys: # list of keys that are trusted. Only the keys in KMS are considered
           - kms: inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementSystem resource specified
           - kms: inline-keys-2
-            name: wabbit-key-12345 # OPTIONAL
           - kms: akv-wabbit-networks
             name: wabbit-networks-io # OPTIONAL: key name
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
