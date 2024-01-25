@@ -69,6 +69,15 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
 	// VerificationCerts is map defining which keyvault certificates belong to which trust store name and its trust store type.
+	// e.g.
+	// {
+	// 	"ca": {
+	// 		"certs": ["kv1", "kv2"],
+	// 	},
+	// 	"signingauthority": {
+	// 		"certs": ["kv3"]
+	// 	},
+	// }
 	VerificationCertStores map[string]interface{} `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
