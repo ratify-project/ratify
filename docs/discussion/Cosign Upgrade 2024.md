@@ -220,6 +220,56 @@ Currently, there is only support for a single key per cosign verifier.
   - Validation occurs on each signature in the manifest in parallel against the SAME key
   - Cosign only supports validation against a SINGLE key at a time
 
+### Trust Policy
+Cosign verifier should support multiple trust policies based on the KeyManagementSystems (KMS) enabled and the desired verification scenario. Please refer to [this](#user-scenarios) section for common user scenarios. At a high level users must be able to have:
+  - multiple KMS `inline` key resources (each `inline` will have a single key)
+  - multiple keys defined in a single AKV KMS
+  - multiple KMS `inline` certificate resources (each `inline` may have a single cert or a cert chain)
+  - multiple certificates definine in a single AKV KMS
+  - mix of keys + certificates in a single AKV KMS
+  - a way to specify specific keys/certificates within a KMS by name and version
+  - a way to scope a policy to a particular registry/repo
+  - multiple policies depending on registry scope
+  - a way to specify enforcement for that specific policy
+    - skip: don't perform any verification for an image reference that matches this policy
+    - any: at least one of the keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
+    - all: ALL keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
+
+Sample
+```yaml
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-cosign
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
+spec:
+  name: cosign
+  artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
+  parameters:
+    trustPolicies:
+      - name: wabbit-networks-images
+        registryScopes:
+          - wabbitnetworks.myregistry.io/carrots
+          - wabbitnetworks.myregistry.io/beets
+        keys: # list of keys that are trusted. Only the keys in KMS are considered
+          - kms: inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementSystem resource specified
+          - kms: inline-keys-2
+            name: wabbit-key-12345 # OPTIONAL
+          - kms: akv-wabbit-networks
+            name: wabbit-networks-io # OPTIONAL: key name
+            version: 1234567890 # OPTIONAL: key version (inline will not support version)
+        certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
+          - kms: inline-certs-1
+        enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
+      - name: verification-bypass
+        registryScopes:
+          - wabbitnetworks.myregistry.io/golden
+        enforcement: skip
+```
+
+To start, only a single `trustPolicies` entry + `keys` with `kms`, `name`, and `version` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
 ### User Scenarios
 
 #### 1 Signature, 2 trusted keys
@@ -276,9 +326,11 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    keyManagementSystems:
-      - inline-key-1
-      - inline-key-2
+    trustPolicies:
+      - name: multiple-trusted-keys
+        keys:
+          - kms: inline-key-1
+          - kms: inline-key-2
 ```
 - Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementSystem `inline-key-1`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementSystem `inline-key-2`. Pod is verified and created successfully.
@@ -322,8 +374,10 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    keyManagementSystems:
-      - inline-key
+    trustPolicies:
+      - name: single-trusted-key
+        keys:
+          - kms: inline-key
 ```
 - Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, one of which is signed with key in KeyManagementSystem `inline-key`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature(s) signed with a different key in `inline-key`. Pod FAILS verification and blocked.
@@ -384,10 +438,12 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    keyManagementSystems:
-      - inline-key-build
-      - inline-key-test
-    keyEnforcement: all
+    trustPolicies:
+      - name: build-test-verification
+        keys:
+          - kms: inline-key-build
+          - kms: inline-key-test
+        enforcement: all
 ```
 - Bob attempts to deploy a pod from the vetted image that has 1 cosign signature, which is signed with key in KeyManagementSystem `inline-key-build`. Pod FAILS verification and blocked.
 - Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, which is signed with keys in KeyManagementSystem `inline-key-build` & `inline-key-test`. Pod passes verification and is created.
@@ -400,12 +456,6 @@ spec:
   - User specifies enforcement type by specifying `count` of verification operations that must succeed.
     - e.g 2 keys specified and 2 signatures on the image. each verification is against both signatures for a single key
     - If count is 2, then 2 verifications must return true
-- Why is `keyEnforcement` necessary?
-  - Not necessary if multiple cosign verifiers are used, each configured with different keys.
-  - `keyEnforcement` allows for single verifier to be used instead of multiple
-  - more user friendly
-  - does not require extra policy logic (although this logic will likely be needed anyways once OCI 1.1 is the default standard cosign uses)
-- How do you specify specific AKV keys you trust rather than the whole truststore?
 - How will this work with OCI 1.1 enabled cosign?
   - Cosign OCI 1.1 support is experimental
   - Currently, an arbitrary signature from list of referrers is chosen to perform verifications on IF multiple cosign artifacts are found.
@@ -435,7 +485,7 @@ Verification flow per key:
   - port certificate providers implementation to new `KMS` object
   - refactor to factory paradigm
   - refactor to define rigid config schema (currently, only a generic map of attributes passed)
-  - add plugin support?
+  - add plugin support
 - Add Key support to `KeyManagementSystem` (~ 2 weeks)
   - update API
   - update Inline provider with `type` field
@@ -445,9 +495,9 @@ Verification flow per key:
 - ~~Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))~~
   - ~~Option 1 or 2 depending on what's decided~~
   - ~~NOTE: If we make cosign a built-in verifier, we will NOT have to do this.~~
-- Cosign verifier multi key support (~ 1.5 weeks)
-  - support key management system specification
-  - add `keyEnforcement` config
+- Cosign verifier multi key support (~ 2.5 weeks)
+  - add `trustPolicies`
+    - support multiple `keys` each with `kms`, `name`, and `version`
   - add multi key verification logic including concurrent signature verification using routines
 - Add RSA and ED25519 key support (~ 0.5 week)
   - auto detect key type based on parsing library
@@ -458,6 +508,8 @@ Verification flow per key:
 - Add `KeyManagementSystem` support to CLI (~ 1.5 weeks)
 
 ## Future Considerations
+- Support `registryScopes` for repo based `trustPolicies`
+- Support `enforcement` with `skip`, `any`, and `all`
 - Support attestations with cosign signature embedded
 - Support certificate based verification of cosign signatures
 - Verify image annotations
