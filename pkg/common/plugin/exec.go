@@ -100,7 +100,7 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
-	pluginOutputJson, pluginOutputMsgs := parsePluginOutput(stdout, stderr)
+	pluginOutputJSON, pluginOutputMsgs := parsePluginOutput(stdout, stderr)
 
 	for _, msg := range pluginOutputMsgs {
 		msg := strings.ToLower(msg)
@@ -132,7 +132,7 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 
 	// TODO stdout reader
 	//return processStdOut(ctx, stdout), nil
-	return pluginOutputJson, nil
+	return pluginOutputJSON, nil
 }
 
 func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
