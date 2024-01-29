@@ -139,11 +139,61 @@ spec:
 - Multitenancy considerations
   - Need a separate keys map for namespaced and global certificate store keys
 
-### Option 2: Renaming CertificateStore to KeyManagementSystem
+### **Option 2: Renaming CertificateStore to KeyManagementSystem** SELECTED IMPLEMENTATION
 - Same as Option 1 except we introduce a new CRD that will replace `CertificateStore` due to potential naming confusion
 - Is the existing name confusing enough to warrant changing to KeyManagementSystem?
 - How would we support CRD name change?
   - Introduce new `KeyManagementSystem` CRD resource and then deprecate `CertificateStore`
+
+#### Proposed Config Changes
+
+Compared to the `CertificateStore`, the `KeyManagementSystem` config spec could be updated to be more flexible. A new `name`` field will be used only in CLI scenarios to mirror CRD name functionality as a unique identifier. This enables multiple KMS of same type to be used.
+
+```yaml
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: KeyManagementSystem
+metadata:
+  name: ratify-notation-inline-cert-kms
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
+spec:
+  name: inline
+  parameters:
+    contentType: key
+    value: |
+      ---------- BEGIN RSA KEY ------------
+      ******
+      ---------- END RSA KEY ------------
+```
+
+CLI Config
+```json
+{
+  ...
+  "keyManagementSystems": {
+    {
+      "name": "ratify-notation-inline-cert-kms",
+      "provider": "inline",
+      "contentType": "key",
+      "value": "---------- BEGIN RSA KEY ------------
+      ******
+      ---------- END RSA KEY ------------"
+    },
+    {
+      "name": "ratify-notation-inline-cert-kms-2",
+      "provider": "inline",
+      "contentType": "key",
+      "value": "---------- BEGIN RSA KEY ------------
+      ******
+      ---------- END RSA KEY ------------"
+    },
+  }
+  ...
+}
+```
+
+**Do we want to consider making the inline provider accept an array of content?**
 
 ### Option 3: Introduce new CRD `KeyStore` separate from `CertificateStore`
 
