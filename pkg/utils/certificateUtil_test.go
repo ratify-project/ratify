@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	testDir = "TestDirectory"
+	testDir  = "TestDirectory"
+	file1Crt = "file1.Crt"
 )
 
 func TestHomepathReplacement(t *testing.T) {
@@ -80,7 +81,7 @@ func TestReadFilesFromPath_SymbolicLink(t *testing.T) {
 	// Setup
 	currPath, _ := os.Getwd()
 	absTestDirPath := currPath + string(os.PathSeparator) + testDir + string(os.PathSeparator)
-	testFile1 := absTestDirPath + "file1.Crt"
+	testFile1 := absTestDirPath + file1Crt
 
 	setupDirectoryForTesting(t, testDir)
 	createCertFile(t, testFile1)
@@ -104,7 +105,7 @@ func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
 	// Setup
 	currPath, _ := os.Getwd()
 	absTestDirPath := currPath + string(os.PathSeparator) + testDir + string(os.PathSeparator)
-	testFile1 := absTestDirPath + "file1.Crt"
+	testFile1 := absTestDirPath + file1Crt
 
 	setupDirectoryForTesting(t, testDir)
 	createCertFile(t, testFile1)
@@ -130,7 +131,7 @@ func TestReadFilesFromPath_MultilevelSymbolicLink(t *testing.T) {
 
 func TestReadFilesFromPath_SingleFile(t *testing.T) {
 	// Setup
-	testFile1 := testDir + string(os.PathSeparator) + "file1.Crt"
+	testFile1 := testDir + string(os.PathSeparator) + file1Crt
 
 	setupDirectoryForTesting(t, testDir)
 	createCertFile(t, testFile1)
