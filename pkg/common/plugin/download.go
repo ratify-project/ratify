@@ -126,6 +126,10 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 		return fmt.Errorf("unsupported manifest media type: %s", referenceManifestDescriptor.MediaType)
 	}
 
+	if len(referenceManifest.Blobs) == 0 {
+		return fmt.Errorf("no blobs found in the manifest")
+	}
+
 	// download the first blob to the target path
 	logrus.Debugf("Downloading blob %s", referenceManifest.Blobs[0].Digest.String())
 	_, blobReader, err := repository.Blobs().FetchReference(ctx, referenceManifest.Blobs[0].Digest.String())
