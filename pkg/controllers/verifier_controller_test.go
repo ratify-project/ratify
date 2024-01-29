@@ -152,6 +152,15 @@ func TestWriteVerifierStatus(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			writeVerifierStatus(context.Background(), tc.reconciler, tc.verifier, logger, tc.isSuccess, tc.errString)
+
+			if tc.verifier.Status.IsSuccess != tc.isSuccess {
+				t.Fatalf("Expected isSuccess to be %+v , actual %+v", tc.isSuccess, tc.verifier.Status.IsSuccess)
+			}
+
+			if tc.verifier.Status.Error != tc.errString {
+				t.Fatalf("Expected Error to be %+v , actual %+v", tc.errString, tc.verifier.Status.Error)
+			}
+
 		})
 	}
 }
