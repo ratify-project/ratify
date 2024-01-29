@@ -111,8 +111,7 @@ func parseExpiresOn(s interface{}) (json.Number, error) {
 		return timeToDuration(eo), nil
 	} else if eo, err := time.Parse(expiresOnDateFormat, asStr); err == nil {
 		return timeToDuration(eo), nil
-	} else {
-		// unknown format
-		return json.Number(""), err
 	}
+	// unknown format
+	return json.Number(""), fmt.Errorf("unknown expires_on format %s", asStr)
 }
