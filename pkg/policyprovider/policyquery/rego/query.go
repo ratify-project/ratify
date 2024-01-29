@@ -63,11 +63,11 @@ func (r *Rego) Evaluate(ctx context.Context, input map[string]interface{}) (bool
 		return false, err
 	} else if len(results) == 0 || len(results[0].Expressions) == 0 {
 		return false, errors.New("no results returned from query")
-	} else {
-		result, ok := results[0].Expressions[0].Value.(bool)
-		if !ok {
-			return false, fmt.Errorf("unexpected result type: %v", results[0].Expressions[0].Value)
-		}
-		return result, nil
 	}
+
+	result, ok := results[0].Expressions[0].Value.(bool)
+	if !ok {
+		return false, fmt.Errorf("unexpected result type: %v", results[0].Expressions[0].Value)
+	}
+	return result, nil
 }

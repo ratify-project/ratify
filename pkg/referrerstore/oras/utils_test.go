@@ -72,9 +72,9 @@ func TestIsInsecureRegistry(t *testing.T) {
 			expected: true,
 		},
 	}
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
 		t.Run(testCase.desc, func(t *testing.T) {
-			output := isInsecureRegistry(testCase.registry, &testCase.config)
+			output := isInsecureRegistry(testCase.registry, &testCases[i].config)
 			if output != testCase.expected {
 				t.Fatalf("mismatch of insecure registry type: expected %v, actual %v", testCase.expected, output)
 			}

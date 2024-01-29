@@ -82,10 +82,10 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 		},
 	}
 
-	for _, tc := range cases {
+	for i, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			formatKeyVaultCertificate(&tc.keyVaultObject)
-			if !reflect.DeepEqual(tc.keyVaultObject, tc.expectedKeyVaultObject) {
+			formatKeyVaultCertificate(&cases[i].keyVaultObject)
+			if !reflect.DeepEqual(cases[i].keyVaultObject, cases[i].expectedKeyVaultObject) {
 				t.Fatalf("expected: %+v, but got: %+v", tc.expectedKeyVaultObject, tc.keyVaultObject)
 			}
 		})
@@ -319,12 +319,12 @@ func Test(t *testing.T) {
 		},
 	}
 
-	for _, tc := range cases {
+	for i, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
 			testdata := kv.SecretBundle{
-				Value:       &tc.value,
-				ID:          &tc.id,
-				ContentType: &tc.contentType,
+				Value:       &cases[i].value,
+				ID:          &cases[i].id,
+				ContentType: &cases[i].contentType,
 			}
 
 			certs, status, err := getCertsFromSecretBundle(context.Background(), testdata, "certName")
