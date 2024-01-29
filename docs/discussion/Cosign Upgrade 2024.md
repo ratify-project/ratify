@@ -214,6 +214,7 @@ Cons:
     - In K8s scenarios, it will not be an encouraged pattern to specify local directory. This is why implementing directory cert reading as a cert store provider may not make  sense.
     - However, if a user decides to do a mixture of cert stores + local directory then they would need to specify in 2 different sections (cosign plugin config + cert store)
     - **UPDATE 1/18/24**: We will mirror notation experience with a `verificationKeys` field in the cosign verifier config
+  - The current AKV integration relies on workload identity. The CLI scenario will use a non-WI scheme for authentication to managed identity
 
 ## Support Multiple keys for cosign verification
 
@@ -554,7 +555,9 @@ Verification flow per key:
 - Add docs and walkthroughs (~ 1 week)
   - redo cosign walk through
 - New e2e tests for different scenarios (~ 1 week)
-- Add `KeyManagementSystem` support to CLI (~ 1.5 weeks)
+- Add `KeyManagementSystem` support to CLI (~ 2 weeks)
+  - Update  `verify` command group to create `KeyManagementSystem` from config
+  - Update AKV provider for non Workload Identity auth
 
 ## Future Considerations
 - Support `registryScopes` for repo based `trustPolicies`
