@@ -100,7 +100,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
-	certificatesMap[resource] = certificates
+	certificatesMap[resource] = append(certificatesMap[resource], certificates...)
 	isFetchSuccessful = true
 	emptyErrorString := ""
 	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
