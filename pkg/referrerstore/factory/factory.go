@@ -82,12 +82,11 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 	}
 
 	storeFactory, ok := builtInStores[storeNameStr]
-	// TODO: validate path
 	if ok {
 		return storeFactory.Create(configVersion, storeConfig)
 	}
 
-	if _, err := pluginCommon.FindInPaths(storeNameStr, []string{pluginBinDir[0]}); err != nil {
+	if _, err := pluginCommon.FindInPaths(storeNameStr, pluginBinDir); err != nil {
 		return nil, re.ErrorCodePluginNotFound.NewError(re.ReferrerStore, "", re.EmptyLink, err, "plugin not found", re.HideStackTrace)
 	}
 
