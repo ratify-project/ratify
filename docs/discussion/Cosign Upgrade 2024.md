@@ -530,7 +530,6 @@ Verification flow per key:
 ## Dev Work Items (WIP)
 - Introduce new `KeyManagementSystem` CRD to replace `CertificateStore` (~ 3 weeks)
   - maintain old `CertificateStore` controllers and source code for backwards compat
-  - deprecate CRD version for `CertificateStore`
   - define new `KeyManagementSystem` CRD + controllers
   - port certificate providers implementation to new `KMS` object
   - refactor to factory paradigm
