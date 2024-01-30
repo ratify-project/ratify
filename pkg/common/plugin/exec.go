@@ -119,19 +119,6 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 		}
 	}
 
-	// Copy stderr to caller's buffer in case plugin printed to both
-	// stdout and stderr for some reason. Ignore failures as stderr is
-	// only informational.
-	// if e.Stderr != nil && stderr.Len() > 0 {
-	// 	processStdError(ctx, stderr)
-	// 	//outputPluginMessage(ctx, stderr.String())
-	// }
-
-	//TODO output stdout plugin messages
-	// jsonBytes := processStdOut(ctx, stdout)
-
-	// TODO stdout reader
-	//return processStdOut(ctx, stdout), nil
 	return pluginOutputJSON, nil
 }
 
