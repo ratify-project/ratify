@@ -5,10 +5,12 @@ on:
     types: [labeled]
   pull_request:
     branches:
-      - staging
+      - main
+      - 1.0.0*
   push:
     branches:
-      - staging
+      - 1.0.0*
+      - main
   workflow_dispatch:
 
 permissions: read-all
@@ -84,8 +86,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        KUBERNETES_VERSION: ["1.27.7"]
-        GATEKEEPER_VERSION: ["3.14.0"]
+        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
@@ -128,7 +130,56 @@ jobs:
           name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
           path: |
             logs-*.json
-            
+
+  build_test_aks_e2e:
+    name: "Build and run e2e Test on AKS"
+    env:
+      AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
+      AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+      AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Set up Go 1.21
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: '1.21'
+
+      - name: Az CLI login
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
+        with:
+          creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
+
+      - name: Dependencies e2e
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+          make e2e-docker-credential-store-setup
+          make e2e-dependencies
+
+      - name: Run e2e on Azure
+        run: |
+          make e2e-aks KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }} GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }} TENANT_ID=${{ env.AZURE_TENANT_ID }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        if: ${{ always() }}
+        with:
+          name: e2e-logs-aks-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
+          path: |
+            logs-*.json
+
   markdown-link-check:
       runs-on: ubuntu-latest
       steps:
@@ -142,4 +193,30 @@ jobs:
           use-quiet-mode: 'no'
           use-verbose-mode: 'yes'
           config-file: '.github/workflows/markdown.links.config.json'
-          folder-path: 'docs/'   
+          folder-path: 'docs/'
+  test-cleanup:
+    env:
+      AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
+      AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
+      AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+    needs: ['build_test_aks_e2e']
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Set up Go 1.21
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: '1.21'
+
+      - name: Az CLI login
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
+        with:
+          creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
+
+      - name: clean up
+        run: |
+          make e2e-cleanup AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }}
