@@ -535,6 +535,7 @@ Verification flow per key:
   - refactor to factory paradigm
   - refactor to define rigid config schema (currently, only a generic map of attributes passed)
   - add plugin support
+  - add enforcement so only `KeyManagementSystem` OR `CertificateStore` can be enabled at a time
 - Add Key support to `KeyManagementSystem` (~ 2 weeks)
   - update API
   - update Inline provider with `type` field
@@ -549,6 +550,7 @@ Verification flow per key:
   - add `trustPolicies`
     - support multiple `keys` each with `kms`, `name`, and `version`
   - add multi key verification logic including concurrent signature verification using routines
+  - preserve existing file path based key support for backwards compat
 - Add RSA and ED25519 key support (~ 0.5 week)
   - auto detect key type based on parsing library
   - pick cosign verifier according to format
