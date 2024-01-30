@@ -544,6 +544,7 @@ Verification flow per key:
 - ~~Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))~~
   - ~~Option 1 or 2 depending on what's decided~~
   - ~~NOTE: If we make cosign a built-in verifier, we will NOT have to do this.~~
+- Cosign Verifier: migrate to a built in verifier (~ 1 week)
 - Cosign verifier multi key support (~ 2.5 weeks)
   - add `trustPolicies`
     - support multiple `keys` each with `kms`, `name`, and `version`
