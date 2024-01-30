@@ -133,9 +133,9 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 				t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
 			}
 
-      if stores[0].Name() != "sample" {
-        t.Fatalf("expected to create plugin store")
-      }
+			if stores[0].Name() != "plugin-store" {
+				t.Fatalf("expected to create plugin store")
+			}
 
 			if _, ok := stores[0].(*plugin.StorePlugin); !ok {
 				t.Fatalf("type assertion failed expected a plugin store")

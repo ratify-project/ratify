@@ -160,7 +160,6 @@ func TestWriteVerifierStatus(t *testing.T) {
 			if tc.verifier.Status.Error != tc.errString {
 				t.Fatalf("Expected Error to be %+v , actual %+v", tc.errString, tc.verifier.Status.Error)
 			}
-
 		})
 	}
 }
