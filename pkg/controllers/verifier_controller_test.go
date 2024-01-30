@@ -16,14 +16,19 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/utils"
 	vr "github.com/deislabs/ratify/pkg/verifier"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestMain(m *testing.M) {
@@ -36,10 +41,11 @@ func TestMain(m *testing.M) {
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
 	var testVerifierSpec = configv1beta1.VerifierSpec{
-		Name:          "notation",
+		Name:          "sample",
 		ArtifactTypes: "application/vnd.cncf.notary.signature",
+		Address:       getVerifierPluginsDir(),
 	}
-	var resource = "notation"
+	var resource = "sample"
 
 	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
@@ -62,6 +68,18 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 	}
 	if len(VerifierMap) != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", len(VerifierMap))
+	}
+}
+
+func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
+	resetVerifierMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var testVerifierSpec = getInvalidVerifierSpec()
+	err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestVerifierAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
 	}
 }
 
@@ -95,6 +113,54 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 
 	if len(VerifierMap) != 0 {
 		t.Fatalf("Verifier map should be 0 after deletion, actual %v", len(VerifierMap))
+	}
+}
+
+func TestWriteVerifierStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		verifier   *configv1beta1.Verifier
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			errString:  "",
+			verifier:   &configv1beta1.Verifier{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			verifier:   &configv1beta1.Verifier{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			verifier:  &configv1beta1.Verifier{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeVerifierStatus(context.Background(), tc.reconciler, tc.verifier, logger, tc.isSuccess, tc.errString)
+
+			if tc.verifier.Status.IsSuccess != tc.isSuccess {
+				t.Fatalf("Expected isSuccess to be %+v , actual %+v", tc.isSuccess, tc.verifier.Status.IsSuccess)
+			}
+
+			if tc.verifier.Status.Error != tc.errString {
+				t.Fatalf("Expected Error to be %+v , actual %+v", tc.errString, tc.verifier.Status.Error)
+			}
+		})
 	}
 }
 
@@ -133,13 +199,28 @@ func getLicenseCheckerFromParam(parametersString string) configv1beta1.VerifierS
 	return configv1beta1.VerifierSpec{
 		Name:          "licensechecker",
 		ArtifactTypes: "application/vnd.ratify.spdx.v0",
+		Address:       getVerifierPluginsDir(),
 		Parameters: runtime.RawExtension{
 			Raw: allowedLicenses,
 		},
 	}
 }
 
+func getInvalidVerifierSpec() configv1beta1.VerifierSpec {
+	return configv1beta1.VerifierSpec{
+		Name:          "pluginnotfound",
+		ArtifactTypes: "application/vnd.ratify.spdx.v0",
+		Address:       getVerifierPluginsDir(),
+	}
+}
+
 func getDefaultLicenseCheckerSpec() configv1beta1.VerifierSpec {
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"Apache\"]}"
 	return getLicenseCheckerFromParam(parametersString)
+}
+
+func getVerifierPluginsDir() string {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins"))
+	return pluginDir
 }

@@ -50,6 +50,7 @@ func Register(name string, factory StoreFactory) {
 	builtInStores[name] = factory
 }
 
+// the first element of pluginBinDir will be used as the plugin directory
 func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion string, pluginBinDir []string) (referrerstore.ReferrerStore, error) {
 	storeName, ok := storeConfig[types.Name]
 	if !ok {
@@ -84,6 +85,11 @@ func CreateStoreFromConfig(storeConfig config.StorePluginConfig, configVersion s
 	if ok {
 		return storeFactory.Create(configVersion, storeConfig)
 	}
+
+	if _, err := pluginCommon.FindInPaths(storeNameStr, pluginBinDir); err != nil {
+		return nil, re.ErrorCodePluginNotFound.NewError(re.ReferrerStore, "", re.EmptyLink, err, "plugin not found", re.HideStackTrace)
+	}
+
 	return plugin.NewStore(configVersion, storeConfig, pluginBinDir)
 }
 

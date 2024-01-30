@@ -82,6 +82,7 @@ build-plugins:
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/cosign/... -o ./bin/plugins/ ./plugins/verifier/cosign
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/licensechecker/... -o ./bin/plugins/ ./plugins/verifier/licensechecker
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sample/... -o ./bin/plugins/ ./plugins/verifier/sample
+	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/referrerstore/sample/... -o ./bin/plugins/referrerstore/ ./plugins/referrerstore/sample
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sbom/... -o ./bin/plugins/ ./plugins/verifier/sbom
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/schemavalidator/... -o ./bin/plugins/ ./plugins/verifier/schemavalidator
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/vulnerabilityreport/... -o ./bin/plugins/ ./plugins/verifier/vulnerabilityreport

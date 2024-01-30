@@ -41,12 +41,24 @@ type StoreSpec struct {
 
 // StoreStatus defines the observed state of Store
 type StoreStatus struct {
-	// Important: Run "make" to regenerate code after modifying this file
+	// Important: Run "make install-crds" to regenerate code after modifying this file
+
+	// Is successful in finding the plugin
+	IsSuccess bool `json:"issuccess"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
+// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.brieferror`
 // Store is the Schema for the stores API
 type Store struct {
 	metav1.TypeMeta   `json:",inline"`

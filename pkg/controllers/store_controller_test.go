@@ -16,17 +16,24 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
 	var testStoreSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    "sample",
+		Address: getVerifierPluginsDir(),
 	}
 
 	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
@@ -53,11 +60,62 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	}
 }
 
+func TestWriteStoreStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		store      *configv1beta1.Store
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			store:      &configv1beta1.Store{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			store:      &configv1beta1.Store{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			store:     &configv1beta1.Store{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeStoreStatus(context.Background(), tc.reconciler, tc.store, logger, tc.isSuccess, tc.errString)
+		})
+	}
+}
+
+func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
+	resetStoreMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var spec = getInvalidStoreSpec()
+	err := storeAddOrReplace(spec, resource)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestStoreAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
 	// add a Store
 
-	var resource = "oras"
+	var resource = "sample"
 
 	var testStoreSpec = getOrasStoreSpec()
 
@@ -70,7 +128,8 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 
 	// modify the Store
 	var updatedSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    "sample",
+		Address: getStorePluginsDir(),
 	}
 
 	if err := storeAddOrReplace(updatedSpec, resource); err != nil {
@@ -98,9 +157,23 @@ func getOrasStoreSpec() configv1beta1.StoreSpec {
 	var storeParameters = []byte(parametersString)
 
 	return configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    "sample",
+		Address: getStorePluginsDir(),
 		Parameters: runtime.RawExtension{
 			Raw: storeParameters,
 		},
+	}
+}
+
+func getStorePluginsDir() string {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins/referrerstore/"))
+	return pluginDir
+}
+
+func getInvalidStoreSpec() configv1beta1.StoreSpec {
+	return configv1beta1.StoreSpec{
+		Name:    "pluginnotfound",
+		Address: getStorePluginsDir(),
 	}
 }

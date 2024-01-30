@@ -19,6 +19,7 @@ import (
 	"errors"
 	"os"
 	"path"
+	"path/filepath"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/featureflag"
@@ -46,7 +47,7 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, getReferrerstorePluginsDir())
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
@@ -67,13 +68,13 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 
 func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 	storeConfig := map[string]interface{}{
-		"name": "plugin-store",
+		"name": "sample",
 	}
 	storesConfig := config.StoresConfig{
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, getReferrerstorePluginsDir())
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
@@ -83,7 +84,7 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
 	}
 
-	if stores[0].Name() != "plugin-store" {
+	if stores[0].Name() != "sample" {
 		t.Fatalf("expected to create plugin store")
 	}
 
@@ -95,6 +96,7 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T) {
 	os.Setenv("RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS", "1")
 	featureflag.InitFeatureFlagsFromEnv()
+
 	testCases := []struct {
 		name     string
 		artifact string
@@ -121,8 +123,7 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 			storesConfig := config.StoresConfig{
 				Stores: []config.StorePluginConfig{storeConfig},
 			}
-
-			stores, err := CreateStoresFromConfig(storesConfig, "")
+			stores, err := CreateStoresFromConfig(storesConfig, getReferrerstorePluginsDir())
 
 			if err != nil {
 				t.Fatalf("create stores failed with err %v", err)
@@ -146,4 +147,10 @@ func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T
 			}
 		})
 	}
+}
+
+func getReferrerstorePluginsDir() string {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../../../", "./bin/plugins/referrerstore/"))
+	return pluginDir
 }
