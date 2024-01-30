@@ -1,4 +1,4 @@
-name: Merge Release Into Main
+name: Merge staging Into Main
 
 on:
   push:
@@ -12,15 +12,13 @@ jobs:
     steps:
       - name: git checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-        with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
-
+        
       # https://github.com/marketplace/actions/github-pull-request-action
       - name: create pull request
         id: open-pr
         uses: repo-sync/pull-request@v2
         with:
-          github_token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          github_token: ${{ secrets.ACCESS_TOKEN }}
           destination_branch: ${{ github.event.repository.default_branch }}
           pr_title: "[Automated] Merge ${{ github.ref_name }} into ${{ github.event.repository.default_branch }}"
           pr_body: "Automated Pull Request"
@@ -32,6 +30,6 @@ jobs:
         if: steps.open-pr.outputs.pr_number != ''
         uses: peter-evans/enable-pull-request-automerge@v2
         with:
-          token: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+          token: ${{ secrets.ACCESS_TOKEN }}
           pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
           merge-method: merge
