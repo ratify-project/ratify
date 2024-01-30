@@ -211,7 +211,7 @@ func TestParseVerifierConfig(t *testing.T) {
 	}
 	certStoresSampleNeedConvert := make(map[string]interface{})
 	certStoresSampleNeedConvert["certs"] = []string{
-		"defaultns/akv1", "testns/akv2",
+		"defaultns/akv1", "akv2",
 	}
 	certStoresSampleNeedConvertExpected := make(map[string]interface{})
 	certStoresSampleNeedConvertExpected["ca"] = map[string]interface{}{
@@ -295,6 +295,42 @@ func TestParseVerifierConfig(t *testing.T) {
 			}
 			if !reflect.DeepEqual(notationPluginConfig, tt.expect) {
 				t.Errorf("expect %+v, got %+v", tt.expect, notationPluginConfig)
+			}
+		})
+	}
+}
+
+func TestPrependNamspaceToCertStores(t *testing.T) {
+	certStoresSample := make(map[string]interface{})
+	certStoresSample["ca"] = map[string]interface{}{
+		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	}
+
+	tests := []struct {
+		name                   string
+		verificationCertStores map[string]interface{}
+		namespace              string
+		expectErr              bool
+		expect                 map[string]interface{}
+	}{
+		{
+			name:                   "no namespace value provided",
+			verificationCertStores: certStoresSample,
+			namespace:              "",
+			expectErr:              true,
+			expect:                 nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			verificationCertStores, err := prependNamespaceToCertStore(tt.verificationCertStores, tt.namespace)
+
+			if (err != nil) != tt.expectErr {
+				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
+			}
+			if !reflect.DeepEqual(verificationCertStores, tt.expect) {
+				t.Errorf("expect %+v, got %+v", tt.expect, verificationCertStores)
 			}
 		})
 	}
