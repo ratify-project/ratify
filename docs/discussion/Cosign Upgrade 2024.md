@@ -158,7 +158,7 @@ metadata:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 spec:
-  name: inline
+  type: inline
   parameters:
     contentType: key
     value: |
@@ -174,7 +174,7 @@ CLI Config
   "keyManagementSystems": {
     {
       "name": "ratify-notation-inline-cert-kms",
-      "provider": "inline",
+      "type": "inline",
       "contentType": "key",
       "value": "---------- BEGIN RSA KEY ------------
       ******
@@ -182,7 +182,7 @@ CLI Config
     },
     {
       "name": "ratify-notation-inline-cert-kms-2",
-      "provider": "inline",
+      "type": "inline",
       "contentType": "key",
       "value": "---------- BEGIN RSA KEY ------------
       ******
@@ -336,9 +336,9 @@ metadata:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 spec:
-  provider: inline
+  type: inline
   parameters:
-    type: key
+    contentType: key
     value: |
     ---------- BEGIN RSA KEY ------------
     ******
@@ -354,9 +354,9 @@ metadata:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 spec:
-  provider: inline
+  type: inline
   parameters:
-    type: key
+    contentType: key
     value: |
     ---------- BEGIN RSA KEY ------------
     ******
@@ -401,9 +401,9 @@ metadata:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 spec:
-  provider: inline
+  type: inline
   parameters:
-    type: key
+    contentType: key
     value: |
     ---------- BEGIN RSA KEY ------------
     ******
@@ -447,9 +447,9 @@ metadata:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
 spec:
-  provider: inline
+  type: inline
   parameters:
-    type: key
+    contentType: key
     value: |
     ---------- BEGIN RSA KEY ------------
     ******
