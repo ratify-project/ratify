@@ -1,4 +1,4 @@
-name: build-pr #test comment
+name: build-pr #test comment2
 
 on:
   pull_request_target:
@@ -75,8 +75,8 @@ jobs:
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@4fe8c5f003fae66aa5ebb77cfd3e7bfbbda0b6b0 # v3.1.5
 
-  build_test_e2e:
-    name: "Build and run e2e Test"
+  build_test_e2e_basic:
+    name: "Build and run e2e Test on latest matrix"
     runs-on: ubuntu-latest
     timeout-minutes: 35
     permissions:
@@ -128,7 +128,62 @@ jobs:
           name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
           path: |
             logs-*.json
-            
+
+  build_test_e2e_full:
+    name: "Build and run e2e Test in full matrix"
+    runs-on: ubuntu-latest
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch'
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      - name: Set up Go 1.21
+        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
+        with:
+          go-version: '1.21'
+
+      - name: Bootstrap e2e
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/bin
+          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
+          make e2e-bootstrap KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }}
+          make generate-certs
+      - name: Run e2e with config policy
+        run: |
+          make e2e-deploy-gatekeeper GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}
+          make e2e-deploy-ratify GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}
+          make test-e2e GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }}
+      - name: Save logs
+        if: ${{ always() }}
+        run: |
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-config-policy.json
+      - name: Run e2e with Rego policy
+        run: |
+          make deploy-rego-policy
+          make test-e2e
+      - name: Save logs
+        if: ${{ always() }}
+        run: |
+          kubectl logs -n gatekeeper-system -l control-plane=controller-manager --tail=-1 > full-logs-externaldata-controller-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l control-plane=audit-controller --tail=-1 > full-logs-externaldata-audit-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}.json
+          kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > full-logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
+          kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > full-logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
+      - name: Upload artifacts
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
+        if: ${{ always() }}
+        with:
+          name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
+          path: |
+            logs-*.json
+           
   markdown-link-check:
       runs-on: ubuntu-latest
       steps:
