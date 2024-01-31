@@ -28,6 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"github.com/deislabs/ratify/internal/constants"
 )
 
 // VerifierReconciler reconciles a Verifier object
@@ -70,9 +71,11 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 	if err := verifierAddOrReplace(verifier.Spec, resource, req.Namespace); err != nil {
 		verifierLogger.Error(err, " unable to create verifier from verifier crd")
+		writeVerifierStatus(ctx, r, &verifier, verifierLogger, false, err.Error())
 		return ctrl.Result{}, err
 	}
 
+	writeVerifierStatus(ctx, r, &verifier, verifierLogger, true, "")
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
 }
@@ -93,4 +96,22 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, namespace, objectName, verifierConfig)
+}
+
+func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.Verifier, logger *logrus.Entry, isSuccess bool, errorString string) {
+	if isSuccess {
+		verifier.Status.IsSuccess = true
+		verifier.Status.Error = ""
+		verifier.Status.BriefError = ""
+	} else {
+		verifier.Status.IsSuccess = false
+		verifier.Status.Error = errorString
+		if len(errorString) > constants.MaxBriefErrLength {
+			verifier.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
+		}
+	}
+
+	if statusErr := r.Status().Update(ctx, verifier); statusErr != nil {
+		logger.Error(statusErr, ",unable to update verifier status")
+	}
 }

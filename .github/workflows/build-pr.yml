@@ -40,7 +40,7 @@ jobs:
       - name: setup go environment
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: "1.20"
+          go-version: "1.21"
       - name: Run tidy
         run: go mod tidy
       - name: Build CLI
@@ -48,7 +48,7 @@ jobs:
       - name: Check build
         run: bin/ratify version
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
+        uses: codecov/codecov-action@4fe8c5f003fae66aa5ebb77cfd3e7bfbbda0b6b0 # v3.1.5
       - name: Run helm lint
         run: helm lint charts/ratify
 
@@ -63,7 +63,7 @@ jobs:
       - name: setup go environment
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: "1.20"
+          go-version: "1.21"
       - name: Run tidy
         run: go mod tidy
       - name: Build CLI
@@ -75,7 +75,7 @@ jobs:
           make install ratify-config install-bats
           make test-e2e-cli LOCAL_REGISTRY_IMAGE=registry GOCOVERDIR=${GITHUB_WORKSPACE}/test/e2e/.cover
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
+        uses: codecov/codecov-action@4fe8c5f003fae66aa5ebb77cfd3e7bfbbda0b6b0 # v3.1.5
 
   build_test_e2e:
     name: "Build and run e2e Test"
@@ -91,10 +91,10 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Set up Go 1.20
+      - name: Set up Go 1.21
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Bootstrap e2e
         run: |
@@ -124,7 +124,7 @@ jobs:
           kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
           kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}-rego-policy.json
       - name: Upload artifacts
-        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         if: ${{ always() }}
         with:
           name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
@@ -151,13 +151,13 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Set up Go 1.20
+      - name: Set up Go 1.21
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Az CLI login
-        uses: azure/login@e15b166166a8746d1a47596803bd8c1b595455cf # v1.6.0
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 
@@ -173,7 +173,7 @@ jobs:
           make e2e-aks KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }} GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }} TENANT_ID=${{ env.AZURE_TENANT_ID }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         if: ${{ always() }}
         with:
           name: e2e-logs-aks-${{ matrix.KUBERNETES_VERSION }}-${{ matrix.GATEKEEPER_VERSION }}
@@ -207,13 +207,13 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Set up Go 1.20
+      - name: Set up Go 1.21
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: '1.20'
+          go-version: '1.21'
 
       - name: Az CLI login
-        uses: azure/login@e15b166166a8746d1a47596803bd8c1b595455cf # v1.6.0
+        uses: azure/login@cb79c773a3cfa27f31f25eb3f677781210c9ce3d # v1.6.1
         with:
           creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
 

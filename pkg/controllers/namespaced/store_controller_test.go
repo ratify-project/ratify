@@ -17,6 +17,8 @@ package namespaced
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
@@ -35,12 +37,21 @@ import (
 const (
 	storeName     = "testStore"
 	testNamespace = "testNamespace"
+	sampleName    = "sample"
+	orasName      = "oras"
 )
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
+	dirPath, err := test.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	var testStoreSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    sampleName,
+		Address: dirPath,
 	}
 
 	if err := storeAddOrReplace(testStoreSpec, "oras", constants.EmptyNamespace); err != nil {
@@ -54,13 +65,13 @@ func TestStoreAdd_EmptyParameter(t *testing.T) {
 func TestStoreAdd_InvalidConfig(t *testing.T) {
 	resetStoreMap()
 	var testStoreSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name: orasName,
 		Parameters: runtime.RawExtension{
 			Raw: []byte("test"),
 		},
 	}
 
-	if err := storeAddOrReplace(testStoreSpec, "oras", constants.EmptyNamespace); err == nil {
+	if err := storeAddOrReplace(testStoreSpec, orasName, constants.EmptyNamespace); err == nil {
 		t.Fatalf("storeAddOrReplace() expected error, actual %v", err)
 	}
 	if controllers.StoreMap.GetStoreCount() != 0 {
@@ -73,8 +84,13 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if controllers.StoreMap.GetStoreCount() != 0 {
 		t.Fatalf("Store map expected size 0, actual %v", controllers.StoreMap.GetStoreCount())
 	}
+	dirPath, err := test.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
 
-	var testStoreSpec = getOrasStoreSpec()
+	var testStoreSpec = getOrasStoreSpec(sampleName, dirPath)
 
 	if err := storeAddOrReplace(testStoreSpec, "testObject", constants.EmptyNamespace); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
@@ -84,15 +100,29 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	}
 }
 
+func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
+	resetStoreMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var spec = getInvalidStoreSpec()
+	err := storeAddOrReplace(spec, resource, testNamespace)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestStoreAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
+	dirPath, err := test.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
+	var testStoreSpec = getOrasStoreSpec(sampleName, dirPath)
 	// add a Store
-
-	var resource = "oras"
-
-	var testStoreSpec = getOrasStoreSpec()
-
-	if err := storeAddOrReplace(testStoreSpec, resource, constants.EmptyNamespace); err != nil {
+	if err := storeAddOrReplace(testStoreSpec, sampleName, constants.EmptyNamespace); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
 	if controllers.StoreMap.GetStoreCount() != 1 {
@@ -101,10 +131,11 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 
 	// modify the Store
 	var updatedSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    sampleName,
+		Address: dirPath,
 	}
 
-	if err := storeAddOrReplace(updatedSpec, resource, constants.EmptyNamespace); err != nil {
+	if err := storeAddOrReplace(updatedSpec, sampleName, constants.EmptyNamespace); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
 
@@ -113,7 +144,7 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 		t.Fatalf("Store map should be 1 after replacement, actual %v", controllers.StoreMap.GetStoreCount())
 	}
 
-	controllers.StoreMap.DeleteStore(constants.EmptyNamespace, resource)
+	controllers.StoreMap.DeleteStore(constants.EmptyNamespace, sampleName)
 
 	if controllers.StoreMap.GetStoreCount() != 0 {
 		t.Fatalf("Store map should be 0 after deletion, actual %v", controllers.StoreMap.GetStoreCount())
@@ -121,6 +152,12 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 }
 
 func TestStoreReconcile(t *testing.T) {
+	dirPath, err := test.CreatePlugin(orasName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	tests := []struct {
 		name               string
 		store              *configv1beta1.Store
@@ -139,7 +176,7 @@ func TestStoreReconcile(t *testing.T) {
 					Name:      storeName,
 				},
 				Spec: configv1beta1.StoreSpec{
-					Name: "oras",
+					Name: orasName,
 				},
 			},
 			expectedErr:        false,
@@ -153,7 +190,8 @@ func TestStoreReconcile(t *testing.T) {
 					Name:      storeName,
 				},
 				Spec: configv1beta1.StoreSpec{
-					Name: "oras",
+					Name:    orasName,
+					Address: dirPath,
 				},
 			},
 			expectedErr:        false,
@@ -234,14 +272,22 @@ func resetStoreMap() {
 	controllers.StoreMap = referrerstores.NewActiveStores()
 }
 
-func getOrasStoreSpec() configv1beta1.StoreSpec {
+func getOrasStoreSpec(pluginName, pluginPath string) configv1beta1.StoreSpec {
 	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosignEnabled\":false,\"useHttp\":false}"
 	var storeParameters = []byte(parametersString)
 
 	return configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    pluginName,
+		Address: pluginPath,
 		Parameters: runtime.RawExtension{
 			Raw: storeParameters,
 		},
+	}
+}
+
+func getInvalidStoreSpec() configv1beta1.StoreSpec {
+	return configv1beta1.StoreSpec{
+		Name:    "pluginnotfound",
+		Address: "test/path",
 	}
 }

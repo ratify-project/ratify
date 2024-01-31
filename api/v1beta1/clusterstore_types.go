@@ -42,11 +42,23 @@ type ClusterStoreSpec struct {
 // ClusterStoreStatus defines the observed state of ClusterStore
 type ClusterStoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Is successful in finding the plugin
+	IsSuccess bool `json:"issuccess"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
+// +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
+// +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.brieferror`
 // ClusterStore is the Schema for the clusterstores API
 type ClusterStore struct {
 	metav1.TypeMeta   `json:",inline"`

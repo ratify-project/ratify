@@ -42,6 +42,15 @@ type StoreSpec struct {
 // StoreStatus defines the observed state of Store
 type StoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Is successful in finding the plugin
+	IsSuccess bool `json:"issuccess"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 }
 
 // Store is the Schema for the stores API

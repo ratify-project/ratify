@@ -16,6 +16,9 @@ limitations under the License.
 package test
 
 import (
+	"os"
+	"path/filepath"
+
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -40,4 +43,19 @@ func CreateScheme() (*runtime.Scheme, error) {
 
 func KeyFor(obj client.Object) types.NamespacedName {
 	return client.ObjectKeyFromObject(obj)
+}
+
+func CreatePlugin(pluginName string) (string, error) {
+	tempDir, err := os.MkdirTemp("", "directory")
+	if err != nil {
+		return "", err
+	}
+
+	fullName := filepath.Join(tempDir, pluginName)
+	file, err := os.Create(fullName)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	return tempDir, nil
 }

@@ -18,6 +18,8 @@ package skel
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -41,12 +43,12 @@ func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
 			t.Fatalf("expected artifact type %s actual %s", "test-type", referenceDescriptor.ArtifactType)
 		}
 
-		if referrerStore.Name() != "test-store" {
-			t.Fatalf("expected store name %s actual %s", "test-store", referrerStore.Name())
+		if referrerStore.Name() != "sample" {
+			t.Fatalf("expected store name %s actual %s", "sample", referrerStore.Name())
 		}
 
 		// the parsed pluginBinDirs should include the data that was provided by Ratify, plus the default (currently assumed to be "")
-		expectedPluginBinDirs := []string{"/tmp/ratify/plugins", ""}
+		expectedPluginBinDirs := []string{getReferrerstorePluginsDir(), ""}
 		pluginStore := referrerStore.(*sp.StorePlugin)
 		actualPluginBinDirs := pluginStore.GetPath()
 		if !reflect.DeepEqual(expectedPluginBinDirs, actualPluginBinDirs) {
@@ -62,7 +64,7 @@ func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "storeConfig" : {"store": {"name":"test-store", "some": "config"}, "pluginBinDirs": ["/tmp/ratify/plugins"]}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData := fmt.Sprintf(`{ "storeConfig" : {"store": {"name":"sample", "some": "config"}, "pluginBinDirs": ["%s"]}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`, getReferrerstorePluginsDir())
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -129,7 +131,7 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 		plugin.SubjectEnvKey: "localhost:5000/net-monitor:v1@sha256:a0fc570a245b09ed752c42d600ee3bb5b4f77bbd70d8898780b7ab43454530eb",
 	}
 
-	stdinData := `{ "storeConfig" : {"store": {"name":"test-store", "some": "config"}}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData := fmt.Sprintf(`{ "storeConfig" : {"store": {"name":"sample", "some": "config"}}, "pluginBinDirs": ["%s"], "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`, getReferrerstorePluginsDir())
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	pluginContext := &pcontext{
@@ -161,14 +163,14 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 
 	environment[plugin.VersionEnvKey] = "1.0.0"
 
-	stdinData = `"storeConfig" : {"store": {"name":"test-store", "some": "config"}}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData = fmt.Sprintf(`"storeConfig" : {"store": {"name":"sample", "some": "config"}, "pluginBinDirs": ["%s"]},"config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`, getReferrerstorePluginsDir())
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", verifyReference, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrConfigParsingFailure {
 		t.Fatalf("plugin execution expected to fail with error code %d for invalid config", types.ErrConfigParsingFailure)
 	}
 
-	stdinData = `{"storeConfig" : {"store": {"name":"test-store", "some": "config"}}, "config": {"some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData = fmt.Sprintf(`{"storeConfig" : {"store": {"name":"sample", "some": "config"}, "pluginBinDirs": ["%s"]}, "config": {"some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`, getReferrerstorePluginsDir())
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", verifyReference, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrInvalidVerifierConfig {
@@ -176,18 +178,24 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 	}
 
 	environment[plugin.CommandEnvKey] = "unknown"
-	stdinData = `{"storeConfig" : {"store": {"name":"test-store", "some": "config"}}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData = fmt.Sprintf(`{"storeConfig" : {"store": {"name":"sample", "some": "config"}, "pluginBinDirs": ["%s"]},  "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`, getReferrerstorePluginsDir())
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", verifyReference, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrUnknownCommand {
-		t.Fatalf("plugin execution expected to fail with error code %d for invalid command", types.ErrUnknownCommand)
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid command, actual err :%v", types.ErrUnknownCommand, err)
 	}
 
 	environment[plugin.CommandEnvKey] = plugin.VerifyCommand
-	stdinData = `{"storeConfig" : {"store": {"name":"test-store", "some": "config"}}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`
+	stdinData = fmt.Sprintf(`{"storeConfig" : {"store": {"name":"sample", "some": "config"}, "pluginBinDirs": ["%s"]}, "config": {"name": "skel-test-case", "some":"config"}, "referenceDesc": {"artifactType": "test-type"}}`, getReferrerstorePluginsDir())
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", verifyReference, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrPluginCmdFailure {
 		t.Fatalf("plugin execution expected to fail with error code %d for cmd failure", types.ErrPluginCmdFailure)
 	}
+}
+
+func getReferrerstorePluginsDir() string {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../../../../", "./bin/plugins/referrerstore/"))
+	return pluginDir
 }

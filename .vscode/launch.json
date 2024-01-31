@@ -46,7 +46,8 @@
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
         "RATIFY_LOG_LEVEL": "debug",
-        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1"
+        "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
+        "RATIFY_NAMESPACE": "gatekeeper-system",
       },
       "args": [
         "serve",

@@ -17,6 +17,8 @@ package factory
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/deislabs/ratify/internal/constants"
@@ -104,15 +106,18 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 }
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../../..", "./bin/plugins"))
+
 	verifierConfig := map[string]interface{}{
 		"name": "plugin-verifier-0",
-		"type": "plugin-verifier",
+		"type": "sample",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},
 	}
 
-	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, "", "")
+	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, pluginDir, "")
 
 	if err != nil {
 		t.Fatalf("create verifiers failed with err %v", err)

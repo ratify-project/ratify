@@ -31,6 +31,10 @@ func Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(in *unversioned.StoreSp
 	return nil
 }
 
+func Convert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(in *unversioned.StoreStatus, out *StoreStatus, _ conversion.Scope) error {
+	return nil
+}
+
 func Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, _ conversion.Scope) error {
 	out.Name = in.Name
 	out.Address = in.Address

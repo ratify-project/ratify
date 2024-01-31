@@ -17,25 +17,36 @@ package clustered
 
 import (
 	"context"
+	"os"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/controllers/test"
 	"github.com/deislabs/ratify/pkg/customresources/referrerstores"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 const (
 	storeName = "storeName"
+	orasName  = "oras"
 )
 
 func TestStoreReconcile(t *testing.T) {
+	dirPath, err := test.CreatePlugin(orasName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	tests := []struct {
 		name               string
 		store              *configv1beta1.ClusterStore
@@ -54,7 +65,7 @@ func TestStoreReconcile(t *testing.T) {
 					Name:      storeName,
 				},
 				Spec: configv1beta1.ClusterStoreSpec{
-					Name: "oras",
+					Name: orasName,
 				},
 			},
 			expectedErr:        false,
@@ -68,7 +79,8 @@ func TestStoreReconcile(t *testing.T) {
 					Name:      storeName,
 				},
 				Spec: configv1beta1.ClusterStoreSpec{
-					Name: "oras",
+					Name:    orasName,
+					Address: dirPath,
 				},
 			},
 			expectedErr:        false,
@@ -148,13 +160,13 @@ func TestStoreSetupWithManager(t *testing.T) {
 func TestStoreAdd_InvalidConfig(t *testing.T) {
 	resetStoreMap()
 	var testStoreSpec = configv1beta1.ClusterStoreSpec{
-		Name: "oras",
+		Name: orasName,
 		Parameters: runtime.RawExtension{
 			Raw: []byte("test"),
 		},
 	}
 
-	if err := storeAddOrReplace(testStoreSpec, "oras"); err == nil {
+	if err := storeAddOrReplace(testStoreSpec, orasName); err == nil {
 		t.Fatalf("storeAddOrReplace() expected error, actual %v", err)
 	}
 	if controllers.StoreMap.GetStoreCount() != 0 {
@@ -162,6 +174,64 @@ func TestStoreAdd_InvalidConfig(t *testing.T) {
 	}
 }
 
+func TestWriteStoreStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		store      *configv1beta1.ClusterStore
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			store:      &configv1beta1.ClusterStore{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			store:      &configv1beta1.ClusterStore{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			store:     &configv1beta1.ClusterStore{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeStoreStatus(context.Background(), tc.reconciler, tc.store, logger, tc.isSuccess, tc.errString)
+		})
+	}
+}
+
+func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
+	resetStoreMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var spec = getInvalidStoreSpec()
+	err := storeAddOrReplace(spec, resource)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestStoreAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
 func resetStoreMap() {
 	controllers.StoreMap = referrerstores.NewActiveStores()
+}
+
+func getInvalidStoreSpec() configv1beta1.ClusterStoreSpec {
+	return configv1beta1.ClusterStoreSpec{
+		Name:    "pluginnotfound",
+		Address: "test/path",
+	}
 }

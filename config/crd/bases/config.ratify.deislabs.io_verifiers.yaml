@@ -70,7 +70,14 @@ spec:
         type: object
     served: true
     storage: false
-  - name: v1beta1
+  - additionalPrinterColumns:
+    - jsonPath: .status.issuccess
+      name: IsSuccess
+      type: boolean
+    - jsonPath: .status.brieferror
+      name: Error
+      type: string
+    name: v1beta1
     schema:
       openAPIV3Schema:
         description: Verifier is the Schema for the verifiers API
@@ -124,7 +131,21 @@ spec:
             type: object
           status:
             description: VerifierStatus defines the observed state of Verifier
+            properties:
+              brieferror:
+                description: Truncated error message if the message is too long
+                type: string
+              error:
+                description: Error message if operation was unsuccessful
+                type: string
+              issuccess:
+                description: Is successful in finding the plugin
+                type: boolean
+            required:
+            - issuccess
             type: object
         type: object
     served: true
     storage: true
+    subresources:
+      status: {}

@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
@@ -65,8 +66,11 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	if err := storeAddOrReplace(store.Spec, resource, req.Namespace); err != nil {
 		storeLogger.Error(err, "unable to create store from store crd")
+		writeStoreStatus(ctx, r, &store, storeLogger, false, err.Error())
 		return ctrl.Result{}, err
 	}
+
+	writeStoreStatus(ctx, r, &store, storeLogger, true, "")
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
@@ -87,4 +91,22 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname, namespace string)
 	}
 
 	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, namespace, storeConfig)
+}
+
+func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.Store, logger *logrus.Entry, isSuccess bool, errorString string) {
+	if isSuccess {
+		store.Status.IsSuccess = true
+		store.Status.Error = ""
+		store.Status.BriefError = ""
+	} else {
+		store.Status.IsSuccess = false
+		store.Status.Error = errorString
+		if len(errorString) > constants.MaxBriefErrLength {
+			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
+		}
+	}
+
+	if statusErr := r.Status().Update(ctx, store); statusErr != nil {
+		logger.Error(statusErr, ",unable to update store error status")
+	}
 }

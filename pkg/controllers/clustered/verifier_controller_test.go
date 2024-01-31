@@ -18,16 +18,19 @@ package clustered
 import (
 	"context"
 	"os"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/controllers/test"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -38,6 +41,7 @@ const (
 	invalidConfig = "invalidConfig"
 	success       = "success"
 	verifierName  = "verifierName"
+	sampleName    = "sampleName"
 )
 
 func TestMain(m *testing.M) {
@@ -49,17 +53,35 @@ func TestMain(m *testing.M) {
 
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
-	var testVerifierSpec = configv1beta1.ClusterVerifierSpec{
-		Name:          "notation",
-		ArtifactTypes: "application/vnd.cncf.notary.signature",
+	dirPath, err := test.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
-	var resource = "notation"
+	defer os.RemoveAll(dirPath)
 
-	if err := verifierAddOrReplace(testVerifierSpec, resource); err != nil {
+	var testVerifierSpec = configv1beta1.ClusterVerifierSpec{
+		Name:          sampleName,
+		ArtifactTypes: "application/vnd.cncf.notary.signature",
+		Address:       dirPath,
+	}
+
+	if err := verifierAddOrReplace(testVerifierSpec, sampleName); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if controllers.VerifierMap.GetVerifierCount() != 1 {
 		t.Fatalf("Verifier map expected size 1, actual %v", controllers.VerifierMap.GetVerifierCount())
+	}
+}
+
+func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
+	resetVerifierMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var testVerifierSpec = getInvalidVerifierSpec()
+	err := verifierAddOrReplace(testVerifierSpec, resource)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestVerifierAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
 	}
 }
 
@@ -76,6 +98,54 @@ func TestVerifierAdd_InvalidConfig(t *testing.T) {
 
 	if err := verifierAddOrReplace(testVerifierSpec, resource); err == nil {
 		t.Fatalf("Expected an error but returned nil")
+	}
+}
+
+func TestWriteVerifierStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		verifier   *configv1beta1.ClusterVerifier
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			errString:  "",
+			verifier:   &configv1beta1.ClusterVerifier{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			verifier:   &configv1beta1.ClusterVerifier{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			verifier:  &configv1beta1.ClusterVerifier{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeVerifierStatus(context.Background(), tc.reconciler, tc.verifier, logger, tc.isSuccess, tc.errString)
+
+			if tc.verifier.Status.IsSuccess != tc.isSuccess {
+				t.Fatalf("Expected isSuccess to be %+v , actual %+v", tc.isSuccess, tc.verifier.Status.IsSuccess)
+			}
+
+			if tc.verifier.Status.Error != tc.errString {
+				t.Fatalf("Expected Error to be %+v , actual %+v", tc.errString, tc.verifier.Status.Error)
+			}
+		})
 	}
 }
 
@@ -103,6 +173,12 @@ func TestVerifierSetupWithManager(t *testing.T) {
 }
 
 func TestVerifierReconcile(t *testing.T) {
+	dirPath, err := test.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	tests := []struct {
 		name                  string
 		verifier              *configv1beta1.ClusterVerifier
@@ -148,7 +224,8 @@ func TestVerifierReconcile(t *testing.T) {
 					Name:      verifierName,
 				},
 				Spec: configv1beta1.ClusterVerifierSpec{
-					Name: "notation",
+					Name:    sampleName,
+					Address: dirPath,
 				},
 			},
 			expectedErr:           false,
@@ -188,4 +265,12 @@ func TestVerifierReconcile(t *testing.T) {
 
 func resetVerifierMap() {
 	controllers.VerifierMap = verifiers.NewActiveVerifiers()
+}
+
+func getInvalidVerifierSpec() configv1beta1.ClusterVerifierSpec {
+	return configv1beta1.ClusterVerifierSpec{
+		Name:          "pluginnotfound",
+		ArtifactTypes: "application/vnd.ratify.spdx.v0",
+		Address:       "test/path",
+	}
 }

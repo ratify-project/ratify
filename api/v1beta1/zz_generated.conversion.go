@@ -760,6 +760,9 @@ func Convert_unversioned_ClusterStoreSpec_To_v1beta1_ClusterStoreSpec(in *unvers
 }
 
 func autoConvert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(in *ClusterStoreStatus, out *unversioned.ClusterStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -769,6 +772,9 @@ func Convert_v1beta1_ClusterStoreStatus_To_unversioned_ClusterStoreStatus(in *Cl
 }
 
 func autoConvert_unversioned_ClusterStoreStatus_To_v1beta1_ClusterStoreStatus(in *unversioned.ClusterStoreStatus, out *ClusterStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -862,6 +868,9 @@ func Convert_unversioned_ClusterVerifierSpec_To_v1beta1_ClusterVerifierSpec(in *
 }
 
 func autoConvert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(in *ClusterVerifierStatus, out *unversioned.ClusterVerifierStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -871,6 +880,9 @@ func Convert_v1beta1_ClusterVerifierStatus_To_unversioned_ClusterVerifierStatus(
 }
 
 func autoConvert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(in *unversioned.ClusterVerifierStatus, out *ClusterVerifierStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -1084,6 +1096,9 @@ func Convert_unversioned_StoreSpec_To_v1beta1_StoreSpec(in *unversioned.StoreSpe
 }
 
 func autoConvert_v1beta1_StoreStatus_To_unversioned_StoreStatus(in *StoreStatus, out *unversioned.StoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -1093,6 +1108,9 @@ func Convert_v1beta1_StoreStatus_To_unversioned_StoreStatus(in *StoreStatus, out
 }
 
 func autoConvert_unversioned_StoreStatus_To_v1beta1_StoreStatus(in *unversioned.StoreStatus, out *StoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -1186,6 +1204,9 @@ func Convert_unversioned_VerifierSpec_To_v1beta1_VerifierSpec(in *unversioned.Ve
 }
 
 func autoConvert_v1beta1_VerifierStatus_To_unversioned_VerifierStatus(in *VerifierStatus, out *unversioned.VerifierStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -1195,6 +1216,9 @@ func Convert_v1beta1_VerifierStatus_To_unversioned_VerifierStatus(in *VerifierSt
 }
 
 func autoConvert_unversioned_VerifierStatus_To_v1beta1_VerifierStatus(in *unversioned.VerifierStatus, out *VerifierStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 

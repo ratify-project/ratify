@@ -66,8 +66,11 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	if err := storeAddOrReplace(store.Spec, resource); err != nil {
 		storeLogger.Error(err, "unable to create store from store crd")
+		writeStoreStatus(ctx, r, &store, storeLogger, false, err.Error())
 		return ctrl.Result{}, err
 	}
+
+	writeStoreStatus(ctx, r, &store, storeLogger, true, "")
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
@@ -88,4 +91,22 @@ func storeAddOrReplace(spec configv1beta1.ClusterStoreSpec, fullname string) err
 	}
 
 	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, constants.EmptyNamespace, storeConfig)
+}
+
+func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.ClusterStore, logger *logrus.Entry, isSuccess bool, errorString string) {
+	if isSuccess {
+		store.Status.IsSuccess = true
+		store.Status.Error = ""
+		store.Status.BriefError = ""
+	} else {
+		store.Status.IsSuccess = false
+		store.Status.Error = errorString
+		if len(errorString) > constants.MaxBriefErrLength {
+			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
+		}
+	}
+
+	if statusErr := r.Status().Update(ctx, store); statusErr != nil {
+		logger.Error(statusErr, ",unable to update store error status")
+	}
 }

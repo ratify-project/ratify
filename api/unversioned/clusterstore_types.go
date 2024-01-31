@@ -42,6 +42,15 @@ type ClusterStoreSpec struct {
 // ClusterStoreStatus defines the observed state of ClusterStore
 type ClusterStoreStatus struct {
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Is successful in finding the plugin
+	IsSuccess bool `json:"issuccess"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 }
 
 // ClusterStore is the Schema for the clusterstores API

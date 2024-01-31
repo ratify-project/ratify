@@ -29,7 +29,7 @@ jobs:
       - name: setup go environment
         uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
         with:
-          go-version: "1.20"
+          go-version: "1.21"
       - name: Run tidy
         run: go mod tidy
       - name: Bootstrap e2e
@@ -49,7 +49,7 @@ jobs:
           kubectl logs -n gatekeeper-system -l app=ratify --tail=-1 > logs-ratify-preinstall-${{ matrix.KUBERNETES_VERSION }}-config-policy.json
           kubectl logs -n gatekeeper-system -l app.kubernetes.io/name=ratify --tail=-1 > logs-ratify-${{ matrix.KUBERNETES_VERSION }}-config-policy.json
       - name: Upload artifacts
-        uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4.0.0
+        uses: actions/upload-artifact@26f96dfa697d77e81fd5907df203aa23a56210a8 # v4.3.0
         if: ${{ always() }}
         with:
           name: e2e-logs-${{ matrix.KUBERNETES_VERSION }}

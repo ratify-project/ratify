@@ -49,6 +49,15 @@ type VerifierSpec struct {
 type VerifierStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+
+	// Is successful in finding the plugin
+	IsSuccess bool `json:"issuccess"`
+	// Error message if operation was unsuccessful
+	// +optional
+	Error string `json:"error,omitempty"`
+	// Truncated error message if the message is too long
+	// +optional
+	BriefError string `json:"brieferror,omitempty"`
 }
 
 // Verifier is the Schema for the verifiers API
