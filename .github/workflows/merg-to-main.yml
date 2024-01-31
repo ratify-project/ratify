@@ -3,7 +3,7 @@ name: Merge staging Into Main
 on:
   push:
     branches:
-      - 'staging'
+      - 'staging' #test1
 
 jobs:
   main:
