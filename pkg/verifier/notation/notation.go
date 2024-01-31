@@ -68,7 +68,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-	// VerificationCerts is map defining which keyvault certificates belong to which trust store name and its trust store type.
+	// VerificationCertStores is map defining which keyvault certificates belong to which trust store name and its trust store type.
 	// e.g.
 	// {
 	// 	"ca": {

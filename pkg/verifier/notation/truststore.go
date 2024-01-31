@@ -31,7 +31,6 @@ var logOpt = logger.Option{
 	ComponentType: logger.Verifier,
 }
 
-// need switch pointer receiver
 type trustStore struct {
 	certPaths        []string
 	certStoresByType map[string]interface{}
