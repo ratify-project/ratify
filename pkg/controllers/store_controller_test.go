@@ -29,11 +29,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const sampleName = "sample"
+
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
+	dirPath, err := createPlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	var testStoreSpec = configv1beta1.StoreSpec{
-		Name:    "sample",
-		Address: getVerifierPluginsDir(),
+		Name:    sampleName,
+		Address: dirPath,
 	}
 
 	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
@@ -49,8 +57,13 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if len(StoreMap) != 0 {
 		t.Fatalf("Store map expected size 0, actual %v", len(StoreMap))
 	}
+	dirPath, err := createPlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
 
-	var testStoreSpec = getOrasStoreSpec()
+	var testStoreSpec = getOrasStoreSpec(sampleName, dirPath)
 
 	if err := storeAddOrReplace(testStoreSpec, "testObject"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
@@ -113,13 +126,15 @@ func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
 
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
+	dirPath, err := createPlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
+	var testStoreSpec = getOrasStoreSpec(sampleName, dirPath)
 	// add a Store
-
-	var resource = "sample"
-
-	var testStoreSpec = getOrasStoreSpec()
-
-	if err := storeAddOrReplace(testStoreSpec, resource); err != nil {
+	if err := storeAddOrReplace(testStoreSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(StoreMap) != 1 {
@@ -128,11 +143,11 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 
 	// modify the Store
 	var updatedSpec = configv1beta1.StoreSpec{
-		Name:    "sample",
-		Address: getStorePluginsDir(),
+		Name:    sampleName,
+		Address: dirPath,
 	}
 
-	if err := storeAddOrReplace(updatedSpec, resource); err != nil {
+	if err := storeAddOrReplace(updatedSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
 
@@ -141,7 +156,7 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 		t.Fatalf("Store map should be 1 after replacement, actual %v", len(StoreMap))
 	}
 
-	storeRemove(resource)
+	storeRemove(sampleName)
 
 	if len(StoreMap) != 0 {
 		t.Fatalf("Store map should be 0 after deletion, actual %v", len(StoreMap))
@@ -152,28 +167,37 @@ func resetStoreMap() {
 	StoreMap = map[string]referrerstore.ReferrerStore{}
 }
 
-func getOrasStoreSpec() configv1beta1.StoreSpec {
+func getOrasStoreSpec(pluginName, pluginPath string) configv1beta1.StoreSpec {
 	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosignEnabled\":false,\"useHttp\":false}"
 	var storeParameters = []byte(parametersString)
 
 	return configv1beta1.StoreSpec{
-		Name:    "sample",
-		Address: getStorePluginsDir(),
+		Name:    pluginName,
+		Address: pluginPath,
 		Parameters: runtime.RawExtension{
 			Raw: storeParameters,
 		},
 	}
 }
 
-func getStorePluginsDir() string {
-	workingDir, _ := os.Getwd()
-	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins/referrerstore/"))
-	return pluginDir
-}
-
 func getInvalidStoreSpec() configv1beta1.StoreSpec {
 	return configv1beta1.StoreSpec{
 		Name:    "pluginnotfound",
-		Address: getStorePluginsDir(),
+		Address: "test/path",
 	}
+}
+
+func createPlugin(pluginName string) (string, error) {
+	tempDir, err := os.MkdirTemp("", "directory")
+	if err != nil {
+		return "", err
+	}
+
+	fullName := filepath.Join(tempDir, pluginName)
+	file, err := os.Create(fullName)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	return tempDir, nil
 }

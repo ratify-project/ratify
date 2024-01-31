@@ -80,11 +80,6 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*Policy)(nil), (*unversioned.Policy)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1alpha1_Policy_To_unversioned_Policy(a.(*Policy), b.(*unversioned.Policy), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*PolicyList)(nil), (*unversioned.PolicyList)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_PolicyList_To_unversioned_PolicyList(a.(*PolicyList), b.(*unversioned.PolicyList), scope)
 	}); err != nil {
@@ -130,18 +125,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.StoreSpec)(nil), (*StoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(a.(*unversioned.StoreSpec), b.(*StoreSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*StoreStatus)(nil), (*unversioned.StoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_StoreStatus_To_unversioned_StoreStatus(a.(*StoreStatus), b.(*unversioned.StoreStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.StoreStatus)(nil), (*StoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(a.(*unversioned.StoreStatus), b.(*StoreStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -170,18 +155,8 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.VerifierSpec)(nil), (*VerifierSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(a.(*unversioned.VerifierSpec), b.(*VerifierSpec), scope)
-	}); err != nil {
-		return err
-	}
 	if err := s.AddGeneratedConversionFunc((*VerifierStatus)(nil), (*unversioned.VerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1alpha1_VerifierStatus_To_unversioned_VerifierStatus(a.(*VerifierStatus), b.(*unversioned.VerifierStatus), scope)
-	}); err != nil {
-		return err
-	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.VerifierStatus)(nil), (*VerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(a.(*unversioned.VerifierStatus), b.(*VerifierStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -202,6 +177,31 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddConversionFunc((*unversioned.Policy)(nil), (*Policy)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_unversioned_Policy_To_v1alpha1_Policy(a.(*unversioned.Policy), b.(*Policy), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*unversioned.StoreSpec)(nil), (*StoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(a.(*unversioned.StoreSpec), b.(*StoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*unversioned.StoreStatus)(nil), (*StoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(a.(*unversioned.StoreStatus), b.(*StoreStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*unversioned.VerifierSpec)(nil), (*VerifierSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(a.(*unversioned.VerifierSpec), b.(*VerifierSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*unversioned.VerifierStatus)(nil), (*VerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(a.(*unversioned.VerifierStatus), b.(*VerifierStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddConversionFunc((*Policy)(nil), (*unversioned.Policy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1alpha1_Policy_To_unversioned_Policy(a.(*Policy), b.(*unversioned.Policy), scope)
 	}); err != nil {
 		return err
 	}
@@ -474,7 +474,17 @@ func Convert_unversioned_Store_To_v1alpha1_Store(in *unversioned.Store, out *Sto
 
 func autoConvert_v1alpha1_StoreList_To_unversioned_StoreList(in *StoreList, out *unversioned.StoreList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]unversioned.Store)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]unversioned.Store, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_Store_To_unversioned_Store(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -485,7 +495,17 @@ func Convert_v1alpha1_StoreList_To_unversioned_StoreList(in *StoreList, out *unv
 
 func autoConvert_unversioned_StoreList_To_v1alpha1_StoreList(in *unversioned.StoreList, out *StoreList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Store)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]Store, len(*in))
+		for i := range *in {
+			if err := Convert_unversioned_Store_To_v1alpha1_Store(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -509,15 +529,11 @@ func Convert_v1alpha1_StoreSpec_To_unversioned_StoreSpec(in *StoreSpec, out *unv
 
 func autoConvert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(in *unversioned.StoreSpec, out *StoreSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	// WARNING: in.Version requires manual conversion: does not exist in peer-type
 	out.Address = in.Address
 	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
 	out.Parameters = in.Parameters
 	return nil
-}
-
-// Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec is an autogenerated conversion function.
-func Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(in *unversioned.StoreSpec, out *StoreSpec, s conversion.Scope) error {
-	return autoConvert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(in, out, s)
 }
 
 func autoConvert_v1alpha1_StoreStatus_To_unversioned_StoreStatus(in *StoreStatus, out *unversioned.StoreStatus, s conversion.Scope) error {
@@ -530,12 +546,10 @@ func Convert_v1alpha1_StoreStatus_To_unversioned_StoreStatus(in *StoreStatus, ou
 }
 
 func autoConvert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(in *unversioned.StoreStatus, out *StoreStatus, s conversion.Scope) error {
+	// WARNING: in.IsSuccess requires manual conversion: does not exist in peer-type
+	// WARNING: in.Error requires manual conversion: does not exist in peer-type
+	// WARNING: in.BriefError requires manual conversion: does not exist in peer-type
 	return nil
-}
-
-// Convert_unversioned_StoreStatus_To_v1alpha1_StoreStatus is an autogenerated conversion function.
-func Convert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(in *unversioned.StoreStatus, out *StoreStatus, s conversion.Scope) error {
-	return autoConvert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(in, out, s)
 }
 
 func autoConvert_v1alpha1_Verifier_To_unversioned_Verifier(in *Verifier, out *unversioned.Verifier, s conversion.Scope) error {
@@ -572,7 +586,17 @@ func Convert_unversioned_Verifier_To_v1alpha1_Verifier(in *unversioned.Verifier,
 
 func autoConvert_v1alpha1_VerifierList_To_unversioned_VerifierList(in *VerifierList, out *unversioned.VerifierList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]unversioned.Verifier)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]unversioned.Verifier, len(*in))
+		for i := range *in {
+			if err := Convert_v1alpha1_Verifier_To_unversioned_Verifier(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -583,7 +607,17 @@ func Convert_v1alpha1_VerifierList_To_unversioned_VerifierList(in *VerifierList,
 
 func autoConvert_unversioned_VerifierList_To_v1alpha1_VerifierList(in *unversioned.VerifierList, out *VerifierList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]Verifier)(unsafe.Pointer(&in.Items))
+	if in.Items != nil {
+		in, out := &in.Items, &out.Items
+		*out = make([]Verifier, len(*in))
+		for i := range *in {
+			if err := Convert_unversioned_Verifier_To_v1alpha1_Verifier(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Items = nil
+	}
 	return nil
 }
 
@@ -608,16 +642,12 @@ func Convert_v1alpha1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec,
 
 func autoConvert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	// WARNING: in.Version requires manual conversion: does not exist in peer-type
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
 	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
 	out.Parameters = in.Parameters
 	return nil
-}
-
-// Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec is an autogenerated conversion function.
-func Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, s conversion.Scope) error {
-	return autoConvert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(in, out, s)
 }
 
 func autoConvert_v1alpha1_VerifierStatus_To_unversioned_VerifierStatus(in *VerifierStatus, out *unversioned.VerifierStatus, s conversion.Scope) error {
@@ -630,10 +660,8 @@ func Convert_v1alpha1_VerifierStatus_To_unversioned_VerifierStatus(in *VerifierS
 }
 
 func autoConvert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(in *unversioned.VerifierStatus, out *VerifierStatus, s conversion.Scope) error {
+	// WARNING: in.IsSuccess requires manual conversion: does not exist in peer-type
+	// WARNING: in.Error requires manual conversion: does not exist in peer-type
+	// WARNING: in.BriefError requires manual conversion: does not exist in peer-type
 	return nil
-}
-
-// Convert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus is an autogenerated conversion function.
-func Convert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(in *unversioned.VerifierStatus, out *VerifierStatus, s conversion.Scope) error {
-	return autoConvert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(in, out, s)
 }

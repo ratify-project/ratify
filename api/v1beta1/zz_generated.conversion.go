@@ -491,6 +491,7 @@ func Convert_unversioned_StoreList_To_v1beta1_StoreList(in *unversioned.StoreLis
 
 func autoConvert_v1beta1_StoreSpec_To_unversioned_StoreSpec(in *StoreSpec, out *unversioned.StoreSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.Address = in.Address
 	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
 	out.Parameters = in.Parameters
@@ -504,6 +505,7 @@ func Convert_v1beta1_StoreSpec_To_unversioned_StoreSpec(in *StoreSpec, out *unve
 
 func autoConvert_unversioned_StoreSpec_To_v1beta1_StoreSpec(in *unversioned.StoreSpec, out *StoreSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.Address = in.Address
 	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
 	out.Parameters = in.Parameters
@@ -516,6 +518,9 @@ func Convert_unversioned_StoreSpec_To_v1beta1_StoreSpec(in *unversioned.StoreSpe
 }
 
 func autoConvert_v1beta1_StoreStatus_To_unversioned_StoreStatus(in *StoreStatus, out *unversioned.StoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -525,6 +530,9 @@ func Convert_v1beta1_StoreStatus_To_unversioned_StoreStatus(in *StoreStatus, out
 }
 
 func autoConvert_unversioned_StoreStatus_To_v1beta1_StoreStatus(in *unversioned.StoreStatus, out *StoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -589,6 +597,7 @@ func Convert_unversioned_VerifierList_To_v1beta1_VerifierList(in *unversioned.Ve
 
 func autoConvert_v1beta1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec, out *unversioned.VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
 	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
@@ -603,6 +612,7 @@ func Convert_v1beta1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec, 
 
 func autoConvert_unversioned_VerifierSpec_To_v1beta1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
 	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
@@ -616,6 +626,9 @@ func Convert_unversioned_VerifierSpec_To_v1beta1_VerifierSpec(in *unversioned.Ve
 }
 
 func autoConvert_v1beta1_VerifierStatus_To_unversioned_VerifierStatus(in *VerifierStatus, out *unversioned.VerifierStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
@@ -625,6 +638,9 @@ func Convert_v1beta1_VerifierStatus_To_unversioned_VerifierStatus(in *VerifierSt
 }
 
 func autoConvert_unversioned_VerifierStatus_To_v1beta1_VerifierStatus(in *unversioned.VerifierStatus, out *VerifierStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
 	return nil
 }
 
