@@ -49,7 +49,10 @@ func (s *trustStore) GetCertificates(ctx context.Context, trustStoreTypeInput tr
 	if err != nil {
 		return nil, err
 	}
-	return s.filterValidCerts(certs)
+	if trustStoreTypeInput == truststore.TypeCA {
+		return s.filterValidCerts(certs)
+	}
+	return certs, nil
 }
 
 func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
