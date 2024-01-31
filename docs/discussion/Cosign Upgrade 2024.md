@@ -285,10 +285,12 @@ Cosign verifier should support multiple trust policies based on the KeyManagemen
     - skip: don't perform any verification for an image reference that matches this policy
     - any: at least one of the keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
     - all: ALL keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
-  - define certificates to be used in a trust policy for Trusted Timestamp verification `tsaCerts`
-  - define options per trust policy for transparency log verification `tLogVerify`
-  - define options per trust policy for keyless verification
+  - a way to define certificates to be used in a trust policy for Trusted Timestamp verification `tsaCerts`
+  - a way to define options per trust policy for transparency log verification `tLogVerify`
+  - a way to define options per trust policy for keyless verification
     - certificate transparency log lookup `ctLogVerify`
+  - a way to scope the policy based on `artifactType` if we have nested verification `artifactTypeScopes`
+    - if the user defines `artifactTypeScopes`, then the `registryScopes` are applied first and then `artifactTypeScopes`. `artifactTypeScopes` are only enforced if the subject image manifest being verified contains a `subject` field (basically is a referrer).
 
 Sample
 ```yaml
@@ -308,6 +310,9 @@ spec:
         registryScopes:
           - wabbitnetworks.myregistry.io/carrots
           - wabbitnetworks.myregistry.io/beets
+        artifactTypeScopes: # OPTIONAL: applied after registryScopes; only considered for nested verification scenarios. 
+          - application/sarif+json
+          - application/spdx+json
         keys: # list of keys that are trusted. Only the keys in KMS are considered
           - kms: inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementSystem resource specified
           - kms: inline-keys-2
