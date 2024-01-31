@@ -285,6 +285,10 @@ Cosign verifier should support multiple trust policies based on the KeyManagemen
     - skip: don't perform any verification for an image reference that matches this policy
     - any: at least one of the keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
     - all: ALL keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
+  - define certificates to be used in a trust policy for Trusted Timestamp verification `tsaCerts`
+  - define options per trust policy for transparency log verification `tLogVerify`
+  - define options per trust policy for keyless verification
+    - certificate transparency log lookup `ctLogVerify`
 
 Sample
 ```yaml
@@ -312,6 +316,10 @@ spec:
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
           - kms: inline-certs-1
+        tsaCerts:
+          - kms: inline-certs-tsa-1
+        tLogVerify: true # transparency log verification (default to false)
+        rekorURL: customrekor.io # rekor URL for transparency log verification (default to sigstore's public-good endpoint)
         enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
       - name: verification-bypass
         registryScopes:
