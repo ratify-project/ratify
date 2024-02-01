@@ -18,12 +18,12 @@ package controllers
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -33,7 +33,7 @@ const sampleName = "sample"
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
-	dirPath, err := createPlugin(sampleName)
+	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -57,7 +57,7 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if len(StoreMap) != 0 {
 		t.Fatalf("Store map expected size 0, actual %v", len(StoreMap))
 	}
-	dirPath, err := createPlugin(sampleName)
+	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -126,7 +126,7 @@ func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
 
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
-	dirPath, err := createPlugin(sampleName)
+	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -185,19 +185,4 @@ func getInvalidStoreSpec() configv1beta1.StoreSpec {
 		Name:    "pluginnotfound",
 		Address: "test/path",
 	}
-}
-
-func createPlugin(pluginName string) (string, error) {
-	tempDir, err := os.MkdirTemp("", "directory")
-	if err != nil {
-		return "", err
-	}
-
-	fullName := filepath.Join(tempDir, pluginName)
-	file, err := os.Create(fullName)
-	if err != nil {
-		return "", err
-	}
-	defer file.Close()
-	return tempDir, nil
 }
