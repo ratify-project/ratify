@@ -18,7 +18,6 @@ package controllers
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -31,6 +30,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const licenseChecker = "licensechecker"
+
 func TestMain(m *testing.M) {
 	// make sure to reset verifierMap before each test run
 	VerifierMap = map[string]vr.ReferenceVerifier{}
@@ -40,14 +41,19 @@ func TestMain(m *testing.M) {
 
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
-	var testVerifierSpec = configv1beta1.VerifierSpec{
-		Name:          "sample",
-		ArtifactTypes: "application/vnd.cncf.notary.signature",
-		Address:       getVerifierPluginsDir(),
+	dirPath, err := createPlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
-	var resource = "sample"
+	defer os.RemoveAll(dirPath)
 
-	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
+	var testVerifierSpec = configv1beta1.VerifierSpec{
+		Name:          sampleName,
+		ArtifactTypes: "application/vnd.cncf.notary.signature",
+		Address:       dirPath,
+	}
+
+	if err := verifierAddOrReplace(testVerifierSpec, sampleName, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -61,7 +67,13 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 		t.Fatalf("Verifier map expected size 0, actual %v", len(VerifierMap))
 	}
 
-	var testVerifierSpec = getDefaultLicenseCheckerSpec()
+	dirPath, err := createPlugin(licenseChecker)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
+	var testVerifierSpec = getDefaultLicenseCheckerSpec(dirPath)
 
 	if err := verifierAddOrReplace(testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
@@ -85,12 +97,16 @@ func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
 
 func TestVerifier_UpdateAndDelete(t *testing.T) {
 	resetVerifierMap()
+	dirPath, err := createPlugin(licenseChecker)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
 
-	var resource = "licensechecker"
-	var testVerifierSpec = getDefaultLicenseCheckerSpec()
+	var testVerifierSpec = getDefaultLicenseCheckerSpec(dirPath)
 
 	// add a verifier
-	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(VerifierMap) != 1 {
@@ -99,8 +115,8 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 
 	// modify the verifier
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"GNU\"]}"
-	testVerifierSpec = getLicenseCheckerFromParam(parametersString)
-	if err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace); err != nil {
+	testVerifierSpec = getLicenseCheckerFromParam(parametersString, dirPath)
+	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 
@@ -109,7 +125,7 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 		t.Fatalf("Verifier map should be 1 after replacement, actual %v", len(VerifierMap))
 	}
 
-	verifierRemove(resource)
+	verifierRemove(licenseChecker)
 
 	if len(VerifierMap) != 0 {
 		t.Fatalf("Verifier map should be 0 after deletion, actual %v", len(VerifierMap))
@@ -193,13 +209,13 @@ func resetVerifierMap() {
 	VerifierMap = map[string]vr.ReferenceVerifier{}
 }
 
-func getLicenseCheckerFromParam(parametersString string) configv1beta1.VerifierSpec {
+func getLicenseCheckerFromParam(parametersString, pluginPath string) configv1beta1.VerifierSpec {
 	var allowedLicenses = []byte(parametersString)
 
 	return configv1beta1.VerifierSpec{
-		Name:          "licensechecker",
+		Name:          licenseChecker,
 		ArtifactTypes: "application/vnd.ratify.spdx.v0",
-		Address:       getVerifierPluginsDir(),
+		Address:       pluginPath,
 		Parameters: runtime.RawExtension{
 			Raw: allowedLicenses,
 		},
@@ -210,17 +226,11 @@ func getInvalidVerifierSpec() configv1beta1.VerifierSpec {
 	return configv1beta1.VerifierSpec{
 		Name:          "pluginnotfound",
 		ArtifactTypes: "application/vnd.ratify.spdx.v0",
-		Address:       getVerifierPluginsDir(),
+		Address:       "test/path",
 	}
 }
 
-func getDefaultLicenseCheckerSpec() configv1beta1.VerifierSpec {
+func getDefaultLicenseCheckerSpec(pluginPath string) configv1beta1.VerifierSpec {
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"Apache\"]}"
-	return getLicenseCheckerFromParam(parametersString)
-}
-
-func getVerifierPluginsDir() string {
-	workingDir, _ := os.Getwd()
-	pluginDir := filepath.Clean(filepath.Join(workingDir, "../..", "./bin/plugins"))
-	return pluginDir
+	return getLicenseCheckerFromParam(parametersString, pluginPath)
 }
