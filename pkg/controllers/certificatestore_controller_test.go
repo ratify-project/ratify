@@ -16,8 +16,6 @@ limitations under the License.
 package controllers
 
 import (
-	"crypto/x509"
-	"encoding/pem"
 	"fmt"
 	"testing"
 
@@ -184,19 +182,4 @@ func TestGetCertificateProvider(t *testing.T) {
 	if err == nil {
 		t.Fatalf("Getting unregistered provider should returns an error")
 	}
-}
-
-// convert string to a x509 certificate
-func getCert(certString string) *x509.Certificate {
-	block, _ := pem.Decode([]byte(certString))
-	if block == nil {
-		panic("failed to parse certificate PEM")
-	}
-
-	test, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		panic("failed to parse certificate: " + err.Error())
-	}
-
-	return test
 }
