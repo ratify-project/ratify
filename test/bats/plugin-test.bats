@@ -20,7 +20,6 @@ WAIT_TIME=60
 SLEEP_TIME=1
 
 @test "helm genCert test" {
-    skip "Skipping test for now"
     # tls cert provided
     helm uninstall ratify --namespace gatekeeper-system
     make e2e-helm-deploy-ratify CERT_DIR=${CERT_DIR} CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}

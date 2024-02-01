@@ -42,6 +42,19 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	}
 }
 
+func TestGetCertificates_EmptyCertStore(t *testing.T) {
+	certStore := make(map[string]interface{})
+	certStore["ca"] = map[string]interface{}{"store1": []interface{}{}}
+	store := &trustStore{
+		certStoresByType: certStore,
+	}
+
+	certificatesMap := map[string][]*x509.Certificate{}
+	if certs, err := store.getCertificatesInternal(context.Background(), "ca", "store1", certificatesMap); err != nil || len(certs) != 0 {
+		t.Fatalf("no error expected if cert store is empty")
+	}
+}
+
 func TestGetCertificates_NamedStore(t *testing.T) {
 	certStore := make(map[string]interface{})
 	certStore["ca"] = map[string]interface{}{"store1": []interface{}{"default/kv1"}, "store2": []interface{}{"projecta/kv2"}}

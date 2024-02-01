@@ -217,6 +217,14 @@ func TestParseVerifierConfig(t *testing.T) {
 	certStoresSampleNeedConvertExpected["ca"] = map[string]interface{}{
 		"certs": []interface{}{"defaultns/akv1", "testns/akv2"},
 	}
+	certStoresSampleMixConfig := make(map[string]interface{})
+	certStoresSampleMixConfig["certs"] = []string{
+		"defaultns/akv1", "akv2",
+	}
+	certStoresSampleMixConfig["ca"] = map[string]interface{}{
+		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	}
 	tests := []struct {
 		name      string
 		configMap map[string]interface{}
@@ -282,6 +290,16 @@ func TestParseVerifierConfig(t *testing.T) {
 				VerificationCerts:      []string{testPath, defaultCertDir},
 				VerificationCertStores: certStoresSampleNeedConvertExpected,
 			},
+		},
+		{
+			name: "false parsed with specified cert stores with storeType conversion",
+			configMap: map[string]interface{}{
+				"name":                   test,
+				"verificationCerts":      []string{testPath},
+				"verificationCertStores": certStoresSampleMixConfig,
+			},
+			expectErr: true,
+			expect:    nil,
 		},
 	}
 

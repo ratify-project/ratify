@@ -99,7 +99,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
-	updateCertificatesMap(resource, certificates)
+	certificatesMap[resource] = certificates
 	isFetchSuccessful = true
 	emptyErrorString := ""
 	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
@@ -113,10 +113,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 // returns the internal certificate map
 func GetCertificatesMap() map[string][]*x509.Certificate {
 	return certificatesMap
-}
-
-func updateCertificatesMap(resource string, certificates []*x509.Certificate) {
-	certificatesMap[resource] = certificates
 }
 
 // SetupWithManager sets up the controller with the Manager.
