@@ -116,7 +116,9 @@ func GetCertificatesMap() map[string][]*x509.Certificate {
 }
 
 func appendCertificates(resource string, certificates []*x509.Certificate) {
-	certificatesMap[resource] = append(certificatesMap[resource], certificates...)
+	// certificatesMap[resource] = append(certificatesMap[resource], certificates...)
+	certificatesMap[resource] = certificates
+
 }
 
 // SetupWithManager sets up the controller with the Manager.
