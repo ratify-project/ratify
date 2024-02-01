@@ -102,6 +102,7 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 
 	pluginOutputJSON, pluginOutputMsgs := parsePluginOutput(stdout, stderr)
 
+	// Disregards plugin source stream and logs the plugin messages to stderr
 	for _, msg := range pluginOutputMsgs {
 		msg := strings.ToLower(msg)
 		switch {

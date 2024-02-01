@@ -42,14 +42,15 @@ func main() {
 	// create a plugin logger
 	pluginlogger := logger.NewLogger()
 
-	// output to stderr
+	// output info and Debug to stderr
 	pluginlogger.Info("initialized plugin")
 	pluginlogger.Debugf("plugin %s %s", "sample", "1.0.0")
 
 	skel.PluginMain("sample", "1.0.0", VerifyReference, []string{"1.0.0"})
 
-	// set output to stdout
+	// By default, the pluginlogger writes to stderr. To change the output, use SetOutput
 	pluginlogger.SetOutput(os.Stdout)
+	// output warning to stdout
 	pluginlogger.Warn("example warning message...")
 }
 
