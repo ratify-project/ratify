@@ -191,21 +191,21 @@ func TestGetCertificateProvider(t *testing.T) {
 	}
 }
 
-func TestAppendCertificates(t *testing.T) {
+func TestUpdateCertificatesMap(t *testing.T) {
 	kv1Cert := getCert(certStr)
 	kv2Cert := getCert(certStr2)
 	certificates := []*x509.Certificate{kv1Cert}
 	certificatesMap["certs-ca"] = []*x509.Certificate{kv2Cert}
 
 	// test with empty map
-	appendCertificates("certs-sa", certificates)
+	updateCertificatesMap("certs-sa", certificates)
 
 	if len(certificatesMap) == 0 {
 		t.Fatalf("Properties should not be empty")
 	}
 
 	// test with non-empty map
-	appendCertificates("certs-ca", certificates)
+	updateCertificatesMap("certs-ca", certificates)
 
 	if len(certificatesMap) == 0 {
 		t.Fatalf("Properties should not be empty")
