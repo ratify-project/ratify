@@ -22,6 +22,7 @@ import (
 
 	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
+	test "github.com/deislabs/ratify/pkg/utils"
 	vfConfig "github.com/deislabs/ratify/pkg/verifier/config"
 )
 
@@ -186,6 +187,12 @@ func TestGetHomeDir(t *testing.T) {
 }
 
 func TestCreateFromConfig(t *testing.T) {
+	dirPath, err := test.CreatePlugin("oras", "cosign")
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	tests := []struct {
 		name        string
 		config      Config
@@ -238,6 +245,7 @@ func TestCreateFromConfig(t *testing.T) {
 			name: "valid config",
 			config: Config{
 				StoresConfig: config.StoresConfig{
+					PluginBinDirs: []string{dirPath},
 					Stores: []config.StorePluginConfig{
 						{
 							"name": "oras",
@@ -245,6 +253,7 @@ func TestCreateFromConfig(t *testing.T) {
 					},
 				},
 				VerifiersConfig: vfConfig.VerifiersConfig{
+					PluginBinDirs: []string{dirPath},
 					Verifiers: []vfConfig.VerifierConfig{
 						{
 							"name": "cosign",

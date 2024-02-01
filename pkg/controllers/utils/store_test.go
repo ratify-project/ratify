@@ -16,10 +16,12 @@ limitations under the License.
 package utils
 
 import (
+	"os"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
+	test "github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier/types"
 )
 
@@ -29,8 +31,15 @@ const (
 )
 
 func TestUpsertStoreMap(t *testing.T) {
+	dirPath, err := test.CreatePlugin(storeName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	tests := []struct {
 		name        string
+		address     string
 		storeConfig rc.StorePluginConfig
 		expectedErr bool
 	}{
@@ -40,7 +49,8 @@ func TestUpsertStoreMap(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name: "valid config",
+			name:    "valid config",
+			address: dirPath,
 			storeConfig: rc.StorePluginConfig{
 				"name": storeName,
 			},
@@ -50,7 +60,7 @@ func TestUpsertStoreMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := UpsertStoreMap("", "", storeName, testNamespace, tt.storeConfig)
+			err := UpsertStoreMap("", tt.address, storeName, testNamespace, tt.storeConfig)
 			if tt.expectedErr != (err != nil) {
 				t.Fatalf("expected error: %v, got: %v", tt.expectedErr, err)
 			}

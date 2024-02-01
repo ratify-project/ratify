@@ -18,19 +18,47 @@ package utils
 import (
 	"os"
 	"path/filepath"
+
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func CreatePlugin(pluginName string) (string, error) {
+func CreateScheme() (*runtime.Scheme, error) {
+	scheme := runtime.NewScheme()
+
+	b := runtime.SchemeBuilder{
+		clientgoscheme.AddToScheme,
+		configv1beta1.AddToScheme,
+	}
+
+	if err := b.AddToScheme(scheme); err != nil {
+		return nil, err
+	}
+
+	return scheme, nil
+}
+
+func KeyFor(obj client.Object) types.NamespacedName {
+	return client.ObjectKeyFromObject(obj)
+}
+
+func CreatePlugin(pluginNames ...string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "directory")
 	if err != nil {
 		return "", err
 	}
 
-	fullName := filepath.Join(tempDir, pluginName)
-	file, err := os.Create(fullName)
-	if err != nil {
-		return "", err
+	for _, pluginName := range pluginNames {
+		fullName := filepath.Join(tempDir, pluginName)
+		file, err := os.Create(fullName)
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
 	}
-	defer file.Close()
+
 	return tempDir, nil
 }

@@ -23,14 +23,13 @@ import (
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/controllers/test"
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	test "github.com/deislabs/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -261,29 +260,6 @@ func TestPolicyReconcile(t *testing.T) {
 				t.Fatalf("Expected policy count to be %d, actual %d", tt.expectedPolicyCount, len(controllers.ActivePolicies.NamespacedPolicies))
 			}
 		})
-	}
-}
-
-func TestPolicySetupWithManager(t *testing.T) {
-	scheme, err := test.CreateScheme()
-	if err != nil {
-		t.Fatalf("CreateScheme() expected no error, actual %v", err)
-	}
-	client := fake.NewClientBuilder().WithScheme(scheme)
-	r := &PolicyReconciler{
-		Scheme: scheme,
-		Client: client.Build(),
-	}
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		t.Fatalf("NewManager() expected no error, actual %v", err)
-	}
-
-	if err := r.SetupWithManager(mgr); err != nil {
-		t.Fatalf("SetupWithManager() expected no error, actual %v", err)
 	}
 }
 

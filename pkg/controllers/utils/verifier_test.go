@@ -16,11 +16,13 @@ limitations under the License.
 package utils
 
 import (
+	"os"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
+	test "github.com/deislabs/ratify/pkg/utils"
 	vc "github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/types"
 )
@@ -31,8 +33,15 @@ const (
 )
 
 func TestUpsertVerifier(t *testing.T) {
+	dirPath, err := test.CreatePlugin(verifierName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	tests := []struct {
 		name           string
+		address        string
 		namespace      string
 		objectName     string
 		verifierConfig vc.VerifierConfig
@@ -44,7 +53,8 @@ func TestUpsertVerifier(t *testing.T) {
 			expectedErr:    true,
 		},
 		{
-			name: "empty address",
+			name:    "empty address",
+			address: dirPath,
 			verifierConfig: vc.VerifierConfig{
 				"name": verifierName,
 			},
@@ -56,7 +66,7 @@ func TestUpsertVerifier(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resetVerifierMap()
 
-			err := UpsertVerifier("", "", tt.namespace, tt.objectName, tt.verifierConfig)
+			err = UpsertVerifier("", tt.address, tt.namespace, tt.objectName, tt.verifierConfig)
 			if tt.expectedErr != (err != nil) {
 				t.Fatalf("UpsertVerifier() expected error %v, actual %v", tt.expectedErr, err)
 			}

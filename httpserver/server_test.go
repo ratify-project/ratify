@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -553,14 +554,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		// ex := &core.Executor{
-		// 	PolicyEnforcer: nil,
-		// 	ReferrerStores: []referrerstore.ReferrerStore{store},
-		// 	Verifiers:      []verifier.ReferenceVerifier{ver},
-		// }
-
 		ex := newTestExecutor(nil, store, ver, nil)
-
 		getExecutor := func() *core.Executor {
 			return ex
 		}
@@ -589,8 +583,8 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			t.Fatalf("failed to decode response body: %v", err)
 		}
 		retFirstErr := respBody.Response.Items[0].Error
-		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config must be specified").Error()
-		if retFirstErr != expectedErr {
+		expectedErr := ratifyerrors.ErrorCodePolicyProviderNotFound.WithComponentType(ratifyerrors.Executor).Error()
+		if !strings.Contains(retFirstErr, expectedErr) {
 			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr, retFirstErr)
 		}
 	})

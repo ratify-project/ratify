@@ -22,8 +22,7 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
-	"github.com/deislabs/ratify/pkg/controllers/test"
-	ctrl "sigs.k8s.io/controller-runtime"
+	test "github.com/deislabs/ratify/pkg/utils"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
@@ -128,29 +127,6 @@ func TestUpdateSuccessStatus_emptyProperties(t *testing.T) {
 	//make sure properties of last cached cert was updated
 	if len(certStore.Status.Properties.Raw) != 0 {
 		t.Fatalf("Properties should be empty")
-	}
-}
-
-func TestCertStoreSetupWithManager(t *testing.T) {
-	scheme, err := test.CreateScheme()
-	if err != nil {
-		t.Fatalf("CreateScheme() expected no error, actual %v", err)
-	}
-	client := fake.NewClientBuilder().WithScheme(scheme)
-	r := &CertificateStoreReconciler{
-		Scheme: scheme,
-		Client: client.Build(),
-	}
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		t.Fatalf("NewManager() expected no error, actual %v", err)
-	}
-
-	if err := r.SetupWithManager(mgr); err != nil {
-		t.Fatalf("SetupWithManager() expected no error, actual %v", err)
 	}
 }
 

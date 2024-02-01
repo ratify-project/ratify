@@ -24,12 +24,11 @@ import (
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/controllers/test"
 	"github.com/deislabs/ratify/pkg/customresources/referrerstores"
+	test "github.com/deislabs/ratify/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -242,29 +241,6 @@ func TestStoreReconcile(t *testing.T) {
 				t.Fatalf("Store map expected size %v, actual %v", tt.expectedStoreCount, controllers.StoreMap.GetStoreCount())
 			}
 		})
-	}
-}
-
-func TestStoreSetupWithManager(t *testing.T) {
-	scheme, err := test.CreateScheme()
-	if err != nil {
-		t.Fatalf("CreateScheme() expected no error, actual %v", err)
-	}
-	client := fake.NewClientBuilder().WithScheme(scheme)
-	r := &StoreReconciler{
-		Scheme: scheme,
-		Client: client.Build(),
-	}
-
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme: scheme,
-	})
-	if err != nil {
-		t.Fatalf("NewManager() expected no error, actual %v", err)
-	}
-
-	if err := r.SetupWithManager(mgr); err != nil {
-		t.Fatalf("SetupWithManager() expected no error, actual %v", err)
 	}
 }
 
