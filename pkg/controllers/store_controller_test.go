@@ -16,17 +16,32 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
+	"os"
+	"strings"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const sampleName = "sample"
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
+	dirPath, err := utils.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	var testStoreSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    sampleName,
+		Address: dirPath,
 	}
 
 	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
@@ -42,8 +57,13 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if len(StoreMap) != 0 {
 		t.Fatalf("Store map expected size 0, actual %v", len(StoreMap))
 	}
+	dirPath, err := utils.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
 
-	var testStoreSpec = getOrasStoreSpec()
+	var testStoreSpec = getOrasStoreSpec(sampleName, dirPath)
 
 	if err := storeAddOrReplace(testStoreSpec, "testObject"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
@@ -53,15 +73,68 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	}
 }
 
+func TestWriteStoreStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		store      *configv1beta1.Store
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			store:      &configv1beta1.Store{},
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			store:      &configv1beta1.Store{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &mockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			store:     &configv1beta1.Store{},
+			reconciler: &mockStatusClient{
+				updateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeStoreStatus(context.Background(), tc.reconciler, tc.store, logger, tc.isSuccess, tc.errString)
+		})
+	}
+}
+
+func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
+	resetStoreMap()
+	var resource = "invalidplugin"
+	expectedMsg := "plugin not found"
+	var spec = getInvalidStoreSpec()
+	err := storeAddOrReplace(spec, resource)
+
+	if !strings.Contains(err.Error(), expectedMsg) {
+		t.Fatalf("TestStoreAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
+	dirPath, err := utils.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
+	var testStoreSpec = getOrasStoreSpec(sampleName, dirPath)
 	// add a Store
-
-	var resource = "oras"
-
-	var testStoreSpec = getOrasStoreSpec()
-
-	if err := storeAddOrReplace(testStoreSpec, resource); err != nil {
+	if err := storeAddOrReplace(testStoreSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
 	if len(StoreMap) != 1 {
@@ -70,10 +143,11 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 
 	// modify the Store
 	var updatedSpec = configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    sampleName,
+		Address: dirPath,
 	}
 
-	if err := storeAddOrReplace(updatedSpec, resource); err != nil {
+	if err := storeAddOrReplace(updatedSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
 
@@ -82,7 +156,7 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 		t.Fatalf("Store map should be 1 after replacement, actual %v", len(StoreMap))
 	}
 
-	storeRemove(resource)
+	storeRemove(sampleName)
 
 	if len(StoreMap) != 0 {
 		t.Fatalf("Store map should be 0 after deletion, actual %v", len(StoreMap))
@@ -93,14 +167,22 @@ func resetStoreMap() {
 	StoreMap = map[string]referrerstore.ReferrerStore{}
 }
 
-func getOrasStoreSpec() configv1beta1.StoreSpec {
+func getOrasStoreSpec(pluginName, pluginPath string) configv1beta1.StoreSpec {
 	var parametersString = "{\"authProvider\":{\"name\":\"k8Secrets\",\"secrets\":[{\"secretName\":\"myregistrykey\"}]},\"cosignEnabled\":false,\"useHttp\":false}"
 	var storeParameters = []byte(parametersString)
 
 	return configv1beta1.StoreSpec{
-		Name: "oras",
+		Name:    pluginName,
+		Address: pluginPath,
 		Parameters: runtime.RawExtension{
 			Raw: storeParameters,
 		},
+	}
+}
+
+func getInvalidStoreSpec() configv1beta1.StoreSpec {
+	return configv1beta1.StoreSpec{
+		Name:    "pluginnotfound",
+		Address: "test/path",
 	}
 }

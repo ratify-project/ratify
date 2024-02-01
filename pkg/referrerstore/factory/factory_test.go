@@ -26,6 +26,13 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
+	"github.com/deislabs/ratify/pkg/utils"
+)
+
+const (
+	testStore       = "testStore"
+	sampleName      = "sample"
+	pluginStoreName = "plugin-store"
 )
 
 type TestStoreFactory struct{}
@@ -35,18 +42,24 @@ func (f *TestStoreFactory) Create(_ string, _ config.StorePluginConfig) (referre
 }
 
 func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
+	dirPath, err := utils.CreatePlugin(testStore)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	builtInStores = map[string]StoreFactory{
-		"testStore": &TestStoreFactory{},
+		testStore: &TestStoreFactory{},
 	}
 
 	storeConfig := map[string]interface{}{
-		"name": "testStore",
+		"name": testStore,
 	}
 	storesConfig := config.StoresConfig{
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, dirPath)
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
@@ -66,14 +79,20 @@ func TestCreateStoresFromConfig_BuiltInStores_ReturnsExpected(t *testing.T) {
 }
 
 func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
+	dirPath, err := utils.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
 	storeConfig := map[string]interface{}{
-		"name": "plugin-store",
+		"name": sampleName,
 	}
 	storesConfig := config.StoresConfig{
 		Stores: []config.StorePluginConfig{storeConfig},
 	}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+	stores, err := CreateStoresFromConfig(storesConfig, dirPath)
 
 	if err != nil {
 		t.Fatalf("create stores failed with err %v", err)
@@ -83,7 +102,7 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
 	}
 
-	if stores[0].Name() != "plugin-store" {
+	if stores[0].Name() != "sample" {
 		t.Fatalf("expected to create plugin store")
 	}
 
@@ -95,37 +114,61 @@ func TestCreateStoresFromConfig_PluginStores_ReturnsExpected(t *testing.T) {
 func TestCreateStoresFromConfig_DynamicPluginStores_ReturnsExpected(t *testing.T) {
 	os.Setenv("RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS", "1")
 	featureflag.InitFeatureFlagsFromEnv()
-	storeConfig := map[string]interface{}{
-		"name": "plugin-store",
-		"source": map[string]interface{}{
-			"artifact": "wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1",
+
+	testCases := []struct {
+		name     string
+		artifact string
+	}{
+		{
+			name:     "image specified by tag",
+			artifact: "wabbitnetworks.azurecr.io/test/sample-store-plugin:v1",
+		},
+		{
+			name:     "image specified by digest",
+			artifact: "wabbitnetworks.azurecr.io/test/sample-store-plugin@sha256:96ba9f9636cde32df87d62dcad4e430d055e708b9f173475c5d7468b732d6566",
 		},
 	}
 
-	storesConfig := config.StoresConfig{
-		Stores: []config.StorePluginConfig{storeConfig},
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			storeConfig := map[string]interface{}{
+				"name": pluginStoreName,
+				"source": map[string]interface{}{
+					"artifact": tc.artifact,
+				},
+			}
 
-	stores, err := CreateStoresFromConfig(storesConfig, "")
+			dirPath, err := utils.CreatePlugin(pluginStoreName)
+			if err != nil {
+				t.Fatalf("createPlugin() expected no error, actual %v", err)
+			}
+			defer os.RemoveAll(dirPath)
 
-	if err != nil {
-		t.Fatalf("create stores failed with err %v", err)
-	}
+			storesConfig := config.StoresConfig{
+				Stores: []config.StorePluginConfig{storeConfig},
+			}
+			stores, err := CreateStoresFromConfig(storesConfig, dirPath)
 
-	if len(stores) != 1 {
-		t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
-	}
+			if err != nil {
+				t.Fatalf("create stores failed with err %v", err)
+			}
 
-	if stores[0].Name() != "plugin-store" {
-		t.Fatalf("expected to create plugin store")
-	}
+			if len(stores) != 1 {
+				t.Fatalf("expected to have %d stores, actual count %d", 1, len(stores))
+			}
 
-	if _, ok := stores[0].(*plugin.StorePlugin); !ok {
-		t.Fatalf("type assertion failed expected a plugin store")
-	}
+			if stores[0].Name() != "plugin-store" {
+				t.Fatalf("expected to create plugin store")
+			}
 
-	pluginPath := path.Join(stores[0].GetConfig().PluginBinDirs[0], stores[0].Name())
-	if _, err := os.Stat(pluginPath); errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("downloaded plugin not found in path")
+			if _, ok := stores[0].(*plugin.StorePlugin); !ok {
+				t.Fatalf("type assertion failed expected a plugin store")
+			}
+
+			pluginPath := path.Join(stores[0].GetConfig().PluginBinDirs[0], stores[0].Name())
+			if _, err := os.Stat(pluginPath); errors.Is(err, os.ErrNotExist) {
+				t.Fatalf("downloaded plugin not found in path")
+			}
+		})
 	}
 }
