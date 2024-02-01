@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 
 func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	resetVerifierMap()
-	dirPath, err := createPlugin(sampleName)
+	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -67,7 +67,7 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 		t.Fatalf("Verifier map expected size 0, actual %v", len(VerifierMap))
 	}
 
-	dirPath, err := createPlugin(licenseChecker)
+	dirPath, err := utils.CreatePlugin(licenseChecker)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -97,7 +97,7 @@ func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
 
 func TestVerifier_UpdateAndDelete(t *testing.T) {
 	resetVerifierMap()
-	dirPath, err := createPlugin(licenseChecker)
+	dirPath, err := utils.CreatePlugin(licenseChecker)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}

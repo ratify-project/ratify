@@ -18,7 +18,6 @@ package factory
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/deislabs/ratify/internal/constants"
@@ -26,6 +25,7 @@ import (
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 
+	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/plugin"
@@ -104,8 +104,11 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 }
 
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
-	workingDir, _ := os.Getwd()
-	pluginDir := filepath.Clean(filepath.Join(workingDir, "../../..", "./bin/plugins"))
+	dirPath, err := utils.CreatePlugin("sample")
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
 
 	verifierConfig := map[string]interface{}{
 		"name": "plugin-verifier-0",
@@ -115,7 +118,7 @@ func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T)
 		Verifiers: []config.VerifierConfig{verifierConfig},
 	}
 
-	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, pluginDir, "")
+	verifiers, err := CreateVerifiersFromConfig(verifiersConfig, dirPath, "")
 
 	if err != nil {
 		t.Fatalf("create verifiers failed with err %v", err)
