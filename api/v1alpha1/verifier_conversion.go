@@ -21,6 +21,17 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 )
 
-func Convert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(in *unversioned.VerifierStatus, out *VerifierStatus, s conversion.Scope) error {
+// Convert unversioned VerifierStatus to VerifierStatus of v1alpha1.
+//
+//nolint:revive
+func Convert_unversioned_VerifierStatus_To_v1alpha1_VerifierStatus(in *unversioned.VerifierStatus, out *VerifierStatus, _ conversion.Scope) error {
+	return nil
+}
+
+// Convert unversioned VerifierSpec to VerifierSpec of v1alpha1.
+//
+//nolint:revive
+func Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(spec *unversioned.VerifierSpec, out *VerifierSpec, _ conversion.Scope) error {
+	out.Parameters = spec.Parameters
 	return nil
 }

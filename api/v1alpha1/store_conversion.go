@@ -23,6 +23,9 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 )
 
+// Convert unversioned StoreSpec to VerifieStoreSpecrSpec of v1alpha1.
+//
+//nolint:revive
 func Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(in *unversioned.StoreSpec, out *StoreSpec, _ conversion.Scope) error {
 	out.Name = in.Name
 	out.Address = in.Address
@@ -31,14 +34,9 @@ func Convert_unversioned_StoreSpec_To_v1alpha1_StoreSpec(in *unversioned.StoreSp
 	return nil
 }
 
+// Convert unversioned StoreStatus to StoreStatus of v1alpha1.
+//
+//nolint:revive
 func Convert_unversioned_StoreStatus_To_v1alpha1_StoreStatus(in *unversioned.StoreStatus, out *StoreStatus, _ conversion.Scope) error {
-	return nil
-}
-
-func Convert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, _ conversion.Scope) error {
-	out.Name = in.Name
-	out.Address = in.Address
-	out.ArtifactTypes = in.ArtifactTypes
-	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
 	return nil
 }
