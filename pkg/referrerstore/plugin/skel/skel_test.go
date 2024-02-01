@@ -18,6 +18,8 @@ package skel
 import (
 	"bytes"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -30,8 +32,8 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-const (
-	testStdinData = `{ "name":"skel-test-case", "some": "config" }`
+var (
+	testStdinData = fmt.Sprintf(`{ "name":"skel-test-case", "some": "config","pluginBinDirs": ["%s"]}`, getPluginsDir())
 )
 
 func TestPluginMain_GetBlobContent_ReturnsExpected(t *testing.T) {
@@ -220,7 +222,7 @@ func TestPluginMain_ErrorCases(t *testing.T) {
 	pluginContext.Stdin = strings.NewReader(stdinData)
 	err = pluginContext.pluginMainCore("skel-test-case", "1.0.0", nil, getBlobContent, nil, nil, []string{"1.0.0"})
 	if err == nil || err.Code != types.ErrConfigParsingFailure {
-		t.Fatalf("plugin execution expected to fail with error code %d for invalid config", types.ErrConfigParsingFailure)
+		t.Fatalf("plugin execution expected to fail with error code %d for invalid config, actual error: %s", types.ErrConfigParsingFailure, err)
 	}
 
 	stdinData = ` {"some": "config" }`
@@ -315,4 +317,10 @@ func TestPluginMain_ListReferrers_ErrorCases(t *testing.T) {
 	if err == nil || err.Code != types.ErrArgsParsingFailure {
 		t.Fatalf("plugin execution expected to fail with error code %d for invalid arg", types.ErrArgsParsingFailure)
 	}
+}
+
+func getPluginsDir() string {
+	workingDir, _ := os.Getwd()
+	pluginDir := filepath.Clean(filepath.Join(workingDir, "../../../../", "./bin/plugins/referrerstore/"))
+	return pluginDir
 }

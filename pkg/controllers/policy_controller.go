@@ -88,6 +88,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		return ctrl.Result{}, err
 	}
 
+	writePolicyStatus(ctx, r, &policy, policyLogger, true, "")
 	return ctrl.Result{}, nil
 }
 
@@ -159,13 +160,14 @@ func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *confi
 		updatePolicyErrorStatus(policy, errString)
 	}
 	if statusErr := r.Status().Update(ctx, policy); statusErr != nil {
-		logger.Error(statusErr, ", unbale to update policy error status")
+		logger.Error(statusErr, ", unable to update policy error status")
 	}
 }
 
 func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
 	policy.Status.IsSuccess = true
 	policy.Status.Error = ""
+	policy.Status.BriefError = ""
 }
 
 func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {
