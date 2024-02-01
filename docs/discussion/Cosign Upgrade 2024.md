@@ -139,21 +139,21 @@ spec:
 - Multitenancy considerations
   - Need a separate keys map for namespaced and global certificate store keys
 
-### **Option 2: Renaming CertificateStore to KeyManagementSystem** SELECTED IMPLEMENTATION
+### **Option 2: Renaming CertificateStore to KeyManagementProvider** SELECTED IMPLEMENTATION
 - Same as Option 1 except we introduce a new CRD that will replace `CertificateStore` due to potential naming confusion
-- Is the existing name confusing enough to warrant changing to KeyManagementSystem?
+- Is the existing name confusing enough to warrant changing to KeyManagementProvider?
 - How would we support CRD name change?
-  - Introduce new `KeyManagementSystem` CRD resource and then deprecate `CertificateStore`
+  - Introduce new `KeyManagementProvider` CRD resource and then deprecate `CertificateStore`
 
 #### Proposed Config Changes
 
-Compared to the `CertificateStore`, the `KeyManagementSystem` config spec could be updated to be more flexible. A new `name`` field will be used only in CLI scenarios to mirror CRD name functionality as a unique identifier. This enables multiple KMS of same type to be used.
+Compared to the `CertificateStore`, the `KeyManagementProvider` config spec could be updated to be more flexible. A new `name`` field will be used only in CLI scenarios to mirror CRD name functionality as a unique identifier. This enables multiple KMS of same type to be used.
 
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: KeyManagementSystem
+kind: KeyManagementProvider
 metadata:
-  name: ratify-notation-inline-cert-kms
+  name: ratify-notation-inline-cert-kmprovider
   annotations:
     helm.sh/hook: pre-install,pre-upgrade
     helm.sh/hook-weight: "5"
@@ -173,7 +173,7 @@ CLI Config
   ...
   "keyManagementSystems": {
     {
-      "name": "ratify-notation-inline-cert-kms",
+      "name": "ratify-notation-inline-cert-kmprovider",
       "type": "inline",
       "contentType": "key",
       "value": "---------- BEGIN RSA KEY ------------
@@ -181,7 +181,7 @@ CLI Config
       ---------- END RSA KEY ------------"
     },
     {
-      "name": "ratify-notation-inline-cert-kms-2",
+      "name": "ratify-notation-inline-cert-kmprovider-2",
       "type": "inline",
       "contentType": "key",
       "value": "---------- BEGIN RSA KEY ------------
@@ -272,7 +272,7 @@ Currently, there is only support for a single key per cosign verifier.
   - Cosign only supports validation against a SINGLE key at a time
 
 ### Trust Policy
-Cosign verifier should support multiple trust policies based on the KeyManagementSystems (KMS) enabled and the desired verification scenario. Please refer to [this](#user-scenarios) section for common user scenarios. At a high level users must be able to have:
+Cosign verifier should support multiple trust policies based on the KeyManagementProviders (KMS) enabled and the desired verification scenario. Please refer to [this](#user-scenarios) section for common user scenarios. At a high level users must be able to have:
   - multiple KMS `inline` key resources (each `inline` will have a single key)
   - multiple keys defined in a single AKV KMS
   - multiple KMS `inline` certificate resources (each `inline` may have a single cert or a cert chain)
@@ -314,15 +314,15 @@ spec:
           - application/sarif+json
           - application/spdx+json
         keys: # list of keys that are trusted. Only the keys in KMS are considered
-          - kms: inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementSystem resource specified
-          - kms: inline-keys-2
-          - kms: akv-wabbit-networks
+          - provider: inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementProvider resource specified
+          - provider: inline-keys-2
+          - provider: akv-wabbit-networks
             name: wabbit-networks-io # OPTIONAL: key name
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
-          - kms: inline-certs-1
+          - provider: inline-certs-1
         tsaCerts:
-          - kms: inline-certs-tsa-1
+          - provider: inline-certs-tsa-1
         tLogVerify: true # transparency log verification (default to false)
         rekorURL: customrekor.io # rekor URL for transparency log verification (default to sigstore's public-good endpoint)
         enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
@@ -332,17 +332,17 @@ spec:
         enforcement: skip
 ```
 
-To start, only a single `trustPolicies` entry + `keys` with `kms`, `name`, and `version` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
+To start, only a single `trustPolicies` entry + `keys` with `provider`, `name`, and `version` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
 ### User Scenarios
 
 #### 1 Signature, 2 trusted keys
 Bob has a container image he built. His trusted pool contains 2 self-managed keys to sign the image using `cosign`. Only ONE of the keys is used for signing at a time. There is only ONE signature. Bob's organization utilizes and trusts both keys. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature using AT LEAST one key from a trusted pool.
 
 - Bob installs Ratify on the cluster
-- Bob applies 2 new inline `KeyManagementSystem` CR onto the cluster, `inline-key-1` & `inline-key-2`. Each CR will have a key Bob's organization trusts.
+- Bob applies 2 new inline `KeyManagementProvider` CR onto the cluster, `inline-key-1` & `inline-key-2`. Each CR will have a key Bob's organization trusts.
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: KeyManagementSystem
+kind: KeyManagementProvider
 metadata:
   name: inline-key-1
   annotations:
@@ -360,7 +360,7 @@ spec:
 ```
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: KeyManagementSystem
+kind: KeyManagementProvider
 metadata:
   name: inline-key-2
   annotations:
@@ -392,11 +392,11 @@ spec:
     trustPolicies:
       - name: multiple-trusted-keys
         keys:
-          - kms: inline-key-1
-          - kms: inline-key-2
+          - provider: inline-key-1
+          - provider: inline-key-2
 ```
-- Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementSystem `inline-key-1`. Pod is verified and created successfully.
-- Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementSystem `inline-key-2`. Pod is verified and created successfully.
+- Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementProvider `inline-key-1`. Pod is verified and created successfully.
+- Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementProvider `inline-key-2`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature signed with key NOT in `inline-key-1` or `inline-key-2`. Pod FAILS verification and blocked.
 
 #### 2 Signatures but only 1 is from a key that he trusts
@@ -404,10 +404,10 @@ spec:
 Bob has a container image that he imported from another registry. An existing cosign signature, signed by an entity he doesn't trust, is already associated with the image. After vetting the image, he utilizes 1 self-managed key to sign the image using `cosign`. Now the image has 2 cosign signatures. Bob only trusts his key. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature using only HIS key that he trusts.
 
 - Bob installs Ratify on the cluster
-- Bob applies a new inline `KeyManagementSystem` CR onto the cluster, `inline-key`
+- Bob applies a new inline `KeyManagementProvider` CR onto the cluster, `inline-key`
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: KeyManagementSystem
+kind: KeyManagementProvider
 metadata:
   name: inline-key
   annotations:
@@ -440,9 +440,9 @@ spec:
     trustPolicies:
       - name: single-trusted-key
         keys:
-          - kms: inline-key
+          - provider: inline-key
 ```
-- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, one of which is signed with key in KeyManagementSystem `inline-key`. Pod is verified and created successfully.
+- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, one of which is signed with key in KeyManagementProvider `inline-key`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature(s) signed with a different key in `inline-key`. Pod FAILS verification and blocked.
 
 #### 2 Signatures 2 Keys: both keys must be used
@@ -450,10 +450,10 @@ spec:
 Bob has a container image that is produced from a build pipeline and tested via a testing pipeline. After each pipeline, the image is signed with cosign using a SEPARATE key. Now the image has 2 cosign signatures. Bob trusts both keys and requires BOTH keys to be used. Bob wants to ensure all container images entering his K8s cluster are verified to have a valid cosign signature from his build AND test pipeline.
 
 - Bob installs Ratify on the cluster
-- Bob applies a new inline `KeyManagementSystem` CR onto the cluster, `inline-key-build` & `inline-key-test`
+- Bob applies a new inline `KeyManagementProvider` CR onto the cluster, `inline-key-build` & `inline-key-test`
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: KeyManagementSystem
+kind: KeyManagementProvider
 metadata:
   name: inline-key-build
   annotations:
@@ -471,7 +471,7 @@ spec:
 ```
 ```yaml
 apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: KeyManagementSystem
+kind: KeyManagementProvider
 metadata:
   name: inline-key-test
   annotations:
@@ -504,12 +504,12 @@ spec:
     trustPolicies:
       - name: build-test-verification
         keys:
-          - kms: inline-key-build
-          - kms: inline-key-test
+          - provider: inline-key-build
+          - provider: inline-key-test
         enforcement: all
 ```
-- Bob attempts to deploy a pod from the vetted image that has 1 cosign signature, which is signed with key in KeyManagementSystem `inline-key-build`. Pod FAILS verification and blocked.
-- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, which is signed with keys in KeyManagementSystem `inline-key-build` & `inline-key-test`. Pod passes verification and is created.
+- Bob attempts to deploy a pod from the vetted image that has 1 cosign signature, which is signed with key in KeyManagementProvider `inline-key-build`. Pod FAILS verification and blocked.
+- Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, which is signed with keys in KeyManagementProvider `inline-key-build` & `inline-key-test`. Pod passes verification and is created.
 
 > **NOTE**: Based on Cosign's own verification implementation, there does not seem to be a way to enforce that ALL signatures found are valid. This behavior is unchartered as far as we can tell and would require Ratify to determine if we want to support this directly. For that reason, the strict ALL signature scenario is not yet included.
 
@@ -541,15 +541,17 @@ Verification flow per key:
 - Verifier is then passed to cosign's `VerifySignature()` method as a verification option
 
 ## Dev Work Items (WIP)
-- Introduce new `KeyManagementSystem` CRD to replace `CertificateStore` (~ 3 weeks)
+- Introduce new `KeyManagementProvider` CRD to replace `CertificateStore` (~ 2 weeks)
   - maintain old `CertificateStore` controllers and source code for backwards compat
-  - define new `KeyManagementSystem` CRD + controllers
+  - define new `KeyManagementProvider` CRD + controllers
   - port certificate providers implementation to new `KMS` object
   - refactor to factory paradigm
   - refactor to define rigid config schema (currently, only a generic map of attributes passed)
   - add plugin support
-  - add enforcement so only `KeyManagementSystem` OR `CertificateStore` can be enabled at a time
-- Add Key support to `KeyManagementSystem` (~ 2 weeks)
+  - add enforcement so only `KeyManagementProvider` OR `CertificateStore` can be enabled at a time
+- Add Plugin support to `KeyManagementProvider` (~ 1 week)
+- Add deprecation headers and warnings to `CertificateStore` CRD and code files (~ 0.5 weeks)
+- Add Key support to `KeyManagementProvider` (~ 2 weeks)
   - update API
   - update Inline provider with `type` field
   - update AKV provider for `key` fetching logic
@@ -561,7 +563,7 @@ Verification flow per key:
 - Cosign Verifier: migrate to a built in verifier (~ 1 week)
 - Cosign verifier multi key support (~ 2.5 weeks)
   - add `trustPolicies`
-    - support multiple `keys` each with `kms`, `name`, and `version`
+    - support multiple `keys` each with `provider`, `name`, and `version`
   - add multi key verification logic including concurrent signature verification using routines
   - preserve existing file path based key support for backwards compat
 - Add RSA and ED25519 key support (~ 0.5 week)
@@ -569,9 +571,12 @@ Verification flow per key:
   - pick cosign verifier according to format
 - Add docs and walkthroughs (~ 1 week)
   - redo cosign walk through
+  - update all walkthroughs and samples to use `KeyManagementProvider`
+  - add reference docs for `KeyManagementProvider`
+  - mark `CertificateStore` docs as deprecated
 - New e2e tests for different scenarios (~ 1 week)
-- Add `KeyManagementSystem` support to CLI (~ 2 weeks)
-  - Update  `verify` command group to create `KeyManagementSystem` from config
+- Add `KeyManagementProvider` support to CLI (~ 2 weeks)
+  - Update  `verify` command group to create `KeyManagementProvider` from config
   - Update AKV provider for non Workload Identity auth
 
 ## Future Considerations
