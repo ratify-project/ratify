@@ -28,7 +28,6 @@ import (
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
-	"golang.org/x/exp/slices"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -54,12 +53,7 @@ const (
 	typeSigningAuthority = string(truststore.TypeSigningAuthority)
 )
 
-var (
-	trustStoreTypes = []string{
-		typeCA,
-		typeSigningAuthority,
-	}
-)
+var trustStoreTypes = []string{typeCA, typeSigningAuthority}
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
 type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to have unique type name
@@ -207,10 +201,6 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
-func isValidTrustStoreType(storeType string) bool {
-	return slices.Contains(trustStoreTypes, storeType)
-}
-
 func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
@@ -222,22 +212,12 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 
-	// convert <store>:<certs> to ca:<store><certs>
-	// TBD if have both legacy and new types of store struct, then throw err
-	needConvert := true
-	for _, storeType := range trustStoreTypes {
-		if _, ok := conf.VerificationCertStores[storeType]; ok {
-			needConvert = false
-			break
+	if certStoresLen := len(conf.VerificationCertStores); certStoresLen > 0 {
+		// convert <store>:<certs> to ca:<store><certs> if no store type is provided
+		if err := verificationCertStoresConversion(conf); err != nil {
+			return nil, err
 		}
-	}
-	if needConvert && len(conf.VerificationCertStores) > 0 {
-		conf.VerificationCertStores = map[string]any{
-			typeCA: conf.VerificationCertStores,
-		}
-	}
-	// append namespace to uniquely identify the certstore
-	if len(conf.VerificationCertStores) > 0 {
+		// append namespace to uniquely identify the certstore
 		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
 		conf.VerificationCertStores, err = prependNamespaceToCertStore(conf.VerificationCertStores, namespace)
 		if err != nil {
@@ -248,6 +228,26 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
 	return conf, nil
+}
+
+// convert <store>:<certs> to ca:<store><certs>
+func verificationCertStoresConversion(conf *NotationPluginVerifierConfig) error {
+	storeTypeAsKeyCount := 0
+	certStoresLen := len(conf.VerificationCertStores)
+	for _, storeType := range trustStoreTypes {
+		if _, ok := conf.VerificationCertStores[storeType]; ok {
+			storeTypeAsKeyCount++
+		}
+	}
+
+	if storeTypeAsKeyCount == 0 {
+		conf.VerificationCertStores = map[string]any{
+			typeCA: conf.VerificationCertStores,
+		}
+	} else if certStoresLen > storeTypeAsKeyCount {
+		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, fmt.Sprintf("failed to parse to VerificationCertStores from: %+v. which using a mix of certStoresByType and legacy certStores", conf.VerificationCertStores), re.HideStackTrace)
+	}
+	return nil
 }
 
 // signatures should not have nested references

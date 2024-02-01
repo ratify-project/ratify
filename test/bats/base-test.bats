@@ -286,16 +286,6 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
 
-    # add the leaf certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
-    assert_success
-    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-
-    # verify that the image cannot be run with a leaf cert
-    run kubectl run demo-leaf2 --namespace default --image=registry:5000/notation:leafSigned
-    assert_failure
-
     # add the root certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
@@ -305,12 +295,22 @@ RATIFY_NAMESPACE=gatekeeper-system
     # configure the notation verifier to use the inline certificate store
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
     assert_success
-    
-    # wait for the httpserver cache to be invalidated
-    sleep 15
+
     # verify that the image can be run with a root cert
     run kubectl run demo-leaf --namespace default --image=registry:5000/notation:leafSigned
     assert_success
+
+    # add the root certificate as an inline certificate store
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    assert_success
+    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+
+    # wait for the httpserver cache to be invalidated
+    sleep 15
+    # verify that the image cannot be run with a leaf cert
+    run kubectl run demo-leaf2 --namespace default --image=registry:5000/notation:leafSigned
+    assert_failure
 }
 
 @test "validate ratify/gatekeeper tls cert rotation" {

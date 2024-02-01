@@ -25,6 +25,7 @@ import (
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	"golang.org/x/exp/slices"
 )
 
 var logOpt = logger.Option{
@@ -42,7 +43,7 @@ type trustStore struct {
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s *trustStore) GetCertificates(ctx context.Context, trustStoreTypeInput truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	var certs []*x509.Certificate
-	if !isValidTrustStoreType(string(trustStoreTypeInput)) {
+	if !isValidTrustStoreType(trustStoreTypeInput) {
 		trustStoreTypeInput = truststore.TypeCA
 	}
 	certs, err := s.getCertificatesInternal(ctx, trustStoreTypeInput, namedStore, controllers.GetCertificatesMap())
@@ -103,4 +104,8 @@ func (s *trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certif
 		return nil, errors.New("valid certificates must be provided, only CA certificates or self-signed signing certificates are supported")
 	}
 	return filteredCerts, nil
+}
+
+func isValidTrustStoreType(storeType truststore.Type) bool {
+	return slices.Contains(trustStoreTypes, string(storeType))
 }

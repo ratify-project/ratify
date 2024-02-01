@@ -43,7 +43,6 @@ SLEEP_TIME=1
     helm uninstall ratify --namespace gatekeeper-system
     run kubectl delete --namespace gatekeeper-system secret ratify-tls
     assert_success
-    sleep 10
     make e2e-helm-deploy-ratify-without-tls-certs CERT_ROTATION_ENABLED=true GATEKEEPER_VERSION=${GATEKEEPER_VERSION}
     sleep 5
 

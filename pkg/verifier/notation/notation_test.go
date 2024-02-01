@@ -300,6 +300,54 @@ func TestParseVerifierConfig(t *testing.T) {
 	}
 }
 
+func TestVerificationCertStoresConversion(t *testing.T) {
+	certStoresSample := make(map[string]interface{})
+	certStoresSample["ca"] = map[string]interface{}{
+		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	}
+	certStoresSampleNeedConvert := make(map[string]interface{})
+	certStoresSampleNeedConvert["certs"] = []string{
+		"defaultns/akv1", "testns/akv2",
+	}
+	certStoresSampleNeedConvert["ca"] = map[string]interface{}{
+		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	}
+	tests := []struct {
+		name      string
+		configMap *NotationPluginVerifierConfig
+		expectErr bool
+	}{
+		{
+			name: "no conversion needed",
+			configMap: &NotationPluginVerifierConfig{
+				Name:                   test,
+				VerificationCertStores: certStoresSample,
+			},
+			expectErr: false,
+		},
+		{
+			name: "conversion needed",
+			configMap: &NotationPluginVerifierConfig{
+				Name:                   test,
+				VerificationCertStores: certStoresSampleNeedConvert,
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := verificationCertStoresConversion(tt.configMap)
+
+			if (err != nil) != tt.expectErr {
+				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
+			}
+		})
+	}
+}
+
 func TestPrependNamspaceToCertStores(t *testing.T) {
 	certStoresSample := make(map[string]interface{})
 	certStoresSample["ca"] = map[string]interface{}{
