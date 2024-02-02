@@ -41,8 +41,6 @@ type trustStore struct {
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s *trustStore) GetCertificates(ctx context.Context, trustStoreTypeInput truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	var certs []*x509.Certificate
-
 	certs, err := s.getCertificatesInternal(ctx, trustStoreTypeInput, namedStore, controllers.GetCertificatesMap())
 	if err != nil {
 		return nil, err
@@ -64,7 +62,7 @@ func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType trus
 				certs = append(certs, result...)
 			}
 			if len(certs) == 0 {
-				return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
+				return nil, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
 			}
 		} else {
 			logger.GetLogger(ctx, logOpt).Debugf("unable to fetch certGroup from collection: %+v in type: %v", certStores[namedStore], storeType)

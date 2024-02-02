@@ -318,7 +318,7 @@ func TestParseVerifierConfig(t *testing.T) {
 	}
 }
 
-func TestVerificationCertStoresConversion(t *testing.T) {
+func TestConvertVerificationCertsStores(t *testing.T) {
 	certStoresSample := make(map[string]interface{})
 	certStoresSample["ca"] = map[string]interface{}{
 		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
@@ -357,7 +357,7 @@ func TestVerificationCertStoresConversion(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := verificationCertStoresConversion(tt.configMap)
+			err := convertVerificationCertsStores(tt.configMap)
 
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)

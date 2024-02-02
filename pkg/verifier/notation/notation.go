@@ -47,13 +47,13 @@ import (
 )
 
 const (
-	verifierType         = "notation"
-	defaultCertPath      = "ratify-certs/notation/truststore"
-	typeCA               = string(truststore.TypeCA)
-	typeSigningAuthority = string(truststore.TypeSigningAuthority)
+	verifierType                      = "notation"
+	defaultCertPath                   = "ratify-certs/notation/truststore"
+	trustStoreTypeCA                  = string(truststore.TypeCA)
+	trustStoreTypeypeSigningAuthority = string(truststore.TypeSigningAuthority)
 )
 
-var trustStoreTypes = []string{typeCA, typeSigningAuthority}
+var trustStoreTypes = []string{trustStoreTypeCA, trustStoreTypeypeSigningAuthority}
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
 type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to have unique type name
@@ -63,7 +63,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
 	// VerificationCertStores is map defining which keyvault certificates belong to which trust store name and its trust store type.
-	// e.g.
+	// possible concrete type: map[string]map[string][]string
 	// {
 	// 	"ca": {
 	// 		"certs": ["kv1", "kv2"],
@@ -71,6 +71,10 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 	// 	"signingauthority": {
 	// 		"certs": ["kv3"]
 	// 	},
+	// }
+	// possible concrete type: map[string][]string
+	// {
+	// 	"ca": ["kv1", "kv2"],
 	// }
 	VerificationCertStores map[string]interface{} `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
@@ -212,9 +216,9 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 
-	if certStoresLen := len(conf.VerificationCertStores); certStoresLen > 0 {
+	if len(conf.VerificationCertStores) > 0 {
 		// convert <store>:<certs> to ca:<store><certs> if no store type is provided
-		if err := verificationCertStoresConversion(conf); err != nil {
+		if err := convertVerificationCertsStores(conf); err != nil {
 			return nil, err
 		}
 		// append namespace to uniquely identify the certstore
@@ -230,10 +234,9 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	return conf, nil
 }
 
-// convert <store>:<certs> to ca:<store><certs>
-func verificationCertStoresConversion(conf *NotationPluginVerifierConfig) error {
+// convertVerificationCertsStores converts <store>:<certs> to ca:<store><certs> if the structure does not match the latest spec
+func convertVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
 	storeTypeAsKeyCount := 0
-	certStoresLen := len(conf.VerificationCertStores)
 	for _, storeType := range trustStoreTypes {
 		if _, ok := conf.VerificationCertStores[storeType]; ok {
 			storeTypeAsKeyCount++
@@ -242,9 +245,9 @@ func verificationCertStoresConversion(conf *NotationPluginVerifierConfig) error 
 
 	if storeTypeAsKeyCount == 0 {
 		conf.VerificationCertStores = map[string]any{
-			typeCA: conf.VerificationCertStores,
+			trustStoreTypeCA: conf.VerificationCertStores,
 		}
-	} else if certStoresLen > storeTypeAsKeyCount {
+	} else if len(conf.VerificationCertStores) > storeTypeAsKeyCount {
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, fmt.Sprintf("failed to parse to VerificationCertStores from: %+v. which using a mix of certStoresByType and legacy certStores", conf.VerificationCertStores), re.HideStackTrace)
 	}
 	return nil
