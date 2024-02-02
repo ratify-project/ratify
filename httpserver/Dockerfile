@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG BUILDERIMAGE="golang:1.20"
+ARG BUILDERIMAGE="golang:1.21"
 ARG BASEIMAGE="gcr.io/distroless/static:nonroot"
 
 FROM --platform=$BUILDPLATFORM $BUILDERIMAGE as builder
