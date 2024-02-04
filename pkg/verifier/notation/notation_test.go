@@ -204,26 +204,27 @@ func TestCanVerify(t *testing.T) {
 }
 
 func TestParseVerifierConfig(t *testing.T) {
-	certStoresSample := make(map[string]interface{})
-	certStoresSample["ca"] = map[string]interface{}{
-		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	certStoresSample := make(map[string]map[string][]string)
+	certStoresSample["ca"] = map[string][]string{
+		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
-	certStoresSampleNeedConvert := make(map[string]interface{})
+	certStoresSampleNeedConvert := make(map[string][]string)
 	certStoresSampleNeedConvert["certs"] = []string{
 		"defaultns/akv1", "akv2",
 	}
-	certStoresSampleNeedConvertExpected := make(map[string]interface{})
-	certStoresSampleNeedConvertExpected["ca"] = map[string]interface{}{
-		"certs": []interface{}{"defaultns/akv1", "testns/akv2"},
+	certStoresSampleNeedConvertExpected := make(map[string]map[string][]string)
+	certStoresSampleNeedConvertExpected["ca"] = map[string][]string{
+		"certs": {"defaultns/akv1", "testns/akv2"},
 	}
-	certStoresSampleMixConfig := make(map[string]interface{})
-	certStoresSampleMixConfig["certs"] = []string{
-		"defaultns/akv1", "akv2",
-	}
-	certStoresSampleMixConfig["ca"] = map[string]interface{}{
-		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	certStoresSampleMixConfig := make(map[string]map[string][]string)
+	certStoresSampleMixConfigLegacy :=
+		map[string][]string{"certs": {
+			"defaultns/akv1", "akv2",
+		}}
+	certStoresSampleMixConfig["ca"] = map[string][]string{
+		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
 	tests := []struct {
 		name      string
@@ -266,15 +267,15 @@ func TestParseVerifierConfig(t *testing.T) {
 		{
 			name: "successfully parsed with specified cert stores",
 			configMap: map[string]interface{}{
-				"name":                   test,
-				"verificationCerts":      []string{testPath},
-				"verificationCertStores": certStoresSample,
+				"name":                      test,
+				"verificationCerts":         []string{testPath},
+				"newVerificationCertStores": certStoresSample,
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
-				Name:                   test,
-				VerificationCerts:      []string{testPath, defaultCertDir},
-				VerificationCertStores: certStoresSample,
+				Name:                      test,
+				VerificationCerts:         []string{testPath, defaultCertDir},
+				NewVerificationCertStores: certStoresSample,
 			},
 		},
 		{
@@ -286,17 +287,18 @@ func TestParseVerifierConfig(t *testing.T) {
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
-				Name:                   test,
-				VerificationCerts:      []string{testPath, defaultCertDir},
-				VerificationCertStores: certStoresSampleNeedConvertExpected,
+				Name:                      test,
+				VerificationCerts:         []string{testPath, defaultCertDir},
+				NewVerificationCertStores: certStoresSampleNeedConvertExpected,
 			},
 		},
 		{
 			name: "false parsed with specified cert stores with storeType conversion",
 			configMap: map[string]interface{}{
-				"name":                   test,
-				"verificationCerts":      []string{testPath},
-				"verificationCertStores": certStoresSampleMixConfig,
+				"name":                      test,
+				"verificationCerts":         []string{testPath},
+				"verificationCertStores":    certStoresSampleMixConfigLegacy,
+				"newVerificationCertStores": certStoresSampleMixConfig,
 			},
 			expectErr: true,
 			expect:    nil,
@@ -318,19 +320,19 @@ func TestParseVerifierConfig(t *testing.T) {
 	}
 }
 
-func TestConvertVerificationCertsStores(t *testing.T) {
-	certStoresSample := make(map[string]interface{})
-	certStoresSample["ca"] = map[string]interface{}{
-		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+func TestNormalizeVerificationCertsStores(t *testing.T) {
+	certStoresSample := make(map[string]map[string][]string)
+	certStoresSample["ca"] = map[string][]string{
+		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
-	certStoresSampleNeedConvert := make(map[string]interface{})
-	certStoresSampleNeedConvert["certs"] = []string{
-		"defaultns/akv1", "testns/akv2",
+	certStoresSampleNeedConvertLegacy := map[string][]string{
+		"certs": {"defaultns/akv1", "testns/akv2"},
 	}
-	certStoresSampleNeedConvert["ca"] = map[string]interface{}{
-		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	certStoresSampleNeedConvert := make(map[string]map[string][]string)
+	certStoresSampleNeedConvert["ca"] = map[string][]string{
+		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
 	tests := []struct {
 		name      string
@@ -340,16 +342,17 @@ func TestConvertVerificationCertsStores(t *testing.T) {
 		{
 			name: "no conversion needed",
 			configMap: &NotationPluginVerifierConfig{
-				Name:                   test,
-				VerificationCertStores: certStoresSample,
+				Name:                      test,
+				NewVerificationCertStores: certStoresSample,
 			},
 			expectErr: false,
 		},
 		{
 			name: "conversion needed",
 			configMap: &NotationPluginVerifierConfig{
-				Name:                   test,
-				VerificationCertStores: certStoresSampleNeedConvert,
+				Name:                      test,
+				VerificationCertStores:    certStoresSampleNeedConvertLegacy,
+				NewVerificationCertStores: certStoresSampleNeedConvert,
 			},
 			expectErr: true,
 		},
@@ -367,30 +370,30 @@ func TestConvertVerificationCertsStores(t *testing.T) {
 }
 
 func TestPrependNamspaceToCertStores(t *testing.T) {
-	certStoresSample := make(map[string]interface{})
-	certStoresSample["ca"] = map[string]interface{}{
-		"cert-ca":  []interface{}{"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": []interface{}{"testns/akv3", "testns/akv4"},
+	certStoresSample := make(map[string]map[string][]string)
+	certStoresSample["ca"] = map[string][]string{
+		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
+		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
 
 	tests := []struct {
-		name                   string
-		verificationCertStores map[string]interface{}
-		namespace              string
-		expectErr              bool
-		expect                 map[string]interface{}
+		name                      string
+		newVerificationCertStores map[string]map[string][]string
+		namespace                 string
+		expectErr                 bool
+		expect                    map[string]map[string][]string
 	}{
 		{
-			name:                   "no namespace value provided",
-			verificationCertStores: certStoresSample,
-			namespace:              "",
-			expectErr:              true,
-			expect:                 nil,
+			name:                      "no namespace value provided",
+			newVerificationCertStores: certStoresSample,
+			namespace:                 "",
+			expectErr:                 true,
+			expect:                    nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			verificationCertStores, err := prependNamespaceToCertStore(tt.verificationCertStores, tt.namespace)
+			verificationCertStores, err := prependNamespaceToCertStore(tt.newVerificationCertStores, tt.namespace)
 
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)

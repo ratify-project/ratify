@@ -33,7 +33,7 @@ var logOpt = logger.Option{
 
 type trustStore struct {
 	certPaths        []string
-	certStoresByType map[string]interface{}
+	certStoresByType map[string]map[string][]string
 }
 
 // trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v1.0.0-rc.3/verifier/truststore#X509TrustStore]
@@ -51,11 +51,11 @@ func (s *trustStore) GetCertificates(ctx context.Context, trustStoreType trustst
 func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 	// certs configured for this namedStore overrides cert path
-	if certStores, ok := s.certStoresByType[string(storeType)].(map[string]interface{}); ok {
-		if certGroup := certStores[namedStore].([]any); len(certGroup) > 0 {
+	if certStores, ok := s.certStoresByType[string(storeType)]; ok {
+		if certGroup := certStores[namedStore]; len(certGroup) > 0 {
 			for _, certStore := range certGroup {
 				logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-				result := certificatesMap[certStore.(string)]
+				result := certificatesMap[certStore]
 				if len(result) == 0 {
 					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
 				}
