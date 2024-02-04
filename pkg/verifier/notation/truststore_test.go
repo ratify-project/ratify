@@ -44,7 +44,7 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 
 func TestGetCertificates_EmptyCertStore(t *testing.T) {
 	certStore := make(map[string]map[string][]string)
-	certStore["ca"] = map[string][]string{"store1": []string{}}
+	certStore["ca"] = map[string][]string{"store1": {}}
 	store := &trustStore{
 		certStoresByType: certStore,
 	}
