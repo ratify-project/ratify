@@ -74,7 +74,7 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 	// }
 	// possible concrete type: map[string][]string
 	// {
-	// 	"ca": ["kv1", "kv2"],
+	// 	"certs": ["kv1", "kv2"],
 	// }
 	VerificationCertStores map[string]interface{} `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
@@ -218,7 +218,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 
 	if len(conf.VerificationCertStores) > 0 {
 		// convert <store>:<certs> to ca:<store><certs> if no store type is provided
-		if err := convertVerificationCertsStores(conf); err != nil {
+		if err := normalizeVerificationCertsStores(conf); err != nil {
 			return nil, err
 		}
 		// append namespace to uniquely identify the certstore
@@ -234,20 +234,20 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 	return conf, nil
 }
 
-// convertVerificationCertsStores converts <store>:<certs> to ca:<store><certs> if the structure does not match the latest spec
-func convertVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
-	storeTypeAsKeyCount := 0
+// normalizeVerificationCertsStores converts <store>:<certs> to ca:<store><certs> if the structure does not match the latest spec
+func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
+	storeTypeCountInConfig := 0
 	for _, storeType := range trustStoreTypes {
 		if _, ok := conf.VerificationCertStores[storeType]; ok {
-			storeTypeAsKeyCount++
+			storeTypeCountInConfig++
 		}
 	}
 
-	if storeTypeAsKeyCount == 0 {
+	if storeTypeCountInConfig == 0 {
 		conf.VerificationCertStores = map[string]any{
 			trustStoreTypeCA: conf.VerificationCertStores,
 		}
-	} else if len(conf.VerificationCertStores) > storeTypeAsKeyCount {
+	} else if len(conf.VerificationCertStores) > storeTypeCountInConfig {
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, fmt.Sprintf("failed to parse to VerificationCertStores from: %+v. which using a mix of certStoresByType and legacy certStores", conf.VerificationCertStores), re.HideStackTrace)
 	}
 	return nil
