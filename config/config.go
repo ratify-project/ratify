@@ -32,7 +32,7 @@ import (
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/homedir"
 	pcConfig "github.com/deislabs/ratify/pkg/policyprovider/config"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
 	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
 	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"

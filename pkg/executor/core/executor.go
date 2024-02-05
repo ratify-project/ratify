@@ -180,7 +180,6 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 	var verifyResults []interface{}
 	var isSuccess = true
 	for _, verifier := range executor.GetVerifiers(ctxUtils.GetNamespace(ctx)) {
-
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)

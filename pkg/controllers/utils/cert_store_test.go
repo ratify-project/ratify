@@ -99,5 +99,4 @@ func TestGetCertificatesMap(t *testing.T) {
 	if certs := GetCertificatesMap(ctx); len(certs) != 1 {
 		t.Fatalf("Expected 1 certificate store, got %d", len(certs))
 	}
-
 }

@@ -84,13 +84,11 @@ var (
 		"version": "1.0",
 		"trustPolicies": []map[string]interface{}{
 			{
-				"name":           "default",
-				"registryScopes": []string{"*"},
-				"signatureVerification": map[string]string{
-					"level": "strict",
-				},
-				"trustStores":       []string{"ca:certs"},
-				"trustedIdentities": []string{"*"},
+				"name":                  "default",
+				"registryScopes":        []string{"*"},
+				"signatureVerification": map[string]string{"level": "strict"},
+				"trustStores":           []string{"ca:certs"},
+				"trustedIdentities":     []string{"*"},
 			},
 		},
 	}

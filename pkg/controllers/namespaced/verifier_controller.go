@@ -22,13 +22,13 @@ import (
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/controllers"
 
+	"github.com/deislabs/ratify/internal/constants"
 	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"github.com/deislabs/ratify/internal/constants"
 )
 
 // VerifierReconciler reconciles a Verifier object

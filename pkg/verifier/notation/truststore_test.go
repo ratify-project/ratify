@@ -88,7 +88,6 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	if len(result) != 0 {
 		t.Fatalf("expected no certStore selected")
 	}
-
 }
 
 func TestGetCertificates_certPath(t *testing.T) {
