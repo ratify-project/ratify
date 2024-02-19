@@ -49,7 +49,7 @@ require (
 	google.golang.org/grpc v1.61.0
 	google.golang.org/protobuf v1.32.0
 	k8s.io/api v0.28.6
-	k8s.io/apimachinery v0.28.6
+	k8s.io/apimachinery v0.28.7
 	k8s.io/client-go v0.28.6
 	oras.land/oras-go/v2 v2.3.1
 )
