@@ -26,8 +26,8 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-// Checks K8s Docker Json Config Secret is properly extracted and
-// credentials returned when Provide is called
+// TestResolveCredentialFromSecret_K8SecretDockerConfigJson_ReturnsExpected checks
+// K8s Docker Json Config Secret is properly extracted and credentials returned when Provide is called
 func TestResolveCredentialFromSecret_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
 	testSecret.Data = make(map[string][]byte)
@@ -46,6 +46,8 @@ func TestResolveCredentialFromSecret_K8SecretDockerConfigJson_ReturnsExpected(t 
 	}
 }
 
+// TestResolveCredentialFromSecret_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected checks
+// K8s Docker Json Config Secret is properly extracted and credentials returned when Provide is called with an identity token
 func TestResolveCredentialFromSecret_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected(t *testing.T) {
 	var testSecret core.Secret
 	testSecret.Data = make(map[string][]byte)
