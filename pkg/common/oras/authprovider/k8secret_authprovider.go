@@ -40,7 +40,7 @@ type k8SecretProviderFactory struct{}
 type k8SecretAuthProvider struct {
 	ratifyNamespace  string
 	config           k8SecretAuthProviderConf
-	clusterClientSet *kubernetes.Clientset
+	clusterClientSet kubernetes.Interface
 }
 
 type secretConfig struct {
