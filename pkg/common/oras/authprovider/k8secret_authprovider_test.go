@@ -16,6 +16,7 @@ limitations under the License.
 package authprovider
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -33,7 +34,7 @@ func TestProvide_K8SecretDockerConfigJson_ReturnsExpected(t *testing.T) {
 
 	var k8secretprovider k8SecretAuthProvider
 
-	authConfig, err := k8secretprovider.resolveCredentialFromSecret("index.docker.io", &testSecret)
+	authConfig, err := k8secretprovider.resolveCredentialFromSecret(context.Background(), "index.docker.io", &testSecret)
 	if err != nil {
 		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
@@ -51,7 +52,7 @@ func TestProvide_K8SecretDockerConfigJsonWithIdentityToken_ReturnsExpected(t *te
 
 	var k8secretprovider k8SecretAuthProvider
 
-	authConfig, err := k8secretprovider.resolveCredentialFromSecret("index.docker.io", &testSecret)
+	authConfig, err := k8secretprovider.resolveCredentialFromSecret(context.Background(), "index.docker.io", &testSecret)
 	if err != nil {
 		t.Fatalf("resolveCredentialFromSecret failed to get credential with err %v", err)
 	}
@@ -70,7 +71,7 @@ func TestProvide_K8SecretNonExistentRegistry_ReturnsExpected(t *testing.T) {
 
 	var k8secretprovider k8SecretAuthProvider
 
-	if _, err := k8secretprovider.resolveCredentialFromSecret("nonexistent.ghcr.io", &testSecret); !errors.Is(err, ratifyerrors.ErrorCodeNoMatchingCredential) {
+	if _, err := k8secretprovider.resolveCredentialFromSecret(context.Background(), "nonexistent.ghcr.io", &testSecret); !errors.Is(err, ratifyerrors.ErrorCodeNoMatchingCredential) {
 		t.Fatalf("resolveCredentialFromSecret should have failed to get credential with err %v but returned err %v", ratifyerrors.ErrorCodeNoMatchingCredential, err)
 	}
 }
