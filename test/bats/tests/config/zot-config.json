@@ -1,0 +1,14 @@
+{
+    "Storage": {
+      "RootDirectory": "/var/lib/registry"
+    },
+    "HTTP": {
+      "Address": "0.0.0.0",
+      "Port": "5000",
+      "Auth": {
+        "HTPasswd": {
+          "Path": "/etc/zot/htpasswd"
+        }
+      }
+    }
+}
