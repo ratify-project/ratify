@@ -227,6 +227,7 @@ e2e-run-local-registry:
 		-v ${HOME}/auth/htpasswd:/etc/zot/htpasswd \
 		-v ${GITHUB_WORKSPACE}/test/bats/tests/config/zot-config.json:/etc/zot/config.json \
 		${LOCAL_REGISTRY_IMAGE}
+	sleep 10
 	${GITHUB_WORKSPACE}/bin/oras login --insecure ${TEST_REGISTRY} -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD}
 
 e2e-create-all-image:
