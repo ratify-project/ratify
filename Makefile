@@ -232,6 +232,7 @@ e2e-create-all-image:
 	rm -rf .staging
 	mkdir .staging
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/all.tar -t all:v0 .staging
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/all.tar:v0 ${TEST_REGISTRY}/all:v0
 	rm .staging/all.tar
@@ -277,11 +278,13 @@ e2e-notation-setup:
 	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notation/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notation
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation signed image"]' > .staging/notation/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:signed
 	rm .staging/notation/notation.tar
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation unsigned image"]' > .staging/notation/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:unsigned
 	rm .staging/notation/notation.tar
@@ -303,6 +306,7 @@ e2e-notation-leaf-cert-setup:
 	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notation/leaf-test/leaf.key","certPath":".staging/notation/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation leaf signed image"]' > .staging/notation/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:leafSigned
 	rm .staging/notation/notation.tar
@@ -317,11 +321,13 @@ e2e-cosign-setup:
 
 	# image signed with a key
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/cosign/cosign.tar -t cosign:v0 .staging/cosign
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/cosign/cosign.tar:v0 ${TEST_REGISTRY}/cosign:signed-key
 	rm .staging/cosign/cosign.tar
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign unsigned image"]' > .staging/cosign/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/cosign/cosign.tar -t cosign:v0 .staging/cosign
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/cosign/cosign.tar:v0 ${TEST_REGISTRY}/cosign:unsigned
 	rm .staging/cosign/cosign.tar
@@ -342,6 +348,7 @@ e2e-licensechecker-setup:
 
 	# Build/Push Image
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/licensechecker/licensechecker.tar -t licensechecker:v0 .staging/licensechecker
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/licensechecker/licensechecker.tar:v0 ${TEST_REGISTRY}/licensechecker:v0
 	rm .staging/licensechecker/licensechecker.tar
@@ -369,10 +376,12 @@ e2e-sbom-setup:
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/sbom/sbom.tar -t sbom:v0 .staging/sbom
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/sbom/sbom.tar:v0 ${TEST_REGISTRY}/sbom:v0
 	rm .staging/sbom/sbom.tar
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/sbom/sbom.tar -t sbom:v0 .staging/sbom
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/sbom/sbom.tar:v0 ${TEST_REGISTRY}/sbom:unsigned
 	rm .staging/sbom/sbom.tar
@@ -418,6 +427,7 @@ e2e-schemavalidator-setup:
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/schemavalidator/schemavalidator.tar -t schemavalidator:v0 .staging/schemavalidator
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/schemavalidator/schemavalidator.tar:v0 ${TEST_REGISTRY}/schemavalidator:v0
 	rm .staging/schemavalidator/schemavalidator.tar
@@ -445,6 +455,7 @@ e2e-vulnerabilityreport-setup:
 
 	# Build/Push Image
 	printf 'FROM ${ALPINE_IMAGE_VULNERABLE}\nCMD ["echo", "vulnerabilityreport image"]' > .staging/vulnerabilityreport/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/vulnerabilityreport/vulnerabilityreport.tar -t vulnerabilityreport:v0 .staging/vulnerabilityreport
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/vulnerabilityreport/vulnerabilityreport.tar:v0 ${TEST_REGISTRY}/vulnerabilityreport:v0
 	rm .staging/vulnerabilityreport/vulnerabilityreport.tar
@@ -463,6 +474,7 @@ e2e-inlinecert-setup:
 
 	# build and sign an image with an alternate certificate
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "alternate notation signed image"]' > .staging/inlinecert/Dockerfile
+	docker buildx create --use
 	docker buildx build --output type=oci,dest=.staging/inlinecert/inlinecert.tar -t inlinecert:v0 .staging/inlinecert
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/inlinecert/inlinecert.tar:v0 ${TEST_REGISTRY}/notation:signed-alternate
 	rm .staging/inlinecert/inlinecert.tar
