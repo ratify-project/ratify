@@ -32,7 +32,7 @@ GATEKEEPER_VERSION ?= 3.14.0
 DAPR_VERSION ?= 1.12.5
 COSIGN_VERSION ?= 2.2.3
 NOTATION_VERSION ?= 1.1.0
-ORAS_VERSION ?= 1.0.1
+ORAS_VERSION ?= 1.1.0
 
 HELM_VERSION ?= 3.14.2
 HELMFILE_VERSION ?= 0.162.0
@@ -57,7 +57,7 @@ GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
 # Local Registry Setup
-LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.1
+LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.2-rc2
 TEST_REGISTRY = localhost:5000
 TEST_REGISTRY_USERNAME = test_user
 TEST_REGISTRY_PASSWORD = test_pw
@@ -397,7 +397,8 @@ e2e-sbom-setup:
 	# -nsu (NamespaceUri) - The namespace that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
 	# -di (DockerImage) - The docker image that will be used to generate the SBOM manifest
 	# -m (ManifestPath) - The path to the SBOM manifest that will be generated
-	# -D (Debug) - Enable debug logging 
+	# -D (Debug) - Enable debug logging
+	docker pull localhost:5000/sbom:v0
 	.staging/sbom/sbom-tool generate -b .staging/sbom -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
