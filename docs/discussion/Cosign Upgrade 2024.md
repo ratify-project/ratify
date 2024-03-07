@@ -200,6 +200,8 @@ CLI Config
 }
 ```
 
+Key Management Provider for AKV will be updated to now accept an optional `id` field. This `id` corresponds to the `Certificate Identifier` or `Key Identifier` URL from Azure Key Vault. If specified, any user input for certificate/key name and version will be ignored.
+
 **Do we want to consider making the inline provider accept an array of content?**
 
 ### Option 3: Introduce new CRD `KeyStore` separate from `CertificateStore`
