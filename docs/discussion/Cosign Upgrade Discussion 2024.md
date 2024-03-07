@@ -5,6 +5,7 @@ Tracked issues in scope:
 - [Support Cosign verification with multiple keys](https://github.com/deislabs/ratify/issues/1191)
 - [Support for Cosign verification with keys managed in KMS](https://github.com/deislabs/ratify/issues/1190)
 - [Support Cosign verification with RSA key](https://github.com/deislabs/ratify/issues/1189)
+- [Support keyless verification with OIDC identities](https://github.com/deislabs/ratify/issues/1323)
 
 Ratify currently supports keyless cosign verification which includes an optional custom Rekor server specification. Transparency log verification only occurs for keyless scenarios. Keyed verification is limited to a single public key specified as a value provided in the helm chart. The chart creates a `Secret` for the cosign key and mounts it at a well-known path in the Ratify container. Users must manually update the `Secret` to update the key. There is no support for multiple keys. There is no support for keys stored KMS. There is only support for ECDSA keys, and not RSA or ED25519. There is no support for certificates.
 
@@ -281,25 +282,33 @@ Currently, there is only support for a single key per cosign verifier.
   - Cosign only supports validation against a SINGLE key at a time
 
 ### Trust Policy
-Cosign verifier should support multiple trust policies based on the KeyManagementProviders (KMS) enabled and the desired verification scenario. Please refer to [this](#user-scenarios) section for common user scenarios. At a high level users must be able to have:
-  - multiple KMS `inline` key resources (each `inline` will have a single key)
-  - multiple keys defined in a single AKV KMS
-  - multiple KMS `inline` certificate resources (each `inline` may have a single cert or a cert chain)
-  - multiple certificates definine in a single AKV KMS
-  - mix of keys + certificates in a single AKV KMS
-  - a way to specify specific keys/certificates within a KMS by name and version
-  - a way to scope a policy to a particular registry/repo
-  - multiple policies depending on registry scope
-  - a way to specify enforcement for that specific policy
+Cosign verifier should support multiple trust policies based on the KeyManagementProviders (KMP) enabled and the desired verification scenario. Please refer to [this](#user-scenarios) section for common user scenarios. At a high level users must be able to have:
+  - multiple KMP `inline` key resources (each `inline` will have a single key)
+  - multiple keys defined in a single AKV KMP
+  - multiple KMP `inline` certificate resources (each `inline` may have a single cert or a cert chain)
+  - multiple certificates definine in a single AKV KMP
+  - mix of keys + certificates in a single AKV KMP
+  - a way to specify specific keys/certificates within a KMP by name and version
+  - a way to specify specific AKV keys/certificate by `Certificate ID` or `Key ID` URL.
+  - a way to scope a trust policy to a particular registry/repo/image
+  - multiple trust policies
+  - a way to specify enforcement for that specific trust policy
     - skip: don't perform any verification for an image reference that matches this policy
     - any: at least one of the keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
     - all: ALL keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
   - a way to define certificates to be used in a trust policy for Trusted Timestamp verification `tsaCerts`
   - a way to define options per trust policy for transparency log verification `tLogVerify`
-  - a way to define options per trust policy for keyless verification
+  - a way to define options per trust policy for keyless verification under a section called `keyless`
     - certificate transparency log lookup `ctLogVerify`
+    - `rekorURL` for custom rekor instances
+    - `certificateIdentity`: certificate identity verifier should be configured to trust (OPTIONAL iff certificateIdentityExp is defined)
+    - `certificateIdentityExp`: wildcard expressions mapping to certificate identitie(s) verifier should be configured to trust (OPTIONAL iff certificateIdentity is defined. Overrides certificateIdentity if also specified)
+    - `certificateOIDCIssuer`: certificate OIDC Issuer verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuerExp is defined)
+    - `certificateOIDCIssuerExp`: wildcard expressions mapping to certificate OIDC Issuer(s) verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuer is defined. Overrides certificateOIDCIssuer if also specified)
   - a way to scope the policy based on `artifactType` if we have nested verification `artifactTypeScopes`
     - if the user defines `artifactTypeScopes`, then the `registryScopes` are applied first and then `artifactTypeScopes`. `artifactTypeScopes` are only enforced if the subject image manifest being verified contains a `subject` field (basically is a referrer).
+
+> NOTE: The sample below is an experience goal and not all configurations will be implemented initially
 
 Sample
 ```yaml
@@ -326,14 +335,20 @@ spec:
           - provider: inline/inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementProvider resource specified
           - provider: inline/inline-keys-2
           - provider: azurekeyvault/akv-wabbit-networks
-            name: wabbit-networks-io # OPTIONAL: key name
+            name: wabbit-networks-io # OPTIONAL: key name (inline will not support name since each inline has only one key/certificate)
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
           - provider: inline/inline-certs-1
         tsaCerts:
           - provider: inline/inline-certs-tsa-1
         tLogVerify: true # transparency log verification (default to false)
-        rekorURL: customrekor.io # rekor URL for transparency log verification (default to sigstore's public-good endpoint)
+        keyless:
+          ctLogVerify: false # certificate transparency log verification boolean (default to true)
+          rekorURL: customrekor.io # rekor URL for transparency log verification (default to sigstore's public-good endpoint)
+          certificateIdentity: wabbit-identity # certificate identity verifier should be configured to trust (OPTIONAL iff certificateIdentityExp is defined)
+          certificateIdentityExp: # wildcard expressions mapping to certificate identitie(s) verifier should be configured to trust (OPTIONAL iff certificateIdentity is defined. Overrides certificateIdentity if also specified)
+          certificateOIDCIssuer: wabbit-issuer # certificate OIDC Issuer verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuerExp is defined)
+          certificateOIDCIssuerExp: # wild card expressions mapping to certificate OIDC Issuer(s) verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuer is defined. Overrides certificateOIDCIssuer if also specified)
         enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
       - name: verification-bypass
         registryScopes:
@@ -549,17 +564,26 @@ Verification flow per key:
 - The `LoadPublicKeyRaw()` method in the cosign keys library will automatically detect which key type (based on the key header) and return the appropriate signature verifier
 - Verifier is then passed to cosign's `VerifySignature()` method as a verification option
 
+## Support keyless verification with OIDC identities
+Newer versions of Cosign require that the user defines which identities and OIDC issuers they trust for keyless verifications. Ratify's Cosign verifier should `certificate-identity`, `certificate-identity-exp`, `certificate-oidc-issuer`, `certificate-oidc-issuer-regexp` to match Cosign cli behavior. The identity and issuer specification is REQUIRED and will be enforced during config validation.
+
+### Implementation
+- add 4 parameters to the `keyless` section of the trust policy config
+- add new config validation logic to make sure at least the issuer & identity is defined or accompanying regexp
+- pass through issuer & identity parameters as options to the cosign verifier `VerifyImage` function.
+
 ## Dev Work Items (WIP)
 - Introduce new `KeyManagementProvider` CRD to replace `CertificateStore` (~ 2 weeks)
   - maintain old `CertificateStore` controllers and source code for backwards compat
   - define new `KeyManagementProvider` CRD + controllers
-  - port certificate providers implementation to new `KMS` object
+  - port certificate providers implementation to new `KMP` object
   - refactor to factory paradigm
   - refactor to define rigid config schema (currently, only a generic map of attributes passed)
   - add enforcement so only `KeyManagementProvider` OR `CertificateStore` can be enabled at a time
+  - add id support for certificates in the global `Certificates` map
 - Add Plugin support to `KeyManagementProvider` (~ 1 week)
 - Add deprecation headers and warnings to `CertificateStore` CRD and code files (~ 0.5 weeks)
-- Add Key support to `KeyManagementProvider` (~ 2 weeks)
+- Add Key support to `KeyManagementProvider` (~ 2-3 weeks)
   - update API
   - update Inline provider with `type` field
   - update AKV provider for `key` fetching logic
@@ -568,12 +592,16 @@ Verification flow per key:
 - ~~Update key/certificate store logic to provide cert + key access to external plugins (see [above](#implementation-details))~~
   - ~~Option 1 or 2 depending on what's decided~~
   - ~~NOTE: If we make cosign a built-in verifier, we will NOT have to do this.~~
-- Cosign Verifier: migrate to a built in verifier (~ 1 week)
-- Cosign verifier multi key support (~ 2.5 weeks)
+- Cosign Verifier: migrate to a built in verifier (~ 1-2 weeks)
+- Cosign verifier multi key support (~ 3 weeks)
   - add `trustPolicies`
-    - support multiple `keys` each with `provider`, `name`, and `version`
+    - support multiple `keys` each with `provider`, and optional `name`, `version`
   - add multi key verification logic including concurrent signature verification using routines
-  - preserve existing file path based key support for backwards compat
+  - preserve existing file path based key support for backwards compatability
+- Add more robust Cosign Keyless support (~1.5 weeks)
+  - add new section to Trust Policy
+  - add support for Trust policy to use keyless vs key when both are specified?
+  - add new support for `ctLogVerify` configuration
 - Add RSA and ED25519 key support (~ 0.5 week)
   - auto detect key type based on parsing library
   - pick cosign verifier according to format
@@ -588,7 +616,7 @@ Verification flow per key:
   - Update AKV provider for non Workload Identity auth
 
 ## Future Considerations
-- Support `registryScopes` for repo based `trustPolicies`
+- Support `registryScopes` for repo based `trustPolicies` (this includes wildcard regex support)
 - Support `enforcement` with `skip`, `any`, and `all`
 - Support attestations with cosign signature embedded
 - Support certificate based verification of cosign signatures
