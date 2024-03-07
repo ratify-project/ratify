@@ -86,6 +86,13 @@ spec:
     - contains `byte` array content
 - Global `Key`s map
   - follow same pattern as `Certificates` map which is updated on reconcile of the `CertificateStore` K8s resource.
+  - how do we uniquely identify keys/certificates agnostic of the provider?
+    - The user will have to be aware of the convention:
+    - `?<namespace>?/<type>/<name>`
+    - there will be separate section for `certificate/keyname` & `version`
+    - `type` and `name` MUST be specified. For inline providers, date provided in `certificate/keyname` & `version` will be ignored.
+    - `certificate/keyname` is required for AKV provider. `version` is optional
+    - `namespace` : the namespace the KeyManagementProvider resource is in. ONLY for K8s. ONLY the namespace verifier is in OR `cluster` to specify cluster resource. If no `namespace` is provided, the current verifier namespace will internally be appended to the front of each map key entry since user's are assumed to only access KeyManagementProvider in their own namespace unless explicitly specified otherwise.
 - Can we promote Cosign to be a built-in verifier like Notation is?
   - This would allow us to use `CertificateStore` without having to build support for external plugins accessing certificates.
   - It will also be slightly more performant if it can share the in-memory ORAS store cache.
@@ -314,9 +321,9 @@ spec:
           - application/sarif+json
           - application/spdx+json
         keys: # list of keys that are trusted. Only the keys in KMS are considered
-          - provider: inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementProvider resource specified
-          - provider: inline-keys-2
-          - provider: akv-wabbit-networks
+          - provider: inline/inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementProvider resource specified
+          - provider: inline/inline-keys-2
+          - provider: akv/akv-wabbit-networks
             name: wabbit-networks-io # OPTIONAL: key name
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
