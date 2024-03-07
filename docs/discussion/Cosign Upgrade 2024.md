@@ -325,13 +325,13 @@ spec:
         keys: # list of keys that are trusted. Only the keys in KMS are considered
           - provider: inline/inline-keys-1 # REQUIRED: if name is not provided, all keys are assumed to be trusted in KeyManagementProvider resource specified
           - provider: inline/inline-keys-2
-          - provider: akv/akv-wabbit-networks
+          - provider: azurekeyvault/akv-wabbit-networks
             name: wabbit-networks-io # OPTIONAL: key name
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
-          - provider: inline-certs-1
+          - provider: inline/inline-certs-1
         tsaCerts:
-          - provider: inline-certs-tsa-1
+          - provider: inline/inline-certs-tsa-1
         tLogVerify: true # transparency log verification (default to false)
         rekorURL: customrekor.io # rekor URL for transparency log verification (default to sigstore's public-good endpoint)
         enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
@@ -401,8 +401,8 @@ spec:
     trustPolicies:
       - name: multiple-trusted-keys
         keys:
-          - provider: inline-key-1
-          - provider: inline-key-2
+          - provider: inline/inline-key-1
+          - provider: inline/inline-key-2
 ```
 - Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementProvider `inline-key-1`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature signed with key in KeyManagementProvider `inline-key-2`. Pod is verified and created successfully.
@@ -449,7 +449,7 @@ spec:
     trustPolicies:
       - name: single-trusted-key
         keys:
-          - provider: inline-key
+          - provider: inline/inline-key
 ```
 - Bob attempts to deploy a pod from the vetted image that has 2 cosign signatures, one of which is signed with key in KeyManagementProvider `inline-key`. Pod is verified and created successfully.
 - Bob attempts to deploy a pod from an image that has cosign signature(s) signed with a different key in `inline-key`. Pod FAILS verification and blocked.
@@ -513,8 +513,8 @@ spec:
     trustPolicies:
       - name: build-test-verification
         keys:
-          - provider: inline-key-build
-          - provider: inline-key-test
+          - provider: inline/inline-key-build
+          - provider: inline/inline-key-test
         enforcement: all
 ```
 - Bob attempts to deploy a pod from the vetted image that has 1 cosign signature, which is signed with key in KeyManagementProvider `inline-key-build`. Pod FAILS verification and blocked.
@@ -556,7 +556,6 @@ Verification flow per key:
   - port certificate providers implementation to new `KMS` object
   - refactor to factory paradigm
   - refactor to define rigid config schema (currently, only a generic map of attributes passed)
-  - add plugin support
   - add enforcement so only `KeyManagementProvider` OR `CertificateStore` can be enabled at a time
 - Add Plugin support to `KeyManagementProvider` (~ 1 week)
 - Add deprecation headers and warnings to `CertificateStore` CRD and code files (~ 0.5 weeks)
