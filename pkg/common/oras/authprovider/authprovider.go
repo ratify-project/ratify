@@ -25,6 +25,7 @@ import (
 	"time"
 
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/types"
@@ -63,6 +64,8 @@ type defaultAuthProviderConf struct {
 const DefaultAuthProviderName string = "dockerConfig"
 const DefaultDockerAuthTTL = 1 * time.Hour
 
+var logOpt = logger.Option{ComponentType: logger.AuthProvider}
+
 // init calls Register for our default provider, which simply reads the .dockercfg file.
 func init() {
 	Register(DefaultAuthProviderName, &defaultProviderFactory{})
@@ -96,7 +99,7 @@ func (d *defaultAuthProvider) Enabled(_ context.Context) bool {
 }
 
 // Provide reads docker config file and returns corresponding credentials from file if exists
-func (d *defaultAuthProvider) Provide(_ context.Context, artifact string) (AuthConfig, error) {
+func (d *defaultAuthProvider) Provide(ctx context.Context, artifact string) (AuthConfig, error) {
 	// load docker config file at default path if config file path not specified
 	var cfg *configfile.ConfigFile
 	if d.configPath == "" {
@@ -124,7 +127,16 @@ func (d *defaultAuthProvider) Provide(_ context.Context, artifact string) (AuthC
 		return AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err).WithComponentType(re.AuthProvider)
 	}
 
-	dockerAuthConfig := cfg.AuthConfigs[artifactHostName]
+	dockerAuthConfig, exists := cfg.AuthConfigs[artifactHostName]
+	if !exists {
+		logger.GetLogger(ctx, logOpt).Debugf("no credentials found for registry hostname: %s", artifactHostName)
+		hostnames := []string{}
+		for k := range cfg.AuthConfigs {
+			hostnames = append(hostnames, k)
+		}
+		logger.GetLogger(ctx, logOpt).Debugf("list of registry host names in config : %v", hostnames)
+		return AuthConfig{}, nil
+	}
 	if dockerAuthConfig == (types.AuthConfig{}) {
 		return AuthConfig{}, nil
 	}
