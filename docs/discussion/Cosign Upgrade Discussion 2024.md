@@ -296,7 +296,7 @@ Cosign verifier should support multiple trust policies based on the KeyManagemen
     - skip: don't perform any verification for an image reference that matches this policy
     - any: at least one of the keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
     - all: ALL keys/certificates trusted in the policy must result in a successful verification for overall cosign verification to be true
-  - a way to define certificates to be used in a trust policy for Trusted Timestamp verification `tsaCerts`
+  - a way to define certificates to be used in a trust policy for Trusted Timestamp verification `tsaCertificates`
   - a way to define options per trust policy for transparency log verification `tLogVerify`
   - a way to define options per trust policy for keyless verification under a section called `keyless`
     - certificate transparency log lookup `ctLogVerify`
@@ -339,7 +339,7 @@ spec:
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
           - provider: inline/inline-certs-1
-        tsaCerts:
+        tsaCertificates:
           - provider: inline/inline-certs-tsa-1
         tLogVerify: true # transparency log verification (default to false)
         keyless:
