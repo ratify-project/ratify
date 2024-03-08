@@ -94,7 +94,7 @@ require (
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.5 // indirect
 	github.com/go-ini/ini v1.67.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.2 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/go-ldap/ldap/v3 v3.4.6 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.0 // indirect
@@ -121,7 +121,7 @@ require (
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 	go.step.sm/crypto v0.42.1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240116215550-a9fa1716bcac // indirect
-	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
 )
 
