@@ -87,13 +87,15 @@ spec:
     - contains `byte` array content
 - Global `Key`s map
   - follow same pattern as `Certificates` map which is updated on reconcile of the `CertificateStore` K8s resource.
-  - how do we uniquely identify keys/certificates agnostic of the provider?
-    - The user will have to be aware of the convention:
-    - `?<namespace>?/<type>/<name>`
-    - there will be separate section for `certificate/keyname` & `version`
-    - `type` and `name` MUST be specified. For inline providers, date provided in `certificate/keyname` & `version` will be ignored.
-    - `certificate/keyname` is required for AKV provider. `version` is optional
-    - `namespace` : the namespace the KeyManagementProvider resource is in. ONLY for K8s. ONLY the namespace verifier is in OR `cluster` to specify cluster resource. If no `namespace` is provided, the current verifier namespace will internally be appended to the front of each map key entry since user's are assumed to only access KeyManagementProvider in their own namespace unless explicitly specified otherwise.
+  - how do we store the certificates so they are partioned by namespace, resource unique name, and optionally certificate/key name + version?
+    - `Certificates` map will map `<namespace>/<name>` to a map of certificates for that particular resource
+    - map will be keyed by a special struct `KMPMapKey` which contains a `Name` and `Version` field
+    - each unique map key will map to an array x.509 certificates
+    - Inline provider will store all certs in a single map entry
+    - AKV provider
+      - If only certificate/key name provided. Fetch the latest version and only populate the `Name` field for the map key
+      - If both name and version provided. Fetch specific version and populate both `Name` and `Version`. 
+      - Note: A generic `Name` based fetched content will be considered uniquely different than a `Name` + `Version` content EVEN if the unversioned 'latest` is equal to a specified matching version. 
 - Can we promote Cosign to be a built-in verifier like Notation is?
   - This would allow us to use `CertificateStore` without having to build support for external plugins accessing certificates.
   - It will also be slightly more performant if it can share the in-memory ORAS store cache.
@@ -357,6 +359,8 @@ spec:
 ```
 
 To start, only a single `trustPolicies` entry + `keys` with `provider`, `name`, and `version` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
+
+The `provider` field, where the name of the `KeyManagementProvider` (KMP) can be specified, is assumed to be referencing a `KMP` in the same namespace as the cosign verifier. If the user would like to specify a `provider` in the cluster scope, the user must append `cluster/` to the front of the `KMP` name.
 ### User Scenarios
 
 #### 1 Signature, 2 trusted keys
