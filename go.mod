@@ -121,7 +121,7 @@ require (
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 	go.step.sm/crypto v0.42.1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240116215550-a9fa1716bcac // indirect
-	gopkg.in/go-jose/go-jose.v2 v2.6.1 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
 )
 
