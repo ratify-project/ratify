@@ -107,28 +107,6 @@ CLI Config
 }
 ```
 
-Key Management Provider for AKV will be updated to now accept an optional `id` field. This `id` corresponds to the `Certificate Identifier` or `Key Identifier` URL from Azure Key Vault. If specified, any user input for certificate/key name and version will be ignored.
-
-```yaml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: KeyManagementProvider
-metadata:
-  name: kmp-akv
-  annotations:
-    helm.sh/hook: pre-install,pre-upgrade
-    helm.sh/hook-weight: "5"
-spec:
-  type: azurekeyvault
-  parameters:
-    vaultURI: VAULT_URI
-    keys:
-      - id: https://testakv.vault.azure.net/keys/wabbit-networks/123456789abcde
-    certificates:
-      - id: https://testakv.vault.azure.net/certificates/wabbit-networks/123456789abcde
-    tenantID: TENANT_ID  
-    clientID: CLIENT_ID
-```
-
 ### Implementation Details
 
 - New API `GetKeys`
