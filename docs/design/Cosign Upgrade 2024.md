@@ -14,9 +14,9 @@ Currently, cosign verifier looks for a single key that already exists at a speci
 
 ### User Experience
 
-A new resource `KeyManagementProvider` will be introduced and the `CertificateStore` will be deprecated. `CertificateStore` will be maintained until Ratify v2.0.0. Only one resource type can be enabled at the same time.
+A new resource `KeyManagementProvider` will be introduced and the `CertificateStore` will be deprecated. `CertificateStore` will be maintained until Ratify v2.0.0. Only one resource type can be enabled at the same time. If user attempt to apply the opposite type resource when one already exists for the opposing type, then a warning message will be shown for that resource in the status.
 
-Compared to the `CertificateStore`, the `KeyManagementProvider` config spec will be updated to be more flexible. A new `name` field will be used only in CLI scenarios to mirror CRD name functionality as a unique identifier. This enables multiple KMS of same type to be used. The `type` field corresponds to the existing `provider` field in the `CertificateStore`.
+Compared to the `CertificateStore`, the `KeyManagementProvider` (KMP) config spec will be updated to be more flexible. A new `name` field will be used only in CLI scenarios to mirror CRD name functionality as a unique identifier. This enables multiple KMP of same type to be used. The `type` field corresponds to the existing `provider` field in the `CertificateStore`.
 
 Inline Key Management Provider with keys
 ```yaml
@@ -30,7 +30,7 @@ metadata:
 spec:
   type: inline
   parameters:
-    type: key
+    contentType: key
     value: |
     ---------- BEGIN RSA KEY ------------
     ******
@@ -52,8 +52,8 @@ spec:
   parameters:
     vaultURI: VAULT_URI
     keys:
-      - keyName: KEY_NAME
-        keyVersion: KEY_VERSION
+      - name: KEY_NAME
+        version: KEY_VERSION
     tenantID: TENANT_ID  
     clientID: CLIENT_ID
 ```
@@ -72,11 +72,11 @@ spec:
   parameters:
     vaultURI: VAULT_URI
     keys:
-      - keyName: KEY_NAME
-        keyVersion: KEY_VERSION
+      - name: KEY_NAME
+        version: KEY_VERSION
     certificates:
-      - certificateName: CERTIFICATE_NAME
-        certificateVersion: CERTIFICATE_VERSION
+      - name: CERTIFICATE_NAME
+        version: CERTIFICATE_VERSION
     tenantID: TENANT_ID  
     clientID: CLIENT_ID
 ```
@@ -118,7 +118,7 @@ CLI Config
   - how do we store the certificates so they are partioned by namespace, resource unique name, and optionally certificate/key name + version?
     - `Certificates` map will map `<namespace>/<name>` to a map of certificates for that particular resource
     - map will be keyed by a special struct `KMPMapKey` which contains a `Name` and `Version` field
-    - each unique map key will map to an array x.509 certificates
+    - each unique map key will map to an array of x.509 certificates
     - Inline provider will store all certs in a single map entry
     - AKV provider
       - If only certificate/key name provided. Fetch the latest version and only populate the `Name` field for the map key
@@ -127,14 +127,45 @@ CLI Config
 - Cosign will be promoted to a built-in verifier and the plugin version will be removed
   - MUST maintain complete feature experience parity
 - Repurpose Inline Certificate Provider
-  - add new `type` field to spec: "key" or "certificate". If not provided, default to "certificate" for backwards compatability. 
+  - add new `contentType` field to spec: "key" or "certificate". If not provided, default to "certificate" for backwards compatability. 
 - Repurpose Azure Key Vault Certificate Provider
   - use `GetKeys` API to fetch keys from configured key vault
   - add new `keys` field to spec
 - Multitenancy: supported by namespaced keys in the global `Keys` map
 
 ### How do we support CLI scenario?
-  - CLI mode should support specification of a list of keys within the cosign verifier. Cosign plugin will handle directory configuration and key reading within implementation. Currently, one a single `key` path can be provided. This will be updated to support an array of keys under config `verificationKeys`. For backward compatability, the existing `key` field will also be honored.
+  - CLI mode should support specification of a list of keys within the cosign verifier. Cosign plugin will handle directory configuration and key reading within implementation. Currently, one a single `key` path can be provided. This will be updated to support an absolute `filePath` to a key per entry in the `keys` field of the Cosign trust policy (see trust policy details [here](#trust-policy)). For backward compatability, the existing `key` field will also be honored.
+    - example:
+      ```json
+      {
+        ...
+        "verifier": {
+          "version": "1.0.0",
+          "plugins": [
+              {
+                  "type": "cosign",
+                  "name": "cosign-wabbit-networks",
+                  "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
+                  "trustPolicies": [
+                    {
+                      "name": "wabbit-networks-images",
+                      "keys": [
+                        {
+                          "provider": "wabbit-key-1", // this can be any name
+                          "filePath": "/path/to/key1.pub"
+                        },
+                        {
+                          "provider": "wabbit-key-2",
+                          "filePath": "/path/to/key2.pub"
+                        }
+                      ]
+                    }
+                  ]
+              },
+        }
+        ...
+      }    
+      ```
   - `KeyManagementProvider` should be able to be configured via section in the `config.json`. This includes inline + any existing or future providers
   - The current AKV integration relies on workload identity. The CLI scenario will use a non-Workload Identity scheme for authentication to managed identity. The AzureKeyVault provider must be updated to support a generic `DefaultAzureCredential` which has built in keychain support for many different types of authentication schemes.
 
@@ -218,7 +249,8 @@ Cosign verifier should support multiple trust policies based on the KeyManagemen
     - `certificateOIDCIssuer`: certificate OIDC Issuer verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuerExp is defined)
     - `certificateOIDCIssuerExp`: wildcard expressions mapping to certificate OIDC Issuer(s) verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuer is defined. Overrides certificateOIDCIssuer if also specified)
   - a way to scope the policy based on `artifactType` if we have nested verification `artifactTypeScopes`
-    - if the user defines `artifactTypeScopes`, then the `registryScopes` are applied first and then `artifactTypeScopes`. `artifactTypeScopes` are only enforced if the subject image manifest being verified contains a `subject` field (basically is a referrer).
+    - if the user defines `artifactTypeScopes`, then the `scopes` are applied first and then `artifactTypeScopes`. `artifactTypeScopes` are only enforced if the subject image manifest being verified contains a `subject` field (basically is a referrer).
+  - a way to specify local path keys using a `filePath`
 
 > NOTE: The sample below is an experience goal and not all configurations will be implemented initially
 
@@ -237,10 +269,10 @@ spec:
   parameters:
     trustPolicies:
       - name: wabbit-networks-images
-        registryScopes:
+        scopes:
           - wabbitnetworks.myregistry.io/carrots
           - wabbitnetworks.myregistry.io/beets
-        artifactTypeScopes: # OPTIONAL: applied after registryScopes; only considered for nested verification scenarios. 
+        artifactTypeScopes: # OPTIONAL: applied after scopes; only considered for nested verification scenarios. 
           - application/sarif+json
           - application/spdx+json
         keys: # list of keys that are trusted. Only the keys in KMS are considered
@@ -249,6 +281,8 @@ spec:
           - provider: azurekeyvault/akv-wabbit-networks
             name: wabbit-networks-io # OPTIONAL: key name (inline will not support name since each inline has only one key/certificate)
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
+          - provider: wabbit-local-key # REQUIRED: can be any name if filePath is specified
+            filePath: /path/to/key.pub # absolute file path to local key path. Useful for CLI scenarios
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
           - provider: inline/inline-certs-1
         tsaCertificates:
@@ -263,7 +297,7 @@ spec:
           certificateOIDCIssuerExp: # wild card expressions mapping to certificate OIDC Issuer(s) verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuer is defined. Overrides certificateOIDCIssuer if also specified)
         enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
       - name: verification-bypass
-        registryScopes:
+        scopes:
           - wabbitnetworks.myregistry.io/golden
         enforcement: skip
 ```
@@ -478,7 +512,16 @@ Verification flow per key:
 - The `LoadPublicKeyRaw()` method in the cosign keys library will automatically detect which key type (based on the key header) and return the appropriate signature verifier
 - Verifier is then passed to cosign's `VerifySignature()` method as a verification option
 
-## Dev Work Items (WIP)
+
+## Support keyless verification with OIDC identities
+Newer versions of Cosign require that the user defines which identities and OIDC issuers they trust for keyless verifications. Ratify's Cosign verifier should `certificate-identity`, `certificate-identity-exp`, `certificate-oidc-issuer`, `certificate-oidc-issuer-regexp` to match Cosign cli behavior. The identity and issuer specification is REQUIRED and will be enforced during config validation.
+
+### Implementation
+- add 4 parameters to the `keyless` section of the trust policy config
+- add new config validation logic to make sure at least the issuer & identity is defined or accompanying regexp
+- pass through issuer & identity parameters as options to the cosign verifier `VerifyImage` function.
+
+## Dev Work Items
 - Introduce new `KeyManagementProvider` CRD to replace `CertificateStore` (~ 2 weeks)
   - maintain old `CertificateStore` controllers and source code for backwards compat
   - define new `KeyManagementProvider` CRD + controllers
@@ -519,7 +562,7 @@ Verification flow per key:
   - Update AKV provider for non Workload Identity auth
 
 ## Future Considerations
-- Support `registryScopes` for repo based `trustPolicies`
+- Support `scopes` for repo based `trustPolicies`
 - Support `enforcement` with `skip`, `any`, and `all`
 - Support attestations with cosign signature embedded
 - Support certificate based verification of cosign signatures

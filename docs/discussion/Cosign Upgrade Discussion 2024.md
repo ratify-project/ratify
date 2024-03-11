@@ -51,8 +51,8 @@ spec:
   parameters:
     vaultURI: VAULT_URI
     keys:
-      - keyName: KEY_NAME
-        keyVersion: KEY_VERSION
+      - name: KEY_NAME
+        version: KEY_VERSION
     tenantID: TENANT_ID  
     clientID: CLIENT_ID
 ```
@@ -71,11 +71,11 @@ spec:
   parameters:
     vaultURI: VAULT_URI
     keys:
-      - keyName: KEY_NAME
-        keyVersion: KEY_VERSION
+      - name: KEY_NAME
+        version: KEY_VERSION
     certificates:
-      - certificateName: CERTIFICATE_NAME
-        certificateVersion: CERTIFICATE_VERSION
+      - name: CERTIFICATE_NAME
+        version: CERTIFICATE_VERSION
     tenantID: TENANT_ID  
     clientID: CLIENT_ID
 ```
@@ -217,13 +217,42 @@ Cons:
 - Providers will share almost the exact same implementation as certificate stores
 
 ### How do we support CLI scenario?
-  - `CertificateStore` is only supported in K8s scenarios as CRD. There is no CLI equivalent.
-  - Ideally, `CertificateStore` should be supported at CLI too. However, even with CLI mode, a local directory for keys should be an option user can specify rather than just in-line and AKV.
-  - Cosign plugin will handle directory configuration and key reading within plugin implementation. This should be complimentary to any certs provided as plugin input.
+  - CLI mode should support specification of a list of keys within the cosign verifier. Cosign plugin will handle directory configuration and key reading within implementation. Currently, one a single `key` path can be provided. This will be updated to support an absolute `filePath` to a key per entry in the `keys` field of the Cosign trust policy (see trust policy details [here](#trust-policy)). For backward compatability, the existing `key` field will also be honored.
+    - example `config.json`:
+      ```json
+      {
+        ...
+        "verifier": {
+          "version": "1.0.0",
+          "plugins": [
+              {
+                  "type": "cosign",
+                  "name": "cosign-wabbit-networks",
+                  "artifactTypes": "application/vnd.dev.cosign.artifact.sig.v1+json",
+                  "trustPolicies": [
+                    {
+                      "name": "wabbit-networks-images",
+                      "keys": [
+                        {
+                          "provider": "wabbit-key-1", // this can be any name
+                          "filePath": "/path/to/key1.pub"
+                        },
+                        {
+                          "provider": "wabbit-key-2",
+                          "filePath": "/path/to/key2.pub"
+                        }
+                      ]
+                    }
+                  ]
+              },
+        }
+        ...
+      }    
+      ```
   - Should we have a separate local directory cert store provider that gets configured like other cert stores or should we scope it only to the cosign plugin?
     - In K8s scenarios, it will not be an encouraged pattern to specify local directory. This is why implementing directory cert reading as a cert store provider may not make  sense.
     - However, if a user decides to do a mixture of cert stores + local directory then they would need to specify in 2 different sections (cosign plugin config + cert store)
-    - **UPDATE 1/18/24**: We will mirror notation experience with a `verificationKeys` field in the cosign verifier config
+    - **UPDATE 3/11/24**: We will provide a local `filePath` for configuring local public keys
   - The current AKV integration relies on workload identity. The CLI scenario will use a non-WI scheme for authentication to managed identity
 
 ## Support Multiple keys for cosign verification
@@ -306,7 +335,8 @@ Cosign verifier should support multiple trust policies based on the KeyManagemen
     - `certificateOIDCIssuer`: certificate OIDC Issuer verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuerExp is defined)
     - `certificateOIDCIssuerExp`: wildcard expressions mapping to certificate OIDC Issuer(s) verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuer is defined. Overrides certificateOIDCIssuer if also specified)
   - a way to scope the policy based on `artifactType` if we have nested verification `artifactTypeScopes`
-    - if the user defines `artifactTypeScopes`, then the `registryScopes` are applied first and then `artifactTypeScopes`. `artifactTypeScopes` are only enforced if the subject image manifest being verified contains a `subject` field (basically is a referrer).
+    - if the user defines `artifactTypeScopes`, then the `scopes` are applied first and then `artifactTypeScopes`. `artifactTypeScopes` are only enforced if the subject image manifest being verified contains a `subject` field (basically is a referrer).
+  -  a way to specify local path keys using a `filePath`
 
 > NOTE: The sample below is an experience goal and not all configurations will be implemented initially
 
@@ -325,10 +355,10 @@ spec:
   parameters:
     trustPolicies:
       - name: wabbit-networks-images
-        registryScopes:
+        scopes:
           - wabbitnetworks.myregistry.io/carrots
           - wabbitnetworks.myregistry.io/beets
-        artifactTypeScopes: # OPTIONAL: applied after registryScopes; only considered for nested verification scenarios. 
+        artifactTypeScopes: # OPTIONAL: applied after scopes; only considered for nested verification scenarios. 
           - application/sarif+json
           - application/spdx+json
         keys: # list of keys that are trusted. Only the keys in KMS are considered
@@ -337,6 +367,8 @@ spec:
           - provider: azurekeyvault/akv-wabbit-networks
             name: wabbit-networks-io # OPTIONAL: key name (inline will not support name since each inline has only one key/certificate)
             version: 1234567890 # OPTIONAL: key version (inline will not support version)
+          - provider: wabbit-local-key # REQUIRED: can be any name if filePath is specified
+            filePath: /path/to/key.pub # absolute file path to local key path. Useful for CLI scenarios
         certificates: # list of certificates that are trusted. Only the certificates in KMS are considered
           - provider: inline/inline-certs-1
         tsaCertificates:
@@ -351,12 +383,12 @@ spec:
           certificateOIDCIssuerExp: # wild card expressions mapping to certificate OIDC Issuer(s) verifier should be configured to trust (OPTIONAL iff certificateOIDCIssuer is defined. Overrides certificateOIDCIssuer if also specified)
         enforcement: any # skip (don't perform any verification and auto pass), any (at least one key/cert used in successfull verification is overall success), all (all keys/certs must be used for overall success)
       - name: verification-bypass
-        registryScopes:
+        scopes:
           - wabbitnetworks.myregistry.io/golden
         enforcement: skip
 ```
 
-To start, only a single `trustPolicies` entry + `keys` with `provider`, `name`, and `version` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
+To start, only a single `trustPolicies` entry + `keys` with `provider`, `name`, `version`, and `filePath` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
 
 The `provider` field, where the name of the `KeyManagementProvider` (KMP) can be specified, is assumed to be referencing a `KMP` in the same namespace as the cosign verifier. If the user would like to specify a `provider` in the cluster scope, the user must append `cluster/` to the front of the `KMP` name.
 ### User Scenarios
@@ -618,7 +650,7 @@ Newer versions of Cosign require that the user defines which identities and OIDC
   - Update AKV provider for non Workload Identity auth
 
 ## Future Considerations
-- Support `registryScopes` for repo based `trustPolicies` (this includes wildcard regex support)
+- Support `scopes` for repo based `trustPolicies` (this includes wildcard regex support)
 - Support `enforcement` with `skip`, `any`, and `all`
 - Support attestations with cosign signature embedded
 - Support certificate based verification of cosign signatures
