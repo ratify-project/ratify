@@ -45,8 +45,6 @@ var (
 	certificatesMap = map[string][]*x509.Certificate{}
 )
 
-const maxBriefErrLength = 30
-
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/finalizers,verbs=update
@@ -78,10 +76,25 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// get cert provider attributes
-	attributes, err := getCertStoreConfig(certStore.Spec)
 	lastFetchedTime := metav1.Now()
 	isFetchSuccessful := false
+
+	// ensure that certificate store and key management provider are not configured together
+	var keyManagementProviderList configv1beta1.KeyManagementProviderList
+	if err := r.List(ctx, &keyManagementProviderList); err != nil {
+		logger.Error(err, "unable to list key management providers")
+		return ctrl.Result{}, err
+	}
+
+	if len(keyManagementProviderList.Items) > 0 {
+		err := fmt.Errorf("key management provider already exists: key management provider and certificate store cannot be configured together")
+		logger.Error(err)
+		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		// Note: for backwards compatibility in upgrade scenarios, we are not returning an error here
+	}
+
+	// get cert provider attributes
+	attributes, err := getCertStoreConfig(certStore.Spec)
 
 	if err != nil {
 		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)

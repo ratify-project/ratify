@@ -23,6 +23,7 @@ import (
 
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
 )
@@ -57,7 +58,14 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
 			result := certificatesMap[certStore]
 			if len(result) == 0 {
-				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+				// check key management provider if certificate store does not have certificates.
+				// NOTE: certificate store and key management provider cannot be configured together.
+				// This will be enforced by the controller/CLI
+				result = keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(certStore))
+				// notation verifier does not consider specific named/versioned certificates within a key management provider resource
+				if len(result) == 0 {
+					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+				}
 			}
 			certs = append(certs, result...)
 		}

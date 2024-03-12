@@ -66,8 +66,8 @@ deploy_ratify() {
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
     --set akvCertConfig.enabled=true \
     --set akvCertConfig.vaultURI=${VAULT_URI} \
-    --set akvCertConfig.certificates[0].certificateName=${NOTATION_PEM_NAME} \
-    --set akvCertConfig.certificates[1].certificateName=${NOTATION_CHAIN_PEM_NAME} \
+    --set akvCertConfig.certificates[0].name=${NOTATION_PEM_NAME} \
+    --set akvCertConfig.certificates[1].name=${NOTATION_CHAIN_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
