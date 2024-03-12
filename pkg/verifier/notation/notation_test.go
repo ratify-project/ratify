@@ -209,15 +209,15 @@ func TestParseVerifierConfig(t *testing.T) {
 		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
 		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
-	certStoresSampleNeedConvert := make(map[string][]string)
+	certStoresSampleNeedConvert := make(map[string]interface{})
 	certStoresSampleNeedConvert["certs"] = []string{
 		"defaultns/akv1", "akv2",
 	}
-	certStoresSampleNeedConvertExpected := make(map[string]map[string][]string)
+	certStoresSampleNeedConvertExpected := make(map[string]interface{})
 	certStoresSampleNeedConvertExpected["ca"] = map[string][]string{
 		"certs": {"defaultns/akv1", "testns/akv2"},
 	}
-	certStoresSampleMixConfig := make(map[string]map[string][]string)
+	certStoresSampleMixConfig := make(map[string]interface{})
 	certStoresSampleMixConfigLegacy :=
 		map[string][]string{"certs": {
 			"defaultns/akv1", "akv2",
@@ -267,15 +267,13 @@ func TestParseVerifierConfig(t *testing.T) {
 		{
 			name: "successfully parsed with specified cert stores",
 			configMap: map[string]interface{}{
-				"name":                      test,
-				"verificationCerts":         []string{testPath},
-				"newVerificationCertStores": certStoresSample,
+				"name":              test,
+				"verificationCerts": []string{testPath},
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
-				Name:                      test,
-				VerificationCerts:         []string{testPath, defaultCertDir},
-				NewVerificationCertStores: certStoresSample,
+				Name:              test,
+				VerificationCerts: []string{testPath, defaultCertDir},
 			},
 		},
 		{
@@ -287,18 +285,16 @@ func TestParseVerifierConfig(t *testing.T) {
 			},
 			expectErr: false,
 			expect: &NotationPluginVerifierConfig{
-				Name:                      test,
-				VerificationCerts:         []string{testPath, defaultCertDir},
-				NewVerificationCertStores: certStoresSampleNeedConvertExpected,
+				Name:              test,
+				VerificationCerts: []string{testPath, defaultCertDir},
 			},
 		},
 		{
 			name: "false parsed with specified cert stores with storeType conversion",
 			configMap: map[string]interface{}{
-				"name":                      test,
-				"verificationCerts":         []string{testPath},
-				"verificationCertStores":    certStoresSampleMixConfigLegacy,
-				"newVerificationCertStores": certStoresSampleMixConfig,
+				"name":                   test,
+				"verificationCerts":      []string{testPath},
+				"verificationCertStores": certStoresSampleMixConfigLegacy,
 			},
 			expectErr: true,
 			expect:    nil,
@@ -321,15 +317,14 @@ func TestParseVerifierConfig(t *testing.T) {
 }
 
 func TestNormalizeVerificationCertsStores(t *testing.T) {
-	certStoresSample := make(map[string]map[string][]string)
+	certStoresSample := make(map[string]interface{})
 	certStoresSample["ca"] = map[string][]string{
 		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
 		"cert-ca2": {"testns/akv3", "testns/akv4"},
 	}
-	certStoresSampleNeedConvertLegacy := map[string][]string{
-		"certs": {"defaultns/akv1", "testns/akv2"},
+	certStoresSampleNeedConvert := map[string]interface{}{
+		"certs": []string{"defaultns/akv1", "testns/akv2"},
 	}
-	certStoresSampleNeedConvert := make(map[string]map[string][]string)
 	certStoresSampleNeedConvert["ca"] = map[string][]string{
 		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
 		"cert-ca2": {"testns/akv3", "testns/akv4"},
@@ -342,17 +337,16 @@ func TestNormalizeVerificationCertsStores(t *testing.T) {
 		{
 			name: "no conversion needed",
 			configMap: &NotationPluginVerifierConfig{
-				Name:                      test,
-				NewVerificationCertStores: certStoresSample,
+				Name:                   test,
+				VerificationCertStores: certStoresSample,
 			},
 			expectErr: false,
 		},
 		{
 			name: "conversion needed",
 			configMap: &NotationPluginVerifierConfig{
-				Name:                      test,
-				VerificationCertStores:    certStoresSampleNeedConvertLegacy,
-				NewVerificationCertStores: certStoresSampleNeedConvert,
+				Name:                   test,
+				VerificationCertStores: certStoresSampleNeedConvert,
 			},
 			expectErr: true,
 		},
@@ -360,7 +354,7 @@ func TestNormalizeVerificationCertsStores(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := normalizeVerificationCertsStores(tt.configMap)
+			err := normalizeVerificationCertsStores(tt.configMap, "testns")
 
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
@@ -370,36 +364,39 @@ func TestNormalizeVerificationCertsStores(t *testing.T) {
 }
 
 func TestPrependNamspaceToCertStores(t *testing.T) {
-	certStoresSample := make(map[string]map[string][]string)
-	certStoresSample["ca"] = map[string][]string{
-		"cert-ca":  {"defaultns/akv1", "testns/akv2"},
-		"cert-ca2": {"testns/akv3", "testns/akv4"},
-	}
+	certStoresSample := []interface{}{"defaultns/akv1", "akv2"}
 
 	tests := []struct {
-		name                      string
-		newVerificationCertStores map[string]map[string][]string
-		namespace                 string
-		expectErr                 bool
-		expect                    map[string]map[string][]string
+		name      string
+		certs     []interface{}
+		namespace string
+		expectErr bool
+		expect    []string
 	}{
 		{
-			name:                      "no namespace value provided",
-			newVerificationCertStores: certStoresSample,
-			namespace:                 "",
-			expectErr:                 true,
-			expect:                    nil,
+			name:      "no namespace value provided",
+			certs:     certStoresSample,
+			namespace: "",
+			expectErr: true,
+			expect:    []string{"defaultns/akv1", "akv2"},
+		},
+		{
+			name:      "namespace value provided",
+			certs:     certStoresSample,
+			namespace: "testns",
+			expectErr: false,
+			expect:    []string{"defaultns/akv1", "testns/akv2"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			verificationCertStores, err := prependNamespaceToCertStore(tt.newVerificationCertStores, tt.namespace)
+			err := prependNamespaceToCertStore(tt.certs, tt.namespace)
 
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
 			}
-			if !reflect.DeepEqual(verificationCertStores, tt.expect) {
-				t.Errorf("expect %+v, got %+v", tt.expect, verificationCertStores)
+			if !reflect.DeepEqual(tt.certs, tt.expect) {
+				t.Errorf("expect %+v, got %+v", tt.expect, tt.certs)
 			}
 		})
 	}
