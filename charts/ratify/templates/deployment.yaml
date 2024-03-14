@@ -14,7 +14,7 @@ spec:
     metadata:
       labels:
         {{- include "ratify.selectorLabels" . | nindent 8 }}
-        {{- if .Values.oras.authProviders.azureWorkloadIdentityEnabled }}
+        {{- if ne .Values.azureWorkloadIdentity.clientId "" }}
         azure.workload.identity/use: "true"
         {{- end }}
       annotations:
