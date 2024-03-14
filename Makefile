@@ -25,43 +25,39 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitCommitHash=$(GIT_COMMIT_HASH)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
-KIND_VERSION ?= 0.14.0
+KIND_VERSION ?= 0.22.0
 KUBERNETES_VERSION ?= 1.27.7
 KIND_KUBERNETES_VERSION ?= 1.27.3
 GATEKEEPER_VERSION ?= 3.15.0
-DAPR_VERSION ?= 1.11.1
-COSIGN_VERSION ?= 1.13.1
-NOTATION_VERSION ?= 1.0.0-rc.7
-ORAS_VERSION ?= 1.0.0-rc.2
+DAPR_VERSION ?= 1.12.5
+COSIGN_VERSION ?= 2.2.3
+NOTATION_VERSION ?= 1.1.0
+ORAS_VERSION ?= 1.1.0
 
-HELM_VERSION ?= 3.9.2
-HELMFILE_VERSION ?= 0.155.0
+HELM_VERSION ?= 3.14.2
+HELMFILE_VERSION ?= 0.162.0
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
 BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_QUICKSTART_TESTS_FILE ?= test/bats/quickstart-test.bats
 BATS_HA_TESTS_FILE ?= test/bats/high-availability.bats
-BATS_VERSION ?= 1.7.0
-SYFT_VERSION ?= v0.76.0
-YQ_VERSION ?= v4.34.1
+BATS_VERSION ?= 1.10.0
+SYFT_VERSION ?= v1.0.0
+YQ_VERSION ?= v4.42.1
 YQ_BINARY ?= yq_linux_amd64
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
 ALPINE_IMAGE_VULNERABLE ?= alpine@sha256:25fad2a32ad1f6f510e528448ae1ec69a28ef81916a004d3629874104f8a7f70
 REDIS_IMAGE_TAG ?= 7.0-debian-11
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
-SBOM_TOOL_VERSION ?=v2.0.0
-TRIVY_VERSION ?= 0.47.0
-
-# ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.24.2
+SBOM_TOOL_VERSION ?=v2.2.3
+TRIVY_VERSION ?= 0.49.1
 
 GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
 # Local Registry Setup
-LOCAL_REGISTRY_IMAGE ?= ghcr.io/oras-project/registry:v1.0.0-rc.4
-LOCAL_UNSIGNED_IMAGE = hello-world:latest
+LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.2
 TEST_REGISTRY = localhost:5000
 TEST_REGISTRY_USERNAME = test_user
 TEST_REGISTRY_PASSWORD = test_pw
@@ -228,25 +224,20 @@ e2e-run-local-registry:
 		-p 5000:5000 \
 		--restart=always \
 		--name registry \
-		-v ${HOME}/auth:/auth \
-		-e "REGISTRY_AUTH=htpasswd" \
-		-e "REGISTRY_AUTH_HTPASSWD_REALM=Registry Realm" \
-		-e REGISTRY_AUTH_HTPASSWD_PATH=/auth/htpasswd \
-		-e REGISTRY_STORAGE_DELETE_ENABLED=true \
+		-v ${HOME}/auth/htpasswd:/etc/zot/htpasswd \
+		-v ${GITHUB_WORKSPACE}/test/bats/tests/config/zot-config.json:/etc/zot/config.json \
 		${LOCAL_REGISTRY_IMAGE}
-	sleep 5
-	docker login -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}
-	${GITHUB_WORKSPACE}/bin/oras login \
-		-u ${TEST_REGISTRY_USERNAME} \
-		-p ${TEST_REGISTRY_PASSWORD} \
-		${TEST_REGISTRY}
+	sleep 10
+	${GITHUB_WORKSPACE}/bin/oras login --insecure ${TEST_REGISTRY} -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD}
 
 e2e-create-all-image:
 	rm -rf .staging
 	mkdir .staging
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "all-in-one image"]' > .staging/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/all:v0 .staging
-	docker push ${TEST_REGISTRY}/all:v0
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/all.tar -t all:v0 .staging
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/all.tar:v0 ${TEST_REGISTRY}/all:v0
+	rm .staging/all.tar
 
 e2e-bootstrap: e2e-dependencies e2e-create-local-registry
 	printf 'kind: Cluster\napiVersion: kind.x-k8s.io/v1alpha4\ncontainerdConfigPatches:\n- |-\n  [plugins."io.containerd.grpc.v1.cri".registry.mirrors."localhost:5000"]\n    endpoint = ["http://registry:5000"]' > kind_config.yaml
@@ -289,18 +280,22 @@ e2e-notation-setup:
 	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notation/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notation
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation signed image"]' > .staging/notation/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed .staging/notation
-	docker push ${TEST_REGISTRY}/notation:signed
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:signed
+	rm .staging/notation/notation.tar
 
-	docker pull ${LOCAL_UNSIGNED_IMAGE}
-	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${TEST_REGISTRY}/notation:unsigned
-	docker push ${TEST_REGISTRY}/notation:unsigned
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation unsigned image"]' > .staging/notation/Dockerfile
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:unsigned
+	rm .staging/notation/notation.tar
 
 	rm -rf ~/.config/notation
 	.staging/notation/notation cert generate-test --default "ratify-bats-test"
 
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/notation:signed | jq -r .[0].RepoDigests[0]`
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:signed --descriptor | jq .digest | xargs`
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/all:v0 --descriptor | jq .digest | xargs`
 
 e2e-notation-leaf-cert-setup:
 	mkdir -p .staging/notation/leaf-test
@@ -313,9 +308,11 @@ e2e-notation-leaf-cert-setup:
 	jq '.keys += [{"name":"leaf-test","keyPath":".staging/notation/leaf-test/leaf.key","certPath":".staging/notation/leaf-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation leaf signed image"]' > .staging/notation/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/notation:leafSigned .staging/notation
-	docker push ${TEST_REGISTRY}/notation:leafSigned
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" `docker image inspect ${TEST_REGISTRY}/notation:leafSigned | jq -r .[0].RepoDigests[0]`
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:leafSigned
+	rm .staging/notation/notation.tar
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:leafSigned --descriptor | jq .digest | xargs`
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
@@ -326,19 +323,23 @@ e2e-cosign-setup:
 
 	# image signed with a key
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign signed image"]' > .staging/cosign/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/cosign:signed-key .staging/cosign
-	docker push ${TEST_REGISTRY}/cosign:signed-key
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/cosign/cosign.tar -t cosign:v0 .staging/cosign
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/cosign/cosign.tar:v0 ${TEST_REGISTRY}/cosign:signed-key
+	rm .staging/cosign/cosign.tar
 
-	docker pull ${LOCAL_UNSIGNED_IMAGE}
-	docker image tag ${LOCAL_UNSIGNED_IMAGE} ${TEST_REGISTRY}/cosign:unsigned
-	docker push ${TEST_REGISTRY}/cosign:unsigned
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "cosign unsigned image"]' > .staging/cosign/Dockerfile
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/cosign/cosign.tar -t cosign:v0 .staging/cosign
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/cosign/cosign.tar:v0 ${TEST_REGISTRY}/cosign:unsigned
+	rm .staging/cosign/cosign.tar
 
 	export COSIGN_PASSWORD="test" && \
 	cd .staging/cosign && \
 	./cosign-linux-amd64 login ${TEST_REGISTRY} -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} && \
 	./cosign-linux-amd64 generate-key-pair && \
-	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${TEST_REGISTRY}/cosign:signed-key | jq -r .[0].RepoDigests[0]` && \
-	./cosign-linux-amd64 sign --key cosign.key `docker image inspect ${TEST_REGISTRY}/all:v0 | jq -r .[0].RepoDigests[0]`
+	./cosign-linux-amd64 sign --allow-insecure-registry --allow-http-registry --tlog-upload=false --key cosign.key ${TEST_REGISTRY}/cosign@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/cosign:signed-key --descriptor | jq .digest | xargs` && \
+	./cosign-linux-amd64 sign --allow-insecure-registry --allow-http-registry --tlog-upload=false --key cosign.key ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/all:v0 --descriptor | jq .digest | xargs`
 
 e2e-licensechecker-setup:
 	rm -rf .staging/licensechecker
@@ -349,16 +350,20 @@ e2e-licensechecker-setup:
 
 	# Build/Push Image
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "licensechecker image"]' > .staging/licensechecker/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/licensechecker:v0 .staging/licensechecker
-	docker push ${TEST_REGISTRY}/licensechecker:v0
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/licensechecker/licensechecker.tar -t licensechecker:v0 .staging/licensechecker
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/licensechecker/licensechecker.tar:v0 ${TEST_REGISTRY}/licensechecker:v0
+	rm .staging/licensechecker/licensechecker.tar
 
 	# Create/Attach SPDX
-	.staging/licensechecker/syft -o spdx --file .staging/licensechecker/sbom.spdx ${TEST_REGISTRY}/licensechecker:v0
+	.staging/licensechecker/syft -o spdx=.staging/licensechecker/sbom.spdx ${TEST_REGISTRY}/licensechecker:v0
 	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/licensechecker:v0 \
   		--artifact-type application/vnd.ratify.spdx.v0 \
+		--distribution-spec v1.1-referrers-api \
   		.staging/licensechecker/sbom.spdx:application/text
 	${GITHUB_WORKSPACE}/bin/oras attach ${TEST_REGISTRY}/all:v0 \
   		--artifact-type application/vnd.ratify.spdx.v0 \
+		--distribution-spec v1.1-referrers-api \
   		.staging/licensechecker/sbom.spdx:application/text
 
 e2e-sbom-setup:
@@ -373,11 +378,15 @@ e2e-sbom-setup:
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image"]' > .staging/sbom/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/sbom:v0 .staging/sbom
-	docker push ${TEST_REGISTRY}/sbom:v0
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/sbom/sbom.tar -t sbom:v0 .staging/sbom
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/sbom/sbom.tar:v0 ${TEST_REGISTRY}/sbom:v0
+	rm .staging/sbom/sbom.tar
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "sbom image unsigned"]' > .staging/sbom/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/sbom:unsigned .staging/sbom
-	docker push ${TEST_REGISTRY}/sbom:unsigned
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/sbom/sbom.tar -t sbom:v0 .staging/sbom
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/sbom/sbom.tar:v0 ${TEST_REGISTRY}/sbom:unsigned
+	rm .staging/sbom/sbom.tar
 	
 	# Generate/Attach sbom
 	# -b (BuildDropPath) - The folder to save the generated SPDX SBOM manifests to
@@ -388,24 +397,28 @@ e2e-sbom-setup:
 	# -nsu (NamespaceUri) - The namespace that will be used as the SBOM manifest's namespace. This should be a URL that's owned by your organization
 	# -di (DockerImage) - The docker image that will be used to generate the SBOM manifest
 	# -m (ManifestPath) - The path to the SBOM manifest that will be generated
-	# -D (Debug) - Enable debug logging 
+	# -D (Debug) - Enable debug logging
+	docker pull localhost:5000/sbom:v0
 	.staging/sbom/sbom-tool generate -b .staging/sbom -pn ratify -di ${TEST_REGISTRY}/sbom:v0 -m .staging/sbom -pv 1.0 -ps acme -nsu ratify -nsb http://registry:5000 -D true
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
+		--distribution-spec v1.1-referrers-api \
 		 ${TEST_REGISTRY}/sbom:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
+		--distribution-spec v1.1-referrers-api \
 		 ${TEST_REGISTRY}/sbom:unsigned \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/spdx+json \
+		--distribution-spec v1.1-referrers-api \
 		 ${TEST_REGISTRY}/all:v0 \
 		.staging/sbom/_manifest/spdx_2.2/manifest.spdx.json
-
+	sleep 5
 	# Push Signature to sbom
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`oras discover -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`${GITHUB_WORKSPACE}/bin/oras discover --distribution-spec v1.1-referrers-api -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras discover --distribution-spec v1.1-referrers-api -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
@@ -417,17 +430,21 @@ e2e-schemavalidator-setup:
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/schemavalidator:v0 .staging/schemavalidator
-	docker push ${TEST_REGISTRY}/schemavalidator:v0
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/schemavalidator/schemavalidator.tar -t schemavalidator:v0 .staging/schemavalidator
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/schemavalidator/schemavalidator.tar:v0 ${TEST_REGISTRY}/schemavalidator:v0
+	rm .staging/schemavalidator/schemavalidator.tar
 
 	# Create/Attach Scan Results
 	.staging/schemavalidator/trivy image --format sarif --output .staging/schemavalidator/trivy-scan.sarif ${TEST_REGISTRY}/schemavalidator:v0
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		--artifact-type application/vnd.aquasecurity.trivy.report.sarif.v1 \
+		--distribution-spec v1.1-referrers-api \
 		${TEST_REGISTRY}/schemavalidator:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
 	${GITHUB_WORKSPACE}/bin/oras attach \
-		--artifact-type vnd.aquasecurity.trivy.report.sarif.v1 \
+		--artifact-type application/vnd.aquasecurity.trivy.report.sarif.v1 \
+		--distribution-spec v1.1-referrers-api \
 		${TEST_REGISTRY}/all:v0 \
 		.staging/schemavalidator/trivy-scan.sarif:application/sarif+json
 
@@ -441,13 +458,16 @@ e2e-vulnerabilityreport-setup:
 
 	# Build/Push Image
 	printf 'FROM ${ALPINE_IMAGE_VULNERABLE}\nCMD ["echo", "vulnerabilityreport image"]' > .staging/vulnerabilityreport/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/vulnerabilityreport:v0 .staging/vulnerabilityreport
-	docker push ${TEST_REGISTRY}/vulnerabilityreport:v0
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/vulnerabilityreport/vulnerabilityreport.tar -t vulnerabilityreport:v0 .staging/vulnerabilityreport
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/vulnerabilityreport/vulnerabilityreport.tar:v0 ${TEST_REGISTRY}/vulnerabilityreport:v0
+	rm .staging/vulnerabilityreport/vulnerabilityreport.tar
 
 	# Create/Attach Scan Result
 	.staging/vulnerabilityreport/trivy image --format sarif --output .staging/vulnerabilityreport/trivy-sarif.json ${TEST_REGISTRY}/vulnerabilityreport:v0
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/sarif+json \
+		--distribution-spec v1.1-referrers-api \
 		${TEST_REGISTRY}/vulnerabilityreport:v0 \
 		.staging/vulnerabilityreport/trivy-sarif.json:application/sarif+json
 
@@ -457,11 +477,13 @@ e2e-inlinecert-setup:
 
 	# build and sign an image with an alternate certificate
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "alternate notation signed image"]' > .staging/inlinecert/Dockerfile
-	docker build --no-cache -t ${TEST_REGISTRY}/notation:signed-alternate .staging/inlinecert
-	docker push ${TEST_REGISTRY}/notation:signed-alternate
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/inlinecert/inlinecert.tar -t inlinecert:v0 .staging/inlinecert
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/inlinecert/inlinecert.tar:v0 ${TEST_REGISTRY}/notation:signed-alternate
+	rm .staging/inlinecert/inlinecert.tar
 
 	.staging/notation/notation cert generate-test "alternate-cert"
-	.staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "alternate-cert" `docker image inspect ${TEST_REGISTRY}/notation:signed-alternate | jq -r .[0].RepoDigests[0]`
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "alternate-cert" ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:signed-alternate --descriptor | jq .digest | xargs`
 
 e2e-azure-setup: e2e-create-all-image e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
 
