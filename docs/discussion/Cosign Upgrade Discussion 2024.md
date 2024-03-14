@@ -177,7 +177,7 @@ spec:
       ---------- END RSA KEY ------------
 ```
 
-CLI Config
+CLI Config additions: The `keyManagementSystems` would be a new top level section in the `config.json`.
 ```json
 {
   ...
@@ -217,7 +217,7 @@ Cons:
 - Providers will share almost the exact same implementation as certificate stores
 
 ### How do we support CLI scenario?
-  - CLI mode should support specification of a list of keys within the cosign verifier. Cosign plugin will handle directory configuration and key reading within implementation. Currently, one a single `key` path can be provided. This will be updated to support an absolute `filePath` to a key per entry in the `keys` field of the Cosign trust policy (see trust policy details [here](#trust-policy)). For backward compatability, the existing `key` field will also be honored.
+  - CLI mode should support specification of a list of keys within the cosign verifier. Cosign plugin will handle directory configuration and key reading within implementation. Currently, one a single `key` path can be provided. This will be updated to support an absolute `filePath` to a key per entry in the `keys` field of the Cosign trust policy (see trust policy details [here](#trust-policy)). The `provider` field is NOT required and is ignored if provided when the `filePath` is specified. For backward compatability, the existing `key` field will also be honored.
     - example `config.json`:
       ```json
       {
@@ -234,11 +234,9 @@ Cons:
                       "name": "wabbit-networks-images",
                       "keys": [
                         {
-                          "provider": "wabbit-key-1", // this can be any name
                           "filePath": "/path/to/key1.pub"
                         },
                         {
-                          "provider": "wabbit-key-2",
                           "filePath": "/path/to/key2.pub"
                         }
                       ]
