@@ -57,7 +57,7 @@ GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
 # Local Registry Setup
-LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.2-rc2
+LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.2
 TEST_REGISTRY = localhost:5000
 TEST_REGISTRY_USERNAME = test_user
 TEST_REGISTRY_PASSWORD = test_pw
