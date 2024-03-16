@@ -67,7 +67,7 @@ SLEEP_TIME=1
     cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     assert_success
-    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
 
     # configure the notation verifier to use the inline key management provider
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml

@@ -25,6 +25,7 @@ import (
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
 	"github.com/deislabs/ratify/pkg/utils"
 
+	re "github.com/deislabs/ratify/errors"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -87,7 +88,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	if len(keyManagementProviderList.Items) > 0 {
-		err := fmt.Errorf("key management provider already exists: key management provider and certificate store cannot be configured together")
+		err := re.ErrorCodeKeyManagementConflict.WithComponentType(re.CertProvider).WithPluginName(resource).WithDetail("key management provider already exists")
 		logger.Error(err)
 		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		// Note: for backwards compatibility in upgrade scenarios, we are not returning an error here
