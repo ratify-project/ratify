@@ -49,7 +49,7 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
-type CosignPluginConfig struct {
+type PluginConfig struct {
 	Name             string   `json:"name"`
 	Type             string   `json:"type,omitempty"`
 	ArtifactTypes    string   `json:"artifactTypes"`
@@ -74,7 +74,7 @@ type cosignVerifier struct {
 	verifierType     string
 	artifactTypes    []string
 	nestedReferences []string
-	config           *CosignPluginConfig
+	config           *PluginConfig
 }
 
 type cosignVerifierFactory struct{}
@@ -91,7 +91,7 @@ func init() {
 }
 
 // Create creates a new cosign verifier
-func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
+func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, _ string, namespace string) (verifier.ReferenceVerifier, error) {
 	logger.GetLogger(context.Background(), logOpt).Debugf("creating cosign verifier with config %v, namespace '%v'", verifierConfig, namespace)
 	verifierName := verifierConfig[types.Name].(string)
 	config, err := parseVerifierConfig(verifierConfig)
@@ -244,9 +244,9 @@ func (v *cosignVerifier) GetNestedReferences() []string {
 }
 
 // ParseVerifierConfig parses the verifier config and returns a CosignPluginConfig
-func parseVerifierConfig(verifierConfig config.VerifierConfig) (*CosignPluginConfig, error) {
+func parseVerifierConfig(verifierConfig config.VerifierConfig) (*PluginConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
-	conf := CosignPluginConfig{}
+	conf := PluginConfig{}
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
@@ -257,7 +257,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*CosignPluginCon
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to cosign verifier config from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 
-	// if Type is not provided, use the Name as the Type (backwards compatability)
+	// if Type is not provided, use the Name as the Type (backwards compatibility)
 	if conf.Type == "" {
 		conf.Type = conf.Name
 	}
