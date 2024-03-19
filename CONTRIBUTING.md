@@ -144,7 +144,7 @@ Follow the steps below to build and deploy a Ratify image with your private chan
 export REGISTRY=yourregistry
 docker buildx create --use
 
-docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
+docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
 docker build --progress=plain --build-arg KUBE_VERSION="1.27.7" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
