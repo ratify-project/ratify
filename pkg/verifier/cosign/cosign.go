@@ -243,7 +243,7 @@ func (v *cosignVerifier) GetNestedReferences() []string {
 	return v.nestedReferences
 }
 
-// ParseVerifierConfig parses the verifier config and returns a CosignPluginConfig
+// ParseVerifierConfig parses the verifier config and returns a PluginConfig
 func parseVerifierConfig(verifierConfig config.VerifierConfig) (*PluginConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := PluginConfig{}
