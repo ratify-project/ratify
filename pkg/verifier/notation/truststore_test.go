@@ -30,26 +30,37 @@ const (
 )
 
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
-	certStore := map[string][]string{}
-	certStore["store1"] = []string{"kv1"}
-	certStore["store2"] = []string{"kv2"}
+	certStore := make(map[string]map[string][]string)
+	certStore["ca"] = map[string][]string{"store1": {"default/kv1"}, "store2": {"projecta/kv2"}}
 	store := &trustStore{
-		certStores: certStore,
+		certStoresByType: certStore,
 	}
 
 	certificatesMap := map[string][]*x509.Certificate{}
-	if _, err := store.getCertificatesInternal(context.Background(), "store1", certificatesMap); err == nil {
+	if _, err := store.getCertificatesInternal(context.Background(), "ca", "store1", certificatesMap); err == nil {
 		t.Fatalf("error expected if cert map is empty")
 	}
 }
 
+func TestGetCertificates_EmptyCertStore(t *testing.T) {
+	certStore := make(map[string]map[string][]string)
+	certStore["ca"] = map[string][]string{"store1": {}}
+	store := &trustStore{
+		certStoresByType: certStore,
+	}
+
+	certificatesMap := map[string][]*x509.Certificate{}
+	if certs, err := store.getCertificatesInternal(context.Background(), "ca", "store1", certificatesMap); err != nil || len(certs) != 0 {
+		t.Fatalf("no error expected if cert store is empty")
+	}
+}
+
 func TestGetCertificates_NamedStore(t *testing.T) {
-	certStore := map[string][]string{}
-	certStore["store1"] = []string{"default/kv1"}
-	certStore["store2"] = []string{"projecta/kv2"}
+	certStore := make(map[string]map[string][]string)
+	certStore["ca"] = map[string][]string{"store1": {"default/kv1"}, "store2": {"projecta/kv2"}}
 
 	store := &trustStore{
-		certStores: certStore,
+		certStoresByType: certStore,
 	}
 
 	kv1Cert := getCert(certStr)
@@ -60,7 +71,7 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	certificatesMap["projecta/kv2"] = []*x509.Certificate{kv2Cert}
 
 	// only the certificate in the specified namedStore should be returned
-	result, _ := store.getCertificatesInternal(context.Background(), "store1", certificatesMap)
+	result, _ := store.getCertificatesInternal(context.Background(), "ca", "store1", certificatesMap)
 	expectedLen := 1
 
 	if len(result) != expectedLen {
@@ -85,7 +96,7 @@ func TestGetCertificates_certPath(t *testing.T) {
 	trustStore := &trustStore{
 		certPaths: []string{tmpFile.Name()},
 	}
-	certs, err := trustStore.getCertificatesInternal(context.Background(), "", nil)
+	certs, err := trustStore.getCertificatesInternal(context.Background(), "ca", "", nil)
 	if err != nil {
 		t.Fatalf("failed to get certs: %v", err)
 	}

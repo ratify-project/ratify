@@ -32,37 +32,40 @@ var logOpt = logger.Option{
 }
 
 type trustStore struct {
-	certPaths  []string
-	certStores map[string][]string
+	certPaths        []string
+	certStoresByType map[string]map[string][]string
 }
 
 // trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v1.0.0-rc.3/verifier/truststore#X509TrustStore]
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
-func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
+func (s *trustStore) GetCertificates(ctx context.Context, trustStoreType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	certs, err := s.getCertificatesInternal(ctx, trustStoreType, namedStore, controllers.GetCertificatesMap())
 	if err != nil {
 		return nil, err
 	}
 	return s.filterValidCerts(certs)
 }
 
-func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
+func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
-
 	// certs configured for this namedStore overrides cert path
-	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
-		for _, certStore := range certGroup {
-			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-			result := certificatesMap[certStore]
-			if len(result) == 0 {
-				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+	if certStores, ok := s.certStoresByType[string(storeType)]; ok {
+		if certGroup := certStores[namedStore]; len(certGroup) > 0 {
+			for _, certStore := range certGroup {
+				logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
+				result := certificatesMap[certStore]
+				if len(result) == 0 {
+					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+				}
+				certs = append(certs, result...)
 			}
-			certs = append(certs, result...)
-		}
-		if len(certs) == 0 {
-			return certs, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
+			if len(certs) == 0 {
+				return nil, fmt.Errorf("unable to fetch certificates for namedStore: %+v", namedStore)
+			}
+		} else {
+			logger.GetLogger(ctx, logOpt).Debugf("unable to fetch certGroup from collection: %+v in type: %v", certStores[namedStore], storeType)
 		}
 	} else {
 		for _, path := range s.certPaths {
@@ -78,7 +81,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 }
 
 // filterValidCerts keeps CA certificates and self-signed certs.
-func (s trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certificate, error) {
+func (s *trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certificate, error) {
 	filteredCerts := make([]*x509.Certificate, 0)
 	for _, cert := range certs {
 		if !cert.IsCA {
