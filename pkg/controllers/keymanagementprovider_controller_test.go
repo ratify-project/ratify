@@ -209,7 +209,7 @@ func TestSpecToKeyManagementProviderProvider(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, err := specToKeyManagementProviderProvider(tc.spec)
+			_, err := specToKeyManagementProvider(tc.spec)
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
 			}

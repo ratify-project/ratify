@@ -80,12 +80,12 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	// if certificate store is configured, return error. Only one of certificate store and key management provider can be configured
 	if len(certificateStoreList.Items) > 0 {
 		err := re.ErrorCodeKeyManagementConflict.WithComponentType(re.KeyManagementProvider).WithPluginName(resource).WithDetail("certificate store already exists")
+		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log an error.
+		// In v2.0.0 or later, Ratify will return an error to the user.
 		logger.Error(err)
-		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
-		// Note: for backwards compatibility in upgrade scenarios, we are not returning an error here
 	}
 
-	provider, err := specToKeyManagementProviderProvider(keyManagementProvider.Spec)
+	provider, err := specToKeyManagementProvider(keyManagementProvider.Spec)
 	if err != nil {
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
@@ -119,8 +119,8 @@ func (r *KeyManagementProviderReconciler) SetupWithManager(mgr ctrl.Manager) err
 		Complete(r)
 }
 
-// specToKeyManagementProviderProvider creates KeyManagementProviderProvider from  KeyManagementProviderSpec config
-func specToKeyManagementProviderProvider(spec configv1beta1.KeyManagementProviderSpec) (keymanagementprovider.KeyManagementProvider, error) {
+// specToKeyManagementProvider creates KeyManagementProviderProvider from  KeyManagementProviderSpec config
+func specToKeyManagementProvider(spec configv1beta1.KeyManagementProviderSpec) (keymanagementprovider.KeyManagementProvider, error) {
 	kmProviderConfig, err := rawToKeyManagementProviderConfig(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse key management provider config: %w", err)
