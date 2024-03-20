@@ -4,7 +4,7 @@ metadata:
   name: verifier-schemavalidator
 spec:
   name: schemavalidator
-  artifactTypes: vnd.aquasecurity.trivy.report.sarif.v1
+  artifactTypes: application/vnd.aquasecurity.trivy.report.sarif.v1
   parameters: 
     schemas:
       application/sarif+json: https://json.schemastore.org/sourcehut-build-0.65.0.json

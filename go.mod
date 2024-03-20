@@ -25,7 +25,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/golang/protobuf v1.5.4
-	github.com/google/go-containerregistry v0.19.0
+	github.com/google/go-containerregistry v0.19.1
 	github.com/gorilla/mux v1.8.1
 	github.com/notaryproject/notation-core-go v1.0.2
 	github.com/notaryproject/notation-go v1.0.1
@@ -48,9 +48,9 @@ require (
 	golang.org/x/sync v0.6.0
 	google.golang.org/grpc v1.61.1
 	google.golang.org/protobuf v1.33.0
-	k8s.io/api v0.28.7
-	k8s.io/apimachinery v0.28.7
-	k8s.io/client-go v0.28.7
+	k8s.io/api v0.28.8
+	k8s.io/apimachinery v0.28.8
+	k8s.io/client-go v0.28.8
 	oras.land/oras-go/v2 v2.3.1
 )
 
@@ -151,7 +151,7 @@ require (
 	github.com/containerd/stargz-snapshotter/estargz v0.14.3 // indirect
 	github.com/cyberphone/json-canonicalization v0.0.0-20231011164504-785e29786b46 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/docker/docker v24.0.7+incompatible // indirect
+	github.com/docker/docker v24.0.9+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/fxamacker/cbor/v2 v2.5.0 // indirect

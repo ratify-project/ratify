@@ -36,7 +36,9 @@
                     "MIT AND LicenseRef-AND AND BSD-2-Clause AND LicenseRef-AND AND GPL-2.0-or-later",
                     "MPL-2.0 AND LicenseRef-AND AND MIT",
                     "BSD-2-Clause AND LicenseRef-AND AND BSD-3-Clause",
-                    "NONE"
+                    "NONE",
+                    "NOASSERTION",
+                    ""
                 ]
             }
         ]
