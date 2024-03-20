@@ -358,7 +358,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     sleep 10
 
     # apply an invalid cert in an inline certificate store 
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline_invalid.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline_invalid.yaml -n ${RATIFY_NAMESPACE}
     assert_success
     # validate key management provider status property shows success
     run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
