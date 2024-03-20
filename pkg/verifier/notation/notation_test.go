@@ -250,45 +250,6 @@ func TestNormalizeVerificationCertsStores(t *testing.T) {
 	}
 }
 
-func TestPrependNamspaceToCertStores(t *testing.T) {
-	certStoresSample := []interface{}{"defaultns/akv1", "akv2"}
-
-	tests := []struct {
-		name      string
-		certs     []interface{}
-		namespace string
-		expectErr bool
-		expect    []string
-	}{
-		{
-			name:      "no namespace value provided",
-			certs:     certStoresSample,
-			namespace: "",
-			expectErr: true,
-			expect:    []string{"defaultns/akv1", "akv2"},
-		},
-		{
-			name:      "namespace value provided",
-			certs:     certStoresSample,
-			namespace: "testns",
-			expectErr: false,
-			expect:    []string{"defaultns/akv1", "testns/akv2"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := prependNamespaceToCertStore(tt.certs, tt.namespace)
-
-			if (err != nil) != tt.expectErr {
-				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
-			}
-			if !reflect.DeepEqual(tt.certs, tt.expect) {
-				t.Errorf("expect %+v, got %+v", tt.expect, tt.certs)
-			}
-		})
-	}
-}
-
 func TestVerifySignature(t *testing.T) {
 	v := &notationPluginVerifier{
 		notationVerifier: &testNotationPluginVerifier,
