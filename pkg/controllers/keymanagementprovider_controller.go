@@ -72,6 +72,7 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	isFetchSuccessful := false
 
 	// get certificate store list to check if certificate store is configured
+	// TODO: remove check in v2.0.0+
 	var certificateStoreList configv1beta1.CertificateStoreList
 	if err := r.List(ctx, &certificateStoreList); err != nil {
 		logger.Error(err, "unable to list certificate stores")
@@ -81,7 +82,6 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	if len(certificateStoreList.Items) > 0 {
 		err := re.ErrorCodeKeyManagementConflict.WithComponentType(re.KeyManagementProvider).WithPluginName(resource).WithDetail("certificate store already exists")
 		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log an error.
-		// In v2.0.0 or later, Ratify will return an error to the user.
 		logger.Error(err)
 	}
 

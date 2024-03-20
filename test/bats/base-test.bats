@@ -260,7 +260,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
-        # restore the original key management provider provider
+        # restore the original key management provider
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f kmprovider_staging.yaml'
         # restore the original notation verifier for other tests
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
@@ -298,7 +298,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 }
 
-@test "validate inline key management provider provider" {
+@test "validate inline key management provider" {
     teardown() {
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
@@ -333,6 +333,40 @@ RATIFY_NAMESPACE=gatekeeper-system
     # verify that the image can now be run
     run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
     assert_success
+}
+
+@test "validate inline key management provider with inline certificate store" {
+    # this test validates that if a key management provider and certificate store are both configured with the same name,
+    # the certificate store will take precedence and continue to work as expected
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
+    }
+     # configure the default template/constraint
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+
+    # validate key management provider status property shows success
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    assert_success
+    run kubectl run demo --namespace default --image=registry:5000/notation:signed
+    assert_success
+
+    sleep 10
+
+    # apply an invalid cert in an inline certificate store 
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline_invalid.yaml
+    assert_success
+    # validate key management provider status property shows success
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    assert_success
+    # verification should fail as the certificate store will take precedence over the key management provider
+    run kubectl run demo1 --namespace default --image=registry:5000/notation:signed
+    assert_failure
+
 }
 
 @test "validate K8s secrets ORAS auth provider" {
