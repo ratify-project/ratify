@@ -6,9 +6,7 @@ on:
   pull_request:
     branches:
       - staging2
-  push:
-    branches:
-      - staging2
+       
   workflow_dispatch:
 
 permissions: read-all
