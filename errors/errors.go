@@ -122,7 +122,7 @@ var (
 	// ErrorCodeKeyManagementConflict is returned when key management provider and certificate store are configured together.
 	ErrorCodeKeyManagementConflict = Register("errcode", ErrorDescriptor{
 		Value:       "KEY_MANAGEMENT_CONFLICT",
-		Message:     "key management provider and certificate store cannot be configured together",
-		Description: "Key management provider and certificate store cannot be configured together. Please remove one of them.",
+		Message:     "key management provider and certificate store should not be configured together",
+		Description: "Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.",
 	})
 )
