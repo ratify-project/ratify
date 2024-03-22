@@ -53,8 +53,8 @@ type PluginConfig struct {
 	Name             string   `json:"name"`
 	Type             string   `json:"type,omitempty"`
 	ArtifactTypes    string   `json:"artifactTypes"`
-	KeyRef           string   `json:"key"`
-	RekorURL         string   `json:"rekorURL"`
+	KeyRef           string   `json:"key,omitempty"`
+	RekorURL         string   `json:"rekorURL,omitempty"`
 	NestedReferences []string `json:"nestedArtifactTypes,omitempty"`
 }
 
@@ -93,17 +93,22 @@ func init() {
 // Create creates a new cosign verifier
 func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, _ string, namespace string) (verifier.ReferenceVerifier, error) {
 	logger.GetLogger(context.Background(), logOpt).Debugf("creating cosign verifier with config %v, namespace '%v'", verifierConfig, namespace)
-	verifierName := verifierConfig[types.Name].(string)
+	verifierName, hasName := verifierConfig[types.Name].(string)
+	if !hasName {
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("missing name in verifier config")
+	}
+
 	config, err := parseVerifierConfig(verifierConfig)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
 	return &cosignVerifier{
-		name:          verifierName,
-		verifierType:  config.Type,
-		artifactTypes: strings.Split(config.ArtifactTypes, ","),
-		config:        config,
+		name:             verifierName,
+		verifierType:     config.Type,
+		artifactTypes:    strings.Split(config.ArtifactTypes, ","),
+		nestedReferences: config.NestedReferences,
+		config:           config,
 	}, nil
 }
 
@@ -245,7 +250,10 @@ func (v *cosignVerifier) GetNestedReferences() []string {
 
 // ParseVerifierConfig parses the verifier config and returns a PluginConfig
 func parseVerifierConfig(verifierConfig config.VerifierConfig) (*PluginConfig, error) {
-	verifierName := verifierConfig[types.Name].(string)
+	verifierName, hasName := verifierConfig[types.Name].(string)
+	if !hasName {
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, "", re.EmptyLink, nil, "missing name in verifier config", re.HideStackTrace)
+	}
 	conf := PluginConfig{}
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
@@ -260,6 +268,10 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig) (*PluginConfig, e
 	// if Type is not provided, use the Name as the Type (backwards compatibility)
 	if conf.Type == "" {
 		conf.Type = conf.Name
+	}
+
+	if conf.ArtifactTypes == "" {
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, nil, "missing artifactTypes in verifier config", re.HideStackTrace)
 	}
 
 	return &conf, nil
