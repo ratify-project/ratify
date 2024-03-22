@@ -17,10 +17,13 @@ package cosign
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/verifier/config"
+	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sigstore/cosign/v2/pkg/oci/static"
 )
 
 // TestCreate tests the Create function of the cosign verifier
@@ -236,5 +239,72 @@ func TestParseVerifierConfig(t *testing.T) {
 				t.Errorf("Type() = %v, want %v", pluginConfig.Type, tt.wantType)
 			}
 		})
+	}
+}
+
+// TestStaticLayerOpts tests the staticLayerOpts function
+func TestStaticLayerOpts(test *testing.T) {
+	tc := []struct {
+		name    string
+		desc    imgspec.Descriptor
+		wantLen int
+		wantErr bool
+	}{
+		{
+			name: "valid config",
+			desc: imgspec.Descriptor{
+				MediaType: "application/vnd.oci.image.layer.v1.tar",
+				Annotations: map[string]string{
+					static.CertificateAnnotationKey: "testcert",
+					static.ChainAnnotationKey:       "testchain",
+					static.BundleAnnotationKey:      "{\"SignedEntryTimestamp\":\"MEUCIQDj21LM7GkNM3SlaodBrUgZBFF7gFCgI1u/bE82kCyzBgIgB7Oqk/vahZevqUTHqo7JFo02yc2zawTTw3gMwwf0En8=\",\"Payload\":{\"body\":\"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiI4MzdhMjkyNGZlZjgwYTVhNmJiOGQ4NzExZTY2NTE4YzMwOTJkZTg4ODhlYTg4ODBhOTMyM2I5ODUwNjkzMzM5In19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FUUNJQXFueXVsUTVoZW1KaStQZ0EvdHgyVEFqM2xSdlJlYkFmSWtZYnM1NlZhckFpQnJoS3BaQ3Fzb2M2NGdzdllEZUxFWGRyb291U0RvQjRrZ2dJUEZ6MEFpSnc9PSIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2sxSlNVTXhla05EUVd3eVowRjNTVUpCWjBsVldXOUlibWcyY25GQk0yZFVSSE5TTTFaUmRuSmFkazlQT0RWTmQwTm5XVWxMYjFwSmVtb3dSVUYzVFhjS1RucEZWazFDVFVkQk1WVkZRMmhOVFdNeWJHNWpNMUoyWTIxVmRWcEhWakpOVWpSM1NFRlpSRlpSVVVSRmVGWjZZVmRrZW1SSE9YbGFVekZ3WW01U2JBcGpiVEZzV2tkc2FHUkhWWGRJYUdOT1RXcE5kMDVFUlROTmFrRXhUVlJGTTFkb1kwNU5hazEzVGtSRk0wMXFSWGROVkVVelYycEJRVTFHYTNkRmQxbElDa3R2V2tsNmFqQkRRVkZaU1V0dldrbDZhakJFUVZGalJGRm5RVVV3VFRNd2FWTndaVUU1WVhGMk1VOUJVVEp6YlRKbVQwSkpSbUpMWVhOck1UVktOVTRLU25SSkswRTJUR2RFU1V0WVdYcEJTRXB0ZDBabFVGUkRZbHB6V2t3cldHeDZaVTlCTmxFelZYWXhPR1pFUWpoUFMyRlBRMEZZZDNkblowWTBUVUUwUndwQk1WVmtSSGRGUWk5M1VVVkJkMGxJWjBSQlZFSm5UbFpJVTFWRlJFUkJTMEpuWjNKQ1owVkdRbEZqUkVGNlFXUkNaMDVXU0ZFMFJVWm5VVlUwV1hsMUNqZzJMMjV2Um1Vclptb3ZkbFIwSzBKSlJ6Qk1WelEwZDBoM1dVUldVakJxUWtKbmQwWnZRVlV6T1ZCd2VqRlphMFZhWWpWeFRtcHdTMFpYYVhocE5Ga0tXa1E0ZDBwM1dVUldVakJTUVZGSUwwSkNNSGRITkVWYVdWZDBhR015YUhKak1teDFXakpvYUdKRWF6UlJSMlIwV1Zkc2MweHRUblppVkVGelFtZHZjZ3BDWjBWRlFWbFBMMDFCUlVKQ1FqVnZaRWhTZDJONmIzWk1NbVJ3WkVkb01WbHBOV3BpTWpCMllrYzVibUZYTkhaaU1rWXhaRWRuZDB4bldVdExkMWxDQ2tKQlIwUjJla0ZDUTBGUlowUkNOVzlrU0ZKM1kzcHZka3d5WkhCa1IyZ3hXV2sxYW1JeU1IWmlSemx1WVZjMGRtSXlSakZrUjJkM1oxbHJSME5wYzBjS1FWRlJRakZ1YTBOQ1FVbEZaWGRTTlVGSVkwRmtVVVJrVUZSQ2NYaHpZMUpOYlUxYVNHaDVXbHA2WTBOdmEzQmxkVTQwT0hKbUswaHBia3RCVEhsdWRRcHFaMEZCUVZsbFVTOUlhMkZCUVVGRlFYZENSMDFGVVVOSlIyTm5UVFl2YVZGWldIUlVkemhoWVUxSUwweDRhQzlYYjA4eGVISlFOVUZoY2xOV1JEaFlDa2t3YURSQmFVSk5jRU5NTkN0RlMxbHNPWGQ2TnpBd1JuUXdWSEIxVDNoVVJFVnhhR3hFVEZsVmNIWnFjR1prUW5aRVFVdENaMmR4YUd0cVQxQlJVVVFLUVhkT2IwRkVRbXhCYWtFeFpuZDVaVkowVnpGcU4yUllNbHA2UzA1aVluRjNjVU0zWVZjNWFXTlhlRE40U1dsRU1IQlZhVGRLWVRodWRWbG5XR3BJYUFwWVZVWnBRMng2UjNkS1kwTk5VVVEzV21GTVNERkxUekZwVTNwU1EwVkZaRGhhUm1KaFprMXhjSGc1VTBsVFVHaGxSVFJsYkdWV1NDdEhjbkZ5Ylc5WkNrMVBUbHB2TVhCa1ltOVZTMnh2TUQwS0xTMHRMUzFGVGtRZ1EwVlNWRWxHU1VOQlZFVXRMUzB0TFFvPSJ9fX19\",\"integratedTime\":1681764685,\"logIndex\":18215184,\"logID\":\"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d\"}}",
+				},
+			},
+			wantLen: 3,
+			wantErr: false,
+		},
+		{
+			name: "incorrect rekor bundle",
+			desc: imgspec.Descriptor{
+				MediaType: "application/vnd.oci.image.layer.v1.tar",
+				Annotations: map[string]string{
+					static.CertificateAnnotationKey: "testcert",
+					static.ChainAnnotationKey:       "testchain",
+					static.BundleAnnotationKey:      "invalidbundle",
+				},
+			},
+			wantLen: 0,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tc {
+		test.Run(tt.name, func(test *testing.T) {
+			layerOpts, err := staticLayerOpts(tt.desc)
+			if (err != nil) != tt.wantErr {
+				test.Errorf("staticLayerOpts() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if err == nil && len(layerOpts) != tt.wantLen {
+				test.Errorf("staticLayerOpts() = %v, want %v", len(layerOpts), tt.wantLen)
+			}
+		})
+	}
+}
+
+// TestErrorToVerifyResult tests the errorToVerifyResult function
+func TestErrorToVerifyResult(t *testing.T) {
+	verifierResult := errorToVerifyResult("test", "cosign", fmt.Errorf("test error"))
+	if verifierResult.IsSuccess {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.IsSuccess, false)
+	}
+	if verifierResult.Name != "test" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Name, "test")
+	}
+	if verifierResult.Type != "cosign" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Type, "cosign")
+	}
+	if verifierResult.Message != "cosign verification failed: test error" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "cosign verification failed: test error")
 	}
 }
