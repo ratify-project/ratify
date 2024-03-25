@@ -386,9 +386,9 @@ spec:
         enforcement: skip
 ```
 
-To start, only a single `trustPolicies` entry + `keys` with `provider`, `name`, `version`, and `filePath` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
+To start, only a single `trustPolicies` entry + `keys` with `provider`, `name`, `version`, `filePath`, and `scopes` will be supported. The behavior will match an equivalent `enforcement` of `any`. Future, work will add support for remainig configs.
 
-The `provider` field, where the name of the `KeyManagementProvider` (KMP) can be specified, is assumed to be referencing a `KMP` in the same namespace as the cosign verifier. If the user would like to specify a `provider` in the cluster scope, the user must append `cluster/` to the front of the `KMP` name.
+The `provider` field, where the name of the `KeyManagementProvider` (KMP) can be specified, is assumed to be referencing a `KMP` in the ratify installatio namespace (currently the Verifier is a cluster scoped resource). If the user would like to specify a `provider` in the cluster scope, the user must append `cluster/` to the front of the `KMP` name. If the user would like to specify a a `KMP` in a different namespace, the user must append the namespace to the front of the name reference using a `/` delimiter. For example, a KMP, `test-kmp` in the `test` namespace would be referenced `test/test-kmp`.
 ### User Scenarios
 
 #### 1 Signature, 2 trusted keys
@@ -579,6 +579,36 @@ spec:
   - Cosign OCI 1.1 support is experimental
   - Currently, an arbitrary signature from list of referrers is chosen to perform verifications on IF multiple cosign artifacts are found.
   - This logic will be updated in the future once 1.1 is GA but for now it's left as a TODO in the Cosign code base.
+
+### How does `scopes` matching work?
+
+`scopes` are associated per `trustPolicy`. They function to apply on top of a validation image reference and match a SINGLE trust policy to use for verification. Ratify needs to decide how to implement scope matching based on the scenarios to support. Scopes could support regular expressions however they are not as user friendly. Ratify could also define its own domain/repository pattern syntax. Or, Ratify could support both side-by-side; however, this would require having behavior to rectify if both are used at once or used for different policies. The other concern is if multiple trust policies are defined each with scopes that can apply. For example, let's take Trust Policy A which has scope `*` (any image reference works). Then, let's define Trust Policy B with scope `ghcr.io`. Finally, define Trust Policy C with scope `ghcr.io/deislabs/ratify`. If our image to validate has reference: `ghcr.io/deislabs/ratify:v1.2.0`, which Trust Policy should apply? Ideally, we should match to he policy that is most specific first, so Trust Policy C would be selected.
+
+#### Scenarios to Support
+1. Wildcard: `*`
+2. Registry wide scope: `ghcr.io`
+3. Wildcard registry domain scope: `*.azurecr.io`
+4. Intermediate repository paths (repository path may reference a subpath but not an absolute path): `ghcr.io/deislabs/`
+
+#### How does notation do this?
+
+Notation's Trust Policy supports a generic `*` wildcard OR a an absolute repository path `ghcr.io/absolute/path`. There is no support for registry or wildcard registry domains. Furthermore, since only absolute repository paths are supported, there is no concern of a trust policy whose scope is a super set of another more tightly scoped trust policy.
+
+#### Regex based matching
+- Every element in `scopes` is a string regular expression. How do we figure out which policy has the tighest scope if multiple trust policies have regex that match the entire image reference?
+- Regex is the most flexible and can satisfy all other requirements. However, it does require user has general understanding of regex and how to format expressions.
+
+#### Custom pattern syntax
+- Use pure sub string matching: give a string scope `s` and image reference `r`, a trust policy matches if all of `s` is a substring of `r`. This would support scope from domain all the way to tags. It could also work for partial path patterns like image reference whose path contains `/somepath/`. The tightest scope would be the longest string scope that still has a full matching substring. The trust policy selected would be the policy with a matching scope that is character-wise the longest.
+- Sub-string matching does not allow for specifying positional matching behavior like "regex" does. Let's say our goal is to match image references which end with repotiory `/test`. In pure sub string matching if there's an intermediate repo named `/test`, it will consider that a match which is NOT correct. 
+
+#### Proposed Solution
+Introduce a hybrid solution that is based on substring matching:
+- "tighest scope" is defined as a scope string that is longest AND has a matching substring in the image reference.
+- `*` is a wildcard reserved for a trust policy that matches everything. It will have the loosest scope and will only be used iff there is NOT a tighter scope found.
+- Partial path patterns like `/somepath/` are not supported or recommended
+- wild card registry domain scope can be achieved by specifying the domain string as a scope string (example: use only ACRs --> `.azurecr.io`)
+- Regex is NOT supported
 
 ### Implementation Details
 
