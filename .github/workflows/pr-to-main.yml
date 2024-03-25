@@ -30,7 +30,7 @@ jobs:
           gh_pr_up --title "[Automated1] Merge ${{ env.GITHUB_CONTEXT }} into main" --body "Automated Pull Request" --base main
 
       # https://github.com/marketplace/actions/github-pull-request-action
-      - name: create pull request
+      - name: create pull request with reposync acition
         id: open-pr
         uses: repo-sync/pull-request@v2 #TODO switch for digest
         with:
