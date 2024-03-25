@@ -5,6 +5,9 @@ on:
     branches:
       - 'staging2' #to update to staging
 
+permissions:
+  pull-requests: write
+
 jobs:
   main:
     name: Create PR Release to Main
@@ -18,7 +21,14 @@ jobs:
           echo "$GITHUB_CONTEXT"| jq '.event.commits[].id' | tail -2 | head -1 |sed 's/\"//g'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
-          
+      
+      # https://github.com/marketplace/actions/github-pull-request-action
+      - uses: actions/checkout@v3
+      - name: pull-request
+        run: |
+          gh_pr_up() { gh pr create $* || gh pr edit $* }
+          gh_pr_up --title "[Automated1] Merge ${{ env.GITHUB_CONTEXT }} into main" --body "Automated Pull Request" --base main
+
       # https://github.com/marketplace/actions/github-pull-request-action
       - name: create pull request
         id: open-pr
