@@ -64,11 +64,11 @@ deploy_ratify() {
     --set image.crdRepository=${REGISTRY}/test/localbuildcrd \
     --set image.tag=${TAG} \
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
-    --set akvCertConfig.enabled=true \
-    --set akvCertConfig.vaultURI=${VAULT_URI} \
-    --set akvCertConfig.certificates[0].name=${NOTATION_PEM_NAME} \
-    --set akvCertConfig.certificates[1].name=${NOTATION_CHAIN_PEM_NAME} \
-    --set akvCertConfig.tenantId=${TENANT_ID} \
+    --set azurekeyvault.enabled=true \
+    --set azurekeyvault.vaultURI=${VAULT_URI} \
+    --set azurekeyvault.certificates[0].name=${NOTATION_PEM_NAME} \
+    --set azurekeyvault.certificates[1].name=${NOTATION_CHAIN_PEM_NAME} \
+    --set azurekeyvault.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
     --set-file cosign.key=".staging/cosign/cosign.pub" \
