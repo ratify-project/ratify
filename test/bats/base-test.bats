@@ -337,7 +337,7 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "validate inline key management provider with inline certificate store" {
     # this test validates that if a key management provider and certificate store are both configured with the same name,
-    # the certificate store will take precedence and continue to work as expected
+    # the key management provider will take precedence and continue to work as expected
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
@@ -364,9 +364,9 @@ RATIFY_NAMESPACE=gatekeeper-system
     # validate key management provider status property shows success
     run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
     assert_success
-    # verification should fail as the certificate store will take precedence over the key management provider
+    # verification should succeed as the existing KMP will take precedence over the new certificate store
     run kubectl run demo1 --namespace default --image=registry:5000/notation:signed
-    assert_failure
+    assert_success
 
 }
 
