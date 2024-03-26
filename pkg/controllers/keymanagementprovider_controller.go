@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
@@ -91,17 +92,28 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
+	// fetch certificates and store in map
 	certificates, certAttributes, err := provider.GetCertificates(ctx)
 	if err != nil {
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
 	keymanagementprovider.SetCertificatesInMap(resource, certificates)
+
+	// fetch keys and store in map
+	keys, keyAttributes, err := provider.GetKeys(ctx)
+	if err != nil {
+		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
+	}
+	keymanagementprovider.SetKeysInMap(resource, keys)
+	// merge certificates and keys status into one
+	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true
 	emptyErrorString := ""
-	writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
+	writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, keyAttributes)
 
-	logger.Infof("%v certificates fetched for key management provider %v", len(certificates), resource)
+	logger.Infof("%v certificate(s) & %v key(s) fetched for key management provider %v", len(certificates), len(keys), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
