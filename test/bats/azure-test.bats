@@ -45,7 +45,7 @@ SLEEP_TIME=1
 
 @test "validate image signed by leaf cert" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
@@ -64,13 +64,13 @@ SLEEP_TIME=1
     assert_success
 
     # add the leaf certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     assert_success
-    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
 
-    # configure the notation verifier to use the inline certificate store
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
+    # configure the notation verifier to use the inline key management provider
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -250,7 +250,7 @@ SLEEP_TIME=1
     assert_failure
 
     echo "Add notation verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_certstore.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_kmprovider.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -304,7 +304,7 @@ SLEEP_TIME=1
 @test "validate mutation tag to digest" {
     teardown() {
         echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod mutate-demo --namespace default'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod mutate-demo --namespace default --ignore-not-found=true'
     }
     run kubectl apply -f ./library/default/template.yaml
     assert_success

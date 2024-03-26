@@ -61,6 +61,7 @@ releases:
           - "verifiers.config.ratify.deislabs.io"
           - "certificatestores.config.ratify.deislabs.io"
           - "policies.config.ratify.deislabs.io"
+          - "keymanagementproviders.config.ratify.deislabs.io"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
