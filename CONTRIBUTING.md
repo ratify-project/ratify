@@ -252,7 +252,7 @@ Gatekeeper requires TLS for external data provider interactions. As such ratify 
     helm install ratify \
       ./charts/ratify --atomic \
       --namespace gatekeeper-system \
-      --set-file notationCert=./test/testdata/notation.crt \
+      --set-file notationCerts[0]=./test/testdata/notation.crt \
       --set-file provider.tls.crt=./tls/certs/tls.crt \
       --set-file provider.tls.key=./tls/certs/tls.key \
       --set-file provider.tls.cabundle=./tls/certs/ca.crt
