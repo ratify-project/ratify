@@ -23,11 +23,11 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
     
       # https://github.com/marketplace/actions/github-pull-request-action
-      - name: create pull request with reposync action
+      - name: create pull request with reposync action2
         id: open-pr
         uses: repo-sync/pull-request@v2 #TODO switch for digest
         with:
-          github_token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.PR_TOKEN }}
           destination_branch: main
           pr_title: "[Automated] Merge ${{ env.GITHUB_CONTEXT }} into main"
           pr_body: "Automated Pull Request"
