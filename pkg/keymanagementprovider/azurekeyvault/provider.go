@@ -171,8 +171,7 @@ func (s *akvKMProvider) GetKeys(ctx context.Context) (map[keymanagementprovider.
 	for _, keyVaultKey := range s.keys {
 		logger.GetLogger(ctx, logOpt).Debugf("fetching key from key vault, keyName %v,  keyvault %v", keyVaultKey.Name, s.vaultURI)
 
-		// fetch the object from Key Vault
-		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/deislabs/ratify/issues/695 for details
+		// fetch the key object from Key Vault
 		startTime := time.Now()
 		keyBundle, err := s.kvClient.GetKey(ctx, s.vaultURI, keyVaultKey.Name, keyVaultKey.Version)
 		if err != nil {
