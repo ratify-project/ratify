@@ -37,6 +37,6 @@ jobs:
         if: steps.open-pr.outputs.pr_number != ''
         uses: peter-evans/enable-pull-request-automerge@v2 #TODO switch for digest
         with:
-          token: ${{ secrets.ACCESS_TOKEN }}
+          token: ${{ secrets.PR_TOKEN }}
           pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
           merge-method: merge
