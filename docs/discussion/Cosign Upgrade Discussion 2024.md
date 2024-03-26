@@ -588,7 +588,7 @@ spec:
 1. Wildcard: `*`
 2. Registry wide scope: `ghcr.io`
 3. Wildcard registry domain scope: `*.azurecr.io`
-4. Intermediate repository paths (repository path may reference a subpath but not an absolute path): `ghcr.io/deislabs/`
+4. Intermediate repository paths (repository path may reference a subpath but not an absolute path): `ghcr.io/deislabs/*`
 
 #### How does notation do this?
 
@@ -600,15 +600,19 @@ Notation's Trust Policy supports a generic `*` wildcard OR a an absolute reposit
 
 #### Custom pattern syntax
 - Use pure sub string matching: give a string scope `s` and image reference `r`, a trust policy matches if all of `s` is a substring of `r`. This would support scope from domain all the way to tags. It could also work for partial path patterns like image reference whose path contains `/somepath/`. The tightest scope would be the longest string scope that still has a full matching substring. The trust policy selected would be the policy with a matching scope that is character-wise the longest.
-- Sub-string matching does not allow for specifying positional matching behavior like "regex" does. Let's say our goal is to match image references which end with repotiory `/test`. In pure sub string matching if there's an intermediate repo named `/test`, it will consider that a match which is NOT correct. 
+- Sub-string matching does not allow for specifying positional matching behavior like "regex" does. Let's say our goal is to match image references which end with repository `/test`. In pure sub string matching if there's an intermediate repo named `test`, it will consider that a match which is NOT correct. 
 
 #### Proposed Solution
 Introduce a hybrid solution that is based on substring matching:
 - "tighest scope" is defined as a scope string that is longest AND has a matching substring in the image reference.
 - `*` is a wildcard reserved for a trust policy that matches everything. It will have the loosest scope and will only be used iff there is NOT a tighter scope found.
-- Partial path patterns like `/somepath/` are not supported or recommended
+- Partial path patterns like `/somepath/` are NOT supported or recommended
 - wild card registry domain scope can be achieved by specifying the domain string as a scope string (example: use only ACRs --> `.azurecr.io`)
 - Regex is NOT supported
+- String scope will be used as an exact substring matching pattern. If there are multiple policies whose scopes match, then the policy with the longer submatch string will win.
+
+- Problems:
+  - Scope A: '.azurecr.io' and Scope B: 'test/happy/test2'. Which scope is "tighter"? Scope A scopes to a particular registry domain but Scope B works for any registry domain
 
 ### Implementation Details
 
