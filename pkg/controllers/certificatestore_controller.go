@@ -45,8 +45,6 @@ var (
 	certificatesMap = map[string][]*x509.Certificate{}
 )
 
-const maxBriefErrLength = 30
-
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/finalizers,verbs=update
@@ -78,10 +76,11 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// get cert provider attributes
-	attributes, err := getCertStoreConfig(certStore.Spec)
 	lastFetchedTime := metav1.Now()
 	isFetchSuccessful := false
+
+	// get cert provider attributes
+	attributes, err := getCertStoreConfig(certStore.Spec)
 
 	if err != nil {
 		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
