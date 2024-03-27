@@ -3,7 +3,7 @@ name: Merge staging Into Main
 on:
   push:
     branches:
-      - 'staging2' #to update to staging
+      - 'staging' #to update to staging
 
 permissions:
   pull-requests: write
