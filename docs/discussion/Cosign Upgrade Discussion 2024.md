@@ -602,7 +602,7 @@ Notation's Trust Policy supports a generic `*` wildcard OR a an absolute reposit
 - Use pure sub string matching: give a string scope `s` and image reference `r`, a trust policy matches if all of `s` is a substring of `r`. This would support scope from domain all the way to tags. It could also work for partial path patterns like image reference whose path contains `/somepath/`. The tightest scope would be the longest string scope that still has a full matching substring. The trust policy selected would be the policy with a matching scope that is character-wise the longest.
 - Sub-string matching does not allow for specifying positional matching behavior like "regex" does. Let's say our goal is to match image references which end with repository `/test`. In pure sub string matching if there's an intermediate repo named `test`, it will consider that a match which is NOT correct. 
 
-#### Proposed Solution
+#### Potential Solution
 Introduce a hybrid solution that is based on substring matching:
 - "tighest scope" is defined as a scope string that is longest AND has a matching substring in the image reference.
 - `*` is a wildcard reserved for a trust policy that matches everything. It will have the loosest scope and will only be used iff there is NOT a tighter scope found.
@@ -613,6 +613,22 @@ Introduce a hybrid solution that is based on substring matching:
 
 - Problems:
   - Scope A: '.azurecr.io' and Scope B: 'test/happy/test2'. Which scope is "tighter"? Scope A scopes to a particular registry domain but Scope B works for any registry domain
+
+#### 3/27/24 CC discussion
+- Overlapping scopes is a security risk since users can inadvertently create overlapping scopes with wildcards when adding a new trust policy
+- We need to enforce non overlapping scopes on verifier creation and fail if there is
+- We will support:
+  - `*` global scope will have least precedence and will not be considered an overlapping scope
+  - multiple policies cannot define a `*` global scope. This must be validated
+  - support all the way down to image level. 
+  - wildcard `*` character will denote if there is a set of 0+ characters in that section of the pattern. Wildcard characters can only be used after the pattern defined. You can only specify 1 wild card character per scope.
+    - example: `ghcr.io/namspace/*` will consider a scope match if there is any image reference which starts with this pattern.
+  - Why can't we support multiple wild card characters? Short answer is that scope conflicts are guaranteed.
+    - wildcard character before and after a pattern can lead to unintendend conflicts. Say we have 2 scopes in 2 different policies, `*/namespace/*` and `*/reponame/*`. Let's take our image reference: ghcr.io/namespace/reponame:v1. Here, both policies could match. This is NOT allowed.
+  - Why can't we support wild card characters before or after the scope?
+    - Scopes that support wildcards before or after CANNOT be mixed. There's always a possibility for overlap between `ghcr.io/namespace/*` & `*/reponame:v1`.
+  - The main restriction is that determining scope conflicts is happening on verifier create at which point we need an ABSOLUTE way to determine if scopes are overlapping, since the image ref is not known
+  - How do we support registries with unique domains (ACR, ECR, Jfrog)? You want to allows for refs with `*.azurecr.io` which is technically same as `*.azurecr.io*`.
 
 ### Implementation Details
 
