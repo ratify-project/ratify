@@ -36,10 +36,10 @@ builds:
     ignore:
       - goos: windows
         goarch: arm64
-
-  - id: cosign
-    dir: plugins/verifier/cosign
-    binary: cosign
+  
+  - id: vulnerabilityreport
+    dir: plugins/verifier/vulnerabilityreport
+    binary: vulnerabilityreport
     env:
       - CGO_ENABLED=0
     goos:

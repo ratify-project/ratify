@@ -77,16 +77,16 @@
       ],
     },
     {
-      "name": "Debug Cosign Plugin",
+      "name": "Debug SBOM Plugin",
       "type": "go",
       "request": "launch",
       "mode": "auto",
-      "program": "${workspaceFolder}/plugins/verifier/cosign",
+      "program": "${workspaceFolder}/plugins/verifier/sbom",
       "env": {
         "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
         "RATIFY_LOG_LEVEL": "debug",
         "RATIFY_VERIFIER_COMMAND": "VERIFY",
-        "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",
+        "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/image:sbom",
         "RATIFY_VERIFIER_VERSION": "1.0.0",
       },
       "console": "integratedTerminal"

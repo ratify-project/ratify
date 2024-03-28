@@ -1,1 +1,0 @@
-This document has been moved to https://ratify.dev/docs/external%20plugins/Verifier/cosign
