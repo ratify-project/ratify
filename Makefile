@@ -75,7 +75,6 @@ build-cli: fmt vet
 
 .PHONY: build-plugins
 build-plugins:
-	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/cosign/... -o ./bin/plugins/ ./plugins/verifier/cosign
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/licensechecker/... -o ./bin/plugins/ ./plugins/verifier/licensechecker
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/verifier/sample/... -o ./bin/plugins/ ./plugins/verifier/sample
 	go build -cover -coverpkg=github.com/deislabs/ratify/plugins/referrerstore/sample/... -o ./bin/plugins/referrerstore/ ./plugins/referrerstore/sample
@@ -530,7 +529,6 @@ e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-se
 
 e2e-build-local-ratify-image:
 	docker build --progress=plain --no-cache \
-	--build-arg build_cosign=true \
 	--build-arg build_sbom=true \
 	--build-arg build_licensechecker=true \
 	--build-arg build_schemavalidator=true \

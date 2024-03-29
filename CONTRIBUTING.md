@@ -84,16 +84,16 @@ Sample launch json for debugging a plugin:
 {
   "version": "0.2.0",
   "configurations": [{
-    "name": "Debug Cosign Plugin",
+    "name": "Debug SBOM Plugin",
     "type": "go",
     "request": "launch",
     "mode": "auto",
-    "program": "${workspaceFolder}/plugins/verifier/cosign",
+    "program": "${workspaceFolder}/plugins/verifier/sbom",
     "env": {
       "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
       "RATIFY_LOG_LEVEL": "debug",
       "RATIFY_VERIFIER_COMMAND": "VERIFY",
-      "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",
+      "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/image:sbom",
       "RATIFY_VERIFIER_VERSION": "1.0.0",
     },
     "console": "integratedTerminal"
@@ -107,15 +107,15 @@ Sample JSON stdin
 ```json
 {
   "config": {
-    "artifactTypes":"application/vnd.dev.cosign.artifact.sig.v1+json",
-    "key":"/home/akashsinghal/ratify/.staging/cosign/cosign.pub",
-    "name":"cosign"
+    "artifactTypes":"application/spdx+json",
+    "name":"sbom",
+    "disallowedLicenses":["AGPL"],
+    "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}]
   },
   "storeConfig": {
     "version":"1.0.0",
     "pluginBinDirs":null,
     "store": {
-      "cosignEnabled":true,
       "name":"oras",
       "useHttp":true
     }
@@ -124,7 +124,7 @@ Sample JSON stdin
     "mediaType":"application/vnd.oci.image.manifest.v1+json",
     "digest":"sha256:...",
     "size":558,
-    "artifactType":"application/vnd.dev.cosign.artifact.sig.v1+json"
+    "artifactType":"application/spdx+json"
   }
 }
 ```
@@ -144,7 +144,7 @@ Follow the steps below to build and deploy a Ratify image with your private chan
 export REGISTRY=yourregistry
 docker buildx create --use
 
-docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
+docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
 docker build --progress=plain --build-arg KUBE_VERSION="1.27.7" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
