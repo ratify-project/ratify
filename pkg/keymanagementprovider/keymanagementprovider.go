@@ -128,9 +128,9 @@ func FlattenKMPMap(certMap map[KMPMapKey][]*x509.Certificate) []*x509.Certificat
 }
 
 // FlattenKMPMapKeys flattens the map of keys fetched for a single key management provider resource and returns a single array
-func FlattenKMPMapKeys(certMap map[KMPMapKey]crypto.PublicKey) []crypto.PublicKey {
+func FlattenKMPMapKeys(keyMap map[KMPMapKey]crypto.PublicKey) []crypto.PublicKey {
 	items := []crypto.PublicKey{}
-	for _, val := range certMap {
+	for _, val := range keyMap {
 		items = append(items, val)
 	}
 	return items

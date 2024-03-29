@@ -33,7 +33,6 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	c "github.com/deislabs/ratify/config"
-	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
@@ -81,9 +80,8 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	// if certificate store is configured, return error. Only one of certificate store and key management provider can be configured
 	if len(certificateStoreList.Items) > 0 {
-		err := re.ErrorCodeKeyManagementConflict.WithComponentType(re.KeyManagementProvider).WithPluginName(resource).WithDetail("certificate store already exists")
-		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log an error.
-		logger.Error(err)
+		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log a warning statement.
+		logger.Warn("Certificate Store already exists. Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.")
 	}
 
 	provider, err := specToKeyManagementProvider(keyManagementProvider.Spec)
