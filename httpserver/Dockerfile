@@ -23,7 +23,6 @@ ARG TARGETVARIANT=""
 ARG LDFLAGS
 ARG GOPROXY
 ARG build_sbom
-ARG build_cosign
 ARG build_licensechecker
 ARG build_schemavalidator
 ARG build_vulnerabilityreport
@@ -41,7 +40,6 @@ COPY . .
 RUN go build -ldflags "${LDFLAGS}" -o /app/out/ /app/cmd/ratify
 RUN mkdir /app/out/plugins
 RUN if [ "$build_sbom" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/sbom; fi
-RUN if [ "$build_cosign" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/cosign; fi
 RUN if [ "$build_licensechecker" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/licensechecker; fi
 RUN if [ "$build_schemavalidator" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/schemavalidator; fi
 RUN if [ "$build_vulnerabilityreport" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/vulnerabilityreport; fi
