@@ -37,6 +37,7 @@ import (
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	vt "github.com/deislabs/ratify/pkg/verifier/types"
 	"golang.org/x/sync/errgroup"
+	
 )
 
 const (
@@ -53,7 +54,7 @@ var logOpt = logger.Option{
 type Executor struct {
 	ReferrerStores []referrerstore.ReferrerStore
 	PolicyEnforcer policyprovider.PolicyProvider
-	Verifiers      []vr.ReferenceVerifier
+	Verifiers      verifiers.Verifiers
 	Config         *config.ExecutorConfig
 }
 
