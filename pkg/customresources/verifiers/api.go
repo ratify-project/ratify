@@ -19,14 +19,20 @@ import (
 	vr "github.com/deislabs/ratify/pkg/verifier"
 )
 
+// Verifiers is an interface that defines the methods for managing verifiers across different scopes.
 type Verifiers interface {
+	// GetVerifiers returns verifiers under the given scope.
 	GetVerifiers(scope string) []vr.ReferenceVerifier
 
+	// AddVerifier adds a verifier to the given scope.
 	AddVerifier(scope, verifierName string, verifier vr.ReferenceVerifier)
 
+	// DeleteVerifier deletes a verifier from the given scope.
 	DeleteVerifier(scope, verifierName string)
 
+	// IsEmpty returns true if verifiers are empty.
 	IsEmpty() bool
 
+	// GetVerifierCount returns the number of verifiers in all scopes.
 	GetVerifierCount() int
 }

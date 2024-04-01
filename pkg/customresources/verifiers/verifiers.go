@@ -16,30 +16,38 @@ limitations under the License.
 package verifiers
 
 import (
-	"github.com/deislabs/ratify/internal/constants"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 )
 
+// ActiveVerifiers implements Verifiers interface.
 type ActiveVerifiers struct {
+	// TODO: Implement concurrent safety using sync.Map
+	// The structure of the map is as follows:
+	// The first level maps from scope to verifiers
+	// The second level maps from verifier name to verifier
+	// Example:
+	// {
+	//   "namespace1": {
+	//     "verifier1": verifier1,
+	//     "verifier2": verifier2
+	//   }
+	// }
 	NamespacedVerifiers map[string]map[string]vr.ReferenceVerifier
 }
 
-func NewActiveVerifiers() ActiveVerifiers {
-	return ActiveVerifiers{
+func NewActiveVerifiers() Verifiers {
+	return &ActiveVerifiers{
 		NamespacedVerifiers: make(map[string]map[string]vr.ReferenceVerifier),
 	}
 }
 
 // GetVerifiers implements the Verifiers interface.
 // It returns a list of verifiers for the given scope. If no verifiers are found for the given scope, it returns cluster-wide verifiers.
-func (v *ActiveVerifiers) GetVerifiers(scope string) []vr.ReferenceVerifier {
+// TODO: Current implementation fetches verifiers for all namespaces including cluster-wide ones. Will support actual namespace based verifiers in future.
+func (v *ActiveVerifiers) GetVerifiers(_ string) []vr.ReferenceVerifier {
 	verifiers := []vr.ReferenceVerifier{}
-	for _, verifier := range v.NamespacedVerifiers[scope] {
-		verifiers = append(verifiers, verifier)
-	}
-
-	if len(verifiers) == 0 && scope != constants.EmptyNamespace {
-		for _, verifier := range v.NamespacedVerifiers[constants.EmptyNamespace] {
+	for _, namespacedVerifiers := range v.NamespacedVerifiers {
+		for _, verifier := range namespacedVerifiers {
 			verifiers = append(verifiers, verifier)
 		}
 	}
@@ -56,14 +64,11 @@ func (v *ActiveVerifiers) AddVerifier(scope, verifierName string, verifier vr.Re
 func (v *ActiveVerifiers) DeleteVerifier(scope, verifierName string) {
 	if verifiers, ok := v.NamespacedVerifiers[scope]; ok {
 		delete(verifiers, verifierName)
-		if len(verifiers) == 0 {
-			delete(v.NamespacedVerifiers, scope)
-		}
 	}
 }
 
 func (v *ActiveVerifiers) IsEmpty() bool {
-	return len(v.NamespacedVerifiers) == 0
+	return v.GetVerifierCount() == 0
 }
 
 func (v *ActiveVerifiers) GetVerifierCount() int {

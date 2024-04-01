@@ -23,6 +23,7 @@ import (
 
 	re "github.com/deislabs/ratify/errors"
 	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	"github.com/deislabs/ratify/pkg/featureflag"
 	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/deislabs/ratify/pkg/verifier/config"
@@ -102,7 +103,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 
 // TODO pointer to avoid copy
 // returns an array of verifiers from VerifiersConfig
-func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPluginPath string, namespace string) ([]verifier.ReferenceVerifier, error) {
+func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPluginPath string, namespace string) (verifiers.Verifiers, error) {
 	if verifiersConfig.Version == "" {
 		verifiersConfig.Version = types.SpecVersion
 	}
@@ -116,7 +117,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail("verifiers config should have at least one verifier")
 	}
 
-	verifiers := make([]verifier.ReferenceVerifier, 0)
+	verifiers := verifiers.NewActiveVerifiers()
 
 	if len(verifiersConfig.PluginBinDirs) == 0 {
 		verifiersConfig.PluginBinDirs = []string{defaultPluginPath}
@@ -129,7 +130,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 		if err != nil {
 			return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithError(err)
 		}
-		verifiers = append(verifiers, verifier)
+		verifiers.AddVerifier(namespace, verifier.Name(), verifier)
 	}
 
 	return verifiers, nil

@@ -256,7 +256,7 @@ func (server *Server) validateComponents(handlerComponents string) error {
 		if server.GetExecutor().PolicyEnforcer == nil {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
 		}
-		if len(server.GetExecutor().Verifiers) == 0 {
+		if server.GetExecutor().Verifiers.IsEmpty() {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")
 		}
 	}

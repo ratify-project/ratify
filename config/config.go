@@ -26,6 +26,7 @@ import (
 
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/homedir"
 	"github.com/deislabs/ratify/pkg/policyprovider"
@@ -34,7 +35,6 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	rsConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/verifier"
 	vfConfig "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/pkg/errors"
@@ -84,7 +84,7 @@ func getHomeDir() string {
 }
 
 // Returns created referer store, verifier, policyprovider objects from config
-func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
+func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, verifiers.Verifiers, policyprovider.PolicyProvider, error) {
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
 
 	if err != nil {
@@ -99,7 +99,7 @@ func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.Refe
 		return nil, nil, nil, errors.Wrap(err, "failed to load verifiers from config")
 	}
 
-	logrus.Infof("verifiers successfully created. number of verifiers %d", len(verifiers))
+	logrus.Infof("verifiers successfully created. number of verifiers %d", verifiers.GetVerifierCount())
 
 	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(cf.PoliciesConfig)
 

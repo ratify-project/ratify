@@ -22,8 +22,10 @@ import (
 	"time"
 
 	"github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	e "github.com/deislabs/ratify/pkg/executor"
 	"github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
@@ -37,7 +39,6 @@ import (
 	vr "github.com/deislabs/ratify/pkg/verifier"
 	vt "github.com/deislabs/ratify/pkg/verifier/types"
 	"golang.org/x/sync/errgroup"
-	
 )
 
 const (
@@ -54,8 +55,8 @@ var logOpt = logger.Option{
 type Executor struct {
 	ReferrerStores []referrerstore.ReferrerStore
 	PolicyEnforcer policyprovider.PolicyProvider
-	Verifiers      verifiers.Verifiers
-	Config         *config.ExecutorConfig
+	verifiers.Verifiers
+	Config *config.ExecutorConfig
 }
 
 // TODO Logging within executor
@@ -169,7 +170,7 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 	var verifyResults []interface{}
 	var isSuccess = true
 
-	for _, verifier := range executor.Verifiers {
+	for _, verifier := range executor.GetVerifiers(ctxUtils.GetNamespace(ctx)) {
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
@@ -214,7 +215,7 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 		return executor.addNestedReports(errCtx, referenceDesc, subjectRef, &nestedReport)
 	})
 
-	for _, verifier := range executor.Verifiers {
+	for _, verifier := range executor.GetVerifiers(ctxUtils.GetNamespace(ctx)) {
 		if !verifier.CanVerify(ctx, referenceDesc) {
 			continue
 		}

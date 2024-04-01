@@ -35,6 +35,8 @@ import (
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	"github.com/sirupsen/logrus"
 
+	vrs "github.com/deislabs/ratify/pkg/customresources/verifiers"
+	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
@@ -47,12 +49,7 @@ const testArtifactType string = "test-type1"
 const testImageNameTagged string = "localhost:5000/net-monitor:v1"
 
 func testGetExecutor() *core.Executor {
-	return &core.Executor{
-		Verifiers:      []verifier.ReferenceVerifier{},
-		ReferrerStores: []referrerstore.ReferrerStore{},
-		PolicyEnforcer: nil,
-		Config:         nil,
-	}
+	return newTestExecutor(nil, nil, nil, nil)
 }
 
 func TestNewServer_Expected(t *testing.T) {
@@ -132,11 +129,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
-		}
+		ex := newTestExecutor(configPolicy, store, ver, nil)
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -199,15 +192,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
-			Config: &exconfig.ExecutorConfig{
-				VerificationRequestTimeout: nil,
-				MutationRequestTimeout:     nil,
-			},
-		}
+		ex := newTestExecutor(configPolicy, store, ver, nil)
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -274,11 +259,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
-		}
+		ex := newTestExecutor(configPolicy, store, ver, nil)
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -350,11 +331,7 @@ func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
-		}
+		ex := newTestExecutor(configPolicy, nil, ver, nil)
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -429,15 +406,10 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 		}
 
 		verifyTimeout := 5000
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
-			Config: &exconfig.ExecutorConfig{
-				VerificationRequestTimeout: &verifyTimeout,
-				MutationRequestTimeout:     nil,
-			},
-		}
+		ex := newTestExecutor(configPolicy, store, ver, &exconfig.ExecutorConfig{
+			VerificationRequestTimeout: &verifyTimeout,
+			MutationRequestTimeout:     nil,
+		})
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -481,15 +453,10 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 
 		responseRecorder := httptest.NewRecorder()
 
-		ex := &core.Executor{
-			PolicyEnforcer: config.PolicyEnforcer{},
-			ReferrerStores: []referrerstore.ReferrerStore{&mocks.TestStore{}},
-			Verifiers:      []verifier.ReferenceVerifier{&core.TestVerifier{}},
-			Config: &exconfig.ExecutorConfig{
-				VerificationRequestTimeout: nil,
-				MutationRequestTimeout:     nil,
-			},
-		}
+		ex := newTestExecutor(config.PolicyEnforcer{}, &mocks.TestStore{}, &core.TestVerifier{}, &exconfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		})
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -558,11 +525,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: nil,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{ver},
-		}
+		ex := newTestExecutor(nil, store, ver, nil)
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -627,11 +590,7 @@ func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		ex := &core.Executor{
-			PolicyEnforcer: configPolicy,
-			ReferrerStores: []referrerstore.ReferrerStore{store},
-			Verifiers:      []verifier.ReferenceVerifier{},
-		}
+		ex := newTestExecutor(configPolicy, store, nil, nil)
 
 		getExecutor := func() *core.Executor {
 			return ex
@@ -715,4 +674,23 @@ func TestServer_serverGracefulShutdown(t *testing.T) {
 	}
 	// wait some time to see shutdown logs
 	time.Sleep(5 * time.Second)
+}
+
+func newTestExecutor(policyEnforcer policyprovider.PolicyProvider, store referrerstore.ReferrerStore, verifier verifier.ReferenceVerifier, config *exconfig.ExecutorConfig) *core.Executor {
+	activeStores := make([]referrerstore.ReferrerStore, 0)
+	if store != nil {
+		activeStores = append(activeStores, store)
+	}
+
+	activeVerifiers := vrs.NewActiveVerifiers()
+	if verifier != nil {
+		activeVerifiers.AddVerifier("", verifier.Name(), verifier)
+	}
+
+	return &core.Executor{
+		PolicyEnforcer: policyEnforcer,
+		ReferrerStores: activeStores,
+		Verifiers:      activeVerifiers,
+		Config:         config,
+	}
 }

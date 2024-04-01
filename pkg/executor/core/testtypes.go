@@ -28,10 +28,14 @@ type TestVerifier struct {
 	CanVerifyFunc    func(artifactType string) bool
 	VerifyResult     func(artifactType string) bool
 	nestedReferences []string
+	name             string
 }
 
 func (s *TestVerifier) Name() string {
-	return "verifier-testVerifier"
+	if len(s.name) == 0 {
+		return "verifier-testVerifier"
+	}
+	return s.name
 }
 
 func (s *TestVerifier) Type() string {

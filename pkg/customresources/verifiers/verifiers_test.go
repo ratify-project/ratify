@@ -77,12 +77,12 @@ func TestVerifiersOperations(t *testing.T) {
 		t.Errorf("Expected 4 verifiers, got %d", verifiers.GetVerifierCount())
 	}
 
-	if len(verifiers.GetVerifiers(namespace1)) != 2 {
-		t.Errorf("Expected 2 verifiers, got %d", len(verifiers.GetVerifiers(namespace1)))
+	if len(verifiers.GetVerifiers(namespace1)) != 4 {
+		t.Errorf("Expected 4 verifiers, got %d", len(verifiers.GetVerifiers(namespace1)))
 	}
 
-	if len(verifiers.GetVerifiers(namespace2)) != 2 {
-		t.Errorf("Expected 2 verifiers, got %d", len(verifiers.GetVerifiers(namespace2)))
+	if len(verifiers.GetVerifiers(namespace2)) != 4 {
+		t.Errorf("Expected 4 verifiers, got %d", len(verifiers.GetVerifiers(namespace2)))
 	}
 
 	verifiers.DeleteVerifier(namespace2, verifier1.Name())
