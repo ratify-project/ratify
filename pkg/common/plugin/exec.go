@@ -16,14 +16,18 @@ limitations under the License.
 package plugin
 
 import (
+	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
 
+	"github.com/deislabs/ratify/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -31,6 +35,10 @@ const (
 	maxRetryCount = 5
 	waitDuration  = time.Second
 )
+
+var logOpt = logger.Option{
+	ComponentType: logger.Plugin,
+}
 
 // Executor is an interface that defines methods to lookup a plugin and execute it.
 type Executor interface {
@@ -92,14 +100,27 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 		return nil, e.pluginErr(err, stdout.Bytes(), stderr.Bytes())
 	}
 
-	// Copy stderr to caller's buffer in case plugin printed to both
-	// stdout and stderr for some reason. Ignore failures as stderr is
-	// only informational.
-	if e.Stderr != nil && stderr.Len() > 0 {
-		_, _ = stderr.WriteTo(e.Stderr)
+	pluginOutputJSON, pluginOutputMsgs := parsePluginOutput(stdout, stderr)
+
+	// Disregards plugin source stream and logs the plugin messages to stderr
+	for _, msg := range pluginOutputMsgs {
+		msg := strings.ToLower(msg)
+		switch {
+		case strings.HasPrefix(msg, "info"):
+			msg = strings.Replace(msg, "info: ", "", -1)
+			logger.GetLogger(ctx, logOpt).Infof("[Plugin] %s", msg)
+		case strings.HasPrefix(msg, "warn"):
+			msg = strings.Replace(msg, "warn: ", "", -1)
+			logger.GetLogger(ctx, logOpt).Warnf("[Plugin] %s", msg)
+		case strings.HasPrefix(msg, "debug"):
+			msg = strings.Replace(msg, "debug: ", "", -1)
+			logger.GetLogger(ctx, logOpt).Debugf("[Plugin] %s", msg)
+		default:
+			fmt.Fprintf(os.Stderr, "[Plugin] %s,", msg)
+		}
 	}
-	// TODO stdout reader
-	return stdout.Bytes(), nil
+
+	return pluginOutputJSON, nil
 }
 
 func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
@@ -117,4 +138,35 @@ func (e *DefaultExecutor) pluginErr(err error, stdout, stderr []byte) error {
 
 func (e *DefaultExecutor) FindInPaths(plugin string, paths []string) (string, error) {
 	return FindInPaths(plugin, paths)
+}
+
+func parsePluginOutput(stdout *bytes.Buffer, stderr *bytes.Buffer) ([]byte, []string) {
+	var obj interface{}
+	var outputBuffer bytes.Buffer
+	var jsonBuffer bytes.Buffer
+	var messages []string
+
+	// Combine stderr and stdout
+	outputBuffer.Write(stderr.Bytes())
+	outputBuffer.Write(stdout.Bytes())
+
+	scanner := bufio.NewScanner(&outputBuffer)
+	for scanner.Scan() {
+		line := scanner.Text()
+		// Assumes a single JSON object is returned somewhere in the output
+		// does not handle multiple JSON objects
+		if strings.Contains(line, "{") {
+			err := json.NewDecoder(strings.NewReader(line)).Decode(&obj)
+			if err != nil {
+				continue
+			}
+
+			jsonString, _ := json.Marshal(obj)
+			jsonBuffer.WriteString(string(jsonString))
+		} else {
+			messages = append(messages, line)
+		}
+	}
+
+	return jsonBuffer.Bytes(), messages
 }

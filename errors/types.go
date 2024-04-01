@@ -43,14 +43,15 @@ var (
 type ComponentType string
 
 const (
-	Verifier       ComponentType = "verifier"
-	ReferrerStore  ComponentType = "referrerStore"
-	Policy         ComponentType = "policy"
-	Executor       ComponentType = "executor"
-	Cache          ComponentType = "cache"
-	AuthProvider   ComponentType = "authProvider"
-	PolicyProvider ComponentType = "policyProvider"
-	CertProvider   ComponentType = "certProvider"
+	Verifier              ComponentType = "verifier"
+	ReferrerStore         ComponentType = "referrerStore"
+	Policy                ComponentType = "policy"
+	Executor              ComponentType = "executor"
+	Cache                 ComponentType = "cache"
+	AuthProvider          ComponentType = "authProvider"
+	PolicyProvider        ComponentType = "policyProvider"
+	CertProvider          ComponentType = "certProvider"
+	KeyManagementProvider ComponentType = "keyManagementProvider"
 )
 
 // ErrorCode represents the error type. The errors are serialized via strings

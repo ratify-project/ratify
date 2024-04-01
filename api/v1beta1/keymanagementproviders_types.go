@@ -21,25 +21,26 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ClusterCertificateStoreSpec defines the desired state of ClusterCertificateStore
-type ClusterCertificateStoreSpec struct {
+// KeyManagementProviderSpec defines the desired state of KeyManagementProvider
+type KeyManagementProviderSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the cluster certificate store provider
-	Provider string `json:"provider,omitempty"`
+	// Name of the key management provider
+	Type string `json:"type,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// Parameters of the cluster certificate store
+	// Parameters of the key management provider
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// ClusterCertificateStoreStatus defines the observed state of ClusterCertificateStore
-type ClusterCertificateStoreStatus struct {
+// KeyManagementProviderStatus defines the observed state of KeyManagementProvider
+type KeyManagementProviderStatus struct {
 	// Important: Run "make manifests" to regenerate code after modifying this file
 
-	// Is successful in loading certificate files
+	// Is successful in loading certificate/key files
 	IsSuccess bool `json:"issuccess"`
 	// Error message if operation was unsuccessful
 	// +optional
@@ -47,40 +48,39 @@ type ClusterCertificateStoreStatus struct {
 	// Truncated error message if the message is too long
 	// +optional
 	BriefError string `json:"brieferror,omitempty"`
-	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
+	// The time stamp of last successful certificate/key fetch operation. If operation failed, last fetched time shows the time of error
 	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
 	// +kubebuilder:pruning:PreserveUnknownFields
-	// provider specific properties of the each individual certificate
+	// provider specific properties of the each individual certificate/key
 	// +optional
 	Properties runtime.RawExtension `json:"properties,omitempty"`
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
-// ClusterCertificateStore is the Schema for the certificatestores API
 // +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
 // +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.brieferror`
 // +kubebuilder:printcolumn:name="LastFetchedTime",type=date,JSONPath=`.status.lastfetchedtime`
-type ClusterCertificateStore struct {
+// KeyManagementProvider is the Schema for the keymanagementproviders API
+type KeyManagementProvider struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterCertificateStoreSpec   `json:"spec,omitempty"`
-	Status ClusterCertificateStoreStatus `json:"status,omitempty"`
+	Spec   KeyManagementProviderSpec   `json:"spec,omitempty"`
+	Status KeyManagementProviderStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
-// ClusterCertificateStoreList contains a list of ClusterCertificateStore
-type ClusterCertificateStoreList struct {
+// KeyManagementProviderList contains a list of KeyManagementProvider
+type KeyManagementProviderList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ClusterCertificateStore `json:"items"`
+	Items           []KeyManagementProvider `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&ClusterCertificateStore{}, &ClusterCertificateStoreList{})
+	SchemeBuilder.Register(&KeyManagementProvider{}, &KeyManagementProviderList{})
 }

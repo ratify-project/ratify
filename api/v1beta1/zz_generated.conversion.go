@@ -76,43 +76,43 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStore)(nil), (*unversioned.ClusterCertificateStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(a.(*ClusterCertificateStore), b.(*unversioned.ClusterCertificateStore), scope)
+	if err := s.AddGeneratedConversionFunc((*ClusterKeyManagementProvider)(nil), (*unversioned.ClusterKeyManagementProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterKeyManagementProvider_To_unversioned_ClusterKeyManagementProvider(a.(*ClusterKeyManagementProvider), b.(*unversioned.ClusterKeyManagementProvider), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStore)(nil), (*ClusterCertificateStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(a.(*unversioned.ClusterCertificateStore), b.(*ClusterCertificateStore), scope)
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterKeyManagementProvider)(nil), (*ClusterKeyManagementProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterKeyManagementProvider_To_v1beta1_ClusterKeyManagementProvider(a.(*unversioned.ClusterKeyManagementProvider), b.(*ClusterKeyManagementProvider), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStoreList)(nil), (*unversioned.ClusterCertificateStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(a.(*ClusterCertificateStoreList), b.(*unversioned.ClusterCertificateStoreList), scope)
+	if err := s.AddGeneratedConversionFunc((*ClusterKeyManagementProviderList)(nil), (*unversioned.ClusterKeyManagementProviderList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterKeyManagementProviderList_To_unversioned_ClusterKeyManagementProviderList(a.(*ClusterKeyManagementProviderList), b.(*unversioned.ClusterKeyManagementProviderList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStoreList)(nil), (*ClusterCertificateStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(a.(*unversioned.ClusterCertificateStoreList), b.(*ClusterCertificateStoreList), scope)
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterKeyManagementProviderList)(nil), (*ClusterKeyManagementProviderList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterKeyManagementProviderList_To_v1beta1_ClusterKeyManagementProviderList(a.(*unversioned.ClusterKeyManagementProviderList), b.(*ClusterKeyManagementProviderList), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStoreSpec)(nil), (*unversioned.ClusterCertificateStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(a.(*ClusterCertificateStoreSpec), b.(*unversioned.ClusterCertificateStoreSpec), scope)
+	if err := s.AddGeneratedConversionFunc((*ClusterKeyManagementProviderSpec)(nil), (*unversioned.ClusterKeyManagementProviderSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterKeyManagementProviderSpec_To_unversioned_ClusterKeyManagementProviderSpec(a.(*ClusterKeyManagementProviderSpec), b.(*unversioned.ClusterKeyManagementProviderSpec), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStoreSpec)(nil), (*ClusterCertificateStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(a.(*unversioned.ClusterCertificateStoreSpec), b.(*ClusterCertificateStoreSpec), scope)
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterKeyManagementProviderSpec)(nil), (*ClusterKeyManagementProviderSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterKeyManagementProviderSpec_To_v1beta1_ClusterKeyManagementProviderSpec(a.(*unversioned.ClusterKeyManagementProviderSpec), b.(*ClusterKeyManagementProviderSpec), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*ClusterCertificateStoreStatus)(nil), (*unversioned.ClusterCertificateStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(a.(*ClusterCertificateStoreStatus), b.(*unversioned.ClusterCertificateStoreStatus), scope)
+	if err := s.AddGeneratedConversionFunc((*ClusterKeyManagementProviderStatus)(nil), (*unversioned.ClusterKeyManagementProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_ClusterKeyManagementProviderStatus_To_unversioned_ClusterKeyManagementProviderStatus(a.(*ClusterKeyManagementProviderStatus), b.(*unversioned.ClusterKeyManagementProviderStatus), scope)
 	}); err != nil {
 		return err
 	}
-	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterCertificateStoreStatus)(nil), (*ClusterCertificateStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
-		return Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(a.(*unversioned.ClusterCertificateStoreStatus), b.(*ClusterCertificateStoreStatus), scope)
+	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterKeyManagementProviderStatus)(nil), (*ClusterKeyManagementProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_ClusterKeyManagementProviderStatus_To_v1beta1_ClusterKeyManagementProviderStatus(a.(*unversioned.ClusterKeyManagementProviderStatus), b.(*ClusterKeyManagementProviderStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -233,6 +233,46 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}
 	if err := s.AddGeneratedConversionFunc((*unversioned.ClusterVerifierStatus)(nil), (*ClusterVerifierStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(a.(*unversioned.ClusterVerifierStatus), b.(*ClusterVerifierStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProvider)(nil), (*unversioned.KeyManagementProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(a.(*KeyManagementProvider), b.(*unversioned.KeyManagementProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProvider)(nil), (*KeyManagementProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(a.(*unversioned.KeyManagementProvider), b.(*KeyManagementProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProviderList)(nil), (*unversioned.KeyManagementProviderList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(a.(*KeyManagementProviderList), b.(*unversioned.KeyManagementProviderList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProviderList)(nil), (*KeyManagementProviderList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(a.(*unversioned.KeyManagementProviderList), b.(*KeyManagementProviderList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProviderSpec)(nil), (*unversioned.KeyManagementProviderSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(a.(*KeyManagementProviderSpec), b.(*unversioned.KeyManagementProviderSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProviderSpec)(nil), (*KeyManagementProviderSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(a.(*unversioned.KeyManagementProviderSpec), b.(*KeyManagementProviderSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProviderStatus)(nil), (*unversioned.KeyManagementProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(a.(*KeyManagementProviderStatus), b.(*unversioned.KeyManagementProviderStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProviderStatus)(nil), (*KeyManagementProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(a.(*unversioned.KeyManagementProviderStatus), b.(*KeyManagementProviderStatus), scope)
 	}); err != nil {
 		return err
 	}
@@ -473,83 +513,83 @@ func Convert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatu
 	return autoConvert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatus(in, out, s)
 }
 
-func autoConvert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(in *ClusterCertificateStore, out *unversioned.ClusterCertificateStore, s conversion.Scope) error {
+func autoConvert_v1beta1_ClusterKeyManagementProvider_To_unversioned_ClusterKeyManagementProvider(in *ClusterKeyManagementProvider, out *unversioned.ClusterKeyManagementProvider, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+	if err := Convert_v1beta1_ClusterKeyManagementProviderSpec_To_unversioned_ClusterKeyManagementProviderSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_v1beta1_ClusterKeyManagementProviderStatus_To_unversioned_ClusterKeyManagementProviderStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
 }
 
-// Convert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore is an autogenerated conversion function.
-func Convert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(in *ClusterCertificateStore, out *unversioned.ClusterCertificateStore, s conversion.Scope) error {
-	return autoConvert_v1beta1_ClusterCertificateStore_To_unversioned_ClusterCertificateStore(in, out, s)
+// Convert_v1beta1_ClusterKeyManagementProvider_To_unversioned_ClusterKeyManagementProvider is an autogenerated conversion function.
+func Convert_v1beta1_ClusterKeyManagementProvider_To_unversioned_ClusterKeyManagementProvider(in *ClusterKeyManagementProvider, out *unversioned.ClusterKeyManagementProvider, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterKeyManagementProvider_To_unversioned_ClusterKeyManagementProvider(in, out, s)
 }
 
-func autoConvert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(in *unversioned.ClusterCertificateStore, out *ClusterCertificateStore, s conversion.Scope) error {
+func autoConvert_unversioned_ClusterKeyManagementProvider_To_v1beta1_ClusterKeyManagementProvider(in *unversioned.ClusterKeyManagementProvider, out *ClusterKeyManagementProvider, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
-	if err := Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+	if err := Convert_unversioned_ClusterKeyManagementProviderSpec_To_v1beta1_ClusterKeyManagementProviderSpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
-	if err := Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(&in.Status, &out.Status, s); err != nil {
+	if err := Convert_unversioned_ClusterKeyManagementProviderStatus_To_v1beta1_ClusterKeyManagementProviderStatus(&in.Status, &out.Status, s); err != nil {
 		return err
 	}
 	return nil
 }
 
-// Convert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore is an autogenerated conversion function.
-func Convert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(in *unversioned.ClusterCertificateStore, out *ClusterCertificateStore, s conversion.Scope) error {
-	return autoConvert_unversioned_ClusterCertificateStore_To_v1beta1_ClusterCertificateStore(in, out, s)
+// Convert_unversioned_ClusterKeyManagementProvider_To_v1beta1_ClusterKeyManagementProvider is an autogenerated conversion function.
+func Convert_unversioned_ClusterKeyManagementProvider_To_v1beta1_ClusterKeyManagementProvider(in *unversioned.ClusterKeyManagementProvider, out *ClusterKeyManagementProvider, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterKeyManagementProvider_To_v1beta1_ClusterKeyManagementProvider(in, out, s)
 }
 
-func autoConvert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(in *ClusterCertificateStoreList, out *unversioned.ClusterCertificateStoreList, s conversion.Scope) error {
+func autoConvert_v1beta1_ClusterKeyManagementProviderList_To_unversioned_ClusterKeyManagementProviderList(in *ClusterKeyManagementProviderList, out *unversioned.ClusterKeyManagementProviderList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]unversioned.ClusterCertificateStore)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]unversioned.KeyManagementProvider)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
-// Convert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList is an autogenerated conversion function.
-func Convert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(in *ClusterCertificateStoreList, out *unversioned.ClusterCertificateStoreList, s conversion.Scope) error {
-	return autoConvert_v1beta1_ClusterCertificateStoreList_To_unversioned_ClusterCertificateStoreList(in, out, s)
+// Convert_v1beta1_ClusterKeyManagementProviderList_To_unversioned_ClusterKeyManagementProviderList is an autogenerated conversion function.
+func Convert_v1beta1_ClusterKeyManagementProviderList_To_unversioned_ClusterKeyManagementProviderList(in *ClusterKeyManagementProviderList, out *unversioned.ClusterKeyManagementProviderList, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterKeyManagementProviderList_To_unversioned_ClusterKeyManagementProviderList(in, out, s)
 }
 
-func autoConvert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(in *unversioned.ClusterCertificateStoreList, out *ClusterCertificateStoreList, s conversion.Scope) error {
+func autoConvert_unversioned_ClusterKeyManagementProviderList_To_v1beta1_ClusterKeyManagementProviderList(in *unversioned.ClusterKeyManagementProviderList, out *ClusterKeyManagementProviderList, s conversion.Scope) error {
 	out.ListMeta = in.ListMeta
-	out.Items = *(*[]ClusterCertificateStore)(unsafe.Pointer(&in.Items))
+	out.Items = *(*[]ClusterKeyManagementProvider)(unsafe.Pointer(&in.Items))
 	return nil
 }
 
-// Convert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList is an autogenerated conversion function.
-func Convert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(in *unversioned.ClusterCertificateStoreList, out *ClusterCertificateStoreList, s conversion.Scope) error {
-	return autoConvert_unversioned_ClusterCertificateStoreList_To_v1beta1_ClusterCertificateStoreList(in, out, s)
+// Convert_unversioned_ClusterKeyManagementProviderList_To_v1beta1_ClusterKeyManagementProviderList is an autogenerated conversion function.
+func Convert_unversioned_ClusterKeyManagementProviderList_To_v1beta1_ClusterKeyManagementProviderList(in *unversioned.ClusterKeyManagementProviderList, out *ClusterKeyManagementProviderList, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterKeyManagementProviderList_To_v1beta1_ClusterKeyManagementProviderList(in, out, s)
 }
 
-func autoConvert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(in *ClusterCertificateStoreSpec, out *unversioned.ClusterCertificateStoreSpec, s conversion.Scope) error {
-	out.Provider = in.Provider
+func autoConvert_v1beta1_ClusterKeyManagementProviderSpec_To_unversioned_ClusterKeyManagementProviderSpec(in *ClusterKeyManagementProviderSpec, out *unversioned.ClusterKeyManagementProviderSpec, s conversion.Scope) error {
+	out.Type = in.Type
 	out.Parameters = in.Parameters
 	return nil
 }
 
-// Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec is an autogenerated conversion function.
-func Convert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(in *ClusterCertificateStoreSpec, out *unversioned.ClusterCertificateStoreSpec, s conversion.Scope) error {
-	return autoConvert_v1beta1_ClusterCertificateStoreSpec_To_unversioned_ClusterCertificateStoreSpec(in, out, s)
+// Convert_v1beta1_ClusterKeyManagementProviderSpec_To_unversioned_ClusterKeyManagementProviderSpec is an autogenerated conversion function.
+func Convert_v1beta1_ClusterKeyManagementProviderSpec_To_unversioned_ClusterKeyManagementProviderSpec(in *ClusterKeyManagementProviderSpec, out *unversioned.ClusterKeyManagementProviderSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterKeyManagementProviderSpec_To_unversioned_ClusterKeyManagementProviderSpec(in, out, s)
 }
 
-func autoConvert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(in *unversioned.ClusterCertificateStoreSpec, out *ClusterCertificateStoreSpec, s conversion.Scope) error {
-	out.Provider = in.Provider
+func autoConvert_unversioned_ClusterKeyManagementProviderSpec_To_v1beta1_ClusterKeyManagementProviderSpec(in *unversioned.ClusterKeyManagementProviderSpec, out *ClusterKeyManagementProviderSpec, s conversion.Scope) error {
+	out.Type = in.Type
 	out.Parameters = in.Parameters
 	return nil
 }
 
-// Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec is an autogenerated conversion function.
-func Convert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(in *unversioned.ClusterCertificateStoreSpec, out *ClusterCertificateStoreSpec, s conversion.Scope) error {
-	return autoConvert_unversioned_ClusterCertificateStoreSpec_To_v1beta1_ClusterCertificateStoreSpec(in, out, s)
+// Convert_unversioned_ClusterKeyManagementProviderSpec_To_v1beta1_ClusterKeyManagementProviderSpec is an autogenerated conversion function.
+func Convert_unversioned_ClusterKeyManagementProviderSpec_To_v1beta1_ClusterKeyManagementProviderSpec(in *unversioned.ClusterKeyManagementProviderSpec, out *ClusterKeyManagementProviderSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterKeyManagementProviderSpec_To_v1beta1_ClusterKeyManagementProviderSpec(in, out, s)
 }
 
-func autoConvert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(in *ClusterCertificateStoreStatus, out *unversioned.ClusterCertificateStoreStatus, s conversion.Scope) error {
+func autoConvert_v1beta1_ClusterKeyManagementProviderStatus_To_unversioned_ClusterKeyManagementProviderStatus(in *ClusterKeyManagementProviderStatus, out *unversioned.ClusterKeyManagementProviderStatus, s conversion.Scope) error {
 	out.IsSuccess = in.IsSuccess
 	out.Error = in.Error
 	out.BriefError = in.BriefError
@@ -558,12 +598,12 @@ func autoConvert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCer
 	return nil
 }
 
-// Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus is an autogenerated conversion function.
-func Convert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(in *ClusterCertificateStoreStatus, out *unversioned.ClusterCertificateStoreStatus, s conversion.Scope) error {
-	return autoConvert_v1beta1_ClusterCertificateStoreStatus_To_unversioned_ClusterCertificateStoreStatus(in, out, s)
+// Convert_v1beta1_ClusterKeyManagementProviderStatus_To_unversioned_ClusterKeyManagementProviderStatus is an autogenerated conversion function.
+func Convert_v1beta1_ClusterKeyManagementProviderStatus_To_unversioned_ClusterKeyManagementProviderStatus(in *ClusterKeyManagementProviderStatus, out *unversioned.ClusterKeyManagementProviderStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_ClusterKeyManagementProviderStatus_To_unversioned_ClusterKeyManagementProviderStatus(in, out, s)
 }
 
-func autoConvert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(in *unversioned.ClusterCertificateStoreStatus, out *ClusterCertificateStoreStatus, s conversion.Scope) error {
+func autoConvert_unversioned_ClusterKeyManagementProviderStatus_To_v1beta1_ClusterKeyManagementProviderStatus(in *unversioned.ClusterKeyManagementProviderStatus, out *ClusterKeyManagementProviderStatus, s conversion.Scope) error {
 	out.IsSuccess = in.IsSuccess
 	out.Error = in.Error
 	out.BriefError = in.BriefError
@@ -572,9 +612,9 @@ func autoConvert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCer
 	return nil
 }
 
-// Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus is an autogenerated conversion function.
-func Convert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(in *unversioned.ClusterCertificateStoreStatus, out *ClusterCertificateStoreStatus, s conversion.Scope) error {
-	return autoConvert_unversioned_ClusterCertificateStoreStatus_To_v1beta1_ClusterCertificateStoreStatus(in, out, s)
+// Convert_unversioned_ClusterKeyManagementProviderStatus_To_v1beta1_ClusterKeyManagementProviderStatus is an autogenerated conversion function.
+func Convert_unversioned_ClusterKeyManagementProviderStatus_To_v1beta1_ClusterKeyManagementProviderStatus(in *unversioned.ClusterKeyManagementProviderStatus, out *ClusterKeyManagementProviderStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_ClusterKeyManagementProviderStatus_To_v1beta1_ClusterKeyManagementProviderStatus(in, out, s)
 }
 
 func autoConvert_v1beta1_ClusterPolicy_To_unversioned_ClusterPolicy(in *ClusterPolicy, out *unversioned.ClusterPolicy, s conversion.Scope) error {
@@ -889,6 +929,110 @@ func autoConvert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierSta
 // Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus is an autogenerated conversion function.
 func Convert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(in *unversioned.ClusterVerifierStatus, out *ClusterVerifierStatus, s conversion.Scope) error {
 	return autoConvert_unversioned_ClusterVerifierStatus_To_v1beta1_ClusterVerifierStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(in *KeyManagementProvider, out *unversioned.KeyManagementProvider, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(in *KeyManagementProvider, out *unversioned.KeyManagementProvider, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(in *unversioned.KeyManagementProvider, out *KeyManagementProvider, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(in *unversioned.KeyManagementProvider, out *KeyManagementProvider, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(in *KeyManagementProviderList, out *unversioned.KeyManagementProviderList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.KeyManagementProvider)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(in *KeyManagementProviderList, out *unversioned.KeyManagementProviderList, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(in *unversioned.KeyManagementProviderList, out *KeyManagementProviderList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]KeyManagementProvider)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(in *unversioned.KeyManagementProviderList, out *KeyManagementProviderList, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in *KeyManagementProviderSpec, out *unversioned.KeyManagementProviderSpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in *KeyManagementProviderSpec, out *unversioned.KeyManagementProviderSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in *unversioned.KeyManagementProviderSpec, out *KeyManagementProviderSpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in *unversioned.KeyManagementProviderSpec, out *KeyManagementProviderSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(in *KeyManagementProviderStatus, out *unversioned.KeyManagementProviderStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(in *KeyManagementProviderStatus, out *unversioned.KeyManagementProviderStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(in *unversioned.KeyManagementProviderStatus, out *KeyManagementProviderStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(in *unversioned.KeyManagementProviderStatus, out *KeyManagementProviderStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(in, out, s)
 }
 
 func autoConvert_v1beta1_PluginSource_To_unversioned_PluginSource(in *PluginSource, out *unversioned.PluginSource, s conversion.Scope) error {

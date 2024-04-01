@@ -50,7 +50,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	var policy configv1beta1.ClusterPolicy
 	var resource = req.Name
-	policyLogger.Infof("Reconciling Policy %s", resource)
+	policyLogger.Infof("Reconciling Cluster Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
 		if apierrors.IsNotFound(err) {

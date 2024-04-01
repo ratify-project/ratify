@@ -51,7 +51,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	var store configv1beta1.ClusterStore
 	var resource = req.Name
-	storeLogger.Infof("reconciling store '%v'", resource)
+	storeLogger.Infof("reconciling cluster store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 		if apierrors.IsNotFound(err) {

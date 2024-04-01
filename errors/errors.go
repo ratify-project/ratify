@@ -118,4 +118,11 @@ var (
 		Message:     "data encoding failure",
 		Description: "Failed to encode data. Please verify the encoding data.",
 	})
+
+	// ErrorCodeKeyManagementConflict is returned when key management provider and certificate store are configured together.
+	ErrorCodeKeyManagementConflict = Register("errcode", ErrorDescriptor{
+		Value:       "KEY_MANAGEMENT_CONFLICT",
+		Message:     "key management provider and certificate store should not be configured together",
+		Description: "Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.",
+	})
 )

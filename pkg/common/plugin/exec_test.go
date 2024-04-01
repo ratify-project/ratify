@@ -16,6 +16,7 @@ limitations under the License.
 package plugin
 
 import (
+	"bytes"
 	"strings"
 	"testing"
 )
@@ -42,5 +43,67 @@ func TestPluginErr(t *testing.T) {
 
 	if !strings.Contains(err.Error(), string(stdErr)) {
 		t.Fatalf("error msg should contain stdErr msg, actual '%v'", err.Error())
+	}
+}
+
+func TestParsePluginOutput_EmptyBuffers(t *testing.T) {
+	stdOut := bytes.NewBufferString("")
+	stdErr := bytes.NewBufferString("")
+
+	json, messages := parsePluginOutput(stdOut, stdErr)
+
+	if len(messages) != 0 {
+		t.Fatalf("unexpected messages, expected 0, got %d", len(messages))
+	}
+
+	if len(json) != 0 {
+		t.Fatalf("unexpected json, expected empty, got '%s'", json)
+	}
+}
+
+func TestParsePluginOutput_StdErrNonEmpty(t *testing.T) {
+	stdOut := bytes.NewBufferString("")
+	stdErr := bytes.NewBufferString("This is a string from std err\n")
+
+	json, messages := parsePluginOutput(stdOut, stdErr)
+
+	if len(messages) != 1 {
+		t.Fatalf("unexpected messages, expected 1, got %d", len(messages))
+	}
+
+	if len(json) != 0 {
+		t.Fatalf("unexpected json, expected empty, got '%s'", json)
+	}
+}
+
+func TestParsePluginOutput_StdOutNonEmpty(t *testing.T) {
+	stdOut := bytes.NewBufferString("{\"key\":\"value\"}\n")
+	stdErr := bytes.NewBufferString("")
+
+	expectedJSON := []byte(`{"key":"value"}`)
+
+	json, messages := parsePluginOutput(stdOut, stdErr)
+
+	if len(messages) != 0 {
+		t.Fatalf("unexpected messages, expected 0, got %d", len(messages))
+	}
+
+	if !bytes.Equal(expectedJSON, json) {
+		t.Fatalf("unexpected json, expected '%s', got '%s'", expectedJSON, json)
+	}
+}
+
+func TestParsePluginOutput_InvalidJson(t *testing.T) {
+	stdOut := bytes.NewBufferString("This is not a valid json\n")
+	stdErr := bytes.NewBufferString("")
+
+	json, messages := parsePluginOutput(stdOut, stdErr)
+
+	if len(messages) != 1 {
+		t.Fatalf("unexpected messages, expected 1, got %d", len(messages))
+	}
+
+	if len(json) != 0 {
+		t.Fatalf("unexpected json, expected empty, got '%s'", json)
 	}
 }

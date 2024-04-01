@@ -22,22 +22,25 @@ import (
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
+// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// ClusterCertificateStoreSpec defines the desired state of ClusterCertificateStore
-type ClusterCertificateStoreSpec struct {
+// ClusterKeyManagementProviderSpec defines the desired state of ClusterKeyManagementProvider
+type ClusterKeyManagementProviderSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the cluster certificate store provider
-	Provider string `json:"provider,omitempty"`
+	// Name of the key management provider
+	Type string `json:"type,omitempty"`
 
-	// Parameters of the cluster certificate store
+	// Parameters of the key management provider
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-type ClusterCertificateStoreStatus struct {
+// ClusterKeyManagementProviderStatus defines the observed state of ClusterKeyManagementProvider
+type ClusterKeyManagementProviderStatus struct {
 	// Important: Run "make manifests" to regenerate code after modifying this file
-	// Is successful in loading certificate files
+
+	// Is successful in loading certificate/key files
 	IsSuccess bool `json:"issuccess"`
 	// Error message if operation was unsuccessful
 	// +optional
@@ -45,26 +48,26 @@ type ClusterCertificateStoreStatus struct {
 	// Truncated error message if the message is too long
 	// +optional
 	BriefError string `json:"brieferror,omitempty"`
-	// The time stamp of last successful certificates fetch operation. If operation failed, last fetched time shows the time of error
+	// The time stamp of last successful certificate/key fetch operation. If operation failed, last fetched time shows the time of error
 	// +optional
 	LastFetchedTime *metav1.Time `json:"lastfetchedtime,omitempty"`
-	// provider specific properties of the each individual certificate
+	// provider specific properties of the each individual certificate/key
 	// +optional
 	Properties runtime.RawExtension `json:"properties,omitempty"`
 }
 
-// ClusterCertificateStore is the Schema for the clustercertificatestores API
-type ClusterCertificateStore struct {
+// ClusterKeyManagementProvider is the Schema for the clusterkeymanagementproviders API
+type ClusterKeyManagementProvider struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterCertificateStoreSpec   `json:"spec,omitempty"`
-	Status ClusterCertificateStoreStatus `json:"status,omitempty"`
+	Spec   ClusterKeyManagementProviderSpec   `json:"spec,omitempty"`
+	Status ClusterKeyManagementProviderStatus `json:"status,omitempty"`
 }
 
-// ClusterCertificateStoreList contains a list of ClusterCertificateStore
-type ClusterCertificateStoreList struct {
+// ClusterKeyManagementProviderList contains a list of ClusterKeyManagementProvider
+type ClusterKeyManagementProviderList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []ClusterCertificateStore `json:"items"`
+	Items           []KeyManagementProvider `json:"items"`
 }

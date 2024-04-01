@@ -214,6 +214,13 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
+	if err = (&namespaced.KeyManagementProviderReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Key Management Provider")
+		os.Exit(1)
+	}
 	if err = (&clustered.VerifierReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -228,11 +235,11 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Cluster Store")
 		os.Exit(1)
 	}
-	if err = (&clustered.CertificateStoreReconciler{
+	if err = (&clustered.KeyManagementProviderReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Cluster Certificate Store")
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Key Management Provider")
 		os.Exit(1)
 	}
 	if err = (&clustered.PolicyReconciler{

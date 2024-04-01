@@ -62,9 +62,17 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 				logger.GetLogger(ctx, logOpt).Warnf("verifier in namespace: %s cannot access certStore: %s in different namespace.", ctxUtils.GetNamespace(ctx), certStore)
 				continue
 			}
-			result := certificatesMap[certStore]
+			result := cutils.GetKMPCertificates(ctx, certStore)
+			// notation verifier does not consider specific named/versioned certificates within a key management provider resource
 			if len(result) == 0 {
-				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for certStore %+v", certStore)
+				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Key Management Provider %+v", certStore)
+				// check certificate store if key management provider does not have certificates.
+				// NOTE: certificate store and key management provider should not be configured together.
+				// User will be warned by the controller/CLI
+				result = certificatesMap[certStore]
+				if len(result) == 0 {
+					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Certificate Store %+v", certStore)
+				}
 			}
 			certs = append(certs, result...)
 		}

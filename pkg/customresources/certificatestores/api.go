@@ -20,9 +20,9 @@ import "crypto/x509"
 type CertificateStores interface {
 	GetCertStores(scope string) map[string][]*x509.Certificate
 
-	AddCert(scope, certName string, cert *x509.Certificate)
+	AddStore(scope, certName string, cert []*x509.Certificate)
 
-	DeleteCert(scope, certName string)
+	DeleteStore(scope, certName string)
 
 	IsEmpty() bool
 }

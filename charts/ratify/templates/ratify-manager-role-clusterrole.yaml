@@ -86,6 +86,32 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - keymanagementproviders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - keymanagementproviders/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - keymanagementproviders/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - policies
   verbs:
   - create

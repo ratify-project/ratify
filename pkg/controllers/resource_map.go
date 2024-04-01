@@ -20,6 +20,7 @@ import (
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
+	kmp "github.com/deislabs/ratify/pkg/customresources/keymanagementproviders"
 )
 
 var (
@@ -33,4 +34,6 @@ var (
 
 	// a map between CertificateStore name to array of x509 certificates
 	CertificatesMap = cs.NewActiveCertStores()
+
+	KMPMap = kmp.NewActiveKMPs()
 )

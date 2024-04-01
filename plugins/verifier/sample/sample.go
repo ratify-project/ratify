@@ -18,8 +18,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/common/plugin/logger"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/verifier"
@@ -37,7 +39,19 @@ type PluginInputConfig struct {
 }
 
 func main() {
+	// create a plugin logger
+	pluginlogger := logger.NewLogger()
+
+	// output info and Debug to stderr
+	pluginlogger.Info("initialized plugin")
+	pluginlogger.Debugf("plugin %s %s", "sample", "1.0.0")
+
 	skel.PluginMain("sample", "1.0.0", VerifyReference, []string{"1.0.0"})
+
+	// By default, the pluginlogger writes to stderr. To change the output, use SetOutput
+	pluginlogger.SetOutput(os.Stdout)
+	// output warning to stdout
+	pluginlogger.Warn("example warning message...")
 }
 
 func parseInput(stdin []byte) (*PluginConfig, error) {

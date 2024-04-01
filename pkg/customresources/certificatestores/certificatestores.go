@@ -25,8 +25,8 @@ type ActiveCertStores struct {
 	NamespacedCertStores map[string]map[string][]*x509.Certificate
 }
 
-func NewActiveCertStores() ActiveCertStores {
-	return ActiveCertStores{
+func NewActiveCertStores() CertificateStores {
+	return &ActiveCertStores{
 		NamespacedCertStores: make(map[string]map[string][]*x509.Certificate),
 	}
 }
