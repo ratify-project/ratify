@@ -50,7 +50,7 @@ The Ratify roadmap is divided into milestones, each with a set of features (high
 
 **major features**
 
-- Kubernetes multi-tenancy support
+- Kubernetes multi-tenancy support (Namespace-specific policies)
 - OCI v1.1 compliance
 - Cosign signatures verification using keys in AKV
 - Error logs improvements
@@ -63,6 +63,7 @@ The Ratify roadmap is divided into milestones, each with a set of features (high
 
 **Major features**
 
+- Kubernetes multi-tenancy support (Verifying Common images across namespaces)
 - Cosign keyless verification using OIDC settings
 - Notary Project signature verification with Time-stamping support
 - Signing Certificate/key rotation support
