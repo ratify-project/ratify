@@ -78,3 +78,40 @@ func TestCreateCacheKey(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNamespace(t *testing.T) {
+	testCases := []struct {
+		name         string
+		namespaceSet bool
+		namespace    string
+	}{
+		{
+			name:         "no namespace",
+			namespaceSet: false,
+		},
+		{
+			name:         "empty namespace",
+			namespaceSet: true,
+			namespace:    "",
+		},
+		{
+			name:         "with namespace",
+			namespaceSet: true,
+			namespace:    testNamespace,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			if tc.namespaceSet {
+				ctx = SetContextWithNamespace(ctx, tc.namespace)
+			}
+
+			namespace := GetNamespace(ctx)
+			if namespace != tc.namespace {
+				t.Fatalf("expected namespace %s, got %s", tc.namespace, namespace)
+			}
+		})
+	}
+}
