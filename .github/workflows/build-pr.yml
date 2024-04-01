@@ -5,7 +5,7 @@ on:
     types: [labeled]
   pull_request:
     branches:
-      - staging2
+      - staging
        
   workflow_dispatch:
 
