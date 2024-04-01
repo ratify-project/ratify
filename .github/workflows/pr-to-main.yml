@@ -3,7 +3,7 @@ name: Merge staging Into Main
 on:
   push:
     branches:
-      - 'staging2' #to update to staging
+      - 'staging'
 
 permissions:
   pull-requests: write
@@ -23,16 +23,16 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
       
       # https://github.com/marketplace/actions/github-pull-request-action
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       - name: pull-request
         run: |
           gh_pr_up() { gh pr create $* || gh pr edit $* }
-          gh_pr_up --title "[Automated1] Merge ${{ env.GITHUB_CONTEXT }} into main" --body "Automated Pull Request" --base main
+          gh_pr_up --title "[Automated] Merge ${{ env.GITHUB_CONTEXT }} into main" --body "Automated Pull Request" --base main
 
       # https://github.com/marketplace/actions/github-pull-request-action
-      - name: create pull request with reposync acition
+      - name: create pull request with reposync action
         id: open-pr
-        uses: repo-sync/pull-request@v2 #TODO switch for digest
+        uses: repo-sync/pull-request@7e79a9f5dc3ad0ce53138f01df2fad14a04831c5 #v2.12.1
         with:
           github_token: ${{ secrets.ACCESS_TOKEN }}
           destination_branch: main
@@ -42,7 +42,7 @@ jobs:
       # https://github.com/marketplace/actions/enable-pull-request-automerge
       - name: enable automerge
         if: steps.open-pr.outputs.pr_number != ''
-        uses: peter-evans/enable-pull-request-automerge@v2 #TODO switch for digest
+        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d #v3.0.0
         with:
           token: ${{ secrets.ACCESS_TOKEN }}
           pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
