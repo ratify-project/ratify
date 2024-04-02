@@ -15,8 +15,8 @@ package controllers
 
 import (
 	"github.com/deislabs/ratify/pkg/customresources/policies"
-	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 )
 
 var (
