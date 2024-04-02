@@ -10,7 +10,7 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 * Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
-## Developing5
+## Developing6
 
 ### Components
 
