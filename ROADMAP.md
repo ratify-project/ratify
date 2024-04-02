@@ -55,6 +55,8 @@ The Ratify roadmap is divided into milestones, each with a set of features (high
 - Cosign signatures verification using keys in AKV
 - Error logs improvements
 
+See details in [GitHub milestone v1.2.0](https://github.com/deislabs/ratify/issues?q=is%3Aopen+is%3Aissue+milestone%3Av1.2.0).
+
 ### v1.3
 
 **Status**: Not started
@@ -67,6 +69,8 @@ The Ratify roadmap is divided into milestones, each with a set of features (high
 - Cosign keyless verification using OIDC settings
 - Notary Project signature verification with Time-stamping support
 - Signing Certificate/key rotation support
+
+See details in [GitHub milestone v1.3.0](https://github.com/deislabs/ratify/issues?q=is%3Aopen+is%3Aissue+milestone%3Av1.3.0).
 
 ### v1.4
 
