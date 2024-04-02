@@ -24,7 +24,6 @@ import (
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/common"
-	vrs "github.com/deislabs/ratify/pkg/customresources/verifiers"
 	e "github.com/deislabs/ratify/pkg/executor"
 	exConfig "github.com/deislabs/ratify/pkg/executor/config"
 	"github.com/deislabs/ratify/pkg/executor/types"
@@ -158,7 +157,7 @@ func (v *mockVerifier) GetNestedReferences() []string {
 }
 
 func TestVerifySubjectInternal_ResolveSubjectDescriptor_Failed(t *testing.T) {
-	executor := newEmptyExecutor()
+	executor := Executor{}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -180,7 +179,10 @@ func TestVerifySubjectInternal_ResolveSubjectDescriptor_Success(t *testing.T) {
 		},
 	}
 
-	executor := newTestExecutor(&mockPolicyProvider{}, store, nil, nil)
+	executor := Executor{
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		PolicyEnforcer: &mockPolicyProvider{},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -194,17 +196,19 @@ func TestVerifySubjectInternal_ResolveSubjectDescriptor_Success(t *testing.T) {
 func TestVerifySubjectInternal_Verify_NoReferrers(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{}
-	ex := newTestExecutor(configPolicy,
-		&mocks.TestStore{
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{&mocks.TestStore{
 			ResolveMap: map[string]digest.Digest{
 				"v1": testDigest,
 			},
-		},
-		[]verifier.ReferenceVerifier{&TestVerifier{}},
-		&exConfig.ExecutorConfig{
+		}},
+		Verifiers: []verifier.ReferenceVerifier{&TestVerifier{}},
+		Config: &exConfig.ExecutorConfig{
 			VerificationRequestTimeout: nil,
 			MutationRequestTimeout:     nil,
-		})
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -241,10 +245,15 @@ func TestVerifySubjectInternal_CanVerify_ExpectedResults(t *testing.T) {
 		},
 	}
 
-	ex := newTestExecutor(configPolicy, store, []verifier.ReferenceVerifier{ver}, &exConfig.ExecutorConfig{
-		VerificationRequestTimeout: nil,
-		MutationRequestTimeout:     nil,
-	})
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -292,10 +301,15 @@ func TestVerifySubjectInternal_VerifyFailures_ExpectedResults(t *testing.T) {
 		},
 	}
 
-	ex := newTestExecutor(configPolicy, store, []verifier.ReferenceVerifier{ver}, &exConfig.ExecutorConfig{
-		VerificationRequestTimeout: nil,
-		MutationRequestTimeout:     nil,
-	})
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -339,10 +353,15 @@ func TestVerifySubjectInternal_VerifySuccess_ExpectedResults(t *testing.T) {
 		},
 	}
 
-	ex := newTestExecutor(configPolicy, store, []verifier.ReferenceVerifier{ver}, &exConfig.ExecutorConfig{
-		VerificationRequestTimeout: nil,
-		MutationRequestTimeout:     nil,
-	})
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -394,10 +413,15 @@ func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *
 		},
 	}
 
-	ex := newTestExecutor(configPolicy, store, []verifier.ReferenceVerifier{ver}, &exConfig.ExecutorConfig{
-		VerificationRequestTimeout: nil,
-		MutationRequestTimeout:     nil,
-	})
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{ver},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: "localhost:5000/net-monitor:v1",
@@ -440,7 +464,6 @@ func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 			return true
 		},
 		nestedReferences: []string{"string-content-does-not-matter"},
-		name:             "sbom-verifier",
 	}
 
 	signatureVerifier := &TestVerifier{
@@ -452,7 +475,15 @@ func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 		},
 	}
 
-	ex := newTestExecutor(configPolicy, store, []verifier.ReferenceVerifier{sbomVerifier, signatureVerifier}, &exConfig.ExecutorConfig{})
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{sbomVerifier, signatureVerifier},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: mocks.TestSubjectWithDigest,
@@ -510,7 +541,6 @@ func TestVerifySubjectInternal_NoNestedReferences_Expected(t *testing.T) {
 		VerifyResult: func(artifactType string) bool {
 			return true
 		},
-		name: "sbom-verifier",
 	}
 
 	signatureVer := &TestVerifier{
@@ -522,7 +552,15 @@ func TestVerifySubjectInternal_NoNestedReferences_Expected(t *testing.T) {
 		},
 	}
 
-	ex := newTestExecutor(configPolicy, store, []verifier.ReferenceVerifier{sbomVer, signatureVer}, &exConfig.ExecutorConfig{})
+	ex := &Executor{
+		PolicyEnforcer: configPolicy,
+		ReferrerStores: []referrerstore.ReferrerStore{store},
+		Verifiers:      []verifier.ReferenceVerifier{sbomVer, signatureVer},
+		Config: &exConfig.ExecutorConfig{
+			VerificationRequestTimeout: nil,
+			MutationRequestTimeout:     nil,
+		},
+	}
 
 	verifyParameters := e.VerifyParameters{
 		Subject: mocks.TestSubjectWithDigest,
@@ -565,21 +603,39 @@ func TestGetVerifyRequestTimeout_ExpectedResults(t *testing.T) {
 		expectedTimeout int
 	}{
 		{
-			setTimeout:      -1,
-			ex:              *newTestExecutor(policyConfig.PolicyEnforcer{}, nil, nil, nil),
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config:         nil,
+			},
 			expectedTimeout: 2900,
 		},
 		{
-			setTimeout:      -1,
-			ex:              *newTestExecutor(policyConfig.PolicyEnforcer{}, nil, nil, &exConfig.ExecutorConfig{}),
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     nil,
+				},
+			},
 			expectedTimeout: 2900,
 		},
 		{
 			setTimeout: 5000,
-			ex: *newTestExecutor(policyConfig.PolicyEnforcer{}, nil, nil, &exConfig.ExecutorConfig{
-				VerificationRequestTimeout: new(int),
-				MutationRequestTimeout:     nil,
-			}),
+			ex: Executor{
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: new(int),
+					MutationRequestTimeout:     nil,
+				},
+			},
 			expectedTimeout: 5000,
 		},
 	}
@@ -604,21 +660,39 @@ func TestGetMutationRequestTimeout_ExpectedResults(t *testing.T) {
 		expectedTimeout int
 	}{
 		{
-			setTimeout:      -1,
-			ex:              *newTestExecutor(policyConfig.PolicyEnforcer{}, nil, nil, nil),
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config:         nil,
+			},
 			expectedTimeout: 950,
 		},
 		{
-			setTimeout:      -1,
-			ex:              *newTestExecutor(policyConfig.PolicyEnforcer{}, nil, nil, &exConfig.ExecutorConfig{}),
+			setTimeout: -1,
+			ex: Executor{
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     nil,
+				},
+			},
 			expectedTimeout: 950,
 		},
 		{
 			setTimeout: 2400,
-			ex: *newTestExecutor(policyConfig.PolicyEnforcer{}, nil, nil, &exConfig.ExecutorConfig{
-				VerificationRequestTimeout: nil,
-				MutationRequestTimeout:     new(int),
-			}),
+			ex: Executor{
+				PolicyEnforcer: policyConfig.PolicyEnforcer{},
+				ReferrerStores: []referrerstore.ReferrerStore{},
+				Verifiers:      []verifier.ReferenceVerifier{},
+				Config: &exConfig.ExecutorConfig{
+					VerificationRequestTimeout: nil,
+					MutationRequestTimeout:     new(int),
+				},
+			},
 			expectedTimeout: 2400,
 		},
 	}
@@ -640,7 +714,7 @@ func TestVerifySubject(t *testing.T) {
 		name           string
 		params         e.VerifyParameters
 		expectedResult types.VerifyResult
-		store          referrerstore.ReferrerStore
+		stores         []referrerstore.ReferrerStore
 		policyEnforcer policyprovider.PolicyProvider
 		verifiers      []verifier.ReferenceVerifier
 		referrers      []ocispecs.ReferenceDescriptor
@@ -659,8 +733,10 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			store: &mockStore{
-				referrers: nil,
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: nil,
+				},
 			},
 			policyEnforcer: &mockPolicyProvider{
 				policyType: pt.RegoPolicy,
@@ -673,8 +749,10 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			store: &mockStore{
-				referrers: nil,
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: nil,
+				},
 			},
 			policyEnforcer: &mockPolicyProvider{
 				policyType: pt.RegoPolicy,
@@ -687,13 +765,15 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			store: &mockStore{
-				referrers: map[string][]ocispecs.ReferenceDescriptor{
-					subjectDigest: {
-						{
-							ArtifactType: artifactType,
-							Descriptor: oci.Descriptor{
-								Digest: signatureDigest,
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: map[string][]ocispecs.ReferenceDescriptor{
+						subjectDigest: {
+							{
+								ArtifactType: artifactType,
+								Descriptor: oci.Descriptor{
+									Digest: signatureDigest,
+								},
 							},
 						},
 					},
@@ -718,13 +798,15 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			store: &mockStore{
-				referrers: map[string][]ocispecs.ReferenceDescriptor{
-					subjectDigest: {
-						{
-							ArtifactType: artifactType,
-							Descriptor: oci.Descriptor{
-								Digest: signatureDigest,
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: map[string][]ocispecs.ReferenceDescriptor{
+						subjectDigest: {
+							{
+								ArtifactType: artifactType,
+								Descriptor: oci.Descriptor{
+									Digest: signatureDigest,
+								},
 							},
 						},
 					},
@@ -750,13 +832,15 @@ func TestVerifySubject(t *testing.T) {
 			params: e.VerifyParameters{
 				Subject: subject1,
 			},
-			store: &mockStore{
-				referrers: map[string][]ocispecs.ReferenceDescriptor{
-					subjectDigest: {
-						{
-							ArtifactType: artifactType,
-							Descriptor: oci.Descriptor{
-								Digest: signatureDigest,
+			stores: []referrerstore.ReferrerStore{
+				&mockStore{
+					referrers: map[string][]ocispecs.ReferenceDescriptor{
+						subjectDigest: {
+							{
+								ArtifactType: artifactType,
+								Descriptor: oci.Descriptor{
+									Digest: signatureDigest,
+								},
 							},
 						},
 					},
@@ -783,7 +867,7 @@ func TestVerifySubject(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ex := newTestExecutor(tc.policyEnforcer, tc.store, tc.verifiers, nil)
+			ex := &Executor{tc.stores, tc.policyEnforcer, tc.verifiers, nil}
 
 			result, err := ex.VerifySubject(context.Background(), tc.params)
 			if (err != nil) != tc.expectErr {
@@ -793,32 +877,5 @@ func TestVerifySubject(t *testing.T) {
 				t.Fatalf("expected result: %+v but got: %+v", tc.expectedResult, result)
 			}
 		})
-	}
-}
-
-func newTestExecutor(policyEnforcer policyprovider.PolicyProvider, store referrerstore.ReferrerStore, verifiers []verifier.ReferenceVerifier, config *exConfig.ExecutorConfig) *Executor {
-	activeStores := make([]referrerstore.ReferrerStore, 0)
-	if store != nil {
-		activeStores = append(activeStores, store)
-	}
-
-	activeVerifiers := vrs.NewActiveVerifiers()
-	for _, verifier := range verifiers {
-		activeVerifiers.AddVerifier("", verifier.Name(), verifier)
-	}
-
-	return &Executor{
-		PolicyEnforcer: policyEnforcer,
-		ReferrerStores: activeStores,
-		Verifiers:      activeVerifiers,
-		Config:         config,
-	}
-}
-
-func newEmptyExecutor() Executor {
-	verifiers := vrs.NewActiveVerifiers()
-
-	return Executor{
-		Verifiers: verifiers,
 	}
 }

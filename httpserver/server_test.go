@@ -35,8 +35,6 @@ import (
 	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
 	"github.com/sirupsen/logrus"
 
-	vrs "github.com/deislabs/ratify/pkg/customresources/verifiers"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	"github.com/deislabs/ratify/pkg/policyprovider/types"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
@@ -48,8 +46,13 @@ import (
 const testArtifactType string = "test-type1"
 const testImageNameTagged string = "localhost:5000/net-monitor:v1"
 
-func testGetExecutor() *core.Executor {
-	return newTestExecutor(nil, nil, nil, nil)
+func testGetExecutor(context.Context) *core.Executor {
+	return &core.Executor{
+		Verifiers:      []verifier.ReferenceVerifier{},
+		ReferrerStores: []referrerstore.ReferrerStore{},
+		PolicyEnforcer: nil,
+		Config:         nil,
+	}
 }
 
 func TestNewServer_Expected(t *testing.T) {
@@ -129,9 +132,13 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			},
 		}
 
-		ex := newTestExecutor(configPolicy, store, ver, nil)
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -144,7 +151,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -192,9 +199,17 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			},
 		}
 
-		ex := newTestExecutor(configPolicy, store, ver, nil)
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+			Config: &exconfig.ExecutorConfig{
+				VerificationRequestTimeout: nil,
+				MutationRequestTimeout:     nil,
+			},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -207,7 +222,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -259,9 +274,13 @@ func TestServer_Mutation_Success(t *testing.T) {
 			},
 		}
 
-		ex := newTestExecutor(configPolicy, store, ver, nil)
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -275,7 +294,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
+			handler: processTimeout(server.mutate, server.GetExecutor(nil).GetMutationRequestTimeout(), true),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -331,9 +350,13 @@ func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		ex := newTestExecutor(configPolicy, nil, ver, nil)
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -347,7 +370,7 @@ func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
+			handler: processTimeout(server.mutate, server.GetExecutor(nil).GetMutationRequestTimeout(), true),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -406,12 +429,17 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 		}
 
 		verifyTimeout := 5000
-		ex := newTestExecutor(configPolicy, store, ver, &exconfig.ExecutorConfig{
-			VerificationRequestTimeout: &verifyTimeout,
-			MutationRequestTimeout:     nil,
-		})
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+			Config: &exconfig.ExecutorConfig{
+				VerificationRequestTimeout: &verifyTimeout,
+				MutationRequestTimeout:     nil,
+			},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -424,7 +452,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -453,12 +481,17 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 
 		responseRecorder := httptest.NewRecorder()
 
-		ex := newTestExecutor(config.PolicyEnforcer{}, &mocks.TestStore{}, &core.TestVerifier{}, &exconfig.ExecutorConfig{
-			VerificationRequestTimeout: nil,
-			MutationRequestTimeout:     nil,
-		})
+		ex := &core.Executor{
+			PolicyEnforcer: config.PolicyEnforcer{},
+			ReferrerStores: []referrerstore.ReferrerStore{&mocks.TestStore{}},
+			Verifiers:      []verifier.ReferenceVerifier{&core.TestVerifier{}},
+			Config: &exconfig.ExecutorConfig{
+				VerificationRequestTimeout: nil,
+				MutationRequestTimeout:     nil,
+			},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -471,7 +504,7 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -525,9 +558,13 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		ex := newTestExecutor(nil, store, ver, nil)
+		ex := &core.Executor{
+			PolicyEnforcer: nil,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{ver},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -541,7 +578,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -590,9 +627,13 @@ func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
 			},
 		}
 
-		ex := newTestExecutor(configPolicy, store, nil, nil)
+		ex := &core.Executor{
+			PolicyEnforcer: configPolicy,
+			ReferrerStores: []referrerstore.ReferrerStore{store},
+			Verifiers:      []verifier.ReferenceVerifier{},
+		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -606,7 +647,7 @@ func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -674,23 +715,4 @@ func TestServer_serverGracefulShutdown(t *testing.T) {
 	}
 	// wait some time to see shutdown logs
 	time.Sleep(5 * time.Second)
-}
-
-func newTestExecutor(policyEnforcer policyprovider.PolicyProvider, store referrerstore.ReferrerStore, verifier verifier.ReferenceVerifier, config *exconfig.ExecutorConfig) *core.Executor {
-	activeStores := make([]referrerstore.ReferrerStore, 0)
-	if store != nil {
-		activeStores = append(activeStores, store)
-	}
-
-	activeVerifiers := vrs.NewActiveVerifiers()
-	if verifier != nil {
-		activeVerifiers.AddVerifier("", verifier.Name(), verifier)
-	}
-
-	return &core.Executor{
-		PolicyEnforcer: policyEnforcer,
-		ReferrerStores: activeStores,
-		Verifiers:      activeVerifiers,
-		Config:         config,
-	}
 }

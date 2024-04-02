@@ -49,6 +49,7 @@ import (
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/referrerstore"
@@ -83,9 +84,11 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	}
 
 	// initialize server
-	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
+	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func(ctx context.Context) *ef.Executor {
 		var activeStores []referrerstore.ReferrerStore
 		var activePolicyEnforcer policyprovider.PolicyProvider
+
+		activeVerifiers := controllers.VerifierMap.GetVerifiers(ctxUtils.GetNamespace(ctx))
 
 		// check if there are active stores from crd controller
 		if len(controllers.StoreMap) > 0 {
@@ -100,7 +103,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 
 		// return executor with latest configuration
 		executor := ef.Executor{
-			Verifiers:      controllers.VerifierMap,
+			Verifiers:      activeVerifiers,
 			ReferrerStores: activeStores,
 			PolicyEnforcer: activePolicyEnforcer,
 			Config:         &cf.ExecutorConfig,
