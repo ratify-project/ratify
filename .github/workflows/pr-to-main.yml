@@ -29,5 +29,5 @@ jobs:
         with:
           github_token: ${{ secrets.PR_TOKEN }}
           destination_branch: main
-          pr_title: "${{ env.GITHUB_CONTEXT }} into main"
+          pr_title: "${{ github.event.commits[][message] }} into main"
           pr_body: "Automated Pull Request"
