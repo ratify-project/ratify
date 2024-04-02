@@ -18,7 +18,7 @@ jobs:
       
       - name: get pr name
         run: |
-          echo "$GITHUB_CONTEXT"| jq '.event.commits[].id' | tail -2 | head -1 |sed 's/\"//g'
+          echo "$GITHUB_CONTEXT"| jq '.event.commits[].message'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
