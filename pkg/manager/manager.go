@@ -30,7 +30,6 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
 	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
@@ -86,19 +85,15 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	// initialize server
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func(ctx context.Context) *ef.Executor {
 		var activeStores []referrerstore.ReferrerStore
-		var activePolicyEnforcer policyprovider.PolicyProvider
-
-		activeVerifiers := controllers.VerifierMap.GetVerifiers(ctxUtils.GetNamespace(ctx))
+		namespace := ctxUtils.GetNamespace(ctx)
+		activeVerifiers := controllers.VerifierMap.GetVerifiers(namespace)
+		activePolicyEnforcer := controllers.ActivePolicies.GetPolicy(namespace)
 
 		// check if there are active stores from crd controller
 		if len(controllers.StoreMap) > 0 {
 			for _, value := range controllers.StoreMap {
 				activeStores = append(activeStores, value)
 			}
-		}
-
-		if !controllers.ActivePolicy.IsEmpty() {
-			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
 		}
 
 		// return executor with latest configuration
