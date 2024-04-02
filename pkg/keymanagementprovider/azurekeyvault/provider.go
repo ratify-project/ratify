@@ -306,18 +306,28 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 	return results, certsStatus, nil
 }
 
+// Based on https://github.com/sigstore/sigstore/blob/8b208f7d608b80a7982b2a66358b8333b1eec542/pkg/signature/kms/azure/client.go#L258
 func getKeyFromKeyBundle(keyBundle kv.KeyBundle) (crypto.PublicKey, error) {
 	webKey := keyBundle.Key
 	if webKey == nil {
 		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "found invalid key bundle, key must not be nil", re.HideStackTrace)
 	}
+
+	keyType := webKey.Kty
+	switch keyType {
+	case kv.ECHSM:
+		webKey.Kty = kv.EC
+	case kv.RSAHSM:
+		webKey.Kty = kv.RSA
+	}
+
 	keyBytes, err := json.Marshal(webKey)
 	if err != nil {
 		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, "failed to marshal key", re.HideStackTrace)
 	}
 
-	var key jose.JSONWebKey
-	err = json.Unmarshal(keyBytes, &key)
+	key := jose.JSONWebKey{}
+	err = key.UnmarshalJSON(keyBytes)
 	if err != nil {
 		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, "failed to unmarshal key into JSON Web Key", re.HideStackTrace)
 	}
