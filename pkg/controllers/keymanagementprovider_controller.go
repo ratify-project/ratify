@@ -96,7 +96,6 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
-	keymanagementprovider.SetCertificatesInMap(resource, certificates)
 
 	// fetch keys and store in map
 	keys, keyAttributes, err := provider.GetKeys(ctx)
@@ -104,6 +103,7 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
+	keymanagementprovider.SetCertificatesInMap(resource, certificates)
 	keymanagementprovider.SetKeysInMap(resource, keys)
 	// merge certificates and keys status into one
 	maps.Copy(keyAttributes, certAttributes)
