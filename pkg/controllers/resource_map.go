@@ -18,6 +18,7 @@ import (
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
+	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 )
 
 var (
