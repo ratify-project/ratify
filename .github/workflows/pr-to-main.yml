@@ -16,34 +16,12 @@ jobs:
       - name: git checkout
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
       
-      - name: get pr name
-        run: |
-          echo "$GITHUB_CONTEXT"| jq '.event.commits[].id' | tail -2 | head -1 |sed 's/\"//g'
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-      
-      # https://github.com/marketplace/actions/github-pull-request-action
-      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - name: pull-request
-        run: |
-          gh_pr_up() { gh pr create $* || gh pr edit $* }
-          gh_pr_up --title "[Automated] Merge ${{ env.GITHUB_CONTEXT }} into main" --body "Automated Pull Request" --base main
-
       # https://github.com/marketplace/actions/github-pull-request-action
       - name: create pull request with reposync action
         id: open-pr
         uses: repo-sync/pull-request@7e79a9f5dc3ad0ce53138f01df2fad14a04831c5 #v2.12.1
         with:
-          github_token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.PR_TOKEN }}
           destination_branch: main
-          pr_title: "[Automated] Merge ${{ env.GITHUB_CONTEXT }} into main"
+          pr_title: ${{ github.event.commits[0].message }}
           pr_body: "Automated Pull Request"
-
-      # https://github.com/marketplace/actions/enable-pull-request-automerge
-      - name: enable automerge
-        if: steps.open-pr.outputs.pr_number != ''
-        uses: peter-evans/enable-pull-request-automerge@a660677d5469627102a1c1e11409dd063606628d #v3.0.0
-        with:
-          token: ${{ secrets.ACCESS_TOKEN }}
-          pull-request-number: ${{ steps.open-pr.outputs.pr_number }}
-          merge-method: merge
