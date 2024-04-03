@@ -27,7 +27,7 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/internal/constants"
 	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
 	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/deislabs/ratify/pkg/referrerstore/types"
@@ -39,11 +39,6 @@ type StoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-var (
-	// a map to track active stores
-	StoreMap = map[string]referrerstore.ReferrerStore{}
-)
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores/status,verbs=get;update;patch
@@ -64,7 +59,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
-			storeRemove(resource)
+			StoreMap.DeleteStore(constants.EmptyNamespace, resource)
 		} else {
 			storeLogger.Error(err, "unable to fetch store")
 		}
@@ -115,15 +110,10 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 		return fmt.Errorf("store factory failed to create store from store config, err: %w", err)
 	}
 
-	StoreMap[fullname] = storeReference
+	StoreMap.AddStore(constants.EmptyNamespace, fullname, storeReference)
 	logrus.Infof("store '%v' added to store map", storeReference.Name())
 
 	return nil
-}
-
-// Remove store from map
-func storeRemove(resourceName string) {
-	delete(StoreMap, resourceName)
 }
 
 // Returns a store reference from spec
