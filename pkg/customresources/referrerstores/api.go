@@ -19,17 +19,20 @@ import (
 	"github.com/deislabs/ratify/pkg/referrerstore"
 )
 
-type ReferrerStores interface {
+// ReferrerStoreManager is an interface that defines the methods for managing referrer stores across different scopes.
+type ReferrerStoreManager interface {
 	// Stores returns the list of referrer stores for the given scope.
-	// For K8s users, scope can be either the namespace or empty string("") for cluster-wide scope.
-	// For CLI users, scope is always empty string("") as there is no namespace specified.
 	GetStores(scope string) []referrerstore.ReferrerStore
 
+	// AddStore adds the given store under the given scope.
 	AddStore(scope, storeName string, store referrerstore.ReferrerStore)
 
+	// DeleteStore deletes the policy from the given scope.
 	DeleteStore(scope, storeName string)
 
+	// IsEmpty returns true if there are no stores.
 	IsEmpty() bool
 
+	// GetStoreCount returns the number of stores in all scopes.
 	GetStoreCount() int
 }

@@ -16,66 +16,73 @@ limitations under the License.
 package referrerstores
 
 import (
-	"fmt"
-
 	"github.com/deislabs/ratify/pkg/referrerstore"
 )
 
+// ActiveStores implements the ReferrerStoreManager interface.
 type ActiveStores struct {
-	NamespacedStores map[string]map[string]referrerstore.ReferrerStore
+	// TODO: Implement concurrent safety using sync.Map
+	// The structure of the map is as follows:
+	// The first level maps from scope to stores
+	// The second level maps from store name to store
+	// Example:
+	// {
+	//   "namespace1": {
+	//     "store1": store1,
+	//     "store2": store2
+	//   }
+	// }
+	// Note: Scope is utilized for organizing and isolating stores. In a Kubernetes (K8s) environment, the scope can be either a namespace or an empty string ("") for cluster-wide stores.
+	ScopedStores map[string]map[string]referrerstore.ReferrerStore
 }
 
-func NewActiveStores() ActiveStores {
-	return ActiveStores{
-		NamespacedStores: make(map[string]map[string]referrerstore.ReferrerStore),
+func NewActiveStores() ReferrerStoreManager {
+	return &ActiveStores{
+		ScopedStores: make(map[string]map[string]referrerstore.ReferrerStore),
 	}
 }
 
-func NewActiveStoresWithoutNames(stores []referrerstore.ReferrerStore) ActiveStores {
-	activeStores := make(map[string]map[string]referrerstore.ReferrerStore)
-	activeStores[""] = make(map[string]referrerstore.ReferrerStore)
-
-	for index, store := range stores {
-		activeStores[""][fmt.Sprintf("%d", index)] = store
-	}
-
-	return ActiveStores{
-		NamespacedStores: activeStores,
-	}
-}
-
-// GetStores implements the Stores interface.
+// GetStores fulfills the ReferrerStoreManager interface.
 // It returns all the stores in the ActiveStores for the given scope. If no stores are found for the given scope, it returns cluster-wide stores.
-func (s *ActiveStores) GetStores(scope string) []referrerstore.ReferrerStore {
+// TODO: Current implementation fetches stores for all namespaces including cluster-wide ones. Will support actual namespace based stores in future.
+func (s *ActiveStores) GetStores(_ string) []referrerstore.ReferrerStore {
 	stores := []referrerstore.ReferrerStore{}
-	for _, namespacedStores := range s.NamespacedStores {
-		for _, store := range namespacedStores {
+	for _, scopedStores := range s.ScopedStores {
+		for _, store := range scopedStores {
 			stores = append(stores, store)
 		}
 	}
 	return stores
 }
 
+// AddStore fulfills the ReferrerStoreManager interface.
+// It adds the given store under the given scope.
 func (s *ActiveStores) AddStore(scope, storeName string, store referrerstore.ReferrerStore) {
-	if _, ok := s.NamespacedStores[scope]; !ok {
-		s.NamespacedStores[scope] = make(map[string]referrerstore.ReferrerStore)
+	if _, ok := s.ScopedStores[scope]; !ok {
+		s.ScopedStores[scope] = make(map[string]referrerstore.ReferrerStore)
 	}
-	s.NamespacedStores[scope][storeName] = store
+	s.ScopedStores[scope][storeName] = store
 }
 
+// DeleteStore fulfills the ReferrerStoreManager interface.
+// It deletes the store with the given name under the given scope.
 func (s *ActiveStores) DeleteStore(scope, storeName string) {
-	if stores, ok := s.NamespacedStores[scope]; ok {
+	if stores, ok := s.ScopedStores[scope]; ok {
 		delete(stores, storeName)
 	}
 }
 
+// IsEmpty fulfills the ReferrerStoreManager interface.
+// It returns true if there are no stores in the ActiveStores.
 func (s *ActiveStores) IsEmpty() bool {
 	return s.GetStoreCount() == 0
 }
 
+// GetStore fulfills the ReferrerStoreManager interface.
+// GetStoreCount returns the total number of stores in the ActiveStores.
 func (s *ActiveStores) GetStoreCount() int {
 	count := 0
-	for _, stores := range s.NamespacedStores {
+	for _, stores := range s.ScopedStores {
 		count += len(stores)
 	}
 	return count
