@@ -275,6 +275,8 @@ Start the debug session with the generated Bridge to Kubernetes launch config se
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
 
+Please create PRs against the `staging` branch, PR can be merged with maintainer approval and tests passing on latest test matrix. On merge to staging branch, an automated PR will be opened against `main` branch to run the full suite of matrix including cloud specific tests. All ratify release are cut from the main branch.
+
 ### Plugins
 
 If you'd like to contribute to the collection of plugins:
