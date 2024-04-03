@@ -197,13 +197,19 @@ func (server *Server) mutate(ctx context.Context, w http.ResponseWriter, r *http
 				returnItem.Error = err.Error()
 				return
 			}
-			parsedReference, err := pkgUtils.ParseSubjectReference(image)
+			requestKey, err := pkgUtils.ParseRequestKey(image)
+			if err != nil {
+				returnItem.Error = err.Error()
+				return
+			}
+			parsedReference, err := pkgUtils.ParseSubjectReference(requestKey.Subject)
 			if err != nil {
 				err = errors.ErrorCodeReferenceInvalid.WithError(err).WithDetail(fmt.Sprintf("failed to parse image reference %s", image))
 				logger.GetLogger(ctx, server.LogOption).Error(err)
 				returnItem.Error = err.Error()
 				return
 			}
+			ctx = ctxUtils.SetContextWithNamespace(ctx, requestKey.Namespace)
 
 			if parsedReference.Digest == "" {
 				var selectedStore referrerstore.ReferrerStore

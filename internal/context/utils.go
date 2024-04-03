@@ -29,6 +29,15 @@ func SetContextWithNamespace(ctx context.Context, namespace string) context.Cont
 	return context.WithValue(ctx, contextKeyNamespace, namespace)
 }
 
+// GetNamespace returns the embedded namespace from the context.
+func GetNamespace(ctx context.Context) string {
+	namespace := ctx.Value(contextKeyNamespace)
+	if namespace == nil {
+		return ""
+	}
+	return namespace.(string)
+}
+
 // CreateCacheKey creates a new cache key prefixed with embedded namespace.
 func CreateCacheKey(ctx context.Context, key string) string {
 	namespace := ctx.Value(contextKeyNamespace)
