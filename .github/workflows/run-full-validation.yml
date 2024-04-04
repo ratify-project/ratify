@@ -1,4 +1,4 @@
-name: test-pr
+name: run-full-validation
 
 on:
   pull_request_target:
