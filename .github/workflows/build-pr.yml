@@ -5,86 +5,34 @@ on:
     types: [labeled]
   pull_request:
     branches:
-      - main
-      - 1.0.0*
-  push:
-    branches:
-      - 1.0.0*
-      - main
+      - staging
   workflow_dispatch:
 
 permissions: read-all
 
 jobs:
-  check-license:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - name: Check license header
-        uses: apache/skywalking-eyes/header@ee81ff786927ea6ffa48b1e29c48e5289f4753aa
-        with:
-          mode: check
-          config: .github/licenserc.yml
-      - name: Check dependencies license
-        uses: apache/skywalking-eyes/dependency@ee81ff786927ea6ffa48b1e29c48e5289f4753aa
-        with:
-          config: .github/licenserc.yml
-          flags:
-            --weak-compatible=true
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
-      - name: setup go environment
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version: "1.21"
-      - name: Run tidy
-        run: go mod tidy
-      - name: Build CLI
-        run: make
-      - name: Check build
-        run: bin/ratify version
-      - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
-      - name: Run helm lint
-        run: helm lint charts/ratify
-
-  build_test_cli:
-    name: "Build and run tests for CLI"
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: setup go environment
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version: "1.21"
-      - name: Run tidy
-        run: go mod tidy
-      - name: Build CLI
-        run: make
-      - name: Check build
-        run: bin/ratify version
-      - name: Test CLI
-        run: |
-          make install ratify-config install-bats
-          make test-e2e-cli LOCAL_REGISTRY_IMAGE=registry GOCOVERDIR=${GITHUB_WORKSPACE}/test/e2e/.cover
-      - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@eaaf4bedf32dbdc6b720b63067d99c4d77d6047d # v3.1.4
-
-  build_test_e2e:
-    name: "Build and run e2e Test"
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    continue-on-error: true
+  call_test_cli:
+    uses: ./.github/workflows/e2e-cli.yml
+   
+  call_test_e2e_basic:
+    name: "run e2e on basic matrix"
     permissions:
       contents: read
     strategy:
+      fail-fast: false
+      matrix:
+        KUBERNETES_VERSION: ["1.27.7"]
+        GATEKEEPER_VERSION: ["3.15.0"]
+    uses: ./.github/workflows/e2e-k8s.yml 
+    with:
+      k8s_version: ${{ matrix.KUBERNETES_VERSION }}
+      gatekeeper_version: ${{ matrix.GATEKEEPER_VERSION }}
+
+  build_test_e2e_full_conditional:
+    name: "run e2e on full test matrix with conditions"
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch'
+    strategy:
+      fail-fast: false
       matrix:
         KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
         GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
@@ -138,6 +86,14 @@ jobs:
       AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
     runs-on: ubuntu-latest
+        GATEKEEPER_VERSION: ["3.13.0", "3.14.0", "3.15.0"]
+    uses: ./.github/workflows/e2e-k8s.yml 
+    with:
+      k8s_version: ${{ matrix.KUBERNETES_VERSION }}
+      gatekeeper_version: ${{ matrix.GATEKEEPER_VERSION }} 
+
+  build_test_aks_e2e_conditional:
+    name: "Build and run e2e Test on AKS with conditions"
     if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     timeout-minutes: 30
     continue-on-error: true
@@ -147,59 +103,19 @@ jobs:
     strategy:
       matrix:
         KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
-        GATEKEEPER_VERSION: ["3.12.0", "3.13.0", "3.14.0"]
-    steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-      - name: Set up Go 1.21
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version: '1.21'
-
-      - name: Az CLI login
-        uses: azure/login@de95379fe4dadc2defb305917eaa7e5dde727294 # v1.5.1
-        with:
-          creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
-
-      - name: Dependencies e2e
-        run: |
-          mkdir -p $GITHUB_WORKSPACE/bin
-          echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-          make e2e-docker-credential-store-setup
-          make e2e-dependencies
-
-      - name: Run e2e on Azure
-        run: |
-          make e2e-aks KUBERNETES_VERSION=${{ matrix.KUBERNETES_VERSION }} GATEKEEPER_VERSION=${{ matrix.GATEKEEPER_VERSION }} TENANT_ID=${{ env.AZURE_TENANT_ID }}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@a8a3f3ad30e3422c9c7b888a15615d19a852ae32 # v3.1.3
-        if: ${{ always() }}
-        with:
-          name: e2e-logs
-          path: |
-            logs-*.json
-
-  markdown-link-check:
-      runs-on: ubuntu-latest
-      steps:
-      - name: Checkout
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
-        with:
-          submodules: recursive
-      - name: Run link check
-        uses: gaurav-nelson/github-action-markdown-link-check@d53a906aa6b22b8979d33bc86170567e619495ec #3.10.3
-        with:
-          use-quiet-mode: 'no'
-          use-verbose-mode: 'yes'
-          config-file: '.github/workflows/markdown.links.config.json'
-          folder-path: 'docs/'
-  test-cleanup:
+        GATEKEEPER_VERSION: ["3.13.0", "3.14.0", "3.15.0"]
+    uses: ./.github/workflows/e2e-aks.yml
+    with:
+      k8s_version: ${{ matrix.KUBERNETES_VERSION }}
+      gatekeeper_version: ${{ matrix.GATEKEEPER_VERSION }}
+    secrets: inherit
+  
+  aks-test-cleanup:
     env:
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
       AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
       AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
-    needs: ['build_test_aks_e2e']
+    needs: ['build_test_aks_e2e_conditional']
     runs-on: ubuntu-latest
     permissions:
       id-token: write
