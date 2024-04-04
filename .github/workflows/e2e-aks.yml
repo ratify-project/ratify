@@ -54,30 +54,3 @@ jobs:
           name: e2e-logs-aks-${{ inputs.k8s_version }}-${{ inputs.gatekeeper_version }}
           path: |
             logs-*.json
-    
-  test-cleanup:
-    env:
-      AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
-      AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
-      AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
-    needs: ['build_test_aks_e2e']
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633 # v4.1.2
-      - name: Set up Go 1.21
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # v5.0.0
-        with:
-          go-version: '1.21'
-
-      - name: Az CLI login
-        uses: azure/login@8c334a195cbb38e46038007b304988d888bf676a # v2.0.0
-        with:
-          creds: '{"clientId":"${{ env.AZURE_CLIENT_ID }}","clientSecret":"${{ secrets.AZURE_CLIENT_SECRET }}","subscriptionId":"${{ env.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ env.AZURE_TENANT_ID }}"}'
-
-      - name: clean up
-        run: |
-          make e2e-cleanup AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }}
