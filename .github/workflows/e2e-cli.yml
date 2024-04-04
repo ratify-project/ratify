@@ -1,4 +1,4 @@
-name: e2e-tests
+name: e2e-cli
 
 on:
   workflow_call:

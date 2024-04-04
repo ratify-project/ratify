@@ -1,4 +1,4 @@
-name: Merge staging Into Main
+name: pr_to_main
 
 on:
   push:
