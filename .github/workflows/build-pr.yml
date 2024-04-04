@@ -22,12 +22,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
       - name: Check license header
-        uses: apache/skywalking-eyes/header@97538682f556b56cc7422ece660d8d7e6c4fb013
+        uses: apache/skywalking-eyes/header@6753eaeab2d30d8b777f33637bf48794f70888d0
         with:
           mode: check
           config: .github/licenserc.yml
       - name: Check dependencies license
-        uses: apache/skywalking-eyes/dependency@97538682f556b56cc7422ece660d8d7e6c4fb013
+        uses: apache/skywalking-eyes/dependency@6753eaeab2d30d8b777f33637bf48794f70888d0
         with:
           config: .github/licenserc.yml
           flags:
@@ -48,7 +48,7 @@ jobs:
       - name: Check build
         run: bin/ratify version
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8 # v4.1.1
+        uses: codecov/codecov-action@7afa10ed9b269c561c2336fd862446844e0cbf71 # v4.2.0
       - name: Run helm lint
         run: helm lint charts/ratify
 
@@ -75,7 +75,7 @@ jobs:
           make install ratify-config install-bats
           make test-e2e-cli GOCOVERDIR=${GITHUB_WORKSPACE}/test/e2e/.cover
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@c16abc29c95fcf9174b58eb7e1abf4c866893bc8 # v4.1.1
+        uses: codecov/codecov-action@7afa10ed9b269c561c2336fd862446844e0cbf71 # v4.2.0
 
   build_test_e2e:
     name: "Build and run e2e Test"
