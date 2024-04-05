@@ -5,7 +5,9 @@ on:
     # Weekly on Saturdays.
     - cron: '30 1 * * 6'
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - staging
   workflow_dispatch:
 
 permissions: read-all
