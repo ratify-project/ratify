@@ -10,12 +10,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
       - name: Check license header
-        uses: apache/skywalking-eyes/header@ed436a5593c63a25f394ea29da61b0ac3731a9fe
+        uses: apache/skywalking-eyes/header@6753eaeab2d30d8b777f33637bf48794f70888d0
         with:
           mode: check
           config: .github/licenserc.yml
       - name: Check dependencies license
-        uses: apache/skywalking-eyes/dependency@ed436a5593c63a25f394ea29da61b0ac3731a9fe
+        uses: apache/skywalking-eyes/dependency@6753eaeab2d30d8b777f33637bf48794f70888d0
         with:
           config: .github/licenserc.yml
           flags:
