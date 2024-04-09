@@ -118,6 +118,7 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		logrus.Error(err, "unable to create verifier from verifier config")
 		return err
 	}
+	// TODO: pass the actual namespace once multi-tenancy is supported.
 	VerifierMap.AddVerifier(constants.EmptyNamespace, objectName, referenceVerifier)
 	logrus.Infof("verifier '%v' added to verifier map", referenceVerifier.Name())
 

@@ -19,8 +19,8 @@ import (
 	vr "github.com/deislabs/ratify/pkg/verifier"
 )
 
-// Verifiers is an interface that defines the methods for managing verifiers across different scopes.
-type Verifiers interface {
+// VerifierManager is an interface that defines the methods for managing verifiers across different scopes.
+type VerifierManager interface {
 	// GetVerifiers returns verifiers under the given scope.
 	GetVerifiers(scope string) []vr.ReferenceVerifier
 
