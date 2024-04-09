@@ -40,7 +40,7 @@ REGISTRY="${ACR_NAME}.azurecr.io"
 
 build_push_to_acr() {
   echo "Building and pushing images to ACR"
-  docker build --progress=plain --no-cache --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -f ./httpserver/Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuild:${TAG}" .
+  docker build --progress=plain --no-cache --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -f ./httpserver/Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuild:${TAG}" .
   docker push "${REGISTRY}/test/localbuild:${TAG}"
 
   docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t "${ACR_NAME}.azurecr.io/test/localbuildcrd:${TAG}" ./charts/ratify/crds
@@ -66,8 +66,8 @@ deploy_ratify() {
     --set gatekeeper.version=${GATEKEEPER_VERSION} \
     --set akvCertConfig.enabled=true \
     --set akvCertConfig.vaultURI=${VAULT_URI} \
-    --set akvCertConfig.certificates[0].certificateName=${NOTATION_PEM_NAME} \
-    --set akvCertConfig.certificates[1].certificateName=${NOTATION_CHAIN_PEM_NAME} \
+    --set akvCertConfig.certificates[0].name=${NOTATION_PEM_NAME} \
+    --set akvCertConfig.certificates[1].name=${NOTATION_CHAIN_PEM_NAME} \
     --set akvCertConfig.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \

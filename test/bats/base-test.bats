@@ -34,8 +34,8 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
     sleep 5
-    # validate certificate store status property shows success
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    # validate key management provider status property shows success
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
@@ -86,8 +86,8 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
     sleep 5
 
-    # validate certificate store status property shows success
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    # validate key management provider status property shows success
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
@@ -103,10 +103,10 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
         
         # restore cert store in ratify namespace
-        run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n default > certStore.yaml"
-        run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default
-        sed 's/default/gatekeeper-system/' certStore.yaml > certStoreNewNS.yaml
-        run kubectl apply -f certStoreNewNS.yaml        
+        run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n default > kmprovider.yaml"
+        run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default
+        sed 's/default/gatekeeper-system/' kmprovider.yaml > kmproviderNewNS.yaml
+        run kubectl apply -f kmproviderNewNS.yaml        
         assert_success
 
         # restore the original notation verifier for other tests
@@ -120,17 +120,17 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
     sleep 5
     
-    # apply the certstore to default namespace
-    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n ${RATIFY_NAMESPACE} > certStore.yaml"    
+    # apply the key management provider to default namespace
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n ${RATIFY_NAMESPACE} > kmprovider.yaml"    
     assert_success
-    sed 's/gatekeeper-system/default/' certStore.yaml > certStoreNewNS.yaml    
-    run kubectl apply -f certStoreNewNS.yaml
+    sed 's/gatekeeper-system/default/' kmprovider.yaml > kmproviderNewNS.yaml    
+    run kubectl apply -f kmproviderNewNS.yaml
     assert_success
-    run kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
+    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
     assert_success
     
     # configure the notation verifier to use inline certificate store with specific namespace
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_specificnscertstore.yaml
+    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_specificnskmprovider.yaml
     assert_success
 
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
@@ -255,15 +255,20 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_mutate_success
 }
 
-@test "validate inline cert provider" {
+@test "validate inline certificate store provider" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
+        # restore the original key management provider
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f kmprovider_staging.yaml'
         # restore the original notation verifier for other tests
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
     }
 
+    # save the existing key management provider inline resource to restore later
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml > kmprovider_staging.yaml"
+    assert_success
     # configure the default template/constraint
     run kubectl apply -f ./library/default/template.yaml
     assert_success
@@ -274,6 +279,9 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
     assert_failure
 
+    # delete the existing key management provider inline resource since certificate store and key management provider cannot be used together
+    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
+    assert_success
     # add the alternate certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
@@ -288,6 +296,78 @@ RATIFY_NAMESPACE=gatekeeper-system
     # verify that the image can now be run
     run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
     assert_success
+}
+
+@test "validate inline key management provider" {
+    teardown() {
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
+
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+    }
+
+    # configure the default template/constraint
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+
+    # verify that the image cannot be run due to an invalid cert
+    sleep 10
+    run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
+    assert_failure
+    sleep 10
+
+    # add the alternate certificate as an inline key management provider
+    cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    assert_success
+    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+
+    # configure the notation verifier to use the inline key management provider
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
+    assert_success
+    sleep 10
+
+    # verify that the image can now be run
+    run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
+    assert_success
+}
+
+@test "validate inline key management provider with inline certificate store" {
+    # this test validates that if a key management provider and certificate store are both configured with the same name,
+    # the key management provider will take precedence and continue to work as expected
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+    }
+     # configure the default template/constraint
+    run kubectl apply -f ./library/default/template.yaml
+    assert_success
+    run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+
+    # validate key management provider status property shows success
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    assert_success
+    run kubectl run demo --namespace default --image=registry:5000/notation:signed
+    assert_success
+
+    sleep 10
+
+    # apply an invalid cert in an inline certificate store 
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline_invalid.yaml -n ${RATIFY_NAMESPACE}
+    assert_success
+    # validate key management provider status property shows success
+    run bash -c "kubectl get certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    assert_success
+    # verification should succeed as the existing KMP will take precedence over the new certificate store
+    run kubectl run demo1 --namespace default --image=registry:5000/notation:signed
+    assert_success
+
 }
 
 @test "validate K8s secrets ORAS auth provider" {
@@ -316,7 +396,7 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "validate image signed by leaf cert" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/certstore-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
@@ -330,25 +410,25 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
 
-    # add the root certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    # add the root certificate as an inline key management provider
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/root.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
-    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
 
-    # configure the notation verifier to use the inline certificate store
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation.yaml
+    # configure the notation verifier to use the inline key management provider
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
     assert_success
 
     # verify that the image can be run with a root cert
     run kubectl run demo-leaf --namespace default --image=registry:5000/notation:leafSigned
     assert_success
 
-    # add the root certificate as an inline certificate store
-    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    # add the root certificate as an inline key management provider
+    cat ~/.config/notation/truststore/x509/ca/leaf-test/leaf.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
-    sed -i '9,$d' ./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
+    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
 
     # wait for the httpserver cache to be invalidated
     sleep 15

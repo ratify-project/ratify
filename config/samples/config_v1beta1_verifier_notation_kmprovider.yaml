@@ -8,11 +8,11 @@ spec:
   parameters:
     verificationCertStores:
       certs:
-        - certstore-akv
-        - certstore-akv1
+        - kmprovider-akv
+        - kmprovider-akv1
       certs1:
-        - certstore-akv2
-        - certstore-akv3
+        - kmprovider-akv2
+        - kmprovider-akv3
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:

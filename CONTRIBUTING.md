@@ -10,6 +10,23 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 * Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
+## Pull Requests
+
+If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
+
+We use the `staging` branch as the our default branch. All ratify release are cut from the main branch. A sample PR process is outlined below:
+1. Fork this repo and create your dev branch from default `staging` branch.
+2. Create a PR against default branch
+3. Maintainer approval and e2e test validation is required for completing the PR.
+4. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
+6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
+
+If the PR contains a regression that could not pass the full validation, please revert the change to unblock others:
+1. Create a new dev branch based off staging.
+2. Open a revert PR against staging.
+3. Follow the same process to get this PR gets merged into staging.
+4. Work on the fix and follow the above PR process.
+
 ## Developing
 
 ### Components
@@ -84,16 +101,16 @@ Sample launch json for debugging a plugin:
 {
   "version": "0.2.0",
   "configurations": [{
-    "name": "Debug Cosign Plugin",
+    "name": "Debug SBOM Plugin",
     "type": "go",
     "request": "launch",
     "mode": "auto",
-    "program": "${workspaceFolder}/plugins/verifier/cosign",
+    "program": "${workspaceFolder}/plugins/verifier/sbom",
     "env": {
       "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
       "RATIFY_LOG_LEVEL": "debug",
       "RATIFY_VERIFIER_COMMAND": "VERIFY",
-      "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/cosign-image:signed",
+      "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/image:sbom",
       "RATIFY_VERIFIER_VERSION": "1.0.0",
     },
     "console": "integratedTerminal"
@@ -107,15 +124,15 @@ Sample JSON stdin
 ```json
 {
   "config": {
-    "artifactTypes":"application/vnd.dev.cosign.artifact.sig.v1+json",
-    "key":"/home/akashsinghal/ratify/.staging/cosign/cosign.pub",
-    "name":"cosign"
+    "artifactTypes":"application/spdx+json",
+    "name":"sbom",
+    "disallowedLicenses":["AGPL"],
+    "disallowedPackages":[{"name":"log4j-core","versionInfo":"2.13.0"}]
   },
   "storeConfig": {
     "version":"1.0.0",
     "pluginBinDirs":null,
     "store": {
-      "cosignEnabled":true,
       "name":"oras",
       "useHttp":true
     }
@@ -124,7 +141,7 @@ Sample JSON stdin
     "mediaType":"application/vnd.oci.image.manifest.v1+json",
     "digest":"sha256:...",
     "size":558,
-    "artifactType":"application/vnd.dev.cosign.artifact.sig.v1+json"
+    "artifactType":"application/spdx+json"
   }
 }
 ```
@@ -144,7 +161,7 @@ Follow the steps below to build and deploy a Ratify image with your private chan
 export REGISTRY=yourregistry
 docker buildx create --use
 
-docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_cosign=true --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
+docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
 docker build --progress=plain --build-arg KUBE_VERSION="1.27.7" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
@@ -271,10 +288,8 @@ This should automatically append a new Bridge to Kubernetes configuration to the
 NOTE: If you are using a remote development environment, set the `useKubernetesServiceEnvironmentVariables` field to `true` in the tasks.json file. 
 
 Start the debug session with the generated Bridge to Kubernetes launch config selected. This will start up the local Ratify server and forward all requests from the Ratify service to the local instance. The http server logs in the debug console will show new requests being processed locally.
-## Pull Requests
 
-If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
-
+## Feature Areas
 ### Plugins
 
 If you'd like to contribute to the collection of plugins:

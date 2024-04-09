@@ -37,7 +37,7 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.1
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.2.3
-	github.com/sigstore/sigstore v1.8.2
+	github.com/sigstore/sigstore v1.8.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spdx/tools-golang v0.5.3
 	github.com/spf13/cobra v1.8.0
@@ -46,7 +46,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.22.0
 	go.opentelemetry.io/otel/sdk/metric v0.39.0
 	golang.org/x/sync v0.6.0
-	google.golang.org/grpc v1.61.1
+	google.golang.org/grpc v1.61.2
 	google.golang.org/protobuf v1.33.0
 	k8s.io/api v0.28.8
 	k8s.io/apimachinery v0.28.8

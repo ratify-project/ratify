@@ -15,7 +15,7 @@ spec:
     verificationCertStores:
       certs:
         {{- if .Values.akvCertConfig.enabled }}
-        - certstore-akv
+        - kmprovider-akv
         {{- else }}
           {{- if .Values.notationCert }}
             {{- if .Values.notationCerts }}
