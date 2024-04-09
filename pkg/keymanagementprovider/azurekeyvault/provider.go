@@ -71,14 +71,13 @@ type akvKMProvider struct {
 	certificates []types.KeyVaultValue
 	keys         []types.KeyVaultValue
 	cloudEnv     *azure.Environment
-	initKVClient func(context.Context, string, string, string) (*kv.BaseClient, error)
 	kvClient     *kv.BaseClient
 }
 type akvKMProviderFactory struct{}
 
-// defaultInitKVClient is a function to initialize the keyvault client
+// initKVClient is a function to initialize the keyvault client
 // used for mocking purposes
-var defaultInitKVClient = initializeKvClient
+var initKVClient = initializeKvClient
 
 // init calls to register the provider
 func init() {
@@ -116,7 +115,6 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 		certificates: conf.Certificates,
 		keys:         conf.Keys,
 		cloudEnv:     azureCloudEnv,
-		initKVClient: defaultInitKVClient,
 	}
 	if err := provider.validate(); err != nil {
 		return nil, err
@@ -124,7 +122,7 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 
 	logger.GetLogger(context.Background(), logOpt).Debugf("vaultURI %s", provider.vaultURI)
 
-	kvClient, err := provider.initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID)
+	kvClient, err := initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID)
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.NewError(re.KeyManagementProvider, providerName, re.AKVLink, err, "failed to create keyvault client", re.HideStackTrace)
 	}
@@ -360,14 +358,14 @@ func (s *akvKMProvider) validate() error {
 	// all certificates must have a name
 	for i := range s.certificates {
 		if s.certificates[i].Name == "" {
-			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("name is not set for certificate %d", i), re.HideStackTrace)
+			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("name is not set for the %d th certificate", i+1), re.HideStackTrace)
 		}
 	}
 
 	// all keys must have a name
 	for i := range s.keys {
 		if s.keys[i].Name == "" {
-			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("name is not set for key %d", i), re.HideStackTrace)
+			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("name is not set for the %d th key", i+1), re.HideStackTrace)
 		}
 	}
 

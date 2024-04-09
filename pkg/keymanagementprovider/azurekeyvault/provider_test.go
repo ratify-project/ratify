@@ -173,7 +173,7 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			defaultInitKVClient = func(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
+			initKVClient = func(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
 				return &kv.BaseClient{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
@@ -224,7 +224,7 @@ func TestGetKeys(t *testing.T) {
 		},
 	}
 
-	defaultInitKVClient = func(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
+	initKVClient = func(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
 		return &kv.BaseClient{}, nil
 	}
 	provider, err := factory.Create("v1", config, "")

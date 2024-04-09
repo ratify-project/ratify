@@ -20,6 +20,7 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 
 	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
@@ -98,7 +99,7 @@ func (f *inlineKMProviderFactory) Create(_ string, keyManagementProviderConfig c
 			{}: key,
 		}
 	default:
-		return nil, errors.ErrorCodeConfigInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail("content type is not supported")
+		return nil, errors.ErrorCodeConfigInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail(fmt.Sprintf("content type %s is not supported", conf.ContentType))
 	}
 
 	return &inlineKMProvider{certs: certMap, keys: keyMap, contentType: conf.ContentType}, nil
