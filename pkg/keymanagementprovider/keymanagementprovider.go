@@ -17,11 +17,13 @@ package keymanagementprovider
 
 import (
 	"context"
+	"crypto"
 	"crypto/x509"
 	"encoding/pem"
 	"sync"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )
 
 // This is a map of properties for fetched certificates/keys
@@ -40,10 +42,24 @@ type KMPMapKey struct {
 type KeyManagementProvider interface {
 	// Returns an array of certificates and the provider specific cert attributes
 	GetCertificates(ctx context.Context) (map[KMPMapKey][]*x509.Certificate, KeyManagementProviderStatus, error)
+	// Returns an array of keys and the provider specific key attributes
+	GetKeys(ctx context.Context) (map[KMPMapKey]crypto.PublicKey, KeyManagementProviderStatus, error)
 }
 
-// static concurreny-safe map to store certificates fetched from key management provider
+// static concurrency-safe map to store certificates fetched from key management provider
+// layout:
+//
+//	map["<namespace>/<name>"] = map[KMPMapKey][]*x509.Certificate
+//	where KMPMapKey is dimensioned by the name and version of the certificate.
+//	Array of x509 Certificates for certificate chain scenarios
 var certificatesMap sync.Map
+
+// static concurrency-safe map to store keys fetched from key management provider
+// layout:
+//
+//	map["<namespace>/<name>"] = map[KMPMapKey]PublicKey
+//	where KMPMapKey is dimensioned by the name and version of the public key.
+var keyMap sync.Map
 
 // DecodeCertificates decodes PEM-encoded bytes into an x509.Certificate chain.
 func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
@@ -70,6 +86,17 @@ func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
 	return certs, nil
 }
 
+// DecodeKey takes in a PEM encoded byte array and returns a public key
+// PEM encoded byte array is expected to be a single public key. If multiple
+// are provided, the first one is returned
+func DecodeKey(value []byte) (crypto.PublicKey, error) {
+	pk, err := cryptoutils.UnmarshalPEMToPublicKey(value)
+	if err != nil {
+		return nil, errors.ErrorCodeKeyInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail("error parsing public key").WithError(err)
+	}
+	return pk, nil
+}
+
 // SetCertificatesInMap sets the certificates in the map
 // it is concurrency-safe
 func SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certificate) {
@@ -93,9 +120,37 @@ func DeleteCertificatesFromMap(resource string) {
 
 // FlattenKMPMap flattens the map of certificates fetched for a single key management provider resource and returns a single array
 func FlattenKMPMap(certMap map[KMPMapKey][]*x509.Certificate) []*x509.Certificate {
-	var certs []*x509.Certificate
-	for _, v := range certMap {
-		certs = append(certs, v...)
+	var items []*x509.Certificate
+	for _, val := range certMap {
+		items = append(items, val...)
 	}
-	return certs
+	return items
+}
+
+// FlattenKMPMapKeys flattens the map of keys fetched for a single key management provider resource and returns a single array
+func FlattenKMPMapKeys(keyMap map[KMPMapKey]crypto.PublicKey) []crypto.PublicKey {
+	items := []crypto.PublicKey{}
+	for _, val := range keyMap {
+		items = append(items, val)
+	}
+	return items
+}
+
+// SetKeysInMap sets the keys in the map
+func SetKeysInMap(resource string, keys map[KMPMapKey]crypto.PublicKey) {
+	keyMap.Store(resource, keys)
+}
+
+// GetKeysFromMap gets the keys from the map and returns an empty map of keys if not found
+func GetKeysFromMap(resource string) map[KMPMapKey]crypto.PublicKey {
+	keys, ok := keyMap.Load(resource)
+	if !ok {
+		return map[KMPMapKey]crypto.PublicKey{}
+	}
+	return keys.(map[KMPMapKey]crypto.PublicKey)
+}
+
+// DeleteKeysFromMap deletes the keys from the map
+func DeleteKeysFromMap(resource string) {
+	keyMap.Delete(resource)
 }
