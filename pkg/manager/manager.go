@@ -49,10 +49,10 @@ import (
 
 	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/deislabs/ratify/pkg/referrerstore"
-	vr "github.com/deislabs/ratify/pkg/verifier"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -84,17 +84,11 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	}
 
 	// initialize server
-	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func() *ef.Executor {
-		var activeVerifiers []vr.ReferenceVerifier
+	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func(ctx context.Context) *ef.Executor {
 		var activeStores []referrerstore.ReferrerStore
 		var activePolicyEnforcer policyprovider.PolicyProvider
 
-		// check if there are active verifiers from crd controller
-		if len(controllers.VerifierMap) > 0 {
-			for _, value := range controllers.VerifierMap {
-				activeVerifiers = append(activeVerifiers, value)
-			}
-		}
+		activeVerifiers := controllers.VerifierMap.GetVerifiers(ctxUtils.GetNamespace(ctx))
 
 		// check if there are active stores from crd controller
 		if len(controllers.StoreMap) > 0 {
