@@ -66,6 +66,8 @@ const (
 	Cache componentType = "cache"
 	// CertProvider is the component type for certificate provider.
 	CertProvider componentType = "certificateProvider"
+	// KeyManagementProvider is the component type for key management provider.
+	KeyManagementProvider componentType = "keyManagementProvider"
 	// AuthProvider is the component type for auth provider.
 	AuthProvider componentType = "authProvider"
 	// PolicyProvider is the component type for policy provider.

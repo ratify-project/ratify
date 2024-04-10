@@ -71,7 +71,7 @@ func TestKMProviderUpdateErrorStatus(t *testing.T) {
 func TestKMProviderUpdateSuccessStatus(t *testing.T) {
 	kmProviderStatus := keymanagementprovider.KeyManagementProviderStatus{}
 	properties := map[string]string{}
-	properties["CertName"] = "wabbit"
+	properties["Name"] = "wabbit"
 	properties["Version"] = "ABC"
 
 	kmProviderStatus["Certificates"] = properties

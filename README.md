@@ -31,7 +31,7 @@ Please see [Ratify website](https://ratify.dev/docs/quick-start) for a quick sta
 ## Community meetings
 
 - Agenda: <https://hackmd.io/ABueHjizRz2iFQpWnQrnNA>
-- We hold a weekly Ratify community meeting on Weds 4:30-5:30pm (Pacific Time)   
+- We hold a weekly Ratify community meeting on Thurs 12:00 - 1:00 AM (UTC)   
 Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calendar/u/0?cid=OWJjdTF2M3ZiZGhubm1mNmJyMDhzc2swNTRAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ)
 - We meet regularly to discuss and prioritize issues. The meeting may get cancelled due to holidays, all cancellation will be posted to meeting notes prior to the meeting.
 - Reach out on Slack at [cloud-native.slack.com#ratify](https://cloud-native.slack.com/archives/C03T3PEKVA9). If you're not already a member of cloud-native slack channel, first add [yourself here](https://communityinviter.com/apps/cloud-native/cncf).

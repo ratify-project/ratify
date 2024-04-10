@@ -24,8 +24,8 @@ import (
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/utils"
-	vr "github.com/deislabs/ratify/pkg/verifier"
 	vc "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/deislabs/ratify/pkg/verifier/types"
@@ -42,11 +42,6 @@ type VerifierReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-var (
-	// a map to track of active verifiers
-	VerifierMap = map[string]vr.ReferenceVerifier{}
-)
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=verifiers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=verifiers/status,verbs=get;update;patch
@@ -72,7 +67,8 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
 		if apierrors.IsNotFound(err) {
 			verifierLogger.Infof("delete event detected, removing verifier %v", resource)
-			verifierRemove(resource)
+			// TODO: pass the actual namespace once multi-tenancy is supported.
+			VerifierMap.DeleteVerifier(constants.EmptyNamespace, resource)
 		} else {
 			verifierLogger.Error(err, "unable to fetch verifier")
 		}
@@ -122,15 +118,11 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		logrus.Error(err, "unable to create verifier from verifier config")
 		return err
 	}
-	VerifierMap[objectName] = referenceVerifier
+	// TODO: pass the actual namespace once multi-tenancy is supported.
+	VerifierMap.AddVerifier(constants.EmptyNamespace, objectName, referenceVerifier)
 	logrus.Infof("verifier '%v' added to verifier map", referenceVerifier.Name())
 
 	return nil
-}
-
-// remove verifier from map
-func verifierRemove(objectName string) {
-	delete(VerifierMap, objectName)
 }
 
 // returns a verifier reference from spec
