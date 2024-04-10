@@ -16,6 +16,7 @@ limitations under the License.
 package config
 
 import (
+	"context"
 	"os"
 	"time"
 
@@ -25,7 +26,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type GetExecutor func() *ef.Executor
+type GetExecutor func(context.Context) *ef.Executor
 
 var (
 	configHash string
@@ -38,7 +39,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	cf, err := Load(configFilePath)
 
 	if err != nil {
-		return func() *ef.Executor { return &ef.Executor{} }, err
+		return func(context.Context) *ef.Executor { return &ef.Executor{} }, err
 	}
 
 	configHash = cf.fileHash
@@ -46,7 +47,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
 	if err != nil {
-		return func() *ef.Executor { return &ef.Executor{} }, err
+		return func(context.Context) *ef.Executor { return &ef.Executor{} }, err
 	}
 
 	executor = ef.Executor{
@@ -59,12 +60,12 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	err = watchForConfigurationChange(configFilePath)
 
 	if err != nil {
-		return func() *ef.Executor { return &ef.Executor{} }, err
+		return func(context.Context) *ef.Executor { return &ef.Executor{} }, err
 	}
 
 	logrus.Info("configuration successfully loaded.")
 
-	return func() *ef.Executor { return &executor }, nil
+	return func(context.Context) *ef.Executor { return &executor }, nil
 }
 
 func reloadExecutor(configFilePath string) {
