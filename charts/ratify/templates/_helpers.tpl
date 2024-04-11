@@ -115,7 +115,7 @@ Choose the caBundle field for External Data Provider
 {{- $ca := genCA "/O=Ratify/CN=Ratify Root CA" 365 -}}
 {{- $tlsSecretName := (include "ratify.tlsSecretName" .) -}}
 {{- if eq (include "ratify.tlsCertsProvided" .) "true" }}
-caBundle: {{ .Values.provider.tls.cabundle | quote }}
+caBundle: {{ .Values.provider.tls.cabundle | b64enc | quote }}
 {{- else if (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data }}
 caBundle: {{ index (lookup "v1" "Secret" .Release.Namespace $tlsSecretName).data "ca.crt" | replace "\n" "" }}
 {{- else }}
