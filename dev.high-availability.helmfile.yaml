@@ -141,7 +141,7 @@ releases:
         value: true
       - name: logger.level
         value: debug
-      - name: notationCert
+      - name: notationCerts[0]
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: replicaCount
         value: 2

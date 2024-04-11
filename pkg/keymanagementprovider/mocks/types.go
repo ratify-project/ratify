@@ -17,6 +17,7 @@ package mocks
 
 import (
 	"context"
+	"crypto"
 	"crypto/x509"
 
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
@@ -24,10 +25,15 @@ import (
 
 type TestKeyManagementProvider struct {
 	certificates map[keymanagementprovider.KMPMapKey][]*x509.Certificate
+	keys         map[keymanagementprovider.KMPMapKey]crypto.PublicKey
 	status       keymanagementprovider.KeyManagementProviderStatus
 	err          error
 }
 
 func (c *TestKeyManagementProvider) GetCertificates(_ context.Context) (map[keymanagementprovider.KMPMapKey][]*x509.Certificate, keymanagementprovider.KeyManagementProviderStatus, error) {
 	return c.certificates, c.status, c.err
+}
+
+func (c *TestKeyManagementProvider) GetKeys(_ context.Context) (map[keymanagementprovider.KMPMapKey]crypto.PublicKey, keymanagementprovider.KeyManagementProviderStatus, error) {
+	return c.keys, c.status, c.err
 }

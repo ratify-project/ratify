@@ -145,6 +145,14 @@ var (
 		Description: "The certificate is invalid. Please verify the provided inline certificates or certificates fetched from key vault are in valid format. Refer to https://ratify.dev/docs/reference/crds/certificate-stores for more information.",
 	})
 
+	// ErrorCodeKeyInvalid is returned when provided key is invalid.
+	// TODO: add website docs for this error code and update URL for error description
+	ErrorCodeKeyInvalid = Register("errcode", ErrorDescriptor{
+		Value:       "KEY_INVALID",
+		Message:     "key invalid",
+		Description: "The key is invalid. Please verify the provided inline key or key fetched from key vault is in valid format. Refer to [INPUT URL] for more information.",
+	})
+
 	// ErrorCodePolicyProviderNotFound is returned when a policy provider cannot
 	// be found.
 	ErrorCodePolicyProviderNotFound = Register("errcode", ErrorDescriptor{
