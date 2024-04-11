@@ -14,6 +14,7 @@ limitations under the License.
 package controllers
 
 import (
+	cs "github.com/deislabs/ratify/pkg/customresources/certificatestores"
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
@@ -28,4 +29,7 @@ var (
 
 	// a map to track active stores
 	StoreMap = rs.NewActiveStores()
+
+	// a map between CertificateStore name to array of x509 certificates
+	CertificatesMap = cs.NewActiveCertStores()
 )

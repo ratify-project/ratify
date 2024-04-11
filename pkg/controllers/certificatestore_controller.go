@@ -15,11 +15,11 @@ package controllers
 
 import (
 	"context"
-	"crypto/x509"
 	"encoding/json"
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
@@ -39,11 +39,6 @@ type CertificateStoreReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
-
-var (
-	// a map between CertificateStore name to array of x509 certificates
-	certificatesMap = map[string][]*x509.Certificate{}
-)
 
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=certificatestores/status,verbs=get;update;patch
@@ -68,7 +63,8 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", resource)
-			delete(certificatesMap, resource)
+			// TODO: pass the actual namespace once multi-tenancy is supported.
+			CertificatesMap.DeleteStore(constants.EmptyNamespace, resource)
 		} else {
 			logger.Error(err, "unable to fetch certificate store")
 		}
@@ -99,7 +95,8 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
-	certificatesMap[resource] = certificates
+	// TODO: pass the actual namespace once multi-tenancy is supported.
+	CertificatesMap.AddStore(constants.EmptyNamespace, resource, certificates)
 	isFetchSuccessful = true
 	emptyErrorString := ""
 	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
@@ -108,11 +105,6 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
-}
-
-// returns the internal certificate map
-func GetCertificatesMap() map[string][]*x509.Certificate {
-	return certificatesMap
 }
 
 // SetupWithManager sets up the controller with the Manager.
