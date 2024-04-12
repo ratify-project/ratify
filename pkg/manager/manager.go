@@ -30,7 +30,6 @@ import (
 	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/httpserver"
 	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/deislabs/ratify/pkg/policyprovider"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
 	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
 	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
@@ -52,7 +51,6 @@ import (
 	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/controllers"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
-	"github.com/deislabs/ratify/pkg/referrerstore"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -85,21 +83,11 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 
 	// initialize server
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func(ctx context.Context) *ef.Executor {
-		var activeStores []referrerstore.ReferrerStore
-		var activePolicyEnforcer policyprovider.PolicyProvider
+		namespace := ctxUtils.GetNamespace(ctx)
 
-		activeVerifiers := controllers.VerifierMap.GetVerifiers(ctxUtils.GetNamespace(ctx))
-
-		// check if there are active stores from crd controller
-		if len(controllers.StoreMap) > 0 {
-			for _, value := range controllers.StoreMap {
-				activeStores = append(activeStores, value)
-			}
-		}
-
-		if !controllers.ActivePolicy.IsEmpty() {
-			activePolicyEnforcer = controllers.ActivePolicy.Enforcer
-		}
+		activeVerifiers := controllers.VerifierMap.GetVerifiers(namespace)
+		activePolicyEnforcer := controllers.ActivePolicies.GetPolicy(namespace)
+		activeStores := controllers.StoreMap.GetStores(namespace)
 
 		// return executor with latest configuration
 		executor := ef.Executor{
