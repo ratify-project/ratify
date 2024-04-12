@@ -60,7 +60,7 @@ azureManagedIdentity:
 azurekeyvault:
   enabled: false
   vaultURI:
-  tenantID:
+  tenantId:
   certificates: []
   keys: []
 
@@ -155,4 +155,4 @@ akvCertConfig: # DEPRECATED: Use azurekeyvault instead
   cert2Name: # DEPRECATED: Use azurekeyvault.certificates instead
   cert2Version: # DEPRECATED: Use azurekeyvault.certificates instead
   certificates: # DEPRECATED: Use azurekeyvault.certificates instead
-  tenantId: # DEPRECATED: Use azurekeyvault.tenantID instead
+  tenantId: # DEPRECATED: Use azurekeyvault.tenantId instead
