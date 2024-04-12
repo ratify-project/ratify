@@ -15,6 +15,7 @@ package controllers
 
 import (
 	"github.com/deislabs/ratify/pkg/customresources/policies"
+	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 )
 
@@ -24,4 +25,7 @@ var (
 	// ActivePolicy is the active policy generated from CRD. There would be exactly
 	// one active policy belonging to a namespace at any given time.
 	ActivePolicies = policies.NewActivePolicies()
+
+	// a map to track active stores
+	StoreMap = rs.NewActiveStores()
 )

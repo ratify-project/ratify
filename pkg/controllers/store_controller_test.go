@@ -22,7 +22,8 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/deislabs/ratify/internal/constants"
+	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -47,15 +48,15 @@ func TestStoreAdd_EmptyParameter(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if len(StoreMap) != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", len(StoreMap))
+	if StoreMap.GetStoreCount() != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
 	}
 }
 
 func TestStoreAdd_WithParameters(t *testing.T) {
 	resetStoreMap()
-	if len(StoreMap) != 0 {
-		t.Fatalf("Store map expected size 0, actual %v", len(StoreMap))
+	if StoreMap.GetStoreCount() != 0 {
+		t.Fatalf("Store map expected size 0, actual %v", StoreMap.GetStoreCount())
 	}
 	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
@@ -68,8 +69,8 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, "testObject"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if len(StoreMap) != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", len(StoreMap))
+	if StoreMap.GetStoreCount() != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
 	}
 }
 
@@ -137,8 +138,8 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if len(StoreMap) != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", len(StoreMap))
+	if StoreMap.GetStoreCount() != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
 	}
 
 	// modify the Store
@@ -152,19 +153,19 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	}
 
 	// validate no Store has been added
-	if len(StoreMap) != 1 {
-		t.Fatalf("Store map should be 1 after replacement, actual %v", len(StoreMap))
+	if StoreMap.GetStoreCount() != 1 {
+		t.Fatalf("Store map should be 1 after replacement, actual %v", StoreMap.GetStoreCount())
 	}
 
-	storeRemove(sampleName)
+	StoreMap.DeleteStore(constants.EmptyNamespace, sampleName)
 
-	if len(StoreMap) != 0 {
-		t.Fatalf("Store map should be 0 after deletion, actual %v", len(StoreMap))
+	if StoreMap.GetStoreCount() != 0 {
+		t.Fatalf("Store map should be 0 after deletion, actual %v", StoreMap.GetStoreCount())
 	}
 }
 
 func resetStoreMap() {
-	StoreMap = map[string]referrerstore.ReferrerStore{}
+	StoreMap = rs.NewActiveStores()
 }
 
 func getOrasStoreSpec(pluginName, pluginPath string) configv1beta1.StoreSpec {
