@@ -44,12 +44,12 @@ spec:
         version: {{ .version  }}
       {{- end }}
       {{- end }}
-    {{- if .Values.azurekeyvault.tenantID }}
-    tenantID: {{ .Values.azurekeyvault.tenantID  }}
-    {{- else if .Values.akvCertConfig.tenantID }}
-    tenantID: {{ .Values.akvCertConfig.tenantID  }}
+    {{- if .Values.azurekeyvault.tenantId }}
+    tenantID: {{ .Values.azurekeyvault.tenantId  }}
+    {{- else if .Values.akvCertConfig.tenantId }}
+    tenantID: {{ .Values.akvCertConfig.tenantId  }}
     {{- else }}
-    {{- fail "tenantID must be provided when azurekeyvault is enabled. please specify azurekeyvault.tenantID" }}
+    {{- fail "tenantID must be provided when azurekeyvault is enabled. please specify azurekeyvault.tenantId" }}
     {{- end }}  
     clientID: {{ required "clientID must be provided when use workload identity in akv" .Values.azureWorkloadIdentity.clientId  }}
 {{ end }}

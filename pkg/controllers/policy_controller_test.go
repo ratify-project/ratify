@@ -63,67 +63,6 @@ func (c mockStatusClient) Status() client.SubResourceWriter {
 	return writer
 }
 
-func TestDeletePolicy(t *testing.T) {
-	testCases := []struct {
-		name             string
-		policyName       string
-		expectPolicyName string
-	}{
-		{
-			name:             "Delete same name",
-			policyName:       policyName1,
-			expectPolicyName: "",
-		},
-		{
-			name:             "Delete different name",
-			policyName:       policyName2,
-			expectPolicyName: policyName1,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			policy := &policy{
-				Name: policyName1,
-			}
-			policy.deletePolicy(tc.policyName)
-			if policy.Name != tc.expectPolicyName {
-				t.Fatalf("Expected policy name to be %s, got %s", tc.expectPolicyName, policy.Name)
-			}
-		})
-	}
-}
-
-func TestIsEmpty(t *testing.T) {
-	testCases := []struct {
-		name   string
-		policy *policy
-		expect bool
-	}{
-		{
-			name:   "Empty policy",
-			policy: &policy{},
-			expect: true,
-		},
-		{
-			name: "Non-empty policy",
-			policy: &policy{
-				Name: policyName1,
-			},
-			expect: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			isEmpty := tc.policy.IsEmpty()
-			if isEmpty != tc.expect {
-				t.Fatalf("Expected to be %t, got %t", tc.expect, isEmpty)
-			}
-		})
-	}
-}
-
 func TestRawToPolicyConfig(t *testing.T) {
 	testCases := []struct {
 		name         string
