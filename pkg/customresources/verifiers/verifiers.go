@@ -42,13 +42,13 @@ func NewActiveVerifiers() VerifierManager {
 	}
 }
 
-// GetVerifiers implements the Verifiers interface.
+// GetVerifiers implements the VerifierManager interface.
 // It returns a list of verifiers for the given scope. If no verifiers are found for the given scope, it returns cluster-wide verifiers.
 // TODO: Current implementation fetches verifiers for all namespaces including cluster-wide ones. Will support actual namespace based verifiers in future.
 func (v *ActiveVerifiers) GetVerifiers(_ string) []vr.ReferenceVerifier {
 	verifiers := []vr.ReferenceVerifier{}
-	for _, namespacedVerifiers := range v.ScopedVerifiers {
-		for _, verifier := range namespacedVerifiers {
+	for _, scopedVerifiers := range v.ScopedVerifiers {
+		for _, verifier := range scopedVerifiers {
 			verifiers = append(verifiers, verifier)
 		}
 	}
