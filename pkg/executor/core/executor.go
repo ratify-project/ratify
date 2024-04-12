@@ -60,6 +60,9 @@ type Executor struct {
 // TODO Logging within executor
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
+	if executor.PolicyEnforcer == nil {
+		return types.VerifyResult{}, errors.ErrorCodePolicyProviderNotFound.WithComponentType(errors.Executor)
+	}
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
 		// get the result for the error based on the policy.

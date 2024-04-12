@@ -13,6 +13,15 @@ limitations under the License.
 
 package controllers
 
-import "github.com/deislabs/ratify/pkg/customresources/verifiers"
+import (
+	"github.com/deislabs/ratify/pkg/customresources/policies"
+	"github.com/deislabs/ratify/pkg/customresources/verifiers"
+)
 
-var VerifierMap = verifiers.NewActiveVerifiers()
+var (
+	VerifierMap = verifiers.NewActiveVerifiers()
+
+	// ActivePolicy is the active policy generated from CRD. There would be exactly
+	// one active policy belonging to a namespace at any given time.
+	ActivePolicies = policies.NewActivePolicies()
+)
