@@ -269,19 +269,25 @@ Gatekeeper requires TLS for external data provider interactions. As such ratify 
     helm install ratify \
       ./charts/ratify --atomic \
       --namespace gatekeeper-system \
+      --set logger.level=debug \
       --set-file notationCerts[0]=./test/testdata/notation.crt \
       --set-file provider.tls.crt=./tls/certs/tls.crt \
       --set-file provider.tls.key=./tls/certs/tls.key \
-      --set-file provider.tls.cabundle=./tls/certs/ca.crt
+      --set-file provider.tls.cabundle="$(cat ./tls/certs/ca.crt | base64 | tr -d '\n\r')" \
+      --set-file provider.tls.caCert=./tls/certs/ca.crt \
+      --set-file provider.tls.caKey=./tls/certs/ca.key
     ```
+Update the `KubernetesLocalProcessConfig.yaml` with updated directory/file paths:
+- In the file, set the `<INSERT WORKLOAD IDENTITY TOKEN LOCAL PATH>` to an absolute directory accessible on local environment. This is the directory where Bridge to K8s will download the Azure Workload Identity JWT token. 
+- In the file, set the `<INSERT CLIENT CA CERT LOCAL PATH>` to an absolute directory accessible on local environment. This is the directory where Bridge to K8s will download the `client-ca-cert` volume (Gatekeeper's `ca.crt`). 
 
 Configure Bridge to Kubernetes (Comprehensive guide [here](https://learn.microsoft.com/en-us/visualstudio/bridge/bridge-to-kubernetes-vs-code))
 1. Open the `Command Palette` in VSCode `CTRL-SHIFT-P`
-1. Select `Bridge to Kubernetes: Configure`
-1. Select `Ratify` from the list as the service to redirect to
-1. Set port to be 6001
-1. Select `Serve w/ CRD manager and TLS enabled` as the launch config
-1. Select 'No' for request isolation
+2. Select `Bridge to Kubernetes: Configure`
+3. Select `Ratify` from the list as the service to redirect to
+4. Set port to be 6001
+5. Select `Serve w/ CRD manager and TLS enabled` as the launch config
+6. Select 'No' for request isolation
 
 This should automatically append a new Bridge to Kubernetes configuration to the launch.json file and add a new tasks.json file. 
 
