@@ -15,6 +15,7 @@ package controllers
 
 import (
 	cs "github.com/deislabs/ratify/pkg/customresources/certificatestores"
+	kmp "github.com/deislabs/ratify/pkg/customresources/keymanagementproviders"
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
@@ -33,4 +34,10 @@ var (
 
 	// NamespacedCertStores is a map between namespace and CertificateStores.
 	NamespacedCertStores = cs.NewActiveCertStores()
+
+	// KMPCertificateMap is a map to store certificates fetched from key management provider across namespaces.
+	KMPCertificateMap = kmp.NewActiveCertStores()
+
+	// KMPKeyMap is a map to store keys fetched from key management provider across namespaces.
+	KMPKeyMap = kmp.NewActiveKeyStores()
 )

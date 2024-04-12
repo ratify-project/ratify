@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/deislabs/ratify/internal/constants"
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -60,7 +61,9 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	if err := r.Get(ctx, req.NamespacedName, &keyManagementProvider); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing key management provider %v", resource)
-			keymanagementprovider.DeleteCertificatesFromMap(resource)
+			// TODO: pass the actual namespace once multi-tenancy is supported.
+			KMPCertificateMap.DeleteCerts(constants.EmptyNamespace, resource)
+			KMPKeyMap.DeleteKeys(constants.EmptyNamespace, resource)
 		} else {
 			logger.Error(err, "unable to fetch key management provider")
 		}
@@ -103,8 +106,9 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
-	keymanagementprovider.SetCertificatesInMap(resource, certificates)
-	keymanagementprovider.SetKeysInMap(resource, keys)
+	// TODO: pass the actual namespace once multi-tenancy is supported.
+	KMPCertificateMap.AddCerts(constants.EmptyNamespace, resource, certificates)
+	KMPKeyMap.AddKeys(constants.EmptyNamespace, resource, keys)
 	// merge certificates and keys status into one
 	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true
