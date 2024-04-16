@@ -14,7 +14,7 @@ spec:
   parameters:
     verificationCertStores:
       certs:
-        {{- if .Values.akvCertConfig.enabled }}
+        {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
         - kmprovider-akv
         {{- else }}
           {{- if .Values.notationCert }}

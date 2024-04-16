@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
@@ -32,7 +33,6 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	c "github.com/deislabs/ratify/config"
-	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
@@ -80,9 +80,8 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	}
 	// if certificate store is configured, return error. Only one of certificate store and key management provider can be configured
 	if len(certificateStoreList.Items) > 0 {
-		err := re.ErrorCodeKeyManagementConflict.WithComponentType(re.KeyManagementProvider).WithPluginName(resource).WithDetail("certificate store already exists")
-		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log an error.
-		logger.Error(err)
+		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log a warning statement.
+		logger.Warn("Certificate Store already exists. Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.")
 	}
 
 	provider, err := specToKeyManagementProvider(keyManagementProvider.Spec)
@@ -91,17 +90,28 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		return ctrl.Result{}, err
 	}
 
+	// fetch certificates and store in map
 	certificates, certAttributes, err := provider.GetCertificates(ctx)
 	if err != nil {
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
+
+	// fetch keys and store in map
+	keys, keyAttributes, err := provider.GetKeys(ctx)
+	if err != nil {
+		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
+	}
 	keymanagementprovider.SetCertificatesInMap(resource, certificates)
+	keymanagementprovider.SetKeysInMap(resource, keys)
+	// merge certificates and keys status into one
+	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true
 	emptyErrorString := ""
-	writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
+	writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, keyAttributes)
 
-	logger.Infof("%v certificates fetched for key management provider %v", len(certificates), resource)
+	logger.Infof("%v certificate(s) & %v key(s) fetched for key management provider %v", len(certificates), len(keys), resource)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil

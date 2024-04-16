@@ -12,15 +12,15 @@
       "program": "${workspaceFolder}/cmd/ratify",
       "env": {
         "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
-        "RATIFY_LOG_LEVEL": "debug",
+        "RATIFY_LOG_LEVEL": "debug"
       },
       "args": [
         "verify",
         "-s",
         "${input:subject}",
         "-c",
-        "${input:configPath}",
-      ],
+        "${input:configPath}"
+      ]
     },
     {
       "name": "Serve",
@@ -35,10 +35,9 @@
         "serve",
         "--http",
         ":6001"
-      ],
+      ]
     },
     {
-      // This requires your kubeconfig to be pointed at a cluster with Ratify CRDs installed
       "name": "Serve w/ CRD manager",
       "type": "go",
       "request": "launch",
@@ -47,18 +46,19 @@
       "env": {
         "RATIFY_LOG_LEVEL": "debug",
         "RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS": "1",
-        "RATIFY_NAMESPACE": "gatekeeper-system",
+        "RATIFY_NAMESPACE": "gatekeeper-system"
       },
       "args": [
         "serve",
         "--enable-crd-manager",
         "--http",
         ":6001"
-      ],
+      ]
     },
     {
       // This requires your kubeconfig to be pointed at a cluster with Ratify CRDs installed
-      // This requires you to have generated tls.crt and tls.key and placed them in a single directory
+      // This requires you to have generated server TLS certs: tls.crt, tls.key, ca.crt, ca.key and placed them in a single directory
+      // This requires you to have a client CA cert (Gatekeeper CA cert) to verify the client cert
       "name": "Serve w/ CRD manager and TLS enabled",
       "type": "go",
       "request": "launch",
@@ -73,8 +73,9 @@
         "--enable-crd-manager",
         "--http",
         ":6001",
-        "--cert-dir=${input:tlsDir}"
-      ],
+        "--cert-dir=${input:tlsDir}",
+        "--ca-cert-file=${input:clientCACert}",
+      ]
     },
     {
       "name": "Debug SBOM Plugin",
@@ -87,7 +88,7 @@
         "RATIFY_LOG_LEVEL": "debug",
         "RATIFY_VERIFIER_COMMAND": "VERIFY",
         "RATIFY_VERIFIER_SUBJECT": "wabbitnetworks.azurecr.io/test/image:sbom",
-        "RATIFY_VERIFIER_VERSION": "1.0.0",
+        "RATIFY_VERIFIER_VERSION": "1.0.0"
       },
       "console": "integratedTerminal"
     }
@@ -111,5 +112,11 @@
       "description": "Absolute path to tls cert and key directory",
       "default": "${workspaceFolder}/tls/certs"
     },
+    {
+      "id": "clientCACert",
+      "type": "promptString",
+      "description": "Absolute path to client CA cert (Gatekeeper CA cert)",
+      "default": "${workspaceFolder}/client-ca-cert/ca.crt"
+    }
   ]
 }
