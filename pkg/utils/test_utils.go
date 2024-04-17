@@ -18,7 +18,32 @@ package utils
 import (
 	"os"
 	"path/filepath"
+
+	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func CreateScheme() (*runtime.Scheme, error) {
+	scheme := runtime.NewScheme()
+
+	b := runtime.SchemeBuilder{
+		clientgoscheme.AddToScheme,
+		configv1beta1.AddToScheme,
+	}
+
+	if err := b.AddToScheme(scheme); err != nil {
+		return nil, err
+	}
+
+	return scheme, nil
+}
+
+func KeyFor(obj client.Object) types.NamespacedName {
+	return client.ObjectKeyFromObject(obj)
+}
 
 func CreatePlugin(pluginName string) (string, error) {
 	tempDir, err := os.MkdirTemp("", "directory")

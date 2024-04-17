@@ -16,6 +16,8 @@ limitations under the License.
 package policies
 
 import (
+	"sync"
+
 	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/policyprovider"
 )
@@ -28,25 +30,26 @@ type PolicyWrapper struct {
 
 // ActivePolicies implements PolicyManager interface.
 type ActivePolicies struct {
-	// TODO: Implement concurrent safety using sync.Map
-	// ScopedPolicies is a mapping from scope to a policy.
-	// Note: Scope is utilized for organizing and isolating verifiers. In a Kubernetes (K8s) environment, the scope can be either a namespace or an empty string ("") for cluster-wide verifiers.
-	ScopedPolicies map[string]PolicyWrapper
+	// scopedPolicies is a mapping from scope to a policy.
+	// Note: Scope is utilized for organizing and isolating policies. In a Kubernetes (K8s) environment, the scope can be either a namespace or an empty string ("") for cluster-wide policy.
+	scopedPolicies sync.Map
 }
 
 func NewActivePolicies() PolicyManager {
-	return &ActivePolicies{
-		ScopedPolicies: make(map[string]PolicyWrapper),
-	}
+	return &ActivePolicies{}
 }
 
 // GetPolicy fulfills the PolicyManager interface.
 // It returns the policy for the given scope. If no policy is found for the given scope, it returns cluster-wide policy.
-// TODO: Current implementation always fetches the cluster-wide policy. Will implement the logic to fetch the policy for the given scope.
-func (p *ActivePolicies) GetPolicy(_ string) policyprovider.PolicyProvider {
-	policy, ok := p.ScopedPolicies[constants.EmptyNamespace]
-	if ok {
-		return policy.Policy
+func (p *ActivePolicies) GetPolicy(scope string) policyprovider.PolicyProvider {
+	if scopedPolicy, ok := p.scopedPolicies.Load(scope); ok {
+		return scopedPolicy.(PolicyWrapper).Policy
+	}
+
+	if scope != constants.EmptyNamespace {
+		if policy, ok := p.scopedPolicies.Load(constants.EmptyNamespace); ok {
+			return policy.(PolicyWrapper).Policy
+		}
 	}
 	return nil
 }
@@ -54,24 +57,18 @@ func (p *ActivePolicies) GetPolicy(_ string) policyprovider.PolicyProvider {
 // AddPolicy fulfills the PolicyManager interface.
 // It adds the given policy under the given scope.
 func (p *ActivePolicies) AddPolicy(scope, policyName string, policy policyprovider.PolicyProvider) {
-	p.ScopedPolicies[scope] = PolicyWrapper{
+	p.scopedPolicies.Store(scope, PolicyWrapper{
 		Name:   policyName,
 		Policy: policy,
-	}
+	})
 }
 
 // DeletePolicy fulfills the PolicyManager interface.
 // It deletes the policy from the given scope.
 func (p *ActivePolicies) DeletePolicy(scope, policyName string) {
-	if policy, ok := p.ScopedPolicies[scope]; ok {
-		if policy.Name == policyName {
-			delete(p.ScopedPolicies, scope)
+	if policy, ok := p.scopedPolicies.Load(scope); ok {
+		if policy.(PolicyWrapper).Name == policyName {
+			p.scopedPolicies.Delete(scope)
 		}
 	}
-}
-
-// IsEmpty fulfills the PolicyManager interface.
-// IsEmpty returns true if there are no policies.
-func (p *ActivePolicies) IsEmpty() bool {
-	return len(p.ScopedPolicies) == 0
 }

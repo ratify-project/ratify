@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -29,6 +30,35 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type mockResourceWriter struct {
+	updateFailed bool
+}
+
+func (w mockResourceWriter) Create(_ context.Context, _ client.Object, _ client.Object, _ ...client.SubResourceCreateOption) error {
+	return nil
+}
+
+func (w mockResourceWriter) Update(_ context.Context, _ client.Object, _ ...client.SubResourceUpdateOption) error {
+	if w.updateFailed {
+		return errors.New("update failed")
+	}
+	return nil
+}
+
+func (w mockResourceWriter) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+	return nil
+}
+
+type mockStatusClient struct {
+	updateFailed bool
+}
+
+func (c mockStatusClient) Status() client.SubResourceWriter {
+	writer := mockResourceWriter{}
+	writer.updateFailed = c.updateFailed
+	return writer
+}
 
 const licenseChecker = "licensechecker"
 

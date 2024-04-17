@@ -13,18 +13,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package clustered
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
+	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -52,13 +50,12 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 
 	var policy configv1beta1.Policy
 	var resource = req.Name
-	policyLogger.Infof("Reconciling Policy %s", resource)
+	policyLogger.Infof("Reconciling Cluster Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
 		if apierrors.IsNotFound(err) {
 			policyLogger.Infof("delete event detected, removing policy %s", resource)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
-			NamespacedPolicies.DeletePolicy(constants.EmptyNamespace, resource)
+			controllers.NamespacedPolicies.DeletePolicy(constants.EmptyNamespace, resource)
 		} else {
 			policyLogger.Error("failed to get Policy: ", err)
 		}
@@ -90,45 +87,13 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 }
 
 func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
-	policyEnforcer, err := specToPolicyEnforcer(spec)
+	policyEnforcer, err := utils.SpecToPolicyEnforcer(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	// TODO: pass the actual namespace once multi-tenancy is supported.
-	NamespacedPolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)
+	controllers.NamespacedPolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)
 	return nil
-}
-
-func specToPolicyEnforcer(spec configv1beta1.PolicySpec) (policyprovider.PolicyProvider, error) {
-	policyConfig, err := rawToPolicyConfig(spec.Parameters.Raw, spec.Type)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse policy config: %w", err)
-	}
-
-	policyEnforcer, err := pf.CreatePolicyProviderFromConfig(policyConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create policy provider: %w", err)
-	}
-
-	return policyEnforcer, nil
-}
-
-func rawToPolicyConfig(raw []byte, policyName string) (config.PoliciesConfig, error) {
-	pluginConfig := config.PolicyPluginConfig{}
-
-	if string(raw) == "" {
-		return config.PoliciesConfig{}, fmt.Errorf("no policy parameters provided")
-	}
-	if err := json.Unmarshal(raw, &pluginConfig); err != nil {
-		return config.PoliciesConfig{}, fmt.Errorf("unable to decode policy parameters.Raw: %s, err: %w", raw, err)
-	}
-
-	pluginConfig["name"] = policyName
-
-	return config.PoliciesConfig{
-		PolicyPlugin: pluginConfig,
-	}, nil
 }
 
 func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.Policy, logger *logrus.Entry, isSuccess bool, errString string) {
@@ -150,8 +115,8 @@ func updatePolicySuccessStatus(policy *configv1beta1.Policy) {
 
 func updatePolicyErrorStatus(policy *configv1beta1.Policy, errString string) {
 	briefErr := errString
-	if len(errString) > maxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errString[:maxBriefErrLength])
+	if len(errString) > constants.MaxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errString[:constants.MaxBriefErrLength])
 	}
 	policy.Status.IsSuccess = false
 	policy.Status.Error = errString

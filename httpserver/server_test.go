@@ -592,7 +592,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			t.Fatalf("failed to decode response body: %v", err)
 		}
 		retFirstErr := respBody.Response.Items[0].Error
-		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config must be specified").Error()
+		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config is not provided").Error()
 		if retFirstErr != expectedErr {
 			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr, retFirstErr)
 		}
