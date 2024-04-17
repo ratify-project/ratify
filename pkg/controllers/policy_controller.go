@@ -58,7 +58,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		if apierrors.IsNotFound(err) {
 			policyLogger.Infof("delete event detected, removing policy %s", resource)
 			// TODO: pass the actual namespace once multi-tenancy is supported.
-			ActivePolicies.DeletePolicy(constants.EmptyNamespace, resource)
+			NamespacedPolicies.DeletePolicy(constants.EmptyNamespace, resource)
 		} else {
 			policyLogger.Error("failed to get Policy: ", err)
 		}
@@ -96,7 +96,7 @@ func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
 	}
 
 	// TODO: pass the actual namespace once multi-tenancy is supported.
-	ActivePolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)
+	NamespacedPolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)
 	return nil
 }
 

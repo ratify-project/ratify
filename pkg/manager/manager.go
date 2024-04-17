@@ -85,9 +85,9 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func(ctx context.Context) *ef.Executor {
 		namespace := ctxUtils.GetNamespace(ctx)
 
-		activeVerifiers := controllers.VerifierMap.GetVerifiers(namespace)
-		activePolicyEnforcer := controllers.ActivePolicies.GetPolicy(namespace)
-		activeStores := controllers.StoreMap.GetStores(namespace)
+		activeVerifiers := controllers.NamespacedVerifiers.GetVerifiers(namespace)
+		activePolicyEnforcer := controllers.NamespacedPolicies.GetPolicy(namespace)
+		activeStores := controllers.NamespacedStores.GetStores(namespace)
 
 		// return executor with latest configuration
 		executor := ef.Executor{

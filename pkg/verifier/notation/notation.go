@@ -221,6 +221,7 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 
 // append namespace to certStore so they are uniquely identifiable
 func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
+	// TODO: once we support multi-tenancy, empty namespace would be reserved for cluster scope.
 	if namespace == "" {
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
