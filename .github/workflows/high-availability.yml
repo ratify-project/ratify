@@ -6,13 +6,13 @@ on:
   pull_request:
     branches:
       - main
-      - staging
+      - dev
       - 1.0.0*
   push:
     branches:
       - 1.0.0*
       - main
-      - staging
+      - dev
   workflow_dispatch:
 
 permissions: read-all

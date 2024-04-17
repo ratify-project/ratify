@@ -14,17 +14,17 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
 
-We use the `staging` branch as the our default branch. All ratify release are cut from the main branch. A sample PR process is outlined below:
-1. Fork this repo and create your dev branch from default `staging` branch.
+We use the `dev` branch as the our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud specific tests on `dev` before changes can be merged into `main`. All ratify release are cut from the `main` branch. A sample PR process is outlined below:
+1. Fork this repo and create your dev branch from default `dev` branch.
 2. Create a PR against default branch
 3. Maintainer approval and e2e test validation is required for completing the PR.
 4. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
 6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
 
 If the PR contains a regression that could not pass the full validation, please revert the change to unblock others:
-1. Create a new dev branch based off staging.
-2. Open a revert PR against staging.
-3. Follow the same process to get this PR gets merged into staging.
+1. Create a new dev branch based off `dev`.
+2. Open a revert PR against `dev`.
+3. Follow the same process to get this PR gets merged into `dev`.
 4. Work on the fix and follow the above PR process.
 
 ## Developing
