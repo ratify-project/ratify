@@ -21,15 +21,16 @@ import (
 )
 
 var (
-	VerifierMap = verifiers.NewActiveVerifiers()
+	// NamespacedVerifiers is a map between namespace and verifiers.
+	NamespacedVerifiers = verifiers.NewActiveVerifiers()
 
-	// ActivePolicy is the active policy generated from CRD. There would be exactly
+	// NamespacedPolicies is the active policy generated from CRD. There would be exactly
 	// one active policy belonging to a namespace at any given time.
-	ActivePolicies = policies.NewActivePolicies()
+	NamespacedPolicies = policies.NewActivePolicies()
 
-	// a map to track active stores
-	StoreMap = rs.NewActiveStores()
+	// NamespacedStores is a map to track active stores across namespaces.
+	NamespacedStores = rs.NewActiveStores()
 
-	// a map between CertificateStore name to array of x509 certificates
-	CertificatesMap = cs.NewActiveCertStores()
+	// NamespacedCertStores is a map between namespace and CertificateStores.
+	NamespacedCertStores = cs.NewActiveCertStores()
 )

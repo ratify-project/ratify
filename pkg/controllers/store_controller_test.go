@@ -48,15 +48,15 @@ func TestStoreAdd_EmptyParameter(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
+	if NamespacedStores.GetStoreCount() != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", NamespacedStores.GetStoreCount())
 	}
 }
 
 func TestStoreAdd_WithParameters(t *testing.T) {
 	resetStoreMap()
-	if StoreMap.GetStoreCount() != 0 {
-		t.Fatalf("Store map expected size 0, actual %v", StoreMap.GetStoreCount())
+	if NamespacedStores.GetStoreCount() != 0 {
+		t.Fatalf("Store map expected size 0, actual %v", NamespacedStores.GetStoreCount())
 	}
 	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
@@ -69,8 +69,8 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, "testObject"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
+	if NamespacedStores.GetStoreCount() != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", NamespacedStores.GetStoreCount())
 	}
 }
 
@@ -138,8 +138,8 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
+	if NamespacedStores.GetStoreCount() != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", NamespacedStores.GetStoreCount())
 	}
 
 	// modify the Store
@@ -153,19 +153,19 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	}
 
 	// validate no Store has been added
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map should be 1 after replacement, actual %v", StoreMap.GetStoreCount())
+	if NamespacedStores.GetStoreCount() != 1 {
+		t.Fatalf("Store map should be 1 after replacement, actual %v", NamespacedStores.GetStoreCount())
 	}
 
-	StoreMap.DeleteStore(constants.EmptyNamespace, sampleName)
+	NamespacedStores.DeleteStore(constants.EmptyNamespace, sampleName)
 
-	if StoreMap.GetStoreCount() != 0 {
-		t.Fatalf("Store map should be 0 after deletion, actual %v", StoreMap.GetStoreCount())
+	if NamespacedStores.GetStoreCount() != 0 {
+		t.Fatalf("Store map should be 0 after deletion, actual %v", NamespacedStores.GetStoreCount())
 	}
 }
 
 func resetStoreMap() {
-	StoreMap = rs.NewActiveStores()
+	NamespacedStores = rs.NewActiveStores()
 }
 
 func getOrasStoreSpec(pluginName, pluginPath string) configv1beta1.StoreSpec {

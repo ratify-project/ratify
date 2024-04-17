@@ -24,5 +24,5 @@ import (
 // returns the internal certificate map
 // TODO: returns certificates from both cluster-wide and given namespace as namespaced verifier could access both.
 func GetCertificatesMap(ctx context.Context) map[string][]*x509.Certificate {
-	return controllers.CertificatesMap.GetCertStores(ctxUtils.GetNamespace(ctx))
+	return controllers.NamespacedCertStores.GetCertStores(ctxUtils.GetNamespace(ctx))
 }

@@ -25,8 +25,8 @@ import (
 )
 
 func TestGetCertificatesMap(t *testing.T) {
-	controllers.CertificatesMap = cs.NewActiveCertStores()
-	controllers.CertificatesMap.AddStore("default", "default/certStore", []*x509.Certificate{})
+	controllers.NamespacedCertStores = cs.NewActiveCertStores()
+	controllers.NamespacedCertStores.AddStore("default", "default/certStore", []*x509.Certificate{})
 	ctx := ctxUtils.SetContextWithNamespace(context.Background(), "default")
 
 	if certs := GetCertificatesMap(ctx); len(certs) != 1 {

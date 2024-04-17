@@ -64,7 +64,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", resource)
 			// TODO: pass the actual namespace once multi-tenancy is supported.
-			CertificatesMap.DeleteStore(constants.EmptyNamespace, resource)
+			NamespacedCertStores.DeleteStore(constants.EmptyNamespace, resource)
 		} else {
 			logger.Error(err, "unable to fetch certificate store")
 		}
@@ -96,7 +96,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	}
 
 	// TODO: pass the actual namespace once multi-tenancy is supported.
-	CertificatesMap.AddStore(constants.EmptyNamespace, resource, certificates)
+	NamespacedCertStores.AddStore(constants.EmptyNamespace, resource, certificates)
 	isFetchSuccessful = true
 	emptyErrorString := ""
 	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
