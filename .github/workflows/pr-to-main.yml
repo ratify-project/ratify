@@ -3,7 +3,7 @@ name: pr_to_main
 on:
   push:
     branches:
-      - 'staging'
+      - 'dev'
 
 permissions:
   pull-requests: write
