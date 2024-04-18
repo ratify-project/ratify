@@ -83,7 +83,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
 		if len(verifierReports) == 0 {
-			return types.VerifyResult{}, errors.ErrorCodeReferrersNotFound.WithComponentType(errors.Executor)
+			return types.VerifyResult{}, errors.ErrorCodeNoVerifierReport.WithComponentType(errors.Executor).WithDescription()
 		}
 	}
 	// If it requires embedded Rego Policy Engine make the decision, execute
