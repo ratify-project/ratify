@@ -178,7 +178,7 @@ func TestFlattenKMPMap(t *testing.T) {
 // TestSetKeysInMap checks if keys are set in the map
 func TestSetKeysInMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
 	if _, ok := keyMap.Load("test"); !ok {
 		t.Fatalf("keysMap should have been set for key")
 	}
@@ -187,8 +187,8 @@ func TestSetKeysInMap(t *testing.T) {
 // TestGetKeysFromMap checks if keys are fetched from the map
 func TestGetKeysFromMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
-	keys := GetKeysFromMap("test")
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	keys, _ := GetKeysFromMap("test")
 	if len(keys) != 1 {
 		t.Fatalf("keys should have been fetched from the map")
 	}
@@ -197,7 +197,7 @@ func TestGetKeysFromMap(t *testing.T) {
 // TestGetKeysFromMap_FailedToFetch checks if keys fail to fetch from map
 func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 	keyMap.Delete("test")
-	keys := GetKeysFromMap("test")
+	keys, _ := GetKeysFromMap("test")
 	if len(keys) != 0 {
 		t.Fatalf("keys should not have been fetched from the map")
 	}
@@ -206,18 +206,10 @@ func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 // TestDeleteKeysFromMap checks if key map entry is deleted from the map
 func TestDeleteKeysFromMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
 	DeleteKeysFromMap("test")
 	if _, ok := keyMap.Load("test"); ok {
 		t.Fatalf("keysMap should have been deleted for key")
-	}
-}
-
-// TestFlattenKMPMapKeys checks if keys in map are flattened to a single array
-func TestFlattenKMPMapKeys(t *testing.T) {
-	keys := FlattenKMPMapKeys(map[KMPMapKey]crypto.PublicKey{{Name: "testkey1"}: &rsa.PublicKey{}, {Name: "testkey2"}: &rsa.PublicKey{}})
-	if len(keys) != 2 {
-		t.Fatalf("keys should have been flattened")
 	}
 }
 

@@ -18,15 +18,22 @@ package cosign
 import (
 	"context"
 	"crypto"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/keymanagementprovider"
+	"github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault"
 	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/deislabs/ratify/pkg/referrerstore"
 	"github.com/deislabs/ratify/pkg/utils"
@@ -34,6 +41,8 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/deislabs/ratify/pkg/verifier/types"
+	"golang.org/x/crypto/cryptobyte"
+	"golang.org/x/crypto/cryptobyte/asn1"
 
 	re "github.com/deislabs/ratify/errors"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -50,12 +59,13 @@ import (
 )
 
 type PluginConfig struct {
-	Name             string   `json:"name"`
-	Type             string   `json:"type,omitempty"`
-	ArtifactTypes    string   `json:"artifactTypes"`
-	KeyRef           string   `json:"key,omitempty"`
-	RekorURL         string   `json:"rekorURL,omitempty"`
-	NestedReferences []string `json:"nestedArtifactTypes,omitempty"`
+	Name             string              `json:"name"`
+	Type             string              `json:"type,omitempty"`
+	ArtifactTypes    string              `json:"artifactTypes"`
+	KeyRef           string              `json:"key,omitempty"`
+	RekorURL         string              `json:"rekorURL,omitempty"`
+	NestedReferences []string            `json:"nestedArtifactTypes,omitempty"`
+	TrustPolicies    []TrustPolicyConfig `json:"trustPolicies,omitempty"`
 }
 
 type Extension struct {
@@ -67,6 +77,7 @@ type cosignExtension struct {
 	IsSuccess       bool          `json:"isSuccess"`
 	BundleVerified  bool          `json:"bundleVerified"`
 	Err             string        `json:"error,omitempty"`
+	KeyInformation  PKKey         `json:"keyInformation,omitempty"`
 }
 
 type cosignVerifier struct {
@@ -75,6 +86,9 @@ type cosignVerifier struct {
 	artifactTypes    []string
 	nestedReferences []string
 	config           *PluginConfig
+	isLegacy         bool
+	trustPolicies    *TrustPolicies
+	namespace        string
 }
 
 type cosignVerifierFactory struct{}
@@ -82,6 +96,9 @@ type cosignVerifierFactory struct{}
 var logOpt = logger.Option{
 	ComponentType: logger.Verifier,
 }
+
+// used for mocking purposes
+var getKeysMaps = getKeysMapsDefault
 
 const verifierType string = "cosign"
 
@@ -103,12 +120,30 @@ func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierC
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
 	}
 
+	// if key or rekorURL is provided, trustPolicies should not be provided
+	if (config.KeyRef != "" || config.RekorURL != "") && len(config.TrustPolicies) > 0 {
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("'key' and 'rekorURL' are part of cosign legacy configuration and cannot be used with `trustPolicies`")
+	}
+
+	var trustPolicies *TrustPolicies
+	legacy := true
+	if config.KeyRef == "" && config.RekorURL == "" {
+		trustPolicies, err = CreateTrustPolicies(config.TrustPolicies, verifierName)
+		if err != nil {
+			return nil, err
+		}
+		legacy = false
+	}
+
 	return &cosignVerifier{
 		name:             verifierName,
 		verifierType:     config.Type,
 		artifactTypes:    strings.Split(config.ArtifactTypes, ","),
 		nestedReferences: config.NestedReferences,
 		config:           config,
+		isLegacy:         legacy,
+		trustPolicies:    trustPolicies,
+		namespace:        namespace,
 	}, nil
 }
 
@@ -132,8 +167,157 @@ func (v *cosignVerifier) CanVerify(_ context.Context, referenceDescriptor ocispe
 	return false
 }
 
-// Verify verifies the subject reference using the cosign verifier
 func (v *cosignVerifier) Verify(ctx context.Context, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+	if v.isLegacy {
+		return v.verifyLegacy(ctx, subjectReference, referenceDescriptor, referrerStore)
+	}
+	return v.verifyInternal(ctx, subjectReference, referenceDescriptor, referrerStore)
+}
+
+func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+	// get the map of keys and relevant cosign options for that reference
+	keysMap, cosignOpts, err := getKeysMaps(ctx, v.trustPolicies, subjectReference.Original, v.namespace)
+	if err != nil {
+		return errorToVerifyResult(v.name, v.verifierType, err), nil
+	}
+
+	// get the reference manifest (cosign oci image)
+	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
+	if err != nil {
+		return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to get reference manifest: %w", err)), nil
+	}
+
+	// manifest must be an OCI Image
+	if referenceManifest.MediaType != imgspec.MediaTypeImageManifest {
+		return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("reference manifest is not an image")), nil
+	}
+
+	// get the subject image descriptor
+	subjectDesc, err := referrerStore.GetSubjectDescriptor(ctx, subjectReference)
+	if err != nil {
+		return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to create subject hash: %w", err)), nil
+	}
+
+	// create the hash of the subject image descriptor (used as the hashed payload)
+	subjectDescHash := v1.Hash{
+		Algorithm: subjectDesc.Digest.Algorithm().String(),
+		Hex:       subjectDesc.Digest.Hex(),
+	}
+
+	sigExtensions := make([]cosignExtension, 0)
+	hasValidSignature := false
+	// check each signature found
+	for _, blob := range referenceManifest.Blobs {
+		// fetch the blob content of the signature from the referrer store
+		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
+		if err != nil {
+			return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to get blob content: %w", err)), nil
+		}
+		// convert the blob to a static signature
+		staticOpts, err := staticLayerOpts(blob)
+		if err != nil {
+			return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to parse static signature opts: %w", err)), nil
+		}
+		sig, err := static.NewSignature(blobBytes, blob.Annotations[static.SignatureAnnotationKey], staticOpts...)
+		if err != nil {
+			return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to generate static signature: %w", err)), nil
+		}
+		// check each key in the map of keys returned by the trust policy
+		for mapKey, pubKey := range keysMap {
+			hashType := crypto.SHA256
+			// default hash type is SHA256 but for AKV scenarios, the hash type is determined by the key size
+			// TODO: investigate if it's possible to extract hash type from sig directly. This is a workaround for now
+			if pubKey.ProviderType == azurekeyvault.ProviderName {
+				switch keyType := pubKey.Key.(type) {
+				case *rsa.PublicKey:
+					switch keyType.Size() {
+					case 256:
+						hashType = crypto.SHA256
+					case 384:
+						hashType = crypto.SHA384
+					case 512:
+						hashType = crypto.SHA512
+					default:
+						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: unsupported key size: %d", keyType.Size())), nil
+					}
+
+					// TODO: remove section after fix for bug in cosign azure key vault implementation
+					// tracking issue: https://github.com/sigstore/sigstore/issues/1384
+					// summary: azure keyvault implementation ASN.1 encodes sig after online signing with keyvault
+					// EC verifiers in cosign have built in ASN.1 decoding, but RSA verifiers do not
+					base64DecodedBytes, err := base64.StdEncoding.DecodeString(blob.Annotations[static.SignatureAnnotationKey])
+					if err != nil {
+						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: failed to decode base64 signature: %w", err)), nil
+					}
+					// decode ASN.1 signature to raw signature if it is ASN.1 encoded
+					decodedSigBytes, err := decodeASN1Signature(base64DecodedBytes)
+					if err != nil {
+						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: failed to decode ASN.1 signature: %w", err)), nil
+					}
+					encodedBase64SigBytes := base64.StdEncoding.EncodeToString(decodedSigBytes)
+					sig, err = static.NewSignature(blobBytes, encodedBase64SigBytes, staticOpts...)
+					if err != nil {
+						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: failed to generate static signature: %w", err)), nil
+					}
+				case *ecdsa.PublicKey:
+					switch keyType.Curve {
+					case elliptic.P256():
+						hashType = crypto.SHA256
+					case elliptic.P384():
+						hashType = crypto.SHA384
+					case elliptic.P521():
+						hashType = crypto.SHA512
+					default:
+						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("ECDSA key check: unsupported key curve: %s", keyType.Params().Name)), nil
+					}
+				default:
+					return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("unsupported public key type: %T", pubKey)), nil
+				}
+			}
+
+			// return the correct verifier based on public key type and bytes
+			verifier, err := signature.LoadVerifier(pubKey.Key, hashType)
+			if err != nil {
+				return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to load public key from provider [%s] name [%s] version [%s]: %w", mapKey.Provider, mapKey.Name, mapKey.Version, err)), nil
+			}
+			cosignOpts.SigVerifier = verifier
+			// verify signature with cosign options + perform bundle verification
+			bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, &cosignOpts)
+			extension := cosignExtension{
+				SignatureDigest: blob.Digest,
+				IsSuccess:       true,
+				BundleVerified:  bundleVerified,
+				KeyInformation:  mapKey,
+			}
+			if err != nil {
+				extension.IsSuccess = false
+				extension.Err = err.Error()
+			} else {
+				hasValidSignature = true
+			}
+			sigExtensions = append(sigExtensions, extension)
+		}
+
+		// TODO: perform keyless verification instead if no keys are found
+	}
+
+	if hasValidSignature {
+		return verifier.VerifierResult{
+			Name:       v.name,
+			Type:       v.verifierType,
+			IsSuccess:  true,
+			Message:    "cosign verification success. valid signatures found. please refer to extensions field for verifications performed.",
+			Extensions: Extension{SignatureExtension: sigExtensions},
+		}, nil
+	}
+
+	errorResult := errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("no valid signatures found"))
+	errorResult.Extensions = Extension{SignatureExtension: sigExtensions}
+	return errorResult, nil
+}
+
+// **LEGACY** This implementation will be removed in Ratify v2.0.0. Verify verifies the subject reference using the cosign verifier.
+func (v *cosignVerifier) verifyLegacy(ctx context.Context, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	cosignOpts := &cosign.CheckOpts{
 		ClaimVerifier: cosign.SimpleClaimVerifier,
 	}
@@ -321,4 +505,58 @@ func errorToVerifyResult(name string, verifierType string, err error) verifier.V
 		Type:      verifierType,
 		Message:   errors.Wrap(err, "cosign verification failed").Error(),
 	}
+}
+
+// decodeASN1Signature decodes the ASN.1 signature to raw signature bytes
+func decodeASN1Signature(sig []byte) ([]byte, error) {
+	// Convert the ASN.1 Sequence to a concatenated r||s byte string
+	// This logic is based from https://cs.opensource.google/go/go/+/refs/tags/go1.17.3:src/crypto/ecdsa/ecdsa.go;l=339
+	var (
+		r, s  = &big.Int{}, &big.Int{}
+		inner cryptobyte.String
+	)
+
+	rawSigBytes := sig
+	input := cryptobyte.String(sig)
+	if input.ReadASN1(&inner, asn1.SEQUENCE) {
+		// if ASN.1 sequence is found, parse r and s
+		if !inner.ReadASN1Integer(r) {
+			return nil, fmt.Errorf("failed parsing r")
+		}
+		if !inner.ReadASN1Integer(s) {
+			return nil, fmt.Errorf("failed parsing s")
+		}
+		if !inner.Empty() {
+			return nil, fmt.Errorf("failed parsing signature")
+		}
+		rawSigBytes = []byte{}
+		rawSigBytes = append(rawSigBytes, r.Bytes()...)
+		rawSigBytes = append(rawSigBytes, s.Bytes()...)
+	}
+
+	return rawSigBytes, nil
+}
+
+// getKeysMapsDefault returns the map of keys and cosign options for the reference
+func getKeysMapsDefault(ctx context.Context, trustPolicies *TrustPolicies, reference string, namespace string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
+	// get the trust policy for the reference
+	trustPolicy, err := trustPolicies.GetScopedPolicy(reference)
+	if err != nil {
+		return nil, cosign.CheckOpts{}, err
+	}
+	logger.GetLogger(ctx, logOpt).Debugf("selected trust policy %s for reference %s", trustPolicy.GetName(), reference)
+
+	// get the map of keys for that reference
+	keysMap, err := trustPolicy.GetKeys(namespace)
+	if err != nil {
+		return nil, cosign.CheckOpts{}, err
+	}
+
+	// get the cosign options for that trust policy
+	cosignOpts, err := trustPolicy.GetCosignOpts(ctx)
+	if err != nil {
+		return nil, cosign.CheckOpts{}, err
+	}
+
+	return keysMap, cosignOpts, nil
 }

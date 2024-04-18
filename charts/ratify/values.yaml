@@ -14,7 +14,8 @@ cosignKeys: []
 
 cosign:
   enabled: true
-  key: ""
+  scopes: ["*"] # corresponds to a single trust policy
+  key: "" # DEPRECATED: Use cosignKeys instead
 vulnerabilityreport:
   enabled: false
   passthrough: false

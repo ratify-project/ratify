@@ -122,6 +122,7 @@ require (
 	go.step.sm/crypto v0.44.2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
+	gotest.tools/v3 v3.1.0 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
 )
 

@@ -16,21 +16,12 @@ limitations under the License.
 package utils
 
 import (
-	"net/url"
 	"strings"
+
+	"github.com/deislabs/ratify/internal/constants"
 )
 
-func SanitizeString(input string) string {
-	sanitized := strings.Replace(input, "\n", "", -1)
-	sanitized = strings.Replace(sanitized, "\r", "", -1)
-	return sanitized
-}
-
-func SanitizeURL(input url.URL) string {
-	return SanitizeString(input.String())
-}
-
-func MakePtr[T any](value T) *T {
-	b := value
-	return &b
+// return true if string looks like a K8s namespaced resource. e.g. namespace/name
+func IsNamespacedNamed(name string) bool {
+	return strings.Contains(name, constants.NamespaceSeperator)
 }
