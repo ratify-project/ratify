@@ -40,7 +40,7 @@ require (
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.8.3
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spdx/tools-golang v0.5.3
+	github.com/spdx/tools-golang v0.5.4
 	github.com/spf13/cobra v1.8.0
 	github.com/xlab/treeprint v1.1.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
