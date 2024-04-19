@@ -46,26 +46,20 @@ type KeyManagementProvider interface {
 	GetKeys(ctx context.Context) (map[KMPMapKey]crypto.PublicKey, KeyManagementProviderStatus, error)
 }
 
-// CertificateMap wraps a sync.Map to store certificates fetched from key management provider.
-type CertificateMap struct {
-	// concurrency-safe map to store certificates fetched from key management provider
-	// layout:
-	//
-	//	map["<namespace>/<name>"] = map[KMPMapKey][]*x509.Certificate
-	//	where KMPMapKey is dimensioned by the name and version of the certificate.
-	//	Array of x509 Certificates for certificate chain scenarios
-	mapping sync.Map
-}
+// static concurrency-safe map to store certificates fetched from key management provider
+// layout:
+//
+//	map["<namespace>/<name>"] = map[KMPMapKey][]*x509.Certificate
+//	where KMPMapKey is dimensioned by the name and version of the certificate.
+//	Array of x509 Certificates for certificate chain scenarios
+var certificatesMap sync.Map
 
-// KeyMap wraps a sync.Map to store keys fetched from key management provider.
-type KeyMap struct {
-	// concurrency-safe map to store keys fetched from key management provider
-	// layout:
-	//
-	//	map["<namespace>/<name>"] = map[KMPMapKey]PublicKey
-	//	where KMPMapKey is dimensioned by the name and version of the public key.
-	mapping sync.Map
-}
+// static concurrency-safe map to store keys fetched from key management provider
+// layout:
+//
+//	map["<namespace>/<name>"] = map[KMPMapKey]PublicKey
+//	where KMPMapKey is dimensioned by the name and version of the public key.
+var keyMap sync.Map
 
 // DecodeCertificates decodes PEM-encoded bytes into an x509.Certificate chain.
 func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
@@ -105,13 +99,16 @@ func DecodeKey(value []byte) (crypto.PublicKey, error) {
 
 // SetCertificatesInMap sets the certificates in the map
 // it is concurrency-safe
-func (c *CertificateMap) SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certificate) {
-	c.mapping.Store(resource, certs)
+func SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certificate) {
+	certificatesMap.Store(resource, certs)
 }
 
 // GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found
-func (c *CertificateMap) GetCertificatesFromMap(resource string) map[KMPMapKey][]*x509.Certificate {
-	certs, ok := c.mapping.Load(resource)
+func GetCertificatesFromMap(ctx context.Context, resource string) map[KMPMapKey][]*x509.Certificate {
+	if !isCompatibleNamespace(ctx, resource) {
+		return map[KMPMapKey][]*x509.Certificate{}
+	}
+	certs, ok := certificatesMap.Load(resource)
 	if !ok {
 		return map[KMPMapKey][]*x509.Certificate{}
 	}
@@ -120,8 +117,8 @@ func (c *CertificateMap) GetCertificatesFromMap(resource string) map[KMPMapKey][
 
 // DeleteCertificatesFromMap deletes the certificates from the map
 // it is concurrency-safe
-func (c *CertificateMap) DeleteCertificatesFromMap(resource string) {
-	c.mapping.Delete(resource)
+func DeleteCertificatesFromMap(resource string) {
+	certificatesMap.Delete(resource)
 }
 
 // FlattenKMPMap flattens the map of certificates fetched for a single key management provider resource and returns a single array
@@ -143,13 +140,16 @@ func FlattenKMPMapKeys(keyMap map[KMPMapKey]crypto.PublicKey) []crypto.PublicKey
 }
 
 // SetKeysInMap sets the keys in the map
-func (k *KeyMap) SetKeysInMap(resource string, keys map[KMPMapKey]crypto.PublicKey) {
-	k.mapping.Store(resource, keys)
+func SetKeysInMap(resource string, keys map[KMPMapKey]crypto.PublicKey) {
+	keyMap.Store(resource, keys)
 }
 
 // GetKeysFromMap gets the keys from the map and returns an empty map of keys if not found
-func (k *KeyMap) GetKeysFromMap(resource string) map[KMPMapKey]crypto.PublicKey {
-	keys, ok := k.mapping.Load(resource)
+func GetKeysFromMap(ctx context.Context, resource string) map[KMPMapKey]crypto.PublicKey {
+	if !isCompatibleNamespace(ctx, resource) {
+		return map[KMPMapKey]crypto.PublicKey{}
+	}
+	keys, ok := keyMap.Load(resource)
 	if !ok {
 		return map[KMPMapKey]crypto.PublicKey{}
 	}
@@ -157,6 +157,13 @@ func (k *KeyMap) GetKeysFromMap(resource string) map[KMPMapKey]crypto.PublicKey 
 }
 
 // DeleteKeysFromMap deletes the keys from the map
-func (k *KeyMap) DeleteKeysFromMap(resource string) {
-	k.mapping.Delete(resource)
+func DeleteKeysFromMap(resource string) {
+	keyMap.Delete(resource)
+}
+
+// Namespaced verifiers could access both cluster-scoped and namespaced certStores.
+// But cluster-wide verifiers could only access cluster-scoped certStores.
+// TODO: current implementation always returns true. Check the namespace once we support multi-tenancy.
+func isCompatibleNamespace(_ context.Context, _ string) bool {
+	return true
 }

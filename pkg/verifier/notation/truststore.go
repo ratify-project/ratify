@@ -21,9 +21,9 @@ import (
 	"errors"
 	"fmt"
 
-	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/internal/logger"
 	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
+	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
 )
@@ -56,11 +56,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-			if !isCompatibleNamespace(ctx, certStore) {
-				logger.GetLogger(ctx, logOpt).Warnf("verifier in namespace: %s cannot access certStore: %s in different namespace.", ctxUtils.GetNamespace(ctx), certStore)
-				continue
-			}
-			result := cutils.GetKMPCertificates(ctx, certStore)
+			result := keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(ctx, certStore))
 			// notation verifier does not consider specific named/versioned certificates within a key management provider resource
 			if len(result) == 0 {
 				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Key Management Provider %+v", certStore)
@@ -106,11 +102,4 @@ func (s trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certifi
 		return nil, errors.New("valid certificates must be provided, only CA certificates or self-signed signing certificates are supported")
 	}
 	return filteredCerts, nil
-}
-
-// Namespaced verifiers could access both cluster-scoped and namespaced certStores.
-// But cluster-wide verifiers could only access cluster-scoped certStores.
-// TODO: current implementation always returns true. Check the namespace once we support multi-tenancy.
-func isCompatibleNamespace(_ context.Context, _ string) bool {
-	return true
 }

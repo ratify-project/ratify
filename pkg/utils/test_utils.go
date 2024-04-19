@@ -16,15 +16,8 @@ limitations under the License.
 package utils
 
 import (
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"encoding/pem"
-	"math/big"
 	"os"
 	"path/filepath"
-	"time"
 )
 
 func CreatePlugin(pluginName string) (string, error) {
@@ -40,75 +33,4 @@ func CreatePlugin(pluginName string) (string, error) {
 	}
 	defer file.Close()
 	return tempDir, nil
-}
-
-func CreateTestCert() *x509.Certificate {
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil
-	}
-
-	// Create a certificate template
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization: []string{"My Organization"},
-			Country:      []string{"Country"},
-			Province:     []string{"Province"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().Add(365 * 24 * time.Hour),
-		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-
-	// Create a self-signed certificate
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
-	if err != nil {
-		return nil
-	}
-
-	cert, _ := x509.ParseCertificate(derBytes)
-	return cert
-}
-
-func CreateTestPublicKey() interface{} {
-	// Generate a private key
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		return nil
-	}
-
-	// Marshal the public key
-	publicKeyBytes, err := x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
-	if err != nil {
-		return nil
-	}
-
-	// Create a PEM block for the public key
-	publicKeyPEM := &pem.Block{
-		Type:  "RSA PUBLIC KEY",
-		Bytes: publicKeyBytes,
-	}
-
-	// Encode the PEM block
-	publicKeyPEMEncoded := pem.EncodeToMemory(publicKeyPEM)
-	if publicKeyPEMEncoded == nil {
-		return nil
-	}
-
-	// Decode the public key
-	block, _ := pem.Decode(publicKeyPEMEncoded)
-	if block == nil {
-		return nil
-	}
-
-	// Parse the public key
-	publicKey, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil
-	}
-
-	return publicKey
 }
