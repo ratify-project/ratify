@@ -178,13 +178,13 @@ func (server *Server) registerHandlers() error {
 	if err != nil {
 		return err
 	}
-	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false))
+	server.register(http.MethodPost, verifyPath, processTimeout(server.verify, server.GetExecutor(server.Context).GetVerifyRequestTimeout(), false))
 
 	mutatePath, err := url.JoinPath(ServerRootURL, "mutate")
 	if err != nil {
 		return err
 	}
-	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true))
+	server.register(http.MethodPost, mutatePath, processTimeout(server.mutate, server.GetExecutor(server.Context).GetMutationRequestTimeout(), true))
 
 	return nil
 }

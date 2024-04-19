@@ -38,17 +38,6 @@ type PolicyReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-type policy struct {
-	// The name of the policy.
-	Name string
-	// The policy enforcer making a decision.
-	Enforcer policyprovider.PolicyProvider
-}
-
-// ActivePolicy is the active policy generated from CRD. There would be exactly
-// one active policy at any given time.
-var ActivePolicy policy
-
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=policies/finalizers,verbs=update
@@ -66,9 +55,10 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	policyLogger.Infof("Reconciling Policy %s", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &policy); err != nil {
-		if apierrors.IsNotFound(err) && resource == ActivePolicy.Name {
+		if apierrors.IsNotFound(err) {
 			policyLogger.Infof("delete event detected, removing policy %s", resource)
-			ActivePolicy.deletePolicy(resource)
+			// TODO: pass the actual namespace once multi-tenancy is supported.
+			NamespacedPolicies.DeletePolicy(constants.EmptyNamespace, resource)
 		} else {
 			policyLogger.Error("failed to get Policy: ", err)
 		}
@@ -105,8 +95,8 @@ func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
 		return fmt.Errorf("failed to create policy enforcer: %w", err)
 	}
 
-	ActivePolicy.Name = spec.Type
-	ActivePolicy.Enforcer = policyEnforcer
+	// TODO: pass the actual namespace once multi-tenancy is supported.
+	NamespacedPolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)
 	return nil
 }
 
@@ -139,18 +129,6 @@ func rawToPolicyConfig(raw []byte, policyName string) (config.PoliciesConfig, er
 	return config.PoliciesConfig{
 		PolicyPlugin: pluginConfig,
 	}, nil
-}
-
-func (p *policy) deletePolicy(resource string) {
-	if p.Name == resource {
-		p.Name = ""
-		p.Enforcer = nil
-	}
-}
-
-// IsEmpty returns true if there is no policy set up.
-func (p *policy) IsEmpty() bool {
-	return p.Name == "" && p.Enforcer == nil
 }
 
 func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.Policy, logger *logrus.Entry, isSuccess bool, errString string) {

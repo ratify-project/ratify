@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - dev
       - 1.0.0*
   pull_request:
   workflow_dispatch:

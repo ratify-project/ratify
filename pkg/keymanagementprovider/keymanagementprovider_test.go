@@ -16,6 +16,8 @@ limitations under the License.
 package keymanagementprovider
 
 import (
+	"crypto"
+	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"testing"
@@ -170,5 +172,81 @@ func TestFlattenKMPMap(t *testing.T) {
 	certs := FlattenKMPMap(map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been flattened")
+	}
+}
+
+// TestSetKeysInMap checks if keys are set in the map
+func TestSetKeysInMap(t *testing.T) {
+	keyMap.Delete("test")
+	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	if _, ok := keyMap.Load("test"); !ok {
+		t.Fatalf("keysMap should have been set for key")
+	}
+}
+
+// TestGetKeysFromMap checks if keys are fetched from the map
+func TestGetKeysFromMap(t *testing.T) {
+	keyMap.Delete("test")
+	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	keys := GetKeysFromMap("test")
+	if len(keys) != 1 {
+		t.Fatalf("keys should have been fetched from the map")
+	}
+}
+
+// TestGetKeysFromMap_FailedToFetch checks if keys fail to fetch from map
+func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
+	keyMap.Delete("test")
+	keys := GetKeysFromMap("test")
+	if len(keys) != 0 {
+		t.Fatalf("keys should not have been fetched from the map")
+	}
+}
+
+// TestDeleteKeysFromMap checks if key map entry is deleted from the map
+func TestDeleteKeysFromMap(t *testing.T) {
+	keyMap.Delete("test")
+	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	DeleteKeysFromMap("test")
+	if _, ok := keyMap.Load("test"); ok {
+		t.Fatalf("keysMap should have been deleted for key")
+	}
+}
+
+// TestFlattenKMPMapKeys checks if keys in map are flattened to a single array
+func TestFlattenKMPMapKeys(t *testing.T) {
+	keys := FlattenKMPMapKeys(map[KMPMapKey]crypto.PublicKey{{Name: "testkey1"}: &rsa.PublicKey{}, {Name: "testkey2"}: &rsa.PublicKey{}})
+	if len(keys) != 2 {
+		t.Fatalf("keys should have been flattened")
+	}
+}
+
+// TestDecodeKey checks if key is decoded from pem
+func TestDecodeKey(t *testing.T) {
+	validKey := `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEozC27QupU+1GvAL0tqR7bT3Vpyyf
+OSeWVmPjy6J5x8+6OIpmTs8PKQB1vTF0gErwa1gS/QaOElLaxDKy0GS9Jg==
+-----END PUBLIC KEY-----`
+	cases := []struct {
+		desc        string
+		pemString   string
+		expectedErr bool
+	}{
+		{
+			desc:        "valid public key",
+			pemString:   validKey,
+			expectedErr: false,
+		},
+		{
+			desc:        "invalid public key",
+			pemString:   "foo",
+			expectedErr: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := DecodeKey([]byte(tc.pemString))
+			assert.Equal(t, tc.expectedErr, err != nil)
+		})
 	}
 }

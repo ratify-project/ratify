@@ -1,0 +1,15 @@
+version: 0.1
+env:
+  - name: azure-identity-token # REMOVE if not using Azure Workload Identity
+    value:  $(volumeMounts:azure-identity-token) # REMOVE if not using Azure Workload Identity
+  - name: client-ca-cert
+    value: $(volumeMounts:client-ca-cert)
+  - name: AZURE_FEDERATED_TOKEN_FILE # REMOVE if not using Azure Workload Identity
+    value: <INSERT WORKLOAD IDENTITY TOKEN LOCAL PATH>/azure-identity-token # REMOVE if not using Azure Workload Identity
+  - name: RATIFY_NAMESPACE
+    value: gatekeeper-system
+volumeMounts:
+  - name: client-ca-cert
+    localPath: <INSERT CLIENT CA CERT LOCAL PATH>
+  - name: azure-identity-token # REMOVE if not using Azure Workload Identity
+    localPath: <INSERT WORKLOAD IDENTITY TOKEN LOCAL PATH> # REMOVE if not using Azure Workload Identity

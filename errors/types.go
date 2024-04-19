@@ -68,6 +68,7 @@ type Error struct {
 	PluginName    string        `json:"pluginName,omitempty"`
 	LinkToDoc     string        `json:"linkToDoc,omitempty"`
 	Stack         string        `json:"stack,omitempty"`
+	Description   string        `json:"description,omitempty"`
 }
 
 // ErrorDescriptor provides relevant information about a given error code.
@@ -124,6 +125,11 @@ func (ec ErrorCode) Message() string {
 	return ec.Descriptor().Message
 }
 
+// Description returned the description of this error code.
+func (ec ErrorCode) Description() string {
+	return ec.Descriptor().Description
+}
+
 // String returns the canonical identifier for this error code.
 func (ec ErrorCode) String() string {
 	return ec.Descriptor().Value
@@ -147,6 +153,10 @@ func (ec ErrorCode) WithComponentType(componentType ComponentType) Error {
 // WithLinkToDoc returns a new Error object with attached link to the documentation.
 func (ec ErrorCode) WithLinkToDoc(link string) Error {
 	return newError(ec, ec.Message()).WithLinkToDoc(link)
+}
+
+func (ec ErrorCode) WithDescription() Error {
+	return newError(ec, ec.Message()).WithDescription()
 }
 
 // WithPluginName returns a new Error object with pluginName set.
@@ -223,6 +233,10 @@ func (e Error) Error() string {
 		errStr += fmt.Sprintf(", Detail: %v", e.Detail)
 	}
 
+	if e.Description != "" {
+		errStr += fmt.Sprintf(", Description: %v", e.Description)
+	}
+
 	if e.Stack != "" {
 		errStr += fmt.Sprintf(", Stack trace: %s", e.Stack)
 	}
@@ -258,6 +272,11 @@ func (e Error) WithError(err error) Error {
 // WithLinkToDoc returns a new Error object attached with link to documentation.
 func (e Error) WithLinkToDoc(link string) Error {
 	e.LinkToDoc = link
+	return e
+}
+
+func (e Error) WithDescription() Error {
+	e.Description = e.Code.Description()
 	return e
 }
 
