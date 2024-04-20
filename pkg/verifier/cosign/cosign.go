@@ -68,12 +68,31 @@ type PluginConfig struct {
 	TrustPolicies    []TrustPolicyConfig `json:"trustPolicies,omitempty"`
 }
 
-type Extension struct {
+// LegacyExtension is the structure for the verifier result extensions
+// used for backwards compatibility with the legacy cosign verifier
+type LegacyExtension struct {
 	SignatureExtension []cosignExtension `json:"signatures,omitempty"`
 }
 
+// Extension is the structure for the verifier result extensions
+// contains a list of signature verification results
+// where each entry corresponds to a single signature verified
+type Extension struct {
+	SignatureExtension []cosignExtensionList `json:"signatures,omitempty"`
+}
+
+// cosignExtensionList is the structure verifications performed
+// per signature found in the image manifest
+type cosignExtensionList struct {
+	Signature     string            `json:"signature"`
+	Verifications []cosignExtension `json:"verifications"`
+}
+
+// cosignExtension is the structure for the verification result
+// of a single signature found in the image manifest for a
+// single public key
 type cosignExtension struct {
-	SignatureDigest digest.Digest `json:"signatureDigest"`
+	SignatureDigest digest.Digest `json:"signatureDigest,omitempty"`
 	IsSuccess       bool          `json:"isSuccess"`
 	BundleVerified  bool          `json:"bundleVerified"`
 	Err             string        `json:"error,omitempty"`
@@ -204,10 +223,14 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 		Hex:       subjectDesc.Digest.Hex(),
 	}
 
-	sigExtensions := make([]cosignExtension, 0)
+	sigExtensions := make([]cosignExtensionList, 0)
 	hasValidSignature := false
 	// check each signature found
 	for _, blob := range referenceManifest.Blobs {
+		extensionListEntry := cosignExtensionList{
+			Signature:     blob.Annotations[static.SignatureAnnotationKey],
+			Verifications: make([]cosignExtension, 0),
+		}
 		// fetch the blob content of the signature from the referrer store
 		blobBytes, err := referrerStore.GetBlobContent(ctx, subjectReference, blob.Digest)
 		if err != nil {
@@ -284,10 +307,9 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			// verify signature with cosign options + perform bundle verification
 			bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, &cosignOpts)
 			extension := cosignExtension{
-				SignatureDigest: blob.Digest,
-				IsSuccess:       true,
-				BundleVerified:  bundleVerified,
-				KeyInformation:  mapKey,
+				IsSuccess:      true,
+				BundleVerified: bundleVerified,
+				KeyInformation: mapKey,
 			}
 			if err != nil {
 				extension.IsSuccess = false
@@ -295,10 +317,11 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			} else {
 				hasValidSignature = true
 			}
-			sigExtensions = append(sigExtensions, extension)
+			extensionListEntry.Verifications = append(extensionListEntry.Verifications, extension)
 		}
 
 		// TODO: perform keyless verification instead if no keys are found
+		sigExtensions = append(sigExtensions, extensionListEntry)
 	}
 
 	if hasValidSignature {
@@ -418,12 +441,12 @@ func (v *cosignVerifier) verifyLegacy(ctx context.Context, subjectReference comm
 			Type:       v.verifierType,
 			IsSuccess:  true,
 			Message:    "cosign verification success. valid signatures found",
-			Extensions: Extension{SignatureExtension: sigExtensions},
+			Extensions: LegacyExtension{SignatureExtension: sigExtensions},
 		}, nil
 	}
 
 	errorResult := errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("no valid signatures found"))
-	errorResult.Extensions = Extension{SignatureExtension: sigExtensions}
+	errorResult.Extensions = LegacyExtension{SignatureExtension: sigExtensions}
 	return errorResult, nil
 }
 
