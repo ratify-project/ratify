@@ -251,50 +251,9 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			// default hash type is SHA256 but for AKV scenarios, the hash type is determined by the key size
 			// TODO: investigate if it's possible to extract hash type from sig directly. This is a workaround for now
 			if pubKey.ProviderType == azurekeyvault.ProviderName {
-				switch keyType := pubKey.Key.(type) {
-				case *rsa.PublicKey:
-					switch keyType.Size() {
-					case 256:
-						hashType = crypto.SHA256
-					case 384:
-						hashType = crypto.SHA384
-					case 512:
-						hashType = crypto.SHA512
-					default:
-						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: unsupported key size: %d", keyType.Size())), nil
-					}
-
-					// TODO: remove section after fix for bug in cosign azure key vault implementation
-					// tracking issue: https://github.com/sigstore/sigstore/issues/1384
-					// summary: azure keyvault implementation ASN.1 encodes sig after online signing with keyvault
-					// EC verifiers in cosign have built in ASN.1 decoding, but RSA verifiers do not
-					base64DecodedBytes, err := base64.StdEncoding.DecodeString(blob.Annotations[static.SignatureAnnotationKey])
-					if err != nil {
-						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: failed to decode base64 signature: %w", err)), nil
-					}
-					// decode ASN.1 signature to raw signature if it is ASN.1 encoded
-					decodedSigBytes, err := decodeASN1Signature(base64DecodedBytes)
-					if err != nil {
-						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: failed to decode ASN.1 signature: %w", err)), nil
-					}
-					encodedBase64SigBytes := base64.StdEncoding.EncodeToString(decodedSigBytes)
-					sig, err = static.NewSignature(blobBytes, encodedBase64SigBytes, staticOpts...)
-					if err != nil {
-						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("RSA key check: failed to generate static signature: %w", err)), nil
-					}
-				case *ecdsa.PublicKey:
-					switch keyType.Curve {
-					case elliptic.P256():
-						hashType = crypto.SHA256
-					case elliptic.P384():
-						hashType = crypto.SHA384
-					case elliptic.P521():
-						hashType = crypto.SHA512
-					default:
-						return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("ECDSA key check: unsupported key curve: %s", keyType.Params().Name)), nil
-					}
-				default:
-					return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("unsupported public key type: %T", pubKey)), nil
+				hashType, sig, err = processAKVSignature(blob.Annotations[static.SignatureAnnotationKey], sig, pubKey.Key, blobBytes, staticOpts)
+				if err != nil {
+					return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to process AKV signature: %w", err)), nil
 				}
 			}
 
@@ -582,4 +541,55 @@ func getKeysMapsDefault(ctx context.Context, trustPolicies *TrustPolicies, refer
 	}
 
 	return keysMap, cosignOpts, nil
+}
+
+// processAKVSignature processes the AKV signature and returns the hash type, signature and error
+func processAKVSignature(sigEncoded string, staticSig oci.Signature, publicKey crypto.PublicKey, payloadBytes []byte, staticOpts []static.Option) (crypto.Hash, oci.Signature, error) {
+	var hashType crypto.Hash
+	switch keyType := publicKey.(type) {
+	case *rsa.PublicKey:
+		switch keyType.Size() {
+		case 256:
+			hashType = crypto.SHA256
+		case 384:
+			hashType = crypto.SHA384
+		case 512:
+			hashType = crypto.SHA512
+		default:
+			return crypto.SHA256, nil, fmt.Errorf("RSA key check: unsupported key size: %d", keyType.Size())
+		}
+
+		// TODO: remove section after fix for bug in cosign azure key vault implementation
+		// tracking issue: https://github.com/sigstore/sigstore/issues/1384
+		// summary: azure keyvault implementation ASN.1 encodes sig after online signing with keyvault
+		// EC verifiers in cosign have built in ASN.1 decoding, but RSA verifiers do not
+		base64DecodedBytes, err := base64.StdEncoding.DecodeString(sigEncoded)
+		if err != nil {
+			return crypto.SHA256, nil, fmt.Errorf("RSA key check: failed to decode base64 signature: %w", err)
+		}
+		// decode ASN.1 signature to raw signature if it is ASN.1 encoded
+		decodedSigBytes, err := decodeASN1Signature(base64DecodedBytes)
+		if err != nil {
+			return crypto.SHA256, nil, fmt.Errorf("RSA key check: failed to decode ASN.1 signature: %w", err)
+		}
+		encodedBase64SigBytes := base64.StdEncoding.EncodeToString(decodedSigBytes)
+		staticSig, err = static.NewSignature(payloadBytes, encodedBase64SigBytes, staticOpts...)
+		if err != nil {
+			return crypto.SHA256, nil, fmt.Errorf("RSA key check: failed to generate static signature: %w", err)
+		}
+	case *ecdsa.PublicKey:
+		switch keyType.Curve {
+		case elliptic.P256():
+			hashType = crypto.SHA256
+		case elliptic.P384():
+			hashType = crypto.SHA384
+		case elliptic.P521():
+			hashType = crypto.SHA512
+		default:
+			return crypto.SHA256, nil, fmt.Errorf("ECDSA key check: unsupported key curve: %s", keyType.Params().Name)
+		}
+	default:
+		return crypto.SHA256, nil, fmt.Errorf("unsupported public key type: %T", publicKey)
+	}
+	return hashType, staticSig, nil
 }

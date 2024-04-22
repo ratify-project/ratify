@@ -503,6 +503,7 @@ func TestGetKeysMaps_FailingGetKeys(t *testing.T) {
 }
 
 // TestVerifyInternal tests the verifyInternal function of the cosign verifier
+// it also tests the processAKVSignature function implicitly
 func TestVerifyInternal(t *testing.T) {
 	cosignMediaType := "application/vnd.dev.cosign.simplesigning.v1+json"
 	validSignatureBlob := []byte("test")
@@ -676,7 +677,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: unsupported public key type",
+			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: unsupported public key type",
 		},
 		{
 			name: "invalid RSA key size for AKV",
@@ -707,7 +708,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: RSA key check: unsupported key size",
+			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: RSA key check: unsupported key size",
 		},
 		{
 			name: "invalid ECDSA curve type for AKV",
@@ -738,7 +739,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: ECDSA key check: unsupported key curve",
+			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: ECDSA key check: unsupported key curve",
 		},
 		{
 			name: "valid hash: 256 keysize: 2048 RSA key AKV",
