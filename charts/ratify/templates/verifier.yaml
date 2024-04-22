@@ -61,10 +61,10 @@ spec:
           {{- end }}
         keys:
           {{- range $i, $key := .Values.cosignKeys }}
-          - provider: {{ .Release.Namespace }}/{{$fullname}}-cosign-inline-key-{{$i}}
+          - provider: {{ $.Release.Namespace }}/{{$fullname}}-cosign-inline-key-{{$i}}
           {{- end }}
           {{- if and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0) }}
-          - provider: {{ .Release.Namespace }}/kmprovider-akv
+          - provider: {{ $.Release.Namespace }}/kmprovider-akv
           {{- end }}
     {{- end }}
 {{- end }}
