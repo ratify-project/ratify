@@ -71,6 +71,18 @@ func TestCreateTrustPolicy(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "invalid config version",
+			cfg: TrustPolicyConfig{
+				Version: "0.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{
+					RekorURL: DefaultRekorURL,
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
@@ -281,8 +293,9 @@ func TestValidate(t *testing.T) {
 		{
 			name: "valid",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
 				Keys: []KeyConfig{
 					{
 						Provider: "kmp",

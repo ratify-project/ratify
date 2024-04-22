@@ -55,6 +55,7 @@ spec:
     {{- else }}
     trustPolicies:
       - name: default
+        version: 1.0.0
         scopes:
           {{- range $i, $scope := .Values.cosign.scopes }}
           - "{{$scope}}"

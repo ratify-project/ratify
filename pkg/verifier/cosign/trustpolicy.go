@@ -20,6 +20,7 @@ import (
 	"crypto"
 	"fmt"
 	"os"
+	"slices"
 
 	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/internal/constants"
@@ -45,6 +46,7 @@ type KeylessConfig struct {
 }
 
 type TrustPolicyConfig struct {
+	Version    string        `json:"version"`
 	Name       string        `json:"name"`
 	Scopes     []string      `json:"scopes"`
 	Keys       []KeyConfig   `json:"keys,omitempty"`
@@ -74,16 +76,25 @@ type TrustPolicy interface {
 }
 
 const (
-	fileProviderName   string = "file"
-	DefaultRekorURL    string = "https://rekor.sigstore.dev"
-	DefaultTLogVerify  bool   = true
-	DefaultCTLogVerify bool   = true
+	fileProviderName                string = "file"
+	DefaultRekorURL                 string = "https://rekor.sigstore.dev"
+	DefaultTLogVerify               bool   = true
+	DefaultCTLogVerify              bool   = true
+	DefaultTrustPolicyConfigVersion string = "1.0.0"
 )
+
+var SupportedTrustPolicyConfigVersions = []string{DefaultTrustPolicyConfigVersion}
 
 // CreateTrustPolicy creates a trust policy from the given configuration
 // returns an error if the configuration is invalid
 // reads the public keys from the file path
 func CreateTrustPolicy(config TrustPolicyConfig, verifierName string) (TrustPolicy, error) {
+	// set the default trust policy version if not provided
+	// currently only one version is supported
+	if config.Version == "" {
+		config.Version = DefaultTrustPolicyConfigVersion
+	}
+
 	if err := validate(config, verifierName); err != nil {
 		return nil, err
 	}
@@ -207,6 +218,11 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 // validate checks if the trust policy configuration is valid
 // returns an error if the configuration is invalid
 func validate(config TrustPolicyConfig, verifierName string) error {
+	// check if the trust policy version is supported
+	if !slices.Contains(SupportedTrustPolicyConfigVersions, config.Version) {
+		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: unsupported version %s", config.Name, config.Version))
+	}
+
 	if config.Name == "" {
 		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("missing trust policy name")
 	}
