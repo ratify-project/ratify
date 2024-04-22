@@ -34,12 +34,8 @@ var validScopeRegex = regexp.MustCompile(`^[a-z0-9\.\-:@\/]*\*?$`)
 
 // CreateTrustPolicies creates a set of trust policies from the given configuration
 func CreateTrustPolicies(configs []TrustPolicyConfig, verifierName string) (*TrustPolicies, error) {
-	if configs == nil {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("failed to create trust policies: no policies found")
-	}
-
 	if len(configs) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("failed to create trust policies: no policies defined")
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("failed to create trust policies: no policies found")
 	}
 
 	policies := make([]TrustPolicy, 0, len(configs))
@@ -56,12 +52,7 @@ func CreateTrustPolicies(configs []TrustPolicyConfig, verifierName string) (*Tru
 		policies = append(policies, policy)
 	}
 
-	if len(policies) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("failed to create trust policies: no trust policies defined")
-	}
-
-	err := validateScopes(policies)
-	if err != nil {
+	if err := validateScopes(policies); err != nil {
 		return nil, err
 	}
 
@@ -99,7 +90,7 @@ func (tps *TrustPolicies) GetScopedPolicy(reference string) (TrustPolicy, error)
 
 // validateScopes validates the scopes in the trust policies
 func validateScopes(policies []TrustPolicy) error {
-	scopesMap := make(map[string]TrustPolicy)
+	scopesMap := make(map[string]struct{})
 	hasGlobalWildcard := false
 	for _, policy := range policies {
 		policyName := policy.GetName()
@@ -155,7 +146,7 @@ func validateScopes(policies []TrustPolicy) error {
 					return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: overlapping scopes %s and %s for trust policy %s", scope, existingScope, policyName))
 				}
 			}
-			scopesMap[scope] = policy
+			scopesMap[scope] = struct{}{}
 		}
 	}
 	return nil
