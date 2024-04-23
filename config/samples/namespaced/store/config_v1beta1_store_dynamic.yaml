@@ -1,0 +1,8 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedStore
+metadata:
+  name: store-dynamic
+spec:
+  name: dynamic  
+  source:
+    artifact: wabbitnetworks.azurecr.io/test/sample-store-plugin:v1

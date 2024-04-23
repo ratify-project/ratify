@@ -31,6 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const sampleName = "sample"
+
 type mockResourceWriter struct {
 	updateFailed bool
 }

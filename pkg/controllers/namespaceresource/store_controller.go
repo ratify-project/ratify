@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package namespaceresource
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,11 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/internal/constants"
-	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
+	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,9 +37,9 @@ type StoreReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=stores/finalizers,verbs=update
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedstores,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedstores/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedstores/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -52,15 +49,14 @@ type StoreReconciler struct {
 func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	storeLogger := logrus.WithContext(ctx)
 
-	var store configv1beta1.Store
+	var store configv1beta1.NamespacedStore
 	var resource = req.Name
 	storeLogger.Infof("reconciling store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
-			NamespacedStores.DeleteStore(constants.EmptyNamespace, resource)
+			controllers.NamespacedStores.DeleteStore(req.Namespace, resource)
 		} else {
 			storeLogger.Error(err, "unable to fetch store")
 		}
@@ -68,7 +64,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := storeAddOrReplace(store.Spec, resource); err != nil {
+	if err := storeAddOrReplace(store.Spec, resource, req.Namespace); err != nil {
 		storeLogger.Error(err, "unable to create store from store crd")
 		writeStoreStatus(ctx, r, &store, storeLogger, false, err.Error())
 		return ctrl.Result{}, err
@@ -83,60 +79,21 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 // SetupWithManager sets up the controller with the Manager.
 func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.Store{}).
+		For(&configv1beta1.NamespacedStore{}).
 		Complete(r)
 }
 
 // Creates a store reference from CRD spec and add store to map
-func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
-	storeConfig, err := specToStoreConfig(spec)
+func storeAddOrReplace(spec configv1beta1.NamespacedStoreSpec, fullname, namespace string) error {
+	storeConfig, err := utils.CreateStoreConfig(spec.Parameters.Raw, spec.Name, spec.Source)
 	if err != nil {
 		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
 	}
 
-	// if the default version is not suitable, the plugin configuration should specify the desired version
-	if len(spec.Version) == 0 {
-		spec.Version = config.GetDefaultPluginVersion()
-		logrus.Infof("Version was empty, setting to default version: %v", spec.Version)
-	}
-
-	if spec.Address == "" {
-		spec.Address = config.GetDefaultPluginPath()
-		logrus.Infof("Address was empty, setting to default path %v", spec.Address)
-	}
-	storeReference, err := sf.CreateStoreFromConfig(storeConfig, spec.Version, []string{spec.Address})
-
-	if err != nil || storeReference == nil {
-		logrus.Error(err, "store factory failed to create store from store config")
-		return fmt.Errorf("store factory failed to create store from store config, err: %w", err)
-	}
-
-	// TODO: pass the actual namespace once multi-tenancy is supported.
-	NamespacedStores.AddStore(constants.EmptyNamespace, fullname, storeReference)
-	logrus.Infof("store '%v' added to store map", storeReference.Name())
-
-	return nil
+	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, namespace, storeConfig)
 }
 
-// Returns a store reference from spec
-func specToStoreConfig(storeSpec configv1beta1.StoreSpec) (rc.StorePluginConfig, error) {
-	storeConfig := rc.StorePluginConfig{}
-
-	if string(storeSpec.Parameters.Raw) != "" {
-		if err := json.Unmarshal(storeSpec.Parameters.Raw, &storeConfig); err != nil {
-			logrus.Error(err, "unable to decode store parameters", "Parameters.Raw", storeSpec.Parameters.Raw)
-			return rc.StorePluginConfig{}, err
-		}
-	}
-	storeConfig[types.Name] = storeSpec.Name
-	if storeSpec.Source != nil {
-		storeConfig[types.Source] = storeSpec.Source
-	}
-
-	return storeConfig, nil
-}
-
-func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.Store, logger *logrus.Entry, isSuccess bool, errorString string) {
+func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.NamespacedStore, logger *logrus.Entry, isSuccess bool, errorString string) {
 	if isSuccess {
 		store.Status.IsSuccess = true
 		store.Status.Error = ""
@@ -144,8 +101,8 @@ func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv
 	} else {
 		store.Status.IsSuccess = false
 		store.Status.Error = errorString
-		if len(errorString) > maxBriefErrLength {
-			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+		if len(errorString) > constants.MaxBriefErrLength {
+			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
 		}
 	}
 

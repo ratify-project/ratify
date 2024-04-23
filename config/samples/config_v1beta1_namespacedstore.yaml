@@ -1,0 +1,12 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedStore
+metadata:
+  labels:
+    app.kubernetes.io/name: namespacedstore
+    app.kubernetes.io/instance: namespacedstore-sample
+    app.kubernetes.io/part-of: ratify
+    app.kuberentes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: ratify
+  name: namespacedstore-sample
+spec:
+  # TODO(user): Add fields here
