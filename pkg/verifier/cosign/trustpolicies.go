@@ -62,6 +62,7 @@ func CreateTrustPolicies(configs []TrustPolicyConfig, verifierName string) (*Tru
 }
 
 // GetScopedPolicy returns the policy that applies to the given reference
+// TODO: add link to scopes docs when published
 func (tps *TrustPolicies) GetScopedPolicy(reference string) (TrustPolicy, error) {
 	var globalPolicy TrustPolicy
 	for _, policy := range tps.policies {
