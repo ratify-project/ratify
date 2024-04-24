@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	providerName      string = "azurekeyvault"
+	ProviderName      string = "azurekeyvault"
 	PKCS12ContentType string = "application/x-pkcs12"
 	PEMContentType    string = "application/x-pem-file"
 )
@@ -81,7 +81,7 @@ var initKVClient = initializeKvClient
 
 // init calls to register the provider
 func init() {
-	factory.Register(providerName, &akvKMProviderFactory{})
+	factory.Register(ProviderName, &akvKMProviderFactory{})
 }
 
 // Create creates a new instance of the provider after marshalling and validating the configuration
@@ -99,15 +99,15 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 
 	azureCloudEnv, err := parseAzureEnvironment(conf.CloudName)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", conf.CloudName), re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", conf.CloudName), re.HideStackTrace)
 	}
 
 	if len(conf.Certificates) == 0 && len(conf.Keys) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "no keyvault certificates or keys configured", re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "no keyvault certificates or keys configured", re.HideStackTrace)
 	}
 
 	provider := &akvKMProvider{
-		provider:     providerName,
+		provider:     ProviderName,
 		vaultURI:     strings.TrimSpace(conf.VaultURI),
 		tenantID:     strings.TrimSpace(conf.TenantID),
 		clientID:     strings.TrimSpace(conf.ClientID),
@@ -124,7 +124,7 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 
 	kvClient, err := initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.NewError(re.KeyManagementProvider, providerName, re.AKVLink, err, "failed to create keyvault client", re.HideStackTrace)
+		return nil, re.ErrorCodePluginInitFailure.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to create keyvault client", re.HideStackTrace)
 	}
 	provider.kvClient = kvClient
 
@@ -223,12 +223,12 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.AKVLink, err, "failed to add user agent to keyvault client", re.PrintStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to add user agent to keyvault client", re.PrintStackTrace)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
-		return nil, re.ErrorCodeAuthDenied.NewError(re.KeyManagementProvider, providerName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.PrintStackTrace)
+		return nil, re.ErrorCodeAuthDenied.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.PrintStackTrace)
 	}
 	return &kvClient, nil
 }
@@ -237,7 +237,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 // In a certificate chain scenario, all certificates from root to leaf will be returned
 func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
-		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
+		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
 	}
 
 	version := getObjectVersion(*secretBundle.ID)
@@ -246,7 +246,7 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 	// akv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
 	if *secretBundle.ContentType != PKCS12ContentType &&
 		*secretBundle.ContentType != PEMContentType {
-		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType), re.HideStackTrace)
+		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, fmt.Sprintf("certificate %s version %s, unsupported secret content type %s, supported type are %s and %s", certName, version, *secretBundle.ContentType, PKCS12ContentType, PEMContentType), re.HideStackTrace)
 	}
 
 	results := []*x509.Certificate{}
@@ -258,12 +258,12 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 	if *secretBundle.ContentType == PKCS12ContentType {
 		p12, err := base64.StdEncoding.DecodeString(*secretBundle.Value)
 		if err != nil {
-			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault key management provider: failed to decode PKCS12 Value. Certificate %s, version %s", certName, version), re.HideStackTrace)
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, err, fmt.Sprintf("azure keyvault key management provider: failed to decode PKCS12 Value. Certificate %s, version %s", certName, version), re.HideStackTrace)
 		}
 
 		blocks, err := pkcs12.ToPEM(p12, "")
 		if err != nil {
-			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault key management provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s", certName, version), re.HideStackTrace)
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, err, fmt.Sprintf("azure keyvault key management provider: failed to convert PKCS12 Value to PEM. Certificate %s, version %s", certName, version), re.HideStackTrace)
 		}
 
 		var pemData []byte
@@ -284,7 +284,7 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
 			decodedCerts, err := keymanagementprovider.DecodeCertificates(pemData)
 			if err != nil {
-				return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, fmt.Sprintf("azure keyvault key management provider: failed to decode Certificate %s, version %s", certName, version), re.HideStackTrace)
+				return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, err, fmt.Sprintf("azure keyvault key management provider: failed to decode Certificate %s, version %s", certName, version), re.HideStackTrace)
 			}
 			for _, cert := range decodedCerts {
 				results = append(results, cert)
@@ -297,7 +297,7 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 
 		block, rest = pem.Decode(rest)
 		if block == nil && len(rest) > 0 {
-			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate '%s', version '%s': azure keyvault key management provider error, block is nil and remaining block to parse > 0", certName, version), re.HideStackTrace)
+			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, fmt.Sprintf("certificate '%s', version '%s': azure keyvault key management provider error, block is nil and remaining block to parse > 0", certName, version), re.HideStackTrace)
 		}
 	}
 	logger.GetLogger(ctx, logOpt).Debugf("azurekeyvault certprovider getCertsFromSecretBundle: %v certificates parsed, Certificate '%s', version '%s'", len(results), certName, version)
@@ -308,7 +308,7 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 func getKeyFromKeyBundle(keyBundle kv.KeyBundle) (crypto.PublicKey, error) {
 	webKey := keyBundle.Key
 	if webKey == nil {
-		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "found invalid key bundle, key must not be nil", re.HideStackTrace)
+		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "found invalid key bundle, key must not be nil", re.HideStackTrace)
 	}
 
 	keyType := webKey.Kty
@@ -321,13 +321,13 @@ func getKeyFromKeyBundle(keyBundle kv.KeyBundle) (crypto.PublicKey, error) {
 
 	keyBytes, err := json.Marshal(webKey)
 	if err != nil {
-		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, "failed to marshal key", re.HideStackTrace)
+		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, err, "failed to marshal key", re.HideStackTrace)
 	}
 
 	key := jose.JSONWebKey{}
 	err = key.UnmarshalJSON(keyBytes)
 	if err != nil {
-		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, err, "failed to unmarshal key into JSON Web Key", re.HideStackTrace)
+		return nil, re.ErrorCodeKeyInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, err, "failed to unmarshal key into JSON Web Key", re.HideStackTrace)
 	}
 
 	return key.Key, nil
@@ -346,26 +346,26 @@ func getObjectVersion(id string) string {
 // validate checks vaultURI, tenantID, clientID are set and all certificates/keys have a name
 func (s *akvKMProvider) validate() error {
 	if s.vaultURI == "" {
-		return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "vaultURI is not set", re.HideStackTrace)
+		return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "vaultURI is not set", re.HideStackTrace)
 	}
 	if s.tenantID == "" {
-		return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "tenantID is not set", re.HideStackTrace)
+		return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "tenantID is not set", re.HideStackTrace)
 	}
 	if s.clientID == "" {
-		return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, "clientID is not set", re.HideStackTrace)
+		return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "clientID is not set", re.HideStackTrace)
 	}
 
 	// all certificates must have a name
 	for i := range s.certificates {
 		if s.certificates[i].Name == "" {
-			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("name is not set for the %d th certificate", i+1), re.HideStackTrace)
+			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, fmt.Sprintf("name is not set for the %d th certificate", i+1), re.HideStackTrace)
 		}
 	}
 
 	// all keys must have a name
 	for i := range s.keys {
 		if s.keys[i].Name == "" {
-			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("name is not set for the %d th key", i+1), re.HideStackTrace)
+			return re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, fmt.Sprintf("name is not set for the %d th key", i+1), re.HideStackTrace)
 		}
 	}
 

@@ -88,7 +88,7 @@ spec:
               name: healthz
               protocol: TCP
           volumeMounts:             
-            {{- if .Values.cosign.enabled }}
+            {{- if and .Values.cosign.enabled .Values.cosign.key }}
             - mountPath: "/usr/local/ratify-certs/cosign"
               name: cosign-certs
               readOnly: true
@@ -145,7 +145,7 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:
-        {{- if .Values.cosign.enabled }}
+        {{- if and .Values.cosign.enabled .Values.cosign.key }}
         - name: cosign-certs
           secret:
             secretName: {{ include "ratify.fullname" . }}-cosign-certificate
