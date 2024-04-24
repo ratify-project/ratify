@@ -1,20 +1,19 @@
 # Breaking changes and deprecations
 
 Breaking changes are defined as a change to any of the following that causes installation errors or 
-unexpected runtime behavior after upgrading to the next stable minor version of Ratify(cli, plugin,):
+unexpected runtime behavior after upgrading to the next stable minor version of Ratify:
 - Verification result and schema
 - Default configuration value
 - User facing plugin interfaces
 
-We do our best to maintain backwards compatibility, however breaking changes may be introduced between version for features that have not yet reached v1.0.0 or only available in RATIFY_EXPERIMENTAL flag.
+## Stability levels
+- Generally available (GA) API and plugins may introduce breaking changes 2 releases after deprecation notice.
+- Beta or pre-release API versions may introduce breaking changes 1 release after deprecation notice.
+- Alpha or experimental API versions may change in runtime behavoiur without prior change and deprecation notice.
 
-### Features in Preview
-|     Feature    |  GA Plan |
-|:--------------:|-----:|
-| CRD  |  |  
-| Dynamic plugin |                          |         
-|    HA            |                          |
- 
+The following features are currently in experimental:
+- Dynamic plugin
+- HA
 
 ## Process for applying breaking changes
 
@@ -31,16 +30,24 @@ Deprecations can apply to:
  - Experimental Features
  - Plugins
  - User facing Interfaces
- - Configuration values
+ - Configuration Values
+ - Cli Usage and Configuration
+ - Verification Schema
  
+## Process for deprecation
+
+ - A deprecation notice must be posted as part of the release notes.
+ - Documentation should mark the feature as deprecated and redirect user to the alternative implementation.
+
 ### Announced deprecations
-|     Feature    | Deprecation announcement | Removal |
+|     Feature    | Deprecation announcement | Planned Removal |
 |:--------------:|:------------------------:|:-------:|
-| Config Policy  |                          |         |
-| License Plugin |                          |         |
+| Config Policy  |                          |   v1.5      |
+| License Plugin |                          |   v2      |
  
 ## Attribution
 
 The specification release process was created using content and verbiage from the following specifications:
-
+- [Kubernetes Deprecation Policy](https://kubernetes.io/docs/reference/using-api/deprecation-policy/)
 - [Dapr reference](https://docs.dapr.io/operations/support/breaking-changes-and-deprecations/)
+
