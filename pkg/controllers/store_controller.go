@@ -60,7 +60,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
 			// TODO: pass the actual namespace once multi-tenancy is supported.
-			StoreMap.DeleteStore(constants.EmptyNamespace, resource)
+			NamespacedStores.DeleteStore(constants.EmptyNamespace, resource)
 		} else {
 			storeLogger.Error(err, "unable to fetch store")
 		}
@@ -112,7 +112,7 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 	}
 
 	// TODO: pass the actual namespace once multi-tenancy is supported.
-	StoreMap.AddStore(constants.EmptyNamespace, fullname, storeReference)
+	NamespacedStores.AddStore(constants.EmptyNamespace, fullname, storeReference)
 	logrus.Infof("store '%v' added to store map", storeReference.Name())
 
 	return nil

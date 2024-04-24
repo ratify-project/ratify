@@ -14,18 +14,23 @@ limitations under the License.
 package controllers
 
 import (
+	cs "github.com/deislabs/ratify/pkg/customresources/certificatestores"
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 )
 
 var (
-	VerifierMap = verifiers.NewActiveVerifiers()
+	// NamespacedVerifiers is a map between namespace and verifiers.
+	NamespacedVerifiers = verifiers.NewActiveVerifiers()
 
-	// ActivePolicy is the active policy generated from CRD. There would be exactly
+	// NamespacedPolicies is the active policy generated from CRD. There would be exactly
 	// one active policy belonging to a namespace at any given time.
-	ActivePolicies = policies.NewActivePolicies()
+	NamespacedPolicies = policies.NewActivePolicies()
 
-	// a map to track active stores
-	StoreMap = rs.NewActiveStores()
+	// NamespacedStores is a map to track active stores across namespaces.
+	NamespacedStores = rs.NewActiveStores()
+
+	// NamespacedCertStores is a map between namespace and CertificateStores.
+	NamespacedCertStores = cs.NewActiveCertStores()
 )
