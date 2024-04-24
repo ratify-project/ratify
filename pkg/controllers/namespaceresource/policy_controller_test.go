@@ -13,18 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package namespaced
+package namespaceresource
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/customresources/policies"
 	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"
 	test "github.com/deislabs/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,35 +39,6 @@ const (
 	policyName2   = "policy2"
 	testNamespace = "testNamespace"
 )
-
-type mockResourceWriter struct {
-	updateFailed bool
-}
-
-func (w mockResourceWriter) Create(_ context.Context, _ client.Object, _ client.Object, _ ...client.SubResourceCreateOption) error {
-	return nil
-}
-
-func (w mockResourceWriter) Update(_ context.Context, _ client.Object, _ ...client.SubResourceUpdateOption) error {
-	if w.updateFailed {
-		return errors.New("update failed")
-	}
-	return nil
-}
-
-func (w mockResourceWriter) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
-	return nil
-}
-
-type mockStatusClient struct {
-	updateFailed bool
-}
-
-func (c mockStatusClient) Status() client.SubResourceWriter {
-	writer := mockResourceWriter{}
-	writer.updateFailed = c.updateFailed
-	return writer
-}
 
 func TestPolicyAddOrReplace(t *testing.T) {
 	testCases := []struct {
@@ -98,12 +68,39 @@ func TestPolicyAddOrReplace(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			err := policyAddOrReplace(tc.spec, constants.EmptyNamespace)
+			err := policyAddOrReplace(tc.spec, testNamespace)
 
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
 			}
 		})
+	}
+}
+
+func TestPolicyAddedTwice(t *testing.T) {
+	resetPolicyMap()
+	spec1 := configv1beta1.NamespacedPolicySpec{
+		Parameters: runtime.RawExtension{
+			Raw: []byte("{\"name\": \"configpolicy\"}"),
+		},
+		Type: "configpolicy",
+	}
+	spec2 := configv1beta1.NamespacedPolicySpec{
+		Type: "regopolicy",
+		Parameters: runtime.RawExtension{
+			Raw: []byte("{\"name\": \"regopolicy\", \"policy\": \"package ratify.policy\"}"),
+		},
+	}
+	if err := policyAddOrReplace(spec1, testNamespace); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if err := policyAddOrReplace(spec2, testNamespace); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	policyType := controllers.NamespacedPolicies.GetPolicy(testNamespace).GetPolicyType(context.Background())
+	if policyType != "regopolicy" {
+		t.Fatalf("expected policy type to be regopolicy, got %s", policyType)
 	}
 }
 
@@ -120,21 +117,21 @@ func TestWritePolicyStatus(t *testing.T) {
 			name:       "success status",
 			isSuccess:  true,
 			policy:     &configv1beta1.NamespacedPolicy{},
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:       "error status",
 			isSuccess:  false,
 			policy:     &configv1beta1.NamespacedPolicy{},
 			errString:  "a long error string that exceeds the max length of 30 characters",
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:      "status update failed",
 			isSuccess: true,
 			policy:    &configv1beta1.NamespacedPolicy{},
-			reconciler: &mockStatusClient{
-				updateFailed: true,
+			reconciler: &test.MockStatusClient{
+				UpdateFailed: true,
 			},
 		},
 	}

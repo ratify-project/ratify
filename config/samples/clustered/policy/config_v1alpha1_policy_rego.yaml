@@ -1,7 +1,7 @@
 apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: Policy
+kind: Policy # Policy applies to the cluster.
 metadata:
-  name: "regopolicy"
+  name: "regopolicy" # Ensure that metadata.name is either 'regopolicy' or 'configpolicy'
 spec:
   parameters:
     passthroughEnabled: false

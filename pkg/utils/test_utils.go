@@ -16,6 +16,8 @@ limitations under the License.
 package utils
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
 
@@ -25,6 +27,35 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type MockResourceWriter struct {
+	updateFailed bool
+}
+
+func (w MockResourceWriter) Create(_ context.Context, _ client.Object, _ client.Object, _ ...client.SubResourceCreateOption) error {
+	return nil
+}
+
+func (w MockResourceWriter) Update(_ context.Context, _ client.Object, _ ...client.SubResourceUpdateOption) error {
+	if w.updateFailed {
+		return errors.New("update failed")
+	}
+	return nil
+}
+
+func (w MockResourceWriter) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+	return nil
+}
+
+type MockStatusClient struct {
+	UpdateFailed bool
+}
+
+func (c MockStatusClient) Status() client.SubResourceWriter {
+	writer := MockResourceWriter{}
+	writer.updateFailed = c.UpdateFailed
+	return writer
+}
 
 func CreateScheme() (*runtime.Scheme, error) {
 	scheme := runtime.NewScheme()

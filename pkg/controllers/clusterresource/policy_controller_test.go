@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package clustered
+package clusterresource
 
 import (
 	"context"
-	"errors"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
@@ -39,35 +38,6 @@ const (
 	policyName1 = "policy1"
 	policyName2 = "policy2"
 )
-
-type mockResourceWriter struct {
-	updateFailed bool
-}
-
-func (w mockResourceWriter) Create(_ context.Context, _ client.Object, _ client.Object, _ ...client.SubResourceCreateOption) error {
-	return nil
-}
-
-func (w mockResourceWriter) Update(_ context.Context, _ client.Object, _ ...client.SubResourceUpdateOption) error {
-	if w.updateFailed {
-		return errors.New("update failed")
-	}
-	return nil
-}
-
-func (w mockResourceWriter) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
-	return nil
-}
-
-type mockStatusClient struct {
-	updateFailed bool
-}
-
-func (c mockStatusClient) Status() client.SubResourceWriter {
-	writer := mockResourceWriter{}
-	writer.updateFailed = c.updateFailed
-	return writer
-}
 
 func TestPolicyAddOrReplace(t *testing.T) {
 	testCases := []struct {
@@ -119,21 +89,21 @@ func TestWritePolicyStatus(t *testing.T) {
 			name:       "success status",
 			isSuccess:  true,
 			policy:     &configv1beta1.Policy{},
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:       "error status",
 			isSuccess:  false,
 			policy:     &configv1beta1.Policy{},
 			errString:  "a long error string that exceeds the max length of 30 characters",
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:      "status update failed",
 			isSuccess: true,
 			policy:    &configv1beta1.Policy{},
-			reconciler: &mockStatusClient{
-				updateFailed: true,
+			reconciler: &test.MockStatusClient{
+				UpdateFailed: true,
 			},
 		},
 	}
