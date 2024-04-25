@@ -110,7 +110,10 @@ func SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certifica
 }
 
 // GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found
-func GetCertificatesFromMap(resource string) map[KMPMapKey][]*x509.Certificate {
+func GetCertificatesFromMap(ctx context.Context, resource string) map[KMPMapKey][]*x509.Certificate {
+	if !isCompatibleNamespace(ctx, resource) {
+		return map[KMPMapKey][]*x509.Certificate{}
+	}
 	certs, ok := certificatesMap.Load(resource)
 	if !ok {
 		return map[KMPMapKey][]*x509.Certificate{}
@@ -143,7 +146,10 @@ func SetKeysInMap(resource string, providerType string, keys map[KMPMapKey]crypt
 }
 
 // GetKeysFromMap gets the keys from the map and returns an empty map with false boolean if not found
-func GetKeysFromMap(resource string) (map[KMPMapKey]PublicKey, bool) {
+func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicKey, bool) {
+	if !isCompatibleNamespace(ctx, resource) {
+		return map[KMPMapKey]PublicKey{}, false
+	}
 	keys, ok := keyMap.Load(resource)
 	if !ok {
 		return map[KMPMapKey]PublicKey{}, false
@@ -154,4 +160,11 @@ func GetKeysFromMap(resource string) (map[KMPMapKey]PublicKey, bool) {
 // DeleteKeysFromMap deletes the keys from the map
 func DeleteKeysFromMap(resource string) {
 	keyMap.Delete(resource)
+}
+
+// Namespaced verifiers could access both cluster-scoped and namespaced certStores.
+// But cluster-wide verifiers could only access cluster-scoped certStores.
+// TODO: current implementation always returns true. Check the namespace once we support multi-tenancy.
+func isCompatibleNamespace(_ context.Context, _ string) bool {
+	return true
 }

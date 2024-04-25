@@ -529,7 +529,7 @@ func getKeysMapsDefault(ctx context.Context, trustPolicies *TrustPolicies, refer
 	logger.GetLogger(ctx, logOpt).Debugf("selected trust policy %s for reference %s", trustPolicy.GetName(), reference)
 
 	// get the map of keys for that reference
-	keysMap, err := trustPolicy.GetKeys(namespace)
+	keysMap, err := trustPolicy.GetKeys(ctx, namespace)
 	if err != nil {
 		return nil, cosign.CheckOpts{}, err
 	}

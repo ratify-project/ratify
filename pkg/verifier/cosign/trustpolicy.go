@@ -70,7 +70,7 @@ type trustPolicy struct {
 
 type TrustPolicy interface {
 	GetName() string
-	GetKeys(string) (map[PKKey]keymanagementprovider.PublicKey, error)
+	GetKeys(ctx context.Context, namespace string) (map[PKKey]keymanagementprovider.PublicKey, error)
 	GetScopes() []string
 	GetCosignOpts(context.Context) (cosign.CheckOpts, error)
 }
@@ -138,7 +138,7 @@ func (tp *trustPolicy) GetName() string {
 }
 
 // GetKeys returns the public keys defined in the trust policy
-func (tp *trustPolicy) GetKeys(namespace string) (map[PKKey]keymanagementprovider.PublicKey, error) {
+func (tp *trustPolicy) GetKeys(ctx context.Context, namespace string) (map[PKKey]keymanagementprovider.PublicKey, error) {
 	keyMap := make(map[PKKey]keymanagementprovider.PublicKey)
 	// preload the local keys into the map of keys to be returned
 	for key, pubKey := range tp.localKeys {
@@ -153,7 +153,7 @@ func (tp *trustPolicy) GetKeys(namespace string) (map[PKKey]keymanagementprovide
 		// must prepend namespace to key management provider name if not provided since namespace is prepended during key management provider intialization
 		namespacedKMP := prependNamespaceToKMPName(keyConfig.Provider, namespace)
 		// get the key management provider resource which contains a map of keys
-		kmpResource, ok := keymanagementprovider.GetKeysFromMap(namespacedKMP)
+		kmpResource, ok := keymanagementprovider.GetKeysFromMap(ctx, namespacedKMP)
 		if !ok {
 			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key management provider %s not found", tp.config.Name, namespacedKMP))
 		}
