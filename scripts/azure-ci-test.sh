@@ -34,6 +34,7 @@ export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
 export NOTATION_PEM_NAME="notation"
 export NOTATION_CHAIN_PEM_NAME="notationchain"
+export KEYVAULT_KEY_NAME="test-key"
 
 TAG="test${SUFFIX}"
 REGISTRY="${ACR_NAME}.azurecr.io"
@@ -71,7 +72,7 @@ deploy_ratify() {
     --set azurekeyvault.tenantId=${TENANT_ID} \
     --set oras.authProviders.azureWorkloadIdentityEnabled=true \
     --set azureWorkloadIdentity.clientId=${IDENTITY_CLIENT_ID} \
-    --set-file cosign.key=".staging/cosign/cosign.pub" \
+    --set azurekeyvault.keys[0].name=${KEYVAULT_KEY_NAME} \
     --set featureFlags.RATIFY_CERT_ROTATION=true \
     --set logger.level=debug
 
@@ -105,6 +106,14 @@ upload_cert_to_akv() {
     -p @./test/bats/tests/config/akvpolicy.json
 }
 
+create_key_akv() {
+  az keyvault key create \
+    --vault-name ${KEYVAULT_NAME} \
+    -n ${KEYVAULT_KEY_NAME} \
+    --kty RSA \
+    --size 2048
+}
+
 save_logs() {
   echo "Saving logs"
   local LOG_SUFFIX="${KUBERNETES_VERSION}-${GATEKEEPER_VERSION}"
@@ -125,10 +134,11 @@ trap cleanup EXIT
 
 main() {
   ./scripts/create-azure-resources.sh
-
+  create_key_akv
+  
   local ACR_USER_NAME="00000000-0000-0000-0000-000000000000"
   local ACR_PASSWORD=$(az acr login --name ${ACR_NAME} --expose-token --output tsv --query accessToken)
-  make e2e-azure-setup TEST_REGISTRY=$REGISTRY TEST_REGISTRY_USERNAME=${ACR_USER_NAME} TEST_REGISTRY_PASSWORD=${ACR_PASSWORD}
+  make e2e-azure-setup TEST_REGISTRY=$REGISTRY TEST_REGISTRY_USERNAME=${ACR_USER_NAME} TEST_REGISTRY_PASSWORD=${ACR_PASSWORD} KEYVAULT_KEY_NAME=${KEYVAULT_KEY_NAME} KEYVAULT_NAME=${KEYVAULT_NAME}
 
   build_push_to_acr
   upload_cert_to_akv

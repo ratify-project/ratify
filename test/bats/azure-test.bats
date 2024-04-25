@@ -220,8 +220,6 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_cosign.yaml
-    sleep 5
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     sleep 5
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml

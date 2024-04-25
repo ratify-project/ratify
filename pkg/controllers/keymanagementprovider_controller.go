@@ -60,7 +60,6 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	if err := r.Get(ctx, req.NamespacedName, &keyManagementProvider); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing key management provider %v", resource)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
 			kmp.DeleteCertificatesFromMap(resource)
 			kmp.DeleteKeysFromMap(resource)
 		} else {
@@ -105,9 +104,8 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
-	// TODO: pass the actual namespace once multi-tenancy is supported.
 	kmp.SetCertificatesInMap(resource, certificates)
-	kmp.SetKeysInMap(resource, keys)
+	kmp.SetKeysInMap(resource, keyManagementProvider.Spec.Type, keys)
 	// merge certificates and keys status into one
 	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true
