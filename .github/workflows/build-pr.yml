@@ -16,6 +16,7 @@ jobs:
    
   call_test_e2e_basic:
     name: "run e2e on basic matrix"
+    if: ${{ ! (contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch') }}
     permissions:
       contents: read
     strategy:
