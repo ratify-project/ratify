@@ -1,5 +1,8 @@
 name: quick-start
 
+permissions:
+  contents: read
+
 on:
   pull_request_target:
     types: [labeled]
