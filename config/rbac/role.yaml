@@ -161,3 +161,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedstores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedstores/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedstores/status
+  verbs:
+  - get
+  - patch
+  - update
