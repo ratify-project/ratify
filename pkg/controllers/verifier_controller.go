@@ -68,7 +68,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		if apierrors.IsNotFound(err) {
 			verifierLogger.Infof("delete event detected, removing verifier %v", resource)
 			// TODO: pass the actual namespace once multi-tenancy is supported.
-			VerifierMap.DeleteVerifier(constants.EmptyNamespace, resource)
+			NamespacedVerifiers.DeleteVerifier(constants.EmptyNamespace, resource)
 		} else {
 			verifierLogger.Error(err, "unable to fetch verifier")
 		}
@@ -119,7 +119,7 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, na
 		return err
 	}
 	// TODO: pass the actual namespace once multi-tenancy is supported.
-	VerifierMap.AddVerifier(constants.EmptyNamespace, objectName, referenceVerifier)
+	NamespacedVerifiers.AddVerifier(constants.EmptyNamespace, objectName, referenceVerifier)
 	logrus.Infof("verifier '%v' added to verifier map", referenceVerifier.Name())
 
 	return nil

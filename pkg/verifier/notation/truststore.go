@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/controllers"
+	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
@@ -42,7 +42,7 @@ type trustStore struct {
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
+	certs, err := s.getCertificatesInternal(ctx, namedStore, cutils.GetCertificatesMap(ctx))
 	if err != nil {
 		return nil, err
 	}
