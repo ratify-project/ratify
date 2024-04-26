@@ -3,6 +3,9 @@ name: e2e-cli
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
 jobs:
   check-license:
     runs-on: ubuntu-latest

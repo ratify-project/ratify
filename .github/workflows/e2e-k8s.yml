@@ -1,5 +1,8 @@
 name: e2e-k8s
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
