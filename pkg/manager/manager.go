@@ -50,6 +50,8 @@ import (
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/clusterresource"
+	"github.com/deislabs/ratify/pkg/controllers/namespaceresource"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	//+kubebuilder:scaffold:imports
 )
@@ -212,7 +214,14 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
 		os.Exit(1)
 	}
-	if err = (&controllers.PolicyReconciler{
+	if err = (&namespaceresource.PolicyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Policy")
+		os.Exit(1)
+	}
+	if err = (&clusterresource.PolicyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {

@@ -62,16 +62,8 @@ var (
 func TestPoliciesOperations(t *testing.T) {
 	policies := NewActivePolicies()
 
-	if !policies.IsEmpty() {
-		t.Errorf("Expected policies to be empty")
-	}
-
 	policies.AddPolicy(namespace1, name1, policy1)
 	policies.AddPolicy(namespace2, name1, policy2)
-
-	if policies.IsEmpty() {
-		t.Errorf("Expected policies to not be empty")
-	}
 
 	if policies.GetPolicy(namespace1) != policy1 {
 		t.Errorf("Expected policy1 to be returned")

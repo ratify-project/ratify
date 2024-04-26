@@ -1,0 +1,9 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedPolicy # NamespacedPolicy only applies to specified namespace.
+metadata:
+  name: "ratify-policy" # metadata.name MUST be set to ratify-policy since v1beta1.
+spec:
+  type: "config-policy" # Ensure that spec.type is either 'rego-policy' or 'config-policy' in v1beta1.
+  parameters:
+    artifactVerificationPolicies:
+      default: "all"
