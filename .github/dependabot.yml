@@ -33,6 +33,7 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "golang"
+        versions: '> 1.21'
     commit-message:
       prefix: "chore"
 
@@ -42,5 +43,6 @@ updates:
       interval: "weekly"
     ignore:
       - dependency-name: "vscode/devcontainers/go"
+        versions: '> 1.21'
     commit-message:
       prefix: "chore"
