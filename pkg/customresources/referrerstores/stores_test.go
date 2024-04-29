@@ -74,13 +74,16 @@ func TestStoresOperations(t *testing.T) {
 	stores.AddStore(namespace2, store1.Name(), store1)
 	stores.AddStore(namespace2, store2.Name(), store2)
 
-	if stores.GetStoreCount() != 4 {
-		t.Fatalf("Expected 4 namespaces, got %d", stores.GetStoreCount())
+	if len(stores.GetStores(namespace1)) != 2 {
+		t.Fatalf("Expected 2 stores in namespace %s, got %d", namespace1, len(stores.GetStores(namespace1)))
+	}
+	if len(stores.GetStores(namespace2)) != 2 {
+		t.Fatalf("Expected 2 stores in namespace %s, got %d", namespace2, len(stores.GetStores(namespace2)))
 	}
 
 	stores.DeleteStore(namespace2, store1.Name())
-	if len(stores.GetStores(namespace2)) != 3 {
-		t.Fatalf("Expected 3 store in namespace %s, got %d", namespace2, len(stores.GetStores(namespace2)))
+	if len(stores.GetStores(namespace2)) != 1 {
+		t.Fatalf("Expected 1 store in namespace %s, got %d", namespace2, len(stores.GetStores(namespace2)))
 	}
 
 	stores.DeleteStore(namespace2, store2.Name())
@@ -96,9 +99,5 @@ func TestStoresOperations(t *testing.T) {
 	stores.DeleteStore(namespace1, store2.Name())
 	if len(stores.GetStores(namespace1)) != 0 {
 		t.Fatalf("Expected 0 stores in namespace %s, got %d", namespace1, len(stores.GetStores(namespace1)))
-	}
-
-	if !stores.IsEmpty() {
-		t.Fatalf("Expected stores to be empty")
 	}
 }

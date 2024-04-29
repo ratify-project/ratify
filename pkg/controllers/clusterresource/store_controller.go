@@ -13,11 +13,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package clusterresource
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -26,11 +25,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/internal/constants"
-	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
+	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -54,13 +51,12 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 
 	var store configv1beta1.Store
 	var resource = req.Name
-	storeLogger.Infof("reconciling store '%v'", resource)
+	storeLogger.Infof("reconciling cluster store '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &store); err != nil {
 		if apierrors.IsNotFound(err) {
 			storeLogger.Infof("deletion detected, removing store %v", req.Name)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
-			NamespacedStores.DeleteStore(constants.EmptyNamespace, resource)
+			controllers.NamespacedStores.DeleteStore(constants.EmptyNamespace, resource)
 		} else {
 			storeLogger.Error(err, "unable to fetch store")
 		}
@@ -89,51 +85,12 @@ func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // Creates a store reference from CRD spec and add store to map
 func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
-	storeConfig, err := specToStoreConfig(spec)
+	storeConfig, err := utils.CreateStoreConfig(spec.Parameters.Raw, spec.Name, spec.Source)
 	if err != nil {
 		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
 	}
 
-	// if the default version is not suitable, the plugin configuration should specify the desired version
-	if len(spec.Version) == 0 {
-		spec.Version = config.GetDefaultPluginVersion()
-		logrus.Infof("Version was empty, setting to default version: %v", spec.Version)
-	}
-
-	if spec.Address == "" {
-		spec.Address = config.GetDefaultPluginPath()
-		logrus.Infof("Address was empty, setting to default path %v", spec.Address)
-	}
-	storeReference, err := sf.CreateStoreFromConfig(storeConfig, spec.Version, []string{spec.Address})
-
-	if err != nil || storeReference == nil {
-		logrus.Error(err, "store factory failed to create store from store config")
-		return fmt.Errorf("store factory failed to create store from store config, err: %w", err)
-	}
-
-	// TODO: pass the actual namespace once multi-tenancy is supported.
-	NamespacedStores.AddStore(constants.EmptyNamespace, fullname, storeReference)
-	logrus.Infof("store '%v' added to store map", storeReference.Name())
-
-	return nil
-}
-
-// Returns a store reference from spec
-func specToStoreConfig(storeSpec configv1beta1.StoreSpec) (rc.StorePluginConfig, error) {
-	storeConfig := rc.StorePluginConfig{}
-
-	if string(storeSpec.Parameters.Raw) != "" {
-		if err := json.Unmarshal(storeSpec.Parameters.Raw, &storeConfig); err != nil {
-			logrus.Error(err, "unable to decode store parameters", "Parameters.Raw", storeSpec.Parameters.Raw)
-			return rc.StorePluginConfig{}, err
-		}
-	}
-	storeConfig[types.Name] = storeSpec.Name
-	if storeSpec.Source != nil {
-		storeConfig[types.Source] = storeSpec.Source
-	}
-
-	return storeConfig, nil
+	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, constants.EmptyNamespace, storeConfig)
 }
 
 func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.Store, logger *logrus.Entry, isSuccess bool, errorString string) {
@@ -144,8 +101,8 @@ func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv
 	} else {
 		store.Status.IsSuccess = false
 		store.Status.Error = errorString
-		if len(errorString) > maxBriefErrLength {
-			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+		if len(errorString) > constants.MaxBriefErrLength {
+			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
 		}
 	}
 
