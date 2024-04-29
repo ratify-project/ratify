@@ -200,11 +200,18 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Verifier")
 		os.Exit(1)
 	}
-	if err = (&controllers.StoreReconciler{
+	if err = (&clusterresource.StoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Store")
+		os.Exit(1)
+	}
+	if err = (&namespaceresource.StoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Store")
 		os.Exit(1)
 	}
 	if err = (&controllers.CertificateStoreReconciler{
