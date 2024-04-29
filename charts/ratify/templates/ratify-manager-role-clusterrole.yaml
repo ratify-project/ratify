@@ -138,6 +138,32 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - namespacedkeymanagementproviders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedkeymanagementproviders/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedkeymanagementproviders/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - policies
   verbs:
   - create

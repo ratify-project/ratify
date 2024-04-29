@@ -5,15 +5,15 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.9.2
   creationTimestamp: null
-  name: keymanagementproviders.config.ratify.deislabs.io
+  name: namespacedkeymanagementproviders.config.ratify.deislabs.io
 spec:
   group: config.ratify.deislabs.io
   names:
-    kind: KeyManagementProvider
-    listKind: KeyManagementProviderList
-    plural: keymanagementproviders
-    singular: keymanagementprovider
-  scope: Cluster
+    kind: NamespacedKeyManagementProvider
+    listKind: NamespacedKeyManagementProviderList
+    plural: namespacedkeymanagementproviders
+    singular: namespacedkeymanagementprovider
+  scope: Namespaced
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.issuccess
@@ -28,7 +28,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: KeyManagementProvider is the Schema for the keymanagementproviders
+        description: NamespacedKeyManagementProvider is the Schema for the namespacedkeymanagementproviders
           API
         properties:
           apiVersion:
@@ -44,7 +44,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: KeyManagementProviderSpec defines the desired state of KeyManagementProvider
+            description: NamespacedKeyManagementProviderSpec defines the desired state
+              of NamespacedKeyManagementProvider
             properties:
               parameters:
                 description: Parameters of the key management provider
@@ -55,8 +56,8 @@ spec:
                 type: string
             type: object
           status:
-            description: KeyManagementProviderStatus defines the observed state of
-              KeyManagementProvider
+            description: NamespacedKeyManagementProviderStatus defines the observed
+              state of NamespacedKeyManagementProvider
             properties:
               brieferror:
                 description: Truncated error message if the message is too long
