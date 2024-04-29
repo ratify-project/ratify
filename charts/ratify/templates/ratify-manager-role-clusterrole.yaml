@@ -136,6 +136,32 @@ rules:
   - patch
   - update
 - apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedpolicies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
   - externaldata.gatekeeper.sh
   resources:
   - providers
