@@ -20,9 +20,13 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/pem"
+	"strings"
 	"sync"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/constants"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
+	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )
 
@@ -147,14 +151,15 @@ func SetKeysInMap(resource string, providerType string, keys map[KMPMapKey]crypt
 
 // GetKeysFromMap gets the keys from the map and returns an empty map with false boolean if not found
 func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicKey, bool) {
+	// A cluster-wide operation can cluster-wide provider
+	// A namespaced operation can only fetch the provider in the same namespace or cluster-wide provider.
 	if !isCompatibleNamespace(ctx, resource) {
 		return map[KMPMapKey]PublicKey{}, false
 	}
-	keys, ok := keyMap.Load(resource)
-	if !ok {
-		return map[KMPMapKey]PublicKey{}, false
+	if keys, ok := keyMap.Load(resource); ok {
+		return keys.(map[KMPMapKey]PublicKey), true
 	}
-	return keys.(map[KMPMapKey]PublicKey), true
+	return map[KMPMapKey]PublicKey{}, false
 }
 
 // DeleteKeysFromMap deletes the keys from the map
@@ -162,9 +167,12 @@ func DeleteKeysFromMap(resource string) {
 	keyMap.Delete(resource)
 }
 
-// Namespaced verifiers could access both cluster-scoped and namespaced certStores.
-// But cluster-wide verifiers could only access cluster-scoped certStores.
-// TODO: current implementation always returns true. Check the namespace once we support multi-tenancy.
-func isCompatibleNamespace(_ context.Context, _ string) bool {
-	return true
+// Namespaced verifiers could access KMP in the same namespace or cluster-wide KMP.
+// Cluster-wide verifiers could only access cluster-scoped certStores.
+func isCompatibleNamespace(ctx context.Context, provider string) bool {
+	namespace := ctxUtils.GetNamespace(ctx)
+	if namespace == constants.EmptyNamespace {
+		return !vu.IsNamespacedNamed(provider)
+	}
+	return strings.HasPrefix(provider, namespace+constants.NamespaceSeperator) || !vu.IsNamespacedNamed(provider)
 }

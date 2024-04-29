@@ -14,42 +14,164 @@ limitations under the License.
 package certificatestores
 
 import (
+	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
+	"math/big"
+	"os"
 	"testing"
+	"time"
+
+	"github.com/deislabs/ratify/internal/constants"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
+	"github.com/deislabs/ratify/pkg/utils"
 )
 
 const (
-	namespace1 = "namespace1"
-	namespace2 = "namespace2"
-	name1      = "name1"
-	name2      = "name2"
+	namespace1              = "namespace1"
+	namespace2              = "namespace2"
+	name1                   = "name1"
+	name2                   = "name2"
+	store1                  = namespace1 + "/" + name1
+	store2                  = namespace2 + "/" + name2
+	ratifyDeployedNamespace = "sample"
+	defaultStore            = "default/" + name1
+	storeInRatifyNS         = ratifyDeployedNamespace + "/" + name1
+	storeWithoutNamespace   = name1
+)
+
+var (
+	cert1           = generateTestCert()
+	cert2           = generateTestCert()
+	certInDefaultNS = generateTestCert()
+	certInRatifyNS  = generateTestCert()
 )
 
 func TestCertStoresOperations(t *testing.T) {
 	activeCertStores := NewActiveCertStores()
+	ctx := context.Background()
+	certStore1 := []*x509.Certificate{cert1}
 
-	if !activeCertStores.IsEmpty() {
-		t.Errorf("Expected activeCertStores to be empty")
+	activeCertStores.AddStore(store1, certStore1)
+	if len(activeCertStores.GetCertsFromStore(ctx, store1)) != 1 {
+		t.Fatalf("expect to get 1 certificate, but got: %d", len(activeCertStores.GetCertsFromStore(ctx, store1)))
 	}
 
-	certStore1 := []*x509.Certificate{}
-	certStore2 := []*x509.Certificate{}
+	activeCertStores.DeleteStore(store1)
+	if len(activeCertStores.GetCertsFromStore(ctx, store1)) != 0 {
+		t.Fatalf("expect to get 0 certificate, but got: %d", len(activeCertStores.GetCertsFromStore(ctx, store1)))
+	}
+}
 
-	activeCertStores.AddStore(namespace1, name1, certStore1)
-	activeCertStores.AddStore(namespace2, name2, certStore2)
+func TestGetCertsFromStore(t *testing.T) {
+	activeCertStores := NewActiveCertStores()
+	activeCertStores.AddStore(store1, []*x509.Certificate{cert1})
+	activeCertStores.AddStore(store2, []*x509.Certificate{cert2})
+	activeCertStores.AddStore(defaultStore, []*x509.Certificate{certInDefaultNS})
+	activeCertStores.AddStore(storeInRatifyNS, []*x509.Certificate{certInRatifyNS})
 
-	if activeCertStores.IsEmpty() {
-		t.Errorf("Expected activeCertStores to not be empty")
+	os.Setenv(utils.RatifyNamespaceEnvVar, ratifyDeployedNamespace)
+	defer os.Unsetenv(utils.RatifyNamespaceEnvVar)
+
+	testCases := []struct {
+		name         string
+		scope        string
+		storeName    string
+		expectedCert *x509.Certificate
+	}{
+		{
+			name:         "clustered access to store with namespace",
+			scope:        constants.EmptyNamespace,
+			storeName:    store1,
+			expectedCert: cert1,
+		},
+		{
+			name:         "clustered access to store without namespace",
+			scope:        constants.EmptyNamespace,
+			storeName:    storeWithoutNamespace,
+			expectedCert: certInRatifyNS,
+		},
+		{
+			name:         "clustered access to nonexisting store",
+			scope:        constants.EmptyNamespace,
+			storeName:    "nonexisting",
+			expectedCert: nil,
+		},
+		{
+			name:         "namespaced access to store under default namespace",
+			scope:        namespace1,
+			storeName:    defaultStore,
+			expectedCert: certInDefaultNS,
+		},
+		{
+			name:         "namespaced access to store under same namespace",
+			scope:        namespace1,
+			storeName:    store1,
+			expectedCert: cert1,
+		},
+		{
+			name:         "namespaced access to nonexisting store",
+			scope:        "nonexisting",
+			storeName:    "nonexisting/nonexisting",
+			expectedCert: nil,
+		},
+		{
+			name:         "namespaced access to store under different namespace",
+			scope:        namespace1,
+			storeName:    store2,
+			expectedCert: nil,
+		},
 	}
 
-	if len(activeCertStores.GetCertStores(namespace1)) != 2 {
-		t.Errorf("Expected activeCertStores to have 2 cert store")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := ctxUtils.SetContextWithNamespace(context.Background(), tc.scope)
+			certs := activeCertStores.GetCertsFromStore(ctx, tc.storeName)
+			if len(certs) == 0 {
+				if tc.expectedCert != nil {
+					t.Fatalf("Expected to get certificate, but got none")
+				}
+			} else {
+				if certs[0] != tc.expectedCert {
+					t.Fatalf("Got unexpected certificate")
+				}
+			}
+		})
+	}
+}
+
+func generateTestCert() *x509.Certificate {
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil
 	}
 
-	activeCertStores.DeleteStore(namespace1, name1)
-	activeCertStores.DeleteStore(namespace2, name2)
-
-	if !activeCertStores.IsEmpty() {
-		t.Errorf("Expected activeCertStores to be empty")
+	// Create a certificate template
+	template := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject: pkix.Name{
+			Organization: []string{"Example Org"},
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(1, 0, 0), // Valid for 1 year
+		KeyUsage:              x509.KeyUsageKeyEncipherment | x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		BasicConstraintsValid: true,
 	}
+
+	// Create the certificate
+	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
+	if err != nil {
+		return nil
+	}
+
+	// Parse the certificate
+	cert, err := x509.ParseCertificate(certDER)
+	if err != nil {
+		return nil
+	}
+
+	return cert
 }

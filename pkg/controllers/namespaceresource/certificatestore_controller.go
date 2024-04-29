@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package controllers
+package namespaceresource
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
 	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
+	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/utils"
 
 	"github.com/sirupsen/logrus"
@@ -63,8 +64,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	if err := r.Get(ctx, req.NamespacedName, &certStore); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing certificate store %v", resource)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
-			NamespacedCertStores.DeleteStore(constants.EmptyNamespace, resource)
+			controllers.NamespacedCertStores.DeleteStore(resource)
 		} else {
 			logger.Error(err, "unable to fetch certificate store")
 		}
@@ -95,8 +95,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
-	// TODO: pass the actual namespace once multi-tenancy is supported.
-	NamespacedCertStores.AddStore(constants.EmptyNamespace, resource, certificates)
+	controllers.NamespacedCertStores.AddStore(resource, certificates)
 	isFetchSuccessful = true
 	emptyErrorString := ""
 	writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, certAttributes)
@@ -148,8 +147,8 @@ func writeCertStoreStatus(ctx context.Context, r *CertificateStoreReconciler, ce
 func updateErrorStatus(certStore *configv1beta1.CertificateStore, errorString string, operationTime *metav1.Time) {
 	// truncate brief error string to maxBriefErrLength
 	briefErr := errorString
-	if len(errorString) > maxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+	if len(errorString) > constants.MaxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
 	}
 	certStore.Status.IsSuccess = false
 	certStore.Status.Error = errorString

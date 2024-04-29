@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/ratify/internal/logger"
-	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
+	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
@@ -42,14 +42,14 @@ type trustStore struct {
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, cutils.GetCertificatesMap(ctx))
+	certs, err := s.getCertificatesInternal(ctx, namedStore)
 	if err != nil {
 		return nil, err
 	}
 	return s.filterValidCerts(certs)
 }
 
-func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
+func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
 	// certs configured for this namedStore overrides cert path
@@ -63,7 +63,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 				// check certificate store if key management provider does not have certificates.
 				// NOTE: certificate store and key management provider should not be configured together.
 				// User will be warned by the controller/CLI
-				result = certificatesMap[certStore]
+				result = controllers.NamespacedCertStores.GetCertsFromStore(ctx, certStore)
 				if len(result) == 0 {
 					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Certificate Store %+v", certStore)
 				}
