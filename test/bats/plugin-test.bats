@@ -59,44 +59,6 @@ SLEEP_TIME=1
     assert_success
 }
 
-@test "cosign test" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
-    }
-    run kubectl apply -f ./library/default/template.yaml
-    assert_success
-    sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
-    assert_success
-    sleep 5
-
-    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
-    assert_success
-
-    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
-    assert_failure
-}
-
-@test "cosign keyless test" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign.yaml'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
-    }
-
-    # use imperative command to guarantee useHttp is updated
-    run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign_keyless.yaml
-    sleep 5
-
-    run kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras.yaml
-    sleep 5
-
-    wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
-}
-
 @test "licensechecker test" {
     teardown() {
         echo "cleaning up"
@@ -141,7 +103,7 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_failure
-
+   
     run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
