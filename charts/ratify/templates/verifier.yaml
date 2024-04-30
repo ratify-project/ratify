@@ -50,9 +50,7 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    {{- if .Values.cosign.key }}
-    key: {{ .Values.cosign.key | quote }}
-    {{- else }}
+    {{- if gt (len .Values.cosignKeys) 0 }}
     trustPolicies:
       - name: default
         version: 1.0.0
@@ -67,6 +65,8 @@ spec:
           {{- if and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0) }}
           - provider: {{ $.Release.Namespace }}/kmprovider-akv
           {{- end }}
+    {{- else }}
+    key: {{ .Values.cosign.key | quote }}
     {{- end }}
 {{- end }}
 ---
