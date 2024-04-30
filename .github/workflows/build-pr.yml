@@ -16,12 +16,13 @@ jobs:
    
   call_test_e2e_basic:
     name: "run e2e on basic matrix"
+    if: ${{ ! (contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch') }}
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        KUBERNETES_VERSION: ["1.27.7"]
+        KUBERNETES_VERSION: ["1.29.2"]
         GATEKEEPER_VERSION: ["3.15.0"]
     uses: ./.github/workflows/e2e-k8s.yml 
     with:
@@ -34,7 +35,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        KUBERNETES_VERSION: ["1.28.7", "1.29.2"]
         GATEKEEPER_VERSION: ["3.13.0", "3.14.0", "3.15.0"]
     uses: ./.github/workflows/e2e-k8s.yml 
     with:
@@ -50,7 +51,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        KUBERNETES_VERSION: ["1.26.10", "1.27.7"]
+        KUBERNETES_VERSION: ["1.27.9", "1.29.2"]
         GATEKEEPER_VERSION: ["3.13.0", "3.14.0", "3.15.0"]
     uses: ./.github/workflows/e2e-aks.yml
     with:
