@@ -42,6 +42,7 @@ const (
 	certName                         = "tls.crt"
 	keyName                          = "tls.key"
 	readHeaderTimeout                = 5 * time.Second
+	idleTimeout                      = 90 * time.Second
 	defaultMutationReferrerStoreName = "oras"
 
 	DefaultMetricsType = "prometheus"
@@ -135,6 +136,7 @@ func (server *Server) Run(certRotatorReady chan struct{}) error {
 		Addr:              server.Address,
 		Handler:           server.Router,
 		ReadHeaderTimeout: readHeaderTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	if server.CertDirectory != "" {

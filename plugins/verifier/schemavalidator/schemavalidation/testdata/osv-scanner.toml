@@ -1,0 +1,3 @@
+[[IgnoredVulns]]
+id = "CVE-2022-48174"
+reason = "Test manifest file(trivy_scan_report.json)"

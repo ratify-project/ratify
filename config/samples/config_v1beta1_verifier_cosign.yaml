@@ -6,4 +6,9 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    key: /usr/local/ratify-certs/cosign/cosign.pub
+    trustPolicies:
+      - name: default
+        scopes:
+          - "*"
+        keys:
+          - provider: ratify-cosign-inline-key-0
