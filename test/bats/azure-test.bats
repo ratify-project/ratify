@@ -45,7 +45,7 @@ SLEEP_TIME=1
 
 @test "validate image signed by leaf cert" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
@@ -58,7 +58,7 @@ SLEEP_TIME=1
     assert_success
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-   
+
     # verify that the image can be run with a root cert, root verification cert should have been configured on deployment
     run kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned
     assert_success
