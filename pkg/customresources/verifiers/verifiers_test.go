@@ -69,37 +69,30 @@ func TestVerifiersOperations(t *testing.T) {
 	verifiers.AddVerifier(namespace2, verifier1.Name(), verifier1)
 	verifiers.AddVerifier(namespace2, verifier2.Name(), verifier2)
 
-	if verifiers.IsEmpty() {
-		t.Error("Expected verifiers to not be empty")
+	if len(verifiers.GetVerifiers(namespace1)) != 2 {
+		t.Fatalf("Expected 2 verifiers, got %d", len(verifiers.GetVerifiers(namespace1)))
 	}
-
-	if verifiers.GetVerifierCount() != 4 {
-		t.Errorf("Expected 4 verifiers, got %d", verifiers.GetVerifierCount())
-	}
-
-	if len(verifiers.GetVerifiers(namespace1)) != 4 {
-		t.Errorf("Expected 4 verifiers, got %d", len(verifiers.GetVerifiers(namespace1)))
-	}
-
-	if len(verifiers.GetVerifiers(namespace2)) != 4 {
-		t.Errorf("Expected 4 verifiers, got %d", len(verifiers.GetVerifiers(namespace2)))
+	if len(verifiers.GetVerifiers(namespace2)) != 2 {
+		t.Fatalf("Expected 2 verifiers, got %d", len(verifiers.GetVerifiers(namespace2)))
 	}
 
 	verifiers.DeleteVerifier(namespace2, verifier1.Name())
-	verifiers.DeleteVerifier(namespace2, verifier2.Name())
+	if len(verifiers.GetVerifiers(namespace2)) != 1 {
+		t.Fatalf("Expected 1 verifier, got %d", len(verifiers.GetVerifiers(namespace2)))
+	}
 
+	verifiers.DeleteVerifier(namespace2, verifier2.Name())
 	if len(verifiers.GetVerifiers(namespace2)) != 2 {
-		t.Errorf("Expected 2 verifiers, got %d", len(verifiers.GetVerifiers(namespace2)))
+		t.Fatalf("Expected 2 verifiers, got %d", len(verifiers.GetVerifiers(namespace2)))
 	}
 
 	verifiers.DeleteVerifier(namespace1, verifier1.Name())
-	verifiers.DeleteVerifier(namespace1, verifier2.Name())
-
-	if !verifiers.IsEmpty() {
-		t.Error("Expected verifiers to be empty")
+	if len(verifiers.GetVerifiers(namespace1)) != 1 {
+		t.Fatalf("Expected 1 verifier, got %d", len(verifiers.GetVerifiers(namespace1)))
 	}
 
-	if verifiers.GetVerifierCount() != 0 {
-		t.Errorf("Expected 0 verifiers, got %d", verifiers.GetVerifierCount())
+	verifiers.DeleteVerifier(namespace1, verifier2.Name())
+	if len(verifiers.GetVerifiers(namespace1)) != 0 {
+		t.Fatalf("Expected 0 verifiers, got %d", len(verifiers.GetVerifiers(namespace1)))
 	}
 }

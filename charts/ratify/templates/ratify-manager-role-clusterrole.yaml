@@ -86,6 +86,32 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - namespacedverifiers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedverifiers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedverifiers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - certificatestores
   verbs:
   - create

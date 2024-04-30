@@ -1,0 +1,27 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedVerifier
+metadata:
+  name: verifier-notation
+spec:
+  name: notation
+  artifactTypes: application/vnd.cncf.notary.signature
+  parameters:
+    verificationCertStores:
+      certs:
+        - kmprovider-akv
+        - kmprovider-akv1
+      certs1:
+        - kmprovider-akv2
+        - kmprovider-akv3
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: default
+          registryScopes:
+            - "*"
+          signatureVerification:
+            level: strict
+          trustStores:
+            - ca:certs
+          trustedIdentities:
+            - "*"

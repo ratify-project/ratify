@@ -60,14 +60,14 @@ RATIFY_NAMESPACE=gatekeeper-system
 @test "crd version test" {
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notation.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1alpha1_verifier_notation.yaml
     assert_success
     run bash -c "kubectl get verifiers.config.ratify.deislabs.io/verifier-notation -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
     assert_success
 
     run kubectl delete stores.config.ratify.deislabs.io/store-oras
     assert_success
-    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_http.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1alpha1_store_oras_http.yaml
     assert_success
     run bash -c "kubectl get stores.config.ratify.deislabs.io/store-oras -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
     assert_success
@@ -111,7 +111,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         assert_success
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
     run kubectl apply -f ./library/default/template.yaml
     assert_success
@@ -131,7 +131,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
     
     # configure the notation verifier to use inline certificate store with specific namespace
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_specificnskmprovider.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation_specificnskmprovider.yaml
     assert_success
 
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
@@ -169,7 +169,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     }
 
     # use imperative command to guarantee verifier config is updated
-    run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign_legacy.yaml
+    run kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign_legacy.yaml
     sleep 5
 
     run kubectl apply -f ./library/default/template.yaml
@@ -190,12 +190,12 @@ RATIFY_NAMESPACE=gatekeeper-system
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
     }
 
     # use imperative command to guarantee useHttp is updated
-    run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign_keyless.yaml
+    run kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign_keyless.yaml
     sleep 5
 
     run kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras.yaml
@@ -211,7 +211,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     }
 
     echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
@@ -221,7 +221,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_failure
 
     echo "Add notation verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -237,20 +237,20 @@ RATIFY_NAMESPACE=gatekeeper-system
     }
 
     # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
     assert_success
 
     # apply a invalid verifier CR, validate status with error
-    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml > invalidVerifier.yaml
+    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml > invalidVerifier.yaml
     run kubectl apply -f invalidVerifier.yaml
     assert_success
     run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
     assert_success
 
     # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
     assert_success
@@ -327,7 +327,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         # restore the original key management provider
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f kmprovider_staging.yaml'
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # save the existing key management provider inline resource to restore later
@@ -368,7 +368,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # configure the default template/constraint
@@ -465,7 +465,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # configure the default template/constraint
