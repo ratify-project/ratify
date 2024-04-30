@@ -9,8 +9,8 @@ unexpected runtime behavior after upgrading to the next stable minor version of 
 
 ## Stability levels
 - Generally available features should not be removed from that version or have its behavior significantly changed to avoid breaking existing users.
-- Beta or pre-release versions may introduce breaking changes 2 release after deprecation notice.
-- Alpha or experimental API versions may change in runtime behavoiur without prior change and deprecation notice.
+- Beta or pre-release versions may introduce breaking changes without deprecation notice.
+- Alpha or experimental API versions may change in runtime behaviour without prior change and deprecation notice.
 
 The following features are currently in experimental:
 - [Dynamic plugin](https://ratify.dev/docs/reference/dynamic-plugins)
