@@ -27,7 +27,4 @@ type PolicyManager interface {
 
 	// DeletePolicy deletes the policy from the given scope.
 	DeletePolicy(scope, policyName string)
-
-	// IsEmpty returns true if there are no policies.
-	IsEmpty() bool
 }

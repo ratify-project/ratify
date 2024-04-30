@@ -33,7 +33,7 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	c "github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
+	kmp "github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider/types"
@@ -60,7 +60,8 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	if err := r.Get(ctx, req.NamespacedName, &keyManagementProvider); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing key management provider %v", resource)
-			keymanagementprovider.DeleteCertificatesFromMap(resource)
+			kmp.DeleteCertificatesFromMap(resource)
+			kmp.DeleteKeysFromMap(resource)
 		} else {
 			logger.Error(err, "unable to fetch key management provider")
 		}
@@ -103,8 +104,8 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
 	}
-	keymanagementprovider.SetCertificatesInMap(resource, certificates)
-	keymanagementprovider.SetKeysInMap(resource, keyManagementProvider.Spec.Type, keys)
+	kmp.SetCertificatesInMap(resource, certificates)
+	kmp.SetKeysInMap(resource, keyManagementProvider.Spec.Type, keys)
 	// merge certificates and keys status into one
 	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true
@@ -130,7 +131,7 @@ func (r *KeyManagementProviderReconciler) SetupWithManager(mgr ctrl.Manager) err
 }
 
 // specToKeyManagementProvider creates KeyManagementProviderProvider from  KeyManagementProviderSpec config
-func specToKeyManagementProvider(spec configv1beta1.KeyManagementProviderSpec) (keymanagementprovider.KeyManagementProvider, error) {
+func specToKeyManagementProvider(spec configv1beta1.KeyManagementProviderSpec) (kmp.KeyManagementProvider, error) {
 	kmProviderConfig, err := rawToKeyManagementProviderConfig(spec.Parameters.Raw, spec.Type)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse key management provider config: %w", err)
@@ -162,7 +163,7 @@ func rawToKeyManagementProviderConfig(raw []byte, keyManagamentSystemName string
 }
 
 // writeKMProviderStatus updates the status of the key management provider resource
-func writeKMProviderStatus(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.KeyManagementProvider, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, kmProviderStatus keymanagementprovider.KeyManagementProviderStatus) {
+func writeKMProviderStatus(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.KeyManagementProvider, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
 	if isSuccess {
 		updateKMProviderSuccessStatus(keyManagementProvider, &operationTime, kmProviderStatus)
 	} else {
@@ -188,7 +189,7 @@ func updateKMProviderErrorStatus(keyManagementProvider *configv1beta1.KeyManagem
 
 // updateKMProviderSuccessStatus updates the key management provider status if status argument is non nil
 // Success status includes last fetched time and other provider-specific properties
-func updateKMProviderSuccessStatus(keyManagementProvider *configv1beta1.KeyManagementProvider, lastOperationTime *metav1.Time, kmProviderStatus keymanagementprovider.KeyManagementProviderStatus) {
+func updateKMProviderSuccessStatus(keyManagementProvider *configv1beta1.KeyManagementProvider, lastOperationTime *metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
 	keyManagementProvider.Status.IsSuccess = true
 	keyManagementProvider.Status.Error = ""
 	keyManagementProvider.Status.BriefError = ""

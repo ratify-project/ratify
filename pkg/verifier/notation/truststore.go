@@ -56,7 +56,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-			result := keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(certStore))
+			result := keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(ctx, certStore))
 			// notation verifier does not consider specific named/versioned certificates within a key management provider resource
 			if len(result) == 0 {
 				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Key Management Provider %+v", certStore)

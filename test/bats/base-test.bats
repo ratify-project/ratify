@@ -190,14 +190,14 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign.yaml'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_store_oras_http.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
     }
 
     # use imperative command to guarantee useHttp is updated
     run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign_keyless.yaml
     sleep 5
 
-    run kubectl replace -f ./config/samples/config_v1beta1_store_oras.yaml
+    run kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras.yaml
     sleep 5
 
     wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
@@ -264,7 +264,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     }
 
     # apply a invalid verifier CR, validate status with error
-    sed 's/:v1/:invalid/' ./config/samples/config_v1beta1_store_dynamic.yaml > invalidstore.yaml
+    sed 's/:v1/:invalid/' ./config/samples/clustered/store/config_v1beta1_store_dynamic.yaml > invalidstore.yaml
     run kubectl apply -f invalidstore.yaml
     assert_success
     # wait for download of image
@@ -438,7 +438,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_store_oras_http.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
     }
 
     run kubectl apply -f ./library/default/template.yaml
@@ -448,7 +448,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
     sleep 5
     # apply store CRD with K8s secret auth provier enabled
-    run kubectl apply -f ./config/samples/config_v1beta1_store_oras_k8secretAuth.yaml
+    run kubectl apply -f ./config/samples/clustered/store/config_v1beta1_store_oras_k8secretAuth.yaml
     assert_success
     sleep 5
     run kubectl run demo --namespace default --image=registry:5000/notation:signed

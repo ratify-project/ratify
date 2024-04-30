@@ -16,6 +16,7 @@ limitations under the License.
 package keymanagementprovider
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -142,7 +143,7 @@ func TestSetCertificatesInMap(t *testing.T) {
 func TestGetCertificatesFromMap(t *testing.T) {
 	certificatesMap.Delete("test")
 	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
-	certs := GetCertificatesFromMap("test")
+	certs := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been fetched from the map")
 	}
@@ -151,7 +152,7 @@ func TestGetCertificatesFromMap(t *testing.T) {
 // TestGetCertificatesFromMap_FailedToFetch checks if certificates are fetched from the map
 func TestGetCertificatesFromMap_FailedToFetch(t *testing.T) {
 	certificatesMap.Delete("test")
-	certs := GetCertificatesFromMap("test")
+	certs := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 0 {
 		t.Fatalf("certificates should not have been fetched from the map")
 	}
@@ -188,7 +189,7 @@ func TestSetKeysInMap(t *testing.T) {
 func TestGetKeysFromMap(t *testing.T) {
 	keyMap.Delete("test")
 	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
-	keys, _ := GetKeysFromMap("test")
+	keys, _ := GetKeysFromMap(context.Background(), "test")
 	if len(keys) != 1 {
 		t.Fatalf("keys should have been fetched from the map")
 	}
@@ -197,7 +198,7 @@ func TestGetKeysFromMap(t *testing.T) {
 // TestGetKeysFromMap_FailedToFetch checks if keys fail to fetch from map
 func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 	keyMap.Delete("test")
-	keys, _ := GetKeysFromMap("test")
+	keys, _ := GetKeysFromMap(context.Background(), "test")
 	if len(keys) != 0 {
 		t.Fatalf("keys should not have been fetched from the map")
 	}

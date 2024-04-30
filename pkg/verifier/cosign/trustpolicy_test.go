@@ -16,6 +16,7 @@ limitations under the License.
 package cosign
 
 import (
+	"context"
 	"crypto"
 	"crypto/ecdsa"
 	"testing"
@@ -188,7 +189,7 @@ func TestGetKeys(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
-			keys, err := trustPolicy.GetKeys("ns")
+			keys, err := trustPolicy.GetKeys(context.Background(), "ns")
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("expected %v, got %v", tt.wantErr, err)
 			}

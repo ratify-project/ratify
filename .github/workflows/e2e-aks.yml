@@ -1,5 +1,8 @@
 name: e2e-aks
 
+permissions:
+  contents: read
+
 on:
   workflow_call:
     inputs:
