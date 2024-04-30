@@ -50,7 +50,7 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    {{- if gt (len .Values.cosignKeys) 0 }}
+    {{- if or (gt (len .Values.cosignKeys) 0) (and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0)) }}
     trustPolicies:
       - name: default
         version: 1.0.0

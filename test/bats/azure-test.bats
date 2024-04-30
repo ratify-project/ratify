@@ -58,7 +58,7 @@ SLEEP_TIME=1
     assert_success
     run kubectl apply -f ./library/default/samples/constraint.yaml
     assert_success
-   
+
     # verify that the image can be run with a root cert, root verification cert should have been configured on deployment
     run kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned
     assert_success
@@ -110,6 +110,9 @@ SLEEP_TIME=1
     assert_success
     sleep 5
     run kubectl apply -f ./library/default/samples/constraint.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_cosign_akv.yaml
     assert_success
     sleep 5
 
