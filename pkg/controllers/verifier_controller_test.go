@@ -17,6 +17,7 @@ package controllers
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strings"
 	"testing"
@@ -30,11 +31,42 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const sampleName = "sample"
+
+type mockResourceWriter struct {
+	updateFailed bool
+}
+
+func (w mockResourceWriter) Create(_ context.Context, _ client.Object, _ client.Object, _ ...client.SubResourceCreateOption) error {
+	return nil
+}
+
+func (w mockResourceWriter) Update(_ context.Context, _ client.Object, _ ...client.SubResourceUpdateOption) error {
+	if w.updateFailed {
+		return errors.New("update failed")
+	}
+	return nil
+}
+
+func (w mockResourceWriter) Patch(_ context.Context, _ client.Object, _ client.Patch, _ ...client.SubResourcePatchOption) error {
+	return nil
+}
+
+type mockStatusClient struct {
+	updateFailed bool
+}
+
+func (c mockStatusClient) Status() client.SubResourceWriter {
+	writer := mockResourceWriter{}
+	writer.updateFailed = c.updateFailed
+	return writer
+}
+
 const licenseChecker = "licensechecker"
 
 func TestMain(m *testing.M) {
 	// make sure to reset verifierMap before each test run
-	VerifierMap = verifiers.NewActiveVerifiers()
+	NamespacedVerifiers = verifiers.NewActiveVerifiers()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -56,15 +88,15 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 	if err := verifierAddOrReplace(testVerifierSpec, sampleName, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
-	if VerifierMap.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map expected size 1, actual %v", VerifierMap.GetVerifierCount())
+	if NamespacedVerifiers.GetVerifierCount() != 1 {
+		t.Fatalf("Verifier map expected size 1, actual %v", NamespacedVerifiers.GetVerifierCount())
 	}
 }
 
 func TestVerifierAdd_WithParameters(t *testing.T) {
 	resetVerifierMap()
-	if VerifierMap.GetVerifierCount() != 0 {
-		t.Fatalf("Verifier map expected size 0, actual %v", VerifierMap.GetVerifierCount())
+	if NamespacedVerifiers.GetVerifierCount() != 0 {
+		t.Fatalf("Verifier map expected size 0, actual %v", NamespacedVerifiers.GetVerifierCount())
 	}
 
 	dirPath, err := utils.CreatePlugin(licenseChecker)
@@ -78,8 +110,8 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 	if err := verifierAddOrReplace(testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
-	if VerifierMap.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map expected size 1, actual %v", VerifierMap.GetVerifierCount())
+	if NamespacedVerifiers.GetVerifierCount() != 1 {
+		t.Fatalf("Verifier map expected size 1, actual %v", NamespacedVerifiers.GetVerifierCount())
 	}
 }
 
@@ -109,8 +141,8 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker, constants.EmptyNamespace); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
-	if VerifierMap.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map expected size 1, actual %v", VerifierMap.GetVerifierCount())
+	if NamespacedVerifiers.GetVerifierCount() != 1 {
+		t.Fatalf("Verifier map expected size 1, actual %v", NamespacedVerifiers.GetVerifierCount())
 	}
 
 	// modify the verifier
@@ -121,14 +153,14 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	}
 
 	// validate no verifier has been added
-	if VerifierMap.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map should be 1 after replacement, actual %v", VerifierMap.GetVerifierCount())
+	if NamespacedVerifiers.GetVerifierCount() != 1 {
+		t.Fatalf("Verifier map should be 1 after replacement, actual %v", NamespacedVerifiers.GetVerifierCount())
 	}
 
-	VerifierMap.DeleteVerifier(constants.EmptyNamespace, licenseChecker)
+	NamespacedVerifiers.DeleteVerifier(constants.EmptyNamespace, licenseChecker)
 
-	if VerifierMap.GetVerifierCount() != 0 {
-		t.Fatalf("Verifier map should be 0 after deletion, actual %v", VerifierMap.GetVerifierCount())
+	if NamespacedVerifiers.GetVerifierCount() != 0 {
+		t.Fatalf("Verifier map should be 0 after deletion, actual %v", NamespacedVerifiers.GetVerifierCount())
 	}
 }
 
@@ -206,7 +238,7 @@ func TestGetCertStoreNamespace(t *testing.T) {
 }
 
 func resetVerifierMap() {
-	VerifierMap = verifiers.NewActiveVerifiers()
+	NamespacedVerifiers = verifiers.NewActiveVerifiers()
 }
 
 func getLicenseCheckerFromParam(parametersString, pluginPath string) configv1beta1.VerifierSpec {

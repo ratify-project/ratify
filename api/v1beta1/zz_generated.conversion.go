@@ -76,6 +76,126 @@ func RegisterConversions(s *runtime.Scheme) error {
 	}); err != nil {
 		return err
 	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProvider)(nil), (*unversioned.KeyManagementProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(a.(*KeyManagementProvider), b.(*unversioned.KeyManagementProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProvider)(nil), (*KeyManagementProvider)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(a.(*unversioned.KeyManagementProvider), b.(*KeyManagementProvider), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProviderList)(nil), (*unversioned.KeyManagementProviderList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(a.(*KeyManagementProviderList), b.(*unversioned.KeyManagementProviderList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProviderList)(nil), (*KeyManagementProviderList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(a.(*unversioned.KeyManagementProviderList), b.(*KeyManagementProviderList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProviderSpec)(nil), (*unversioned.KeyManagementProviderSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(a.(*KeyManagementProviderSpec), b.(*unversioned.KeyManagementProviderSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProviderSpec)(nil), (*KeyManagementProviderSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(a.(*unversioned.KeyManagementProviderSpec), b.(*KeyManagementProviderSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*KeyManagementProviderStatus)(nil), (*unversioned.KeyManagementProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(a.(*KeyManagementProviderStatus), b.(*unversioned.KeyManagementProviderStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.KeyManagementProviderStatus)(nil), (*KeyManagementProviderStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(a.(*unversioned.KeyManagementProviderStatus), b.(*KeyManagementProviderStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedPolicy)(nil), (*unversioned.NamespacedPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedPolicy_To_unversioned_NamespacedPolicy(a.(*NamespacedPolicy), b.(*unversioned.NamespacedPolicy), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedPolicy)(nil), (*NamespacedPolicy)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedPolicy_To_v1beta1_NamespacedPolicy(a.(*unversioned.NamespacedPolicy), b.(*NamespacedPolicy), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedPolicyList)(nil), (*unversioned.NamespacedPolicyList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedPolicyList_To_unversioned_NamespacedPolicyList(a.(*NamespacedPolicyList), b.(*unversioned.NamespacedPolicyList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedPolicyList)(nil), (*NamespacedPolicyList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedPolicyList_To_v1beta1_NamespacedPolicyList(a.(*unversioned.NamespacedPolicyList), b.(*NamespacedPolicyList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedPolicySpec)(nil), (*unversioned.NamespacedPolicySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedPolicySpec_To_unversioned_NamespacedPolicySpec(a.(*NamespacedPolicySpec), b.(*unversioned.NamespacedPolicySpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedPolicySpec)(nil), (*NamespacedPolicySpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedPolicySpec_To_v1beta1_NamespacedPolicySpec(a.(*unversioned.NamespacedPolicySpec), b.(*NamespacedPolicySpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedPolicyStatus)(nil), (*unversioned.NamespacedPolicyStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedPolicyStatus_To_unversioned_NamespacedPolicyStatus(a.(*NamespacedPolicyStatus), b.(*unversioned.NamespacedPolicyStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedPolicyStatus)(nil), (*NamespacedPolicyStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedPolicyStatus_To_v1beta1_NamespacedPolicyStatus(a.(*unversioned.NamespacedPolicyStatus), b.(*NamespacedPolicyStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedStore)(nil), (*unversioned.NamespacedStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedStore_To_unversioned_NamespacedStore(a.(*NamespacedStore), b.(*unversioned.NamespacedStore), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedStore)(nil), (*NamespacedStore)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedStore_To_v1beta1_NamespacedStore(a.(*unversioned.NamespacedStore), b.(*NamespacedStore), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedStoreList)(nil), (*unversioned.NamespacedStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedStoreList_To_unversioned_NamespacedStoreList(a.(*NamespacedStoreList), b.(*unversioned.NamespacedStoreList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedStoreList)(nil), (*NamespacedStoreList)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedStoreList_To_v1beta1_NamespacedStoreList(a.(*unversioned.NamespacedStoreList), b.(*NamespacedStoreList), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedStoreSpec)(nil), (*unversioned.NamespacedStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedStoreSpec_To_unversioned_NamespacedStoreSpec(a.(*NamespacedStoreSpec), b.(*unversioned.NamespacedStoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedStoreSpec)(nil), (*NamespacedStoreSpec)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedStoreSpec_To_v1beta1_NamespacedStoreSpec(a.(*unversioned.NamespacedStoreSpec), b.(*NamespacedStoreSpec), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*NamespacedStoreStatus)(nil), (*unversioned.NamespacedStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_v1beta1_NamespacedStoreStatus_To_unversioned_NamespacedStoreStatus(a.(*NamespacedStoreStatus), b.(*unversioned.NamespacedStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
+	if err := s.AddGeneratedConversionFunc((*unversioned.NamespacedStoreStatus)(nil), (*NamespacedStoreStatus)(nil), func(a, b interface{}, scope conversion.Scope) error {
+		return Convert_unversioned_NamespacedStoreStatus_To_v1beta1_NamespacedStoreStatus(a.(*unversioned.NamespacedStoreStatus), b.(*NamespacedStoreStatus), scope)
+	}); err != nil {
+		return err
+	}
 	if err := s.AddGeneratedConversionFunc((*PluginSource)(nil), (*unversioned.PluginSource)(nil), func(a, b interface{}, scope conversion.Scope) error {
 		return Convert_v1beta1_PluginSource_To_unversioned_PluginSource(a.(*PluginSource), b.(*unversioned.PluginSource), scope)
 	}); err != nil {
@@ -311,6 +431,316 @@ func autoConvert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreS
 // Convert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatus is an autogenerated conversion function.
 func Convert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatus(in *unversioned.CertificateStoreStatus, out *CertificateStoreStatus, s conversion.Scope) error {
 	return autoConvert_unversioned_CertificateStoreStatus_To_v1beta1_CertificateStoreStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(in *KeyManagementProvider, out *unversioned.KeyManagementProvider, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(in *KeyManagementProvider, out *unversioned.KeyManagementProvider, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProvider_To_unversioned_KeyManagementProvider(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(in *unversioned.KeyManagementProvider, out *KeyManagementProvider, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(in *unversioned.KeyManagementProvider, out *KeyManagementProvider, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProvider_To_v1beta1_KeyManagementProvider(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(in *KeyManagementProviderList, out *unversioned.KeyManagementProviderList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.KeyManagementProvider)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(in *KeyManagementProviderList, out *unversioned.KeyManagementProviderList, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProviderList_To_unversioned_KeyManagementProviderList(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(in *unversioned.KeyManagementProviderList, out *KeyManagementProviderList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]KeyManagementProvider)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(in *unversioned.KeyManagementProviderList, out *KeyManagementProviderList, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProviderList(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in *KeyManagementProviderSpec, out *unversioned.KeyManagementProviderSpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in *KeyManagementProviderSpec, out *unversioned.KeyManagementProviderSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in *unversioned.KeyManagementProviderSpec, out *KeyManagementProviderSpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in *unversioned.KeyManagementProviderSpec, out *KeyManagementProviderSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in, out, s)
+}
+
+func autoConvert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(in *KeyManagementProviderStatus, out *unversioned.KeyManagementProviderStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
+	return nil
+}
+
+// Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus is an autogenerated conversion function.
+func Convert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(in *KeyManagementProviderStatus, out *unversioned.KeyManagementProviderStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_KeyManagementProviderStatus_To_unversioned_KeyManagementProviderStatus(in, out, s)
+}
+
+func autoConvert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(in *unversioned.KeyManagementProviderStatus, out *KeyManagementProviderStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	out.LastFetchedTime = (*v1.Time)(unsafe.Pointer(in.LastFetchedTime))
+	out.Properties = in.Properties
+	return nil
+}
+
+// Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus is an autogenerated conversion function.
+func Convert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(in *unversioned.KeyManagementProviderStatus, out *KeyManagementProviderStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_KeyManagementProviderStatus_To_v1beta1_KeyManagementProviderStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedPolicy_To_unversioned_NamespacedPolicy(in *NamespacedPolicy, out *unversioned.NamespacedPolicy, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_NamespacedPolicySpec_To_unversioned_NamespacedPolicySpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_NamespacedPolicyStatus_To_unversioned_NamespacedPolicyStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_NamespacedPolicy_To_unversioned_NamespacedPolicy is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedPolicy_To_unversioned_NamespacedPolicy(in *NamespacedPolicy, out *unversioned.NamespacedPolicy, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedPolicy_To_unversioned_NamespacedPolicy(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedPolicy_To_v1beta1_NamespacedPolicy(in *unversioned.NamespacedPolicy, out *NamespacedPolicy, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_NamespacedPolicySpec_To_v1beta1_NamespacedPolicySpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_NamespacedPolicyStatus_To_v1beta1_NamespacedPolicyStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_NamespacedPolicy_To_v1beta1_NamespacedPolicy is an autogenerated conversion function.
+func Convert_unversioned_NamespacedPolicy_To_v1beta1_NamespacedPolicy(in *unversioned.NamespacedPolicy, out *NamespacedPolicy, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedPolicy_To_v1beta1_NamespacedPolicy(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedPolicyList_To_unversioned_NamespacedPolicyList(in *NamespacedPolicyList, out *unversioned.NamespacedPolicyList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.NamespacedPolicy)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_NamespacedPolicyList_To_unversioned_NamespacedPolicyList is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedPolicyList_To_unversioned_NamespacedPolicyList(in *NamespacedPolicyList, out *unversioned.NamespacedPolicyList, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedPolicyList_To_unversioned_NamespacedPolicyList(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedPolicyList_To_v1beta1_NamespacedPolicyList(in *unversioned.NamespacedPolicyList, out *NamespacedPolicyList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]NamespacedPolicy)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_NamespacedPolicyList_To_v1beta1_NamespacedPolicyList is an autogenerated conversion function.
+func Convert_unversioned_NamespacedPolicyList_To_v1beta1_NamespacedPolicyList(in *unversioned.NamespacedPolicyList, out *NamespacedPolicyList, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedPolicyList_To_v1beta1_NamespacedPolicyList(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedPolicySpec_To_unversioned_NamespacedPolicySpec(in *NamespacedPolicySpec, out *unversioned.NamespacedPolicySpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_NamespacedPolicySpec_To_unversioned_NamespacedPolicySpec is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedPolicySpec_To_unversioned_NamespacedPolicySpec(in *NamespacedPolicySpec, out *unversioned.NamespacedPolicySpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedPolicySpec_To_unversioned_NamespacedPolicySpec(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedPolicySpec_To_v1beta1_NamespacedPolicySpec(in *unversioned.NamespacedPolicySpec, out *NamespacedPolicySpec, s conversion.Scope) error {
+	out.Type = in.Type
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_NamespacedPolicySpec_To_v1beta1_NamespacedPolicySpec is an autogenerated conversion function.
+func Convert_unversioned_NamespacedPolicySpec_To_v1beta1_NamespacedPolicySpec(in *unversioned.NamespacedPolicySpec, out *NamespacedPolicySpec, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedPolicySpec_To_v1beta1_NamespacedPolicySpec(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedPolicyStatus_To_unversioned_NamespacedPolicyStatus(in *NamespacedPolicyStatus, out *unversioned.NamespacedPolicyStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	return nil
+}
+
+// Convert_v1beta1_NamespacedPolicyStatus_To_unversioned_NamespacedPolicyStatus is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedPolicyStatus_To_unversioned_NamespacedPolicyStatus(in *NamespacedPolicyStatus, out *unversioned.NamespacedPolicyStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedPolicyStatus_To_unversioned_NamespacedPolicyStatus(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedPolicyStatus_To_v1beta1_NamespacedPolicyStatus(in *unversioned.NamespacedPolicyStatus, out *NamespacedPolicyStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	return nil
+}
+
+// Convert_unversioned_NamespacedPolicyStatus_To_v1beta1_NamespacedPolicyStatus is an autogenerated conversion function.
+func Convert_unversioned_NamespacedPolicyStatus_To_v1beta1_NamespacedPolicyStatus(in *unversioned.NamespacedPolicyStatus, out *NamespacedPolicyStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedPolicyStatus_To_v1beta1_NamespacedPolicyStatus(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedStore_To_unversioned_NamespacedStore(in *NamespacedStore, out *unversioned.NamespacedStore, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_v1beta1_NamespacedStoreSpec_To_unversioned_NamespacedStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_v1beta1_NamespacedStoreStatus_To_unversioned_NamespacedStoreStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_v1beta1_NamespacedStore_To_unversioned_NamespacedStore is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedStore_To_unversioned_NamespacedStore(in *NamespacedStore, out *unversioned.NamespacedStore, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedStore_To_unversioned_NamespacedStore(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedStore_To_v1beta1_NamespacedStore(in *unversioned.NamespacedStore, out *NamespacedStore, s conversion.Scope) error {
+	out.ObjectMeta = in.ObjectMeta
+	if err := Convert_unversioned_NamespacedStoreSpec_To_v1beta1_NamespacedStoreSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	if err := Convert_unversioned_NamespacedStoreStatus_To_v1beta1_NamespacedStoreStatus(&in.Status, &out.Status, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Convert_unversioned_NamespacedStore_To_v1beta1_NamespacedStore is an autogenerated conversion function.
+func Convert_unversioned_NamespacedStore_To_v1beta1_NamespacedStore(in *unversioned.NamespacedStore, out *NamespacedStore, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedStore_To_v1beta1_NamespacedStore(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedStoreList_To_unversioned_NamespacedStoreList(in *NamespacedStoreList, out *unversioned.NamespacedStoreList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]unversioned.NamespacedStore)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_v1beta1_NamespacedStoreList_To_unversioned_NamespacedStoreList is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedStoreList_To_unversioned_NamespacedStoreList(in *NamespacedStoreList, out *unversioned.NamespacedStoreList, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedStoreList_To_unversioned_NamespacedStoreList(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedStoreList_To_v1beta1_NamespacedStoreList(in *unversioned.NamespacedStoreList, out *NamespacedStoreList, s conversion.Scope) error {
+	out.ListMeta = in.ListMeta
+	out.Items = *(*[]NamespacedStore)(unsafe.Pointer(&in.Items))
+	return nil
+}
+
+// Convert_unversioned_NamespacedStoreList_To_v1beta1_NamespacedStoreList is an autogenerated conversion function.
+func Convert_unversioned_NamespacedStoreList_To_v1beta1_NamespacedStoreList(in *unversioned.NamespacedStoreList, out *NamespacedStoreList, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedStoreList_To_v1beta1_NamespacedStoreList(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedStoreSpec_To_unversioned_NamespacedStoreSpec(in *NamespacedStoreSpec, out *unversioned.NamespacedStoreSpec, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.Address = in.Address
+	out.Source = (*unversioned.PluginSource)(unsafe.Pointer(in.Source))
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_v1beta1_NamespacedStoreSpec_To_unversioned_NamespacedStoreSpec is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedStoreSpec_To_unversioned_NamespacedStoreSpec(in *NamespacedStoreSpec, out *unversioned.NamespacedStoreSpec, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedStoreSpec_To_unversioned_NamespacedStoreSpec(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedStoreSpec_To_v1beta1_NamespacedStoreSpec(in *unversioned.NamespacedStoreSpec, out *NamespacedStoreSpec, s conversion.Scope) error {
+	out.Name = in.Name
+	out.Version = in.Version
+	out.Address = in.Address
+	out.Source = (*PluginSource)(unsafe.Pointer(in.Source))
+	out.Parameters = in.Parameters
+	return nil
+}
+
+// Convert_unversioned_NamespacedStoreSpec_To_v1beta1_NamespacedStoreSpec is an autogenerated conversion function.
+func Convert_unversioned_NamespacedStoreSpec_To_v1beta1_NamespacedStoreSpec(in *unversioned.NamespacedStoreSpec, out *NamespacedStoreSpec, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedStoreSpec_To_v1beta1_NamespacedStoreSpec(in, out, s)
+}
+
+func autoConvert_v1beta1_NamespacedStoreStatus_To_unversioned_NamespacedStoreStatus(in *NamespacedStoreStatus, out *unversioned.NamespacedStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	return nil
+}
+
+// Convert_v1beta1_NamespacedStoreStatus_To_unversioned_NamespacedStoreStatus is an autogenerated conversion function.
+func Convert_v1beta1_NamespacedStoreStatus_To_unversioned_NamespacedStoreStatus(in *NamespacedStoreStatus, out *unversioned.NamespacedStoreStatus, s conversion.Scope) error {
+	return autoConvert_v1beta1_NamespacedStoreStatus_To_unversioned_NamespacedStoreStatus(in, out, s)
+}
+
+func autoConvert_unversioned_NamespacedStoreStatus_To_v1beta1_NamespacedStoreStatus(in *unversioned.NamespacedStoreStatus, out *NamespacedStoreStatus, s conversion.Scope) error {
+	out.IsSuccess = in.IsSuccess
+	out.Error = in.Error
+	out.BriefError = in.BriefError
+	return nil
+}
+
+// Convert_unversioned_NamespacedStoreStatus_To_v1beta1_NamespacedStoreStatus is an autogenerated conversion function.
+func Convert_unversioned_NamespacedStoreStatus_To_v1beta1_NamespacedStoreStatus(in *unversioned.NamespacedStoreStatus, out *NamespacedStoreStatus, s conversion.Scope) error {
+	return autoConvert_unversioned_NamespacedStoreStatus_To_v1beta1_NamespacedStoreStatus(in, out, s)
 }
 
 func autoConvert_v1beta1_PluginSource_To_unversioned_PluginSource(in *PluginSource, out *unversioned.PluginSource, s conversion.Scope) error {

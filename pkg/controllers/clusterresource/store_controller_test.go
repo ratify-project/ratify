@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package clusterresource
 
 import (
 	"context"
@@ -23,14 +23,25 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
+	"github.com/deislabs/ratify/pkg/controllers"
 	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
 	"github.com/deislabs/ratify/pkg/utils"
+	test "github.com/deislabs/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const sampleName = "sample"
+const (
+	storeName     = "testStore"
+	testNamespace = "testNamespace"
+	sampleName    = "sample"
+	orasName      = "oras"
+)
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
@@ -48,15 +59,16 @@ func TestStoreAdd_EmptyParameter(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, "oras"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
+	stores := controllers.NamespacedStores.GetStores(constants.EmptyNamespace)
+	if len(stores) != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", len(stores))
 	}
 }
 
 func TestStoreAdd_WithParameters(t *testing.T) {
 	resetStoreMap()
-	if StoreMap.GetStoreCount() != 0 {
-		t.Fatalf("Store map expected size 0, actual %v", StoreMap.GetStoreCount())
+	if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != 0 {
+		t.Fatalf("Store map expected size 0, actual %v", len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
 	}
 	dirPath, err := utils.CreatePlugin(sampleName)
 	if err != nil {
@@ -69,8 +81,8 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, "testObject"); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
+	if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
 	}
 }
 
@@ -87,21 +99,21 @@ func TestWriteStoreStatus(t *testing.T) {
 			name:       "success status",
 			isSuccess:  true,
 			store:      &configv1beta1.Store{},
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:       "error status",
 			isSuccess:  false,
 			store:      &configv1beta1.Store{},
 			errString:  "a long error string that exceeds the max length of 30 characters",
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:      "status update failed",
 			isSuccess: true,
 			store:     &configv1beta1.Store{},
-			reconciler: &mockStatusClient{
-				updateFailed: true,
+			reconciler: &test.MockStatusClient{
+				UpdateFailed: true,
 			},
 		},
 	}
@@ -138,8 +150,8 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	if err := storeAddOrReplace(testStoreSpec, sampleName); err != nil {
 		t.Fatalf("storeAddOrReplace() expected no error, actual %v", err)
 	}
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map expected size 1, actual %v", StoreMap.GetStoreCount())
+	if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Store map expected size 1, actual %v", len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
 	}
 
 	// modify the Store
@@ -153,19 +165,113 @@ func TestStore_UpdateAndDelete(t *testing.T) {
 	}
 
 	// validate no Store has been added
-	if StoreMap.GetStoreCount() != 1 {
-		t.Fatalf("Store map should be 1 after replacement, actual %v", StoreMap.GetStoreCount())
+	if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Store map should be 1 after replacement, actual %v", len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
 	}
 
-	StoreMap.DeleteStore(constants.EmptyNamespace, sampleName)
+	controllers.NamespacedStores.DeleteStore(constants.EmptyNamespace, sampleName)
 
-	if StoreMap.GetStoreCount() != 0 {
-		t.Fatalf("Store map should be 0 after deletion, actual %v", StoreMap.GetStoreCount())
+	if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != 0 {
+		t.Fatalf("Store map should be 0 after deletion, actual %v", len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
+	}
+}
+
+func TestStoreReconcile(t *testing.T) {
+	dirPath, err := test.CreatePlugin(orasName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
+	tests := []struct {
+		name               string
+		store              *configv1beta1.Store
+		req                *reconcile.Request
+		expectedErr        bool
+		expectedStoreCount int
+	}{
+		{
+			name: "nonexistent store",
+			req: &reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: "nonexistent"},
+			},
+			store: &configv1beta1.Store{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: constants.EmptyNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.StoreSpec{
+					Name: orasName,
+				},
+			},
+			expectedErr:        false,
+			expectedStoreCount: 0,
+		},
+		{
+			name: "valid spec",
+			store: &configv1beta1.Store{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: constants.EmptyNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.StoreSpec{
+					Name:    orasName,
+					Address: dirPath,
+				},
+			},
+			expectedErr:        false,
+			expectedStoreCount: 1,
+		},
+		{
+			name: "invalid parameters",
+			store: &configv1beta1.Store{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: constants.EmptyNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.StoreSpec{
+					Parameters: runtime.RawExtension{
+						Raw: []byte("test"),
+					},
+				},
+			},
+			expectedErr:        true,
+			expectedStoreCount: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetStoreMap()
+			scheme, _ := test.CreateScheme()
+			client := fake.NewClientBuilder().WithScheme(scheme)
+			client.WithObjects(tt.store)
+			r := &StoreReconciler{
+				Scheme: scheme,
+				Client: client.Build(),
+			}
+			var req reconcile.Request
+			if tt.req != nil {
+				req = *tt.req
+			} else {
+				req = reconcile.Request{
+					NamespacedName: test.KeyFor(tt.store),
+				}
+			}
+
+			_, err := r.Reconcile(context.Background(), req)
+			if tt.expectedErr != (err != nil) {
+				t.Fatalf("Reconcile() expected error %v, actual %v", tt.expectedErr, err)
+			}
+			if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != tt.expectedStoreCount {
+				t.Fatalf("Store map expected size %v, actual %v", tt.expectedStoreCount, len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
+			}
+		})
 	}
 }
 
 func resetStoreMap() {
-	StoreMap = rs.NewActiveStores()
+	controllers.NamespacedStores = rs.NewActiveStores()
 }
 
 func getOrasStoreSpec(pluginName, pluginPath string) configv1beta1.StoreSpec {

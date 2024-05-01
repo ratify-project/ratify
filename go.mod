@@ -10,7 +10,7 @@ retract (
 
 require (
 	github.com/Azure/azure-sdk-for-go v68.0.0+incompatible
-	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.0
+	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.11.1
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.5.2
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2
 	github.com/aws/aws-sdk-go-v2 v1.26.1
@@ -40,7 +40,7 @@ require (
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.8.3
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spdx/tools-golang v0.5.3
+	github.com/spdx/tools-golang v0.5.4
 	github.com/spf13/cobra v1.8.0
 	github.com/xlab/treeprint v1.1.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
@@ -49,10 +49,10 @@ require (
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.62.2
 	google.golang.org/protobuf v1.33.0
-	k8s.io/api v0.28.8
-	k8s.io/apimachinery v0.28.8
-	k8s.io/client-go v0.28.8
-	oras.land/oras-go/v2 v2.3.1
+	k8s.io/api v0.28.9
+	k8s.io/apimachinery v0.28.9
+	k8s.io/client-go v0.28.9
+	oras.land/oras-go/v2 v2.5.0
 )
 
 require (
@@ -122,6 +122,7 @@ require (
 	go.step.sm/crypto v0.44.2 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
+	gotest.tools/v3 v3.1.0 // indirect
 	sigs.k8s.io/release-utils v0.7.7 // indirect
 )
 
@@ -235,7 +236,7 @@ require (
 	golang.org/x/crypto v0.22.0
 	golang.org/x/exp v0.0.0-20231108232855-2478ac86f678 // indirect
 	golang.org/x/mod v0.16.0 // indirect
-	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.19.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/term v0.19.0 // indirect

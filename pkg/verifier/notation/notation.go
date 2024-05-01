@@ -37,6 +37,7 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/types"
 	"github.com/notaryproject/notation-go/log"
 
+	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 	_ "github.com/notaryproject/notation-core-go/signature/cose" // register COSE signature
 	_ "github.com/notaryproject/notation-core-go/signature/jws"  // register JWS signature
 	"github.com/notaryproject/notation-go"
@@ -221,21 +222,17 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 
 // append namespace to certStore so they are uniquely identifiable
 func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
+	// TODO: once we support multi-tenancy, empty namespace would be reserved for cluster scope.
 	if namespace == "" {
 		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
 	}
 
 	for _, certStores := range verificationCertStore {
 		for i, certstore := range certStores {
-			if !isNamespacedNamed(certstore) {
+			if !vu.IsNamespacedNamed(certstore) {
 				certStores[i] = namespace + constants.NamespaceSeperator + certstore
 			}
 		}
 	}
 	return verificationCertStore, nil
-}
-
-// return true if string looks like a K8s namespaced resource. e.g. namespace/name
-func isNamespacedNamed(name string) bool {
-	return strings.Contains(name, constants.NamespaceSeperator)
 }

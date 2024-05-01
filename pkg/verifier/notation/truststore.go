@@ -22,7 +22,7 @@ import (
 	"fmt"
 
 	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/controllers"
+	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
@@ -42,7 +42,7 @@ type trustStore struct {
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
+	certs, err := s.getCertificatesInternal(ctx, namedStore, cutils.GetCertificatesMap(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-			result := keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(certStore))
+			result := keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(ctx, certStore))
 			// notation verifier does not consider specific named/versioned certificates within a key management provider resource
 			if len(result) == 0 {
 				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Key Management Provider %+v", certStore)
