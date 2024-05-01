@@ -88,13 +88,13 @@ func TestCreate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid trust policies config",
+			name: "valid trust policies config with no legacy config or trust policies",
 			config: config.VerifierConfig{
 				"name":          "test",
 				"artifactTypes": "testtype",
 				"trustPolicies": []TrustPolicyConfig{},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "invalid config with legacy and trust policies",

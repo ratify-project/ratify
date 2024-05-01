@@ -146,7 +146,8 @@ func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierC
 
 	var trustPolicies *TrustPolicies
 	legacy := true
-	if config.KeyRef == "" && config.RekorURL == "" {
+	// if trustPolicies are provided and non-legacy, create the trust policies
+	if config.KeyRef == "" && config.RekorURL == "" && len(config.TrustPolicies) > 0 {
 		trustPolicies, err = CreateTrustPolicies(config.TrustPolicies, verifierName)
 		if err != nil {
 			return nil, err
