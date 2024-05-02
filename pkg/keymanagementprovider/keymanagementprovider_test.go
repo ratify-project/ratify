@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -199,6 +200,15 @@ func TestGetKeysFromMap(t *testing.T) {
 func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 	keyMap.Delete("test")
 	keys, _ := GetKeysFromMap(context.Background(), "test")
+	if len(keys) != 0 {
+		t.Fatalf("keys should not have been fetched from the map")
+	}
+}
+
+func TestGetKeysFromMap_AccessDifferentNamespace_ReturnsFalse(t *testing.T) {
+	keyMap.Delete("test")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), "namespace1")
+	keys, _ := GetKeysFromMap(ctx, "namespace2/test")
 	if len(keys) != 0 {
 		t.Fatalf("keys should not have been fetched from the map")
 	}

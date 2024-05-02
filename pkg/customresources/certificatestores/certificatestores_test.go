@@ -37,16 +37,14 @@ const (
 	store1                  = namespace1 + "/" + name1
 	store2                  = namespace2 + "/" + name2
 	ratifyDeployedNamespace = "sample"
-	defaultStore            = "default/" + name1
 	storeInRatifyNS         = ratifyDeployedNamespace + "/" + name1
 	storeWithoutNamespace   = name1
 )
 
 var (
-	cert1           = generateTestCert()
-	cert2           = generateTestCert()
-	certInDefaultNS = generateTestCert()
-	certInRatifyNS  = generateTestCert()
+	cert1          = generateTestCert()
+	cert2          = generateTestCert()
+	certInRatifyNS = generateTestCert()
 )
 
 func TestCertStoresOperations(t *testing.T) {
@@ -69,7 +67,6 @@ func TestGetCertsFromStore(t *testing.T) {
 	activeCertStores := NewActiveCertStores()
 	activeCertStores.AddStore(store1, []*x509.Certificate{cert1})
 	activeCertStores.AddStore(store2, []*x509.Certificate{cert2})
-	activeCertStores.AddStore(defaultStore, []*x509.Certificate{certInDefaultNS})
 	activeCertStores.AddStore(storeInRatifyNS, []*x509.Certificate{certInRatifyNS})
 
 	os.Setenv(utils.RatifyNamespaceEnvVar, ratifyDeployedNamespace)
@@ -98,12 +95,6 @@ func TestGetCertsFromStore(t *testing.T) {
 			scope:        constants.EmptyNamespace,
 			storeName:    "nonexisting",
 			expectedCert: nil,
-		},
-		{
-			name:         "namespaced access to store under default namespace",
-			scope:        namespace1,
-			storeName:    defaultStore,
-			expectedCert: certInDefaultNS,
 		},
 		{
 			name:         "namespaced access to store under same namespace",

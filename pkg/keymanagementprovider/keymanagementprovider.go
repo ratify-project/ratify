@@ -115,7 +115,7 @@ func SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certifica
 
 // GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found
 func GetCertificatesFromMap(ctx context.Context, resource string) map[KMPMapKey][]*x509.Certificate {
-	if !isCompatibleNamespace(ctx, resource) {
+	if !hasAccessToProvider(ctx, resource) {
 		return map[KMPMapKey][]*x509.Certificate{}
 	}
 	certs, ok := certificatesMap.Load(resource)
@@ -153,7 +153,7 @@ func SetKeysInMap(resource string, providerType string, keys map[KMPMapKey]crypt
 func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicKey, bool) {
 	// A cluster-wide operation can cluster-wide provider
 	// A namespaced operation can only fetch the provider in the same namespace or cluster-wide provider.
-	if !isCompatibleNamespace(ctx, resource) {
+	if !hasAccessToProvider(ctx, resource) {
 		return map[KMPMapKey]PublicKey{}, false
 	}
 	if keys, ok := keyMap.Load(resource); ok {
@@ -169,7 +169,7 @@ func DeleteKeysFromMap(resource string) {
 
 // Namespaced verifiers could access KMP in the same namespace or cluster-wide KMP.
 // Cluster-wide verifiers could only access cluster-scoped certStores.
-func isCompatibleNamespace(ctx context.Context, provider string) bool {
+func hasAccessToProvider(ctx context.Context, provider string) bool {
 	namespace := ctxUtils.GetNamespace(ctx)
 	if namespace == constants.EmptyNamespace {
 		return !vu.IsNamespacedNamed(provider)

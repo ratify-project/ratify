@@ -104,8 +104,8 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
         
         # restore cert store in ratify namespace
-        run bash -c "kubectl get namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n default > kmprovider.yaml"
-        run kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default
+        run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > kmprovider.yaml"
+        run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0
         sed 's/default/gatekeeper-system/' kmprovider.yaml > kmproviderNewNS.yaml
         run kubectl apply -f kmproviderNewNS.yaml        
         assert_success
@@ -122,12 +122,12 @@ RATIFY_NAMESPACE=gatekeeper-system
     sleep 5
     
     # apply the key management provider to default namespace
-    run bash -c "kubectl get namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n ${RATIFY_NAMESPACE} > kmprovider.yaml"    
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > kmprovider.yaml"    
     assert_success
     sed 's/gatekeeper-system/default/' kmprovider.yaml > kmproviderNewNS.yaml    
     run kubectl apply -f kmproviderNewNS.yaml
     assert_success
-    run kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
+    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0
     assert_success
     
     # configure the notation verifier to use inline certificate store with specific namespace
@@ -344,7 +344,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_failure
 
     # delete the existing key management provider inline resource since certificate store and key management provider cannot be used together
-    run kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
+    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0
     assert_success
     # add the alternate certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
@@ -364,7 +364,7 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "validate inline key management provider" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
         # restore the original notation verifier for other tests
@@ -460,7 +460,7 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "validate image signed by leaf cert" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 

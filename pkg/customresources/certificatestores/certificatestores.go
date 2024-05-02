@@ -26,8 +26,6 @@ import (
 	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 )
 
-const defaultNamespace = "default"
-
 // ActiveCertStores implements the CertStoreManager interface
 type ActiveCertStores struct {
 	// scopedCertStores is mapping from cert store name to certificate list.
@@ -37,7 +35,6 @@ type ActiveCertStores struct {
 	//   "namespace1/store1": []*x509.Certificate,
 	//   "namespace2/store2": []*x509.Certificate
 	// }
-	// Note: The namespace "default" is reserved for cluster-wide scenario.
 	scopedCertStores sync.Map
 }
 
@@ -48,11 +45,15 @@ func NewActiveCertStores() CertStoreManager {
 // GetCertStores fulfills the CertStoreManager interface.
 // It returns a list of certificates in the given store.
 func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName string) []*x509.Certificate {
-	storeName = prependNamespaceToStoreName(storeName)
-	if !isCompatibleNamespace(ctx, storeName) {
+	prependedName, prepended := prependNamespaceToStoreName(storeName)
+	if !prepended {
 		return []*x509.Certificate{}
 	}
-	if certs, ok := c.scopedCertStores.Load(storeName); ok {
+
+	if !hasAccessToStore(ctx, storeName) {
+		return []*x509.Certificate{}
+	}
+	if certs, ok := c.scopedCertStores.Load(prependedName); ok {
 		return certs.([]*x509.Certificate)
 	}
 	return []*x509.Certificate{}
@@ -70,26 +71,25 @@ func (c *ActiveCertStores) DeleteStore(storeName string) {
 	c.scopedCertStores.Delete(storeName)
 }
 
-// Namespaced verifiers could access certStores in the same namespace or "default" namespace.
+// Namespaced verifiers could access certStores in the same namespace.
 // Cluster-wide verifier could access all certStores.
 // Note: the cluster-wide behavior is different from KMP as we need to keep the behavior backward compatible.
-func isCompatibleNamespace(ctx context.Context, storeName string) bool {
+func hasAccessToStore(ctx context.Context, storeName string) bool {
 	namespace := ctxUtils.GetNamespace(ctx)
 	if namespace == constants.EmptyNamespace {
 		return true
 	}
-	return strings.HasPrefix(storeName, namespace+constants.NamespaceSeperator) || strings.HasPrefix(storeName, defaultNamespace+constants.NamespaceSeperator)
+	return strings.HasPrefix(storeName, namespace+constants.NamespaceSeperator)
 }
 
 // prependNamespaceToStoreName prepends namespace to store name if not already present.
-// If the namespace where Ratify deployed is not set, `default` namespace will be prepended. However, this case should never happen.
-func prependNamespaceToStoreName(storeName string) string {
+// If the namespace where Ratify deployed is not set, prepended would be set to false.
+func prependNamespaceToStoreName(storeName string) (prependedName string, prepended bool) {
 	if vu.IsNamespacedNamed(storeName) {
-		return storeName
+		return storeName, true
 	}
-	defaultNS := defaultNamespace
 	if ns, found := os.LookupEnv(utils.RatifyNamespaceEnvVar); found {
-		defaultNS = ns
+		return ns + constants.NamespaceSeperator + storeName, true
 	}
-	return defaultNS + constants.NamespaceSeperator + storeName
+	return storeName, false
 }
