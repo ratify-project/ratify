@@ -2,7 +2,7 @@
 ---
 {{- if .Values.notationCert }} 
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: KeyManagementProvider
+kind: NamespacedKeyManagementProvider
 metadata:
   name: {{$fullname}}-notation-inline-cert
   annotations:
@@ -17,7 +17,7 @@ spec:
 ---
 {{-  range $i, $cert := .Values.notationCerts }}
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: KeyManagementProvider
+kind: NamespacedKeyManagementProvider
 metadata:
   name: {{$fullname}}-notation-inline-cert-{{$i}}
   annotations:
@@ -32,7 +32,7 @@ spec:
 ---
 {{-  range $i, $key := .Values.cosignKeys }}
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: KeyManagementProvider
+kind: NamespacedKeyManagementProvider
 metadata:
   name: {{$fullname}}-cosign-inline-key-{{$i}}
   annotations:

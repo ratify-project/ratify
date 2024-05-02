@@ -13,20 +13,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package clusterresource
 
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
 	"github.com/sirupsen/logrus"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	test "github.com/deislabs/ratify/pkg/utils"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -129,94 +128,6 @@ func TestKMProviderUpdateSuccessStatus_emptyProperties(t *testing.T) {
 	}
 }
 
-// TestRawToKeyManagementProviderConfig tests the rawToKeyManagementProviderConfig method
-func TestRawToKeyManagementProviderConfig(t *testing.T) {
-	testCases := []struct {
-		name         string
-		raw          []byte
-		expectErr    bool
-		expectConfig config.KeyManagementProviderConfig
-	}{
-		{
-			name:         "empty Raw",
-			raw:          []byte{},
-			expectErr:    true,
-			expectConfig: config.KeyManagementProviderConfig{},
-		},
-		{
-			name:         "unmarshal failure",
-			raw:          []byte("invalid"),
-			expectErr:    true,
-			expectConfig: config.KeyManagementProviderConfig{},
-		},
-		{
-			name:      "valid Raw",
-			raw:       []byte("{\"type\": \"inline\"}"),
-			expectErr: false,
-			expectConfig: config.KeyManagementProviderConfig{
-				"type": "inline",
-			},
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			config, err := rawToKeyManagementProviderConfig(tc.raw, "inline")
-
-			if tc.expectErr != (err != nil) {
-				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
-			}
-			if !reflect.DeepEqual(config, tc.expectConfig) {
-				t.Fatalf("Expected config to be %v, got %v", tc.expectConfig, config)
-			}
-		})
-	}
-}
-
-// TestSpecToKeyManagementProviderProvider tests the specToKeyManagementProviderProvider method
-func TestSpecToKeyManagementProviderProvider(t *testing.T) {
-	testCases := []struct {
-		name      string
-		spec      configv1beta1.KeyManagementProviderSpec
-		expectErr bool
-	}{
-		{
-			name:      "empty spec",
-			spec:      configv1beta1.KeyManagementProviderSpec{},
-			expectErr: true,
-		},
-		{
-			name: "missing inline provider required fields",
-			spec: configv1beta1.KeyManagementProviderSpec{
-				Type: "inline",
-				Parameters: runtime.RawExtension{
-					Raw: []byte("{\"type\": \"inline\"}"),
-				},
-			},
-			expectErr: true,
-		},
-		{
-			name: "valid spec",
-			spec: configv1beta1.KeyManagementProviderSpec{
-				Type: "inline",
-				Parameters: runtime.RawExtension{
-					Raw: []byte(`{"type": "inline", "contentType": "certificate", "value": "-----BEGIN CERTIFICATE-----\nMIID2jCCAsKgAwIBAgIQXy2VqtlhSkiZKAGhsnkjbDANBgkqhkiG9w0BAQsFADBvMRswGQYDVQQD\nExJyYXRpZnkuZXhhbXBsZS5jb20xDzANBgNVBAsTBk15IE9yZzETMBEGA1UEChMKTXkgQ29tcGFu\neTEQMA4GA1UEBxMHUmVkbW9uZDELMAkGA1UECBMCV0ExCzAJBgNVBAYTAlVTMB4XDTIzMDIwMTIy\nNDUwMFoXDTI0MDIwMTIyNTUwMFowbzEbMBkGA1UEAxMScmF0aWZ5LmV4YW1wbGUuY29tMQ8wDQYD\nVQQLEwZNeSBPcmcxEzARBgNVBAoTCk15IENvbXBhbnkxEDAOBgNVBAcTB1JlZG1vbmQxCzAJBgNV\nBAgTAldBMQswCQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL10bM81\npPAyuraORABsOGS8M76Bi7Guwa3JlM1g2D8CuzSfSTaaT6apy9GsccxUvXd5cmiP1ffna5z+EFmc\nizFQh2aq9kWKWXDvKFXzpQuhyqD1HeVlRlF+V0AfZPvGt3VwUUjNycoUU44ctCWmcUQP/KShZev3\n6SOsJ9q7KLjxxQLsUc4mg55eZUThu8mGB8jugtjsnLUYvIWfHhyjVpGrGVrdkDMoMn+u33scOmrt\nsBljvq9WVo4T/VrTDuiOYlAJFMUae2Ptvo0go8XTN3OjLblKeiK4C+jMn9Dk33oGIT9pmX0vrDJV\nX56w/2SejC1AxCPchHaMuhlwMpftBGkCAwEAAaNyMHAwDgYDVR0PAQH/BAQDAgeAMAkGA1UdEwQC\nMAAwEwYDVR0lBAwwCgYIKwYBBQUHAwMwHwYDVR0jBBgwFoAU0eaKkZj+MS9jCp9Dg1zdv3v/aKww\nHQYDVR0OBBYEFNHmipGY/jEvYwqfQ4Nc3b97/2isMA0GCSqGSIb3DQEBCwUAA4IBAQBNDcmSBizF\nmpJlD8EgNcUCy5tz7W3+AAhEbA3vsHP4D/UyV3UgcESx+L+Nye5uDYtTVm3lQejs3erN2BjW+ds+\nXFnpU/pVimd0aYv6mJfOieRILBF4XFomjhrJOLI55oVwLN/AgX6kuC3CJY2NMyJKlTao9oZgpHhs\nLlxB/r0n9JnUoN0Gq93oc1+OLFjPI7gNuPXYOP1N46oKgEmAEmNkP1etFrEjFRgsdIFHksrmlOlD\nIed9RcQ087VLjmuymLgqMTFX34Q3j7XgN2ENwBSnkHotE9CcuGRW+NuiOeJalL8DBmFXXWwHTKLQ\nPp5g6m1yZXylLJaFLKz7tdMmO355\n-----END CERTIFICATE-----\n"}`),
-				},
-			},
-			expectErr: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := specToKeyManagementProvider(tc.spec)
-			if tc.expectErr != (err != nil) {
-				t.Fatalf("Expected error to be %t, got %t", tc.expectErr, err != nil)
-			}
-		})
-	}
-}
-
 func TestWriteKMProviderStatus(t *testing.T) {
 	logger := logrus.WithContext(context.Background())
 	lastFetchedTime := metav1.Now()
@@ -232,21 +143,21 @@ func TestWriteKMProviderStatus(t *testing.T) {
 			isSuccess:  true,
 			errString:  "",
 			kmProvider: &configv1beta1.KeyManagementProvider{},
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:       "error status",
 			isSuccess:  false,
 			kmProvider: &configv1beta1.KeyManagementProvider{},
 			errString:  "a long error string that exceeds the max length of 30 characters",
-			reconciler: &mockStatusClient{},
+			reconciler: &test.MockStatusClient{},
 		},
 		{
 			name:       "status update failed",
 			isSuccess:  true,
 			kmProvider: &configv1beta1.KeyManagementProvider{},
-			reconciler: &mockStatusClient{
-				updateFailed: true,
+			reconciler: &test.MockStatusClient{
+				UpdateFailed: true,
 			},
 		},
 	}

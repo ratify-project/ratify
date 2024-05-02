@@ -24,8 +24,9 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-// KeyManagementProviderSpec defines the desired state of KeyManagementProvider
-type KeyManagementProviderSpec struct {
+// NamespacedKeyManagementProviderSpec defines the desired state of NamespacedKeyManagementProvider
+type NamespacedKeyManagementProviderSpec struct {
+	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Name of the key management provider
@@ -36,9 +37,10 @@ type KeyManagementProviderSpec struct {
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
 }
 
-// KeyManagementProviderStatus defines the observed state of KeyManagementProvider
-type KeyManagementProviderStatus struct {
-	// Important: Run "make manifests" to regenerate code after modifying this file
+// NamespacedKeyManagementProviderStatus defines the observed state of NamespacedKeyManagementProvider
+type NamespacedKeyManagementProviderStatus struct {
+	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
+	// Important: Run "make" to regenerate code after modifying this file
 
 	// Is successful in loading certificate/key files
 	IsSuccess bool `json:"issuccess"`
@@ -58,30 +60,30 @@ type KeyManagementProviderStatus struct {
 }
 
 // +kubebuilder:object:root=true
-// +kubebuilder:resource:scope="Cluster"
+// +kubebuilder:resource:scope="Namespaced"
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:printcolumn:name="IsSuccess",type=boolean,JSONPath=`.status.issuccess`
 // +kubebuilder:printcolumn:name="Error",type=string,JSONPath=`.status.brieferror`
 // +kubebuilder:printcolumn:name="LastFetchedTime",type=date,JSONPath=`.status.lastfetchedtime`
-// KeyManagementProvider is the Schema for the keymanagementproviders API
-type KeyManagementProvider struct {
+// NamespacedKeyManagementProvider is the Schema for the namespacedkeymanagementproviders API
+type NamespacedKeyManagementProvider struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   KeyManagementProviderSpec   `json:"spec,omitempty"`
-	Status KeyManagementProviderStatus `json:"status,omitempty"`
+	Spec   NamespacedKeyManagementProviderSpec   `json:"spec,omitempty"`
+	Status NamespacedKeyManagementProviderStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
-// KeyManagementProviderList contains a list of KeyManagementProvider
-type KeyManagementProviderList struct {
+// NamespacedKeyManagementProviderList contains a list of NamespacedKeyManagementProvider
+type NamespacedKeyManagementProviderList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
-	Items           []KeyManagementProvider `json:"items"`
+	Items           []NamespacedKeyManagementProvider `json:"items"`
 }
 
 func init() {
-	SchemeBuilder.Register(&KeyManagementProvider{}, &KeyManagementProviderList{})
+	SchemeBuilder.Register(&NamespacedKeyManagementProvider{}, &NamespacedKeyManagementProviderList{})
 }
