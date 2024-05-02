@@ -61,7 +61,6 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
 		if apierrors.IsNotFound(err) {
 			verifierLogger.Infof("delete event detected, removing verifier %v", resource)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
 			controllers.NamespacedVerifiers.DeleteVerifier(req.Namespace, resource)
 		} else {
 			verifierLogger.Error(err, "unable to fetch verifier")
