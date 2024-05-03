@@ -35,11 +35,11 @@ type mockCertStores struct {
 	certMap map[string][]*x509.Certificate
 }
 
-func (m *mockCertStores) GetCertsFromStore(_ context.Context, storeName string) []*x509.Certificate {
+func (m *mockCertStores) GetCertsFromStore(_ context.Context, storeName string) ([]*x509.Certificate, error) {
 	if m.certMap == nil {
-		return nil
+		return nil, nil
 	}
-	return m.certMap[storeName]
+	return m.certMap[storeName], nil
 }
 
 func (m *mockCertStores) AddStore(_ string, _ []*x509.Certificate) {}

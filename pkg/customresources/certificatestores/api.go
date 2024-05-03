@@ -21,7 +21,7 @@ import (
 // CertStoreManager is an interface that defines the methods for managing certificate stores across different scopes.
 type CertStoreManager interface {
 	// GetCertsFromStore returns certificates from the given certificate store.
-	GetCertsFromStore(ctx context.Context, storeName string) []*x509.Certificate
+	GetCertsFromStore(ctx context.Context, storeName string) ([]*x509.Certificate, error)
 
 	// AddStore adds the given certificate.
 	AddStore(storeName string, cert []*x509.Certificate)

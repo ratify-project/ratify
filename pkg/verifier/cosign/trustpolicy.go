@@ -149,9 +149,9 @@ func (tp *trustPolicy) GetKeys(ctx context.Context, _ string) (map[PKKey]keymana
 			continue
 		}
 		// get the key management provider resource which contains a map of keys
-		kmpResource, ok := keymanagementprovider.GetKeysFromMap(ctx, keyConfig.Provider)
-		if !ok {
-			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy [%s] failed: key management provider %s not found", tp.config.Name, keyConfig.Provider))
+		kmpResource, kmpErr := keymanagementprovider.GetKeysFromMap(ctx, keyConfig.Provider)
+		if kmpErr != nil {
+			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy [%s] failed to access key management provider %s, err: %s", tp.config.Name, keyConfig.Provider, kmpErr.Error()))
 		}
 		// get a specific key from the key management provider resource
 		if keyConfig.Name != "" {

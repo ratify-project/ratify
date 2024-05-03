@@ -16,6 +16,7 @@ package certificatestores
 import (
 	"context"
 	"crypto/x509"
+	"fmt"
 	"os"
 	"strings"
 	"sync"
@@ -44,19 +45,19 @@ func NewActiveCertStores() CertStoreManager {
 
 // GetCertStores fulfills the CertStoreManager interface.
 // It returns a list of certificates in the given store.
-func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName string) []*x509.Certificate {
+func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName string) ([]*x509.Certificate, error) {
 	prependedName, prepended := prependNamespaceToStoreName(storeName)
 	if !prepended {
-		return []*x509.Certificate{}
+		return []*x509.Certificate{}, fmt.Errorf("The given store name %s is not namespaced", storeName)
 	}
 
 	if !hasAccessToStore(ctx, storeName) {
-		return []*x509.Certificate{}
+		return []*x509.Certificate{}, fmt.Errorf("namespace: [%s] does not have access to certificate store: %s", ctxUtils.GetNamespace(ctx), storeName)
 	}
 	if certs, ok := c.scopedCertStores.Load(prependedName); ok {
-		return certs.([]*x509.Certificate)
+		return certs.([]*x509.Certificate), nil
 	}
-	return []*x509.Certificate{}
+	return []*x509.Certificate{}, fmt.Errorf("failed to access non-existent certificate store: %s", storeName)
 }
 
 // AddStore fulfills the CertStoreManager interface.
@@ -71,8 +72,8 @@ func (c *ActiveCertStores) DeleteStore(storeName string) {
 	c.scopedCertStores.Delete(storeName)
 }
 
-// Namespaced verifiers could access certStores in the same namespace.
-// Cluster-wide verifier could access all certStores.
+// A namespaced verification request could access certStores in the same namespace.
+// A cluster-wide (context namespace is "") verification request could access certStores across all namespaces.
 // Note: the cluster-wide behavior is different from KMP as we need to keep the behavior backward compatible.
 func hasAccessToStore(ctx context.Context, storeName string) bool {
 	namespace := ctxUtils.GetNamespace(ctx)

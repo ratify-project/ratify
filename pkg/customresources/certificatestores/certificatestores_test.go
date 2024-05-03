@@ -53,13 +53,15 @@ func TestCertStoresOperations(t *testing.T) {
 	certStore1 := []*x509.Certificate{cert1}
 
 	activeCertStores.AddStore(store1, certStore1)
-	if len(activeCertStores.GetCertsFromStore(ctx, store1)) != 1 {
-		t.Fatalf("expect to get 1 certificate, but got: %d", len(activeCertStores.GetCertsFromStore(ctx, store1)))
+	certs, _ := activeCertStores.GetCertsFromStore(ctx, store1)
+	if len(certs) != 1 {
+		t.Fatalf("expect to get 1 certificate, but got: %d", len(certs))
 	}
 
 	activeCertStores.DeleteStore(store1)
-	if len(activeCertStores.GetCertsFromStore(ctx, store1)) != 0 {
-		t.Fatalf("expect to get 0 certificate, but got: %d", len(activeCertStores.GetCertsFromStore(ctx, store1)))
+	certs, _ = activeCertStores.GetCertsFromStore(ctx, store1)
+	if len(certs) != 0 {
+		t.Fatalf("expect to get 0 certificate, but got: %d", len(certs))
 	}
 }
 
@@ -119,7 +121,7 @@ func TestGetCertsFromStore(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := ctxUtils.SetContextWithNamespace(context.Background(), tc.scope)
-			certs := activeCertStores.GetCertsFromStore(ctx, tc.storeName)
+			certs, _ := activeCertStores.GetCertsFromStore(ctx, tc.storeName)
 			if len(certs) == 0 {
 				if tc.expectedCert != nil {
 					t.Fatalf("Expected to get certificate, but got none")
