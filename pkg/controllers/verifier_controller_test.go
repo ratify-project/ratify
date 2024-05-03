@@ -212,31 +212,6 @@ func TestWriteVerifierStatus(t *testing.T) {
 	}
 }
 
-func TestGetCertStoreNamespace(t *testing.T) {
-	// error scenario, everything is empty, expect error
-	_, err := getCertStoreNamespace("")
-	if err.Error() == "environment variable" {
-		t.Fatalf("env not set should trigger an error")
-	}
-
-	ratifyDeployedNamespace := "sample"
-	os.Setenv(utils.RatifyNamespaceEnvVar, ratifyDeployedNamespace)
-	defer os.Unsetenv(utils.RatifyNamespaceEnvVar)
-
-	// scenario1, when default namespace is provided, then we should expect default
-	verifierNamespace := "verifierNamespace"
-	ns, _ := getCertStoreNamespace(verifierNamespace)
-	if ns != verifierNamespace {
-		t.Fatalf("default namespace expected")
-	}
-
-	// scenario2, default is empty, should return ratify installed namespace
-	ns, _ = getCertStoreNamespace("")
-	if ns != ratifyDeployedNamespace {
-		t.Fatalf("default namespace expected")
-	}
-}
-
 func resetVerifierMap() {
 	NamespacedVerifiers = verifiers.NewActiveVerifiers()
 }

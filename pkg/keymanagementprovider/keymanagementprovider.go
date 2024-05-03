@@ -20,9 +20,14 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/constants"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
+	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )
 
@@ -109,16 +114,15 @@ func SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certifica
 	certificatesMap.Store(resource, certs)
 }
 
-// GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found
-func GetCertificatesFromMap(ctx context.Context, resource string) map[KMPMapKey][]*x509.Certificate {
-	if !isCompatibleNamespace(ctx, resource) {
-		return map[KMPMapKey][]*x509.Certificate{}
+// GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found or an error happened.
+func GetCertificatesFromMap(ctx context.Context, resource string) (map[KMPMapKey][]*x509.Certificate, error) {
+	if !hasAccessToProvider(ctx, resource) {
+		return map[KMPMapKey][]*x509.Certificate{}, fmt.Errorf("namespace: [%s] does not have access to key management provider: %s", ctxUtils.GetNamespace(ctx), resource)
 	}
-	certs, ok := certificatesMap.Load(resource)
-	if !ok {
-		return map[KMPMapKey][]*x509.Certificate{}
+	if certs, ok := certificatesMap.Load(resource); ok {
+		return certs.(map[KMPMapKey][]*x509.Certificate), nil
 	}
-	return certs.(map[KMPMapKey][]*x509.Certificate)
+	return map[KMPMapKey][]*x509.Certificate{}, fmt.Errorf("failed to access non-existent key management provider: %s", resource)
 }
 
 // DeleteCertificatesFromMap deletes the certificates from the map
@@ -145,16 +149,17 @@ func SetKeysInMap(resource string, providerType string, keys map[KMPMapKey]crypt
 	keyMap.Store(resource, typedMap)
 }
 
-// GetKeysFromMap gets the keys from the map and returns an empty map with false boolean if not found
-func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicKey, bool) {
-	if !isCompatibleNamespace(ctx, resource) {
-		return map[KMPMapKey]PublicKey{}, false
+// GetKeysFromMap gets the keys from the map and returns an empty map if not found or an error happened.
+func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicKey, error) {
+	// A cluster-wide operation can cluster-wide provider
+	// A namespaced operation can only fetch the provider in the same namespace or cluster-wide provider.
+	if !hasAccessToProvider(ctx, resource) {
+		return map[KMPMapKey]PublicKey{}, fmt.Errorf("namespace: [%s] does not have access to key management provider: %s", ctxUtils.GetNamespace(ctx), resource)
 	}
-	keys, ok := keyMap.Load(resource)
-	if !ok {
-		return map[KMPMapKey]PublicKey{}, false
+	if keys, ok := keyMap.Load(resource); ok {
+		return keys.(map[KMPMapKey]PublicKey), nil
 	}
-	return keys.(map[KMPMapKey]PublicKey), true
+	return map[KMPMapKey]PublicKey{}, fmt.Errorf("failed to access non-existent key management provider: %s", resource)
 }
 
 // DeleteKeysFromMap deletes the keys from the map
@@ -162,9 +167,12 @@ func DeleteKeysFromMap(resource string) {
 	keyMap.Delete(resource)
 }
 
-// Namespaced verifiers could access both cluster-scoped and namespaced certStores.
-// But cluster-wide verifiers could only access cluster-scoped certStores.
-// TODO: current implementation always returns true. Check the namespace once we support multi-tenancy.
-func isCompatibleNamespace(_ context.Context, _ string) bool {
-	return true
+// A namespaced verification request could access KMP in the same namespace or cluster-wide KMP.
+// A cluster-wide (context namespace is "") verification request could only access cluster-wide KMP.
+func hasAccessToProvider(ctx context.Context, provider string) bool {
+	namespace := ctxUtils.GetNamespace(ctx)
+	if namespace == constants.EmptyNamespace {
+		return !vu.IsNamespacedNamed(provider)
+	}
+	return strings.HasPrefix(provider, namespace+constants.NamespaceSeperator) || !vu.IsNamespacedNamed(provider)
 }
