@@ -19,13 +19,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/config"
-	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/utils"
 	vc "github.com/deislabs/ratify/pkg/verifier/config"
 	vf "github.com/deislabs/ratify/pkg/verifier/factory"
 	"github.com/deislabs/ratify/pkg/verifier/types"
@@ -76,13 +73,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	namespace, err := getCertStoreNamespace(req.Namespace)
-	if err != nil {
-		verifierLogger.Error(err, "unable to get default namespace for certstore specified in verifier crd")
-		return ctrl.Result{}, err
-	}
-
-	if err = verifierAddOrReplace(verifier.Spec, resource, namespace); err != nil {
+	if err := verifierAddOrReplace(verifier.Spec, resource, constants.EmptyNamespace); err != nil {
 		verifierLogger.Error(err, "unable to create verifier from verifier crd")
 		writeVerifierStatus(ctx, r, &verifier, verifierLogger, false, err.Error())
 		return ctrl.Result{}, err
@@ -150,23 +141,6 @@ func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&configv1beta1.Verifier{}).
 		Complete(r)
-}
-
-// Historically certStore defined in trust policy only contains name which means the CertStore cannot be uniquely identified
-// If verifierNamespace is not empty, this method returns the default cert store namespace else returns the ratify deployed namespace
-func getCertStoreNamespace(verifierNamespace string) (string, error) {
-	// first, check if we can use the verifier namespace as the cert store namespace
-	if verifierNamespace != "" {
-		return verifierNamespace, nil
-	}
-
-	// next, return the ratify deployed namespace
-	ns, found := os.LookupEnv(utils.RatifyNamespaceEnvVar)
-	if !found {
-		return "", re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("environment variable %s not set", utils.RatifyNamespaceEnvVar))
-	}
-
-	return ns, nil
 }
 
 func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.Verifier, logger *logrus.Entry, isSuccess bool, errorString string) {

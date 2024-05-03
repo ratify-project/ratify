@@ -14,72 +14,83 @@ limitations under the License.
 package certificatestores
 
 import (
+	"context"
 	"crypto/x509"
+	"fmt"
+	"os"
+	"strings"
+	"sync"
 
 	"github.com/deislabs/ratify/internal/constants"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
+	"github.com/deislabs/ratify/pkg/utils"
+	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 )
 
 // ActiveCertStores implements the CertStoreManager interface
 type ActiveCertStores struct {
-	// TODO: Implement concurrent safety using sync.Map
-	// The structure of the map is as follows:
-	// The first level maps from scope to certificate stores.
-	// The second level maps from certificate store name to certificates.
+	// scopedCertStores is mapping from cert store name to certificate list.
 	// The certificate store name is prefixed with the namespace.
 	// Example:
 	// {
-	//   "namespace1": {
-	//     "namespace1/store1": []*x509.Certificate,
-	//     "namespace1/store2": []*x509.Certificate
-	//   },
-	//   "namespace2": {
-	//     "namespace2/store1": []*x509.Certificate,
-	//     "namespace2/store2": []*x509.Certificate
-	//   }
+	//   "namespace1/store1": []*x509.Certificate,
+	//   "namespace2/store2": []*x509.Certificate
 	// }
-	// Note: Scope is utilized for organizing and isolating cert stores. In a Kubernetes (K8s) environment, the scope can be either a namespace or an empty string ("") for cluster-wide cert stores.
-	ScopedCertStores map[string]map[string][]*x509.Certificate
+	scopedCertStores sync.Map
 }
 
 func NewActiveCertStores() CertStoreManager {
-	return &ActiveCertStores{
-		ScopedCertStores: make(map[string]map[string][]*x509.Certificate),
-	}
+	return &ActiveCertStores{}
 }
 
 // GetCertStores fulfills the CertStoreManager interface.
-// It returns a list of cert stores for the given scope. If no cert stores are found for the given scope, it returns cluster-wide cert stores.
-// TODO: Current implementation always fetches cluster-wide cert stores. Will support actual namespaced certStores in future.
-func (c *ActiveCertStores) GetCertStores(_ string) map[string][]*x509.Certificate {
-	return c.ScopedCertStores[constants.EmptyNamespace]
+// It returns a list of certificates in the given store.
+func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName string) ([]*x509.Certificate, error) {
+	prependedName, prepended := prependNamespaceToStoreName(storeName)
+	if !prepended {
+		return []*x509.Certificate{}, fmt.Errorf("The given store name %s is not namespaced", storeName)
+	}
+
+	if !hasAccessToStore(ctx, storeName) {
+		return []*x509.Certificate{}, fmt.Errorf("namespace: [%s] does not have access to certificate store: %s", ctxUtils.GetNamespace(ctx), storeName)
+	}
+	if certs, ok := c.scopedCertStores.Load(prependedName); ok {
+		return certs.([]*x509.Certificate), nil
+	}
+	return []*x509.Certificate{}, fmt.Errorf("failed to access non-existent certificate store: %s", storeName)
 }
 
 // AddStore fulfills the CertStoreManager interface.
-// It adds the given certificate under the given scope.
-// TODO: Current implementation always adds the given certificate to cluster-wide cert store. Will support actual namespaced certStores in future.
-func (c *ActiveCertStores) AddStore(_, storeName string, certs []*x509.Certificate) {
-	scope := constants.EmptyNamespace
-	if c.ScopedCertStores[scope] == nil {
-		c.ScopedCertStores[scope] = make(map[string][]*x509.Certificate)
-	}
-	c.ScopedCertStores[scope][storeName] = certs
+// It adds the given certificate under cert store.
+func (c *ActiveCertStores) AddStore(storeName string, cert []*x509.Certificate) {
+	c.scopedCertStores.Store(storeName, cert)
 }
 
 // DeleteStore fulfills the CertStoreManager interface.
-// It deletes the certificate from the given scope.
-// TODO: Current implementation always deletes the cluster-wide cert store. Will support actual namespaced certStores in future.
-func (c *ActiveCertStores) DeleteStore(_, storeName string) {
-	if store, ok := c.ScopedCertStores[constants.EmptyNamespace]; ok {
-		delete(store, storeName)
-	}
+// It deletes the given cert store.
+func (c *ActiveCertStores) DeleteStore(storeName string) {
+	c.scopedCertStores.Delete(storeName)
 }
 
-// IsEmpty fulfills the CertStoreManager interface.
-// It returns true if there are no certificates.
-func (c *ActiveCertStores) IsEmpty() bool {
-	count := 0
-	for _, certStores := range c.ScopedCertStores {
-		count += len(certStores)
+// A namespaced verification request could access certStores in the same namespace.
+// A cluster-wide (context namespace is "") verification request could access certStores across all namespaces.
+// Note: the cluster-wide behavior is different from KMP as we need to keep the behavior backward compatible.
+func hasAccessToStore(ctx context.Context, storeName string) bool {
+	namespace := ctxUtils.GetNamespace(ctx)
+	if namespace == constants.EmptyNamespace {
+		return true
 	}
-	return count == 0
+	return strings.HasPrefix(storeName, namespace+constants.NamespaceSeperator)
+}
+
+// prependNamespaceToStoreName prepends namespace to store name if not already present.
+// If the namespace where Ratify deployed is not set, prepended would be set to false.
+func prependNamespaceToStoreName(storeName string) (prependedName string, prepended bool) {
+	if vu.IsNamespacedNamed(storeName) {
+		return storeName, true
+	}
+	if ns, found := os.LookupEnv(utils.RatifyNamespaceEnvVar); found {
+		return ns + constants.NamespaceSeperator + storeName, true
+	}
+	return storeName, false
 }

@@ -13,19 +13,19 @@ limitations under the License.
 
 package certificatestores
 
-import "crypto/x509"
+import (
+	"context"
+	"crypto/x509"
+)
 
 // CertStoreManager is an interface that defines the methods for managing certificate stores across different scopes.
 type CertStoreManager interface {
-	// GetCertStores returns certificates for the given scope.
-	GetCertStores(scope string) map[string][]*x509.Certificate
+	// GetCertsFromStore returns certificates from the given certificate store.
+	GetCertsFromStore(ctx context.Context, storeName string) ([]*x509.Certificate, error)
 
-	// AddStore adds the given certificate under the given scope.
-	AddStore(scope, storeName string, cert []*x509.Certificate)
+	// AddStore adds the given certificate.
+	AddStore(storeName string, cert []*x509.Certificate)
 
 	// DeleteStore deletes the certificate from the given scope.
-	DeleteStore(scope, storeName string)
-
-	// IsEmpty returns true if there are no certificates.
-	IsEmpty() bool
+	DeleteStore(storeName string)
 }

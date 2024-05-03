@@ -20,6 +20,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/deislabs/ratify/pkg/controllers"
 )
 
 const (
@@ -29,7 +31,23 @@ const (
 	leafCertStr = "-----BEGIN CERTIFICATE-----\nMIIC7jCCAdagAwIBAgIURNiOON+GKbFS8yFxG6aMRoMg29cwDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzAzMTAwMTEwMjlaFw0yNDAzMDkwMTEwMjlaMBkxFzAVBgNVBAMMDnJhdGlm\neS5kZWZhdWx0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwUwGuWJ5\nDwspcL+7K+0XlkQ0g+sbyvfY0j0NdUmzsTPQNxsdUsbgYeidLnp0ruHKuHLq6Y9t\nEHUPF+A4S6lIi5OPhEkVxd/A5kzSX23WocJGmlew+Z/usjQdtiQ4ylYyHoHfPNrf\nrocbY21XQ3x2IM3yIo1QqSHNdCsE0UxsFI3j9XC+saIqrkr+k1SsI2AhhGRjXTke\nPNpOaJ+CRwsGz7PbnsACLbiAdOUJUGRkOlIl/p7hU2IcZUYTTGcKOFXP8DtbUJ+K\nQcBQOsfZyg36jvkpzmw/yAK00Uuc0X+5CaKfDKDw4MXvJFpRvG+Vc0mb5RB1E8py\neA6eXtUrZ5J4hQIDAQABox0wGzAZBgNVHREEEjAQgg5yYXRpZnkuZGVmYXVsdDAN\nBgkqhkiG9w0BAQsFAAOCAQEAHbiuodTJCDpCUu8tNjbww5ebTRznKZGnFmKQs5zU\no8KyCfLhR9/9zetDADwtWCQUvykFuHjx8tj41hALXXXafzkYPeTsfDmEoVWIJMQ1\nHqjbzc6bbxQAY7cC5HqM67fXYjPs1v3Uv3GZhF2EjBMqymKC+lZ/RSfktzN0iADn\nlwG9DrDibD739jBF09b3LHtdV55blN2wyB54DwMl5x0a4+bFYVj7fZzjctG4pH7T\njnBS69oxetPaqcRY7SQljJKaesiqx3CtiwVUpGTBexDtw6OIj9cWiCFT0lS3TfCh\nunfSQvVgezqE7txrFbXDQCgbl1jGagfia2ol7+IbLUR6TQ==\n-----END CERTIFICATE-----\n"
 )
 
+type mockCertStores struct {
+	certMap map[string][]*x509.Certificate
+}
+
+func (m *mockCertStores) GetCertsFromStore(_ context.Context, storeName string) ([]*x509.Certificate, error) {
+	if m.certMap == nil {
+		return nil, nil
+	}
+	return m.certMap[storeName], nil
+}
+
+func (m *mockCertStores) AddStore(_ string, _ []*x509.Certificate) {}
+
+func (m *mockCertStores) DeleteStore(_ string) {}
+
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
+	resetCertStore()
 	certStore := map[string][]string{}
 	certStore["store1"] = []string{"kv1"}
 	certStore["store2"] = []string{"kv2"}
@@ -37,13 +55,13 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 		certStores: certStore,
 	}
 
-	certificatesMap := map[string][]*x509.Certificate{}
-	if _, err := store.getCertificatesInternal(context.Background(), "store1", certificatesMap); err == nil {
+	if _, err := store.getCertificatesInternal(context.Background(), "store1"); err == nil {
 		t.Fatalf("error expected if cert map is empty")
 	}
 }
 
 func TestGetCertificates_NamedStore(t *testing.T) {
+	resetCertStore()
 	certStore := map[string][]string{}
 	certStore["store1"] = []string{"default/kv1"}
 	certStore["store2"] = []string{"projecta/kv2"}
@@ -58,9 +76,12 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	certificatesMap := map[string][]*x509.Certificate{}
 	certificatesMap["default/kv1"] = []*x509.Certificate{kv1Cert}
 	certificatesMap["projecta/kv2"] = []*x509.Certificate{kv2Cert}
+	controllers.NamespacedCertStores = &mockCertStores{
+		certMap: certificatesMap,
+	}
 
 	// only the certificate in the specified namedStore should be returned
-	result, _ := store.getCertificatesInternal(context.Background(), "store1", certificatesMap)
+	result, _ := store.getCertificatesInternal(context.Background(), "store1")
 	expectedLen := 1
 
 	if len(result) != expectedLen {
@@ -73,6 +94,7 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 }
 
 func TestGetCertificates_certPath(t *testing.T) {
+	resetCertStore()
 	// create a temporary certificate file
 	tmpFile, err := os.CreateTemp("", "*.pem")
 	if err != nil {
@@ -85,7 +107,7 @@ func TestGetCertificates_certPath(t *testing.T) {
 	trustStore := &trustStore{
 		certPaths: []string{tmpFile.Name()},
 	}
-	certs, err := trustStore.getCertificatesInternal(context.Background(), "", nil)
+	certs, err := trustStore.getCertificatesInternal(context.Background(), "")
 	if err != nil {
 		t.Fatalf("failed to get certs: %v", err)
 	}
@@ -154,4 +176,8 @@ func getCert(certString string) *x509.Certificate {
 	}
 
 	return test
+}
+
+func resetCertStore() {
+	controllers.NamespacedCertStores = &mockCertStores{}
 }
