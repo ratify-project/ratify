@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package clusterresource
 
 import (
 	"context"
@@ -24,14 +24,17 @@ import (
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	"github.com/deislabs/ratify/internal/constants"
+	"github.com/deislabs/ratify/pkg/controllers"
 	"github.com/deislabs/ratify/pkg/customresources/verifiers"
 	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
-
-const sampleName = "sample"
 
 type mockResourceWriter struct {
 	updateFailed bool
@@ -62,11 +65,14 @@ func (c mockStatusClient) Status() client.SubResourceWriter {
 	return writer
 }
 
-const licenseChecker = "licensechecker"
+const (
+	licenseChecker = "licensechecker"
+	verifierName   = "verifierName"
+)
 
 func TestMain(m *testing.M) {
 	// make sure to reset verifierMap before each test run
-	NamespacedVerifiers = verifiers.NewActiveVerifiers()
+	controllers.NamespacedVerifiers = verifiers.NewActiveVerifiers()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -85,18 +91,18 @@ func TestVerifierAdd_EmptyParameter(t *testing.T) {
 		Address:       dirPath,
 	}
 
-	if err := verifierAddOrReplace(testVerifierSpec, sampleName, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, sampleName); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
-	if NamespacedVerifiers.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map expected size 1, actual %v", NamespacedVerifiers.GetVerifierCount())
+	if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Verifier map expected size 1, actual %v", len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
 	}
 }
 
 func TestVerifierAdd_WithParameters(t *testing.T) {
 	resetVerifierMap()
-	if NamespacedVerifiers.GetVerifierCount() != 0 {
-		t.Fatalf("Verifier map expected size 0, actual %v", NamespacedVerifiers.GetVerifierCount())
+	if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != 0 {
+		t.Fatalf("Verifier map expected size 0, actual %v", len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
 	}
 
 	dirPath, err := utils.CreatePlugin(licenseChecker)
@@ -107,11 +113,11 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 
 	var testVerifierSpec = getDefaultLicenseCheckerSpec(dirPath)
 
-	if err := verifierAddOrReplace(testVerifierSpec, "testObject", constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, "testObject"); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
-	if NamespacedVerifiers.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map expected size 1, actual %v", NamespacedVerifiers.GetVerifierCount())
+	if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Verifier map expected size 1, actual %v", len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
 	}
 }
 
@@ -120,10 +126,26 @@ func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
 	var resource = "invalidplugin"
 	expectedMsg := "plugin not found"
 	var testVerifierSpec = getInvalidVerifierSpec()
-	err := verifierAddOrReplace(testVerifierSpec, resource, constants.EmptyNamespace)
+	err := verifierAddOrReplace(testVerifierSpec, resource)
 
 	if !strings.Contains(err.Error(), expectedMsg) {
 		t.Fatalf("TestVerifierAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
+func TestVerifierAdd_InvalidConfig(t *testing.T) {
+	resetVerifierMap()
+	var testVerifierSpec = configv1beta1.VerifierSpec{
+		Name:          "notation",
+		ArtifactTypes: "application/vnd.cncf.notary.signature",
+		Parameters: runtime.RawExtension{
+			Raw: []byte("test\n"),
+		},
+	}
+	var resource = "notation"
+
+	if err := verifierAddOrReplace(testVerifierSpec, resource); err == nil {
+		t.Fatalf("Expected an error but returned nil")
 	}
 }
 
@@ -138,29 +160,29 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 	var testVerifierSpec = getDefaultLicenseCheckerSpec(dirPath)
 
 	// add a verifier
-	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
-	if NamespacedVerifiers.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map expected size 1, actual %v", NamespacedVerifiers.GetVerifierCount())
+	if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Verifier map expected size 1, actual %v", len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
 	}
 
 	// modify the verifier
 	var parametersString = "{\"allowedLicenses\":[\"MIT\",\"GNU\"]}"
 	testVerifierSpec = getLicenseCheckerFromParam(parametersString, dirPath)
-	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(testVerifierSpec, licenseChecker); err != nil {
 		t.Fatalf("verifierAddOrReplace() expected no error, actual %v", err)
 	}
 
 	// validate no verifier has been added
-	if NamespacedVerifiers.GetVerifierCount() != 1 {
-		t.Fatalf("Verifier map should be 1 after replacement, actual %v", NamespacedVerifiers.GetVerifierCount())
+	if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != 1 {
+		t.Fatalf("Verifier map should be 1 after replacement, actual %v", len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
 	}
 
-	NamespacedVerifiers.DeleteVerifier(constants.EmptyNamespace, licenseChecker)
+	controllers.NamespacedVerifiers.DeleteVerifier(constants.EmptyNamespace, licenseChecker)
 
-	if NamespacedVerifiers.GetVerifierCount() != 0 {
-		t.Fatalf("Verifier map should be 0 after deletion, actual %v", NamespacedVerifiers.GetVerifierCount())
+	if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != 0 {
+		t.Fatalf("Verifier map should be 0 after deletion, actual %v", len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
 	}
 }
 
@@ -212,8 +234,99 @@ func TestWriteVerifierStatus(t *testing.T) {
 	}
 }
 
+func TestVerifierReconcile(t *testing.T) {
+	dirPath, err := utils.CreatePlugin(sampleName)
+	if err != nil {
+		t.Fatalf("createPlugin() expected no error, actual %v", err)
+	}
+	defer os.RemoveAll(dirPath)
+
+	tests := []struct {
+		name                  string
+		verifier              *configv1beta1.Verifier
+		req                   *reconcile.Request
+		expectedErr           bool
+		expectedVerifierCount int
+	}{
+		{
+			name: "nonexistent verifier",
+			req: &reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: "nonexistent"},
+			},
+			verifier: &configv1beta1.Verifier{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "",
+					Name:      verifierName,
+				},
+			},
+			expectedErr:           false,
+			expectedVerifierCount: 0,
+		},
+		{
+			name: "invalid parameters",
+			verifier: &configv1beta1.Verifier{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "",
+					Name:      verifierName,
+				},
+				Spec: configv1beta1.VerifierSpec{
+					Parameters: runtime.RawExtension{
+						Raw: []byte("test"),
+					},
+				},
+			},
+			expectedErr:           true,
+			expectedVerifierCount: 0,
+		},
+		{
+			name: "valid spec",
+			verifier: &configv1beta1.Verifier{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: "",
+					Name:      verifierName,
+				},
+				Spec: configv1beta1.VerifierSpec{
+					Name:    sampleName,
+					Address: dirPath,
+				},
+			},
+			expectedErr:           false,
+			expectedVerifierCount: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			resetVerifierMap()
+			scheme, _ := utils.CreateScheme()
+			client := fake.NewClientBuilder().WithScheme(scheme)
+			client.WithObjects(tt.verifier)
+			r := &VerifierReconciler{
+				Scheme: scheme,
+				Client: client.Build(),
+			}
+			var req reconcile.Request
+			if tt.req != nil {
+				req = *tt.req
+			} else {
+				req = reconcile.Request{
+					NamespacedName: utils.KeyFor(tt.verifier),
+				}
+			}
+
+			_, err := r.Reconcile(context.Background(), req)
+			if tt.expectedErr != (err != nil) {
+				t.Fatalf("Reconcile() expected error %v, actual %v", tt.expectedErr, err)
+			}
+			if len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)) != tt.expectedVerifierCount {
+				t.Fatalf("Verifier map expected size %v, actual %v", tt.expectedVerifierCount, len(controllers.NamespacedVerifiers.GetVerifiers(constants.EmptyNamespace)))
+			}
+		})
+	}
+}
+
 func resetVerifierMap() {
-	NamespacedVerifiers = verifiers.NewActiveVerifiers()
+	controllers.NamespacedVerifiers = verifiers.NewActiveVerifiers()
 }
 
 func getLicenseCheckerFromParam(parametersString, pluginPath string) configv1beta1.VerifierSpec {

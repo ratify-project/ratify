@@ -13,20 +13,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package namespaceresource
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/config"
 	"github.com/deislabs/ratify/internal/constants"
-	vc "github.com/deislabs/ratify/pkg/verifier/config"
-	vf "github.com/deislabs/ratify/pkg/verifier/factory"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/deislabs/ratify/pkg/controllers"
 
+	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,9 +37,9 @@ type VerifierReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=verifiers,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=verifiers/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=verifiers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedverifiers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedverifiers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedverifiers/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -56,7 +53,7 @@ type VerifierReconciler struct {
 func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	verifierLogger := logrus.WithContext(ctx)
 
-	var verifier configv1beta1.Verifier
+	var verifier configv1beta1.NamespacedVerifier
 	var resource = req.Name
 
 	verifierLogger.Infof("reconciling verifier '%v'", resource)
@@ -64,8 +61,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := r.Get(ctx, req.NamespacedName, &verifier); err != nil {
 		if apierrors.IsNotFound(err) {
 			verifierLogger.Infof("delete event detected, removing verifier %v", resource)
-			// TODO: pass the actual namespace once multi-tenancy is supported.
-			NamespacedVerifiers.DeleteVerifier(constants.EmptyNamespace, resource)
+			controllers.NamespacedVerifiers.DeleteVerifier(req.Namespace, resource)
 		} else {
 			verifierLogger.Error(err, "unable to fetch verifier")
 		}
@@ -73,7 +69,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := verifierAddOrReplace(verifier.Spec, resource, constants.EmptyNamespace); err != nil {
+	if err := verifierAddOrReplace(verifier.Spec, resource, req.Namespace); err != nil {
 		verifierLogger.Error(err, "unable to create verifier from verifier crd")
 		writeVerifierStatus(ctx, r, &verifier, verifierLogger, false, err.Error())
 		return ctrl.Result{}, err
@@ -86,64 +82,24 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // creates a verifier reference from CRD spec and add store to map
-func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string, namespace string) error {
-	verifierConfig, err := specToVerifierConfig(spec, objectName)
+func verifierAddOrReplace(spec configv1beta1.NamespacedVerifierSpec, objectName string, namespace string) error {
+	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
 		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
 	}
 
-	if len(spec.Version) == 0 {
-		spec.Version = config.GetDefaultPluginVersion()
-		logrus.Infof("Version was empty, setting to default version: %v", spec.Version)
-	}
-
-	if spec.Address == "" {
-		spec.Address = config.GetDefaultPluginPath()
-		logrus.Infof("Address was empty, setting to default path: %v", spec.Address)
-	}
-
-	referenceVerifier, err := vf.CreateVerifierFromConfig(verifierConfig, spec.Version, []string{spec.Address}, namespace)
-
-	if err != nil || referenceVerifier == nil {
-		logrus.Error(err, "unable to create verifier from verifier config")
-		return err
-	}
-	// TODO: pass the actual namespace once multi-tenancy is supported.
-	NamespacedVerifiers.AddVerifier(constants.EmptyNamespace, objectName, referenceVerifier)
-	logrus.Infof("verifier '%v' added to verifier map", referenceVerifier.Name())
-
-	return nil
-}
-
-// returns a verifier reference from spec
-func specToVerifierConfig(verifierSpec configv1beta1.VerifierSpec, verifierName string) (vc.VerifierConfig, error) {
-	verifierConfig := vc.VerifierConfig{}
-
-	if string(verifierSpec.Parameters.Raw) != "" {
-		if err := json.Unmarshal(verifierSpec.Parameters.Raw, &verifierConfig); err != nil {
-			logrus.Error(err, "unable to decode verifier parameters", "Parameters.Raw", verifierSpec.Parameters.Raw)
-			return vc.VerifierConfig{}, err
-		}
-	}
-	verifierConfig[types.Name] = verifierName
-	verifierConfig[types.Type] = verifierSpec.Name
-	verifierConfig[types.ArtifactTypes] = verifierSpec.ArtifactTypes
-	if verifierSpec.Source != nil {
-		verifierConfig[types.Source] = verifierSpec.Source
-	}
-
-	return verifierConfig, nil
+	return cutils.UpsertVerifier(spec.Version, spec.Address, namespace, objectName, verifierConfig)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.Verifier{}).
+		For(&configv1beta1.NamespacedVerifier{}).
 		Complete(r)
 }
 
-func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.Verifier, logger *logrus.Entry, isSuccess bool, errorString string) {
+func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.NamespacedVerifier, logger *logrus.Entry, isSuccess bool, errorString string) {
 	if isSuccess {
 		verifier.Status.IsSuccess = true
 		verifier.Status.Error = ""
@@ -151,8 +107,8 @@ func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *c
 	} else {
 		verifier.Status.IsSuccess = false
 		verifier.Status.Error = errorString
-		if len(errorString) > maxBriefErrLength {
-			verifier.Status.BriefError = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+		if len(errorString) > constants.MaxBriefErrLength {
+			verifier.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
 		}
 	}
 
