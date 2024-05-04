@@ -29,10 +29,4 @@ type VerifierManager interface {
 
 	// DeleteVerifier deletes a verifier from the given scope.
 	DeleteVerifier(scope, verifierName string)
-
-	// IsEmpty returns true if verifiers are empty.
-	IsEmpty() bool
-
-	// GetVerifierCount returns the number of verifiers in all scopes.
-	GetVerifierCount() int
 }

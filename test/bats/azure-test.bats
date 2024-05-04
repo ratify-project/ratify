@@ -35,7 +35,7 @@ SLEEP_TIME=1
     sleep 5
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_dynamic.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_dynamic.yaml
     sleep 5
 
     # parse the logs for the newly created ratify pod
@@ -137,12 +137,12 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_partial_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_partial_licensechecker.yaml
     sleep 5
     run kubectl run license-checker --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
     assert_failure
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run license-checker2 --namespace default --image=${TEST_REGISTRY}/licensechecker:v0
@@ -163,7 +163,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom.yaml
     sleep 5
     run kubectl run sbom --namespace default --image=${TEST_REGISTRY}/sbom:v0
     assert_success
@@ -193,13 +193,13 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator.yaml
     sleep 5
 
     run kubectl run schemavalidator --namespace default --image=${TEST_REGISTRY}/schemavalidator:v0
     assert_success
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator_bad.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run schemavalidator2 --namespace default --image=${TEST_REGISTRY}/schemavalidator:v0
@@ -223,11 +223,11 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom.yaml
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator.yaml
     sleep 5
 
     run kubectl run all-in-one --namespace default --image=${TEST_REGISTRY}/all:v0
@@ -241,7 +241,7 @@ SLEEP_TIME=1
     }
 
     echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
@@ -251,7 +251,7 @@ SLEEP_TIME=1
     assert_failure
 
     echo "Add notation verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_kmprovider.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation_kmprovider.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
@@ -295,7 +295,7 @@ SLEEP_TIME=1
     start=$(date --iso-8601=seconds)
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_dynamic.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_dynamic.yaml
     sleep 5
 
     run bash -c "kubectl -n gatekeeper-system logs $latestpod --since-time=$start | grep 'dynamic plugins are currently disabled'"
