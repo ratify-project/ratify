@@ -243,7 +243,7 @@ SLEEP_TIME=1
     # apply namespaced policy and delete clustered policy.
     run bash -c "kubectl get policies.config.ratify.deislabs.io/ratify-policy -o yaml > clusterpolicy.yaml"
     assert_success
-    sed 's/kind: Policy/kind: NamespacedPolicy/;/^\s*resourceVersion:/d' clusterpolicy.yaml > namespacedpolicy.yaml
+    sed 's/kind: Policy/kind: NamespacedPolicy/;/^\s*resourceVersion:/d' clusterpolicy.yaml >namespacedpolicy.yaml
     run kubectl apply -f namespacedpolicy.yaml
     assert_success
 
