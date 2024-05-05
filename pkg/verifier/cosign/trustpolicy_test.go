@@ -21,6 +21,7 @@ import (
 	"crypto/ecdsa"
 	"testing"
 
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
 )
 
@@ -174,7 +175,7 @@ func TestGetKeys(t *testing.T) {
 				Scopes: []string{"*"},
 				Keys: []KeyConfig{
 					{
-						Provider: "kmp",
+						Provider: "ns/kmp",
 						Name:     "key1",
 					},
 				},
@@ -189,7 +190,8 @@ func TestGetKeys(t *testing.T) {
 			if err != nil {
 				t.Fatalf("expected no error, got %v", err)
 			}
-			keys, err := trustPolicy.GetKeys(context.Background(), "ns")
+			ctx := ctxUtils.SetContextWithNamespace(context.Background(), "ns")
+			keys, err := trustPolicy.GetKeys(ctx, "")
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("expected %v, got %v", tt.wantErr, err)
 			}
@@ -333,43 +335,5 @@ func TestLoadKeyFromPath(t *testing.T) {
 	case *ecdsa.PublicKey:
 	default:
 		t.Fatalf("expected ecdsa.PublicKey, got %v", keyType)
-	}
-}
-
-// TestPrependNamespaceToKMPName tests the prependNamespaceToKMPName function
-func TestPrependNamespaceToKMPName(t *testing.T) {
-	tc := []struct {
-		name     string
-		kmpName  string
-		ns       string
-		expected string
-	}{
-		{
-			name:     "empty namespace",
-			kmpName:  "kmp",
-			ns:       "",
-			expected: "kmp",
-		},
-		{
-			name:     "non-empty namespace",
-			kmpName:  "kmp",
-			ns:       "ns",
-			expected: "ns/kmp",
-		},
-		{
-			name:     "namespaced kmp",
-			kmpName:  "ns/kmp",
-			ns:       "ns",
-			expected: "ns/kmp",
-		},
-	}
-
-	for _, tt := range tc {
-		t.Run(tt.name, func(t *testing.T) {
-			actual := prependNamespaceToKMPName(tt.kmpName, tt.ns)
-			if actual != tt.expected {
-				t.Fatalf("expected %s, got %s", tt.expected, actual)
-			}
-		})
 	}
 }

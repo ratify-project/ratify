@@ -193,11 +193,18 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		close(certRotatorReady)
 	}
 
-	if err = (&controllers.VerifierReconciler{
+	if err = (&clusterresource.VerifierReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Verifier")
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Verifier")
+		os.Exit(1)
+	}
+	if err = (&namespaceresource.VerifierReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Verifier")
 		os.Exit(1)
 	}
 	if err = (&clusterresource.StoreReconciler{
@@ -214,11 +221,11 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Store")
 		os.Exit(1)
 	}
-	if err = (&controllers.CertificateStoreReconciler{
+	if err = (&namespaceresource.CertificateStoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Certificate Store")
 		os.Exit(1)
 	}
 	if err = (&namespaceresource.PolicyReconciler{
@@ -235,11 +242,18 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeyManagementProviderReconciler{
+	if err = (&clusterresource.KeyManagementProviderReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Key Management Provider")
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Key Management Provider")
+		os.Exit(1)
+	}
+	if err = (&namespaceresource.KeyManagementProviderReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Key Management Provider")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

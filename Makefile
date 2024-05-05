@@ -26,8 +26,8 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
 KIND_VERSION ?= 0.22.0
-KUBERNETES_VERSION ?= 1.27.7
-KIND_KUBERNETES_VERSION ?= 1.27.3
+KUBERNETES_VERSION ?= 1.29.2
+KIND_KUBERNETES_VERSION ?= 1.29.2
 GATEKEEPER_VERSION ?= 3.15.0
 DAPR_VERSION ?= 1.12.5
 COSIGN_VERSION ?= 2.2.3
@@ -587,6 +587,7 @@ e2e-helm-deploy-ratify:
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
 	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logger.level=debug
@@ -604,6 +605,7 @@ e2e-helm-deploy-ratify-without-tls-certs:
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \

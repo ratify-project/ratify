@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package namespaceresource
 
 import (
 	"context"
@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"maps"
 
+	"github.com/deislabs/ratify/internal/constants"
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -32,11 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	c "github.com/deislabs/ratify/config"
+	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
 	kmp "github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/types"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,16 +44,16 @@ type KeyManagementProviderReconciler struct {
 	Scheme *runtime.Scheme
 }
 
-// +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders,verbs=get;list;watch;create;update;patch;delete
-// +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders/status,verbs=get;update;patch
-// +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders/finalizers,verbs=update
+// +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedkeymanagementproviders,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedkeymanagementproviders/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedkeymanagementproviders/finalizers,verbs=update
 func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logrus.WithContext(ctx)
 
 	var resource = req.NamespacedName.String()
-	var keyManagementProvider configv1beta1.KeyManagementProvider
+	var keyManagementProvider configv1beta1.NamespacedKeyManagementProvider
 
-	logger.Infof("reconciling key management provider '%v'", resource)
+	logger.Infof("reconciling namespaced key management provider '%v'", resource)
 
 	if err := r.Get(ctx, req.NamespacedName, &keyManagementProvider); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -85,7 +83,7 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 		logger.Warn("Certificate Store already exists. Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.")
 	}
 
-	provider, err := specToKeyManagementProvider(keyManagementProvider.Spec)
+	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
 	if err != nil {
 		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
@@ -126,44 +124,12 @@ func (r *KeyManagementProviderReconciler) SetupWithManager(mgr ctrl.Manager) err
 	// if there are no changes to spec of CRD, this event should be filtered out by using the predicate
 	// see more discussions at https://github.com/kubernetes-sigs/kubebuilder/issues/618
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&configv1beta1.KeyManagementProvider{}).WithEventFilter(pred).
+		For(&configv1beta1.NamespacedKeyManagementProvider{}).WithEventFilter(pred).
 		Complete(r)
 }
 
-// specToKeyManagementProvider creates KeyManagementProviderProvider from  KeyManagementProviderSpec config
-func specToKeyManagementProvider(spec configv1beta1.KeyManagementProviderSpec) (kmp.KeyManagementProvider, error) {
-	kmProviderConfig, err := rawToKeyManagementProviderConfig(spec.Parameters.Raw, spec.Type)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse key management provider config: %w", err)
-	}
-
-	// TODO: add Version and Address to KeyManagementProviderSpec
-	keyManagementProviderProvider, err := factory.CreateKeyManagementProviderFromConfig(kmProviderConfig, "0.1.0", c.GetDefaultPluginPath())
-	if err != nil {
-		return nil, fmt.Errorf("failed to create key management provider provider: %w", err)
-	}
-
-	return keyManagementProviderProvider, nil
-}
-
-// rawToKeyManagementProviderConfig converts raw json to KeyManagementProviderConfig
-func rawToKeyManagementProviderConfig(raw []byte, keyManagamentSystemName string) (config.KeyManagementProviderConfig, error) {
-	pluginConfig := config.KeyManagementProviderConfig{}
-
-	if string(raw) == "" {
-		return config.KeyManagementProviderConfig{}, fmt.Errorf("no key management provider parameters provided")
-	}
-	if err := json.Unmarshal(raw, &pluginConfig); err != nil {
-		return config.KeyManagementProviderConfig{}, fmt.Errorf("unable to decode key management provider parameters.Raw: %s, err: %w", raw, err)
-	}
-
-	pluginConfig[types.Type] = keyManagamentSystemName
-
-	return pluginConfig, nil
-}
-
 // writeKMProviderStatus updates the status of the key management provider resource
-func writeKMProviderStatus(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.KeyManagementProvider, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
+func writeKMProviderStatus(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
 	if isSuccess {
 		updateKMProviderSuccessStatus(keyManagementProvider, &operationTime, kmProviderStatus)
 	} else {
@@ -175,11 +141,11 @@ func writeKMProviderStatus(ctx context.Context, r client.StatusClient, keyManage
 }
 
 // updateKMProviderErrorStatus updates the key management provider status with error, brief error and last fetched time
-func updateKMProviderErrorStatus(keyManagementProvider *configv1beta1.KeyManagementProvider, errorString string, operationTime *metav1.Time) {
+func updateKMProviderErrorStatus(keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, errorString string, operationTime *metav1.Time) {
 	// truncate brief error string to maxBriefErrLength
 	briefErr := errorString
-	if len(errorString) > maxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errorString[:maxBriefErrLength])
+	if len(errorString) > constants.MaxBriefErrLength {
+		briefErr = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
 	}
 	keyManagementProvider.Status.IsSuccess = false
 	keyManagementProvider.Status.Error = errorString
@@ -189,7 +155,7 @@ func updateKMProviderErrorStatus(keyManagementProvider *configv1beta1.KeyManagem
 
 // updateKMProviderSuccessStatus updates the key management provider status if status argument is non nil
 // Success status includes last fetched time and other provider-specific properties
-func updateKMProviderSuccessStatus(keyManagementProvider *configv1beta1.KeyManagementProvider, lastOperationTime *metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
+func updateKMProviderSuccessStatus(keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, lastOperationTime *metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
 	keyManagementProvider.Status.IsSuccess = true
 	keyManagementProvider.Status.Error = ""
 	keyManagementProvider.Status.BriefError = ""

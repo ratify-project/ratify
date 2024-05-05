@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -143,7 +144,7 @@ func TestSetCertificatesInMap(t *testing.T) {
 func TestGetCertificatesFromMap(t *testing.T) {
 	certificatesMap.Delete("test")
 	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
-	certs := GetCertificatesFromMap(context.Background(), "test")
+	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been fetched from the map")
 	}
@@ -152,7 +153,7 @@ func TestGetCertificatesFromMap(t *testing.T) {
 // TestGetCertificatesFromMap_FailedToFetch checks if certificates are fetched from the map
 func TestGetCertificatesFromMap_FailedToFetch(t *testing.T) {
 	certificatesMap.Delete("test")
-	certs := GetCertificatesFromMap(context.Background(), "test")
+	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 0 {
 		t.Fatalf("certificates should not have been fetched from the map")
 	}
@@ -199,6 +200,15 @@ func TestGetKeysFromMap(t *testing.T) {
 func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 	keyMap.Delete("test")
 	keys, _ := GetKeysFromMap(context.Background(), "test")
+	if len(keys) != 0 {
+		t.Fatalf("keys should not have been fetched from the map")
+	}
+}
+
+func TestGetKeysFromMap_AccessDifferentNamespace_ReturnsFalse(t *testing.T) {
+	keyMap.Delete("test")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), "namespace1")
+	keys, _ := GetKeysFromMap(ctx, "namespace2/test")
 	if len(keys) != 0 {
 		t.Fatalf("keys should not have been fetched from the map")
 	}

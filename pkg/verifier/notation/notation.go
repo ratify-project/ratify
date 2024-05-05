@@ -24,7 +24,6 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -37,7 +36,6 @@ import (
 	"github.com/deislabs/ratify/pkg/verifier/types"
 	"github.com/notaryproject/notation-go/log"
 
-	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 	_ "github.com/notaryproject/notation-core-go/signature/cose" // register COSE signature
 	_ "github.com/notaryproject/notation-core-go/signature/jws"  // register JWS signature
 	"github.com/notaryproject/notation-go"
@@ -188,7 +186,7 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
-func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
+func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*NotationPluginVerifierConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
 
@@ -201,15 +199,6 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 
-	// append namespace to uniquely identify the certstore
-	if len(conf.VerificationCertStores) > 0 {
-		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
-		conf.VerificationCertStores, err = prependNamespaceToCertStore(conf.VerificationCertStores, namespace)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
 	return conf, nil
@@ -218,21 +207,4 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 // signatures should not have nested references
 func (v *notationPluginVerifier) GetNestedReferences() []string {
 	return []string{}
-}
-
-// append namespace to certStore so they are uniquely identifiable
-func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
-	// TODO: once we support multi-tenancy, empty namespace would be reserved for cluster scope.
-	if namespace == "" {
-		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
-	}
-
-	for _, certStores := range verificationCertStore {
-		for i, certstore := range certStores {
-			if !vu.IsNamespacedNamed(certstore) {
-				certStores[i] = namespace + constants.NamespaceSeperator + certstore
-			}
-		}
-	}
-	return verificationCertStore, nil
 }

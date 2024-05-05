@@ -16,12 +16,14 @@ limitations under the License.
 package verifiers
 
 import (
+	"sync"
+
+	"github.com/deislabs/ratify/internal/constants"
 	vr "github.com/deislabs/ratify/pkg/verifier"
 )
 
 // ActiveVerifiers implements VerifierManger interface.
 type ActiveVerifiers struct {
-	// TODO: Implement concurrent safety using sync.Map
 	// The structure of the map is as follows:
 	// The first level maps from scope to verifiers
 	// The second level maps from verifier name to verifier
@@ -33,49 +35,44 @@ type ActiveVerifiers struct {
 	//   }
 	// }
 	// Note: Scope is utilized for organizing and isolating verifiers. In a Kubernetes (K8s) environment, the scope can be either a namespace or an empty string ("") for cluster-wide verifiers.
-	ScopedVerifiers map[string]map[string]vr.ReferenceVerifier
+	//scopedVerifiers map[string]map[string]vr.ReferenceVerifier
+	scopedVerifiers sync.Map
 }
 
 func NewActiveVerifiers() VerifierManager {
-	return &ActiveVerifiers{
-		ScopedVerifiers: make(map[string]map[string]vr.ReferenceVerifier),
-	}
+	return &ActiveVerifiers{}
 }
 
 // GetVerifiers implements the VerifierManager interface.
 // It returns a list of verifiers for the given scope. If no verifiers are found for the given scope, it returns cluster-wide verifiers.
-// TODO: Current implementation fetches verifiers for all namespaces including cluster-wide ones. Will support actual namespace based verifiers in future.
-func (v *ActiveVerifiers) GetVerifiers(_ string) []vr.ReferenceVerifier {
+func (v *ActiveVerifiers) GetVerifiers(scope string) []vr.ReferenceVerifier {
 	verifiers := []vr.ReferenceVerifier{}
-	for _, scopedVerifiers := range v.ScopedVerifiers {
-		for _, verifier := range scopedVerifiers {
+	if scopedVerifier, ok := v.scopedVerifiers.Load(scope); ok {
+		for _, verifier := range scopedVerifier.(map[string]vr.ReferenceVerifier) {
 			verifiers = append(verifiers, verifier)
+		}
+	}
+	if len(verifiers) == 0 && scope != constants.EmptyNamespace {
+		if clusterVerifier, ok := v.scopedVerifiers.Load(constants.EmptyNamespace); ok {
+			for _, verifier := range clusterVerifier.(map[string]vr.ReferenceVerifier) {
+				verifiers = append(verifiers, verifier)
+			}
 		}
 	}
 	return verifiers
 }
 
+// AddVerifier fulfills the VerifierManager interface.
+// It adds the given verifier under the given scope.
 func (v *ActiveVerifiers) AddVerifier(scope, verifierName string, verifier vr.ReferenceVerifier) {
-	if _, ok := v.ScopedVerifiers[scope]; !ok {
-		v.ScopedVerifiers[scope] = make(map[string]vr.ReferenceVerifier)
-	}
-	v.ScopedVerifiers[scope][verifierName] = verifier
+	scopedVerifier, _ := v.scopedVerifiers.LoadOrStore(scope, make(map[string]vr.ReferenceVerifier))
+	scopedVerifier.(map[string]vr.ReferenceVerifier)[verifierName] = verifier
 }
 
+// DeleteVerifier fulfills the VerifierManager interface.
+// It deletes the verfier of the given name under the given scope.
 func (v *ActiveVerifiers) DeleteVerifier(scope, verifierName string) {
-	if verifiers, ok := v.ScopedVerifiers[scope]; ok {
-		delete(verifiers, verifierName)
+	if scopedVerifier, ok := v.scopedVerifiers.Load(scope); ok {
+		delete(scopedVerifier.(map[string]vr.ReferenceVerifier), verifierName)
 	}
-}
-
-func (v *ActiveVerifiers) IsEmpty() bool {
-	return v.GetVerifierCount() == 0
-}
-
-func (v *ActiveVerifiers) GetVerifierCount() int {
-	count := 0
-	for _, verifiers := range v.ScopedVerifiers {
-		count += len(verifiers)
-	}
-	return count
 }

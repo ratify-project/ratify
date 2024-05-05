@@ -32,7 +32,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
     # validate key management provider status property shows success
-    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n gatekeeper-system -o yaml | grep 'issuccess: true'"
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
