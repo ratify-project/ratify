@@ -27,6 +27,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment: aks-deploy
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4.1.4
