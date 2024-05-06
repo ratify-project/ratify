@@ -9,6 +9,7 @@ The specification release process was created using content and verbiage from th
 * [ORAS Artifact Specification Releases](https://github.com/oras-project/artifacts-spec/blob/main/RELEASES.md)
 * [ORAS Developer Guide](https://github.com/oras-project/oras-www/blob/main/docs/CLI/5_developer_guide.md)
 * [Mystikos Release Management](https://github.com/deislabs/mystikos/blob/main/doc/releasing.md)
+* Gatekeeper release management
 
 ## Versioning
 
@@ -26,21 +27,25 @@ Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc
 
 2. If the format of the data returned for [external data calls](docs/reference/verification-result-version.md) has changed, validate change is also reflected in [`httpserver/types.go`](httpserver/types.go).
 
-3. Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` [packages](https://github.com/orgs/deislabs/packages?repo_name=ratify). Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`).
+3. Delete all dev images generated since the previous release under the `ratify-dev` and `ratify-crds-dev` [packages](https://github.com/orgs/deislabs/packages?repo_name=ratify). Each dev image tag is prefixed with `dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a build generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `dev.20230308.4cf9838`). The most recent images are also tagged with a rolling tag `latest`.
 
-4. Copy contents from [`dev.helmfile.yaml`](dev.helmfile.yaml) to [`helmfile.yaml`](helmfile.yaml) & [`dev.high-availability.helmfile.yaml`](dev.high-availability.helmfile.yaml) to [`high-availability.helmfile.yaml`](high-availability.helmfile.yaml). You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version.
+4. Delete all dev helm charts since the previous release under the `ratify-chart-dev/ratify` [packages](https://github.com/orgs/deislabs/packages?repo_name=ratify). Each helm chart is published with a semantic version compatible tag `0-dev` followed by the date of creation and then the abbreviated 7 character commit SHA (e.g a chart generated on March 8, 2023 from main branch with commit SHA `4cf98388ef33c587ef86b82e05cb0f7de2da2ea8` would be tagged `0-dev.20230308.4cf9838`). The most recent dev chart is also tagged with the rolling tag `0-dev`.
+
+5. Copy contents from [`dev.helmfile.yaml`](dev.helmfile.yaml) to [`helmfile.yaml`](helmfile.yaml) & [`dev.high-availability.helmfile.yaml`](dev.high-availability.helmfile.yaml) to [`high-availability.helmfile.yaml`](high-availability.helmfile.yaml). You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version.
 
 ## Git Release Flow
 
 This section deals with the practical considerations of versioning in Git, this repo's version control system.  See the semantic versioning specification for the scope of changes allowed for each release type.
 
+All releases will be of the form _vX.Y.Z_ where X is the major version, Y is the minor version and Z is the patch version.
+
 ### Patch releases
 
-When a patch release is required, the patch commits should be merged with the `main` branch when ready.  Then a new branch should be created with the patch version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.0`, the branch should be named `v0.1.1` and can optionally be suffixed with a pre-release (e.g. `v0.1.1-rc1`).  The limited nature of fixes in a patch release should mean pre-releases can often be omitted.
+Applicable fixes, including security fixes, may be backported to supported releases, depending on severity and feasibility. Patch release are cut from branch `release-X.Y`. Commits can be cherry-picked from `main`, changes should be merged into latest supported minor release-X.Y branches once required PR requirements are met.
 
 ### Minor releases
 
-When a minor release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the minor version incremented and optional pre-release specifiers.  For example if the previous release was `v0.1.1`, the branch should be named `v0.2.0` and can optionally be suffixed with a pre-release (e.g. `v0.2.0-beta1`).  Pre-releases will be more common will be more common with minor releases.
+When a minor release is required, the release commits should be merged with the `main` branch when ready. A new branch `release-X.Y` will be created. Pre-releases will be more common will be more common with minor releases. Required changes for the minor release should be PRed directly to the to the `release-X.Y`  branch, the change will then be ported back to `main`.
 
 ### Major releases
 
@@ -48,7 +53,9 @@ When a major release is required, the release commits should be merged with the 
 
 ### Tag and Release
 
-Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/files) to update the chart value. When the release branch is ready, a tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
+**X.Y.Z** refers to the version (git tag) of Gatekeeper that is released. This is the version of the Ratify image and the Chart version.
+
+Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/files) to update the chart value. When the `release-X.Y` branch is ready, a tag **X.Y.Z** should be pushed. e.g. `git tag v1.1.1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
 
 * The release will be marked as a draft to allow an final editing before publishing.
 * The release notes and other fields can edited after the action completes.  The description can be in Markdown.
@@ -56,6 +63,21 @@ Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/fil
 * The pre-built binaries are built from commit at the head of the release branch.
   * The files are named `ratify_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.
 
+## Supported Releases
+
+Applicable fixes, including security fixes, may be cherry-picked into the release branch, depending on severity and feasibility. Patch releases are cut from that branch as needed.
+
+We expect users to stay reasonably up-to-date with the versions of Gatekeeper they use in production, but understand that it may take time to upgrade. We expect users to be running approximately the latest patch release of a given minor release and encourage users to upgrade as soon as possible.
+
+We expect to "support" n (current). "Support" means we expect users to be running that version in production. For example, when v1.2 comes out, v1.1 will no longer be supported for patches, and we encourage users to upgrade to a supported version as soon in 5minas possible.
+
+## Supported Kubernetes and Gatekeeper Versions
+
+Gatekeeper is assumed to be compatible with the [current Kubernetes Supported Versions](https://kubernetes.io/releases/patch-releases/#detailed-release-history-for-active-branches) per [Kubernetes Supported Versions policy](https://kubernetes.io/releases/version-skew-policy/).
+
+For example, if Gatekeeper _supported_ versions are v3.7 and v3.8, and Kubernetes _supported_ versions are v1.22, v1.23, v1.24, then all supported Gatekeeper versions (v3.7, v3.8) are assumed to be compatible with all supported Kubernetes versions (v1.22, v1.23, v1.24). If Kubernetes v1.25 is released later, then Gatekeeper v3.7 and v3.8 will be assumed to be compatible with v1.25 if those Gatekeeper versions are still supported at that time.
+
+If you choose to use Gatekeeper with a version of Kubernetes that it does not support, you are using it at your own risk.
 ## Post Release Activity
 
 After a successful release, please manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
