@@ -45,7 +45,7 @@ Applicable fixes, including security fixes, may be backported to supported relea
 
 ### Minor releases
 
-When a minor release is required, the release commits should be merged with the `main` branch when ready. A new branch `release-X.Y` will be created. Pre-releases will be more common will be more common with minor releases. Required changes for the minor release should be PRed directly to the to the `release-X.Y`  branch, the change will then be ported back to `main`.
+When a minor release is required, the release commits should be merged with the `main` branch when ready. Alpha and Beta releases will be cut from the main branch, for RC and stable releases a new branch `release-X.Y` will be created. Required changes for the minor release should be PRed to the `dev`  branch, the change will then be cherry picked to `release-X.Y` from `main`.
 
 ### Major releases
 
@@ -64,20 +64,16 @@ Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/fil
   * The files are named `ratify_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.
 
 ## Supported Releases
-
 Applicable fixes, including security fixes, may be cherry-picked into the release branch, depending on severity and feasibility. Patch releases are cut from that branch as needed.
 
-We expect users to stay reasonably up-to-date with the versions of Gatekeeper they use in production, but understand that it may take time to upgrade. We expect users to be running approximately the latest patch release of a given minor release and encourage users to upgrade as soon as possible.
-
-We expect to "support" n (current). "Support" means we expect users to be running that version in production. For example, when v1.2 comes out, v1.1 will no longer be supported for patches, and we encourage users to upgrade to a supported version as soon in 5minas possible.
+We expect to "support" n (current). "Support" means we expect users to be running that version in production. For example, when v1.2 comes out, v1.1 will no longer be supported for patches, and we encourage users to upgrade to a supported version as soon as possible.
 
 ## Supported Kubernetes and Gatekeeper Versions
 
-Gatekeeper is assumed to be compatible with the [current Kubernetes Supported Versions](https://kubernetes.io/releases/patch-releases/#detailed-release-history-for-active-branches) per [Kubernetes Supported Versions policy](https://kubernetes.io/releases/version-skew-policy/).
+Ratify is assumed to be compatible with currently supported GateKeeper versions and the [current Kubernetes Supported Versions](https://kubernetes.io/releases/patch-releases/#detailed-release-history-for-active-branches) per [Kubernetes Supported Versions policy](https://kubernetes.io/releases/version-skew-policy/).
 
-For example, if Gatekeeper _supported_ versions are v3.7 and v3.8, and Kubernetes _supported_ versions are v1.22, v1.23, v1.24, then all supported Gatekeeper versions (v3.7, v3.8) are assumed to be compatible with all supported Kubernetes versions (v1.22, v1.23, v1.24). If Kubernetes v1.25 is released later, then Gatekeeper v3.7 and v3.8 will be assumed to be compatible with v1.25 if those Gatekeeper versions are still supported at that time.
+For example, if Gatekeeper _supported_ versions are v3.7 and v3.8, and Kubernetes _supported_ versions are v1.22, v1.23, v1.24, then current version of Ratify (v1.1) are assumed to be compatible with all supported Kubernetes versions (v1.22, v1.23, v1.24). 
 
-If you choose to use Gatekeeper with a version of Kubernetes that it does not support, you are using it at your own risk.
 ## Post Release Activity
 
 After a successful release, please manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
