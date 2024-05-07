@@ -64,6 +64,7 @@ jobs:
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
       AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
       AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
+    if: ${{ always() }}
     needs: ['build_test_aks_e2e_conditional']
     runs-on: ubuntu-latest
     permissions:
