@@ -195,20 +195,22 @@ func TestGetCertificateProvider(t *testing.T) {
 func TestCertStoreReconcile(t *testing.T) {
 	tests := []struct {
 		name              string
+		description       string
 		provider          *configv1beta1.CertificateStore
 		req               *reconcile.Request
 		expectedErr       bool
 		expectedCertCount int
 	}{
 		{
-			name: "nonexistent store",
+			name:        "nonexistent store",
+			description: "Reconciling a non-existent certStore CR, it should be deleted from map",
 			req: &reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "nonexistent"},
 			},
 			provider: &configv1beta1.CertificateStore{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: testNamespace,
-					Name:      kmpName,
+					Name:      storeName,
 				},
 				Spec: configv1beta1.CertificateStoreSpec{
 					Provider: "inline",
@@ -219,6 +221,7 @@ func TestCertStoreReconcile(t *testing.T) {
 		},
 		{
 			name: "invalid params",
+			description: "Received invalid parameters of the certStore Spec, it should fail the reconcile and return an error",
 			provider: &configv1beta1.CertificateStore{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: testNamespace,
@@ -232,7 +235,8 @@ func TestCertStoreReconcile(t *testing.T) {
 			expectedCertCount: 0,
 		},
 		{
-			name: "valid params",
+			name:        "valid params",
+			description: "Received invalid parameters of the certStore Spec, it should fail the reconcile and return an error",
 			provider: &configv1beta1.CertificateStore{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: testNamespace,

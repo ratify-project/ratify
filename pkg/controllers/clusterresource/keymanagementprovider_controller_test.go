@@ -188,13 +188,15 @@ func TestWriteKMProviderStatus(t *testing.T) {
 func TestKMPReconcile(t *testing.T) {
 	tests := []struct {
 		name             string
+		description      string
 		provider         *configv1beta1.KeyManagementProvider
 		req              *reconcile.Request
 		expectedErr      bool
 		expectedKMPCount int
 	}{
 		{
-			name: "nonexistent store",
+			name:        "nonexistent KMP",
+			description: "Reconciling a non-existent KMP CR, it should be deleted from maps",
 			req: &reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "nonexistent"},
 			},
@@ -211,11 +213,12 @@ func TestKMPReconcile(t *testing.T) {
 			expectedKMPCount: 0,
 		},
 		{
-			name: "invalid params",
+			name:        "invalid params",
+			description: "Received invalid parameters of the KMP Spec, it should fail the reconcile and return an error",
 			provider: &configv1beta1.KeyManagementProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: constants.EmptyNamespace,
-					Name:      storeName,
+					Name:      kmpName,
 				},
 				Spec: configv1beta1.KeyManagementProviderSpec{
 					Type: "inline",
@@ -225,11 +228,12 @@ func TestKMPReconcile(t *testing.T) {
 			expectedKMPCount: 0,
 		},
 		{
-			name: "valid params",
+			name:        "valid params",
+			description: "Received a valid KMP manifest, it should be added to the cert map",
 			provider: &configv1beta1.KeyManagementProvider{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: constants.EmptyNamespace,
-					Name:      storeName,
+					Name:      kmpName,
 				},
 				Spec: configv1beta1.KeyManagementProviderSpec{
 					Type: "inline",
