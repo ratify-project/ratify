@@ -15,4 +15,4 @@ spec:
         scopes:
           - "*"
         keys:
-          - provider: gatekeeper-system/kmprovider-akv
+          - provider: kmprovider-akv

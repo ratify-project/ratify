@@ -11,4 +11,4 @@ spec:
         scopes:
           - "*"
         keys:
-          - provider: ratify-cosign-inline-key-0
+          - provider: default/ratify-cosign-inline-key-0
