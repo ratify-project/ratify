@@ -26,7 +26,7 @@ jobs:
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment: aks-deploy
+    environment: azure-test
     permissions:
       id-token: write
       contents: read
