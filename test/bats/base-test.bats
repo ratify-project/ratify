@@ -538,3 +538,72 @@ RATIFY_NAMESPACE=gatekeeper-system
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
 }
+
+@test "namespaced notation/cosign verifiers test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-notation --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clusternotationkmprovider.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -n default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clustercosignkmprovider.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedpolicies.config.ratify.deislabs.io/ratify-policy --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clusterpolicy.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod notation-demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod notation-demo1 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
+    sleep 3
+
+    # apply namespaced policy and delete cluster-wide policy.
+    run bash -c "kubectl get policies.config.ratify.deislabs.io/ratify-policy -o yaml > clusterpolicy.yaml"
+    assert_success
+    sed 's/kind: Policy/kind: NamespacedPolicy/;/^\s*resourceVersion:/d' clusterpolicy.yaml >namespacedpolicy.yaml
+    run kubectl apply -f namespacedpolicy.yaml
+    assert_success
+
+    # apply namespaced kmp and delete cluster-wide kmp.
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > clusternotationkmprovider.yaml"
+    assert_success
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/' clusternotationkmprovider.yaml >namespacednotationkmprovider.yaml
+    run kubectl apply -f namespacednotationkmprovider.yaml
+    assert_success
+
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -o yaml > clustercosignkmprovider.yaml"
+    assert_success
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/;/^\s*resourceVersion:/d' clustercosignkmprovider.yaml >namespacedcosignkmprovider.yaml
+    run kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -n default --ignore-not-found=true
+    sleep 5
+    run kubectl apply -f namespacedcosignkmprovider.yaml
+    assert_success
+    sleep 5
+
+    # apply namespaced notation verifiers and delete cluster-wide notation verifiers.
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_notation.yaml
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation --ignore-not-found=true
+
+    # validate notation images.
+    run kubectl run notation-demo --namespace default --image=registry:5000/notation:signed
+    assert_success
+
+    run kubectl run notation-demo1 --namespace default --image=registry:5000/notation:unsigned
+    assert_failure
+
+    # apply namespaced cosign verifiers and delete cluster-wide cosign verifiers.
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_cosign.yaml
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --ignore-not-found=true
+
+    # validate cosign images.
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
+    assert_success
+
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
+    assert_failure
+}
