@@ -29,10 +29,4 @@ type ReferrerStoreManager interface {
 
 	// DeleteStore deletes the policy from the given scope.
 	DeleteStore(scope, storeName string)
-
-	// IsEmpty returns true if there are no stores.
-	IsEmpty() bool
-
-	// GetStoreCount returns the number of stores in all scopes.
-	GetStoreCount() int
 }

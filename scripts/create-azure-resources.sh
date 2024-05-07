@@ -96,7 +96,7 @@ create_akv() {
   echo "AKV '${KEYVAULT_NAME}' is created"
 
   # Grant permissions to access the certificate.
-  az keyvault set-policy --name ${KEYVAULT_NAME} --secret-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
+  az keyvault set-policy --name ${KEYVAULT_NAME} --secret-permissions get --key-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
 }
 
 main() {

@@ -15,7 +15,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
+        uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b
       - name: prepare
         id: prepare
         run: |
@@ -45,7 +45,7 @@ jobs:
       - name: docker build ratify-crds
         run: |
           docker buildx create --use
-          docker buildx build --build-arg KUBE_VERSION="1.27.7" -f crd.Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }} -t ${{ steps.prepare.outputs.crdref }} --push ./charts/ratify/crds
+          docker buildx build --build-arg KUBE_VERSION="1.29.2" -f crd.Dockerfile --platform linux/amd64,linux/arm64,linux/arm/v7 --label org.opencontainers.image.revision=${{ github.sha }} -t ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }} -t ${{ steps.prepare.outputs.crdref }} --push ./charts/ratify/crds
       - name: docker build ratify base
         run: |
           docker buildx create --use         

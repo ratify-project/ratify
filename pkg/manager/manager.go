@@ -50,6 +50,8 @@ import (
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
 	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/deislabs/ratify/pkg/controllers/clusterresource"
+	"github.com/deislabs/ratify/pkg/controllers/namespaceresource"
 	ef "github.com/deislabs/ratify/pkg/executor/core"
 	//+kubebuilder:scaffold:imports
 )
@@ -191,39 +193,67 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		close(certRotatorReady)
 	}
 
-	if err = (&controllers.VerifierReconciler{
+	if err = (&clusterresource.VerifierReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Verifier")
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Verifier")
 		os.Exit(1)
 	}
-	if err = (&controllers.StoreReconciler{
+	if err = (&namespaceresource.VerifierReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Verifier")
+		os.Exit(1)
+	}
+	if err = (&clusterresource.StoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Store")
 		os.Exit(1)
 	}
-	if err = (&controllers.CertificateStoreReconciler{
+	if err = (&namespaceresource.StoreReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Certificate Store")
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Store")
 		os.Exit(1)
 	}
-	if err = (&controllers.PolicyReconciler{
+	if err = (&namespaceresource.CertificateStoreReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Certificate Store")
+		os.Exit(1)
+	}
+	if err = (&namespaceresource.PolicyReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Policy")
+		os.Exit(1)
+	}
+	if err = (&clusterresource.PolicyReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Policy")
 		os.Exit(1)
 	}
-	if err = (&controllers.KeyManagementProviderReconciler{
+	if err = (&clusterresource.KeyManagementProviderReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Key Management Provider")
+		setupLog.Error(err, "unable to create controller", "controller", "Cluster Key Management Provider")
+		os.Exit(1)
+	}
+	if err = (&namespaceresource.KeyManagementProviderReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespaced Key Management Provider")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

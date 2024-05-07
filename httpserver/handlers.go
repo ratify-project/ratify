@@ -257,7 +257,7 @@ func (server *Server) validateComponents(ctx context.Context, handlerComponents 
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.ReferrerStore).WithDetail("referrer store config should have at least one store")
 		}
 		if server.GetExecutor(ctx).PolicyEnforcer == nil {
-			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config must be specified")
+			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.PolicyProvider).WithDetail("policy provider config is not provided")
 		}
 		if len(server.GetExecutor(ctx).Verifiers) == 0 {
 			return errors.ErrorCodeConfigInvalid.WithComponentType(errors.Verifier).WithDetail("verifiers config should have at least one verifier")

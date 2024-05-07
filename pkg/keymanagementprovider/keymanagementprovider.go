@@ -20,9 +20,14 @@ import (
 	"crypto"
 	"crypto/x509"
 	"encoding/pem"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/deislabs/ratify/errors"
+	"github.com/deislabs/ratify/internal/constants"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
+	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )
 
@@ -36,6 +41,11 @@ type KeyManagementProviderStatus map[string]interface{}
 type KMPMapKey struct {
 	Name    string
 	Version string
+}
+
+type PublicKey struct {
+	Key          crypto.PublicKey
+	ProviderType string
 }
 
 // KeyManagementProvider is an interface that defines methods to be implemented by a each key management provider provider
@@ -57,8 +67,9 @@ var certificatesMap sync.Map
 // static concurrency-safe map to store keys fetched from key management provider
 // layout:
 //
-//	map["<namespace>/<name>"] = map[KMPMapKey]PublicKey
-//	where KMPMapKey is dimensioned by the name and version of the public key.
+//		map["<namespace>/<name>"] = map[KMPMapKey]PublicKey
+//		where KMPMapKey is dimensioned by the name and version of the public key
+//	 where PublicKey is a struct containing the public key and the provider type
 var keyMap sync.Map
 
 // DecodeCertificates decodes PEM-encoded bytes into an x509.Certificate chain.
@@ -103,13 +114,15 @@ func SetCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certifica
 	certificatesMap.Store(resource, certs)
 }
 
-// GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found
-func GetCertificatesFromMap(resource string) map[KMPMapKey][]*x509.Certificate {
-	certs, ok := certificatesMap.Load(resource)
-	if !ok {
-		return map[KMPMapKey][]*x509.Certificate{}
+// GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found or an error happened.
+func GetCertificatesFromMap(ctx context.Context, resource string) (map[KMPMapKey][]*x509.Certificate, error) {
+	if !hasAccessToProvider(ctx, resource) {
+		return map[KMPMapKey][]*x509.Certificate{}, fmt.Errorf("namespace: [%s] does not have access to key management provider: %s", ctxUtils.GetNamespace(ctx), resource)
 	}
-	return certs.(map[KMPMapKey][]*x509.Certificate)
+	if certs, ok := certificatesMap.Load(resource); ok {
+		return certs.(map[KMPMapKey][]*x509.Certificate), nil
+	}
+	return map[KMPMapKey][]*x509.Certificate{}, fmt.Errorf("failed to access non-existent key management provider: %s", resource)
 }
 
 // DeleteCertificatesFromMap deletes the certificates from the map
@@ -127,30 +140,39 @@ func FlattenKMPMap(certMap map[KMPMapKey][]*x509.Certificate) []*x509.Certificat
 	return items
 }
 
-// FlattenKMPMapKeys flattens the map of keys fetched for a single key management provider resource and returns a single array
-func FlattenKMPMapKeys(keyMap map[KMPMapKey]crypto.PublicKey) []crypto.PublicKey {
-	items := []crypto.PublicKey{}
-	for _, val := range keyMap {
-		items = append(items, val)
-	}
-	return items
-}
-
 // SetKeysInMap sets the keys in the map
-func SetKeysInMap(resource string, keys map[KMPMapKey]crypto.PublicKey) {
-	keyMap.Store(resource, keys)
+func SetKeysInMap(resource string, providerType string, keys map[KMPMapKey]crypto.PublicKey) {
+	typedMap := make(map[KMPMapKey]PublicKey)
+	for key, value := range keys {
+		typedMap[key] = PublicKey{Key: value, ProviderType: providerType}
+	}
+	keyMap.Store(resource, typedMap)
 }
 
-// GetKeysFromMap gets the keys from the map and returns an empty map of keys if not found
-func GetKeysFromMap(resource string) map[KMPMapKey]crypto.PublicKey {
-	keys, ok := keyMap.Load(resource)
-	if !ok {
-		return map[KMPMapKey]crypto.PublicKey{}
+// GetKeysFromMap gets the keys from the map and returns an empty map if not found or an error happened.
+func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicKey, error) {
+	// A cluster-wide operation can cluster-wide provider
+	// A namespaced operation can only fetch the provider in the same namespace or cluster-wide provider.
+	if !hasAccessToProvider(ctx, resource) {
+		return map[KMPMapKey]PublicKey{}, fmt.Errorf("namespace: [%s] does not have access to key management provider: %s", ctxUtils.GetNamespace(ctx), resource)
 	}
-	return keys.(map[KMPMapKey]crypto.PublicKey)
+	if keys, ok := keyMap.Load(resource); ok {
+		return keys.(map[KMPMapKey]PublicKey), nil
+	}
+	return map[KMPMapKey]PublicKey{}, fmt.Errorf("failed to access non-existent key management provider: %s", resource)
 }
 
 // DeleteKeysFromMap deletes the keys from the map
 func DeleteKeysFromMap(resource string) {
 	keyMap.Delete(resource)
+}
+
+// A namespaced verification request could access KMP in the same namespace or cluster-wide KMP.
+// A cluster-wide (context namespace is "") verification request could only access cluster-wide KMP.
+func hasAccessToProvider(ctx context.Context, provider string) bool {
+	namespace := ctxUtils.GetNamespace(ctx)
+	if namespace == constants.EmptyNamespace {
+		return !vu.IsNamespacedNamed(provider)
+	}
+	return strings.HasPrefix(provider, namespace+constants.NamespaceSeperator) || !vu.IsNamespacedNamed(provider)
 }

@@ -17,14 +17,30 @@ package cosign
 
 import (
 	"context"
+	"crypto/ecdh"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
 	"fmt"
+	"slices"
+	"strings"
 	"testing"
 
+	"github.com/deislabs/ratify/pkg/common"
+	"github.com/deislabs/ratify/pkg/keymanagementprovider"
+	"github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault"
 	"github.com/deislabs/ratify/pkg/ocispecs"
+	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
 	"github.com/deislabs/ratify/pkg/verifier/config"
+	"github.com/opencontainers/go-digest"
 	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/cosign/v2/pkg/oci/static"
+	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )
+
+const ratifySampleImageRef string = "ghcr.io/deislabs/ratify:v1"
 
 // TestCreate tests the Create function of the cosign verifier
 func TestCreate(t *testing.T) {
@@ -38,6 +54,22 @@ func TestCreate(t *testing.T) {
 			config: config.VerifierConfig{
 				"name":          "test",
 				"artifactTypes": "testtype",
+				"trustPolicies": []TrustPolicyConfig{
+					{
+						Name:    "test",
+						Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+						Scopes:  []string{"*"},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid legacy config",
+			config: config.VerifierConfig{
+				"name":          "test",
+				"artifactTypes": "testtype",
+				"key":           "testkey_path",
 			},
 			wantErr: false,
 		},
@@ -52,6 +84,31 @@ func TestCreate(t *testing.T) {
 			name: "invalid config",
 			config: config.VerifierConfig{
 				"name": "test",
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid trust policies config with no legacy config or trust policies",
+			config: config.VerifierConfig{
+				"name":          "test",
+				"artifactTypes": "testtype",
+				"trustPolicies": []TrustPolicyConfig{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid config with legacy and trust policies",
+			config: config.VerifierConfig{
+				"name":          "test",
+				"artifactTypes": "testtype",
+				"trustPolicies": []TrustPolicyConfig{
+					{
+						Name:    "test",
+						Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+						Scopes:  []string{"*"},
+					},
+				},
+				"key": "testkey_path",
 			},
 			wantErr: true,
 		},
@@ -75,6 +132,13 @@ func TestName(t *testing.T) {
 	validConfig := config.VerifierConfig{
 		"name":          name,
 		"artifactTypes": "testtype",
+		"trustPolicies": []TrustPolicyConfig{
+			{
+				Name:    "test",
+				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Scopes:  []string{"*"},
+			},
+		},
 	}
 	cosignVerifier, err := verifierFactory.Create("", validConfig, "", "test-namespace")
 	if err != nil {
@@ -92,6 +156,13 @@ func TestType(t *testing.T) {
 	validConfig := config.VerifierConfig{
 		"name":          "test",
 		"artifactTypes": "testtype",
+		"trustPolicies": []TrustPolicyConfig{
+			{
+				Name:    "test",
+				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Scopes:  []string{"*"},
+			},
+		},
 	}
 	cosignVerifier, err := verifierFactory.Create("", validConfig, "", "test-namespace")
 	if err != nil {
@@ -138,6 +209,13 @@ func TestCanVerify(t *testing.T) {
 			validConfig := config.VerifierConfig{
 				"name":          "test",
 				"artifactTypes": tt.artifactTypes,
+				"trustPolicies": []TrustPolicyConfig{
+					{
+						Name:    "test",
+						Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+						Scopes:  []string{"*"},
+					},
+				},
 			}
 			cosignVerifier, err := verifierFactory.Create("", validConfig, "", "test-namespace")
 			if err != nil {
@@ -155,8 +233,15 @@ func TestCanVerify(t *testing.T) {
 func TestGetNestedReferences(t *testing.T) {
 	verifierFactory := cosignVerifierFactory{}
 	validConfig := config.VerifierConfig{
-		"name":                "test",
-		"artifactTypes":       "testtype",
+		"name":          "test",
+		"artifactTypes": "testtype",
+		"trustPolicies": []TrustPolicyConfig{
+			{
+				Name:    "test",
+				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Scopes:  []string{"*"},
+			},
+		},
 		"nestedArtifactTypes": []string{"nested-artifact-type"},
 	}
 	cosignVerifier, err := verifierFactory.Create("", validConfig, "", "test-namespace")
@@ -306,5 +391,549 @@ func TestErrorToVerifyResult(t *testing.T) {
 	}
 	if verifierResult.Message != "cosign verification failed: test error" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "cosign verification failed: test error")
+	}
+}
+
+// TestDecodeASN1Signature tests the decodeASN1Signature function
+func TestDecodeASN1Signature(t *testing.T) {
+	tc := []struct {
+		name             string
+		sigBytes         []byte
+		expectedSigBytes []byte
+		wantErr          bool
+	}{
+		{
+			name:             "invalid not asn1",
+			sigBytes:         []byte("test"),
+			expectedSigBytes: []byte("test"),
+			wantErr:          false,
+		},
+		{
+			name:             "valid asn1",
+			sigBytes:         []byte("0E\x02!\x00\xb4\xd7R\xf0\xee\x11ձ\x9f\rtsog\x99\xa1\x86L=\x04\x92\u07b8\xb7\xa1\x94Mj\xfe\xd2\xda\x02\x02 \x027|~q\xcb2\xaf\xd1\xddx;\x04\xed\r\x9a\x9a\x03\xa9\x84\x8cu\xba\x1a\x9eFb\xc2h\x7fk\xc3"),
+			expectedSigBytes: []byte("\xb4\xd7R\xf0\xee\x11ձ\x9f\rtsog\x99\xa1\x86L=\x04\x92\u07b8\xb7\xa1\x94Mj\xfe\xd2\xda\x02\x027|~q\xcb2\xaf\xd1\xddx;\x04\xed\r\x9a\x9a\x03\xa9\x84\x8cu\xba\x1a\x9eFb\xc2h\x7fk\xc3"),
+			wantErr:          false,
+		},
+		{
+			name:             "invalid r",
+			sigBytes:         []byte("0E\x03!\x00\xb4\xd7R\xf0\xee\x11ձ\x9f\rtsog\x99\xa1\x86L=\x04\x92\u07b8\xb7\xa1\x94Mj\xfe\xd2\xda\x02\x02 \x027|~q\xcb2\xaf\xd1\xddx;\x04\xed\r\x9a\x9a\x03\xa9\x84\x8cu\xba\x1a\x9eFb\xc2h\x7fk\xc3"),
+			expectedSigBytes: nil,
+			wantErr:          true,
+		},
+		{
+			name:             "invalid s",
+			sigBytes:         []byte("0E\x02!\x00\xb4\xd7R\xf0\xee\x11ձ\x9f\rtsog\x99\xa1\x86L=\x04\x92\u07b8\xb7\xa1\x94Mj\xfe\xd2\xda\x02\x03 \x027|~q\xcb2\xaf\xd1\xddx;\x04\xed\r\x9a\x9a\x03\xa9\x84\x8cu\xba\x1a\x9eFb\xc2h\x7fk\xc3"),
+			expectedSigBytes: nil,
+			wantErr:          true,
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.name, func(t *testing.T) {
+			sigBytes, err := decodeASN1Signature(tt.sigBytes)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("decodeASN1Signature() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			if sigBytes != nil && !slices.Equal(tt.expectedSigBytes, sigBytes) {
+				t.Errorf("decodeASN1Signature() = %v, want %v", sigBytes, tt.expectedSigBytes)
+			}
+		})
+	}
+}
+
+func TestGetKeysMaps_Success(t *testing.T) {
+	trustPolciesConfig := []TrustPolicyConfig{
+		{
+			Name:    "test-policy",
+			Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+			Scopes:  []string{"ghcr.io/*"},
+		},
+	}
+
+	trustPolicies, err := CreateTrustPolicies(trustPolciesConfig, "test")
+	if err != nil {
+		t.Fatalf("CreateTrustPolicies() error = %v", err)
+	}
+	_, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	if err != nil {
+		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, false)
+	}
+}
+
+func TestGetKeysMaps_FailingTrustPolicies(t *testing.T) {
+	trustPolciesConfig := []TrustPolicyConfig{
+		{
+			Name:    "test-policy",
+			Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+			Scopes:  []string{"myregistry.io/*"},
+		},
+	}
+
+	trustPolicies, err := CreateTrustPolicies(trustPolciesConfig, "test")
+	if err != nil {
+		t.Fatalf("CreateTrustPolicies() error = %v", err)
+	}
+	_, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	if err == nil {
+		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, true)
+	}
+}
+
+func TestGetKeysMaps_FailingGetKeys(t *testing.T) {
+	trustPolciesConfig := []TrustPolicyConfig{
+		{
+			Name: "test-policy",
+			Keys: []KeyConfig{
+				{
+					Provider: "non-existent",
+				},
+			},
+			Scopes: []string{"*"},
+		},
+	}
+
+	trustPolicies, err := CreateTrustPolicies(trustPolciesConfig, "test")
+	if err != nil {
+		t.Fatalf("CreateTrustPolicies() error = %v", err)
+	}
+	_, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	if err == nil {
+		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, true)
+	}
+}
+
+// TestVerifyInternal tests the verifyInternal function of the cosign verifier
+// it also tests the processAKVSignature function implicitly
+func TestVerifyInternal(t *testing.T) {
+	cosignMediaType := "application/vnd.dev.cosign.simplesigning.v1+json"
+	validSignatureBlob := []byte("test")
+	subjectDigest := digest.Digest("sha256:5678")
+	testRefDigest := digest.Digest("sha256:1234")
+	blobDigest := digest.Digest("valid blob")
+	//nolint:gosec // this is a test key
+	invalidRsaPrivKey, _ := rsa.GenerateKey(rand.Reader, 1024)
+	invalidRsaPubKey := invalidRsaPrivKey.Public()
+	invalidECPrivKey, _ := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
+	invalidECPubKey := invalidECPrivKey.Public()
+
+	validRSA256PubKey, err := cryptoutils.UnmarshalPEMToPublicKey([]byte(`-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtHGXFzi1W93vQ88EwzmI
+IhTXMYpcffQmmHYLgjkeLWL4SQ7DJEyq4j+Yz994lq0B4nCT9EaLkXYSMZhfYuHg
+y+2kMkh+1eNUtjGVJBkHc5iz7YR9OaIDlY36TnKlk0HfyBrjNrlwyodD6no/2LCf
+6FmGT6mVIaE/fyrxN3ZCHzfcw5LaGgHRt+91NJa5PnQCxjXUfyabHbHehgNLjjpn
+kwCW3GGs56cOMQowHsLrlwQnXAq5wvAueRz3Ommz+DPnVXUSV+vfYDt56oggX386
+LOe8VCiwi4T9IIuWlKIi+AuIm8aQ+11o9LjpvDqFD1rJU/KMFhczA4Kj0fRM7Ulg
+ewIDAQAB
+-----END PUBLIC KEY-----`))
+	if err != nil {
+		t.Fatalf("error creating RSA public key: %v", err)
+	}
+
+	validRSA384PubKey, err := cryptoutils.UnmarshalPEMToPublicKey([]byte(`-----BEGIN PUBLIC KEY-----
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEArccnwmvTOS0iqaxiCRsD
+4vixdUy2az39vL3iABjLr6Ht2NLA8dyO0NeEBb6+lfoqOl8RX29rJ0LnCaQL/wV8
+BQ3idfzdeX/rzdhRoegDiZ7MDgd01ZDeocGSfOAKJ3E1Kr0+etB4UuOF2T7dcVNn
+lAtZxEH6wNtW2HFoLg6bnlUuSj+9RVaP2Z0D55Bk4Un1jinB6Et81SCIuvDcMbKt
+aW3Xu17mdHiscLQBOnmX86mKRP8R4Ij9TtNyEW/9WLNXHV1iJhm9TVONZkX2hRjy
+o3+pPYvsZAAjyIk4AHF4BROCMA+WmyqkjnyVdEcJBi6f8NptjnS8A5jtTXIrndEq
+OE1VTu44z8hcQqrIypdyF86rMsJm91F8x68clvSYyvYn15lzv720LOglFF2NrD8S
+0SmxbyPB4bnRhEiyxh9ocAbGVXu+FyjrLPjTCTTnIpnTzgm/XtSqjA6104Zz3Seu
+TvvdnkTLbUxqHzoFYXSksJHvOiH2U7JAay8S4CZ4KrGvAgMBAAE=
+-----END PUBLIC KEY-----`))
+	if err != nil {
+		t.Fatalf("error creating RSA public key: %v", err)
+	}
+
+	validECDSAP256PubKey, err := cryptoutils.UnmarshalPEMToPublicKey([]byte(`-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE1ljPT4AO3Ny57S2B1a5P2LSrru5l
+ewt8iyi46g8SRrasghTR8xliLiZJl3GTM3UOdUAZCiruwPC7hihLD5JcqQ==
+-----END PUBLIC KEY-----`))
+	if err != nil {
+		t.Fatalf("error creating RSA public key: %v", err)
+	}
+
+	validECDSAP384PubKey, err := cryptoutils.UnmarshalPEMToPublicKey([]byte(`-----BEGIN PUBLIC KEY-----
+MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEFbJSMiBAtIiydUeqhMGpZBDRkZhYFu5r
+zg5rpyR7WJVgDPH8++2IY9Zg1HYKB0aGqyuLK5i8bG3C8avDLXg2+Dmf35wV2Mgh
+mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
+-----END PUBLIC KEY-----
+	`))
+	if err != nil {
+		t.Fatalf("error creating RSA public key: %v", err)
+	}
+
+	subjectRef := common.Reference{
+		Digest:   subjectDigest,
+		Original: ratifySampleImageRef,
+		Tag:      "v1",
+	}
+	refDescriptor := ocispecs.ReferenceDescriptor{
+		ArtifactType: "testtype",
+		Descriptor: imgspec.Descriptor{
+			Digest:    testRefDigest,
+			MediaType: imgspec.MediaTypeImageManifest,
+		},
+	}
+	tc := []struct {
+		name                        string
+		keys                        map[PKKey]keymanagementprovider.PublicKey
+		getKeysError                bool
+		cosignOpts                  cosign.CheckOpts
+		store                       *mocks.MemoryTestStore
+		expectedResultMessagePrefix string
+	}{
+		{
+			name:                        "get keys error",
+			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
+			getKeysError:                true,
+			store:                       &mocks.MemoryTestStore{},
+			expectedResultMessagePrefix: "cosign verification failed: error",
+		},
+		{
+			name:                        "manifest fetch error",
+			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
+			getKeysError:                false,
+			store:                       &mocks.MemoryTestStore{},
+			expectedResultMessagePrefix: "cosign verification failed: failed to get reference manifest",
+		},
+		{
+			name:         "incorrect reference manifest media type error",
+			keys:         map[PKKey]keymanagementprovider.PublicKey{},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: "invalid",
+					},
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed: reference manifest is not an image",
+		},
+		{
+			name:         "failed subject descriptor fetch",
+			keys:         map[PKKey]keymanagementprovider.PublicKey{},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+					},
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed: failed to create subject hash",
+		},
+		{
+			name:         "failed to fetch blob",
+			keys:         map[PKKey]keymanagementprovider.PublicKey{},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Digest: digest.Digest("nonexistent blob hash"),
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed: failed to get blob content",
+		},
+		{
+			name: "invalid key type for AKV",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: &ecdh.PublicKey{}, ProviderType: azurekeyvault.ProviderName},
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Digest: blobDigest,
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					blobDigest: validSignatureBlob,
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: unsupported public key type",
+		},
+		{
+			name: "invalid RSA key size for AKV",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: invalidRsaPubKey, ProviderType: azurekeyvault.ProviderName},
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Digest: blobDigest,
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					blobDigest: validSignatureBlob,
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: RSA key check: unsupported key size",
+		},
+		{
+			name: "invalid ECDSA curve type for AKV",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: invalidECPubKey, ProviderType: azurekeyvault.ProviderName},
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Digest: blobDigest,
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					blobDigest: validSignatureBlob,
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: ECDSA key check: unsupported key curve",
+		},
+		{
+			name: "valid hash: 256 keysize: 2048 RSA key AKV",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: validRSA256PubKey, ProviderType: azurekeyvault.ProviderName},
+			},
+			cosignOpts: cosign.CheckOpts{
+				IgnoreSCT:  true,
+				IgnoreTlog: true,
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Size:      267,
+								Digest:    "sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70",
+								MediaType: cosignMediaType,
+								Annotations: map[string]string{
+									static.SignatureAnnotationKey: "j6VNQ+Z3BqLeM75WM8WKnJqtwR7Kv21BwURHLmK6S05gCV/JntSbVthNVKoNY3906NMqmfZDlP/QuUOQt7Fxq2ivixw1xKa1KlE+ydW951GyMysaZx36U08Wmfyqt6dbgXMU6/nQE8oxG855rfywvE+MAmIJ+u1ktPbU+HoXEPP8yNUyK4gY/JAopQVEcktGAqFAbT49LzlE3FTJQNE6WryCQy5GiaM/1qdKzQi9GQb2g20Vxg6+e4AuxogAs+bzexoA4J5bUkDAkE/PDIXNz2EgjB0o7zK1NQEDiLNRq7fafTY5G56vXtltuMWOzCGnLMXbk4f3K9wKXF++7h4I3w==",
+								},
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification success",
+		},
+		{
+			name: "valid hash: 256 keysize: 3072 RSA key",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: validRSA384PubKey},
+			},
+			cosignOpts: cosign.CheckOpts{
+				IgnoreSCT:  true,
+				IgnoreTlog: true,
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Size:      267,
+								Digest:    "sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70",
+								MediaType: cosignMediaType,
+								Annotations: map[string]string{
+									static.SignatureAnnotationKey: "fP5+FQcc59WjqDAcvcgfHBZbu/FfQYh+ZjgwuEwLj/y0ku2S+rFbk8XE2gPZ4mcgT9Bceu+UMY/pYLqNI7ngkXMamYg1gzsTPrAG5DpEbApGMDiQyOlCcEFqgJbxqFOmg+HD9eSOMmibFbUh8XMt4LuyZIjmcCqJ22i8B49y8LFo6QiE64/jjhNLlRK4LvDTSUGDJ4VXW+c9y/PxbpZxtHIVyIYK82qL8P2/BuRxQ9ZVKJE1eFdz3Suz0ZIQmhkimLqQdOOxoGFcO4syjHYzfneBNvySWNxVXJCjw86DJqsDl5se+mY2Zww13DihfQX0cKSGGVfRoMgvIQOeaMNyFaCad2BQFfraqVUU5p7v0FqO6r0FU9z0ixRj81xVKJA3GPUZdF1ImcwOE4cOuQYARE6aiw78t2vrW5PRGtRPWpu+JY1+2v5m61w60G9HAozpnucWG3u9agdhwwD6VLJzPduVdnZr8t1WN8BpZs5NA3n4wkrlmRpnYtw7MqupaJQ2",
+								},
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification success",
+		},
+		{
+			name: "valid hash: 256 curve: P256 ECDSA key AKV",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: validECDSAP256PubKey, ProviderType: azurekeyvault.ProviderName},
+			},
+			cosignOpts: cosign.CheckOpts{
+				IgnoreSCT:  true,
+				IgnoreTlog: true,
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Size:      267,
+								Digest:    "sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70",
+								MediaType: cosignMediaType,
+								Annotations: map[string]string{
+									static.SignatureAnnotationKey: "MEYCIQDCMOtZXzsgZknsOhcv1VC7cN72xuBr16GU98bT0tXWdQIhAJp9X9jh4sIG1xhmoaYwGGkl1/8EQW7zqFUpMkEoi3s1",
+								},
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification success",
+		},
+		{
+			name: "valid hash: 256 curve: P384 ECDSA key",
+			keys: map[PKKey]keymanagementprovider.PublicKey{
+				{Provider: "test"}: {Key: validECDSAP384PubKey},
+			},
+			cosignOpts: cosign.CheckOpts{
+				IgnoreSCT:  true,
+				IgnoreTlog: true,
+			},
+			getKeysError: false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Size:      267,
+								Digest:    "sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70",
+								MediaType: cosignMediaType,
+								Annotations: map[string]string{
+									static.SignatureAnnotationKey: "MGUCMQC6Z7RgD2uxG5IiqKoOmrjTRVqBn+XqSjHU5oSI/RNAl9FBrM5HuzZm6cMmlp40jIoCMHKeH42xtJBTOPzbkG/z9aWaNagjn8jEFKWB28w4hjufN6NG1QReF2ai7befjTnRmg==",
+								},
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    subjectDigest,
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification success",
+		},
+	}
+
+	for _, tt := range tc {
+		t.Run(tt.name, func(t *testing.T) {
+			getKeysMaps = func(_ context.Context, _ *TrustPolicies, _ string, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
+				if tt.getKeysError {
+					return nil, cosign.CheckOpts{}, fmt.Errorf("error")
+				}
+
+				return tt.keys, tt.cosignOpts, nil
+			}
+			verifierFactory := cosignVerifierFactory{}
+			trustPoliciesConfig := []TrustPolicyConfig{
+				{
+					Name:    "test-policy",
+					Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+					Scopes:  []string{"*"},
+				},
+			}
+			validConfig := config.VerifierConfig{
+				"name":          "test",
+				"artifactTypes": "testtype",
+				"type":          "cosign",
+				"trustPolicies": trustPoliciesConfig,
+			}
+			cosignVerifier, err := verifierFactory.Create("", validConfig, "", "test-namespace")
+			if err != nil {
+				t.Fatalf("Create() error = %v", err)
+			}
+			result, _ := cosignVerifier.Verify(context.Background(), subjectRef, refDescriptor, tt.store)
+			if !strings.HasPrefix(result.Message, tt.expectedResultMessagePrefix) {
+				t.Errorf("Verify() = %v, want %v", result.Message, tt.expectedResultMessagePrefix)
+			}
+		})
 	}
 }

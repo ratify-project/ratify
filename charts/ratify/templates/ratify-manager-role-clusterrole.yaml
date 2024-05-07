@@ -34,6 +34,32 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - namespacedstores
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedstores/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedstores/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - verifiers
   verbs:
   - create
@@ -53,6 +79,32 @@ rules:
   - config.ratify.deislabs.io
   resources:
   - verifiers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedverifiers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedverifiers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedverifiers/status
   verbs:
   - get
   - patch
@@ -112,6 +164,32 @@ rules:
 - apiGroups:
   - config.ratify.deislabs.io
   resources:
+  - namespacedkeymanagementproviders
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedkeymanagementproviders/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedkeymanagementproviders/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
   - policies
   verbs:
   - create
@@ -131,6 +209,32 @@ rules:
   - config.ratify.deislabs.io
   resources:
   - policies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedpolicies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedpolicies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.deislabs.io
+  resources:
+  - namespacedpolicies/status
   verbs:
   - get
   - patch

@@ -16,6 +16,7 @@ limitations under the License.
 package keymanagementprovider
 
 import (
+	"context"
 	"crypto"
 	"crypto/rsa"
 	"crypto/x509"
@@ -23,6 +24,7 @@ import (
 	"testing"
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -142,7 +144,7 @@ func TestSetCertificatesInMap(t *testing.T) {
 func TestGetCertificatesFromMap(t *testing.T) {
 	certificatesMap.Delete("test")
 	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
-	certs := GetCertificatesFromMap("test")
+	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been fetched from the map")
 	}
@@ -151,7 +153,7 @@ func TestGetCertificatesFromMap(t *testing.T) {
 // TestGetCertificatesFromMap_FailedToFetch checks if certificates are fetched from the map
 func TestGetCertificatesFromMap_FailedToFetch(t *testing.T) {
 	certificatesMap.Delete("test")
-	certs := GetCertificatesFromMap("test")
+	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 0 {
 		t.Fatalf("certificates should not have been fetched from the map")
 	}
@@ -178,7 +180,7 @@ func TestFlattenKMPMap(t *testing.T) {
 // TestSetKeysInMap checks if keys are set in the map
 func TestSetKeysInMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
 	if _, ok := keyMap.Load("test"); !ok {
 		t.Fatalf("keysMap should have been set for key")
 	}
@@ -187,8 +189,8 @@ func TestSetKeysInMap(t *testing.T) {
 // TestGetKeysFromMap checks if keys are fetched from the map
 func TestGetKeysFromMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
-	keys := GetKeysFromMap("test")
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	keys, _ := GetKeysFromMap(context.Background(), "test")
 	if len(keys) != 1 {
 		t.Fatalf("keys should have been fetched from the map")
 	}
@@ -197,7 +199,16 @@ func TestGetKeysFromMap(t *testing.T) {
 // TestGetKeysFromMap_FailedToFetch checks if keys fail to fetch from map
 func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 	keyMap.Delete("test")
-	keys := GetKeysFromMap("test")
+	keys, _ := GetKeysFromMap(context.Background(), "test")
+	if len(keys) != 0 {
+		t.Fatalf("keys should not have been fetched from the map")
+	}
+}
+
+func TestGetKeysFromMap_AccessDifferentNamespace_ReturnsFalse(t *testing.T) {
+	keyMap.Delete("test")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), "namespace1")
+	keys, _ := GetKeysFromMap(ctx, "namespace2/test")
 	if len(keys) != 0 {
 		t.Fatalf("keys should not have been fetched from the map")
 	}
@@ -206,18 +217,10 @@ func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
 // TestDeleteKeysFromMap checks if key map entry is deleted from the map
 func TestDeleteKeysFromMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
 	DeleteKeysFromMap("test")
 	if _, ok := keyMap.Load("test"); ok {
 		t.Fatalf("keysMap should have been deleted for key")
-	}
-}
-
-// TestFlattenKMPMapKeys checks if keys in map are flattened to a single array
-func TestFlattenKMPMapKeys(t *testing.T) {
-	keys := FlattenKMPMapKeys(map[KMPMapKey]crypto.PublicKey{{Name: "testkey1"}: &rsa.PublicKey{}, {Name: "testkey2"}: &rsa.PublicKey{}})
-	if len(keys) != 2 {
-		t.Fatalf("keys should have been flattened")
 	}
 }
 

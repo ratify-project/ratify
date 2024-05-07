@@ -1,0 +1,10 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedVerifier
+metadata:
+  name: verifier-schemavalidator
+spec:
+  name: schemavalidator
+  artifactTypes: application/vnd.aquasecurity.trivy.report.sarif.v1
+  parameters: 
+    schemas:
+      application/sarif+json: https://json.schemastore.org/sourcehut-build-0.65.0.json
