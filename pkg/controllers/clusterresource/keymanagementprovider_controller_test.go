@@ -270,9 +270,9 @@ func TestKMPReconcile(t *testing.T) {
 			if tt.expectedErr != (err != nil) {
 				t.Fatalf("Reconcile() expected error %v, actual %v", tt.expectedErr, err)
 			}
-			certs, _ := keymanagementprovider.GetCertificatesFromMap(context.Background(), storeName)
+			certs, _ := keymanagementprovider.GetCertificatesFromMap(context.Background(), kmpName)
 			if len(certs) != tt.expectedKMPCount {
-				t.Fatalf("Store map expected size %v, actual %v", tt.expectedKMPCount, len(certs))
+				t.Fatalf("Cert map expected size %v, actual %v", tt.expectedKMPCount, len(certs))
 			}
 		})
 	}

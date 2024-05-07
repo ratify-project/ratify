@@ -220,7 +220,7 @@ func TestCertStoreReconcile(t *testing.T) {
 			expectedCertCount: 0,
 		},
 		{
-			name: "invalid params",
+			name:        "invalid params",
 			description: "Received invalid parameters of the certStore Spec, it should fail the reconcile and return an error",
 			provider: &configv1beta1.CertificateStore{
 				ObjectMeta: metav1.ObjectMeta{
