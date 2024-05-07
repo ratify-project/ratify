@@ -67,10 +67,10 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_partial_licensechecker.yaml
@@ -92,10 +92,10 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
@@ -103,7 +103,7 @@ SLEEP_TIME=1
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_failure
-   
+
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
@@ -129,10 +129,10 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator2 --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
@@ -157,10 +157,10 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod vulnerabilityreport2 --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
@@ -185,10 +185,10 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod all-in-one --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
