@@ -25,10 +25,10 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo2 --namespace default --force --ignore-not-found=true'
     }
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     # validate key management provider status property shows success

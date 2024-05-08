@@ -28,7 +28,7 @@ const (
 func TestSetContext(t *testing.T) {
 	ctx := context.Background()
 	ctx = SetContextWithNamespace(ctx, testNamespace)
-	namespace := ctx.Value(contextKeyNamespace).(string)
+	namespace := ctx.Value(ContextKeyNamespace).(string)
 	if namespace != testNamespace {
 		t.Fatalf("expected namespace %s, got %s", testNamespace, namespace)
 	}

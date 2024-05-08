@@ -23,6 +23,7 @@ import (
 
 	logstash "github.com/bshuster-repo/logrus-logstash-hook"
 	re "github.com/deislabs/ratify/errors"
+	icontext "github.com/deislabs/ratify/internal/context"
 	dcontext "github.com/docker/distribution/context"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -93,6 +94,7 @@ func InitContext(ctx context.Context, r *http.Request) context.Context {
 
 // GetLogger returns a logger with provided values.
 func GetLogger(ctx context.Context, opt Option) dcontext.Logger {
+	ctx = dcontext.WithLogger(ctx, dcontext.GetLogger(ctx, icontext.ContextKeyNamespace))
 	ctx = context.WithValue(ctx, ContextKeyComponentType, opt.ComponentType)
 	return dcontext.GetLogger(ctx, ContextKeyComponentType)
 }

@@ -125,17 +125,17 @@ delete-ratify:
 
 .PHONY: deploy-demo-constraints
 deploy-demo-constraints:
-	kubectl apply -f ./library/default/template.yaml
-	kubectl apply -f ./library/default/samples/constraint.yaml
+	kubectl apply -f ./library/multi-tenancy-validation/template.yaml
+	kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
 
 .PHONY: delete-demo-constraints
 delete-demo-constraints:
-	kubectl delete -f ./library/default/template.yaml
-	kubectl delete -f ./library/default/samples/constraint.yaml
+	kubectl delete -f ./library/multi-tenancy-validation/template.yaml
+	kubectl delete -f ./library/multi-tenancy-validation/samples/constraint.yaml
 
 .PHONY: deploy-rego-policy
 deploy-rego-policy:
-	kubectl apply -f ./config/samples/clustered/policy/config_v1beta1_policy_rego.yaml
+	kubectl replace -f ./config/samples/clustered/policy/config_v1beta1_policy_rego.yaml
 
 .PHONY: deploy-gatekeeper
 deploy-gatekeeper:

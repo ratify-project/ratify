@@ -8,7 +8,7 @@ spec:
   parameters:
      verificationCertStores:
        certs:
-         - ratify-notation-inline-cert-0
+         - default/ratify-notation-inline-cert-0
      trustPolicyDoc:
       version: "1.0"
       trustPolicies:
