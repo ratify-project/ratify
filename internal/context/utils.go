@@ -22,16 +22,16 @@ import (
 
 type contextKey string
 
-const contextKeyNamespace = contextKey("namespace")
+const ContextKeyNamespace = contextKey("namespace")
 
 // SetContextWithNamespace embeds namespace to the context.
 func SetContextWithNamespace(ctx context.Context, namespace string) context.Context {
-	return context.WithValue(ctx, contextKeyNamespace, namespace)
+	return context.WithValue(ctx, ContextKeyNamespace, namespace)
 }
 
 // GetNamespace returns the embedded namespace from the context.
 func GetNamespace(ctx context.Context) string {
-	namespace := ctx.Value(contextKeyNamespace)
+	namespace := ctx.Value(ContextKeyNamespace)
 	if namespace == nil {
 		return ""
 	}
@@ -40,7 +40,7 @@ func GetNamespace(ctx context.Context) string {
 
 // CreateCacheKey creates a new cache key prefixed with embedded namespace.
 func CreateCacheKey(ctx context.Context, key string) string {
-	namespace := ctx.Value(contextKeyNamespace)
+	namespace := ctx.Value(ContextKeyNamespace)
 	if namespace == nil {
 		return key
 	}

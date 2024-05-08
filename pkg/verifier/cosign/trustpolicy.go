@@ -23,9 +23,7 @@ import (
 	"slices"
 
 	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	vu "github.com/deislabs/ratify/pkg/verifier/utils"
 	"github.com/deislabs/ratify/utils"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/rekor"
@@ -138,7 +136,7 @@ func (tp *trustPolicy) GetName() string {
 }
 
 // GetKeys returns the public keys defined in the trust policy
-func (tp *trustPolicy) GetKeys(ctx context.Context, namespace string) (map[PKKey]keymanagementprovider.PublicKey, error) {
+func (tp *trustPolicy) GetKeys(ctx context.Context, _ string) (map[PKKey]keymanagementprovider.PublicKey, error) {
 	keyMap := make(map[PKKey]keymanagementprovider.PublicKey)
 	// preload the local keys into the map of keys to be returned
 	for key, pubKey := range tp.localKeys {
@@ -150,24 +148,22 @@ func (tp *trustPolicy) GetKeys(ctx context.Context, namespace string) (map[PKKey
 		if keyConfig.File != "" {
 			continue
 		}
-		// must prepend namespace to key management provider name if not provided since namespace is prepended during key management provider intialization
-		namespacedKMP := prependNamespaceToKMPName(keyConfig.Provider, namespace)
 		// get the key management provider resource which contains a map of keys
-		kmpResource, ok := keymanagementprovider.GetKeysFromMap(ctx, namespacedKMP)
-		if !ok {
-			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key management provider %s not found", tp.config.Name, namespacedKMP))
+		kmpResource, kmpErr := keymanagementprovider.GetKeysFromMap(ctx, keyConfig.Provider)
+		if kmpErr != nil {
+			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy [%s] failed to access key management provider %s, err: %s", tp.config.Name, keyConfig.Provider, kmpErr.Error()))
 		}
 		// get a specific key from the key management provider resource
 		if keyConfig.Name != "" {
 			pubKey, exists := kmpResource[keymanagementprovider.KMPMapKey{Name: keyConfig.Name, Version: keyConfig.Version}]
 			if !exists {
-				return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key %s with version %s not found in key management provider %s", tp.config.Name, keyConfig.Name, keyConfig.Version, namespacedKMP))
+				return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key %s with version %s not found in key management provider %s", tp.config.Name, keyConfig.Name, keyConfig.Version, keyConfig.Provider))
 			}
-			keyMap[PKKey{Provider: namespacedKMP, Name: keyConfig.Name, Version: keyConfig.Version}] = pubKey
+			keyMap[PKKey{Provider: keyConfig.Provider, Name: keyConfig.Name, Version: keyConfig.Version}] = pubKey
 		} else {
 			// get all public keys from the key management provider
 			for key, pubKey := range kmpResource {
-				keyMap[PKKey{Provider: namespacedKMP, Name: key.Name, Version: key.Version}] = pubKey
+				keyMap[PKKey{Provider: keyConfig.Provider, Name: key.Name, Version: key.Version}] = pubKey
 			}
 		}
 	}
@@ -276,14 +272,4 @@ func loadKeyFromPath(filePath string) (crypto.PublicKey, error) {
 	}
 
 	return cryptoutils.UnmarshalPEMToPublicKey(contents)
-}
-
-// prependNamespaceToKMPName prepends the namespace to the key management provider name if not already present
-// if the namespace is empty, the key management provider name is returned as is
-func prependNamespaceToKMPName(kmpName string, namespace string) string {
-	// namespace will be empty for CLI scenarios. use the KMP name as is
-	if vu.IsNamespacedNamed(kmpName) || namespace == "" {
-		return kmpName
-	}
-	return fmt.Sprintf("%s%s%s", namespace, constants.NamespaceSeperator, kmpName)
 }
