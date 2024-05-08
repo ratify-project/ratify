@@ -16,15 +16,23 @@ limitations under the License.
 package namespaceresource
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
 	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
+	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/pkg/certificateprovider"
 	"github.com/deislabs/ratify/pkg/certificateprovider/inline"
+	"github.com/deislabs/ratify/pkg/controllers"
+	test "github.com/deislabs/ratify/pkg/utils"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestGetCertStoreConfig_ValidConfig(t *testing.T) {
@@ -181,5 +189,98 @@ func TestGetCertificateProvider(t *testing.T) {
 	_, err := getCertificateProvider(providers, "azurekv")
 	if err == nil {
 		t.Fatalf("Getting unregistered provider should returns an error")
+	}
+}
+
+func TestCertStoreReconcile(t *testing.T) {
+	tests := []struct {
+		name              string
+		description       string
+		provider          *configv1beta1.CertificateStore
+		req               *reconcile.Request
+		expectedErr       bool
+		expectedCertCount int
+	}{
+		{
+			name:        "nonexistent store",
+			description: "Reconciling a non-existent certStore CR, it should be deleted from map",
+			req: &reconcile.Request{
+				NamespacedName: types.NamespacedName{Name: "nonexistent"},
+			},
+			provider: &configv1beta1.CertificateStore{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.CertificateStoreSpec{
+					Provider: "inline",
+				},
+			},
+			expectedErr:       false,
+			expectedCertCount: 0,
+		},
+		{
+			name:        "invalid params",
+			description: "Received invalid parameters of the certStore Spec, it should fail the reconcile and return an error",
+			provider: &configv1beta1.CertificateStore{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.CertificateStoreSpec{
+					Provider: "inline",
+				},
+			},
+			expectedErr:       true,
+			expectedCertCount: 0,
+		},
+		{
+			name:        "valid params",
+			description: "Received invalid parameters of the certStore Spec, it should fail the reconcile and return an error",
+			provider: &configv1beta1.CertificateStore{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.CertificateStoreSpec{
+					Provider: "inline",
+					Parameters: runtime.RawExtension{
+						Raw: []byte(`{"value": "-----BEGIN CERTIFICATE-----\nMIID2jCCAsKgAwIBAgIQXy2VqtlhSkiZKAGhsnkjbDANBgkqhkiG9w0BAQsFADBvMRswGQYDVQQD\nExJyYXRpZnkuZXhhbXBsZS5jb20xDzANBgNVBAsTBk15IE9yZzETMBEGA1UEChMKTXkgQ29tcGFu\neTEQMA4GA1UEBxMHUmVkbW9uZDELMAkGA1UECBMCV0ExCzAJBgNVBAYTAlVTMB4XDTIzMDIwMTIy\nNDUwMFoXDTI0MDIwMTIyNTUwMFowbzEbMBkGA1UEAxMScmF0aWZ5LmV4YW1wbGUuY29tMQ8wDQYD\nVQQLEwZNeSBPcmcxEzARBgNVBAoTCk15IENvbXBhbnkxEDAOBgNVBAcTB1JlZG1vbmQxCzAJBgNV\nBAgTAldBMQswCQYDVQQGEwJVUzCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAL10bM81\npPAyuraORABsOGS8M76Bi7Guwa3JlM1g2D8CuzSfSTaaT6apy9GsccxUvXd5cmiP1ffna5z+EFmc\nizFQh2aq9kWKWXDvKFXzpQuhyqD1HeVlRlF+V0AfZPvGt3VwUUjNycoUU44ctCWmcUQP/KShZev3\n6SOsJ9q7KLjxxQLsUc4mg55eZUThu8mGB8jugtjsnLUYvIWfHhyjVpGrGVrdkDMoMn+u33scOmrt\nsBljvq9WVo4T/VrTDuiOYlAJFMUae2Ptvo0go8XTN3OjLblKeiK4C+jMn9Dk33oGIT9pmX0vrDJV\nX56w/2SejC1AxCPchHaMuhlwMpftBGkCAwEAAaNyMHAwDgYDVR0PAQH/BAQDAgeAMAkGA1UdEwQC\nMAAwEwYDVR0lBAwwCgYIKwYBBQUHAwMwHwYDVR0jBBgwFoAU0eaKkZj+MS9jCp9Dg1zdv3v/aKww\nHQYDVR0OBBYEFNHmipGY/jEvYwqfQ4Nc3b97/2isMA0GCSqGSIb3DQEBCwUAA4IBAQBNDcmSBizF\nmpJlD8EgNcUCy5tz7W3+AAhEbA3vsHP4D/UyV3UgcESx+L+Nye5uDYtTVm3lQejs3erN2BjW+ds+\nXFnpU/pVimd0aYv6mJfOieRILBF4XFomjhrJOLI55oVwLN/AgX6kuC3CJY2NMyJKlTao9oZgpHhs\nLlxB/r0n9JnUoN0Gq93oc1+OLFjPI7gNuPXYOP1N46oKgEmAEmNkP1etFrEjFRgsdIFHksrmlOlD\nIed9RcQ087VLjmuymLgqMTFX34Q3j7XgN2ENwBSnkHotE9CcuGRW+NuiOeJalL8DBmFXXWwHTKLQ\nPp5g6m1yZXylLJaFLKz7tdMmO355\n-----END CERTIFICATE-----\n"}`),
+					},
+				},
+			},
+			expectedErr:       false,
+			expectedCertCount: 1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scheme, _ := test.CreateScheme()
+			client := fake.NewClientBuilder().WithScheme(scheme)
+			client.WithObjects(tt.provider)
+			r := &CertificateStoreReconciler{
+				Scheme: scheme,
+				Client: client.Build(),
+			}
+			var req reconcile.Request
+			if tt.req != nil {
+				req = *tt.req
+			} else {
+				req = reconcile.Request{
+					NamespacedName: test.KeyFor(tt.provider),
+				}
+			}
+
+			_, err := r.Reconcile(context.Background(), req)
+			if tt.expectedErr != (err != nil) {
+				t.Fatalf("Reconcile() expected error %v, actual %v", tt.expectedErr, err)
+			}
+			ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+			certs, _ := controllers.NamespacedCertStores.GetCertsFromStore(ctx, testNamespace+constants.NamespaceSeperator+storeName)
+			if len(certs) != tt.expectedCertCount {
+				t.Fatalf("Store map expected size %v, actual %v", tt.expectedCertCount, len(certs))
+			}
+		})
 	}
 }
