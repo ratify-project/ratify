@@ -45,11 +45,14 @@ Applicable fixes, including security fixes, may be backported to supported relea
 
 ### Minor releases
 
-When a minor release is required, the release commits should be merged with the `main` branch when ready. Alpha and Beta releases will be cut from the main branch, for RC and stable releases a new branch `release-X.Y` will be created. Required changes for the minor release should be PRed to the `dev`  branch, the change will then be cherry picked to `release-X.Y` from `main`.
+When a minor release is required, the release commits should be merged with the `main` branch when ready.   
+
+  - Alpha and Beta releases will be cut from the main branch. 
+  - For RC and stable releases, a new branch `release-X.Y` will be created from `main`. Required changes for the minor release should be PRed to the `dev`  branch, the change will then be cherry picked to `release-X.Y` from `main`.
 
 ### Major releases
 
-When a major release is required, the release commits should be merged with the `main` branch when ready.  Then a new branch should be created with the major version incremented and optional pre-release specifiers.  For example if the previous release was `v1.1.1`, the branch should be named `v2.0.0` and can optionally be suffixed with a pre-release (e.g. `v2.0.0-alpha1`).  Major versions will usually require multiple pre-release versions.
+When a major release is required, the release commits should be merged with the `main` branch when ready.  Major versions will usually require multiple pre-release versions. Similar to minor releases, the new branch should be created for the RC and stable release.
 
 ### Tag and Release
 
@@ -70,9 +73,9 @@ We expect to "support" n (current). "Support" means we expect users to be runnin
 
 ## Supported Kubernetes and Gatekeeper Versions
 
-Ratify is assumed to be compatible with currently supported GateKeeper versions and the [current Kubernetes Supported Versions](https://kubernetes.io/releases/patch-releases/#detailed-release-history-for-active-branches) per [Kubernetes Supported Versions policy](https://kubernetes.io/releases/version-skew-policy/).
+Ratify is assumed to be compatible with [GateKeeper Supported Versions](https://github.com/open-policy-agent/gatekeeper/blob/master/docs/Release_Management.md#supported-releases) and the [current Kubernetes Supported Versions](https://kubernetes.io/releases/patch-releases/#detailed-release-history-for-active-branches) per [Kubernetes Supported Versions policy](https://kubernetes.io/releases/version-skew-policy/).
 
-For example, if Gatekeeper _supported_ versions are v3.7 and v3.8, and Kubernetes _supported_ versions are v1.22, v1.23, v1.24, then current version of Ratify (v1.1) are assumed to be compatible with all supported Kubernetes versions (v1.22, v1.23, v1.24). 
+For example, if Gatekeeper _supported_ versions are v3.13 and v3.14, and Kubernetes _supported_ versions are v1.27, v1.28, v1.29, then current version of Ratify (v1.1) are assumed to be compatible with all supported Kubernetes versions (v1.27, v1.28, v1.29) and Gatekeeper version(v3.13, v3.14). 
 
 ## Post Release Activity
 
