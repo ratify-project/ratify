@@ -94,6 +94,10 @@ func DecodeCertificates(value []byte) ([]*x509.Certificate, error) {
 		}
 	}
 
+	if len(certs) == 0 {
+		return nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.CertProvider).WithDetail("no certificates found in the pem block")
+	}
+
 	return certs, nil
 }
 
