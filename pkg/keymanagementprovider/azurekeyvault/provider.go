@@ -176,6 +176,10 @@ func (s *akvKMProvider) GetKeys(ctx context.Context) (map[keymanagementprovider.
 			return nil, nil, fmt.Errorf("failed to get key objectName:%s, objectVersion:%s, error: %w", keyVaultKey.Name, keyVaultKey.Version, err)
 		}
 
+		if keyBundle.Attributes != nil && keyBundle.Attributes.Enabled != nil && !*keyBundle.Attributes.Enabled {
+			return nil, nil, fmt.Errorf("key %s version %s is disabled. please re-enable in azure key vault or remove reference to this key", keyVaultKey.Name, keyVaultKey.Version)
+		}
+
 		publicKey, err := getKeyFromKeyBundle(keyBundle)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get key from key bundle:%w", err)
