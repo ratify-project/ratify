@@ -1,8 +1,6 @@
 name: run-full-validation
 
 on:
-  pull_request_target:
-    types: [labeled]
   pull_request:
     branches:
       - main
@@ -17,12 +15,10 @@ permissions: read-all
 
 jobs:
   call-e2e-cli:
-    if: github.event_name != 'pull_request_target' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     uses: ./.github/workflows/e2e-cli.yml
 
   call_test_e2e_full:
     name: "Build and run e2e on full test matrix"
-    if: github.event_name != 'pull_request_target' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     permissions:
       contents: read
     strategy:
@@ -37,7 +33,6 @@ jobs:
 
   build_test_aks_e2e:
     name: "Build and run e2e Test on AKS"
-    if: github.event_name != 'pull_request_target' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     permissions:
       id-token: write
       contents: read
@@ -53,7 +48,6 @@ jobs:
     secrets: inherit
 
   aks-test-cleanup:
-    if: github.event_name != 'pull_request_target' || contains(github.event.pull_request.labels.*.name, 'safe to test')
     env:
       AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
       AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
