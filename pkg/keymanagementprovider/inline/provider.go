@@ -85,7 +85,7 @@ func (f *inlineKMProviderFactory) Create(_ string, keyManagementProviderConfig c
 	case certificateContentType:
 		certs, err := keymanagementprovider.DecodeCertificates([]byte(conf.Value))
 		if err != nil {
-			return nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.KeyManagementProvider)
+			return nil, err
 		}
 		certMap = map[keymanagementprovider.KMPMapKey][]*x509.Certificate{
 			{}: certs,
@@ -93,7 +93,7 @@ func (f *inlineKMProviderFactory) Create(_ string, keyManagementProviderConfig c
 	case keyContentType:
 		key, err := keymanagementprovider.DecodeKey([]byte(conf.Value))
 		if err != nil {
-			return nil, errors.ErrorCodeKeyInvalid.WithComponentType(errors.KeyManagementProvider)
+			return nil, err
 		}
 		keyMap = map[keymanagementprovider.KMPMapKey]crypto.PublicKey{
 			{}: key,
