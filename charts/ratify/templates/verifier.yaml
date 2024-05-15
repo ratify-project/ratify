@@ -65,8 +65,7 @@ spec:
           {{- if and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0) }}
           - provider: kmprovider-akv
           {{- end }}
-    {{- end }}
-    {{- if .Values.cosign.key }}
+    {{- else }}
     key: /usr/local/ratify-certs/cosign/cosign.pub
     {{- end }}
 {{- end }}
