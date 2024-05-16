@@ -7,7 +7,6 @@ repositories:
     url: https://charts.bitnami.com/bitnami
   - name: ratify
     url: https://deislabs.github.io/ratify
-    oci: true # PRERELEASE: Remove before copying to helmfile.yaml
     
 releases:
   - name: dapr
