@@ -28,7 +28,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 KIND_VERSION ?= 0.22.0
 KUBERNETES_VERSION ?= 1.29.2
 KIND_KUBERNETES_VERSION ?= 1.29.2
-GATEKEEPER_VERSION ?= 3.15.0
+GATEKEEPER_VERSION ?= 3.16.0
 DAPR_VERSION ?= 1.12.5
 COSIGN_VERSION ?= 2.2.3
 NOTATION_VERSION ?= 1.1.0
@@ -518,10 +518,7 @@ e2e-azure-setup: e2e-create-all-image e2e-notation-setup e2e-notation-leaf-cert-
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
-	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then ./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0; fi
-	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then kubectl -n ${GATEKEEPER_NAMESPACE} patch deployment gatekeeper-controller-manager --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--external-data-provider-response-cache-ttl=1s"}]' && sleep 60; fi
-	# Gatekeeper versions >= 3.14.0 need a special helm value to override the default external data response cache ttl to 10s
-	if [ ${GATEKEEPER_VERSION} != "3.13.0" ]; then ./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0 --set externaldataProviderResponseCacheTTL=1s; fi
+	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0 --set externaldataProviderResponseCacheTTL=1s
 
 e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
