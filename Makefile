@@ -527,7 +527,7 @@ e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
-e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-base-image
+e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-base-image
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
