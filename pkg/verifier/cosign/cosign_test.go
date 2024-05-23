@@ -57,7 +57,7 @@ func TestCreate(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{
 					{
 						Name:    "test",
-						Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+						Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 						Scopes:  []string{"*"},
 					},
 				},
@@ -104,7 +104,7 @@ func TestCreate(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{
 					{
 						Name:    "test",
-						Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+						Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 						Scopes:  []string{"*"},
 					},
 				},
@@ -135,7 +135,7 @@ func TestName(t *testing.T) {
 		"trustPolicies": []TrustPolicyConfig{
 			{
 				Name:    "test",
-				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				Scopes:  []string{"*"},
 			},
 		},
@@ -159,7 +159,7 @@ func TestType(t *testing.T) {
 		"trustPolicies": []TrustPolicyConfig{
 			{
 				Name:    "test",
-				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				Scopes:  []string{"*"},
 			},
 		},
@@ -212,7 +212,7 @@ func TestCanVerify(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{
 					{
 						Name:    "test",
-						Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+						Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 						Scopes:  []string{"*"},
 					},
 				},
@@ -238,7 +238,7 @@ func TestGetNestedReferences(t *testing.T) {
 		"trustPolicies": []TrustPolicyConfig{
 			{
 				Name:    "test",
-				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				Scopes:  []string{"*"},
 			},
 		},
@@ -445,7 +445,7 @@ func TestGetKeysMaps_Success(t *testing.T) {
 	trustPolciesConfig := []TrustPolicyConfig{
 		{
 			Name:    "test-policy",
-			Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+			Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 			Scopes:  []string{"ghcr.io/*"},
 		},
 	}
@@ -464,7 +464,7 @@ func TestGetKeysMaps_FailingTrustPolicies(t *testing.T) {
 	trustPolciesConfig := []TrustPolicyConfig{
 		{
 			Name:    "test-policy",
-			Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+			Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 			Scopes:  []string{"myregistry.io/*"},
 		},
 	}
@@ -916,7 +916,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			trustPoliciesConfig := []TrustPolicyConfig{
 				{
 					Name:    "test-policy",
-					Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 					Scopes:  []string{"*"},
 				},
 			}

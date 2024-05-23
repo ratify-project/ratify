@@ -148,6 +148,7 @@ func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierC
 	legacy := true
 	// if trustPolicies are provided and non-legacy, create the trust policies
 	if config.KeyRef == "" && config.RekorURL == "" && len(config.TrustPolicies) > 0 {
+		logger.GetLogger(context.Background(), logOpt).Debugf("legacy cosign verifier configuration not found, creating trust policies")
 		trustPolicies, err = CreateTrustPolicies(config.TrustPolicies, verifierName)
 		if err != nil {
 			return nil, err
@@ -280,7 +281,22 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			extensionListEntry.Verifications = append(extensionListEntry.Verifications, extension)
 		}
 
-		// TODO: perform keyless verification instead if no keys are found
+		// if no keys are found, perform keyless verification
+		if len(keysMap) == 0 {
+			// verify signature with cosign options + perform bundle verification
+			bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, &cosignOpts)
+			extension := cosignExtension{
+				IsSuccess:      true,
+				BundleVerified: bundleVerified,
+			}
+			if err != nil {
+				extension.IsSuccess = false
+				extension.Err = err.Error()
+			} else {
+				hasValidSignature = true
+			}
+			extensionListEntry.Verifications = append(extensionListEntry.Verifications, extension)
+		}
 		sigExtensions = append(sigExtensions, extensionListEntry)
 	}
 

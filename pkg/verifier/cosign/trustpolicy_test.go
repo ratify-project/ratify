@@ -68,7 +68,8 @@ func TestCreateTrustPolicy(t *testing.T) {
 				Name:   "test",
 				Scopes: []string{"*"},
 				Keyless: KeylessConfig{
-					RekorURL: DefaultRekorURL,
+					CertificateIdentity:   "test-identity",
+					CertificateOIDCIssuer: "https://test-issuer.com",
 				},
 			},
 			wantErr: false,
@@ -80,7 +81,8 @@ func TestCreateTrustPolicy(t *testing.T) {
 				Name:    "test",
 				Scopes:  []string{"*"},
 				Keyless: KeylessConfig{
-					RekorURL: DefaultRekorURL,
+					CertificateIdentity:   "test-identity",
+					CertificateOIDCIssuer: "https://test-issuer.com",
 				},
 			},
 			wantErr: true,
@@ -101,7 +103,7 @@ func TestGetName(t *testing.T) {
 	trustPolicyConfig := TrustPolicyConfig{
 		Name:    "test",
 		Scopes:  []string{"*"},
-		Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+		Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 	}
 	trustPolicy, err := CreateTrustPolicy(trustPolicyConfig, "test-verifier")
 	if err != nil {
@@ -117,7 +119,7 @@ func TestGetScopes(t *testing.T) {
 	trustPolicyConfig := TrustPolicyConfig{
 		Name:    "test",
 		Scopes:  []string{"*"},
-		Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+		Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 	}
 	trustPolicy, err := CreateTrustPolicy(trustPolicyConfig, "test-verifier")
 	if err != nil {
@@ -217,46 +219,51 @@ func TestValidate(t *testing.T) {
 		{
 			name: "no scopes",
 			policyConfig: TrustPolicyConfig{
-				Name: "test",
+				Version: "1.0.0",
+				Name:    "test",
 			},
 			wantErr: true,
 		},
 		{
 			name: "no keys or keyless defined",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
 			},
 			wantErr: true,
 		},
 		{
 			name: "keys and keyless defined",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
 				Keys: []KeyConfig{
 					{
 						Provider: "kmp",
 					},
 				},
-				Keyless: KeylessConfig{RekorURL: DefaultRekorURL},
+				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 			},
 			wantErr: true,
 		},
 		{
 			name: "key provider and key path not defined",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
-				Keys:   []KeyConfig{{}},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keys:    []KeyConfig{{}},
 			},
 			wantErr: true,
 		},
 		{
 			name: "key provider and key path both defined",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
 				Keys: []KeyConfig{
 					{
 						Provider: "kmp",
@@ -269,8 +276,9 @@ func TestValidate(t *testing.T) {
 		{
 			name: "key provider not defined but name defined",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
 				Keys: []KeyConfig{
 					{
 						Name: "key name",
@@ -306,6 +314,52 @@ func TestValidate(t *testing.T) {
 						Version:  "key version",
 					},
 				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "keyless but no certificate identity specified",
+			policyConfig: TrustPolicyConfig{
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{CertificateOIDCIssuer: "test"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "keyless but both certificate identity and expression specified",
+			policyConfig: TrustPolicyConfig{
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateIdentityExp: "test"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "keyless but no certificate oidc issuer specified",
+			policyConfig: TrustPolicyConfig{
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{CertificateIdentity: "test"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "keyless but both certificate oidc issuer and expression specified",
+			policyConfig: TrustPolicyConfig{
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateOIDCIssuer: "test", CertificateOIDCIssuerExp: "test"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "valid keyless",
+			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateOIDCIssuer: "test"},
 			},
 			wantErr: false,
 		},

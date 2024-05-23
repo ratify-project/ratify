@@ -147,3 +147,14 @@ Set the namespace exclusions for Assign
 - {{ .Release.Namespace | quote}}
 {{- end }}
 {{- end }}
+
+{{/*
+Choose cosign legacy or not
+*/}}
+{{- define "ratify.cosignLegacy" -}}
+{{- if or (gt (len .Values.cosignKeys) 0) (and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0)) .Values.cosign.keyless.certificateIdentity .Values.cosign.keyless.certificateIdentityExp .Values.cosign.keyless.certificateIssuer .Values.cosign.keyless.certificateIssuerExp -}}
+false
+{{- else }}
+true
+{{- end }}
+{{- end }}
