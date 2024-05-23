@@ -18,6 +18,7 @@ load helpers
 BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
+RATIFY_NAMESPACE=gatekeeper-system
 
 @test "helm genCert test" {
     # tls cert provided
