@@ -17,12 +17,14 @@ package cosign
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
 	"fmt"
+	"io"
 	"slices"
 	"strings"
 	"testing"
@@ -37,10 +39,22 @@ import (
 	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/cosign/v2/pkg/oci/static"
+	"github.com/sigstore/rekor/pkg/generated/client"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
+	"github.com/sigstore/sigstore/pkg/signature"
 )
 
 const ratifySampleImageRef string = "ghcr.io/deislabs/ratify:v1"
+
+type mockNoOpVerifier struct{}
+
+func (m *mockNoOpVerifier) PublicKey(_ ...signature.PublicKeyOption) (crypto.PublicKey, error) {
+	return nil, nil
+}
+
+func (m *mockNoOpVerifier) VerifySignature(_, message io.Reader, _ ...signature.VerifyOption) error {
+	return nil
+}
 
 // TestCreate tests the Create function of the cosign verifier
 func TestCreate(t *testing.T) {
@@ -933,6 +947,45 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			result, _ := cosignVerifier.Verify(context.Background(), subjectRef, refDescriptor, tt.store)
 			if !strings.HasPrefix(result.Message, tt.expectedResultMessagePrefix) {
 				t.Errorf("Verify() = %v, want %v", result.Message, tt.expectedResultMessagePrefix)
+			}
+		})
+	}
+}
+
+// TestVerificationMessage tests the verificationMessage function
+func TestVerificationMessage(t *testing.T) {
+	tc := []struct {
+		name             string
+		expectedMessages []string
+		bundleVerified   bool
+		checkOpts        cosign.CheckOpts
+	}{
+		{
+			name:             "keyed, offline bundle, claims with annotations",
+			expectedMessages: []string{annotationMessage, claimsMessage, offlineBundleMessage, sigVerifierMessage},
+			bundleVerified:   true,
+			checkOpts: cosign.CheckOpts{
+				ClaimVerifier: cosign.SimpleClaimVerifier,
+				Annotations: map[string]interface{}{
+					"test": "test",
+				},
+				SigVerifier: &mockNoOpVerifier{},
+			},
+		},
+		{
+			name:             "keyless, rekor, fulcio",
+			expectedMessages: []string{rekorClaimsMessage, rekorSigMessage, certVerifierMessage},
+			bundleVerified:   false,
+			checkOpts: cosign.CheckOpts{
+				RekorClient: &client.Rekor{},
+			},
+		},
+	}
+	for _, tt := range tc {
+		t.Run(tt.name, func(t *testing.T) {
+			result := verificationMessage(tt.bundleVerified, &tt.checkOpts)
+			if !slices.Equal(result, tt.expectedMessages) {
+				t.Errorf("verificationMessage() = %v, want %v", result, tt.expectedMessages)
 			}
 		})
 	}

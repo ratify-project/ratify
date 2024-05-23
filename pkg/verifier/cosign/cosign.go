@@ -97,6 +97,7 @@ type cosignExtension struct {
 	BundleVerified  bool          `json:"bundleVerified"`
 	Err             string        `json:"error,omitempty"`
 	KeyInformation  PKKey         `json:"keyInformation,omitempty"`
+	Summary         []string      `json:"summary,omitempty"`
 }
 
 type cosignVerifier struct {
@@ -119,7 +120,16 @@ var logOpt = logger.Option{
 // used for mocking purposes
 var getKeysMaps = getKeysMapsDefault
 
-const verifierType string = "cosign"
+const (
+	verifierType         string = "cosign"
+	annotationMessage    string = "The specified annotations were verified."
+	claimsMessage        string = "The cosign claims were validated."
+	offlineBundleMessage string = "Existence of the claims in the transparency log was verified offline."
+	rekorClaimsMessage   string = "The claims were present in the transparency log."
+	rekorSigMessage      string = "The signatures were integrated into the transparency log when the certificate was valid."
+	sigVerifierMessage   string = "The signatures were verified against the specified public key."
+	certVerifierMessage  string = "The code-signing certificate was verified using trusted certificate authority certificates."
+)
 
 // init() registers the cosign verifier with the factory
 func init() {
@@ -276,6 +286,7 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 				extension.IsSuccess = false
 				extension.Err = err.Error()
 			} else {
+				extension.Summary = verificationMessage(bundleVerified, &cosignOpts)
 				hasValidSignature = true
 			}
 			extensionListEntry.Verifications = append(extensionListEntry.Verifications, extension)
@@ -293,6 +304,7 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 				extension.IsSuccess = false
 				extension.Err = err.Error()
 			} else {
+				extension.Summary = verificationMessage(bundleVerified, &cosignOpts)
 				hasValidSignature = true
 			}
 			extensionListEntry.Verifications = append(extensionListEntry.Verifications, extension)
@@ -609,4 +621,28 @@ func processAKVSignature(sigEncoded string, staticSig oci.Signature, publicKey c
 		return crypto.SHA256, nil, fmt.Errorf("unsupported public key type: %T", publicKey)
 	}
 	return hashType, staticSig, nil
+}
+
+// verificationMessage returns a string list of all verifications performed
+// based on https://github.com/sigstore/cosign/blob/5ae2e31c30ee87e035cc57ebbbe2ecf3b6549ff5/cmd/cosign/cli/verify/verify.go#L318
+func verificationMessage(bundleVerified bool, co *cosign.CheckOpts) []string {
+	var messages []string
+	if co.ClaimVerifier != nil {
+		if co.Annotations != nil {
+			messages = append(messages, annotationMessage)
+		}
+		messages = append(messages, claimsMessage)
+	}
+	if bundleVerified {
+		messages = append(messages, offlineBundleMessage)
+	} else if co.RekorClient != nil {
+		messages = append(messages, rekorClaimsMessage)
+		messages = append(messages, rekorSigMessage)
+	}
+	if co.SigVerifier != nil {
+		messages = append(messages, sigVerifierMessage)
+	} else {
+		messages = append(messages, certVerifierMessage)
+	}
+	return messages
 }
