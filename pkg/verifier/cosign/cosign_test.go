@@ -52,7 +52,7 @@ func (m *mockNoOpVerifier) PublicKey(_ ...signature.PublicKeyOption) (crypto.Pub
 	return nil, nil
 }
 
-func (m *mockNoOpVerifier) VerifySignature(_, message io.Reader, _ ...signature.VerifyOption) error {
+func (m *mockNoOpVerifier) VerifySignature(_, _ io.Reader, _ ...signature.VerifyOption) error {
 	return nil
 }
 
@@ -981,9 +981,9 @@ func TestVerificationMessage(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tc {
+	for i, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			result := verificationMessage(tt.bundleVerified, &tt.checkOpts)
+			result := verificationMessage(tt.bundleVerified, &tc[i].checkOpts)
 			if !slices.Equal(result, tt.expectedMessages) {
 				t.Errorf("verificationMessage() = %v, want %v", result, tt.expectedMessages)
 			}
