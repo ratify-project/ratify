@@ -67,13 +67,13 @@ spec:
           {{- end }}
         tLogVerify: {{ .Values.cosign.tLogVerify }}
         rekorURL: {{ .Values.cosign.rekorURL }}
-        {{- if or .Values.cosign.keyless.certificateIdentity .Values.cosign.keyless.certificateIdentityExp .Values.cosign.keyless.certificateOIDCIssuer .Values.cosign.keyless.certificaeOIDCIssuerExp }}
+        {{- if or .Values.cosign.keyless.certificateIdentity .Values.cosign.keyless.certificateIdentityRegExp .Values.cosign.keyless.certificateOIDCIssuer .Values.cosign.keyless.certificateOIDCIssuerRegExp }}
         keyless:
           ctLogVerify: {{ .Values.cosign.keyless.ctLogVerify }}
           certificateIdentity: {{ .Values.cosign.keyless.certificateIdentity }}
-          certificateIdentityExp: {{ .Values.cosign.keyless.certificateIdentityExp }}
+          certificateIdentityRegExp: {{ .Values.cosign.keyless.certificateIdentityRegExp }}
           certificateOIDCIssuer: {{ .Values.cosign.keyless.certificateOIDCIssuer }}
-          certificaeOIDCIssuerExp: {{ .Values.cosign.keyless.certificaeOIDCIssuerExp }}
+          certificateOIDCIssuerRegExp: {{ .Values.cosign.keyless.certificateOIDCIssuerRegExp }}
         {{- end }}
     {{- else }}
     key: /usr/local/ratify-certs/cosign/cosign.pub

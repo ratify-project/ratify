@@ -331,7 +331,7 @@ func TestValidate(t *testing.T) {
 			policyConfig: TrustPolicyConfig{
 				Name:    "test",
 				Scopes:  []string{"*"},
-				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateIdentityExp: "test"},
+				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateIdentityRegExp: "test"},
 			},
 			wantErr: true,
 		},
@@ -349,7 +349,7 @@ func TestValidate(t *testing.T) {
 			policyConfig: TrustPolicyConfig{
 				Name:    "test",
 				Scopes:  []string{"*"},
-				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateOIDCIssuer: "test", CertificateOIDCIssuerExp: "test"},
+				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateOIDCIssuer: "test", CertificateOIDCIssuerRegExp: "test"},
 			},
 			wantErr: true,
 		},

@@ -39,11 +39,11 @@ type KeyConfig struct {
 }
 
 type KeylessConfig struct {
-	CTLogVerify              *bool  `json:"ctLogVerify,omitempty"`
-	CertificateIdentity      string `json:"certificateIdentity,omitempty"`
-	CertificateIdentityExp   string `json:"certificateIdentityRegExp,omitempty"`
-	CertificateOIDCIssuer    string `json:"certificateOIDCIssuer,omitempty"`
-	CertificateOIDCIssuerExp string `json:"certificateOIDCIssuerRegExp,omitempty"`
+	CTLogVerify                 *bool  `json:"ctLogVerify,omitempty"`
+	CertificateIdentity         string `json:"certificateIdentity,omitempty"`
+	CertificateIdentityRegExp   string `json:"certificateIdentityRegExp,omitempty"`
+	CertificateOIDCIssuer       string `json:"certificateOIDCIssuer,omitempty"`
+	CertificateOIDCIssuerRegExp string `json:"certificateOIDCIssuerRegExp,omitempty"`
 }
 
 type TrustPolicyConfig struct {
@@ -221,9 +221,9 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 		// Set the certificate identity and issuer for keyless verification
 		cosignOpts.Identities = []cosign.Identity{
 			{
-				IssuerRegExp:  tp.config.Keyless.CertificateOIDCIssuerExp,
+				IssuerRegExp:  tp.config.Keyless.CertificateOIDCIssuerRegExp,
 				Issuer:        tp.config.Keyless.CertificateOIDCIssuer,
-				SubjectRegExp: tp.config.Keyless.CertificateIdentityExp,
+				SubjectRegExp: tp.config.Keyless.CertificateIdentityRegExp,
 				Subject:       tp.config.Keyless.CertificateIdentity,
 			},
 		}
@@ -280,19 +280,19 @@ func validate(config TrustPolicyConfig, verifierName string) error {
 	// validate keyless configuration
 	if config.Keyless != (KeylessConfig{}) {
 		// validate certificate identity specified
-		if config.Keyless.CertificateIdentity == "" && config.Keyless.CertificateIdentityExp == "" {
+		if config.Keyless.CertificateIdentity == "" && config.Keyless.CertificateIdentityRegExp == "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: certificate identity or identity regex pattern is required", config.Name))
 		}
 		// validate certificate OIDC issuer specified
-		if config.Keyless.CertificateOIDCIssuer == "" && config.Keyless.CertificateOIDCIssuerExp == "" {
+		if config.Keyless.CertificateOIDCIssuer == "" && config.Keyless.CertificateOIDCIssuerRegExp == "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: certificate OIDC issuer or issuer regex pattern is required", config.Name))
 		}
 		// validate only expression or value is specified for certificate identity
-		if config.Keyless.CertificateIdentity != "" && config.Keyless.CertificateIdentityExp != "" {
+		if config.Keyless.CertificateIdentity != "" && config.Keyless.CertificateIdentityRegExp != "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: only one of certificate identity or identity regex pattern should be specified", config.Name))
 		}
 		// validate only expression or value is specified for certificate OIDC issuer
-		if config.Keyless.CertificateOIDCIssuer != "" && config.Keyless.CertificateOIDCIssuerExp != "" {
+		if config.Keyless.CertificateOIDCIssuer != "" && config.Keyless.CertificateOIDCIssuerRegExp != "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: only one of certificate OIDC issuer or issuer regex pattern should be specified", config.Name))
 		}
 	}

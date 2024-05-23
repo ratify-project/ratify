@@ -21,9 +21,9 @@ cosign:
   keyless:
     ctLogVerify: true
     certificateIdentity: ""
-    certificateIdentityExp: ""
+    certificateIdentityRegExp: ""
     certificateOIDCIssuer: ""
-    certificaeOIDCIssuerExp: ""
+    certificateOIDCIssuerRegExp: ""
 
 vulnerabilityreport:
   enabled: false
