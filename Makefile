@@ -524,35 +524,37 @@ e2e-build-crd-image:
 	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
 	kind load docker-image --name kind localbuildcrd:test
 
-e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-inlinecert-setup e2e-build-crd-image
-	docker build --progress=plain --no-cache \
-	-f ./httpserver/Dockerfile \
-	-t baselocalbuild:test .
-	kind load docker-image --name kind baselocalbuild:test
-
+e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-base-image
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
-    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
-	--set image.repository=baselocalbuild \
-	--set image.crdRepository=localbuildcrd \
-	--set image.tag=test \
-	--set gatekeeper.version=${GATEKEEPER_VERSION} \
-	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
-	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
-	--set-file provider.tls.key=${CERT_DIR}/server.key \
-	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
-    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
-	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
-	--set oras.useHttp=true \
-	--set cosign.enabled=false \
-	--set-file dockerConfig="mount_config.json" \
-	--set logger.level=debug
+		./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+		--set image.repository=baselocalbuild \
+		--set image.crdRepository=localbuildcrd \
+		--set image.tag=test \
+		--set gatekeeper.version=${GATEKEEPER_VERSION} \
+		--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
+		--set-file provider.tls.crt=${CERT_DIR}/server.crt \
+		--set-file provider.tls.key=${CERT_DIR}/server.key \
+		--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+		--set-file provider.tls.caKey=${CERT_DIR}/ca.key \
+		--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+		--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+		--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
+		--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+		--set oras.useHttp=true \
+		--set-file dockerConfig="mount_config.json" \
+		--set logger.level=debug
 
 	rm mount_config.json
 
 e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
+
+e2e-build-local-ratify-base-image:
+	docker build --progress=plain --no-cache \
+		-f ./httpserver/Dockerfile \
+		-t baselocalbuild:test .
+	kind load docker-image --name kind baselocalbuild:test
 
 e2e-build-local-ratify-image:
 	docker build --progress=plain --no-cache \
