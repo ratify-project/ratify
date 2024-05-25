@@ -81,6 +81,7 @@ See details in [GitHub milestone v1.3.0](https://github.com/deislabs/ratify/issu
 **Major features**
 
 - Attestations support
+- Ratify supports Azure Trusted Signing as a new KeyManagementProvider
 - Use Ratify at container runtime (Preview)
 
 ### v2.0
