@@ -41,7 +41,7 @@ serviceAccount:
   create: true
   name: ratify-admin
 gatekeeper:
-  version: "3.15.0"
+  version: "3.16.0"
   namespace: # default is gatekeeper-system
 instrumentation:
   metricsEnabled: true
