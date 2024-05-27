@@ -551,7 +551,7 @@ e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosi
 
 	rm mount_config.json
 
-e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
+e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image load-e2e-build-local-ratify-image e2e-helm-deploy-ratify
 
 e2e-build-local-ratify-base-image:
 	docker build --progress=plain --no-cache \
@@ -567,6 +567,8 @@ e2e-build-local-ratify-image:
 	--build-arg build_vulnerabilityreport=true \
 	-f ./httpserver/Dockerfile \
 	-t localbuild:test .
+
+load-e2e-build-local-ratify-image:
 	kind load docker-image --name kind localbuild:test
 
 e2e-helmfile-deploy-released-ratify:
@@ -632,7 +634,7 @@ e2e-helm-deploy-redis: e2e-helm-deploy-dapr
 	kubectl apply -f test/testdata/dapr/dapr-redis-secret.yaml -n ${GATEKEEPER_NAMESPACE}
 	kubectl apply -f test/testdata/dapr/dapr-redis.yaml -n ${GATEKEEPER_NAMESPACE}
  
-e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-build-crd-image e2e-build-local-ratify-image
+e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-build-crd-image e2e-build-local-ratify-image load-e2e-build-local-ratify-image
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
