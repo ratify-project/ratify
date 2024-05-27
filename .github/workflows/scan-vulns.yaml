@@ -22,7 +22,8 @@ on:
       - "website/**"
       - "**.md"
       - "!cmd/build/helmify/static/README.md"
-
+  workflow_dispatch:
+  
 permissions: read-all
 
 jobs:
