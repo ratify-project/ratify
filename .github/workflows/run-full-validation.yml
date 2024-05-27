@@ -4,11 +4,11 @@ on:
   pull_request:
     branches:
       - main
-      - 1.0.0*
+      - release*      
   push:
     branches:
-      - 1.0.0*
       - main
+      - release*
   workflow_dispatch:
 
 permissions: read-all
