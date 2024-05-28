@@ -2,28 +2,16 @@ name: scan_vulns
 on:
   push:
     paths-ignore:
-      - ".github/workflows/website.yaml"
       - "docs/**"
       - "library/**"
-      - "demo/**"
-      - "deprecated/**"
-      - "example/**"
-      - "website/**"
       - "**.md"
-      - "!cmd/build/helmify/static/README.md"
   pull_request:
     paths-ignore:
-      - ".github/workflows/website.yaml"
       - "docs/**"
       - "library/**"
-      - "demo/**"
-      - "deprecated/**"
-      - "example/**"
-      - "website/**"
       - "**.md"
-      - "!cmd/build/helmify/static/README.md"
   workflow_dispatch:
-  
+
 permissions: read-all
 
 jobs:
@@ -75,6 +63,6 @@ jobs:
 
       - name: Run trivy on images
         run: |
-          for img in "localbuild:test"; do
+          for img in "localbuild:test" "localbuildcrd:test"; do
               trivy image --ignore-unfixed --vuln-type="os,library" "${img}"
           done
