@@ -18,6 +18,7 @@ load helpers
 BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
+RATIFY_NAMESPACE=gatekeeper-system
 
 @test "helm genCert test" {
     # tls cert provided
@@ -293,6 +294,34 @@ SLEEP_TIME=1
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_success
+}
+
+@test "verifier crd status check" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker'
+    }
+
+    # apply a valid verifier, validate status property shows success
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
+    assert_success
+
+    # apply a invalid verifier CR, validate status with error
+    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml >invalidVerifier.yaml
+    run kubectl apply -f invalidVerifier.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    assert_success
+
+    # apply a valid verifier, validate status property shows success
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    assert_failure
 }
 
 @test "dynamic plugins disabled test" {
