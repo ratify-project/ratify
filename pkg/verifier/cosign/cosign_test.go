@@ -44,7 +44,11 @@ import (
 	"github.com/sigstore/sigstore/pkg/signature"
 )
 
-const ratifySampleImageRef string = "ghcr.io/deislabs/ratify:v1"
+const (
+	ratifySampleImageRef string = "ghcr.io/deislabs/ratify:v1"
+	testIdentity         string = "test-identity"
+	testIssuer           string = "https://test-issuer.com"
+)
 
 type mockNoOpVerifier struct{}
 
@@ -71,7 +75,7 @@ func TestCreate(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{
 					{
 						Name:    "test",
-						Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+						Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 						Scopes:  []string{"*"},
 					},
 				},
@@ -118,7 +122,7 @@ func TestCreate(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{
 					{
 						Name:    "test",
-						Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+						Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 						Scopes:  []string{"*"},
 					},
 				},
@@ -149,7 +153,7 @@ func TestName(t *testing.T) {
 		"trustPolicies": []TrustPolicyConfig{
 			{
 				Name:    "test",
-				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+				Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 				Scopes:  []string{"*"},
 			},
 		},
@@ -173,7 +177,7 @@ func TestType(t *testing.T) {
 		"trustPolicies": []TrustPolicyConfig{
 			{
 				Name:    "test",
-				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+				Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 				Scopes:  []string{"*"},
 			},
 		},
@@ -226,7 +230,7 @@ func TestCanVerify(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{
 					{
 						Name:    "test",
-						Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+						Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 						Scopes:  []string{"*"},
 					},
 				},
@@ -252,7 +256,7 @@ func TestGetNestedReferences(t *testing.T) {
 		"trustPolicies": []TrustPolicyConfig{
 			{
 				Name:    "test",
-				Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+				Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 				Scopes:  []string{"*"},
 			},
 		},
@@ -459,7 +463,7 @@ func TestGetKeysMaps_Success(t *testing.T) {
 	trustPolciesConfig := []TrustPolicyConfig{
 		{
 			Name:    "test-policy",
-			Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+			Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 			Scopes:  []string{"ghcr.io/*"},
 		},
 	}
@@ -478,7 +482,7 @@ func TestGetKeysMaps_FailingTrustPolicies(t *testing.T) {
 	trustPolciesConfig := []TrustPolicyConfig{
 		{
 			Name:    "test-policy",
-			Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+			Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 			Scopes:  []string{"myregistry.io/*"},
 		},
 	}
@@ -930,7 +934,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			trustPoliciesConfig := []TrustPolicyConfig{
 				{
 					Name:    "test-policy",
-					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
+					Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
 					Scopes:  []string{"*"},
 				},
 			}

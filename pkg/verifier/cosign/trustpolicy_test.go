@@ -212,9 +212,16 @@ func TestValidate(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name:         "no name",
+			name:         "no version",
 			policyConfig: TrustPolicyConfig{},
 			wantErr:      true,
+		},
+		{
+			name: "no name",
+			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
+			},
+			wantErr: true,
 		},
 		{
 			name: "no scopes",
@@ -290,8 +297,9 @@ func TestValidate(t *testing.T) {
 		{
 			name: "key provider name not defined but version defined",
 			policyConfig: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
 				Keys: []KeyConfig{
 					{
 						Provider: "kmp",
@@ -320,6 +328,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "keyless but no certificate identity specified",
 			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
 				Name:    "test",
 				Scopes:  []string{"*"},
 				Keyless: KeylessConfig{CertificateOIDCIssuer: "test"},
@@ -329,6 +338,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "keyless but both certificate identity and expression specified",
 			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
 				Name:    "test",
 				Scopes:  []string{"*"},
 				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateIdentityRegExp: "test"},
@@ -338,6 +348,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "keyless but no certificate oidc issuer specified",
 			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
 				Name:    "test",
 				Scopes:  []string{"*"},
 				Keyless: KeylessConfig{CertificateIdentity: "test"},
@@ -347,6 +358,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "keyless but both certificate oidc issuer and expression specified",
 			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
 				Name:    "test",
 				Scopes:  []string{"*"},
 				Keyless: KeylessConfig{CertificateIdentity: "test", CertificateOIDCIssuer: "test", CertificateOIDCIssuerRegExp: "test"},
