@@ -89,16 +89,23 @@ create_akv() {
 
   echo "AKV '${KEYVAULT_NAME}' is created"
 
-  # Grant permissions to access the secret
+  # Grant ratify identity permissions to access the secret
   az role assignment create \
     --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
     --assignee-principal-type "ServicePrincipal" \
     --role "Key Vault Secrets User" \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
   
-  # Grant permissions to access/create keys
+  # Grant ratify identity permissions to access keys
   az role assignment create \
     --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Key Vault Crypto User" \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
+
+  # Grant runner SP permissions to create keys
+  az role assignment create \
+    --assignee-object-id ${AZURE_SP_OBJECT_ID} \
     --assignee-principal-type "ServicePrincipal" \
     --role "Key Vault Crypto Officer" \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
