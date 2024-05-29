@@ -23,12 +23,6 @@ set -o pipefail
 : "${AKS_NAME:?AKS_NAME environment variable empty or not defined.}"
 : "${ACR_NAME:?ACR_NAME environment variable empty or not defined.}"
 
-register_feature() {
-  az extension add --name aks-preview
-  az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
-  az provider register --namespace Microsoft.ContainerService
-}
-
 create_user_managed_identity() {
   SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
 
@@ -111,10 +105,6 @@ create_akv() {
 }
 
 main() {
-  export -f register_feature
-  # might take around 20 minutes to register
-  timeout --foreground 1200 bash -c register_feature
-
   az group create --name "${GROUP_NAME}" --tags "ratifye2e" --location "${LOCATION}" >/dev/null
 
   create_user_managed_identity
