@@ -55,7 +55,7 @@ jobs:
 
       - name: Run trivy on git repository
         run: |
-          trivy fs --format table --ignore-unfixed --skip-dirs website --scanners vuln .
+          trivy fs --format table --ignore-unfixed --scanners vuln .
 
       - name: Build docker images
         run: |
