@@ -96,11 +96,11 @@ create_akv() {
     --role "Key Vault Secrets User" \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
   
-  # Grant permissions to access the keys
+  # Grant permissions to access/create keys
   az role assignment create \
     --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
     --assignee-principal-type "ServicePrincipal" \
-    --role "Key Vault Crypto User" \
+    --role "Key Vault Crypto Officer" \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
 }
 
