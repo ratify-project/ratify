@@ -32,6 +32,7 @@ GATEKEEPER_VERSION=${2:-3.16.0}
 TENANT_ID=$3
 export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
+export AZURE_SP_OBJECT_ID=$6
 export NOTATION_PEM_NAME="notation"
 export NOTATION_CHAIN_PEM_NAME="notationchain"
 export KEYVAULT_KEY_NAME="test-key"
