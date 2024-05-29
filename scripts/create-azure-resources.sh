@@ -103,11 +103,11 @@ create_akv() {
     --role "Key Vault Crypto User" \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
 
-  # Grant runner SP permissions to create keys
+  # Grant runner SP permissions to create keys and import certificates
   az role assignment create \
     --assignee-object-id ${AZURE_SP_OBJECT_ID} \
     --assignee-principal-type "ServicePrincipal" \
-    --role "Key Vault Crypto Officer" \
+    --role "Key Vault Administrator" \
     --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
 }
 
