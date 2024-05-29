@@ -90,7 +90,7 @@ create_akv() {
   echo "AKV '${KEYVAULT_NAME}' is created"
 
   # Grant permissions to access the secret
-   az role assignment create \
+  az role assignment create \
     --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
     --assignee-principal-type "ServicePrincipal" \
     --role "Key Vault Secrets User" \
