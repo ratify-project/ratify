@@ -95,8 +95,19 @@ create_akv() {
 
   echo "AKV '${KEYVAULT_NAME}' is created"
 
-  # Grant permissions to access the certificate.
-  az keyvault set-policy --name ${KEYVAULT_NAME} --secret-permissions get --key-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
+  # Grant permissions to access the secret
+   az role assignment create \
+    --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Key Vault Secrets User" \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
+  
+  # Grant permissions to access the keys
+  az role assignment create \
+    --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Key Vault Crypto User" \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
 }
 
 main() {
