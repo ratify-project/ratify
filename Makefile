@@ -65,6 +65,7 @@ TEST_REGISTRY_PASSWORD = test_pw
 # Azure Key Vault Setup
 KEYVAULT_NAME ?= ratify-akv
 KEYVAULT_KEY_NAME ?= test-key
+AZURE_SP_OBJECT_ID ?= 00000000-0000-0000-0000-000000000000
 
 all: build test
 
@@ -661,7 +662,7 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-bui
 	rm mount_config.json
 
 e2e-aks:
-	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
+	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR} ${AZURE_SP_OBJECT_ID}
 
 e2e-cleanup:
 	./scripts/azure-ci-test-cleanup.sh ${AZURE_SUBSCRIPTION_ID}
