@@ -23,12 +23,6 @@ set -o pipefail
 : "${AKS_NAME:?AKS_NAME environment variable empty or not defined.}"
 : "${ACR_NAME:?ACR_NAME environment variable empty or not defined.}"
 
-register_feature() {
-  az extension add --name aks-preview
-  az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview"
-  az provider register --namespace Microsoft.ContainerService
-}
-
 create_user_managed_identity() {
   SUBSCRIPTION_ID="$(az account show --query id --output tsv)"
 
@@ -95,15 +89,29 @@ create_akv() {
 
   echo "AKV '${KEYVAULT_NAME}' is created"
 
-  # Grant permissions to access the certificate.
-  az keyvault set-policy --name ${KEYVAULT_NAME} --secret-permissions get --key-permissions get --object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID}
+  # Grant ratify identity permissions to access the secret
+  az role assignment create \
+    --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Key Vault Secrets User" \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
+  
+  # Grant ratify identity permissions to access keys
+  az role assignment create \
+    --assignee-object-id ${USER_ASSIGNED_IDENTITY_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Key Vault Crypto User" \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
+
+  # Grant runner SP permissions to create keys and import certificates
+  az role assignment create \
+    --assignee-object-id ${AZURE_SP_OBJECT_ID} \
+    --assignee-principal-type "ServicePrincipal" \
+    --role "Key Vault Administrator" \
+    --scope subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${GROUP_NAME}/providers/Microsoft.KeyVault/vaults/${KEYVAULT_NAME}
 }
 
 main() {
-  export -f register_feature
-  # might take around 20 minutes to register
-  timeout --foreground 1200 bash -c register_feature
-
   az group create --name "${GROUP_NAME}" --tags "ratifye2e" --location "${LOCATION}" >/dev/null
 
   create_user_managed_identity
