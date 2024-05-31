@@ -1,2 +1,7 @@
 ignore:
   - "./api"  # ignore folders and all its contents
+coverage:
+  status:
+    patch:
+      default:
+        target: 80%
