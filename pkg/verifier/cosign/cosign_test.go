@@ -472,7 +472,7 @@ func TestGetKeysMaps_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateTrustPolicies() error = %v", err)
 	}
-	_, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	_, _, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
 	if err != nil {
 		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, false)
 	}
@@ -491,7 +491,7 @@ func TestGetKeysMaps_FailingTrustPolicies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateTrustPolicies() error = %v", err)
 	}
-	_, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	_, _, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
 	if err == nil {
 		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, true)
 	}
@@ -514,7 +514,7 @@ func TestGetKeysMaps_FailingGetKeys(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateTrustPolicies() error = %v", err)
 	}
-	_, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	_, _, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
 	if err == nil {
 		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, true)
 	}
@@ -923,12 +923,12 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			getKeysMaps = func(_ context.Context, _ *TrustPolicies, _ string, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
+			getKeysMaps = func(_ context.Context, _ *TrustPolicies, _ string, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, TrustPolicy, error) {
 				if tt.getKeysError {
-					return nil, cosign.CheckOpts{}, fmt.Errorf("error")
+					return nil, cosign.CheckOpts{}, nil, fmt.Errorf("error")
 				}
 
-				return tt.keys, tt.cosignOpts, nil
+				return tt.keys, tt.cosignOpts, &trustPolicy{}, nil
 			}
 			verifierFactory := cosignVerifierFactory{}
 			trustPoliciesConfig := []TrustPolicyConfig{

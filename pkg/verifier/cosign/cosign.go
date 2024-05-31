@@ -79,6 +79,7 @@ type LegacyExtension struct {
 // where each entry corresponds to a single signature verified
 type Extension struct {
 	SignatureExtension []cosignExtensionList `json:"signatures,omitempty"`
+	TrustPolicy        string                `json:"trustPolicy,omitempty"`
 }
 
 // cosignExtensionList is the structure verifications performed
@@ -207,7 +208,7 @@ func (v *cosignVerifier) Verify(ctx context.Context, subjectReference common.Ref
 
 func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
 	// get the map of keys and relevant cosign options for that reference
-	keysMap, cosignOpts, err := getKeysMaps(ctx, v.trustPolicies, subjectReference.Original, v.namespace)
+	keysMap, cosignOpts, trustPolicy, err := getKeysMaps(ctx, v.trustPolicies, subjectReference.Original, v.namespace)
 	if err != nil {
 		return errorToVerifyResult(v.name, v.verifierType, err), nil
 	}
@@ -318,12 +319,12 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			Type:       v.verifierType,
 			IsSuccess:  true,
 			Message:    "cosign verification success. valid signatures found. please refer to extensions field for verifications performed.",
-			Extensions: Extension{SignatureExtension: sigExtensions},
+			Extensions: Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
 		}, nil
 	}
 
 	errorResult := errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("no valid signatures found"))
-	errorResult.Extensions = Extension{SignatureExtension: sigExtensions}
+	errorResult.Extensions = Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()}
 	return errorResult, nil
 }
 
@@ -549,27 +550,27 @@ func decodeASN1Signature(sig []byte) ([]byte, error) {
 }
 
 // getKeysMapsDefault returns the map of keys and cosign options for the reference
-func getKeysMapsDefault(ctx context.Context, trustPolicies *TrustPolicies, reference string, namespace string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
+func getKeysMapsDefault(ctx context.Context, trustPolicies *TrustPolicies, reference string, namespace string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, TrustPolicy, error) {
 	// get the trust policy for the reference
 	trustPolicy, err := trustPolicies.GetScopedPolicy(reference)
 	if err != nil {
-		return nil, cosign.CheckOpts{}, err
+		return nil, cosign.CheckOpts{}, nil, err
 	}
 	logger.GetLogger(ctx, logOpt).Debugf("selected trust policy %s for reference %s", trustPolicy.GetName(), reference)
 
 	// get the map of keys for that reference
 	keysMap, err := trustPolicy.GetKeys(ctx, namespace)
 	if err != nil {
-		return nil, cosign.CheckOpts{}, err
+		return nil, cosign.CheckOpts{}, nil, err
 	}
 
 	// get the cosign options for that trust policy
 	cosignOpts, err := trustPolicy.GetCosignOpts(ctx)
 	if err != nil {
-		return nil, cosign.CheckOpts{}, err
+		return nil, cosign.CheckOpts{}, nil, err
 	}
 
-	return keysMap, cosignOpts, nil
+	return keysMap, cosignOpts, trustPolicy, nil
 }
 
 // processAKVSignature processes the AKV signature and returns the hash type, signature and error
