@@ -66,8 +66,8 @@ jobs:
           for img in "localbuild:test" "localbuildcrd:test"; do
               trivy image --ignore-unfixed --vuln-type="os,library" "${img}"
           done
-      - name: Run trivy on images and exit on CRITICAL severity
+      - name: Run trivy on images and exit on HIGH severity
         run: |
           for img in "localbuild:test" "localbuildcrd:test"; do
-              trivy image --ignore-unfixed --exit-code 1 --severity CRITICAL --vuln-type="os,library" "${img}"
+              trivy image --ignore-unfixed --exit-code 1 --severity HIGH --vuln-type="os,library" "${img}"
           done
