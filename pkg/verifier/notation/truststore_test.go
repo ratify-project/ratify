@@ -50,18 +50,16 @@ func (m *mockCertStores) DeleteStore(_ string) {}
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	resetCertStore()
 	certStore := verificationCertStores{
-		"certstore1": []string{
-			"akv1",
-		},
-		"certstore2": []string{
-			"akv2",
+		trustStoreTypeCA: verificationCertStores{
+			"certstore1": []interface{}{"akv1", "akv2"},
+			"certstore2": []interface{}{"akv3", "akv4"},
 		},
 	}
-	store, err := NewTrustStore(nil, certStore)
+	store, err := newTrustStore([]string{}, certStore)
 	if err != nil {
 		panic("failed to parse verificationCertStores: " + err.Error())
 	}
-	if _, err := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "store1"); err == nil {
+	if _, err := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "certstore1"); err == nil {
 		t.Fatalf("error expected if cert map is empty")
 	}
 }
@@ -76,7 +74,7 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 			"projecta/kv2",
 		},
 	}
-	store, err := NewTrustStore(nil, certStore)
+	store, err := newTrustStore(nil, certStore)
 	if err != nil {
 		panic("failed to parse verificationCertStores: " + err.Error())
 	}

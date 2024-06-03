@@ -37,8 +37,8 @@ type trustStore struct {
 	certStoresByType certStoresByType
 }
 
-func NewTrustStore(certPaths []string, verificationCertStores verificationCertStores) (*trustStore, error) {
-	certStoresByType, err := NewCertStoreByType(verificationCertStores)
+func newTrustStore(certPaths []string, verificationCertStores verificationCertStores) (*trustStore, error) {
+	certStoresByType, err := newCertStoreByType(verificationCertStores)
 	if err != nil {
 		return nil, err
 	}

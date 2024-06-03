@@ -18,7 +18,6 @@ package notation
 import (
 	"context"
 
-	re "github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/notaryproject/notation-go/verifier/truststore"
 )
@@ -28,22 +27,18 @@ type verificationCertStores map[string]interface{}
 // type certStores map[string][]string
 type certStoresByType map[string]map[string][]string
 
-func NewCertStoreByType(verificationCertStores verificationCertStores) (certStoresByType, error) {
+func newCertStoreByType(confVerificationCertStores verificationCertStores) (certStoresByType, error) {
 	certStoresByType := make(map[string]map[string][]string)
-	for certStoreType, certStores := range verificationCertStores {
-		if reformedCertStores, ok := certStores.(map[string]interface{}); ok {
-			certStoresByType[certStoreType] = make(map[string][]string)
-			for certStore, certs := range reformedCertStores {
-				var reformedCerts []string
-				for _, cert := range certs.([]interface{}) {
-					if reformedCert, ok := cert.(string); ok {
-						reformedCerts = append(reformedCerts, reformedCert)
-					}
+	for certStoreType, certStores := range confVerificationCertStores {
+		certStoresByType[certStoreType] = make(map[string][]string)
+		for certStore, certs := range certStores.(verificationCertStores) {
+			var reformedCerts []string
+			for _, cert := range certs.([]interface{}) {
+				if reformedCert, ok := cert.(string); ok {
+					reformedCerts = append(reformedCerts, reformedCert)
 				}
-				certStoresByType[certStoreType][certStore] = reformedCerts
 			}
-		} else {
-			return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("")
+			certStoresByType[certStoreType][certStore] = reformedCerts
 		}
 	}
 	return certStoresByType, nil

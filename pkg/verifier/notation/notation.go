@@ -188,7 +188,7 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	// 	certPaths:  conf.VerificationCerts,
 	// 	certStores: conf.VerificationCertStores,
 	// }
-	store, err := NewTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
+	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
 	if err != nil {
 		return nil, err
 	}
@@ -249,7 +249,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
 	} else if !isCertStoresByType && isLegacyCertStore {
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
-		conf.VerificationCertStores = map[string]interface{}{
+		conf.VerificationCertStores = verificationCertStores{
 			trustStoreTypeCA: conf.VerificationCertStores,
 		}
 	}
