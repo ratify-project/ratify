@@ -67,11 +67,9 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 func TestGetCertificates_NamedStore(t *testing.T) {
 	resetCertStore()
 	certStore := verificationCertStores{
-		"certstore1": []string{
-			"default/kv1",
-		},
-		"certstore2": []string{
-			"projecta/kv2",
+		trustStoreTypeCA: verificationCertStores{
+			"certstore1": []interface{}{"default/kv1"},
+			"certstore2": []interface{}{"projecta/kv2"},
 		},
 	}
 	store, err := newTrustStore(nil, certStore)
@@ -90,7 +88,7 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	}
 
 	// only the certificate in the specified namedStore should be returned
-	result, _ := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "store1")
+	result, _ := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "certstore1")
 	expectedLen := 1
 
 	if len(result) != expectedLen {
