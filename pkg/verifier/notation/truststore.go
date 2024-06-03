@@ -33,27 +33,40 @@ var logOpt = logger.Option{
 }
 
 type trustStore struct {
-	certPaths  []string
-	certStores map[string][]string
+	certPaths        []string
+	certStoresByType certStoresByType
+}
+
+func NewTrustStore(certPaths []string, verificationCertStores verificationCertStores) (*trustStore, error) {
+	certStoresByType, err := NewCertStoreByType(verificationCertStores)
+	if err != nil {
+		return nil, err
+	}
+	store := &trustStore{
+		certPaths:        certPaths,
+		certStoresByType: certStoresByType,
+	}
+	return store, nil
 }
 
 // trustStore implements GetCertificates API of X509TrustStore interface: [https://pkg.go.dev/github.com/notaryproject/notation-go@v1.0.0-rc.3/verifier/truststore#X509TrustStore]
 // Note: this api gets invoked when Ratify calls verify API, so the certificates
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
-func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore)
+func (s *trustStore) GetCertificates(ctx context.Context, trustStoreType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
+	certs, err := s.getCertificatesInternal(ctx, trustStoreType, namedStore)
 	if err != nil {
 		return nil, err
 	}
 	return s.filterValidCerts(certs)
 }
 
-func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string) ([]*x509.Certificate, error) {
+func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
+	certGroup := GetCertGroupFromStore(ctx, s.certStoresByType, storeType, namedStore)
 	// certs configured for this namedStore overrides cert path
-	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
+	if len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
 			certMap, err := keymanagementprovider.GetCertificatesFromMap(ctx, certStore)
@@ -93,7 +106,7 @@ func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore stri
 }
 
 // filterValidCerts keeps CA certificates and self-signed certs.
-func (s trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certificate, error) {
+func (s *trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certificate, error) {
 	filteredCerts := make([]*x509.Certificate, 0)
 	for _, cert := range certs {
 		if !cert.IsCA {

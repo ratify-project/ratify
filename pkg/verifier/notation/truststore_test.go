@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/notaryproject/notation-go/verifier/truststore"
 )
 
 const (
@@ -48,26 +49,36 @@ func (m *mockCertStores) DeleteStore(_ string) {}
 
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	resetCertStore()
-	certStore := map[string][]string{}
-	certStore["store1"] = []string{"kv1"}
-	certStore["store2"] = []string{"kv2"}
-	store := &trustStore{
-		certStores: certStore,
+	certStore := verificationCertStores{
+		"certstore1": []string{
+			"akv1",
+		},
+		"certstore2": []string{
+			"akv2",
+		},
 	}
-
-	if _, err := store.getCertificatesInternal(context.Background(), "store1"); err == nil {
+	store, err := NewTrustStore(nil, certStore)
+	if err != nil {
+		panic("failed to parse verificationCertStores: " + err.Error())
+	}
+	if _, err := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "store1"); err == nil {
 		t.Fatalf("error expected if cert map is empty")
 	}
 }
 
 func TestGetCertificates_NamedStore(t *testing.T) {
 	resetCertStore()
-	certStore := map[string][]string{}
-	certStore["store1"] = []string{"default/kv1"}
-	certStore["store2"] = []string{"projecta/kv2"}
-
-	store := &trustStore{
-		certStores: certStore,
+	certStore := verificationCertStores{
+		"certstore1": []string{
+			"default/kv1",
+		},
+		"certstore2": []string{
+			"projecta/kv2",
+		},
+	}
+	store, err := NewTrustStore(nil, certStore)
+	if err != nil {
+		panic("failed to parse verificationCertStores: " + err.Error())
 	}
 
 	kv1Cert := getCert(certStr)
@@ -81,7 +92,7 @@ func TestGetCertificates_NamedStore(t *testing.T) {
 	}
 
 	// only the certificate in the specified namedStore should be returned
-	result, _ := store.getCertificatesInternal(context.Background(), "store1")
+	result, _ := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "store1")
 	expectedLen := 1
 
 	if len(result) != expectedLen {
@@ -107,7 +118,7 @@ func TestGetCertificates_certPath(t *testing.T) {
 	trustStore := &trustStore{
 		certPaths: []string{tmpFile.Name()},
 	}
-	certs, err := trustStore.getCertificatesInternal(context.Background(), "")
+	certs, err := trustStore.getCertificatesInternal(context.Background(), truststore.TypeCA, "")
 	if err != nil {
 		t.Fatalf("failed to get certs: %v", err)
 	}
