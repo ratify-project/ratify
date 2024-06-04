@@ -695,7 +695,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: unsupported public key type",
+			expectedResultMessagePrefix: "cosign verification failed: failed to verify with keys: failed to process AKV signature: unsupported public key type",
 		},
 		{
 			name: "invalid RSA key size for AKV",
@@ -726,7 +726,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: RSA key check: unsupported key size",
+			expectedResultMessagePrefix: "cosign verification failed: failed to verify with keys: failed to process AKV signature: RSA key check: unsupported key size",
 		},
 		{
 			name: "invalid ECDSA curve type for AKV",
@@ -757,7 +757,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to process AKV signature: ECDSA key check: unsupported key curve",
+			expectedResultMessagePrefix: "cosign verification failed: failed to verify with keys: failed to process AKV signature: ECDSA key check: unsupported key curve",
 		},
 		{
 			name: "valid hash: 256 keysize: 2048 RSA key AKV",
@@ -987,7 +987,7 @@ func TestVerificationMessage(t *testing.T) {
 	}
 	for i, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			result := verificationMessage(tt.bundleVerified, &tc[i].checkOpts)
+			result := verificationPerformedMessage(tt.bundleVerified, &tc[i].checkOpts)
 			if !slices.Equal(result, tt.expectedMessages) {
 				t.Errorf("verificationMessage() = %v, want %v", result, tt.expectedMessages)
 			}
