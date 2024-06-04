@@ -19,11 +19,44 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"fmt"
 	"testing"
 
 	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
+	"github.com/sigstore/cosign/v2/pkg/cosign"
 )
+
+type mockTrustPolicy struct {
+	name                string
+	scopes              []string
+	keysMap             map[PKKey]keymanagementprovider.PublicKey
+	shouldErrKeys       bool
+	shouldErrCosignOpts bool
+}
+
+func (m *mockTrustPolicy) GetName() string {
+	return m.name
+}
+
+func (m *mockTrustPolicy) GetScopes() []string {
+	return m.scopes
+}
+
+func (m *mockTrustPolicy) GetKeys(_ context.Context, _ string) (map[PKKey]keymanagementprovider.PublicKey, error) {
+	if m.shouldErrKeys {
+		return nil, fmt.Errorf("error getting keys")
+	}
+	return m.keysMap, nil
+}
+
+func (m *mockTrustPolicy) GetCosignOpts(_ context.Context) (cosign.CheckOpts, error) {
+	if m.shouldErrCosignOpts {
+		return cosign.CheckOpts{}, fmt.Errorf("error getting cosign opts")
+	}
+
+	return cosign.CheckOpts{}, nil
+}
 
 func TestCreateTrustPolicy(t *testing.T) {
 	tc := []struct {

@@ -460,61 +460,24 @@ func TestDecodeASN1Signature(t *testing.T) {
 }
 
 func TestGetKeysMaps_Success(t *testing.T) {
-	trustPolciesConfig := []TrustPolicyConfig{
-		{
-			Name:    "test-policy",
-			Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
-			Scopes:  []string{"ghcr.io/*"},
-		},
-	}
-
-	trustPolicies, err := CreateTrustPolicies(trustPolciesConfig, "test")
-	if err != nil {
-		t.Fatalf("CreateTrustPolicies() error = %v", err)
-	}
-	_, _, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	trustPolicy := &mockTrustPolicy{}
+	_, _, err := getKeyMapOptsDefault(context.Background(), trustPolicy, "gatekeeper-system")
 	if err != nil {
 		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, false)
 	}
 }
 
-func TestGetKeysMaps_FailingTrustPolicies(t *testing.T) {
-	trustPolciesConfig := []TrustPolicyConfig{
-		{
-			Name:    "test-policy",
-			Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
-			Scopes:  []string{"myregistry.io/*"},
-		},
-	}
-
-	trustPolicies, err := CreateTrustPolicies(trustPolciesConfig, "test")
-	if err != nil {
-		t.Fatalf("CreateTrustPolicies() error = %v", err)
-	}
-	_, _, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+func TestGetKeysMaps_FailingCosignOpts(t *testing.T) {
+	trustPolicy := &mockTrustPolicy{shouldErrCosignOpts: true}
+	_, _, err := getKeyMapOptsDefault(context.Background(), trustPolicy, "gatekeeper-system")
 	if err == nil {
 		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, true)
 	}
 }
 
 func TestGetKeysMaps_FailingGetKeys(t *testing.T) {
-	trustPolciesConfig := []TrustPolicyConfig{
-		{
-			Name: "test-policy",
-			Keys: []KeyConfig{
-				{
-					Provider: "non-existent",
-				},
-			},
-			Scopes: []string{"*"},
-		},
-	}
-
-	trustPolicies, err := CreateTrustPolicies(trustPolciesConfig, "test")
-	if err != nil {
-		t.Fatalf("CreateTrustPolicies() error = %v", err)
-	}
-	_, _, _, err = getKeysMapsDefault(context.Background(), trustPolicies, ratifySampleImageRef, "gatekeeper-system")
+	trustPolicy := &mockTrustPolicy{shouldErrKeys: true}
+	_, _, err := getKeyMapOptsDefault(context.Background(), trustPolicy, "gatekeeper-system")
 	if err == nil {
 		t.Errorf("getKeysMaps() error = %v, wantErr %v", err, true)
 	}
@@ -923,12 +886,12 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			getKeysMaps = func(_ context.Context, _ *TrustPolicies, _ string, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, TrustPolicy, error) {
+			getKeyMapOpts = func(_ context.Context, _ TrustPolicy, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
 				if tt.getKeysError {
-					return nil, cosign.CheckOpts{}, nil, fmt.Errorf("error")
+					return nil, cosign.CheckOpts{}, fmt.Errorf("error")
 				}
 
-				return tt.keys, tt.cosignOpts, &trustPolicy{}, nil
+				return tt.keys, tt.cosignOpts, nil
 			}
 			verifierFactory := cosignVerifierFactory{}
 			trustPoliciesConfig := []TrustPolicyConfig{
