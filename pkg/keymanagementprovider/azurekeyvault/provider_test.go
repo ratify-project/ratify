@@ -19,7 +19,7 @@ package azurekeyvault
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"context"
-	"reflect"
+	"crypto"
 	"strings"
 	"testing"
 	"time"
@@ -50,47 +50,6 @@ func TestParseAzureEnvironment(t *testing.T) {
 	_, err := parseAzureEnvironment(wrongEnvName)
 	if err == nil {
 		t.Fatalf("expected error for wrong azure environment name")
-	}
-}
-
-// TestFormatKeyVaultCertificate tests the formatKeyVaultCertificate function
-func TestFormatKeyVaultCertificate(t *testing.T) {
-	cases := []struct {
-		desc                   string
-		keyVaultObject         types.KeyVaultCertificate
-		expectedKeyVaultObject types.KeyVaultCertificate
-	}{
-		{
-			desc: "leading and trailing whitespace trimmed from all fields",
-			keyVaultObject: types.KeyVaultCertificate{
-				Name:    "cert1     ",
-				Version: "",
-			},
-			expectedKeyVaultObject: types.KeyVaultCertificate{
-				Name:    "cert1",
-				Version: "",
-			},
-		},
-		{
-			desc: "no data loss for already sanitized object",
-			keyVaultObject: types.KeyVaultCertificate{
-				Name:    "cert1",
-				Version: "version1",
-			},
-			expectedKeyVaultObject: types.KeyVaultCertificate{
-				Name:    "cert1",
-				Version: "version1",
-			},
-		},
-	}
-
-	for i, tc := range cases {
-		t.Run(tc.desc, func(t *testing.T) {
-			formatKeyVaultCertificate(&cases[i].keyVaultObject)
-			if !reflect.DeepEqual(cases[i].keyVaultObject, tc.expectedKeyVaultObject) {
-				t.Fatalf("expected: %+v, but got: %+v", tc.expectedKeyVaultObject, cases[i].keyVaultObject)
-			}
-		})
 	}
 }
 
@@ -164,7 +123,7 @@ func TestCreate(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "certificates array not set",
+			name: "certificates & keys array not set",
 			config: config.KeyManagementProviderConfig{
 				"vaultUri":             "https://testkv.vault.azure.net/",
 				"tenantID":             "tid",
@@ -197,9 +156,26 @@ func TestCreate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name: "invalid key name",
+			config: config.KeyManagementProviderConfig{
+				"vaultUri": "https://testkv.vault.azure.net/",
+				"tenantID": "tid",
+				"clientID": "clientid",
+				"keys": []map[string]interface{}{
+					{
+						"name": "",
+					},
+				},
+			},
+			expectErr: true,
+		},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			initKVClient = func(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
+				return &kv.BaseClient{}, nil
+			}
 			_, err := factory.Create("v1", tc.config, "")
 			if tc.expectErr != (err != nil) {
 				t.Fatalf("error = %v, expectErr = %v", err, tc.expectErr)
@@ -234,8 +210,36 @@ func TestGetCertificates(t *testing.T) {
 	assert.Nil(t, certStatus)
 }
 
-// TestGetCertStatusMap tests the getCertStatusMap function
-func TestGetCertStatusMap(t *testing.T) {
+// TestGetKeys tests the GetKeys function
+func TestGetKeys(t *testing.T) {
+	factory := &akvKMProviderFactory{}
+	config := config.KeyManagementProviderConfig{
+		"vaultUri": "https://testkv.vault.azure.net/",
+		"tenantID": "tid",
+		"clientID": "clientid",
+		"keys": []map[string]interface{}{
+			{
+				"name": "key1",
+			},
+		},
+	}
+
+	initKVClient = func(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
+		return &kv.BaseClient{}, nil
+	}
+	provider, err := factory.Create("v1", config, "")
+	if err != nil {
+		t.Fatalf("expected no err but got error = %v", err)
+	}
+
+	keys, keyStatus, err := provider.GetKeys(context.Background())
+	assert.NotNil(t, err)
+	assert.Nil(t, keys)
+	assert.Nil(t, keyStatus)
+}
+
+// TestGetStatusMap tests the getStatusMap function
+func TestGetStatusMap(t *testing.T) {
 	certsStatus := []map[string]string{}
 	certsStatus = append(certsStatus, map[string]string{
 		"CertName":    "Cert1",
@@ -246,7 +250,7 @@ func TestGetCertStatusMap(t *testing.T) {
 		"CertVersion": "VersionEDF",
 	})
 
-	actual := getCertStatusMap(certsStatus)
+	actual := getStatusMap(certsStatus, types.CertificatesStatus)
 	assert.NotNil(t, actual[types.CertificatesStatus])
 }
 
@@ -258,16 +262,16 @@ func TestGetObjectVersion(t *testing.T) {
 	assert.Equal(t, expectedVersion, actual)
 }
 
-// TestGetCertStatus tests the getCertStatusProperty function
-func TestGetCertStatusProperty(t *testing.T) {
+// TestGetStatus tests the getStatusProperty function
+func TestGetStatusProperty(t *testing.T) {
 	timeNow := time.Now().String()
 	certName := "certName"
 	certVersion := "versionABC"
 
-	status := getCertStatusProperty(certName, certVersion, timeNow)
-	assert.Equal(t, certName, status[types.CertificateName])
-	assert.Equal(t, timeNow, status[types.CertificateLastRefreshed])
-	assert.Equal(t, certVersion, status[types.CertificateVersion])
+	status := getStatusProperty(certName, certVersion, timeNow)
+	assert.Equal(t, certName, status[types.StatusName])
+	assert.Equal(t, timeNow, status[types.StatusLastRefreshed])
+	assert.Equal(t, certVersion, status[types.StatusVersion])
 }
 
 // TestGetCertsFromSecretBundle tests the getCertsFromSecretBundle function
@@ -329,6 +333,153 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 				assert.NotNil(t, err)
 				assert.Nil(t, certs)
 				assert.Nil(t, status)
+			} else {
+				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestGetKeyFromKeyBundle(t *testing.T) {
+	cases := []struct {
+		desc        string
+		keyBundle   kv.KeyBundle
+		expectedErr bool
+		output      crypto.PublicKey
+	}{
+		{
+			desc: "no key in key bundle",
+			keyBundle: kv.KeyBundle{
+				Key: nil,
+			},
+			expectedErr: true,
+			output:      nil,
+		},
+		{
+			desc: "invalid key in key bundle",
+			keyBundle: kv.KeyBundle{
+				Key: &kv.JSONWebKey{},
+			},
+			expectedErr: true,
+			output:      nil,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			key, err := getKeyFromKeyBundle(tc.keyBundle)
+			if tc.expectedErr {
+				assert.NotNil(t, err)
+				assert.Nil(t, key)
+			} else {
+				assert.Nil(t, err)
+				assert.NotNil(t, key)
+			}
+			if tc.output != nil {
+				assert.Equal(t, tc.output, key)
+			}
+		})
+	}
+}
+
+func TestValidate(t *testing.T) {
+	vaultURI := "https://test.vault.azure.net"
+	tenantID := "testTenantID"
+	clientID := "testClientID"
+	validTestCerts := []types.KeyVaultValue{
+		{
+			Name:    "testCert",
+			Version: "testVersion",
+		},
+	}
+	validTestKeys := []types.KeyVaultValue{
+		{
+			Name:    "testKey",
+			Version: "testVersion",
+		},
+	}
+
+	cases := []struct {
+		desc        string
+		provider    akvKMProvider
+		expectedErr bool
+	}{
+		{
+			desc:        "Valid Provider",
+			expectedErr: false,
+			provider: akvKMProvider{
+				vaultURI:     vaultURI,
+				tenantID:     tenantID,
+				clientID:     clientID,
+				certificates: validTestCerts,
+				keys:         validTestKeys,
+			},
+		},
+		{
+			desc:        "Missing Vault URI",
+			expectedErr: true,
+			provider: akvKMProvider{
+				tenantID:     tenantID,
+				clientID:     clientID,
+				certificates: validTestCerts,
+				keys:         validTestKeys,
+			},
+		},
+		{
+			desc:        "Missing Tenant ID",
+			expectedErr: true,
+			provider: akvKMProvider{
+				vaultURI:     vaultURI,
+				clientID:     clientID,
+				certificates: validTestCerts,
+				keys:         validTestKeys,
+			},
+		},
+		{
+			desc:        "Missing Client ID",
+			expectedErr: true,
+			provider: akvKMProvider{
+				vaultURI:     vaultURI,
+				tenantID:     tenantID,
+				certificates: validTestCerts,
+				keys:         validTestKeys,
+			},
+		},
+		{
+			desc:        "Missing Certificate Name",
+			expectedErr: true,
+			provider: akvKMProvider{
+				vaultURI: vaultURI,
+				tenantID: tenantID,
+				clientID: clientID,
+				keys:     validTestKeys,
+				certificates: []types.KeyVaultValue{
+					{
+						Version: "testVersion",
+					},
+				},
+			},
+		},
+		{
+			desc:        "Missing Key Name",
+			expectedErr: true,
+			provider: akvKMProvider{
+				vaultURI:     vaultURI,
+				tenantID:     tenantID,
+				clientID:     clientID,
+				certificates: validTestCerts,
+				keys: []types.KeyVaultValue{
+					{
+						Version: "testVersion",
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			err := tc.provider.validate()
+			if tc.expectedErr {
+				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
 			}

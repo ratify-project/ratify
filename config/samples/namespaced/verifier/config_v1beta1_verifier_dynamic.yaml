@@ -1,0 +1,9 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedVerifier
+metadata:
+  name: verifier-dynamic
+spec:
+  name: dynamic
+  artifactTypes: application/vnd.ratify.spdx.v0
+  source:
+    artifact: wabbitnetworks.azurecr.io/test/sample-verifier-plugin:v1

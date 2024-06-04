@@ -1,0 +1,10 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedVerifier
+metadata:
+  name: verifier-license-checker
+spec:
+  name: licensechecker
+  artifactTypes: application/vnd.ratify.spdx.v0
+  parameters: 
+    allowedLicenses: 
+    - MIT

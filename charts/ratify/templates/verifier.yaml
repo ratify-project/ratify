@@ -1,5 +1,4 @@
 {{- $fullname := include "ratify.fullname" . -}}
----
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
@@ -14,19 +13,18 @@ spec:
   parameters:
     verificationCertStores:
       certs:
-        {{- if .Values.akvCertConfig.enabled }}
+        {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
         - kmprovider-akv
-        {{- else }}
-          {{- if .Values.notationCert }}
-            {{- if .Values.notationCerts }}
-            {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
-            {{- end }}
-        - {{$fullname}}-notation-inline-cert
-          {{- end }} 
-          {{- range $i, $cert := .Values.notationCerts }}
-        - {{$fullname}}-notation-inline-cert-{{$i}}
-          {{- end }} 
         {{- end }}
+        {{- if .Values.notationCert }}
+          {{- if .Values.notationCerts }}
+          {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
+          {{- end }}
+        - {{$fullname}}-notation-inline-cert
+        {{- end }} 
+        {{- range $i, $cert := .Values.notationCerts }}
+        - {{$fullname}}-notation-inline-cert-{{$i}}
+        {{- end }} 
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
@@ -50,10 +48,26 @@ metadata:
     helm.sh/hook-weight: "5"
 spec:
   name: cosign
-  version: 1.0.0
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
+    {{- if or (gt (len .Values.cosignKeys) 0) (and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0)) }}
+    trustPolicies:
+      - name: default
+        version: 1.0.0
+        scopes:
+          {{- range $i, $scope := .Values.cosign.scopes }}
+          - "{{$scope}}"
+          {{- end }}
+        keys:
+          {{- range $i, $key := .Values.cosignKeys }}
+          - provider: {{$fullname}}-cosign-inline-key-{{$i}}
+          {{- end }}
+          {{- if and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0) }}
+          - provider: kmprovider-akv
+          {{- end }}
+    {{- else }}
     key: /usr/local/ratify-certs/cosign/cosign.pub
+    {{- end }}
 {{- end }}
 ---
 {{- if .Values.vulnerabilityreport.enabled }}

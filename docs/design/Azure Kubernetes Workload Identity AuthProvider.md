@@ -19,7 +19,7 @@ User would need to follow instructions [here](https://azure.github.io/azure-work
 The official steps for setting up Workload Identity on AKS can be found [here](https://azure.github.io/azure-workload-identity/docs/quick-start.html).  
 
 1. Create ACR
-2. Create OIDC enabled AKS cluster by follow steps [here](https://docs.microsoft.com/en-us/azure/aks/cluster-configuration#oidc-issuer-preview)
+2. Create OIDC enabled AKS cluster by follow steps [here](https://learn.microsoft.com/en-us/azure/aks/use-oidc-issuer#create-an-aks-cluster-with-oidc-issuer)
 3. Save the cluster's OIDC URL: `az aks show --resource-group <resource_group> --name <cluster_name> --query "oidcIssuerProfile.issuerUrl" -otsv`
 4. Install Mutating Admission Webhook onto AKS cluster by following steps [here](https://azure.github.io/azure-workload-identity/docs/installation/mutating-admission-webhook.html)
 5. As the guide linked above shows, it's possible to use the AZ workload identity CLI or the regular az CLI to perform remaining setup. Following steps follow the AZ CLI.

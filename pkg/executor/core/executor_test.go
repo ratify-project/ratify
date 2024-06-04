@@ -188,7 +188,7 @@ func TestVerifySubjectInternal_ResolveSubjectDescriptor_Success(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ratifyerrors.ErrorCodeReferrersNotFound.WithDetail("")) {
+	if _, err := executor.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ratifyerrors.ErrorCodeNoVerifierReport.WithDetail("")) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }
@@ -214,7 +214,7 @@ func TestVerifySubjectInternal_Verify_NoReferrers(t *testing.T) {
 		Subject: "localhost:5000/net-monitor:v1",
 	}
 
-	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ratifyerrors.ErrorCodeReferrersNotFound.WithDetail("")) {
+	if _, err := ex.verifySubjectInternal(context.Background(), verifyParameters); !errors.Is(err, ratifyerrors.ErrorCodeNoVerifierReport.WithDetail("")) {
 		t.Fatalf("expected ErrReferrersNotFound actual %v", err)
 	}
 }

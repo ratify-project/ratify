@@ -17,6 +17,32 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types:
-        - "version-update:semver-major"
-        - "version-update:semver-minor"
-        
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+
+  - package-ecosystem: "docker"
+    directory: "/httpserver"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "golang"
+        versions: '> 1.21'
+    commit-message:
+      prefix: "chore"
+
+  - package-ecosystem: "docker"
+    directory: "/.devcontainer"
+    schedule:
+      interval: "weekly"
+    ignore:
+      - dependency-name: "vscode/devcontainers/go"
+        versions: '> 1.21'
+    commit-message:
+      prefix: "chore"

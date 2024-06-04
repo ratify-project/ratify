@@ -10,7 +10,7 @@ releases:
     namespace: gatekeeper-system
     createNamespace: true
     chart: gatekeeper/gatekeeper
-    version: 3.15.0
+    version: 3.16.0
     wait: true
     set:
       - name: enableExternalData
@@ -62,6 +62,10 @@ releases:
           - "certificatestores.config.ratify.deislabs.io"
           - "policies.config.ratify.deislabs.io"
           - "keymanagementproviders.config.ratify.deislabs.io"
+          - "namespacedkeymanagementproviders.config.ratify.deislabs.io"
+          - "namespacedpolicies.config.ratify.deislabs.io"
+          - "namespacedstores.config.ratify.deislabs.io"
+          - "namespacedverifiers.config.ratify.deislabs.io"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
@@ -72,7 +76,7 @@ releases:
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: notationCert
+      - name: notationCerts[0]
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: featureFlags.RATIFY_CERT_ROTATION
         value: true

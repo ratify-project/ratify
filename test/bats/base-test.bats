@@ -28,14 +28,14 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initcontainer-pod --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod initcontainer-pod1 --namespace default --force --ignore-not-found=true'
     }
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     # validate key management provider status property shows success
-    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
@@ -45,7 +45,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     # validate initContainers image
     run kubectl apply -f ./test/testdata/pod_initContainers_signed.yaml --namespace default
     assert_success
-    
+
     run kubectl apply -f ./test/testdata/pod_initContainers_unsigned.yaml --namespace default
     assert_failure
 
@@ -60,14 +60,14 @@ RATIFY_NAMESPACE=gatekeeper-system
 @test "crd version test" {
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
-    run kubectl apply -f ./config/samples/config_v1alpha1_verifier_notation.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1alpha1_verifier_notation.yaml
     assert_success
     run bash -c "kubectl get verifiers.config.ratify.deislabs.io/verifier-notation -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
     assert_success
 
     run kubectl delete stores.config.ratify.deislabs.io/store-oras
     assert_success
-    run kubectl apply -f ./config/samples/config_v1alpha1_store_oras_http.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1alpha1_store_oras_http.yaml
     assert_success
     run bash -c "kubectl get stores.config.ratify.deislabs.io/store-oras -o yaml | grep 'apiVersion: config.ratify.deislabs.io/v1beta1'"
     assert_success
@@ -79,15 +79,15 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
     }
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
     # validate key management provider status property shows success
-    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
@@ -101,43 +101,116 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
-        
+
         # restore cert store in ratify namespace
-        run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n default > kmprovider.yaml"
-        run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default
-        sed 's/default/gatekeeper-system/' kmprovider.yaml > kmproviderNewNS.yaml
-        run kubectl apply -f kmproviderNewNS.yaml        
+        run kubectl apply -f clusterkmprovider.yaml
         assert_success
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+
+        # delete new namespace
+        run kubectl delete namespace new-namespace
+        assert_success
     }
-    run kubectl apply -f ./library/default/template.yaml
+
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
-
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
-    
-    # apply the key management provider to default namespace
-    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml -n ${RATIFY_NAMESPACE} > kmprovider.yaml"    
+
+    # create a new namespace.
+    run kubectl create namespace new-namespace
     assert_success
-    sed 's/gatekeeper-system/default/' kmprovider.yaml > kmproviderNewNS.yaml    
-    run kubectl apply -f kmproviderNewNS.yaml
+    sleep 3
+
+    # apply the key management provider to new namespace
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > clusterkmprovider.yaml"
     assert_success
-    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
-    assert_success
-    
-    # configure the notation verifier to use inline certificate store with specific namespace
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation_specificnskmprovider.yaml
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/' clusterkmprovider.yaml >namespacedkmprovider.yaml
+    run kubectl apply -f namespacedkmprovider.yaml -n new-namespace
     assert_success
 
-    run kubectl run demo --namespace default --image=registry:5000/notation:signed
+    # delete the cluster-wide key management provider
+    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0
     assert_success
 
-    run kubectl run demo1 --namespace default --image=registry:5000/notation:unsigned
+    # configure the notation verifier to use inline certificate store in new namespace.
+    sed 's/default\//new-namespace\//' ./config/samples/clustered/verifier/config_v1beta1_verifier_notation_specificnskmprovider.yaml >verifier-new-namespace.yaml
+    run kubectl apply -f verifier-new-namespace.yaml
+    assert_success
+    sleep 3
+
+    run kubectl run demo --namespace new-namespace --image=registry:5000/notation:signed
+    assert_success
+
+    run kubectl run demo1 --namespace new-namespace --image=registry:5000/notation:unsigned
     assert_failure
+}
+
+@test "cosign test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
+    }
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
+    assert_success
+    sleep 5
+
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
+    assert_success
+
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
+    assert_failure
+}
+
+@test "cosign legacy test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
+    }
+
+    # use imperative command to guarantee verifier config is updated
+    run kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign_legacy.yaml
+    sleep 5
+
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
+    assert_success
+    sleep 5
+
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
+    assert_success
+
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
+    assert_failure
+}
+
+@test "cosign keyless test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
+    }
+
+    # use imperative command to guarantee useHttp is updated
+    run kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign_keyless.yaml
+    sleep 5
+
+    run kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras.yaml
+    sleep 5
+
+    wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
 }
 
 @test "validate crd add, replace and delete" {
@@ -147,7 +220,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     }
 
     echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
@@ -157,41 +230,13 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_failure
 
     echo "Add notation verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_success
-}
-
-@test "verifier crd status check" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker'
-    }
-
-    # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    assert_success
-
-    # apply a invalid verifier CR, validate status with error
-    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml > invalidVerifier.yaml
-    run kubectl apply -f invalidVerifier.yaml
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
-    assert_success
-
-    # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
-    assert_failure
 }
 
 @test "store crd status check" {
@@ -201,7 +246,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     }
 
     # apply a invalid verifier CR, validate status with error
-    sed 's/:v1/:invalid/' ./config/samples/config_v1beta1_store_dynamic.yaml > invalidstore.yaml
+    sed 's/:v1/:invalid/' ./config/samples/clustered/store/config_v1beta1_store_dynamic.yaml >invalidstore.yaml
     run kubectl apply -f invalidstore.yaml
     assert_success
     # wait for download of image
@@ -212,23 +257,23 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "configmap update test" {
     skip "Skipping test for now as we are no longer watching for configfile update in a K8s environment. This test ensures we are watching config file updates in a non-kub scenario"
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     run kubectl run demo2 --image=registry:5000/notation:signed
     assert_success
 
     run kubectl get configmaps ratify-configuration --namespace=${RATIFY_NAMESPACE} -o yaml >currentConfig.yaml
-    run kubectl delete -f ./library/default/samples/constraint.yaml
+    run kubectl delete -f ./library/multi-tenancy-validation/samples/constraint.yaml
 
     wait_for_process ${WAIT_TIME} ${SLEEP_TIME} "kubectl replace --namespace=${RATIFY_NAMESPACE} -f ${BATS_TESTS_DIR}/configmap/invalidconfigmap.yaml"
     echo "Waiting for 150 second for configuration update"
     sleep 150
 
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     run kubectl run demo3 --image=registry:5000/notation:signed
     echo "Current time after validate : $(date +"%T")"
@@ -243,10 +288,10 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod mutate-demo --namespace default --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     run kubectl run mutate-demo --namespace default --image=registry:5000/notation:signed
@@ -263,11 +308,11 @@ RATIFY_NAMESPACE=gatekeeper-system
         # restore the original key management provider
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f kmprovider_staging.yaml'
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # save the existing key management provider inline resource to restore later
-    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml > kmprovider_staging.yaml"
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > kmprovider_staging.yaml"
     assert_success
     # configure the default template/constraint
     run kubectl apply -f ./library/default/template.yaml
@@ -280,7 +325,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_failure
 
     # delete the existing key management provider inline resource since certificate store and key management provider cannot be used together
-    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE}
+    run kubectl delete keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0
     assert_success
     # add the alternate certificate as an inline certificate store
     cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_certstore_inline.yaml
@@ -300,17 +345,17 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "validate inline key management provider" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-alternate --namespace default --force --ignore-not-found=true'
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # configure the default template/constraint
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
 
     # verify that the image cannot be run due to an invalid cert
@@ -344,21 +389,21 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete certificatestores.config.ratify.deislabs.io/ratify-notation-inline-cert-0 --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
     }
-     # configure the default template/constraint
-    run kubectl apply -f ./library/default/template.yaml
+    # configure the default template/constraint
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
 
     # validate key management provider status property shows success
-    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n ${RATIFY_NAMESPACE} -o yaml | grep 'issuccess: true'"
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml | grep 'issuccess: true'"
     assert_success
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
 
     sleep 10
 
-    # apply an invalid cert in an inline certificate store 
+    # apply an invalid cert in an inline certificate store
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_certstore_inline_invalid.yaml -n ${RATIFY_NAMESPACE}
     assert_success
     # validate key management provider status property shows success
@@ -375,17 +420,17 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo1 --namespace default --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_store_oras_http.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     # apply store CRD with K8s secret auth provier enabled
-    run kubectl apply -f ./config/samples/config_v1beta1_store_oras_k8secretAuth.yaml
+    run kubectl apply -f ./config/samples/clustered/store/config_v1beta1_store_oras_k8secretAuth.yaml
     assert_success
     sleep 5
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
@@ -396,18 +441,18 @@ RATIFY_NAMESPACE=gatekeeper-system
 
 @test "validate image signed by leaf cert" {
     teardown() {
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --namespace ${RATIFY_NAMESPACE} --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementproviders.config.ratify.deislabs.io/keymanagementprovider-inline --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf --namespace default --force --ignore-not-found=true'
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-leaf2 --namespace default --force --ignore-not-found=true'
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # configure the default template/constraint
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
 
     # add the root certificate as an inline key management provider
@@ -456,12 +501,81 @@ RATIFY_NAMESPACE=gatekeeper-system
     sleep 100
 
     # verify that the verification succeeds
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
     run kubectl run demo --namespace default --image=registry:5000/notation:signed
     assert_success
+}
+
+@test "namespaced notation/cosign verifiers test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-notation --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clusternotationkmprovider.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -n default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clustercosignkmprovider.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedpolicies.config.ratify.deislabs.io/ratify-policy --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clusterpolicy.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod notation-demo --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod notation-demo1 --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
+    }
+
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
+    sleep 3
+
+    # apply namespaced policy and delete cluster-wide policy.
+    run bash -c "kubectl get policies.config.ratify.deislabs.io/ratify-policy -o yaml > clusterpolicy.yaml"
+    assert_success
+    sed 's/kind: Policy/kind: NamespacedPolicy/;/^\s*resourceVersion:/d' clusterpolicy.yaml >namespacedpolicy.yaml
+    run kubectl apply -f namespacedpolicy.yaml
+    assert_success
+
+    # apply namespaced kmp and delete cluster-wide kmp.
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > clusternotationkmprovider.yaml"
+    assert_success
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/' clusternotationkmprovider.yaml >namespacednotationkmprovider.yaml
+    run kubectl apply -f namespacednotationkmprovider.yaml
+    assert_success
+
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -o yaml > clustercosignkmprovider.yaml"
+    assert_success
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/;/^\s*resourceVersion:/d' clustercosignkmprovider.yaml >namespacedcosignkmprovider.yaml
+    run kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -n default --ignore-not-found=true
+    sleep 5
+    run kubectl apply -f namespacedcosignkmprovider.yaml
+    assert_success
+    sleep 5
+
+    # apply namespaced notation verifiers and delete cluster-wide notation verifiers.
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_notation.yaml
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation --ignore-not-found=true
+
+    # validate notation images.
+    run kubectl run notation-demo --namespace default --image=registry:5000/notation:signed
+    assert_success
+
+    run kubectl run notation-demo1 --namespace default --image=registry:5000/notation:unsigned
+    assert_failure
+
+    # apply namespaced cosign verifiers and delete cluster-wide cosign verifiers.
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_cosign.yaml
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --ignore-not-found=true
+
+    # validate cosign images.
+    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
+    assert_success
+
+    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
+    assert_failure
 }

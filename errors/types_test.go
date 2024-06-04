@@ -126,6 +126,13 @@ func TestWithPluginName(t *testing.T) {
 	}
 }
 
+func TestWithDescription(t *testing.T) {
+	err := testEC.WithDescription()
+	if err.Description != testDescription {
+		t.Fatalf("expected description: %s, got: %s", testDescription, err.Description)
+	}
+}
+
 func TestIs(t *testing.T) {
 	err := testEC.WithDetail(testDetail)
 	result := err.Is(err)
@@ -161,7 +168,7 @@ func TestIsEmpty(t *testing.T) {
 }
 
 func TestError_Error(t *testing.T) {
-	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType).WithLinkToDoc(testLink).WithDetail(testDetail).WithError(Error{})
+	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType).WithLinkToDoc(testLink).WithDetail(testDetail).WithError(Error{}).WithDescription()
 	result := err.Error()
 	if !strings.HasPrefix(result, testErrorString) {
 		t.Fatalf("expected string starts with: %s, but got: %s", testErrorString, result)

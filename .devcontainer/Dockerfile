@@ -14,8 +14,7 @@
 # See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.245.2/containers/go/.devcontainer/base.Dockerfile
 
 # [Choice] Go version (use -bullseye variants on local arm64/Apple Silicon): 1.21-bullseye, 1, 1.19, 1.18, 1-bullseye, 1.19-bullseye, 1.18-bullseye, 1-buster, 1.19-buster, 1.18-buster
-ARG VARIANT="1.21-bullseye"
-FROM mcr.microsoft.com/vscode/devcontainers/go:${VARIANT}
+FROM mcr.microsoft.com/vscode/devcontainers/go:1.21-bullseye@sha256:0ea3913135923a684b37f9e75a1e9adbb14551199244656b77f516c4c0c6d5bc
 
 # [Choice] Node.js version: none, lts/*, 18, 16, 14
 ARG NODE_VERSION="none"
@@ -54,8 +53,8 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 
 # [Optional] Uncomment the next lines to use go get to install anything else you need
 USER vscode
-RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28 \
-  && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2 \
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1 \
+  && go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0 \
   && chmod a+w -R /go/pkg
 
 # [Optional] Uncomment this line to install global node packages.

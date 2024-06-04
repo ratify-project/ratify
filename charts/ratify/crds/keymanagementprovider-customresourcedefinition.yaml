@@ -13,7 +13,7 @@ spec:
     listKind: KeyManagementProviderList
     plural: keymanagementproviders
     singular: keymanagementprovider
-  scope: Namespaced
+  scope: Cluster
   versions:
   - additionalPrinterColumns:
     - jsonPath: .status.issuccess

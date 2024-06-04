@@ -42,28 +42,34 @@ type trustStore struct {
 // will be loaded for each signature verification.
 // And this API must follow the Notation Trust Store spec: https://github.com/notaryproject/notaryproject/blob/main/specs/trust-store-trust-policy.md#trust-store
 func (s trustStore) GetCertificates(ctx context.Context, _ truststore.Type, namedStore string) ([]*x509.Certificate, error) {
-	certs, err := s.getCertificatesInternal(ctx, namedStore, controllers.GetCertificatesMap())
+	certs, err := s.getCertificatesInternal(ctx, namedStore)
 	if err != nil {
 		return nil, err
 	}
 	return s.filterValidCerts(certs)
 }
 
-func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string, certificatesMap map[string][]*x509.Certificate) ([]*x509.Certificate, error) {
+func (s trustStore) getCertificatesInternal(ctx context.Context, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
 	// certs configured for this namedStore overrides cert path
 	if certGroup := s.certStores[namedStore]; len(certGroup) > 0 {
 		for _, certStore := range certGroup {
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
-			result := keymanagementprovider.FlattenKMPMap(keymanagementprovider.GetCertificatesFromMap(certStore))
+			certMap, err := keymanagementprovider.GetCertificatesFromMap(ctx, certStore)
+			if err != nil {
+				logger.GetLogger(ctx, logOpt).Warnf("unable to fetch certificates for Key Management Provider %+v: %v", certStore, err)
+			}
+			result := keymanagementprovider.FlattenKMPMap(certMap)
 			// notation verifier does not consider specific named/versioned certificates within a key management provider resource
 			if len(result) == 0 {
 				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Key Management Provider %+v", certStore)
 				// check certificate store if key management provider does not have certificates.
 				// NOTE: certificate store and key management provider should not be configured together.
 				// User will be warned by the controller/CLI
-				result = certificatesMap[certStore]
+				if result, err = controllers.NamespacedCertStores.GetCertsFromStore(ctx, certStore); err != nil {
+					logger.GetLogger(ctx, logOpt).Warnf("unable to fetch certificates for Certificate Store %+v: %v", certStore, err)
+				}
 				if len(result) == 0 {
 					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Certificate Store %+v", certStore)
 				}

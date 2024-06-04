@@ -32,6 +32,11 @@ Example pre-release versions include `v0.1.0-alpha1`, `v0.1.0-beta2`, `v0.1.0-rc
 
 5. Copy contents from [`dev.helmfile.yaml`](dev.helmfile.yaml) to [`helmfile.yaml`](helmfile.yaml) & [`dev.high-availability.helmfile.yaml`](dev.high-availability.helmfile.yaml) to [`high-availability.helmfile.yaml`](high-availability.helmfile.yaml). You MUST update/remove values marked by comments in the files. The `dev` prefixed helmfiles are treated as staging files that are up to date with new changes on main branch. The primary `helmfile.yaml` and `high-availability.helmfile.yaml` MUST stay pinned to the current release since they are used by the quickstarts. Update `dev.helmfile.yaml` & `dev.high-availability.helmfile.yaml` ratify chart version to new release version.
 
+6. Our `main` branch contains an extra merge commits compared to `dev` due to the PR [workflow](CONTRIBUTING.md#pull-requests), once per release, we will need to sync `dev` with the `main` branch.
+Once we are looking to automate this with tracking [issue], for now we will need the following steps:
+  - maintainer manually disable allow force push in branch protection rule
+  - make sure the local main branch is up to date
+  - force push to dev branch, ```git push origin --force main:dev```
 ## Git Release Flow
 
 This section deals with the practical considerations of versioning in Git, this repo's version control system.  See the semantic versioning specification for the scope of changes allowed for each release type.
@@ -60,7 +65,13 @@ Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/fil
 
 ## Post Release Activity
 
-After a successful release, please manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
+1. Our `main` branch contains an extra merge commits compared to `dev` due to the PR [workflow](CONTRIBUTING.md#pull-requests), once per release, we will need to sync `dev` with the `main` branch.
+Once we are looking to automate this with tracking [issue], for now we will need the following steps:
+  - maintainer manually disable allow force push in branch protection rule
+  - make sure the local main branch is up to date
+  - force push to dev branch, ```git push origin --force main:dev```
+
+2. After a successful release, please manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
 
 ### Weekly Dev Release
 
@@ -88,6 +99,6 @@ helm install ratify \
     --set image.repository=ghcr.io/deislabs/ratify-dev
     --set image.crdRepository=ghcr.io/deislabs/ratify-crds-dev
     --set image.tag=dev.<YYYYMMDD>.<ABBREVIATED_GIT_HASH_COMMIT>
-    --set-file notationCert=./test/testdata/notation.crt
+    --set-file notationCerts[0]=./test/testdata/notation.crt
 ```
 NOTE: the tag field is the only value that will change when updating to newer dev build images

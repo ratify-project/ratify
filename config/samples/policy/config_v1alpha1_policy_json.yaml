@@ -1,8 +1,0 @@
-apiVersion: config.ratify.deislabs.io/v1alpha1
-kind: Policy
-metadata:
-  name: "configpolicy"
-spec:
-  parameters:
-    artifactVerificationPolicies:
-      default: "all"

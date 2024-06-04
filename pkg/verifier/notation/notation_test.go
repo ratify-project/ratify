@@ -257,8 +257,8 @@ func TestParseVerifierConfig(t *testing.T) {
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: map[string][]string{
-					"certstore1": {"defaultns/akv1", "testns/akv2"},
-					"certstore2": {"testns/akv3", "testns/akv4"},
+					"certstore1": {"defaultns/akv1", "akv2"},
+					"certstore2": {"akv3", "akv4"},
 				},
 			},
 		},

@@ -1,0 +1,24 @@
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: NamespacedVerifier
+metadata:
+  name: verifier-license-checker
+spec:
+  name: licensechecker
+  artifactTypes: application/vnd.ratify.spdx.v0
+  parameters: 
+    allowedLicenses: 
+    - MIT
+    - GPL-2.0-only
+    - OpenSSL
+    - BSD-2-Clause AND BSD-3-Clause
+    - Zlib
+    - MPL-2.0 AND MIT
+    - ISC
+    - Apache-2.0
+    - MIT AND BSD-2-Clause AND GPL-2.0-or-later,
+    - MIT AND LicenseRef-AND AND BSD-2-Clause AND LicenseRef-AND AND GPL-2.0-or-later
+    - MPL-2.0 AND LicenseRef-AND AND MIT
+    - BSD-2-Clause AND LicenseRef-AND AND BSD-3-Clause
+    - NONE
+    - NOASSERTION
+    - ""

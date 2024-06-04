@@ -17,8 +17,10 @@ package inline
 
 import (
 	"context"
+	"crypto"
 	"crypto/x509"
 	"encoding/json"
+	"fmt"
 
 	"github.com/deislabs/ratify/errors"
 	"github.com/deislabs/ratify/pkg/keymanagementprovider"
@@ -32,6 +34,7 @@ const (
 	providerName           string = "inline"
 	certificateContentType string = "certificate"
 	certificatesMapKey     string = "certs"
+	keyContentType         string = "key"
 )
 
 //nolint:revive
@@ -43,6 +46,7 @@ type InlineKMProviderConfig struct {
 
 type inlineKMProvider struct {
 	certs       map[keymanagementprovider.KMPMapKey][]*x509.Certificate
+	keys        map[keymanagementprovider.KMPMapKey]crypto.PublicKey
 	contentType string
 }
 type inlineKMProviderFactory struct{}
@@ -70,26 +74,43 @@ func (f *inlineKMProviderFactory) Create(_ string, keyManagementProviderConfig c
 		return nil, errors.ErrorCodeConfigInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail("contentType parameter is not set")
 	}
 
-	// only support certificate content type for now
-	if conf.ContentType != certificateContentType {
-		return nil, errors.ErrorCodeConfigInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail("contentType parameter is not set to 'certificate'")
-	}
-
 	if conf.Value == "" {
 		return nil, errors.ErrorCodeConfigInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail("value parameter is not set")
 	}
 
-	certs, err := keymanagementprovider.DecodeCertificates([]byte(conf.Value))
-	if err != nil {
-		return nil, errors.ErrorCodeCertInvalid.WithComponentType(errors.KeyManagementProvider)
+	var certMap map[keymanagementprovider.KMPMapKey][]*x509.Certificate
+	var keyMap map[keymanagementprovider.KMPMapKey]crypto.PublicKey
+
+	switch conf.ContentType {
+	case certificateContentType:
+		certs, err := keymanagementprovider.DecodeCertificates([]byte(conf.Value))
+		if err != nil {
+			return nil, err
+		}
+		certMap = map[keymanagementprovider.KMPMapKey][]*x509.Certificate{
+			{}: certs,
+		}
+	case keyContentType:
+		key, err := keymanagementprovider.DecodeKey([]byte(conf.Value))
+		if err != nil {
+			return nil, err
+		}
+		keyMap = map[keymanagementprovider.KMPMapKey]crypto.PublicKey{
+			{}: key,
+		}
+	default:
+		return nil, errors.ErrorCodeConfigInvalid.WithComponentType(errors.KeyManagementProvider).WithDetail(fmt.Sprintf("content type %s is not supported", conf.ContentType))
 	}
-	certMap := map[keymanagementprovider.KMPMapKey][]*x509.Certificate{
-		{}: certs,
-	}
-	return &inlineKMProvider{certs: certMap, contentType: conf.ContentType}, nil
+
+	return &inlineKMProvider{certs: certMap, keys: keyMap, contentType: conf.ContentType}, nil
 }
 
 // GetCertificates returns previously fetched certificates
 func (s *inlineKMProvider) GetCertificates(_ context.Context) (map[keymanagementprovider.KMPMapKey][]*x509.Certificate, keymanagementprovider.KeyManagementProviderStatus, error) {
 	return s.certs, nil, nil
+}
+
+// GetKeys returns previously fetched keys
+func (s *inlineKMProvider) GetKeys(_ context.Context) (map[keymanagementprovider.KMPMapKey]crypto.PublicKey, keymanagementprovider.KeyManagementProviderStatus, error) {
+	return s.keys, nil, nil
 }

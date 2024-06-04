@@ -7,6 +7,10 @@ resources:
   - bases/config.ratify.deislabs.io_certificatestores.yaml
   - bases/config.ratify.deislabs.io_policies.yaml
   - bases/config.ratify.deislabs.io_keymanagementproviders.yaml
+  - bases/config.ratify.deislabs.io_namespacedpolicies.yaml
+  - bases/config.ratify.deislabs.io_namespacedstores.yaml
+  - bases/config.ratify.deislabs.io_namespacedkeymanagementproviders.yaml
+  - bases/config.ratify.deislabs.io_namespacedverifiers.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
@@ -17,6 +21,10 @@ patchesStrategicMerge:
   #- patches/webhook_in_certificatestores.yaml
   #- patches/webhook_in_policies.yaml
   #- patches/webhook_in_keymanagementproviders.yaml
+  #- patches/webhook_in_namespacedpolicies.yaml
+  #- patches/webhook_in_namespacedstores.yaml
+  #- patches/webhook_in_namespacedkeymanagementproviders.yaml
+  #- patches/webhook_in_namespacedverifiers.yaml
   #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
   # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -26,8 +34,12 @@ patchesStrategicMerge:
   #- patches/cainjection_in_certificatestores.yaml
   #- patches/cainjection_in_policies.yaml
   #- patches/cainjection_in_keymanagementproviders.yaml
+  #- patches/cainjection_in_namespacedpolicies.yaml
+  #- patches/cainjection_in_namespacedstores.yaml
+  #- patches/cainjection_in_namespacedkeymanagementproviders.yaml
+  #- patches/cainjection_in_namespacedverifiers.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # the following config is for teaching kustomize how to do kustomization for CRDs.
 configurations:
-- kustomizeconfig.yaml
+  - kustomizeconfig.yaml

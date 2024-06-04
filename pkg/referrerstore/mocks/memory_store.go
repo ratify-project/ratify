@@ -53,14 +53,14 @@ func (store *MemoryTestStore) GetBlobContent(_ context.Context, _ common.Referen
 	if item, ok := store.Blobs[digest]; ok {
 		return item, nil
 	}
-	return nil, nil
+	return nil, fmt.Errorf("blob not found")
 }
 
 func (store *MemoryTestStore) GetReferenceManifest(_ context.Context, _ common.Reference, desc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	if item, ok := store.Manifests[desc.Digest]; ok {
 		return item, nil
 	}
-	return ocispecs.ReferenceManifest{}, nil
+	return ocispecs.ReferenceManifest{}, fmt.Errorf("manifest not found")
 }
 
 func (store *MemoryTestStore) GetConfig() *config.StoreConfig {

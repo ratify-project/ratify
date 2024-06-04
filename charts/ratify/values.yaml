@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.1.0
+  tag: v1.2.0
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -9,12 +9,13 @@ fullnameOverride: ""
 replicaCount: 1
 affinity: {}
 tolerations: []
-notationCert: ""
 notationCerts: []
+cosignKeys: []
 
 cosign:
   enabled: true
-  key: ""
+  scopes: ["*"] # corresponds to a single trust policy
+  key: "" # DEPRECATED: Use cosignKeys instead
 vulnerabilityreport:
   enabled: false
   passthrough: false
@@ -40,7 +41,7 @@ serviceAccount:
   create: true
   name: ratify-admin
 gatekeeper:
-  version: "3.15.0"
+  version: "3.16.0"
   namespace: # default is gatekeeper-system
 instrumentation:
   metricsEnabled: true
@@ -49,7 +50,7 @@ instrumentation:
 
 # Can be used to authenticate to:
 # ACR -> oras.authProviders.azureWorkloadIdentityEnabled
-# Key Vault -> akvCertConfig.enabled
+# Key Vault -> azurekeyvault.enabled
 azureWorkloadIdentity:
   clientId:
 
@@ -57,15 +58,12 @@ azureManagedIdentity:
   clientId:
   tenantId:
 
-akvCertConfig:
+azurekeyvault:
   enabled: false
   vaultURI:
-  cert1Name:
-  cert1Version:
-  cert2Name:
-  cert2Version:
-  certificates:
   tenantId:
+  certificates: []
+  keys: []
 
 oras:
   useHttp: false
@@ -148,3 +146,14 @@ featureFlags:
   RATIFY_CERT_ROTATION: false
   # RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY enables high availability mode including distributed caching.
   RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY: false
+
+notationCert: "" # DEPRECATED: Use notationCerts instead
+akvCertConfig: # DEPRECATED: Use azurekeyvault instead
+  enabled: false # DEPRECATED: Use azurekeyvault.enabled instead
+  vaultURI: # DEPRECATED: Use azurekeyvault.vaultURI instead
+  cert1Name: # DEPRECATED: Use azurekeyvault.certificates instead
+  cert1Version: # DEPRECATED: Use azurekeyvault.certificates instead
+  cert2Name: # DEPRECATED: Use azurekeyvault.certificates instead
+  cert2Version: # DEPRECATED: Use azurekeyvault.certificates instead
+  certificates: # DEPRECATED: Use azurekeyvault.certificates instead
+  tenantId: # DEPRECATED: Use azurekeyvault.tenantId instead

@@ -18,6 +18,7 @@ load helpers
 BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
+RATIFY_NAMESPACE=gatekeeper-system
 
 @test "helm genCert test" {
     # tls cert provided
@@ -59,44 +60,6 @@ SLEEP_TIME=1
     assert_success
 }
 
-@test "cosign test" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-unsigned --namespace default --force --ignore-not-found=true'
-    }
-    run kubectl apply -f ./library/default/template.yaml
-    assert_success
-    sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
-    assert_success
-    sleep 5
-
-    run kubectl run cosign-demo-key --namespace default --image=registry:5000/cosign:signed-key
-    assert_success
-
-    run kubectl run cosign-demo-unsigned --namespace default --image=registry:5000/cosign:unsigned
-    assert_failure
-}
-
-@test "cosign keyless test" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign.yaml'
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/config_v1beta1_store_oras_http.yaml'
-    }
-
-    # use imperative command to guarantee useHttp is updated
-    run kubectl replace -f ./config/samples/config_v1beta1_verifier_cosign_keyless.yaml
-    sleep 5
-
-    run kubectl replace -f ./config/samples/config_v1beta1_store_oras.yaml
-    sleep 5
-
-    wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
-}
-
 @test "licensechecker test" {
     teardown() {
         echo "cleaning up"
@@ -105,18 +68,18 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_partial_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_partial_licensechecker.yaml
     sleep 5
     run kubectl run license-checker --namespace default --image=registry:5000/licensechecker:v0
     assert_failure
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run license-checker2 --namespace default --image=registry:5000/licensechecker:v0
@@ -130,19 +93,19 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod sbom2 --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom_deny.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom_deny.yaml
     sleep 5
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
     assert_failure
-   
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
+
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run sbom --namespace default --image=registry:5000/sbom:v0
@@ -167,19 +130,19 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod schemavalidator2 --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator.yaml
     sleep 5
     run kubectl run schemavalidator --namespace default --image=registry:5000/schemavalidator:v0
     assert_success
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator_bad.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator_bad.yaml
     assert_success
     # wait for the httpserver cache to be invalidated
     sleep 15
@@ -195,19 +158,19 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod vulnerabilityreport2 --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_vulnerabilityreport2.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_vulnerabilityreport2.yaml
     sleep 5
     run kubectl run vulnerabilityreport --namespace default --image=registry:5000/vulnerabilityreport:v0
     assert_success
     sleep 15
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_vulnerabilityreport.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_vulnerabilityreport.yaml
     sleep 5
     run kubectl run vulnerabilityreport2 --namespace default --image=registry:5000/vulnerabilityreport:v0
     assert_failure
@@ -223,19 +186,82 @@ SLEEP_TIME=1
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod all-in-one --namespace default --force --ignore-not-found=true'
     }
 
-    run kubectl apply -f ./library/default/template.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
     assert_success
     sleep 5
-    run kubectl apply -f ./library/default/samples/constraint.yaml
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_cosign.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_sbom.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom.yaml
     sleep 5
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_schemavalidator.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator.yaml
+    sleep 5
+
+    # wait for the httpserver cache to be invalidated
+    sleep 15
+    run kubectl run all-in-one --namespace default --image=registry:5000/all:v0
+    assert_success
+}
+
+@test "namespaced sbom/notary/cosign/licensechecker/schemavalidator verifiers test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-license-checker --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-sbom --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-schemavalidator --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-cosign --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedverifiers.config.ratify.deislabs.io/verifier-notation --namespace default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod all-in-one --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -n default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clusternotationkmprovider.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -n default --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clustercosignkmprovider.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete namespacedpolicies.config.ratify.deislabs.io/ratify-policy --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f clusterpolicy.yaml'
+    }
+
+    run kubectl apply -f ./library/multi-tenancy-validation/template.yaml
+    assert_success
+    sleep 5
+    run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
+    assert_success
+    sleep 5
+
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_notation.yaml
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation --ignore-not-found=true
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_cosign.yaml
+    run kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign --ignore-not-found=true
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_sbom.yaml
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/namespaced/verifier/config_v1beta1_verifier_schemavalidator.yaml
+
+    # apply namespaced policy and delete clustered policy.
+    run bash -c "kubectl get policies.config.ratify.deislabs.io/ratify-policy -o yaml > clusterpolicy.yaml"
+    assert_success
+    sed 's/kind: Policy/kind: NamespacedPolicy/;/^\s*resourceVersion:/d' clusterpolicy.yaml >namespacedpolicy.yaml
+    run kubectl apply -f namespacedpolicy.yaml
+    assert_success
+
+    # apply namespaced kmp and delete clustered kmp.
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml > clusternotationkmprovider.yaml"
+    assert_success
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/' clusternotationkmprovider.yaml >namespacednotationkmprovider.yaml
+    run kubectl apply -f namespacednotationkmprovider.yaml
+    assert_success
+
+    run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -o yaml > clustercosignkmprovider.yaml"
+    assert_success
+    sed 's/KeyManagementProvider/NamespacedKeyManagementProvider/;/^\s*resourceVersion:/d' clustercosignkmprovider.yaml >namespacedcosignkmprovider.yaml
+    run kubectl delete namespacedkeymanagementproviders.config.ratify.deislabs.io/ratify-cosign-inline-key-0 -n default --ignore-not-found=true
+    sleep 5
+    run kubectl apply -f namespacedcosignkmprovider.yaml
+    assert_success
     sleep 5
 
     # wait for the httpserver cache to be invalidated
@@ -251,7 +277,7 @@ SLEEP_TIME=1
     }
 
     echo "adding license checker, delete notation verifier and validate deployment fails due to missing notation verifier"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_complete_licensechecker.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     assert_success
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
@@ -261,13 +287,41 @@ SLEEP_TIME=1
     assert_failure
 
     echo "Add notation verifier and validate deployment succeeds"
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_notation.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml
     assert_success
 
     # wait for the httpserver cache to be invalidated
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_success
+}
+
+@test "verifier crd status check" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker'
+    }
+
+    # apply a valid verifier, validate status property shows success
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
+    assert_success
+
+    # apply a invalid verifier CR, validate status with error
+    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml >invalidVerifier.yaml
+    run kubectl apply -f invalidVerifier.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    assert_success
+
+    # apply a valid verifier, validate status property shows success
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
+    assert_success
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    assert_failure
 }
 
 @test "dynamic plugins disabled test" {
@@ -279,7 +333,7 @@ SLEEP_TIME=1
     start=$(date --iso-8601=seconds)
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
-    run kubectl apply -f ./config/samples/config_v1beta1_verifier_dynamic.yaml
+    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_dynamic.yaml
     sleep 5
 
     run bash -c "kubectl -n gatekeeper-system logs $latestpod --since-time=$start | grep 'dynamic plugins are currently disabled'"

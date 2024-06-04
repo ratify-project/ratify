@@ -6,6 +6,7 @@ List of implemented design and discussion documents. Please open a PR to update 
 
 ### Implemented
 
+* [Cosign Upgrade 2024](design/Cosign%20Upgrade%202024.md)
 * [Vulnerability Report Verifier](design/Ratify%20Vulnerability%20Report%20Verifier.md)
 * [Load Testing Pipeline](design/Load%20Testing%20Pipeline.md)
 * [TLS Certificate Rotation](design/TLS%20Certificate%20Rotation.md)
@@ -24,6 +25,7 @@ List of implemented design and discussion documents. Please open a PR to update 
 * [Verification Result Cache at Executor Level](design/Verification%20Result%20Cache%20at%20Executor%20Level.md)
 ### Discussion
 
+* [Cosign Upgrade Discussion 2024](discussion/Cosign%20Upgrade%20Discussion%202024.md)
 * [Gatekeeper Timeout Constraint](discussion/Gatekeeper%20Timeout%20Constraint.md)
 * [Image Platform Selection](discussion/Image%20Platform%20Selection.md)
 * [Negative Test Cases v1.0.0](discussion/Negative%20test%20cases%20for%20Ratify.md)

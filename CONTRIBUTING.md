@@ -14,17 +14,17 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
 
-We use the `staging` branch as the our default branch. All ratify release are cut from the main branch. A sample PR process is outlined below:
-1. Fork this repo and create your dev branch from default `staging` branch.
+We use the `dev` branch as the our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud specific tests on `dev` before changes can be merged into `main`. All ratify release are cut from the `main` branch. A sample PR process is outlined below:
+1. Fork this repo and create your dev branch from default `dev` branch.
 2. Create a PR against default branch
 3. Maintainer approval and e2e test validation is required for completing the PR.
 4. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
 6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
 
 If the PR contains a regression that could not pass the full validation, please revert the change to unblock others:
-1. Create a new dev branch based off staging.
-2. Open a revert PR against staging.
-3. Follow the same process to get this PR gets merged into staging.
+1. Create a new dev branch based off `dev`.
+2. Open a revert PR against `dev`.
+3. Follow the same process to get this PR gets merged into `dev`.
 4. Work on the fix and follow the above PR process.
 
 ## Developing
@@ -162,7 +162,7 @@ export REGISTRY=yourregistry
 docker buildx create --use
 
 docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
-docker build --progress=plain --build-arg KUBE_VERSION="1.27.7" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
+docker build --progress=plain --build-arg KUBE_VERSION="1.29.2" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
 #### [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
@@ -269,19 +269,25 @@ Gatekeeper requires TLS for external data provider interactions. As such ratify 
     helm install ratify \
       ./charts/ratify --atomic \
       --namespace gatekeeper-system \
-      --set-file notationCert=./test/testdata/notation.crt \
+      --set logger.level=debug \
+      --set-file notationCerts[0]=./test/testdata/notation.crt \
       --set-file provider.tls.crt=./tls/certs/tls.crt \
       --set-file provider.tls.key=./tls/certs/tls.key \
-      --set-file provider.tls.cabundle=./tls/certs/ca.crt
+      --set-file provider.tls.cabundle="$(cat ./tls/certs/ca.crt | base64 | tr -d '\n\r')" \
+      --set-file provider.tls.caCert=./tls/certs/ca.crt \
+      --set-file provider.tls.caKey=./tls/certs/ca.key
     ```
+Update the `KubernetesLocalProcessConfig.yaml` with updated directory/file paths:
+- In the file, set the `<INSERT WORKLOAD IDENTITY TOKEN LOCAL PATH>` to an absolute directory accessible on local environment. This is the directory where Bridge to K8s will download the Azure Workload Identity JWT token. 
+- In the file, set the `<INSERT CLIENT CA CERT LOCAL PATH>` to an absolute directory accessible on local environment. This is the directory where Bridge to K8s will download the `client-ca-cert` volume (Gatekeeper's `ca.crt`). 
 
 Configure Bridge to Kubernetes (Comprehensive guide [here](https://learn.microsoft.com/en-us/visualstudio/bridge/bridge-to-kubernetes-vs-code))
 1. Open the `Command Palette` in VSCode `CTRL-SHIFT-P`
-1. Select `Bridge to Kubernetes: Configure`
-1. Select `Ratify` from the list as the service to redirect to
-1. Set port to be 6001
-1. Select `Serve w/ CRD manager and TLS enabled` as the launch config
-1. Select 'No' for request isolation
+2. Select `Bridge to Kubernetes: Configure`
+3. Select `Ratify` from the list as the service to redirect to
+4. Set port to be 6001
+5. Select `Serve w/ CRD manager and TLS enabled` as the launch config
+6. Select 'No' for request isolation
 
 This should automatically append a new Bridge to Kubernetes configuration to the launch.json file and add a new tasks.json file. 
 

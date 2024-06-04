@@ -29,3 +29,8 @@ func SanitizeString(input string) string {
 func SanitizeURL(input url.URL) string {
 	return SanitizeString(input.String())
 }
+
+func MakePtr[T any](value T) *T {
+	b := value
+	return &b
+}

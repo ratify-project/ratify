@@ -1,4 +1,4 @@
-{{- if .Values.akvCertConfig.enabled }}
+{{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: KeyManagementProvider
 metadata:
@@ -9,7 +9,13 @@ metadata:
 spec:
   type: azurekeyvault
   parameters:
-    vaultURI: {{ required "vaultURI must be provided when AKV cert config is enabled" .Values.akvCertConfig.vaultURI  }}
+    {{- if .Values.azurekeyvault.vaultURI }}
+    vaultURI: {{ .Values.azurekeyvault.vaultURI  }}
+    {{- else if .Values.akvCertConfig.vaultURI }}
+    vaultURI: {{ .Values.akvCertConfig.vaultURI  }}
+    {{- else }}
+    {{- fail "vaultURI must be provided when azurekeyvault is enabled. please specify azurekeyvault.vaultURI" }}
+    {{- end }}
     certificates:
       {{- if .Values.akvCertConfig.cert1Name }}
       - name: {{ .Values.akvCertConfig.cert1Name  }}
@@ -25,6 +31,25 @@ spec:
         version: {{ .version  }}
       {{- end }}
       {{- end }}
-    tenantID: {{ required "tenantID must be provided when AKV cert config is enabled" .Values.akvCertConfig.tenantId  }}    
+      {{-  range .Values.azurekeyvault.certificates }}
+      {{- if .name }}
+      - name: {{ .name  }}
+        version: {{ .version  }}
+      {{- end }}
+      {{- end }}
+    keys:
+      {{-  range .Values.azurekeyvault.keys }}
+      {{- if .name }}
+      - name: {{ .name  }}
+        version: {{ .version  }}
+      {{- end }}
+      {{- end }}
+    {{- if .Values.azurekeyvault.tenantId }}
+    tenantID: {{ .Values.azurekeyvault.tenantId  }}
+    {{- else if .Values.akvCertConfig.tenantId }}
+    tenantID: {{ .Values.akvCertConfig.tenantId  }}
+    {{- else }}
+    {{- fail "tenantID must be provided when azurekeyvault is enabled. please specify azurekeyvault.tenantId" }}
+    {{- end }}  
     clientID: {{ required "clientID must be provided when use workload identity in akv" .Values.azureWorkloadIdentity.clientId  }}
 {{ end }}

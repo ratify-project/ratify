@@ -46,7 +46,7 @@ import (
 const testArtifactType string = "test-type1"
 const testImageNameTagged string = "localhost:5000/net-monitor:v1"
 
-func testGetExecutor() *core.Executor {
+func testGetExecutor(context.Context) *core.Executor {
 	return &core.Executor{
 		Verifiers:      []verifier.ReferenceVerifier{},
 		ReferrerStores: []referrerstore.ReferrerStore{},
@@ -138,7 +138,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -151,7 +151,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -209,7 +209,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -222,7 +222,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -280,7 +280,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -294,7 +294,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
+			handler: processTimeout(server.mutate, server.GetExecutor(nil).GetMutationRequestTimeout(), true),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -356,7 +356,7 @@ func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -370,7 +370,7 @@ func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.mutate, server.GetExecutor().GetMutationRequestTimeout(), true),
+			handler: processTimeout(server.mutate, server.GetExecutor(nil).GetMutationRequestTimeout(), true),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -439,7 +439,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -452,7 +452,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -491,7 +491,7 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 			},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -504,7 +504,7 @@ func TestServer_Verify_ParseReference_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -564,7 +564,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{ver},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -578,7 +578,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)
@@ -592,7 +592,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			t.Fatalf("failed to decode response body: %v", err)
 		}
 		retFirstErr := respBody.Response.Items[0].Error
-		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config must be specified").Error()
+		expectedErr := ratifyerrors.ErrorCodeConfigInvalid.WithComponentType(ratifyerrors.PolicyProvider).WithDetail("policy provider config is not provided").Error()
 		if retFirstErr != expectedErr {
 			t.Fatalf("Expected first subject error to be %s but got %s", expectedErr, retFirstErr)
 		}
@@ -633,7 +633,7 @@ func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
 			Verifiers:      []verifier.ReferenceVerifier{},
 		}
 
-		getExecutor := func() *core.Executor {
+		getExecutor := func(context.Context) *core.Executor {
 			return ex
 		}
 
@@ -647,7 +647,7 @@ func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
 
 		handler := contextHandler{
 			context: server.Context,
-			handler: processTimeout(server.verify, server.GetExecutor().GetVerifyRequestTimeout(), false),
+			handler: processTimeout(server.verify, server.GetExecutor(nil).GetVerifyRequestTimeout(), false),
 		}
 
 		handler.ServeHTTP(responseRecorder, request)

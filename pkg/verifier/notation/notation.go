@@ -24,7 +24,6 @@ import (
 
 	ratifyconfig "github.com/deislabs/ratify/config"
 	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/constants"
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/deislabs/ratify/pkg/common"
 	"github.com/deislabs/ratify/pkg/homedir"
@@ -187,7 +186,7 @@ func (v *notationPluginVerifier) verifySignature(ctx context.Context, subjectRef
 	return (*v.notationVerifier).Verify(ctx, subjectDesc, refBlob, opts)
 }
 
-func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string) (*NotationPluginVerifierConfig, error) {
+func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*NotationPluginVerifierConfig, error) {
 	verifierName := verifierConfig[types.Name].(string)
 	conf := &NotationPluginVerifierConfig{}
 
@@ -200,15 +199,6 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, verifierName, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig), re.HideStackTrace)
 	}
 
-	// append namespace to uniquely identify the certstore
-	if len(conf.VerificationCertStores) > 0 {
-		logger.GetLogger(context.Background(), logOpt).Debugf("VerificationCertStores is not empty, will append namespace %v to certificate store if resource does not already contain a namespace", namespace)
-		conf.VerificationCertStores, err = prependNamespaceToCertStore(conf.VerificationCertStores, namespace)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
 	return conf, nil
@@ -217,25 +207,4 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, namespace string)
 // signatures should not have nested references
 func (v *notationPluginVerifier) GetNestedReferences() []string {
 	return []string{}
-}
-
-// append namespace to certStore so they are uniquely identifiable
-func prependNamespaceToCertStore(verificationCertStore map[string][]string, namespace string) (map[string][]string, error) {
-	if namespace == "" {
-		return nil, re.ErrorCodeEnvNotSet.WithComponentType(re.Verifier).WithDetail("failure to parse VerificationCertStores, namespace for VerificationCertStores must be provided")
-	}
-
-	for _, certStores := range verificationCertStore {
-		for i, certstore := range certStores {
-			if !isNamespacedNamed(certstore) {
-				certStores[i] = namespace + constants.NamespaceSeperator + certstore
-			}
-		}
-	}
-	return verificationCertStore, nil
-}
-
-// return true if string looks like a K8s namespaced resource. e.g. namespace/name
-func isNamespacedNamed(name string) bool {
-	return strings.Contains(name, constants.NamespaceSeperator)
 }

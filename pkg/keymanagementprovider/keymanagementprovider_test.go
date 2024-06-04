@@ -16,11 +16,15 @@ limitations under the License.
 package keymanagementprovider
 
 import (
+	"context"
+	"crypto"
+	"crypto/rsa"
 	"crypto/x509"
 	"errors"
 	"testing"
 
 	ratifyerrors "github.com/deislabs/ratify/errors"
+	ctxUtils "github.com/deislabs/ratify/internal/context"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,11 +38,16 @@ func TestDecodeCertificates(t *testing.T) {
 	}{
 		{
 			desc:        "empty string",
-			expectedErr: false,
+			expectedErr: true,
 		},
 		{
 			desc:        "invalid certificate",
 			pemString:   "-----BEGIN CERTIFICATE-----\nbaddata\n-----END CERTIFICATE-----\n",
+			expectedErr: true,
+		},
+		{
+			desc:        "invalid certificate",
+			pemString:   "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAweAc4xikYT4ZszXVdF5mrgP0zKVYi4Ces0py9dw8XZfh/Hlxb5xWMs4DzTcKwmLatgKNSrvNyOaxkBD90PvcYNaTCwzwQ09kZ5dYtVOV4sdzeyOj8UDtf4MF5eJgJj/wWCQJnWrX/4n6nSdNTXSJEFAZkDv0BKVkZekJHn3fh+pOuv8UtvOrY1NjNK/TLWxB+8xpwugeB9oZ+VgV/gHZBLprxYkmUDsfngYy3+r6RZ+hInalZc5uAbtRUoB8+nVhXXOe3iVcVWFoWPMJ2fuPHz/8cDjv02MNWa/MeAt+ItW3N+VFZNkwbu5en3FepsxzRl04rhZzr1DSX6V6CVX43wIDAQAB-----END PUBLIC KEY-----",
 			expectedErr: true,
 		},
 		{
@@ -140,7 +149,7 @@ func TestSetCertificatesInMap(t *testing.T) {
 func TestGetCertificatesFromMap(t *testing.T) {
 	certificatesMap.Delete("test")
 	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
-	certs := GetCertificatesFromMap("test")
+	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been fetched from the map")
 	}
@@ -149,7 +158,7 @@ func TestGetCertificatesFromMap(t *testing.T) {
 // TestGetCertificatesFromMap_FailedToFetch checks if certificates are fetched from the map
 func TestGetCertificatesFromMap_FailedToFetch(t *testing.T) {
 	certificatesMap.Delete("test")
-	certs := GetCertificatesFromMap("test")
+	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 0 {
 		t.Fatalf("certificates should not have been fetched from the map")
 	}
@@ -170,5 +179,82 @@ func TestFlattenKMPMap(t *testing.T) {
 	certs := FlattenKMPMap(map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been flattened")
+	}
+}
+
+// TestSetKeysInMap checks if keys are set in the map
+func TestSetKeysInMap(t *testing.T) {
+	keyMap.Delete("test")
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	if _, ok := keyMap.Load("test"); !ok {
+		t.Fatalf("keysMap should have been set for key")
+	}
+}
+
+// TestGetKeysFromMap checks if keys are fetched from the map
+func TestGetKeysFromMap(t *testing.T) {
+	keyMap.Delete("test")
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	keys, _ := GetKeysFromMap(context.Background(), "test")
+	if len(keys) != 1 {
+		t.Fatalf("keys should have been fetched from the map")
+	}
+}
+
+// TestGetKeysFromMap_FailedToFetch checks if keys fail to fetch from map
+func TestGetKeysFromMap_FailedToFetch(t *testing.T) {
+	keyMap.Delete("test")
+	keys, _ := GetKeysFromMap(context.Background(), "test")
+	if len(keys) != 0 {
+		t.Fatalf("keys should not have been fetched from the map")
+	}
+}
+
+func TestGetKeysFromMap_AccessDifferentNamespace_ReturnsFalse(t *testing.T) {
+	keyMap.Delete("test")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), "namespace1")
+	keys, _ := GetKeysFromMap(ctx, "namespace2/test")
+	if len(keys) != 0 {
+		t.Fatalf("keys should not have been fetched from the map")
+	}
+}
+
+// TestDeleteKeysFromMap checks if key map entry is deleted from the map
+func TestDeleteKeysFromMap(t *testing.T) {
+	keyMap.Delete("test")
+	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	DeleteKeysFromMap("test")
+	if _, ok := keyMap.Load("test"); ok {
+		t.Fatalf("keysMap should have been deleted for key")
+	}
+}
+
+// TestDecodeKey checks if key is decoded from pem
+func TestDecodeKey(t *testing.T) {
+	validKey := `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEozC27QupU+1GvAL0tqR7bT3Vpyyf
+OSeWVmPjy6J5x8+6OIpmTs8PKQB1vTF0gErwa1gS/QaOElLaxDKy0GS9Jg==
+-----END PUBLIC KEY-----`
+	cases := []struct {
+		desc        string
+		pemString   string
+		expectedErr bool
+	}{
+		{
+			desc:        "valid public key",
+			pemString:   validKey,
+			expectedErr: false,
+		},
+		{
+			desc:        "invalid public key",
+			pemString:   "foo",
+			expectedErr: true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.desc, func(t *testing.T) {
+			_, err := DecodeKey([]byte(tc.pemString))
+			assert.Equal(t, tc.expectedErr, err != nil)
+		})
 	}
 }
