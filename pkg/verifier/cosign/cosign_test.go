@@ -46,8 +46,8 @@ import (
 
 const (
 	ratifySampleImageRef string = "ghcr.io/deislabs/ratify:v1"
-	testIdentity         string = "test-identity"
-	testIssuer           string = "https://test-issuer.com"
+	testIdentity         string = "sozercan@gmail.com"
+	testIssuer           string = "https://github.com/login/oauth"
 )
 
 type mockNoOpVerifier struct{}
@@ -562,6 +562,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 		cosignOpts                  cosign.CheckOpts
 		store                       *mocks.MemoryTestStore
 		expectedResultMessagePrefix string
+		defaultCosignOpts           bool
 	}{
 		{
 			name:                        "get keys error",
@@ -882,16 +883,93 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			},
 			expectedResultMessagePrefix: "cosign verification success",
 		},
+		{
+			name:              "successful keyless verification",
+			keys:              map[PKKey]keymanagementprovider.PublicKey{},
+			defaultCosignOpts: true,
+			getKeysError:      false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Digest: digest.NewDigestFromEncoded(digest.SHA256, "d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6"),
+								Annotations: map[string]string{
+									"dev.cosignproject.cosign/signature": "MEUCIFBlKbxxg1Ni++g99jeWO8Of3g5L0Xd+qMzdqCZySQ8DAiEA3lcOJPJ1FQOahtWaRU0hG0XxFEsbcVx6SIyzYQMMR0A=",
+									"dev.sigstore.cosign/bundle":         "{\"SignedEntryTimestamp\":\"MEUCIAIZfWhm9x2F7wil5dkWX+0+njT+FWXFr8AskDkiHpzoAiEApDk9STKcBJTkQ4qy9/8gn6ea2wduh3UjbLRnzZQa9gU=\",\"Payload\":{\"body\":\"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiJkMTIyNmUzNmJjODUwMjk3ODMyNGNiMmNiMjExNmM2YWE0OGVkYjJlYThmMTViMWM2ZjZmMjU2ZWQ0MzM4OGY2In19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FVUNJRkJsS2J4eGcxTmkrK2c5OWplV084T2YzZzVMMFhkK3FNemRxQ1p5U1E4REFpRUEzbGNPSlBKMUZRT2FodFdhUlUwaEcwWHhGRXNiY1Z4NlNJeXpZUU1NUjBBPSIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2sxSlNVTnZSRU5EUVdsaFowRjNTVUpCWjBsVlVsWjFTa3A2T1VneWJGUldWMDgyTjFCdWMyZDBUWFJUYld4TmQwTm5XVWxMYjFwSmVtb3dSVUYzVFhjS1RucEZWazFDVFVkQk1WVkZRMmhOVFdNeWJHNWpNMUoyWTIxVmRWcEhWakpOVWpSM1NFRlpSRlpSVVVSRmVGWjZZVmRrZW1SSE9YbGFVekZ3WW01U2JBcGpiVEZzV2tkc2FHUkhWWGRJYUdOT1RXcE5kMDFxUlRKTlJGVjVUWHBCTUZkb1kwNU5hazEzVFdwRk1rMUVWWHBOZWtFd1YycEJRVTFHYTNkRmQxbElDa3R2V2tsNmFqQkRRVkZaU1V0dldrbDZhakJFUVZGalJGRm5RVVUzWlV0MU9IQnJOMmN5TDBsU2FGSjVNbEF2TWtoamMxTkNZMWcyUWxwb1QwTkpjMndLU0RBMVFWaHhTelZsUzBKR1R6QmxUU3RvU0hGeGFXbHRZVFJVYm5kNll6RnpUMjkwT0hSVVJuYzVlVVJFYlhod1RrdFBRMEZWVlhkblowWkNUVUUwUndwQk1WVmtSSGRGUWk5M1VVVkJkMGxJWjBSQlZFSm5UbFpJVTFWRlJFUkJTMEpuWjNKQ1owVkdRbEZqUkVGNlFXUkNaMDVXU0ZFMFJVWm5VVlZNYVZWRUNub3hSRzV2YURsVlRXZHBiMDh4ZEZsdU1IYzFTVUpWZDBoM1dVUldVakJxUWtKbmQwWnZRVlV6T1ZCd2VqRlphMFZhWWpWeFRtcHdTMFpYYVhocE5Ga0tXa1E0ZDBsQldVUldVakJTUVZGSUwwSkNXWGRHU1VWVFl6STVObHBZU21wWlZ6VkJXakl4YUdGWGQzVlpNamwwVFVOM1IwTnBjMGRCVVZGQ1p6YzRkd3BCVVVWRlNHMW9NR1JJUW5wUGFUaDJXakpzTUdGSVZtbE1iVTUyWWxNNWMySXlaSEJpYVRsMldWaFdNR0ZFUTBKcFVWbExTM2RaUWtKQlNGZGxVVWxGQ2tGblVqZENTR3RCWkhkQ01VRk9NRGxOUjNKSGVIaEZlVmw0YTJWSVNteHVUbmRMYVZOc05qUXphbmwwTHpSbFMyTnZRWFpMWlRaUFFVRkJRbWhzYVhRS1IweFZRVUZCVVVSQlJWbDNVa0ZKWjA5T2EyUndTSGx1Ykc4eWRFOXZZbkJ1Y2tSWFQwSTJTM2x3Y1d0V2RuUlZiVVpLSzFKVFZVZ3JTREJEU1VWTlNBcDBURFp0Y25nemVUTmxWV3R3ZGpJM2JsRk1VbFJhZDFkeVJuSTROR2QxUXpCNFVYZHdkVmxxVFVGdlIwTkRjVWRUVFRRNVFrRk5SRUV5WjBGTlIxVkRDazFCYTB4eVRuaHJWMlUwVHpGV2JFNDFPRTlqTkcxMlpGQjRjRFJhYUZGMFYwdFNNM0pGUmxCS2FXOXFOMWM1YkV3d1VIYzFiVlp5T1VaQ2VrZzJjMW9LY0dkSmVFRlFhamhKVUZaUFZWVlRVM1JUV0dnM1VsZHFkQ3RKVkVsNVYzQjNTWG8zVUd0MWFVOUZNSEJEUnpaSWRrZERkbXdyWmxScE1FMVFkbkpUVUFwb2NuSmxaV2M5UFFvdExTMHRMVVZPUkNCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2c9PSJ9fX19\",\"integratedTime\":1676524985,\"logIndex\":13452680,\"logID\":\"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d\"}}",
+									"dev.sigstore.cosign/certificate":    "-----BEGIN CERTIFICATE-----\nMIICoDCCAiagAwIBAgIURVuJJz9H2lTVWO67PnsgtMtSmlMwCgYIKoZIzj0EAwMw\nNzEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MR4wHAYDVQQDExVzaWdzdG9yZS1pbnRl\ncm1lZGlhdGUwHhcNMjMwMjE2MDUyMzA0WhcNMjMwMjE2MDUzMzA0WjAAMFkwEwYH\nKoZIzj0CAQYIKoZIzj0DAQcDQgAE7eKu8pk7g2/IRhRy2P/2HcsSBcX6BZhOCIsl\nH05AXqK5eKBFO0eM+hHqqiima4Tnwzc1sOot8tTFw9yDDmxpNKOCAUUwggFBMA4G\nA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQULiUD\nz1Dnoh9UMgioO1tYn0w5IBUwHwYDVR0jBBgwFoAU39Ppz1YkEZb5qNjpKFWixi4Y\nZD8wIAYDVR0RAQH/BBYwFIESc296ZXJjYW5AZ21haWwuY29tMCwGCisGAQQBg78w\nAQEEHmh0dHBzOi8vZ2l0aHViLmNvbS9sb2dpbi9vYXV0aDCBiQYKKwYBBAHWeQIE\nAgR7BHkAdwB1AN09MGrGxxEyYxkeHJlnNwKiSl643jyt/4eKcoAvKe6OAAABhlit\nGLUAAAQDAEYwRAIgONkdpHynlo2tOobpnrDWOB6KypqkVvtUmFJ+RSUH+H0CIEMH\ntL6mrx3y3eUkpv27nQLRTZwWrFr84guC0xQwpuYjMAoGCCqGSM49BAMDA2gAMGUC\nMAkLrNxkWe4O1VlN58Oc4mvdPxp4ZhQtWKR3rEFPJioj7W9lL0Pw5mVr9FBzH6sZ\npgIxAPj8IPVOUUSStSXh7RWjt+ITIyWpwIz7PkuiOE0pCG6HvGCvl+fTi0MPvrSP\nhrreeg==\n-----END CERTIFICATE-----\n",
+									"dev.sigstore.cosign/chain":          "-----BEGIN CERTIFICATE-----\nMIICGjCCAaGgAwIBAgIUALnViVfnU0brJasmRkHrn/UnfaQwCgYIKoZIzj0EAwMw\nKjEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MREwDwYDVQQDEwhzaWdzdG9yZTAeFw0y\nMjA0MTMyMDA2MTVaFw0zMTEwMDUxMzU2NThaMDcxFTATBgNVBAoTDHNpZ3N0b3Jl\nLmRldjEeMBwGA1UEAxMVc2lnc3RvcmUtaW50ZXJtZWRpYXRlMHYwEAYHKoZIzj0C\nAQYFK4EEACIDYgAE8RVS/ysH+NOvuDZyPIZtilgUF9NlarYpAd9HP1vBBH1U5CV7\n7LSS7s0ZiH4nE7Hv7ptS6LvvR/STk798LVgMzLlJ4HeIfF3tHSaexLcYpSASr1kS\n0N/RgBJz/9jWCiXno3sweTAOBgNVHQ8BAf8EBAMCAQYwEwYDVR0lBAwwCgYIKwYB\nBQUHAwMwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQU39Ppz1YkEZb5qNjp\nKFWixi4YZD8wHwYDVR0jBBgwFoAUWMAeX5FFpWapesyQoZMi0CrFxfowCgYIKoZI\nzj0EAwMDZwAwZAIwPCsQK4DYiZYDPIaDi5HFKnfxXx6ASSVmERfsynYBiX2X6SJR\nnZU84/9DZdnFvvxmAjBOt6QpBlc4J/0DxvkTCqpclvziL6BCCPnjdlIB3Pu3BxsP\nmygUY7Ii2zbdCdliiow=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIB9zCCAXygAwIBAgIUALZNAPFdxHPwjeDloDwyYChAO/4wCgYIKoZIzj0EAwMw\nKjEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MREwDwYDVQQDEwhzaWdzdG9yZTAeFw0y\nMTEwMDcxMzU2NTlaFw0zMTEwMDUxMzU2NThaMCoxFTATBgNVBAoTDHNpZ3N0b3Jl\nLmRldjERMA8GA1UEAxMIc2lnc3RvcmUwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAT7\nXeFT4rb3PQGwS4IajtLk3/OlnpgangaBclYpsYBr5i+4ynB07ceb3LP0OIOZdxex\nX69c5iVuyJRQ+Hz05yi+UF3uBWAlHpiS5sh0+H2GHE7SXrk1EC5m1Tr19L9gg92j\nYzBhMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRY\nwB5fkUWlZql6zJChkyLQKsXF+jAfBgNVHSMEGDAWgBRYwB5fkUWlZql6zJChkyLQ\nKsXF+jAKBggqhkjOPQQDAwNpADBmAjEAj1nHeXZp+13NWBNa+EDsDP8G1WWg1tCM\nWP/WHPqpaVo0jhsweNFZgSs0eE7wYI4qAjEA2WB9ot98sIkoF3vZYdd3/VtWB5b9\nTNMea7Ix/stJ5TfcLLeABLE4BNJOsQ4vnBHJ\n-----END CERTIFICATE-----",
+								},
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    digest.NewDigestFromEncoded(digest.SHA256, "623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"),
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					"sha256:d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6": []byte(`{"critical":{"identity":{"docker-reference":"wabbitnetworks.azurecr.io/test/cosign-image"},"image":{"docker-manifest-digest":"sha256:623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"},"type":"cosign container image signature"},"optional":null}`),
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification success",
+		},
+		{
+			name:              "failed keyless verification",
+			keys:              map[PKKey]keymanagementprovider.PublicKey{},
+			defaultCosignOpts: true,
+			getKeysError:      false,
+			store: &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{
+					testRefDigest: {
+						MediaType: refDescriptor.MediaType,
+						Blobs: []imgspec.Descriptor{
+							{
+								Digest: digest.NewDigestFromEncoded(digest.SHA256, "d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6"),
+								Annotations: map[string]string{
+									"dev.cosignproject.cosign/signature": "MEUCIFBlKbxxg1Ni++g99jeWO8Of3g5L0Xd+qMzdqCZySQ8DAiEA3lcOJPJ1FQOahtWaRU0hG0XxFEsbcVx6SIyzYQMMR0A=",
+									"dev.sigstore.cosign/bundle":         "{\"SignedEntryTimestamp\":\"AIZfWhm9x2F7wil5dkWX+0+njT+FWXFr8AskDkiHpzoAiEApDk9STKcBJTkQ4qy9/8gn6ea2wduh3UjbLRnzZQa9gU=\",\"Payload\":{\"body\":\"eyJhcGlWZXJzaW9uIjoiMC4wLjEiLCJraW5kIjoiaGFzaGVkcmVrb3JkIiwic3BlYyI6eyJkYXRhIjp7Imhhc2giOnsiYWxnb3JpdGhtIjoic2hhMjU2IiwidmFsdWUiOiJkMTIyNmUzNmJjODUwMjk3ODMyNGNiMmNiMjExNmM2YWE0OGVkYjJlYThmMTViMWM2ZjZmMjU2ZWQ0MzM4OGY2In19LCJzaWduYXR1cmUiOnsiY29udGVudCI6Ik1FVUNJRkJsS2J4eGcxTmkrK2c5OWplV084T2YzZzVMMFhkK3FNemRxQ1p5U1E4REFpRUEzbGNPSlBKMUZRT2FodFdhUlUwaEcwWHhGRXNiY1Z4NlNJeXpZUU1NUjBBPSIsInB1YmxpY0tleSI6eyJjb250ZW50IjoiTFMwdExTMUNSVWRKVGlCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2sxSlNVTnZSRU5EUVdsaFowRjNTVUpCWjBsVlVsWjFTa3A2T1VneWJGUldWMDgyTjFCdWMyZDBUWFJUYld4TmQwTm5XVWxMYjFwSmVtb3dSVUYzVFhjS1RucEZWazFDVFVkQk1WVkZRMmhOVFdNeWJHNWpNMUoyWTIxVmRWcEhWakpOVWpSM1NFRlpSRlpSVVVSRmVGWjZZVmRrZW1SSE9YbGFVekZ3WW01U2JBcGpiVEZzV2tkc2FHUkhWWGRJYUdOT1RXcE5kMDFxUlRKTlJGVjVUWHBCTUZkb1kwNU5hazEzVFdwRk1rMUVWWHBOZWtFd1YycEJRVTFHYTNkRmQxbElDa3R2V2tsNmFqQkRRVkZaU1V0dldrbDZhakJFUVZGalJGRm5RVVUzWlV0MU9IQnJOMmN5TDBsU2FGSjVNbEF2TWtoamMxTkNZMWcyUWxwb1QwTkpjMndLU0RBMVFWaHhTelZsUzBKR1R6QmxUU3RvU0hGeGFXbHRZVFJVYm5kNll6RnpUMjkwT0hSVVJuYzVlVVJFYlhod1RrdFBRMEZWVlhkblowWkNUVUUwUndwQk1WVmtSSGRGUWk5M1VVVkJkMGxJWjBSQlZFSm5UbFpJVTFWRlJFUkJTMEpuWjNKQ1owVkdRbEZqUkVGNlFXUkNaMDVXU0ZFMFJVWm5VVlZNYVZWRUNub3hSRzV2YURsVlRXZHBiMDh4ZEZsdU1IYzFTVUpWZDBoM1dVUldVakJxUWtKbmQwWnZRVlV6T1ZCd2VqRlphMFZhWWpWeFRtcHdTMFpYYVhocE5Ga0tXa1E0ZDBsQldVUldVakJTUVZGSUwwSkNXWGRHU1VWVFl6STVObHBZU21wWlZ6VkJXakl4YUdGWGQzVlpNamwwVFVOM1IwTnBjMGRCVVZGQ1p6YzRkd3BCVVVWRlNHMW9NR1JJUW5wUGFUaDJXakpzTUdGSVZtbE1iVTUyWWxNNWMySXlaSEJpYVRsMldWaFdNR0ZFUTBKcFVWbExTM2RaUWtKQlNGZGxVVWxGQ2tGblVqZENTR3RCWkhkQ01VRk9NRGxOUjNKSGVIaEZlVmw0YTJWSVNteHVUbmRMYVZOc05qUXphbmwwTHpSbFMyTnZRWFpMWlRaUFFVRkJRbWhzYVhRS1IweFZRVUZCVVVSQlJWbDNVa0ZKWjA5T2EyUndTSGx1Ykc4eWRFOXZZbkJ1Y2tSWFQwSTJTM2x3Y1d0V2RuUlZiVVpLSzFKVFZVZ3JTREJEU1VWTlNBcDBURFp0Y25nemVUTmxWV3R3ZGpJM2JsRk1VbFJhZDFkeVJuSTROR2QxUXpCNFVYZHdkVmxxVFVGdlIwTkRjVWRUVFRRNVFrRk5SRUV5WjBGTlIxVkRDazFCYTB4eVRuaHJWMlUwVHpGV2JFNDFPRTlqTkcxMlpGQjRjRFJhYUZGMFYwdFNNM0pGUmxCS2FXOXFOMWM1YkV3d1VIYzFiVlp5T1VaQ2VrZzJjMW9LY0dkSmVFRlFhamhKVUZaUFZWVlRVM1JUV0dnM1VsZHFkQ3RKVkVsNVYzQjNTWG8zVUd0MWFVOUZNSEJEUnpaSWRrZERkbXdyWmxScE1FMVFkbkpUVUFwb2NuSmxaV2M5UFFvdExTMHRMVVZPUkNCRFJWSlVTVVpKUTBGVVJTMHRMUzB0Q2c9PSJ9fX19\",\"integratedTime\":1676524985,\"logIndex\":13452680,\"logID\":\"c0d23d6ad406973f9559f3ba2d1ca01f84147d8ffc5b8445c224f98b9591801d\"}}",
+									"dev.sigstore.cosign/certificate":    "-----BEGIN CERTIFICATE-----\nMIICoDCCAiagAwIBAgIURVuJJz9H2lTVWO67PnsgtMtSmlMwCgYIKoZIzj0EAwMw\nNzEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MR4wHAYDVQQDExVzaWdzdG9yZS1pbnRl\ncm1lZGlhdGUwHhcNMjMwMjE2MDUyMzA0WhcNMjMwMjE2MDUzMzA0WjAAMFkwEwYH\nKoZIzj0CAQYIKoZIzj0DAQcDQgAE7eKu8pk7g2/IRhRy2P/2HcsSBcX6BZhOCIsl\nH05AXqK5eKBFO0eM+hHqqiima4Tnwzc1sOot8tTFw9yDDmxpNKOCAUUwggFBMA4G\nA1UdDwEB/wQEAwIHgDATBgNVHSUEDDAKBggrBgEFBQcDAzAdBgNVHQ4EFgQULiUD\nz1Dnoh9UMgioO1tYn0w5IBUwHwYDVR0jBBgwFoAU39Ppz1YkEZb5qNjpKFWixi4Y\nZD8wIAYDVR0RAQH/BBYwFIESc296ZXJjYW5AZ21haWwuY29tMCwGCisGAQQBg78w\nAQEEHmh0dHBzOi8vZ2l0aHViLmNvbS9sb2dpbi9vYXV0aDCBiQYKKwYBBAHWeQIE\nAgR7BHkAdwB1AN09MGrGxxEyYxkeHJlnNwKiSl643jyt/4eKcoAvKe6OAAABhlit\nGLUAAAQDAEYwRAIgONkdpHynlo2tOobpnrDWOB6KypqkVvtUmFJ+RSUH+H0CIEMH\ntL6mrx3y3eUkpv27nQLRTZwWrFr84guC0xQwpuYjMAoGCCqGSM49BAMDA2gAMGUC\nMAkLrNxkWe4O1VlN58Oc4mvdPxp4ZhQtWKR3rEFPJioj7W9lL0Pw5mVr9FBzH6sZ\npgIxAPj8IPVOUUSStSXh7RWjt+ITIyWpwIz7PkuiOE0pCG6HvGCvl+fTi0MPvrSP\nhrreeg==\n-----END CERTIFICATE-----\n",
+									"dev.sigstore.cosign/chain":          "-----BEGIN CERTIFICATE-----\nMIICGjCCAaGgAwIBAgIUALnViVfnU0brJasmRkHrn/UnfaQwCgYIKoZIzj0EAwMw\nKjEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MREwDwYDVQQDEwhzaWdzdG9yZTAeFw0y\nMjA0MTMyMDA2MTVaFw0zMTEwMDUxMzU2NThaMDcxFTATBgNVBAoTDHNpZ3N0b3Jl\nLmRldjEeMBwGA1UEAxMVc2lnc3RvcmUtaW50ZXJtZWRpYXRlMHYwEAYHKoZIzj0C\nAQYFK4EEACIDYgAE8RVS/ysH+NOvuDZyPIZtilgUF9NlarYpAd9HP1vBBH1U5CV7\n7LSS7s0ZiH4nE7Hv7ptS6LvvR/STk798LVgMzLlJ4HeIfF3tHSaexLcYpSASr1kS\n0N/RgBJz/9jWCiXno3sweTAOBgNVHQ8BAf8EBAMCAQYwEwYDVR0lBAwwCgYIKwYB\nBQUHAwMwEgYDVR0TAQH/BAgwBgEB/wIBADAdBgNVHQ4EFgQU39Ppz1YkEZb5qNjp\nKFWixi4YZD8wHwYDVR0jBBgwFoAUWMAeX5FFpWapesyQoZMi0CrFxfowCgYIKoZI\nzj0EAwMDZwAwZAIwPCsQK4DYiZYDPIaDi5HFKnfxXx6ASSVmERfsynYBiX2X6SJR\nnZU84/9DZdnFvvxmAjBOt6QpBlc4J/0DxvkTCqpclvziL6BCCPnjdlIB3Pu3BxsP\nmygUY7Ii2zbdCdliiow=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIB9zCCAXygAwIBAgIUALZNAPFdxHPwjeDloDwyYChAO/4wCgYIKoZIzj0EAwMw\nKjEVMBMGA1UEChMMc2lnc3RvcmUuZGV2MREwDwYDVQQDEwhzaWdzdG9yZTAeFw0y\nMTEwMDcxMzU2NTlaFw0zMTEwMDUxMzU2NThaMCoxFTATBgNVBAoTDHNpZ3N0b3Jl\nLmRldjERMA8GA1UEAxMIc2lnc3RvcmUwdjAQBgcqhkjOPQIBBgUrgQQAIgNiAAT7\nXeFT4rb3PQGwS4IajtLk3/OlnpgangaBclYpsYBr5i+4ynB07ceb3LP0OIOZdxex\nX69c5iVuyJRQ+Hz05yi+UF3uBWAlHpiS5sh0+H2GHE7SXrk1EC5m1Tr19L9gg92j\nYzBhMA4GA1UdDwEB/wQEAwIBBjAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBRY\nwB5fkUWlZql6zJChkyLQKsXF+jAfBgNVHSMEGDAWgBRYwB5fkUWlZql6zJChkyLQ\nKsXF+jAKBggqhkjOPQQDAwNpADBmAjEAj1nHeXZp+13NWBNa+EDsDP8G1WWg1tCM\nWP/WHPqpaVo0jhsweNFZgSs0eE7wYI4qAjEA2WB9ot98sIkoF3vZYdd3/VtWB5b9\nTNMea7Ix/stJ5TfcLLeABLE4BNJOsQ4vnBHJ\n-----END CERTIFICATE-----",
+								},
+							},
+						},
+					},
+				},
+				Subjects: map[digest.Digest]*ocispecs.SubjectDescriptor{
+					subjectDigest: {
+						Descriptor: imgspec.Descriptor{
+							Digest:    digest.NewDigestFromEncoded(digest.SHA256, "623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"),
+							MediaType: imgspec.MediaTypeImageManifest,
+						},
+					},
+				},
+				Blobs: map[digest.Digest][]byte{
+					"sha256:d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6": []byte(`{"critical":{"identity":{"docker-reference":"wabbitnetworks.azurecr.io/test/cosign-image"},"image":{"docker-manifest-digest":"sha256:623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"},"type":"cosign container image signature"},"optional":null}`),
+				},
+			},
+			expectedResultMessagePrefix: "cosign verification failed",
+		},
 	}
 
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			getKeyMapOpts = func(_ context.Context, _ TrustPolicy, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
+			getKeyMapOpts = func(ctx context.Context, trustPolicy TrustPolicy, _ string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
+				co := tt.cosignOpts
 				if tt.getKeysError {
 					return nil, cosign.CheckOpts{}, fmt.Errorf("error")
 				}
 
-				return tt.keys, tt.cosignOpts, nil
+				if tt.defaultCosignOpts {
+					co, _ = trustPolicy.GetCosignOpts(ctx)
+				}
+
+				return tt.keys, co, nil
 			}
 			verifierFactory := cosignVerifierFactory{}
 			trustPoliciesConfig := []TrustPolicyConfig{
