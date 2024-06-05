@@ -399,6 +399,16 @@ func TestValidate(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "keyless but both certificate identity and expression specified",
+			policyConfig: TrustPolicyConfig{
+				Version: "1.0.0",
+				Name:    "test",
+				Scopes:  []string{"*"},
+				Keyless: KeylessConfig{CertificateOIDCIssuer: "test", CertificateIdentity: "test", CertificateIdentityRegExp: "test"},
+			},
+			wantErr: true,
+		},
+		{
 			name: "valid keyless",
 			policyConfig: TrustPolicyConfig{
 				Version: "1.0.0",

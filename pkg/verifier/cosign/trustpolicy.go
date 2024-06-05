@@ -267,10 +267,6 @@ func validate(config TrustPolicyConfig, verifierName string) error {
 		if keyConfig.File != "" && keyConfig.Provider != "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: 'name' and 'file' cannot be configured together", config.Name))
 		}
-		// key management provider is required when specific keys are configured
-		if keyConfig.Name != "" && keyConfig.Provider == "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key management provider name is required when key name is defined", config.Name))
-		}
 		// key name is required when key version is defined
 		if keyConfig.Version != "" && keyConfig.Name == "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key name is required when key version is defined", config.Name))
