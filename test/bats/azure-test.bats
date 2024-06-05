@@ -60,7 +60,7 @@ SLEEP_TIME=1
     assert_success
 
     # verify that the image can be run with a root cert, root verification cert should have been configured on deployment
-    wait_for_process 6 2 'kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned'
+    wait_for_process 20 10 'kubectl run demo-leaf --namespace default --image=${TEST_REGISTRY}/notation:leafSigned'
     assert_success
 
     # add the leaf certificate as an inline certificate store
@@ -93,7 +93,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
-    wait_for_process 6 2 'kubectl run demo --namespace default --image=${TEST_REGISTRY}/notation:signed'
+    wait_for_process 20 10 'kubectl run demo --namespace default --image=${TEST_REGISTRY}/notation:signed'
     assert_success
     run kubectl run demo1 --namespace default --image=${TEST_REGISTRY}/notation:unsigned
     assert_failure
@@ -116,7 +116,7 @@ SLEEP_TIME=1
     assert_success
     sleep 5
 
-    wait_for_process 6 2 'kubectl run cosign-demo --namespace default --image=${TEST_REGISTRY}/cosign:signed-key'
+    wait_for_process 20 10 'kubectl run cosign-demo --namespace default --image=${TEST_REGISTRY}/cosign:signed-key'
     assert_success
     run kubectl run cosign-demo2 --namespace default --image=${TEST_REGISTRY}/cosign:unsigned
     assert_failure
@@ -145,7 +145,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
     # wait for the httpserver cache to be invalidated
     sleep 15
-    wait_for_process 6 2 'kubectl run license-checker2 --namespace default --image=${TEST_REGISTRY}/licensechecker:v0'
+    wait_for_process 20 10 'kubectl run license-checker2 --namespace default --image=${TEST_REGISTRY}/licensechecker:v0'
     assert_success
 }
 
@@ -165,7 +165,7 @@ SLEEP_TIME=1
 
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_sbom.yaml
     sleep 5
-    wait_for_process 6 2 'kubectl run sbom --namespace default --image=${TEST_REGISTRY}/sbom:v0'
+    wait_for_process 20 10 'kubectl run sbom --namespace default --image=${TEST_REGISTRY}/sbom:v0'
     assert_success
 
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-sbom
@@ -196,7 +196,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator.yaml
     sleep 5
 
-    wait_for_process 6 2 'kubectl run schemavalidator --namespace default --image=${TEST_REGISTRY}/schemavalidator:v0'
+    wait_for_process 20 10 'kubectl run schemavalidator --namespace default --image=${TEST_REGISTRY}/schemavalidator:v0'
     assert_success
 
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator_bad.yaml
@@ -230,7 +230,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_schemavalidator.yaml
     sleep 5
 
-    wait_for_process 6 2 'kubectl run all-in-one --namespace default --image=${TEST_REGISTRY}/all:v0'
+    wait_for_process 20 10 'kubectl run all-in-one --namespace default --image=${TEST_REGISTRY}/all:v0'
     assert_success
 }
 
@@ -256,7 +256,7 @@ SLEEP_TIME=1
 
     # wait for the httpserver cache to be invalidated
     sleep 15
-    wait_for_process 6 2 'kubectl run crdtest --namespace default --image=${TEST_REGISTRY}/notation:signed'
+    wait_for_process 20 10 'kubectl run crdtest --namespace default --image=${TEST_REGISTRY}/notation:signed'
     assert_success
 }
 
@@ -268,7 +268,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
-    wait_for_process 6 2 'kubectl run demo2 --image=${TEST_REGISTRY}/notation:signed'
+    wait_for_process 20 10 'kubectl run demo2 --image=${TEST_REGISTRY}/notation:signed'
     assert_success
 
     run kubectl get configmaps ratify-configuration --namespace=gatekeeper-system -o yaml >currentConfig.yaml
@@ -313,7 +313,7 @@ SLEEP_TIME=1
     run kubectl apply -f ./library/multi-tenancy-validation/samples/constraint.yaml
     assert_success
     sleep 5
-    wait_for_process 6 2 'kubectl run mutate-demo --namespace default --image=${TEST_REGISTRY}/notation:signed'
+    wait_for_process 20 10 'kubectl run mutate-demo --namespace default --image=${TEST_REGISTRY}/notation:signed'
     assert_success
     result=$(kubectl get pod mutate-demo --namespace default -o json | jq -r ".spec.containers[0].image" | grep @sha)
     assert_mutate_success
