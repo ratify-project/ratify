@@ -32,7 +32,7 @@ SLEEP_TIME=1
 
     # enable dynamic plugins
     helm upgrade --atomic --namespace gatekeeper-system --reuse-values --set featureFlags.RATIFY_EXPERIMENTAL_DYNAMIC_PLUGINS=true ratify ./charts/ratify
-    sleep 20
+    sleep 30
     latestpod=$(kubectl -n gatekeeper-system get pod -l=app.kubernetes.io/name=ratify --sort-by=.metadata.creationTimestamp -o=name | tail -n 1)
 
     run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_dynamic.yaml
