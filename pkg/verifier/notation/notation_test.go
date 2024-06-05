@@ -410,3 +410,50 @@ func TestGetNestedReferences(t *testing.T) {
 		t.Fatalf("notation signature should not have nested references")
 	}
 }
+
+func TestNormalizeVerificationCertsStores(t *testing.T) {
+	tests := []struct {
+		name      string
+		conf      *NotationPluginVerifierConfig
+		expectErr bool
+	}{
+		{
+			name: "successfully normalizaVerificationCertsStores",
+			conf: &NotationPluginVerifierConfig{
+				Name:              test,
+				VerificationCerts: []string{testPath, defaultCertDir},
+				VerificationCertStores: verificationCertStores{
+					trustStoreTypeCA: verificationCertStores{
+						"certstore1": []interface{}{"akv1", "akv2"},
+						"certstore2": []interface{}{"akv3", "akv4"},
+					},
+				},
+			},
+			expectErr: false,
+		},
+		{
+
+			name: "failed normalizaVerificationCertsStores with both old VerificationCertStores and new VerificationCertStores are provided",
+			conf: &NotationPluginVerifierConfig{
+				Name:              test,
+				VerificationCerts: []string{testPath, defaultCertDir},
+				VerificationCertStores: verificationCertStores{
+					trustStoreTypeCA: verificationCertStores{
+						"certstore1": []interface{}{"akv1", "akv2"},
+					},
+					"certstore2": []interface{}{"akv3", "akv4"},
+				},
+			},
+			expectErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := normalizeVerificationCertsStores(tt.conf)
+			if (err != nil) != tt.expectErr {
+				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
+			}
+		})
+	}
+}
