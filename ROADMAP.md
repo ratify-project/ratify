@@ -44,27 +44,29 @@ The Ratify roadmap is divided into milestones, each with a set of features (high
 
 ### v1.2
 
-**Status**: In progress
+**Status**: Completed
 
-**Target date**: Apr 30, 2024
+**Target date**: May 31, 2024
+
+**Release link**: [v1.2.0 Release Notes](https://github.com/deislabs/ratify/releases/tag/v1.2.0)
 
 **major features**
 
 - Kubernetes multi-tenancy support (Namespace-specific policies)
 - OCI v1.1 compliance
 - Cosign signatures verification using keys in AKV
-- Error logs improvements
 
 See details in [GitHub milestone v1.2.0](https://github.com/deislabs/ratify/issues?q=is%3Aopen+is%3Aissue+milestone%3Av1.2.0).
 
 ### v1.3
 
-**Status**: Not started
+**Status**: In progress
 
-**Target date**: Jun 30, 2024
+**Target date**: Aug 30, 2024
 
 **Major features**
 
+- Error logs improvements
 - Kubernetes multi-tenancy support (Verifying Common images across namespaces)
 - Cosign keyless verification using OIDC settings
 - Notary Project signature verification with Time-stamping support
@@ -76,11 +78,12 @@ See details in [GitHub milestone v1.3.0](https://github.com/deislabs/ratify/issu
 
 **Status**: Tentative
 
-**Target date**: Sep 30, 2024
+**Target date**: Nov 30, 2024
 
 **Major features**
 
 - Attestations support
+- Ratify supports Azure Trusted Signing as a new KeyManagementProvider
 - Use Ratify at container runtime (Preview)
 
 ### v2.0
