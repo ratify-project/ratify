@@ -39,8 +39,7 @@ func NewLogrusSink(logger *logrus.Logger) *LogrusSink {
 
 // Init receives optional information about the logr library for LogSink
 // implementations that need it.
-func (sink *LogrusSink) Init(_ logr.RuntimeInfo) {
-}
+func (sink *LogrusSink) Init(_ logr.RuntimeInfo) {}
 
 // Enabled tests whether this LogSink is enabled at the specified V-level.
 // For example, commandline flags might be used to set the logging
