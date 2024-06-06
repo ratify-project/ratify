@@ -49,12 +49,12 @@ NOTE: `validatingWebhookTimeoutSeconds` increased from 3 to 7 so all Ratify oper
 - Deploy ratify and a `demo` constraint on gatekeeper
 
 ```bash
-helm repo add ratify https://deislabs.github.io/ratify
+helm repo add ratify https://ratify-project.github.io/ratify
 helm install ratify \
     ratify/ratify --atomic
 
-kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
-kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
+kubectl apply -f https://ratify-project.github.io/ratify/library/default/template.yaml
+kubectl apply -f https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml
 ```
 
 Once the installation is completed, you can test the deployment of an image that is signed using Notary V2 solution.
@@ -78,7 +78,7 @@ You just validated the container images in your k8s cluster!
 - Uninstall Ratify
 
 ```bash=
-kubectl delete -f https://deislabs.github.io/ratify/library/default/template.yaml
+kubectl delete -f https://ratify-project.github.io/ratify/library/default/template.yaml
 helm delete ratify
 ```
 
