@@ -592,6 +592,7 @@ e2e-helm-deploy-ratify:
 	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+	--set cosign.tLogVerify=false \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logger.level=debug
@@ -611,6 +612,7 @@ e2e-helm-deploy-ratify-without-tls-certs:
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
+	--set cosign.tLogVerify=false \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logger.level=debug
