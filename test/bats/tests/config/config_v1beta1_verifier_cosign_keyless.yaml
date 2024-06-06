@@ -1,5 +1,5 @@
 apiVersion: config.ratify.deislabs.io/v1beta1
-kind: NamespacedVerifier
+kind: Verifier
 metadata:
   name: verifier-cosign
 spec:
@@ -9,7 +9,7 @@ spec:
     trustPolicies:
       - name: default
         scopes:
-          - "*"
-        keys:
-          - provider: default/ratify-cosign-inline-key-0
-        tLogVerify: false
+          - '*'
+        keyless:
+          certificateIdentity: sozercan@gmail.com
+          certificateOIDCIssuer: https://github.com/login/oauth
