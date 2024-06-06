@@ -18,9 +18,9 @@ package oras
 import (
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/opencontainers/go-digest"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
 )
 
 func TestIsInsecureRegistry(t *testing.T) {

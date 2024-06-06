@@ -21,12 +21,12 @@ import (
 	"path"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
-	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
-	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
-	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/pkg/featureflag"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/config"
+	"github.com/ratify-project/ratify/pkg/referrerstore/mocks"
+	"github.com/ratify-project/ratify/pkg/referrerstore/plugin"
+	"github.com/ratify-project/ratify/pkg/utils"
 )
 
 const (

@@ -22,9 +22,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
 )
 
 const (

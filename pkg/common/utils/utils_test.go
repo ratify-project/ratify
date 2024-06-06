@@ -19,8 +19,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
 )
 
 const TestArtifactType = "application/vnd.test.artifacttype"

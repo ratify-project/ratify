@@ -17,11 +17,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	c "github.com/deislabs/ratify/config"
-	kmp "github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/types"
+	c "github.com/ratify-project/ratify/config"
+	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/factory"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/types"
 )
 
 // SpecToKeyManagementProvider creates KeyManagementProvider from  KeyManagementProviderSpec config

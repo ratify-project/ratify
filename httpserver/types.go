@@ -16,8 +16,8 @@ limitations under the License.
 package httpserver
 
 import (
-	"github.com/deislabs/ratify/pkg/executor/types"
-	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
+	"github.com/ratify-project/ratify/pkg/executor/types"
+	pt "github.com/ratify-project/ratify/pkg/policyprovider/types"
 )
 
 const (

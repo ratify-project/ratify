@@ -2,7 +2,7 @@ syntax="proto3";
 
 package referrerstore;
 
-option go_package = "github.com/deislabs/ratify/experimental/proto/v1/referrerstore";
+option go_package = "github.com/ratify-project/ratify/experimental/proto/v1/referrerstore";
 
 import "common.proto";
 import "google/protobuf/struct.proto";

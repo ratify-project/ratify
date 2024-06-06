@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/cache"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/cache"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
 )
 
 const defaultTTL = 10

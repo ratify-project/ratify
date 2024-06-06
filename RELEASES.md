@@ -55,7 +55,7 @@ When a major release is required, the release commits should be merged with the 
 
 ### Tag and Release
 
-Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/files) to update the chart value. When the release branch is ready, a tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
+Prepare the release with a [PR](https://github.com/ratify-project/ratify/pull/1031/files) to update the chart value. When the release branch is ready, a tag should be pushed with a name matching the branch name, e.g. `git tag v0.1.0-alpha1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
 
 * The release will be marked as a draft to allow an final editing before publishing.
 * The release notes and other fields can edited after the action completes.  The description can be in Markdown.
@@ -76,7 +76,7 @@ Once we are looking to automate this with tracking [issue], for now we will need
 ### Weekly Dev Release
 
 #### Publishing Guidelines
-- Ratify is configured to generate and publish dev build images based on the schedule [here](https://github.com/deislabs/ratify/blob/main/.github/workflows/publish-package.yml#L8). 
+- Ratify is configured to generate and publish dev build images based on the schedule [here](https://github.com/ratify-project/ratify/blob/main/.github/workflows/publish-package.yml#L8). 
 - Contributors MUST select the `Helm Chart Change` option under the `Type of Change` section if there is ANY update to the helm chart that is required for proposed changes in PR.
 - Maintainers MUST manually trigger the "Publish Package" workflow after merging any PR that indicates `Helm Chart Change`
   - Go to the `Actions` tab for the Ratify repository
@@ -90,7 +90,7 @@ Once we are looking to automate this with tracking [issue], for now we will need
   - Once issue is created, post in the `#ratify` slack channel and tag the maintainers
   - Maintainers should acknowledge request by approving/denying request as a follow up comment
 #### How to use a dev build
-1. The `ratify` image and `ratify-crds` image for dev builds exist as separate packages on Github [here](https://github.com/deislabs/ratify/pkgs/container/ratify-dev) and [here](https://github.com/deislabs/ratify/pkgs/container/ratify-crds-dev).
+1. The `ratify` image and `ratify-crds` image for dev builds exist as separate packages on Github [here](https://github.com/ratify-project/ratify/pkgs/container/ratify-dev) and [here](https://github.com/ratify-project/ratify/pkgs/container/ratify-crds-dev).
 2. the `repository` `crdRepository` and `tag` fields must be updated in the helm chart to point to dev build instead of last released build. Please set the tag to be latest tag found at the corresponding `-dev` suffixed package. An example install command scaffold:
 ```
 helm install ratify \

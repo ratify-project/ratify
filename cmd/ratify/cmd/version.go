@@ -18,7 +18,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/deislabs/ratify/internal/version"
+	"github.com/ratify-project/ratify/internal/version"
 	"github.com/spf13/cobra"
 )
 

@@ -20,7 +20,7 @@
 protoc \
 --proto_path=./ratify/proto/v1 \
 --go_out=. \
---go_opt=module=github.com/deislabs/ratify/experimental \
+--go_opt=module=github.com/ratify-project/ratify/experimental \
 --go-grpc_out=. \
---go-grpc_opt=module=github.com/deislabs/ratify/experimental \
+--go-grpc_opt=module=github.com/ratify-project/ratify/experimental \
 ./ratify/proto/v1/*.proto

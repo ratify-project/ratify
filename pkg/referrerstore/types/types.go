@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
 )
 
 const (

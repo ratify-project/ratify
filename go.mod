@@ -1,4 +1,4 @@
-module github.com/deislabs/ratify
+module github.com/ratify-project/ratify
 
 go 1.21
 

@@ -19,12 +19,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	rs "github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	rs "github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/config"
 )
 
 type mockStore struct {

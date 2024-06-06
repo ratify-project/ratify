@@ -24,9 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/deislabs/ratify/internal/constants"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/internal/constants"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/ratify-project/ratify/pkg/utils"
 )
 
 const (

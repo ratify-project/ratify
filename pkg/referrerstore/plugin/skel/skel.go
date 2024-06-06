@@ -23,14 +23,14 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/common/plugin"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	sp "github.com/deislabs/ratify/pkg/referrerstore/plugin"
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
-	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/common/plugin"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	sp "github.com/ratify-project/ratify/pkg/referrerstore/plugin"
+	"github.com/ratify-project/ratify/pkg/referrerstore/types"
+	"github.com/ratify-project/ratify/pkg/utils"
 )
 
 type pcontext struct {

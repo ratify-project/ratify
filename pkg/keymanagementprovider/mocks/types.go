@@ -20,7 +20,7 @@ import (
 	"crypto"
 	"crypto/x509"
 
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 )
 
 type TestKeyManagementProvider struct {

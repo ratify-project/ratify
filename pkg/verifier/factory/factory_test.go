@@ -20,15 +20,15 @@ import (
 	"os"
 	"testing"
 
-	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
 
-	"github.com/deislabs/ratify/pkg/utils"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/config"
-	"github.com/deislabs/ratify/pkg/verifier/plugin"
+	"github.com/ratify-project/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/config"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin"
 )
 
 type TestVerifier struct {

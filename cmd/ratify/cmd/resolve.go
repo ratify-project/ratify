@@ -22,11 +22,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/internal/logger"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	su "github.com/deislabs/ratify/pkg/referrerstore/utils"
-	"github.com/deislabs/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/config"
+	"github.com/ratify-project/ratify/internal/logger"
+	sf "github.com/ratify-project/ratify/pkg/referrerstore/factory"
+	su "github.com/ratify-project/ratify/pkg/referrerstore/utils"
+	"github.com/ratify-project/ratify/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

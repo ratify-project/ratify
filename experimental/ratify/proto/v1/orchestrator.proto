@@ -2,7 +2,7 @@ syntax="proto3";
 
 package orchestrator;
 
-option go_package = "github.com/deislabs/ratify/experimental/proto/v1/orchestrator";
+option go_package = "github.com/ratify-project/ratify/experimental/proto/v1/orchestrator";
 
 import "common.proto";
 import "google/protobuf/struct.proto";

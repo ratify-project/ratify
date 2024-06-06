@@ -18,8 +18,8 @@ package verifiers
 import (
 	"sync"
 
-	"github.com/deislabs/ratify/internal/constants"
-	vr "github.com/deislabs/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/internal/constants"
+	vr "github.com/ratify-project/ratify/pkg/verifier"
 )
 
 // ActiveVerifiers implements VerifierManger interface.

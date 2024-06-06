@@ -18,14 +18,14 @@ package main
 import (
 	"os"
 
-	"github.com/deislabs/ratify/cmd/ratify/cmd"
-	_ "github.com/deislabs/ratify/pkg/cache/dapr"                  // register dapr cache
-	_ "github.com/deislabs/ratify/pkg/cache/ristretto"             // register ristretto cache
-	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register configpolicy policy provider
-	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register regopolicy policy provider
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register oras referrer store
-	_ "github.com/deislabs/ratify/pkg/verifier/cosign"             // register cosign verifier
-	_ "github.com/deislabs/ratify/pkg/verifier/notation"           // register notation verifier
+	"github.com/ratify-project/ratify/cmd/ratify/cmd"
+	_ "github.com/ratify-project/ratify/pkg/cache/dapr"                  // register dapr cache
+	_ "github.com/ratify-project/ratify/pkg/cache/ristretto"             // register ristretto cache
+	_ "github.com/ratify-project/ratify/pkg/policyprovider/configpolicy" // register configpolicy policy provider
+	_ "github.com/ratify-project/ratify/pkg/policyprovider/regopolicy"   // register regopolicy policy provider
+	_ "github.com/ratify-project/ratify/pkg/referrerstore/oras"          // register oras referrer store
+	_ "github.com/ratify-project/ratify/pkg/verifier/cosign"             // register cosign verifier
+	_ "github.com/ratify-project/ratify/pkg/verifier/notation"           // register notation verifier
 )
 
 func main() {

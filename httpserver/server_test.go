@@ -28,19 +28,19 @@ import (
 	"testing"
 	"time"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
-	exconfig "github.com/deislabs/ratify/pkg/executor/config"
-	"github.com/deislabs/ratify/pkg/executor/core"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	config "github.com/deislabs/ratify/pkg/policyprovider/configpolicy"
+	ratifyerrors "github.com/ratify-project/ratify/errors"
+	exconfig "github.com/ratify-project/ratify/pkg/executor/config"
+	"github.com/ratify-project/ratify/pkg/executor/core"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	config "github.com/ratify-project/ratify/pkg/policyprovider/configpolicy"
 	"github.com/sirupsen/logrus"
 
-	"github.com/deislabs/ratify/pkg/policyprovider/types"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
-	"github.com/deislabs/ratify/pkg/verifier"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/pkg/policyprovider/types"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/mocks"
+	"github.com/ratify-project/ratify/pkg/verifier"
 )
 
 const testArtifactType string = "test-type1"

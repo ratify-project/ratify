@@ -22,10 +22,10 @@ import (
 	"time"
 
 	logstash "github.com/bshuster-repo/logrus-logstash-hook"
-	re "github.com/deislabs/ratify/errors"
-	icontext "github.com/deislabs/ratify/internal/context"
 	dcontext "github.com/docker/distribution/context"
 	"github.com/google/uuid"
+	re "github.com/ratify-project/ratify/errors"
+	icontext "github.com/ratify-project/ratify/internal/context"
 	"github.com/sirupsen/logrus"
 )
 

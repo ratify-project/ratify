@@ -42,7 +42,7 @@ var (
 )
 
 const (
-	scope = "github.com/deislabs/ratify"
+	scope = "github.com/ratify-project/ratify"
 
 	// metric names
 	metricNameVerificationDuration = "ratify_verification_request"

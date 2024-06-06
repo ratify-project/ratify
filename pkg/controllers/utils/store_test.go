@@ -17,10 +17,10 @@ import (
 	"os"
 	"testing"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
-	test "github.com/deislabs/ratify/pkg/utils"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	rc "github.com/ratify-project/ratify/pkg/referrerstore/config"
+	test "github.com/ratify-project/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 )
 
 const (
