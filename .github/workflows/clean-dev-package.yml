@@ -1,0 +1,28 @@
+name: clean-dev-package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup-packages:
+    runs-on: ubuntu-latest
+    permissions:
+        packages: write
+    steps:
+      - name: Clean up ratify-crds-dev
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        with: 
+          package-name: 'ratify-crds-dev'
+          package-type: 'container'
+          min-versions-to-keep: 7
+          delete-only-pre-release-versions: "true"
+      - name: Clean up ratify-dev
+        uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        with: 
+          package-name: 'ratify-dev'
+          package-type: 'container'
+          min-versions-to-keep: 7
+          delete-only-pre-release-versions: "true"

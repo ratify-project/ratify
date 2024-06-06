@@ -170,7 +170,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_failure
 }
 
-@test "cosign legacy test" {
+@test "cosign legacy keyed test" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-key --namespace default --force --ignore-not-found=true'
@@ -203,8 +203,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
     }
 
-    # use imperative command to guarantee useHttp is updated
-    run kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign_keyless.yaml
+    run kubectl replace -f ./test/bats/tests/config/config_v1beta1_verifier_cosign_keyless.yaml
     sleep 5
 
     run kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras.yaml
@@ -213,6 +212,23 @@ RATIFY_NAMESPACE=gatekeeper-system
     wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
 }
 
+@test "cosign legacy keyless test" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod cosign-demo-keyless --namespace default --force --ignore-not-found=true'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras_http.yaml'
+    }
+
+    # use imperative command to guarantee useHttp is updated
+    run kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_cosign_keyless_legacy.yaml
+    sleep 5
+
+    run kubectl replace -f ./config/samples/clustered/store/config_v1beta1_store_oras.yaml
+    sleep 5
+
+    wait_for_process 20 10 'kubectl run cosign-demo-keyless --namespace default --image=wabbitnetworks.azurecr.io/test/cosign-image:signed-keyless'
+}
 @test "validate crd add, replace and delete" {
     teardown() {
         echo "cleaning up"
@@ -237,34 +253,6 @@ RATIFY_NAMESPACE=gatekeeper-system
     sleep 15
     run kubectl run crdtest --namespace default --image=registry:5000/notation:signed
     assert_success
-}
-
-@test "verifier crd status check" {
-    teardown() {
-        echo "cleaning up"
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete verifiers.config.ratify.deislabs.io/verifier-license-checker'
-    }
-
-    # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    assert_success
-
-    # apply a invalid verifier CR, validate status with error
-    sed 's/licensechecker/invalidlicensechecker/' ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml >invalidVerifier.yaml
-    run kubectl apply -f invalidVerifier.yaml
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
-    assert_success
-
-    # apply a valid verifier, validate status property shows success
-    run kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Issuccess:  true'"
-    assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
-    assert_failure
 }
 
 @test "store crd status check" {

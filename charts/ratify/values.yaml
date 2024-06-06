@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/deislabs/ratify
   crdRepository: ghcr.io/deislabs/ratify-crds
-  tag: v1.1.0
+  tag: v1.2.0
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -16,6 +16,15 @@ cosign:
   enabled: true
   scopes: ["*"] # corresponds to a single trust policy
   key: "" # DEPRECATED: Use cosignKeys instead
+  rekorURL: ""
+  tLogVerify: true
+  keyless:
+    ctLogVerify: true
+    certificateIdentity: ""
+    certificateIdentityRegExp: ""
+    certificateOIDCIssuer: ""
+    certificateOIDCIssuerRegExp: ""
+
 vulnerabilityreport:
   enabled: false
   passthrough: false
@@ -41,7 +50,7 @@ serviceAccount:
   create: true
   name: ratify-admin
 gatekeeper:
-  version: "3.15.0"
+  version: "3.16.0"
   namespace: # default is gatekeeper-system
 instrumentation:
   metricsEnabled: true

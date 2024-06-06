@@ -28,7 +28,7 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 KIND_VERSION ?= 0.22.0
 KUBERNETES_VERSION ?= 1.29.2
 KIND_KUBERNETES_VERSION ?= 1.29.2
-GATEKEEPER_VERSION ?= 3.15.0
+GATEKEEPER_VERSION ?= 3.16.0
 DAPR_VERSION ?= 1.12.5
 COSIGN_VERSION ?= 2.2.3
 NOTATION_VERSION ?= 1.1.0
@@ -65,6 +65,7 @@ TEST_REGISTRY_PASSWORD = test_pw
 # Azure Key Vault Setup
 KEYVAULT_NAME ?= ratify-akv
 KEYVAULT_KEY_NAME ?= test-key
+AZURE_SP_OBJECT_ID ?= 00000000-0000-0000-0000-000000000000
 
 all: build test
 
@@ -518,44 +519,45 @@ e2e-azure-setup: e2e-create-all-image e2e-notation-setup e2e-notation-leaf-cert-
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
-	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then ./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0; fi
-	if [ ${GATEKEEPER_VERSION} = "3.13.0" ]; then kubectl -n ${GATEKEEPER_NAMESPACE} patch deployment gatekeeper-controller-manager --type=json -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--external-data-provider-response-cache-ttl=1s"}]' && sleep 60; fi
-	# Gatekeeper versions >= 3.14.0 need a special helm value to override the default external data response cache ttl to 10s
-	if [ ${GATEKEEPER_VERSION} != "3.13.0" ]; then ./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0 --set externaldataProviderResponseCacheTTL=1s; fi
+	./.staging/helm/linux-amd64/helm install gatekeeper/gatekeeper --version ${GATEKEEPER_VERSION} --name-template=gatekeeper --namespace ${GATEKEEPER_NAMESPACE} --create-namespace --set enableExternalData=true --set validatingWebhookTimeoutSeconds=5 --set mutatingWebhookTimeoutSeconds=2 --set auditInterval=0 --set externaldataProviderResponseCacheTTL=1s
 
 e2e-build-crd-image:
-	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds
+	docker build --progress=plain --no-cache --build-arg KUBE_VERSION=${KUBERNETES_VERSION} --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t localbuildcrd:test ./charts/ratify/crds	
+
+load-build-crd-image:
 	kind load docker-image --name kind localbuildcrd:test
 
-e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-inlinecert-setup e2e-build-crd-image
-	docker build --progress=plain --no-cache \
-	-f ./httpserver/Dockerfile \
-	-t baselocalbuild:test .
-	kind load docker-image --name kind baselocalbuild:test
-
+e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-inlinecert-setup e2e-build-crd-image load-build-crd-image e2e-build-local-ratify-base-image
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
-    ./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
-	--set image.repository=baselocalbuild \
-	--set image.crdRepository=localbuildcrd \
-	--set image.tag=test \
-	--set gatekeeper.version=${GATEKEEPER_VERSION} \
-	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
-	--set-file provider.tls.crt=${CERT_DIR}/server.crt \
-	--set-file provider.tls.key=${CERT_DIR}/server.key \
-	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
-    --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
-	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
-	--set oras.useHttp=true \
-	--set cosign.enabled=false \
-	--set-file dockerConfig="mount_config.json" \
-	--set logger.level=debug
+		./charts/ratify --atomic --namespace ${GATEKEEPER_NAMESPACE} --create-namespace \
+		--set image.repository=baselocalbuild \
+		--set image.crdRepository=localbuildcrd \
+		--set image.tag=test \
+		--set gatekeeper.version=${GATEKEEPER_VERSION} \
+		--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
+		--set-file provider.tls.crt=${CERT_DIR}/server.crt \
+		--set-file provider.tls.key=${CERT_DIR}/server.key \
+		--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
+		--set-file provider.tls.caKey=${CERT_DIR}/ca.key \
+		--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
+		--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+		--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
+		--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+		--set oras.useHttp=true \
+		--set-file dockerConfig="mount_config.json" \
+		--set logger.level=debug
 
 	rm mount_config.json
 
-e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image e2e-build-local-ratify-image e2e-helm-deploy-ratify
+e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image load-build-crd-image e2e-build-local-ratify-image load-local-ratify-image e2e-helm-deploy-ratify
+
+e2e-build-local-ratify-base-image:
+	docker build --progress=plain --no-cache \
+		-f ./httpserver/Dockerfile \
+		-t baselocalbuild:test .
+	kind load docker-image --name kind baselocalbuild:test
 
 e2e-build-local-ratify-image:
 	docker build --progress=plain --no-cache \
@@ -565,6 +567,8 @@ e2e-build-local-ratify-image:
 	--build-arg build_vulnerabilityreport=true \
 	-f ./httpserver/Dockerfile \
 	-t localbuild:test .
+
+load-local-ratify-image:
 	kind load docker-image --name kind localbuild:test
 
 e2e-helmfile-deploy-released-ratify:
@@ -588,6 +592,7 @@ e2e-helm-deploy-ratify:
 	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
+	--set cosign.tLogVerify=false \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logger.level=debug
@@ -607,6 +612,7 @@ e2e-helm-deploy-ratify-without-tls-certs:
 	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
+	--set cosign.tLogVerify=false \
 	--set oras.useHttp=true \
 	--set-file dockerConfig="mount_config.json" \
 	--set logger.level=debug
@@ -630,7 +636,7 @@ e2e-helm-deploy-redis: e2e-helm-deploy-dapr
 	kubectl apply -f test/testdata/dapr/dapr-redis-secret.yaml -n ${GATEKEEPER_NAMESPACE}
 	kubectl apply -f test/testdata/dapr/dapr-redis.yaml -n ${GATEKEEPER_NAMESPACE}
  
-e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-build-crd-image e2e-build-local-ratify-image
+e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-build-crd-image load-build-crd-image e2e-build-local-ratify-image load-local-ratify-image
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
 
 	./.staging/helm/linux-amd64/helm install ${RATIFY_NAME} \
@@ -660,7 +666,7 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-bui
 	rm mount_config.json
 
 e2e-aks:
-	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR}
+	./scripts/azure-ci-test.sh ${KUBERNETES_VERSION} ${GATEKEEPER_VERSION} ${TENANT_ID} ${GATEKEEPER_NAMESPACE} ${CERT_DIR} ${AZURE_SP_OBJECT_ID}
 
 e2e-cleanup:
 	./scripts/azure-ci-test-cleanup.sh ${AZURE_SUBSCRIPTION_ID}

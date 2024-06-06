@@ -106,7 +106,7 @@
             "details": {
                 "templateInfo": {
                     "sourceType": "PublicURL",
-                    "url": "https://deislabs.github.io/ratify/library/default/template.yaml"
+                    "url": "https://ratify-project.github.io/ratify/library/default/template.yaml"
                 },
                 "apiGroups": [
                     ""

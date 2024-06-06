@@ -28,10 +28,11 @@ export KEYVAULT_NAME="${KEYVAULT_NAME:-ratify-akv-${SUFFIX}}"
 export USER_ASSIGNED_IDENTITY_NAME="${USER_ASSIGNED_IDENTITY_NAME:-ratify-e2e-identity-${SUFFIX}}"
 export LOCATION="eastus"
 export KUBERNETES_VERSION=${1:-1.29.2}
-GATEKEEPER_VERSION=${2:-3.15.0}
+GATEKEEPER_VERSION=${2:-3.16.0}
 TENANT_ID=$3
 export RATIFY_NAMESPACE=${4:-gatekeeper-system}
 CERT_DIR=${5:-"~/ratify/certs"}
+export AZURE_SP_OBJECT_ID=$6
 export NOTATION_PEM_NAME="notation"
 export NOTATION_CHAIN_PEM_NAME="notationchain"
 export KEYVAULT_KEY_NAME="test-key"
@@ -78,8 +79,8 @@ deploy_ratify() {
 
   kubectl delete verifiers.config.ratify.deislabs.io/verifier-cosign
 
-  kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml
-  kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml
+  kubectl apply -f https://ratify-project.github.io/ratify/library/default/template.yaml
+  kubectl apply -f https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml
 }
 
 upload_cert_to_akv() {
@@ -125,6 +126,12 @@ save_logs() {
 
 cleanup() {
   save_logs || true
+
+  echo "Delete key vault"
+  az keyvault delete --name "${KEYVAULT_NAME}" --resource-group "${GROUP_NAME}" || true
+
+  echo "Purge key vault"
+  az keyvault purge --name "${KEYVAULT_NAME}" --no-wait || true
 
   echo "Deleting group"
   az group delete --name "${GROUP_NAME}" --yes --no-wait || true

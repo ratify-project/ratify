@@ -2,14 +2,14 @@ repositories:
   - name: gatekeeper
     url: https://open-policy-agent.github.io/gatekeeper/charts
   - name: ratify
-    url: https://deislabs.github.io/ratify
-    
+    url: https://ratify-project.github.io/ratify
+
 releases:
   - name: gatekeeper
     namespace: gatekeeper-system
     createNamespace: true
     chart: gatekeeper/gatekeeper
-    version: 3.14.0
+    version: 3.16.0
     wait: true
     set:
       - name: enableExternalData
@@ -23,7 +23,7 @@ releases:
   - name: ratify
     namespace: gatekeeper-system
     chart: ratify/ratify
-    version: 1.12.1 # Make sure this matches Chart.yaml
+    version: 1.13.0 # Make sure this matches Chart.yaml
     wait: true
     needs:
       - gatekeeper
@@ -33,14 +33,14 @@ releases:
         command: "bash"
         args:
           - "-c"
-          - "kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml && kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "kubectl apply -f https://ratify-project.github.io/ratify/library/default/template.yaml && kubectl apply -f https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/template.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/template.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -48,7 +48,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -60,6 +60,11 @@ releases:
           - "verifiers.config.ratify.deislabs.io"
           - "certificatestores.config.ratify.deislabs.io"
           - "policies.config.ratify.deislabs.io"
+          - "keymanagementproviders.config.ratify.deislabs.io"
+          - "namespacedkeymanagementproviders.config.ratify.deislabs.io"
+          - "namespacedpolicies.config.ratify.deislabs.io"
+          - "namespacedstores.config.ratify.deislabs.io"
+          - "namespacedverifiers.config.ratify.deislabs.io"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
@@ -70,7 +75,7 @@ releases:
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: notationCert
+      - name: notationCerts[0]
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: featureFlags.RATIFY_CERT_ROTATION
         value: true
