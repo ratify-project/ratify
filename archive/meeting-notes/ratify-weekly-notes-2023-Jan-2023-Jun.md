@@ -785,7 +785,7 @@ Recording: https://youtu.be/vn_GOUXZGhw
 
 ### Presentation/Discussion Agenda Items:
 - [Akash]How do we handle breaking changes that require a change to the README? (Akash) From last week   
-   [Susan] Maybe link to github page something like https://deislabs.github.io/ratify/getting-started.html? how does csi driver maintain its docs ? https://secrets-store-csi-driver.sigs.k8s.io/getting-started/getting-started.html
+   [Susan] Maybe link to github page something like https://ratify-project.github.io/ratify/getting-started.html? how does csi driver maintain its docs ? https://secrets-store-csi-driver.sigs.k8s.io/getting-started/getting-started.html
    [Sajay] Not sure if external doc will have maintainance overhead. We can add a link to the quickstart that is pinned to a released version for now.
    
 - [Akash] Cosign auth support: https://hackmd.io/@akashsinghal/rks7vlOps
