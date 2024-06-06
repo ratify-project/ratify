@@ -2,7 +2,7 @@ repositories:
   - name: gatekeeper
     url: https://open-policy-agent.github.io/gatekeeper/charts
   - name: ratify
-    url: ghcr.io/deislabs/ratify-chart-dev # PRERELEASE: Change to 'https://ratify-project.github.io/ratify' before copying to helmfile.yaml
+    url: ghcr.io/ratify-project/ratify-chart-dev # PRERELEASE: Change to 'https://ratify-project.github.io/ratify' before copying to helmfile.yaml
     oci: true # PRERELEASE: Remove before copying to helmfile.yaml
 
 releases:
