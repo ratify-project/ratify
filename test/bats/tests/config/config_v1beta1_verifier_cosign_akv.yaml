@@ -16,3 +16,4 @@ spec:
           - "*"
         keys:
           - provider: kmprovider-akv
+        tLogVerify: false

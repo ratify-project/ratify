@@ -16,6 +16,15 @@ cosign:
   enabled: true
   scopes: ["*"] # corresponds to a single trust policy
   key: "" # DEPRECATED: Use cosignKeys instead
+  rekorURL: ""
+  tLogVerify: true
+  keyless:
+    ctLogVerify: true
+    certificateIdentity: ""
+    certificateIdentityRegExp: ""
+    certificateOIDCIssuer: ""
+    certificateOIDCIssuerRegExp: ""
+
 vulnerabilityreport:
   enabled: false
   passthrough: false

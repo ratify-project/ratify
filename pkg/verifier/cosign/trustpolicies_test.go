@@ -32,7 +32,7 @@ func TestCreateTrustPolicies(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -53,12 +53,12 @@ func TestCreateTrustPolicies(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v2"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -69,12 +69,12 @@ func TestCreateTrustPolicies(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -85,12 +85,12 @@ func TestCreateTrustPolicies(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -100,12 +100,12 @@ func TestCreateTrustPolicies(t *testing.T) {
 			policyConfigs: []TrustPolicyConfig{
 				{
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -136,12 +136,12 @@ func TestGetScopedPolicy(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v2"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			reference:      "ghcr.io/deislabs/ratify:v1",
@@ -154,12 +154,12 @@ func TestGetScopedPolicy(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify2:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			reference:      "ghcr.io/deislabs/ratify:v1",
@@ -172,12 +172,12 @@ func TestGetScopedPolicy(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify2:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			reference:      "ghcr.io/deislabs/ratify3:v1",
@@ -190,12 +190,12 @@ func TestGetScopedPolicy(t *testing.T) {
 				{
 					Name:    "global",
 					Scopes:  []string{"*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify2:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			reference:      "ghcr.io/deislabs/ratify3:v1",
@@ -234,7 +234,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -245,7 +245,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1", "ghcr.io/deislabs/ratify:v2"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -256,7 +256,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -267,7 +267,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -278,7 +278,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -289,7 +289,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"*", "somescope"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -300,7 +300,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1", "ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -311,12 +311,12 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -327,12 +327,12 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -343,7 +343,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:*", "ghcr.io/deislabs/ratify:*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -354,7 +354,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"*.azurecr.io"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -365,7 +365,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/*/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -376,7 +376,7 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/*", "ghcr.io/deislabs/*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -387,12 +387,12 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/test/*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: false,
@@ -403,12 +403,12 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
@@ -419,12 +419,12 @@ func TestValidateScopes(t *testing.T) {
 				{
 					Name:    "test",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:v1"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 				{
 					Name:    "test-2",
 					Scopes:  []string{"ghcr.io/deislabs/ratify:*"},
-					Keyless: KeylessConfig{RekorURL: "https://rekor.sigstore.dev"},
+					Keyless: KeylessConfig{CertificateIdentity: "test-identity", CertificateOIDCIssuer: "https://test-issuer.com"},
 				},
 			},
 			wantErr: true,
