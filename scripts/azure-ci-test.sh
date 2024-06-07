@@ -127,6 +127,12 @@ save_logs() {
 cleanup() {
   save_logs || true
 
+  echo "Delete key vault"
+  az keyvault delete --name "${KEYVAULT_NAME}" --resource-group "${GROUP_NAME}" || true
+
+  echo "Purge key vault"
+  az keyvault purge --name "${KEYVAULT_NAME}" --no-wait || true
+
   echo "Deleting group"
   az group delete --name "${GROUP_NAME}" --yes --no-wait || true
 }
