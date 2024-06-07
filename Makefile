@@ -542,7 +542,7 @@ e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosi
 		--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
 		--set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 		--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-		--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+		--set notationCerts={"$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)"} \
 		--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
 		--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 		--set oras.useHttp=true \
@@ -589,7 +589,7 @@ e2e-helm-deploy-ratify:
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
     --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set notationCerts={"$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)"} \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
@@ -608,7 +608,7 @@ e2e-helm-deploy-ratify-without-tls-certs:
 	--set image.tag=test \
 	--set gatekeeper.version=${GATEKEEPER_VERSION} \
 	--set featureFlags.RATIFY_CERT_ROTATION=${CERT_ROTATION_ENABLED} \
-	--set notaryCert="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set notationCerts={"$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)"} \
 	--set cosign.key="$$(cat .staging/cosign/cosign.pub)" \
 	--set cosignKeys[0]="$$(cat .staging/cosign/cosign.pub)" \
 	--set oras.useHttp=true \
@@ -649,7 +649,7 @@ e2e-helm-deploy-ratify-replica: e2e-helm-deploy-redis e2e-notation-setup e2e-bui
 	--set-file provider.tls.caCert=${CERT_DIR}/ca.crt \
     --set-file provider.tls.caKey=${CERT_DIR}/ca.key \
 	--set provider.tls.cabundle="$(shell cat ${CERT_DIR}/ca.crt | base64 | tr -d '\n')" \
-	--set notationCerts[0]="$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)" \
+	--set notationCerts={"$$(cat ~/.config/notation/localkeys/ratify-bats-test.crt)"} \
 	--set oras.useHttp=true \
 	--set cosign.enabled=false \
 	--set-file dockerConfig="mount_config.json" \
