@@ -18,7 +18,7 @@ package metrics
 import (
 	"context"
 
-	ctxUtils "github.com/deislabs/ratify/internal/context"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	instrument "go.opentelemetry.io/otel/metric"
