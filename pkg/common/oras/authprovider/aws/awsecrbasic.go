@@ -68,7 +68,8 @@ func (d *awsEcrBasicAuthProvider) getEcrAuthToken(artifact string) (EcrAuthToken
 	}
 
 	ctx := context.Background()
-
+	// TODO: Update to use regional endpoint
+	// nolint:staticcheck
 	resolver := aws.EndpointResolverWithOptionsFunc(func(service, region string, options ...interface{}) (aws.Endpoint, error) {
 		if service == ecr.ServiceID && region == apiOverrideRegion {
 			logrus.Info("AWS ECR basic auth using custom endpoint resolver...")
