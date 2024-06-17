@@ -33,18 +33,18 @@ var logOpt = logger.Option{
 }
 
 type trustStore struct {
-	certPaths        []string
-	certStoresByType certStoresByType
+	certPaths  []string
+	certStores certStores
 }
 
 func newTrustStore(certPaths []string, verificationCertStores verificationCertStores) (*trustStore, error) {
-	certStoresByType, err := newCertStoreByType(verificationCertStores)
+	certStores, err := newCertStoreByType(verificationCertStores)
 	if err != nil {
 		return nil, err
 	}
 	store := &trustStore{
-		certPaths:        certPaths,
-		certStoresByType: certStoresByType,
+		certPaths:  certPaths,
+		certStores: certStores,
 	}
 	return store, nil
 }
@@ -64,7 +64,7 @@ func (s *trustStore) GetCertificates(ctx context.Context, trustStoreType trustst
 func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
-	certGroup := GetCertGroupFromStore(ctx, s.certStoresByType, storeType, namedStore)
+	certGroup := s.certStores.GetCertGroupFromStore(ctx, storeType, namedStore)
 	// certs configured for this namedStore overrides cert path
 	if len(certGroup) > 0 {
 		for _, certStore := range certGroup {

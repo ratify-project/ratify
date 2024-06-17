@@ -33,7 +33,7 @@ func (certstoretype certStoreType) String() string {
 	return string(certstoretype)
 }
 
-// verificationCertStores describes the configuration of verificationCertStores
+// verificationCertStores implements certStores interface
 type verificationCertStores map[string]interface{}
 
 // certStoresByType describes the configuration of verificationCertStores by certStoreType
@@ -48,10 +48,11 @@ type verificationCertStores map[string]interface{}
 //	}
 type certStoresByType map[certStoreType]map[string][]string
 
-func newCertStoreByType(confVerificationCertStores verificationCertStores) (certStoresByType, error) {
-	certStoresByType := make(map[certStoreType]map[string][]string)
+// newCertStoreByType do type assertion and convert certStores configuration into certStoresByType
+func newCertStoreByType(confVerificationCertStores verificationCertStores) (certStores, error) {
+	s := make(certStoresByType)
 	for certstoretype, certStores := range confVerificationCertStores {
-		certStoresByType[certStoreType(certstoretype)] = make(map[string][]string)
+		s[certStoreType(certstoretype)] = make(map[string][]string)
 		if convertedCertStores, ok := certStores.(verificationCertStores); ok {
 			for certStore, certs := range convertedCertStores {
 				var reformedCerts []string
@@ -61,17 +62,17 @@ func newCertStoreByType(confVerificationCertStores verificationCertStores) (cert
 							reformedCerts = append(reformedCerts, reformedCert)
 						}
 					}
-					certStoresByType[certStoreType(certstoretype)][certStore] = reformedCerts
+					s[certStoreType(certstoretype)][certStore] = reformedCerts
 				}
 			}
 		}
 	}
-	return certStoresByType, nil
+	return s, nil
 }
 
 // GetCertGroupFromStore returns certain type of certs from namedStore
-func GetCertGroupFromStore(ctx context.Context, certStoresByType certStoresByType, storeType truststore.Type, namedStore string) (certGroup []string) {
-	if certStores, ok := certStoresByType[certStoreType(storeType)]; ok {
+func (s certStoresByType) GetCertGroupFromStore(ctx context.Context, storeType truststore.Type, namedStore string) (certGroup []string) {
+	if certStores, ok := s[certStoreType(storeType)]; ok {
 		if certGroup, ok = certStores[namedStore]; ok {
 			return
 		}
