@@ -22,23 +22,48 @@ import (
 	"github.com/notaryproject/notation-go/verifier/truststore"
 )
 
+type certStoreType string
+
+const (
+	CA               certStoreType = "CA"
+	SigningAuthority certStoreType = "signingAuthority"
+)
+
+func (certstoretype certStoreType) String() string {
+	return string(certstoretype)
+}
+
+// verificationCertStores describes the configuration of verificationCertStores
 type verificationCertStores map[string]interface{}
 
-// type certStores map[string][]string
-type certStoresByType map[string]map[string][]string
+// certStoresByType describes the configuration of verificationCertStores by certStoreType
+//
+//	{
+//	  "ca": {
+//	    "certs": {"kv1", "kv2"},
+//	  },
+//	  "signingauthority": {
+//	    "certs": {"kv3"}
+//	  },
+//	}
+type certStoresByType map[certStoreType]map[string][]string
 
 func newCertStoreByType(confVerificationCertStores verificationCertStores) (certStoresByType, error) {
-	certStoresByType := make(map[string]map[string][]string)
-	for certStoreType, certStores := range confVerificationCertStores {
-		certStoresByType[certStoreType] = make(map[string][]string)
-		for certStore, certs := range certStores.(verificationCertStores) {
-			var reformedCerts []string
-			for _, cert := range certs.([]interface{}) {
-				if reformedCert, ok := cert.(string); ok {
-					reformedCerts = append(reformedCerts, reformedCert)
+	certStoresByType := make(map[certStoreType]map[string][]string)
+	for certstoretype, certStores := range confVerificationCertStores {
+		certStoresByType[certStoreType(certstoretype)] = make(map[string][]string)
+		if convertedCertStores, ok := certStores.(verificationCertStores); ok {
+			for certStore, certs := range convertedCertStores {
+				var reformedCerts []string
+				if convertedCerts, ok := certs.([]interface{}); ok {
+					for _, cert := range convertedCerts {
+						if reformedCert, ok := cert.(string); ok {
+							reformedCerts = append(reformedCerts, reformedCert)
+						}
+					}
+					certStoresByType[certStoreType(certstoretype)][certStore] = reformedCerts
 				}
 			}
-			certStoresByType[certStoreType][certStore] = reformedCerts
 		}
 	}
 	return certStoresByType, nil
@@ -46,7 +71,7 @@ func newCertStoreByType(confVerificationCertStores verificationCertStores) (cert
 
 // GetCertGroupFromStore returns certain type of certs from namedStore
 func GetCertGroupFromStore(ctx context.Context, certStoresByType certStoresByType, storeType truststore.Type, namedStore string) (certGroup []string) {
-	if certStores, ok := certStoresByType[string(storeType)]; ok {
+	if certStores, ok := certStoresByType[certStoreType(storeType)]; ok {
 		if certGroup, ok = certStores[namedStore]; ok {
 			return
 		}

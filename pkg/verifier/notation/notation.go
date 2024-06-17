@@ -59,19 +59,19 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-	// VerificationCertStores is map defining which keyvault certificates belong to which trust store name.
+	// VerificationCertStores defines a collection of Notary Project Trust Stores.
 	// VerificationCertStores accepts new format map[string]map[string][]string
 	// {
-	// 	"ca": {
-	// 		"certs": {"kv1", "kv2"},
-	// 	},
-	// 	"signingauthority": {
-	// 		"certs": {"kv3"}
-	// 	},
+	//   "ca": {
+	//     "certs": {"kv1", "kv2"},
+	//   },
+	//   "signingauthority": {
+	//     "certs": {"kv3"}
+	//   },
 	// }
 	// VerificationCertStores accepts legacy format map[string][]string as well.
 	// {
-	// 	"certs": {"kv1", "kv2"},
+	//   "certs": {"kv1", "kv2"},
 	// },
 	VerificationCertStores verificationCertStores `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
@@ -184,10 +184,6 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 }
 
 func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string) (notation.Verifier, error) {
-	// store := &trustStore{
-	// 	certPaths:  conf.VerificationCerts,
-	// 	certStores: conf.VerificationCertStores,
-	// }
 	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
 	if err != nil {
 		return nil, err
@@ -221,8 +217,7 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*Notat
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
 	if len(conf.VerificationCertStores) > 0 {
-		err := normalizeVerificationCertsStores(conf)
-		if err != nil {
+		if err := normalizeVerificationCertsStores(conf); err != nil {
 			return nil, err
 		}
 	}
