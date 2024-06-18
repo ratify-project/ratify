@@ -63,7 +63,7 @@ func (ap *TestAuthProvider) Provide(_ context.Context, _ string) (AuthConfig, er
 }
 
 // Checks for creation of defaultAuthProvider with invalid config input
-func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
+func TestProvider_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 	var testProviderFactory defaultProviderFactory
 	tests := []struct {
 		name       string
@@ -109,7 +109,7 @@ func TestProvide_CreationOfAuthProvider_ExpectedResults(t *testing.T) {
 
 // Checks for correct credential resolution when external docker config
 // path is provided
-func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
+func TestProvider_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 	tmpHome, err := os.MkdirTemp("", "config-test")
 	if err != nil {
 		t.Fatalf("unexpected error when creating temporary directory: %v", err)
@@ -141,7 +141,7 @@ func TestProvide_ExternalDockerConfigPath_ExpectedResults(t *testing.T) {
 	}
 }
 
-func TestProvide_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *testing.T) {
+func TestProvider_ExternalDockerConfigPathWithIdentityToken_ExpectedResults(t *testing.T) {
 	tmpHome, err := os.MkdirTemp("", "config-test")
 	if err != nil {
 		t.Fatalf("unexpected error when creating temporary directory: %v", err)

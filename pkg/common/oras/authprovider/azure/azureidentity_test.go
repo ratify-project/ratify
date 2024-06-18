@@ -23,34 +23,97 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	ratifyerrors "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
+	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
 )
 
-// Verifies that Enabled checks if tenantID is empty or AAD token is empty
+// func TestAzureMSICreate_ExpectedResults(t *testing.T) {
+// 	var testProviderFactory azureManagedIdentityProviderFactory
+// 	tests := []struct {
+// 		name       string
+// 		configMap  map[string]interface{}
+// 		isNegative bool
+// 		expect     error
+// 	}{
+// 		{
+// 			name: "input type for unmarshal is unsupported",
+// 			configMap: map[string]interface{}{
+// 				"Name":     "test_name",
+// 				"ClientID": "test_clientID",
+// 			},
+// 			isNegative: true,
+// 			expect:     re.ErrorCodeConfigInvalid,
+// 		},
+// 	}
+// 	for _, testCase := range tests {
+// 		_, err := testProviderFactory.Create(provider.AuthProviderConfig(testCase.configMap))
+// 		if testCase.isNegative != (err != nil) {
+// 			t.Errorf("Expected %v in case %v, but got %v", testCase.expect, testCase.name, err)
+// 		}
+// 	}
+// }
+
+// Verifiers that Enable checks if tenantID is empty or AAD token is empty
 func TestAzureMSIEnabled_ExpectedResults(t *testing.T) {
-	azAuthProvider := azureManagedIdentityAuthProvider{
-		tenantID: "test_tenant",
-		clientID: "test_client",
-		identityToken: azcore.AccessToken{
-			Token: "test_token",
+	tests := []struct {
+		name           string
+		azAuthProvider azureManagedIdentityAuthProvider
+		expect         bool
+	}{
+		{
+			name: "complete config",
+			azAuthProvider: azureManagedIdentityAuthProvider{
+				tenantID: "test_tenant",
+				clientID: "test_client",
+				identityToken: azcore.AccessToken{
+					Token: "test_token",
+				},
+			},
+			expect: true,
+		},
+		{
+			name: "config miss tenantID",
+			azAuthProvider: azureManagedIdentityAuthProvider{
+				tenantID: "",
+				clientID: "test_client",
+				identityToken: azcore.AccessToken{
+					Token: "test_token",
+				},
+			},
+			expect: false,
+		},
+		{
+			name: "config miss clientID",
+			azAuthProvider: azureManagedIdentityAuthProvider{
+				tenantID: "test_tenant",
+				clientID: "",
+				identityToken: azcore.AccessToken{
+					Token: "test_token",
+				},
+			},
+			expect: false,
+		},
+		{
+			name: "config miss Token",
+			azAuthProvider: azureManagedIdentityAuthProvider{
+				tenantID: "test_tenant",
+				clientID: "test_client",
+				identityToken: azcore.AccessToken{
+					Token: "",
+				},
+			},
+			expect: false,
 		},
 	}
-
 	ctx := context.Background()
-
-	if !azAuthProvider.Enabled(ctx) {
-		t.Fatal("enabled should have returned true but returned false")
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.azAuthProvider.Enabled(ctx)
+			if got != tt.expect {
+				t.Fatalf("Expect: %v, got %v for %v", tt.expect, got, tt.name)
+			}
+		})
 	}
 
-	azAuthProvider.tenantID = ""
-	if azAuthProvider.Enabled(ctx) {
-		t.Fatal("enabled should have returned false but returned true for empty tenantID")
-	}
-
-	azAuthProvider.identityToken.Token = ""
-	if azAuthProvider.Enabled(ctx) {
-		t.Fatal("enabled should have returned false but returned true for empty AAD access token")
-	}
 }
 
 // Verifies that tenant id, client id, token file path, and authority host
@@ -70,7 +133,7 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatal("failed to set env variable AZURE_CLIENT_ID")
 	}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = provider.CreateAuthProviderFromConfig(authProviderConfig)
 
 	expectedErr := ratifyerrors.ErrorCodeAuthDenied.WithDetail("AZURE_TENANT_ID environment variable is empty")
 	if err == nil || !errors.Is(err, expectedErr) {
@@ -82,7 +145,7 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 		t.Fatal("failed to set env variable AZURE_TENANT_ID")
 	}
 
-	_, err = authprovider.CreateAuthProviderFromConfig(authProviderConfig)
+	_, err = provider.CreateAuthProviderFromConfig(authProviderConfig)
 
 	expectedErr = ratifyerrors.ErrorCodeAuthDenied.WithDetail("AZURE_CLIENT_ID environment variable is empty")
 	if err == nil || !errors.Is(err, expectedErr) {

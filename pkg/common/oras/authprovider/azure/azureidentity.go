@@ -76,9 +76,6 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 			return nil, re.ErrorCodeEnvNotSet.WithDetail("AZURE_CLIENT_ID environment variable is empty").WithComponentType(re.AuthProvider)
 		}
 	}
-	if err != nil {
-		return nil, err
-	}
 	// retrieve an AAD Access token
 	token, err := getManagedIdentityToken(context.Background(), client)
 	if err != nil {
