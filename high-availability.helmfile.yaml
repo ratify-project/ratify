@@ -1,20 +1,38 @@
 repositories:
+  - name: gatekeeper
+    url: https://open-policy-agent.github.io/gatekeeper/charts
   - name: dapr
     url: https://dapr.github.io/helm-charts/
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
   - name: ratify
-    url: https://deislabs.github.io/ratify
+    url: https://ratify-project.github.io/ratify
     
 releases:
   - name: dapr
     namespace: dapr-system
     createNamespace: true
     chart: dapr/dapr
-    version: 1.11.1
+    version: 1.13.2
     wait: true
+  - name: gatekeeper
+    namespace: gatekeeper-system
+    createNamespace: true
+    chart: gatekeeper/gatekeeper
+    version: 3.16.0
+    wait: true
+    set:
+      - name: enableExternalData
+        value: true
+      - name: validatingWebhookTimeoutSeconds
+        value: 5
+      - name: mutatingWebhookTimeoutSeconds
+        value: 2
+      - name: externaldataProviderResponseCacheTTL
+        value: 10s
   - name: redis
     namespace: gatekeeper-system
+    createNamespace: true
     chart: bitnami/redis
     version: 17.11.6
     wait: true
@@ -32,11 +50,12 @@ releases:
   - name: ratify
     namespace: gatekeeper-system
     chart: ratify/ratify
-    version: 1.12.1 # Make sure this matches Chart.yaml
+    version: 1.13.0 # Make sure this matches Chart.yaml
     wait: true
     needs:
       - dapr-system/dapr
       - gatekeeper-system/redis
+      - gatekeeper-system/gatekeeper
     hooks:
       - events: ["presync"]
         showlogs: true
@@ -53,6 +72,12 @@ releases:
           - "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/dapr/dapr-redis.yaml"
           - "-n"
           - "gatekeeper-system"
+      - events: ["presync"]
+        showlogs: true
+        command: "bash"
+        args:
+          - "-c"
+          - "kubectl apply -f https://ratify-project.github.io/ratify/library/default/template.yaml && kubectl apply -f https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
@@ -79,7 +104,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/template.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/template.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -87,7 +112,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -99,6 +124,10 @@ releases:
           - "verifiers.config.ratify.deislabs.io"
           - "certificatestores.config.ratify.deislabs.io"
           - "policies.config.ratify.deislabs.io"
+          - "namespacedkeymanagementproviders.config.ratify.deislabs.io"
+          - "namespacedpolicies.config.ratify.deislabs.io"
+          - "namespacedstores.config.ratify.deislabs.io"
+          - "namespacedverifiers.config.ratify.deislabs.io"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
@@ -115,7 +144,7 @@ releases:
         value: true
       - name: logger.level
         value: debug
-      - name: notationCert
+      - name: notationCerts[0]
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
       - name: replicaCount
         value: 2

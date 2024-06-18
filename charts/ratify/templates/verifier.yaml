@@ -50,7 +50,7 @@ spec:
   name: cosign
   artifactTypes: application/vnd.dev.cosign.artifact.sig.v1+json
   parameters:
-    {{- if or (gt (len .Values.cosignKeys) 0) (and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0)) }}
+    {{- if  (eq (include "ratify.cosignLegacy" .) "false") }}
     trustPolicies:
       - name: default
         version: 1.0.0
@@ -65,6 +65,16 @@ spec:
           {{- if and .Values.azurekeyvault.enabled (gt (len .Values.azurekeyvault.keys) 0) }}
           - provider: kmprovider-akv
           {{- end }}
+        tLogVerify: {{ .Values.cosign.tLogVerify }}
+        rekorURL: {{ .Values.cosign.rekorURL }}
+        {{- if or .Values.cosign.keyless.certificateIdentity .Values.cosign.keyless.certificateIdentityRegExp .Values.cosign.keyless.certificateOIDCIssuer .Values.cosign.keyless.certificateOIDCIssuerRegExp }}
+        keyless:
+          ctLogVerify: {{ .Values.cosign.keyless.ctLogVerify }}
+          certificateIdentity: {{ .Values.cosign.keyless.certificateIdentity }}
+          certificateIdentityRegExp: {{ .Values.cosign.keyless.certificateIdentityRegExp }}
+          certificateOIDCIssuer: {{ .Values.cosign.keyless.certificateOIDCIssuer }}
+          certificateOIDCIssuerRegExp: {{ .Values.cosign.keyless.certificateOIDCIssuerRegExp }}
+        {{- end }}
     {{- else }}
     key: /usr/local/ratify-certs/cosign/cosign.pub
     {{- end }}

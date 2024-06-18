@@ -147,3 +147,19 @@ Set the namespace exclusions for Assign
 - {{ .Release.Namespace | quote}}
 {{- end }}
 {{- end }}
+
+{{/*
+Choose cosign legacy or not. Determined by if cosignKeys are provided or not
+OR if azurekeyvault is enabled and keys are provided
+OR if keyless is enabled and certificateIdentity, certificateIdentityRegExp, certificateOIDCIssuer, or certificateOIDCIssuerExp are provided
+*/}}
+{{- define "ratify.cosignLegacy" -}}
+{{- $cosignKeysPresent := gt (len .Values.cosignKeys) 0 -}}
+{{- $azureKeyVaultEnabled := .Values.azurekeyvault.enabled -}}
+{{- $azureKeyVaultKeysPresent := gt (len .Values.azurekeyvault.keys) 0 -}}
+{{- if or $cosignKeysPresent (and $azureKeyVaultEnabled $azureKeyVaultKeysPresent) .Values.cosign.keyless.certificateIdentity .Values.cosign.keyless.certificateIdentityRegExp .Values.cosign.keyless.certificateOIDCIssuer .Values.cosign.keyless.certificateOIDCIssuerExp -}}
+false
+{{- else }}
+true
+{{- end }}
+{{- end }}

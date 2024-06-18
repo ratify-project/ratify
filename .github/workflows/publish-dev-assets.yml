@@ -15,7 +15,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: prepare
         id: prepare
         run: |
@@ -37,7 +37,7 @@ jobs:
           echo ::set-output name=baseref::${REPOSITORYBASE}
           echo ::set-output name=crdref::${REPOSITORYCRD}
       - name: docker login
-        uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+        uses: docker/login-action@0d4c9c5ea7693da7b068278f7b52bda2a190a446 # v3.2.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -72,8 +72,8 @@ jobs:
             --push .
       - name: replace version
         run: |
-          sed -i '/^  repository:/c\  repository: ghcr.io/deislabs/ratify-dev' charts/ratify/values.yaml
-          sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/deislabs/ratify-crds-dev' charts/ratify/values.yaml
+          sed -i '/^  repository:/c\  repository: ghcr.io/ratify-project/ratify-dev' charts/ratify/values.yaml
+          sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/ratify-project/ratify-crds-dev' charts/ratify/values.yaml
           sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml 
       - name: helm package
         run: |
