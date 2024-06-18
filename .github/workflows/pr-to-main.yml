@@ -9,22 +9,11 @@ permissions:
   pull-requests: write
 
 jobs:
-  main:
-    name: Create PR Release to Main
+  pull-request:
     runs-on: ubuntu-latest
     steps:
-      - name: git checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
-      
-      # https://github.com/marketplace/actions/github-pull-request-action
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: pull-request
         run: |
           gh_pr_up() { gh pr create $* || gh pr edit $* }
-          gh_pr_up --title ${{ github.event.commits[0].message }} --body "This is a automated PR to main" --base main
-      - name: create pull request with reposync action
-        id: open-pr
-        uses: repo-sync/pull-request@7e79a9f5dc3ad0ce53138f01df2fad14a04831c5 #v2.12.1
-        with:
-          destination_branch: main
-          pr_title: ${{ github.event.commits[0].message }}
-          pr_body: "Automated Pull Request"
+          gh_pr_up --title "My pull request" --body "Description" --base main
