@@ -16,7 +16,7 @@ limitations under the License.
 package verifiers
 
 import (
-	vr "github.com/deislabs/ratify/pkg/verifier"
+	vr "github.com/ratify-project/ratify/pkg/verifier"
 )
 
 // VerifierManager is an interface that defines the methods for managing verifiers across different scopes.

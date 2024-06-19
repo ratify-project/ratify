@@ -37,23 +37,23 @@ import (
 	"oras.land/oras-go/v2/registry/remote/errcode"
 	"oras.land/oras-go/v2/registry/remote/retry"
 
-	ratifyconfig "github.com/deislabs/ratify/config"
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/internal/version"
-	"github.com/deislabs/ratify/pkg/cache"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/aws"   // register aws auth provider
-	_ "github.com/deislabs/ratify/pkg/common/oras/authprovider/azure" // register azure auth provider
-	commonutils "github.com/deislabs/ratify/pkg/common/utils"
-	"github.com/deislabs/ratify/pkg/homedir"
-	"github.com/deislabs/ratify/pkg/metrics"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
-	"github.com/deislabs/ratify/pkg/referrerstore/factory"
 	"github.com/opencontainers/go-digest"
+	ratifyconfig "github.com/ratify-project/ratify/config"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/internal/version"
+	"github.com/ratify-project/ratify/pkg/cache"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
+	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/aws"   // register aws auth provider
+	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/azure" // register azure auth provider
+	commonutils "github.com/ratify-project/ratify/pkg/common/utils"
+	"github.com/ratify-project/ratify/pkg/homedir"
+	"github.com/ratify-project/ratify/pkg/metrics"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/config"
+	"github.com/ratify-project/ratify/pkg/referrerstore/factory"
 )
 
 const (

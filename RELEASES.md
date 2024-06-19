@@ -45,10 +45,10 @@ Applicable fixes, including security fixes, may be backported to supported relea
 
 ### Minor releases
 
-When a minor release is required, the release commits should be merged with the `main` branch when ready.   
+When a minor release is required, the release commits should be merged with the `main` branch when ready.
 
-  - Alpha and Beta releases will be cut from the main branch. 
-  - For RC and stable releases, a new branch `release-X.Y` will be created from `main`. Required changes for the minor release should be PRed to the `dev`  branch, the change will then be cherry picked to `release-X.Y` from `main`.
+* Alpha and Beta releases will be cut from the main branch.
+* For RC and stable releases, a new branch `release-X.Y` will be created from `main`. Required changes for the minor release should be PRed to the `dev`  branch, the change will then be cherry picked to `release-X.Y` from `main`.S
 
 ### Major releases
 
@@ -56,7 +56,7 @@ When a major release is required, the release commits should be merged with the 
 
 ### Tag and Release
 
-**X.Y.Z** refers to the version (git tag) of Ratify that is released. Prepare the release with a [PR](https://github.com/deislabs/ratify/pull/1031/files) to update the chart value. When the `release-X.Y` branch is ready, a tag **X.Y.Z** should be pushed. e.g. `git tag v1.1.1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
+**X.Y.Z** refers to the version (git tag) of Ratify that is released. Prepare the release with a [PR](https://github.com/ratify-project/ratify/pull/1031/files) to update the chart value. When the `release-X.Y` branch is ready, a tag **X.Y.Z** should be pushed. e.g. `git tag v1.1.1` and `git push --tags`.  This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
 
 * The release will be marked as a draft to allow an final editing before publishing.
 * The release notes and other fields can edited after the action completes.  The description can be in Markdown.
@@ -65,6 +65,7 @@ When a major release is required, the release commits should be merged with the 
   * The files are named `ratify_<major>-<minor>-<patch>_<OS>_<ARCH>` with `.zip` files for Windows and `.tar.gz` for all others.
 
 ## Supported Releases
+
 Applicable fixes, including security fixes, may be cherry-picked into the release branch, depending on severity and feasibility. Patch releases are cut from that branch as needed.
 
 We expect to "support" n (current). "Support" means we expect users to be running that version in production. For example, when v1.2 comes out, v1.1 will no longer be supported for patches, and we encourage users to upgrade to a supported version as soon as possible.
@@ -73,7 +74,7 @@ We expect to "support" n (current). "Support" means we expect users to be runnin
 
 Ratify is assumed to be compatible with [GateKeeper Supported Versions](https://github.com/open-policy-agent/gatekeeper/blob/master/docs/Release_Management.md#supported-releases) and the [current Kubernetes Supported Versions](https://kubernetes.io/releases/patch-releases/#detailed-release-history-for-active-branches) per [Kubernetes Supported Versions policy](https://kubernetes.io/releases/version-skew-policy/).
 
-For example, if Gatekeeper _supported_ versions are v3.13 and v3.14, and Kubernetes _supported_ versions are v1.28, v1.29, then current version of Ratify (v1.2) are assumed to be compatible with all supported Kubernetes versions (v1.28, v1.29) and Gatekeeper version(v3.13, v3.14). 
+For example, if Gatekeeper _supported_ versions are v3.13 and v3.14, and Kubernetes _supported_ versions are v1.28, v1.29, then current version of Ratify (v1.2) are assumed to be compatible with all supported Kubernetes versions (v1.28, v1.29) and Gatekeeper version(v3.13, v3.14).
 
 ## Post Release Activity
 
@@ -82,23 +83,27 @@ After a successful release, please manually trigger [quick start action](.github
 ### Weekly Dev Release
 
 #### Publishing Guidelines
-- Ratify is configured to generate and publish dev build images based on the schedule [here](https://github.com/ratify-project/ratify/blob/main/.github/workflows/publish-package.yml#L8). 
-- Contributors MUST select the `Helm Chart Change` option under the `Type of Change` section if there is ANY update to the helm chart that is required for proposed changes in PR.
-- Maintainers MUST manually trigger the "Publish Package" workflow after merging any PR that indicates `Helm Chart Change`
-  - Go to the `Actions` tab for the Ratify repository
-  - Select `publish-ghcr` option from list of workflows on left pane
-  - Select the `Run workflow` drop down on the right side above the list of action runs
-  - Choose `Branch: main`
-  - Select `Run workflow`
-- Process to Request an off-schedule dev build be published
-  - Submit a new feature request issue prefixed with `[Dev Build Request]`
-  - In the the `What this PR does / why we need it` section, briefly explain why an off schedule build is needed
-  - Once issue is created, post in the `#ratify` slack channel and tag the maintainers
-  - Maintainers should acknowledge request by approving/denying request as a follow up comment
+
+* Ratify is configured to generate and publish dev build images based on the schedule [here](https://github.com/ratify-project/ratify/blob/main/.github/workflows/publish-package.yml#L8).
+* Contributors MUST select the `Helm Chart Change` option under the `Type of Change` section if there is ANY update to the helm chart that is required for proposed changes in PR.
+* Maintainers MUST manually trigger the "Publish Package" workflow after merging any PR that indicates `Helm Chart Change`
+  * Go to the `Actions` tab for the Ratify repository
+  * Select `publish-ghcr` option from list of workflows on left pane
+  * Select the `Run workflow` drop down on the right side above the list of action runs
+  * Choose `Branch: main`
+  * Select `Run workflow`
+* Process to Request an off-schedule dev build be published
+  * Submit a new feature request issue prefixed with `[Dev Build Request]`
+  * In the the `What this PR does / why we need it` section, briefly explain why an off schedule build is needed
+  * Once issue is created, post in the `#ratify` slack channel and tag the maintainers
+  * Maintainers should acknowledge request by approving/denying request as a follow up comment
+
 #### How to use a dev build
+
 1. The `ratify` image and `ratify-crds` image for dev builds exist as separate packages on Github [here](https://github.com/ratify-project/ratify/pkgs/container/ratify-dev) and [here](https://github.com/ratify-project/ratify/pkgs/container/ratify-crds-dev).
 2. the `repository` `crdRepository` and `tag` fields must be updated in the helm chart to point to dev build instead of last released build. Please set the tag to be latest tag found at the corresponding `-dev` suffixed package. An example install command scaffold:
-```
+
+```bash
 helm install ratify \
     ./charts/ratify --atomic \
     --namespace gatekeeper-system \
@@ -107,4 +112,5 @@ helm install ratify \
     --set image.tag=dev.<YYYYMMDD>.<ABBREVIATED_GIT_HASH_COMMIT>
     --set-file notationCerts[0]=./test/testdata/notation.crt
 ```
+
 NOTE: the tag field is the only value that will change when updating to newer dev build images

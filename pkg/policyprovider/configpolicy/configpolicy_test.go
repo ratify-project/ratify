@@ -19,14 +19,14 @@ import (
 	"context"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/common"
-	vt "github.com/deislabs/ratify/pkg/executor/types"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	pc "github.com/deislabs/ratify/pkg/policyprovider/config"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	"github.com/deislabs/ratify/pkg/policyprovider/types"
-	vr "github.com/deislabs/ratify/pkg/verifier"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/ratify-project/ratify/pkg/common"
+	vt "github.com/ratify-project/ratify/pkg/executor/types"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	pc "github.com/ratify-project/ratify/pkg/policyprovider/config"
+	pf "github.com/ratify-project/ratify/pkg/policyprovider/factory"
+	"github.com/ratify-project/ratify/pkg/policyprovider/types"
+	vr "github.com/ratify-project/ratify/pkg/verifier"
 )
 
 func TestPolicyEnforcer_ContinueVerifyOnFailure(t *testing.T) {

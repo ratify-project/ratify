@@ -19,8 +19,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deislabs/ratify/utils"
 	"github.com/docker/distribution/registry/api/errcode"
+	"github.com/ratify-project/ratify/utils"
 	"github.com/sirupsen/logrus"
 )
 

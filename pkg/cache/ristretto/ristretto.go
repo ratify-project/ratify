@@ -22,11 +22,11 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/dgraph-io/ristretto"
 	"github.com/dgraph-io/ristretto/z"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/cache"
 )
 
 const RistrettoCacheType = "ristretto"

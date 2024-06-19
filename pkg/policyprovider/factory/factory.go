@@ -19,10 +19,10 @@ import (
 	"fmt"
 	"strings"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/policyprovider"
+	"github.com/ratify-project/ratify/pkg/policyprovider/config"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 	"github.com/sirupsen/logrus"
 )
 

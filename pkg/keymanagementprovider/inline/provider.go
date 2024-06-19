@@ -22,10 +22,10 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
+	"github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/factory"
 )
 
 const (

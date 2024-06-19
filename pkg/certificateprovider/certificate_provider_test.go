@@ -19,7 +19,7 @@ import (
 	"errors"
 	"testing"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
+	ratifyerrors "github.com/ratify-project/ratify/errors"
 	"github.com/stretchr/testify/assert"
 )
 

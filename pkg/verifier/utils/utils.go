@@ -18,7 +18,7 @@ package utils
 import (
 	"strings"
 
-	"github.com/deislabs/ratify/internal/constants"
+	"github.com/ratify-project/ratify/internal/constants"
 )
 
 // return true if string looks like a K8s namespaced resource. e.g. namespace/name

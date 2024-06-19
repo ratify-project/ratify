@@ -20,9 +20,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	sm "github.com/deislabs/ratify/pkg/referrerstore/mocks"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	sm "github.com/ratify-project/ratify/pkg/referrerstore/mocks"
 )
 
 const (

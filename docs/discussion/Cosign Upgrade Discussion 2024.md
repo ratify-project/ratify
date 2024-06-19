@@ -2,10 +2,10 @@
 Author: Akash Singhal (@akashsinghal)
 
 Tracked issues in scope:
-- [Support Cosign verification with multiple keys](https://github.com/deislabs/ratify/issues/1191)
-- [Support for Cosign verification with keys managed in KMS](https://github.com/deislabs/ratify/issues/1190)
-- [Support Cosign verification with RSA key](https://github.com/deislabs/ratify/issues/1189)
-- [Support keyless verification with OIDC identities](https://github.com/deislabs/ratify/issues/1323)
+- [Support Cosign verification with multiple keys](https://github.com/ratify-project/ratify/issues/1191)
+- [Support for Cosign verification with keys managed in KMS](https://github.com/ratify-project/ratify/issues/1190)
+- [Support Cosign verification with RSA key](https://github.com/ratify-project/ratify/issues/1189)
+- [Support keyless verification with OIDC identities](https://github.com/ratify-project/ratify/issues/1323)
 
 Ratify currently supports keyless cosign verification which includes an optional custom Rekor server specification. Transparency log verification only occurs for keyless scenarios. Keyed verification is limited to a single public key specified as a value provided in the helm chart. The chart creates a `Secret` for the cosign key and mounts it at a well-known path in the Ratify container. Users must manually update the `Secret` to update the key. There is no support for multiple keys. There is no support for keys stored KMS. There is only support for ECDSA keys, and not RSA or ED25519. There is no support for certificates.
 
@@ -582,13 +582,13 @@ spec:
 
 ### How does `scopes` matching work?
 
-`scopes` are associated per `trustPolicy`. They function to apply on top of a validation image reference and match a SINGLE trust policy to use for verification. Ratify needs to decide how to implement scope matching based on the scenarios to support. Scopes could support regular expressions however they are not as user friendly. Ratify could also define its own domain/repository pattern syntax. Or, Ratify could support both side-by-side; however, this would require having behavior to rectify if both are used at once or used for different policies. The other concern is if multiple trust policies are defined each with scopes that can apply. For example, let's take Trust Policy A which has scope `*` (any image reference works). Then, let's define Trust Policy B with scope `ghcr.io`. Finally, define Trust Policy C with scope `ghcr.io/deislabs/ratify`. If our image to validate has reference: `ghcr.io/deislabs/ratify:v1.2.0`, which Trust Policy should apply? Ideally, we should match to he policy that is most specific first, so Trust Policy C would be selected.
+`scopes` are associated per `trustPolicy`. They function to apply on top of a validation image reference and match a SINGLE trust policy to use for verification. Ratify needs to decide how to implement scope matching based on the scenarios to support. Scopes could support regular expressions however they are not as user friendly. Ratify could also define its own domain/repository pattern syntax. Or, Ratify could support both side-by-side; however, this would require having behavior to rectify if both are used at once or used for different policies. The other concern is if multiple trust policies are defined each with scopes that can apply. For example, let's take Trust Policy A which has scope `*` (any image reference works). Then, let's define Trust Policy B with scope `ghcr.io`. Finally, define Trust Policy C with scope `ghcr.io/ratify-project/ratify`. If our image to validate has reference: `ghcr.io/ratify-project/ratify:v1.2.0`, which Trust Policy should apply? Ideally, we should match to he policy that is most specific first, so Trust Policy C would be selected.
 
 #### Scenarios to Support
 1. Wildcard: `*`
 2. Registry wide scope: `ghcr.io`
 3. Wildcard registry domain scope: `*.azurecr.io`
-4. Intermediate repository paths (repository path may reference a subpath but not an absolute path): `ghcr.io/deislabs/*`
+4. Intermediate repository paths (repository path may reference a subpath but not an absolute path): `ghcr.io/ratify-project/*`
 
 #### How does notation do this?
 

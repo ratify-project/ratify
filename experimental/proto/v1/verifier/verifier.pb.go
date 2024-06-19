@@ -7,8 +7,8 @@
 package verifier
 
 import (
-	common "github.com/deislabs/ratify/experimental/proto/v1/common"
 	_struct "github.com/golang/protobuf/ptypes/struct"
+	common "github.com/ratify-project/ratify/experimental/proto/v1/common"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

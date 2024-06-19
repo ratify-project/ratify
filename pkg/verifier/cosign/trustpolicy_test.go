@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"testing"
 
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 )
 

@@ -20,8 +20,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/policyprovider/policyengine"
-	"github.com/deislabs/ratify/pkg/policyprovider/policyquery"
+	"github.com/ratify-project/ratify/pkg/policyprovider/policyengine"
+	"github.com/ratify-project/ratify/pkg/policyprovider/policyquery"
 )
 
 const OPA = "opa"

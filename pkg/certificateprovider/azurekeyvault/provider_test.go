@@ -26,7 +26,7 @@ import (
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault/types"
+	"github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )

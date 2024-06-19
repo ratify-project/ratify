@@ -21,10 +21,10 @@ import (
 	"fmt"
 	"strings"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
 
 	"oras.land/oras-go/v2/errdef"
 	"oras.land/oras-go/v2/registry"

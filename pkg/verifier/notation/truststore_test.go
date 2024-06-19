@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/pkg/controllers"
 )
 
 const (

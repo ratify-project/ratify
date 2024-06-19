@@ -16,13 +16,13 @@ package utils
 import (
 	"encoding/json"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	vc "github.com/deislabs/ratify/pkg/verifier/config"
-	vf "github.com/deislabs/ratify/pkg/verifier/factory"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	vc "github.com/ratify-project/ratify/pkg/verifier/config"
+	vf "github.com/ratify-project/ratify/pkg/verifier/factory"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 
-	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/config"
+	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/sirupsen/logrus"
 )
 

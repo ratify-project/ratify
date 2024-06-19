@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier"
 )
 
 const (

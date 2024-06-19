@@ -29,14 +29,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
-	"github.com/deislabs/ratify/pkg/verifier/config"
 	"github.com/opencontainers/go-digest"
 	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore/mocks"
+	"github.com/ratify-project/ratify/pkg/verifier/config"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 	"github.com/sigstore/cosign/v2/pkg/oci/static"
 	"github.com/sigstore/rekor/pkg/generated/client"
@@ -45,7 +45,7 @@ import (
 )
 
 const (
-	ratifySampleImageRef string = "ghcr.io/deislabs/ratify:v1"
+	ratifySampleImageRef string = "ghcr.io/ratify-project/ratify:v1"
 	testIdentity         string = "sozercan@gmail.com"
 	testIssuer           string = "https://github.com/login/oauth"
 )

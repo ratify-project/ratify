@@ -21,10 +21,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/deislabs/ratify/internal/constants"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	"github.com/deislabs/ratify/pkg/utils"
-	vu "github.com/deislabs/ratify/pkg/verifier/utils"
+	"github.com/ratify-project/ratify/internal/constants"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/ratify-project/ratify/pkg/utils"
+	vu "github.com/ratify-project/ratify/pkg/verifier/utils"
 )
 
 // ActiveCertStores implements the CertStoreManager interface

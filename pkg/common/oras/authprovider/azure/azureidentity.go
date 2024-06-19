@@ -22,9 +22,9 @@ import (
 	"os"
 	"time"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
-	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/logger"
+	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"

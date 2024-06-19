@@ -23,18 +23,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	sp "github.com/deislabs/ratify/pkg/referrerstore/plugin"
-	"github.com/deislabs/ratify/pkg/verifier/plugin"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	sp "github.com/ratify-project/ratify/pkg/referrerstore/plugin"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 
-	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier"
 
 	// This import is required to utilize the oras built-in referrer store
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
-	"github.com/deislabs/ratify/pkg/utils"
+	_ "github.com/ratify-project/ratify/pkg/referrerstore/oras"
+	"github.com/ratify-project/ratify/pkg/utils"
 )
 
 const (
