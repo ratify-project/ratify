@@ -10,6 +10,8 @@ on:
       - "docs/**"
       - "library/**"
       - "**.md"
+  schedule:
+    - cron: '30 8 * * 0'  # early morning (08:30 UTC) every Sunday
   workflow_dispatch:
 
 permissions: read-all
@@ -42,7 +44,7 @@ jobs:
           egress-policy: audit
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
 
       - name: Download trivy
         run: |
