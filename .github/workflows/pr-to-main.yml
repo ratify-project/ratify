@@ -19,5 +19,5 @@ jobs:
         uses: repo-sync/pull-request@7e79a9f5dc3ad0ce53138f01df2fad14a04831c5 #v2.12.1
         with:
           destination_branch: main
-          pr_title: [chore] Automated PR to main ${{ github.event.commits[0].message }}
-          pr_body: "Automated Pull Request"
+          pr_title: chore: automated PR to main ${{ github.event.commits[0].message }}
+          pr_body: "Automated Pull Request to main branch"
