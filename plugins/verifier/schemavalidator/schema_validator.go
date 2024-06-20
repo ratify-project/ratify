@@ -20,13 +20,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
-	"github.com/deislabs/ratify/plugins/verifier/schemavalidator/schemavalidation"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	_ "github.com/ratify-project/ratify/pkg/referrerstore/oras"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin/skel"
+	"github.com/ratify-project/ratify/plugins/verifier/schemavalidator/schemavalidation"
 )
 
 type PluginConfig struct {

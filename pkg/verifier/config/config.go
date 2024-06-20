@@ -16,8 +16,8 @@ limitations under the License.
 package config
 
 import (
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	rc "github.com/ratify-project/ratify/pkg/referrerstore/config"
 )
 
 type VerifierConfig map[string]interface{}

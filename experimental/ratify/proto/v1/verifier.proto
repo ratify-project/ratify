@@ -2,7 +2,7 @@ syntax="proto3";
 
 package verifier;
 
-option go_package = "github.com/deislabs/ratify/experimental/proto/v1/verifier";
+option go_package = "github.com/ratify-project/ratify/experimental/proto/v1/verifier";
 
 import "common.proto";
 import "google/protobuf/struct.proto";

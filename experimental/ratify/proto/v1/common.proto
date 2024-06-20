@@ -2,7 +2,7 @@ syntax="proto3";
 
 package common;
 
-option go_package = "github.com/deislabs/ratify/experimental/proto/v1/common";
+option go_package = "github.com/ratify-project/ratify/experimental/proto/v1/common";
 
 /* Descriptor holds various properties of an artifact.
 

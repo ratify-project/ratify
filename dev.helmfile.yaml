@@ -2,9 +2,9 @@ repositories:
   - name: gatekeeper
     url: https://open-policy-agent.github.io/gatekeeper/charts
   - name: ratify
-    url: ghcr.io/deislabs/ratify-chart-dev # PRERELEASE: Change to 'https://deislabs.github.io/ratify' before copying to helmfile.yaml
+    url: ghcr.io/ratify-project/ratify-chart-dev # PRERELEASE: Change to 'https://ratify-project.github.io/ratify' before copying to helmfile.yaml
     oci: true # PRERELEASE: Remove before copying to helmfile.yaml
-    
+
 releases:
   - name: gatekeeper
     namespace: gatekeeper-system
@@ -34,14 +34,14 @@ releases:
         command: "bash"
         args:
           - "-c"
-          - "kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml && kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "kubectl apply -f https://ratify-project.github.io/ratify/library/default/template.yaml && kubectl apply -f https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/template.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/template.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -49,7 +49,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -77,6 +77,6 @@ releases:
           - "gatekeeper-system"
     set:
       - name: notationCerts[0]
-        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
+        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/notation.crt") | quote }}
       - name: featureFlags.RATIFY_CERT_ROTATION
         value: true

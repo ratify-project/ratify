@@ -21,11 +21,11 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/utils"
 )
 
 var logOpt = logger.Option{

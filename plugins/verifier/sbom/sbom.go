@@ -22,15 +22,15 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/plugins/verifier/sbom/utils"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/plugins/verifier/sbom/utils"
 
 	// This import is required to utilize the oras built-in referrer store
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
+	_ "github.com/ratify-project/ratify/pkg/referrerstore/oras"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin/skel"
 	jsonLoader "github.com/spdx/tools-golang/json"
 	"github.com/spdx/tools-golang/spdx"
 	"github.com/spdx/tools-golang/spdx/v2/v2_3"

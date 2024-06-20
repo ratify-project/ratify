@@ -19,9 +19,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/deislabs/ratify/pkg/executor"
-	"github.com/deislabs/ratify/pkg/executor/types"
-	"github.com/deislabs/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/executor"
+	"github.com/ratify-project/ratify/pkg/executor/types"
+	"github.com/ratify-project/ratify/pkg/verifier"
 )
 
 type TestExecutor struct {

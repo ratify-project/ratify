@@ -104,13 +104,13 @@ time=2023-09-20T13:08:43.696147959Z level=error msg=Error: plugin init failure, 
 ```stdout
 "verifierReports": [
     {
-      "subject": "ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
+      "subject": "ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
       "referenceDigest": "sha256:57be2c1c3d9c23ef7c964bba05c7aa23b525732e9c9af9652654ccc3f4babb0e",
       "artifactType": "application/vnd.cncf.notary.signature",
       "verifierReports": [
         {
           "isSuccess": false,
-          "message": "Original Error: (Original Error: (artifact \"ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b\" has no applicable trust policy. Trust policy applicability for a given artifact is determined by registryScopes. To create a trust policy, see: https://notaryproject.dev/docs/quickstart/#create-a-trust-policy), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
+          "message": "Original Error: (Original Error: (artifact \"ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b\" has no applicable trust policy. Trust policy applicability for a given artifact is determined by registryScopes. To create a trust policy, see: https://notaryproject.dev/docs/quickstart/#create-a-trust-policy), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier, Documentation: https://github.com/notaryproject/notaryproject/tree/main/specs, Detail: failed to verify signature of digest), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: verifier-notation, Component Type: verifier",
           "name": "verifier-notation",
           "type": "notation",
           "extensions": null
@@ -129,7 +129,7 @@ The image verification fails.
 ```stdout
 "verifierReports": [
     {
-      "subject": "ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
+      "subject": "ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
       "referenceDigest": "sha256:57be2c1c3d9c23ef7c964bba05c7aa23b525732e9c9af9652654ccc3f4babb0e",
       "artifactType": "application/vnd.cncf.notary.signature",
       "verifierReports": [
@@ -151,7 +151,7 @@ The image verification fails.
 The image verification fails:
 
 ```stdout
-time=2023-09-22T13:50:40.440640495Z level=info msg=verify result for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
+time=2023-09-22T13:50:40.440640495Z level=info msg=verify result for subject ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
   "verifierReports": [
     {
       "isSuccess": false,
@@ -233,14 +233,14 @@ time=2023-09-21T16:49:39.660797685Z level=info msg=Reconciling Policy configpoli
 time=2023-09-21T16:49:39.660900987Z level=error msg=failed to get Policy: Policy.config.ratify.deislabs.io "configpolicy" not found
 time=2023-09-21T16:49:49.266265821Z level=info msg=received request POST /ratify/gatekeeper/v1/mutate
 time=2023-09-21T16:49:49.266514626Z level=info msg=start request POST /ratify/gatekeeper/v1/mutate component-type=server go.version=go1.20.8 trace-id=acb4f156-8132-4cfb-9df6-e73266c5c6c7
-time=2023-09-21T16:49:49.26667593Z level=info msg=mutating image ghcr.io/deislabs/ratify/notary-image:signed component-type=server go.version=go1.20.8 trace-id=acb4f156-8132-4cfb-9df6-e73266c5c6c7
+time=2023-09-21T16:49:49.26667593Z level=info msg=mutating image ghcr.io/ratify-project/ratify/notary-image:signed component-type=server go.version=go1.20.8 trace-id=acb4f156-8132-4cfb-9df6-e73266c5c6c7
 time=2023-09-21T16:49:49.266880934Z level=warning msg=Error: cache not set, Code: CACHE_NOT_SET, Component Type: cache, Detail: failed to set auth cache for ghcr.io component-type=referrerStore go.version=go1.20.8 trace-id=acb4f156-8132-4cfb-9df6-e73266c5c6c7
 ```
 
 #### TC15
 
 ```stdout
-time=2023-09-21T16:24:03.422952769Z level=error msg=Reconciler error Policy=regopolicy controller=policy controllerGroup=config.ratify.deislabs.io controllerKind=Policy error=failed to create policy enforcer: failed to create policy provider: Original Error: (Original Error: (failed to create policy engine: failed to create policy query, err: failed to prepare rego query, err: 1 error occurred: policy.rego:13: rego_unsafe_var_error: var fals is unsafe), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: regopolicy, Component Type: policyProvider, Documentation: https://github.com/deislabs/ratify/blob/main/docs/reference/providers.md#policy-providers, Detail: failed to create OPA engine), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: regopolicy, Component Type: policyProvider, Documentation: https://github.com/deislabs/ratify/blob/main/docs/reference/providers.md#policy-providers, Detail: failed to create policy provider name=regopolicy namespace= reconcileID=71adeaf9-a6f0-4974-88cf-34bd2be47a99
+time=2023-09-21T16:24:03.422952769Z level=error msg=Reconciler error Policy=regopolicy controller=policy controllerGroup=config.ratify.deislabs.io controllerKind=Policy error=failed to create policy enforcer: failed to create policy provider: Original Error: (Original Error: (failed to create policy engine: failed to create policy query, err: failed to prepare rego query, err: 1 error occurred: policy.rego:13: rego_unsafe_var_error: var fals is unsafe), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: regopolicy, Component Type: policyProvider, Documentation: https://github.com/ratify-project/ratify/blob/main/docs/reference/providers.md#policy-providers, Detail: failed to create OPA engine), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Plugin Name: regopolicy, Component Type: policyProvider, Documentation: https://github.com/ratify-project/ratify/blob/main/docs/reference/providers.md#policy-providers, Detail: failed to create policy provider name=regopolicy namespace= reconcileID=71adeaf9-a6f0-4974-88cf-34bd2be47a99
 ```
 
 #### TC16
@@ -293,8 +293,8 @@ Ratify Logs:
 ```stdout
 time=2023-09-21T20:49:55.965807677Z level=info msg=received request POST /ratify/gatekeeper/v1/mutate 
 time=2023-09-21T20:49:55.965917879Z level=info msg=start request POST /ratify/gatekeeper/v1/mutate component-type=server go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
-time=2023-09-21T20:49:55.966001082Z level=info msg=mutating image ghcr.io/deislabs/ratify/notary-image:signed component-type=server go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
-time=2023-09-21T20:49:57.916645653Z level=debug msg=subject descriptor cache miss for value: ghcr.io/deislabs/ratify/notary-image:signed component-type=referrerStore go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
+time=2023-09-21T20:49:55.966001082Z level=info msg=mutating image ghcr.io/ratify-project/ratify/notary-image:signed component-type=server go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
+time=2023-09-21T20:49:57.916645653Z level=debug msg=subject descriptor cache miss for value: ghcr.io/ratify-project/ratify/notary-image:signed component-type=referrerStore go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
 time=2023-09-21T20:49:57.916739655Z level=debug msg=auth cache miss component-type=referrerStore go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
 time=2023-09-21T20:49:57.917014862Z level=error msg=Error saving value to redis: error saving state: rpc error: code = DeadlineExceeded desc = context deadline exceeded component-type=cache go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
 time=2023-09-21T20:49:57.917058964Z level=warning msg=Error: cache not set, Code: CACHE_NOT_SET, Component Type: cache, Detail: failed to set auth cache for ghcr.io component-type=referrerStore go.version=go1.20.8 trace-id=084fab3d-0f0d-4f32-9a9b-03db3c3df5fa
@@ -306,19 +306,19 @@ Audit also begins to fail with timeout of 4.9 second.
 ```stdout
 time=2023-09-21T20:52:45.703791311Z level=info msg=received request POST /ratify/gatekeeper/v1/verify 
 time=2023-09-21T20:52:45.703840611Z level=info msg=start request POST /ratify/gatekeeper/v1/verify component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
-time=2023-09-21T20:52:45.703937712Z level=info msg=verifying subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
-time=2023-09-21T20:52:50.604600679Z level=debug msg=subject descriptor cache miss for value: ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=referrerStore go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
+time=2023-09-21T20:52:45.703937712Z level=info msg=verifying subject ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
+time=2023-09-21T20:52:50.604600679Z level=debug msg=subject descriptor cache miss for value: ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=referrerStore go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
 time=2023-09-21T20:52:50.604668279Z level=debug msg=auth cache miss component-type=referrerStore go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
 time=2023-09-21T20:52:50.60472728Z level=error msg=Error saving value to redis: error saving state: rpc error: code = DeadlineExceeded desc = context deadline exceeded component-type=cache go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
 time=2023-09-21T20:52:50.60474728Z level=warning msg=Error: cache not set, Code: CACHE_NOT_SET, Component Type: cache, Detail: failed to set auth cache for ghcr.io component-type=referrerStore go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
-time=2023-09-21T20:52:50.60483898Z level=warning msg=Original Error: (Original Error: (Head "https://ghcr.io/v2/deislabs/ratify/notary-image/manifests/sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b": context deadline exceeded), Error: repository operation failure, Code: REPOSITORY_OPERATION_FAILURE, Plugin Name: oras), Error: get subject descriptor failure, Code: GET_SUBJECT_DESCRIPTOR_FAILURE, Plugin Name: oras, Component Type: referrerStore, Detail: failed to resolve the subject descriptor component-type=referrerStore go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
-time=2023-09-21T20:52:50.60485408Z level=debug msg=cache miss for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
+time=2023-09-21T20:52:50.60483898Z level=warning msg=Original Error: (Original Error: (Head "https://ghcr.io/v2/ratify-project/ratify/notary-image/manifests/sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b": context deadline exceeded), Error: repository operation failure, Code: REPOSITORY_OPERATION_FAILURE, Plugin Name: oras), Error: get subject descriptor failure, Code: GET_SUBJECT_DESCRIPTOR_FAILURE, Plugin Name: oras, Component Type: referrerStore, Detail: failed to resolve the subject descriptor component-type=referrerStore go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
+time=2023-09-21T20:52:50.60485408Z level=debug msg=cache miss for subject ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
 time=2023-09-21T20:52:50.60487278Z level=error msg=Error saving value to redis: error saving state: rpc error: code = DeadlineExceeded desc = context deadline exceeded component-type=cache go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
-time=2023-09-21T20:52:50.60488398Z level=warning msg=unable to insert cache entry for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
-time=2023-09-21T20:52:50.60490018Z level=info msg=verify result for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
+time=2023-09-21T20:52:50.60488398Z level=warning msg=unable to insert cache entry for subject ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b component-type=server go.version=go1.20.8 trace-id=384a4c5e-6654-47a8-bdaa-16823df527ac
+time=2023-09-21T20:52:50.60490018Z level=info msg=verify result for subject ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
   "verifierReports": [
     {
-      "subject": "ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
+      "subject": "ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b",
       "isSuccess": false,
       "message": "verification failed: Error: referrer store failure, Code: REFERRER_STORE_FAILURE, Component Type: referrerStore, Detail: could not resolve descriptor for a subject from any stores"
     }
@@ -362,7 +362,7 @@ time=2023-09-21T22:17:50.216846963Z level=error msg=Error saving value to redis:
 ```stdout
 level=error msg=Reconciler error CertificateStore=default/certstore-incorrect-cert controller=certificatestore controllerGroup=config.ratify.deislabs.io controllerKind=CertificateStore error=Error fetching certificates in store certstore-incorrect-cert with inline provider, error: Error: cert invalid, Code: CERT_INVALID, Component Type: certProvider name=certstore-incorrect-cert namespace=default reconcileID=6a444f61-fed0-4d0a-b6e1-08bedbe90712
 time=2023-09-22T01:55:54.866028606Z level=warning msg=no certificate fetched for certStore certstore-incorrect-cert component-type=verifier go.version=go1.20.8 trace-id=4b6580f6-8b08-4c0b-a1ab-d4264298a6c9
-time=2023-09-22T01:55:54.866327608Z level=info msg=verify result for subject ghcr.io/deislabs/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
+time=2023-09-22T01:55:54.866327608Z level=info msg=verify result for subject ghcr.io/ratify-project/ratify/notary-image@sha256:8e3d01113285a0e4aa574da8eb9c0f112a1eb979d72f73399d7175ba3cdb1c1b: {
   "verifierReports": [
     {
       "isSuccess": false,

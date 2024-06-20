@@ -23,8 +23,8 @@ import (
 	"errors"
 	"testing"
 
-	ratifyerrors "github.com/deislabs/ratify/errors"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
+	ratifyerrors "github.com/ratify-project/ratify/errors"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	"github.com/stretchr/testify/assert"
 )
 

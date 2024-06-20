@@ -22,9 +22,9 @@ import (
 	"fmt"
 	"maps"
 
-	"github.com/deislabs/ratify/internal/constants"
-	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
-	_ "github.com/deislabs/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
+	"github.com/ratify-project/ratify/internal/constants"
+	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
+	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,9 +32,9 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	cutils "github.com/deislabs/ratify/pkg/controllers/utils"
-	kmp "github.com/deislabs/ratify/pkg/keymanagementprovider"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	cutils "github.com/ratify-project/ratify/pkg/controllers/utils"
+	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/sirupsen/logrus"
 )
 

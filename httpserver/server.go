@@ -29,9 +29,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/metrics"
+	"github.com/ratify-project/ratify/config"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/metrics"
 
 	"github.com/gorilla/mux"
 	"github.com/sirupsen/logrus"

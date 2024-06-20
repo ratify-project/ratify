@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/deislabs/ratify/api/v1beta1"
+	"github.com/ratify-project/ratify/api/v1beta1"
 )
 
 func TestParsePluginSource_HandlesJSON(t *testing.T) {

@@ -21,7 +21,7 @@ import (
 	"encoding/pem"
 	"fmt"
 
-	"github.com/deislabs/ratify/errors"
+	"github.com/ratify-project/ratify/errors"
 )
 
 // This is a map containing Cert store configuration including name, tenantID, and cert object information

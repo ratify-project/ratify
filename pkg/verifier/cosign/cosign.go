@@ -30,25 +30,25 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/utils"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/config"
-	"github.com/deislabs/ratify/pkg/verifier/factory"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/config"
+	"github.com/ratify-project/ratify/pkg/verifier/factory"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 	"golang.org/x/crypto/cryptobyte"
 	"golang.org/x/crypto/cryptobyte/asn1"
 
-	re "github.com/deislabs/ratify/errors"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/opencontainers/go-digest"
 	imgspec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
@@ -79,6 +79,7 @@ type LegacyExtension struct {
 // where each entry corresponds to a single signature verified
 type Extension struct {
 	SignatureExtension []cosignExtensionList `json:"signatures,omitempty"`
+	TrustPolicy        string                `json:"trustPolicy,omitempty"`
 }
 
 // cosignExtensionList is the structure verifications performed
@@ -97,6 +98,7 @@ type cosignExtension struct {
 	BundleVerified  bool          `json:"bundleVerified"`
 	Err             string        `json:"error,omitempty"`
 	KeyInformation  PKKey         `json:"keyInformation,omitempty"`
+	Summary         []string      `json:"summary,omitempty"`
 }
 
 type cosignVerifier struct {
@@ -117,9 +119,19 @@ var logOpt = logger.Option{
 }
 
 // used for mocking purposes
-var getKeysMaps = getKeysMapsDefault
+var getKeyMapOpts = getKeyMapOptsDefault
 
-const verifierType string = "cosign"
+const (
+	verifierType string = "cosign"
+	// messages for verificationPerformedMessage. source: https://github.com/sigstore/cosign/blob/d275a272ec0cdf5a4c22d01b891a4d7e20164d71/cmd/cosign/cli/verify/verify.go#L318
+	annotationMessage    string = "The specified annotations were verified."                                                    // TODO: check if message has been updated by upstream cosign cli
+	claimsMessage        string = "The cosign claims were validated."                                                           // TODO: check if message has been updated by upstream cosign cli
+	offlineBundleMessage string = "Existence of the claims in the transparency log was verified offline."                       // TODO: check if message has been updated by upstream cosign cli
+	rekorClaimsMessage   string = "The claims were present in the transparency log."                                            // TODO: check if message has been updated by upstream cosign cli
+	rekorSigMessage      string = "The signatures were integrated into the transparency log when the certificate was valid."    // TODO: check if message has been updated by upstream cosign cli
+	sigVerifierMessage   string = "The signatures were verified against the specified public key."                              // TODO: check if message has been updated by upstream cosign cli
+	certVerifierMessage  string = "The code-signing certificate was verified using trusted certificate authority certificates." // TODO: check if message has been updated by upstream cosign cli
+)
 
 // init() registers the cosign verifier with the factory
 func init() {
@@ -148,6 +160,7 @@ func (f *cosignVerifierFactory) Create(_ string, verifierConfig config.VerifierC
 	legacy := true
 	// if trustPolicies are provided and non-legacy, create the trust policies
 	if config.KeyRef == "" && config.RekorURL == "" && len(config.TrustPolicies) > 0 {
+		logger.GetLogger(context.Background(), logOpt).Debugf("legacy cosign verifier configuration not found, creating trust policies")
 		trustPolicies, err = CreateTrustPolicies(config.TrustPolicies, verifierName)
 		if err != nil {
 			return nil, err
@@ -195,8 +208,15 @@ func (v *cosignVerifier) Verify(ctx context.Context, subjectReference common.Ref
 }
 
 func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (verifier.VerifierResult, error) {
+	// get the trust policy for the reference
+	trustPolicy, err := v.trustPolicies.GetScopedPolicy(subjectReference.Original)
+	if err != nil {
+		return errorToVerifyResult(v.name, v.verifierType, err), nil
+	}
+	logger.GetLogger(ctx, logOpt).Debugf("selected trust policy %s for reference %s", trustPolicy.GetName(), subjectReference.Original)
+
 	// get the map of keys and relevant cosign options for that reference
-	keysMap, cosignOpts, err := getKeysMaps(ctx, v.trustPolicies, subjectReference.Original, v.namespace)
+	keysMap, cosignOpts, err := getKeyMapOpts(ctx, trustPolicy, v.namespace)
 	if err != nil {
 		return errorToVerifyResult(v.name, v.verifierType, err), nil
 	}
@@ -246,41 +266,20 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 		if err != nil {
 			return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to generate static signature: %w", err)), nil
 		}
-		// check each key in the map of keys returned by the trust policy
-		for mapKey, pubKey := range keysMap {
-			hashType := crypto.SHA256
-			// default hash type is SHA256 but for AKV scenarios, the hash type is determined by the key size
-			// TODO: investigate if it's possible to extract hash type from sig directly. This is a workaround for now
-			if pubKey.ProviderType == azurekeyvault.ProviderName {
-				hashType, sig, err = processAKVSignature(blob.Annotations[static.SignatureAnnotationKey], sig, pubKey.Key, blobBytes, staticOpts)
-				if err != nil {
-					return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to process AKV signature: %w", err)), nil
-				}
-			}
-
-			// return the correct verifier based on public key type and bytes
-			verifier, err := signature.LoadVerifier(pubKey.Key, hashType)
+		if len(keysMap) > 0 {
+			// if keys are found, perform verification with keys
+			var verifications []cosignExtension
+			verifications, hasValidSignature, err = verifyWithKeys(ctx, keysMap, sig, blob.Annotations[static.SignatureAnnotationKey], blobBytes, staticOpts, &cosignOpts, subjectDescHash)
 			if err != nil {
-				return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to load public key from provider [%s] name [%s] version [%s]: %w", mapKey.Provider, mapKey.Name, mapKey.Version, err)), nil
+				return errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("failed to verify with keys: %w", err)), nil
 			}
-			cosignOpts.SigVerifier = verifier
-			// verify signature with cosign options + perform bundle verification
-			bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, &cosignOpts)
-			extension := cosignExtension{
-				IsSuccess:      true,
-				BundleVerified: bundleVerified,
-				KeyInformation: mapKey,
-			}
-			if err != nil {
-				extension.IsSuccess = false
-				extension.Err = err.Error()
-			} else {
-				hasValidSignature = true
-			}
+			extensionListEntry.Verifications = append(extensionListEntry.Verifications, verifications...)
+		} else {
+			// if no keys are found, perform keyless verification
+			var extension cosignExtension
+			extension, hasValidSignature = verifyKeyless(ctx, sig, &cosignOpts, subjectDescHash)
 			extensionListEntry.Verifications = append(extensionListEntry.Verifications, extension)
 		}
-
-		// TODO: perform keyless verification instead if no keys are found
 		sigExtensions = append(sigExtensions, extensionListEntry)
 	}
 
@@ -290,12 +289,12 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			Type:       v.verifierType,
 			IsSuccess:  true,
 			Message:    "cosign verification success. valid signatures found. please refer to extensions field for verifications performed.",
-			Extensions: Extension{SignatureExtension: sigExtensions},
+			Extensions: Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
 		}, nil
 	}
 
 	errorResult := errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("no valid signatures found"))
-	errorResult.Extensions = Extension{SignatureExtension: sigExtensions}
+	errorResult.Extensions = Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()}
 	return errorResult, nil
 }
 
@@ -520,15 +519,69 @@ func decodeASN1Signature(sig []byte) ([]byte, error) {
 	return rawSigBytes, nil
 }
 
-// getKeysMapsDefault returns the map of keys and cosign options for the reference
-func getKeysMapsDefault(ctx context.Context, trustPolicies *TrustPolicies, reference string, namespace string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
-	// get the trust policy for the reference
-	trustPolicy, err := trustPolicies.GetScopedPolicy(reference)
-	if err != nil {
-		return nil, cosign.CheckOpts{}, err
-	}
-	logger.GetLogger(ctx, logOpt).Debugf("selected trust policy %s for reference %s", trustPolicy.GetName(), reference)
+// verifyWithKeys verifies the signature with the keys map and returns the verification results
+func verifyWithKeys(ctx context.Context, keysMap map[PKKey]keymanagementprovider.PublicKey, sig oci.Signature, sigEncoded string, payload []byte, staticOpts []static.Option, cosignOpts *cosign.CheckOpts, subjectDescHash v1.Hash) ([]cosignExtension, bool, error) {
+	// check each key in the map of keys returned by the trust policy
+	var err error
+	verifications := make([]cosignExtension, 0)
+	hasValidSignature := false
+	for mapKey, pubKey := range keysMap {
+		hashType := crypto.SHA256
+		// default hash type is SHA256 but for AKV scenarios, the hash type is determined by the key size
+		// TODO: investigate if it's possible to extract hash type from sig directly. This is a workaround for now
+		if pubKey.ProviderType == azurekeyvault.ProviderName {
+			hashType, sig, err = processAKVSignature(sigEncoded, sig, pubKey.Key, payload, staticOpts)
+			if err != nil {
+				return verifications, false, fmt.Errorf("failed to process AKV signature: %w", err)
+			}
+		}
 
+		// return the correct verifier based on public key type and bytes
+		verifier, err := signature.LoadVerifier(pubKey.Key, hashType)
+		if err != nil {
+			return verifications, false, fmt.Errorf("failed to load public key from provider [%s] name [%s] version [%s]: %w", mapKey.Provider, mapKey.Name, mapKey.Version, err)
+		}
+		cosignOpts.SigVerifier = verifier
+		// verify signature with cosign options + perform bundle verification
+		bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
+		extension := cosignExtension{
+			IsSuccess:      true,
+			BundleVerified: bundleVerified,
+			KeyInformation: mapKey,
+		}
+		if err != nil {
+			extension.IsSuccess = false
+			extension.Err = err.Error()
+		} else {
+			extension.Summary = verificationPerformedMessage(bundleVerified, cosignOpts)
+			hasValidSignature = true
+		}
+		verifications = append(verifications, extension)
+	}
+	return verifications, hasValidSignature, nil
+}
+
+// verifyKeyless performs keyless verification and returns the verification results
+func verifyKeyless(ctx context.Context, sig oci.Signature, cosignOpts *cosign.CheckOpts, subjectDescHash v1.Hash) (cosignExtension, bool) {
+	// verify signature with cosign options + perform bundle verification
+	hasValidSignature := false
+	bundleVerified, err := cosign.VerifyImageSignature(ctx, sig, subjectDescHash, cosignOpts)
+	extension := cosignExtension{
+		IsSuccess:      true,
+		BundleVerified: bundleVerified,
+	}
+	if err != nil {
+		extension.IsSuccess = false
+		extension.Err = err.Error()
+	} else {
+		extension.Summary = verificationPerformedMessage(bundleVerified, cosignOpts)
+		hasValidSignature = true
+	}
+	return extension, hasValidSignature
+}
+
+// getKeyMapOptsDefault returns the map of keys and cosign options for the reference
+func getKeyMapOptsDefault(ctx context.Context, trustPolicy TrustPolicy, namespace string) (map[PKKey]keymanagementprovider.PublicKey, cosign.CheckOpts, error) {
 	// get the map of keys for that reference
 	keysMap, err := trustPolicy.GetKeys(ctx, namespace)
 	if err != nil {
@@ -593,4 +646,29 @@ func processAKVSignature(sigEncoded string, staticSig oci.Signature, publicKey c
 		return crypto.SHA256, nil, fmt.Errorf("unsupported public key type: %T", publicKey)
 	}
 	return hashType, staticSig, nil
+}
+
+// verificationPerformedMessage returns a string list of all verifications performed
+// based on https://github.com/sigstore/cosign/blob/5ae2e31c30ee87e035cc57ebbbe2ecf3b6549ff5/cmd/cosign/cli/verify/verify.go#L318
+func verificationPerformedMessage(bundleVerified bool, co *cosign.CheckOpts) []string {
+	var messages []string
+	if co.ClaimVerifier != nil {
+		if co.Annotations != nil {
+			messages = append(messages, annotationMessage)
+		}
+		messages = append(messages, claimsMessage)
+	}
+	if bundleVerified {
+		messages = append(messages, offlineBundleMessage)
+	} else if co.RekorClient != nil {
+		messages = append(messages, rekorClaimsMessage)
+		messages = append(messages, rekorSigMessage)
+	}
+	// if no SigVerifier is provided, fulcio root certs are assumed to be used (keyless)
+	if co.SigVerifier != nil {
+		messages = append(messages, sigVerifierMessage)
+	} else {
+		messages = append(messages, certVerifierMessage)
+	}
+	return messages
 }

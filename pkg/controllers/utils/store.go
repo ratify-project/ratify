@@ -17,12 +17,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/pkg/controllers"
-	rc "github.com/deislabs/ratify/pkg/referrerstore/config"
-	sf "github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	"github.com/ratify-project/ratify/config"
+	"github.com/ratify-project/ratify/pkg/controllers"
+	rc "github.com/ratify-project/ratify/pkg/referrerstore/config"
+	sf "github.com/ratify-project/ratify/pkg/referrerstore/factory"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 	"github.com/sirupsen/logrus"
 )
 

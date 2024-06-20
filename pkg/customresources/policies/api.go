@@ -15,7 +15,7 @@ limitations under the License.
 
 package policies
 
-import "github.com/deislabs/ratify/pkg/policyprovider"
+import "github.com/ratify-project/ratify/pkg/policyprovider"
 
 // PolicyManager is an interface that defines the methods for managing policies across different scopes.
 type PolicyManager interface {

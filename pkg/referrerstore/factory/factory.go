@@ -21,13 +21,13 @@ import (
 	"path"
 	"strings"
 
-	re "github.com/deislabs/ratify/errors"
-	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
-	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
-	"github.com/deislabs/ratify/pkg/referrerstore/plugin"
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
+	re "github.com/ratify-project/ratify/errors"
+	pluginCommon "github.com/ratify-project/ratify/pkg/common/plugin"
+	"github.com/ratify-project/ratify/pkg/featureflag"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/config"
+	"github.com/ratify-project/ratify/pkg/referrerstore/plugin"
+	"github.com/ratify-project/ratify/pkg/referrerstore/types"
 	"github.com/sirupsen/logrus"
 )
 

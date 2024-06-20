@@ -18,6 +18,7 @@ package metrics
 import (
 	"context"
 
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	instrument "go.opentelemetry.io/otel/metric"
@@ -42,7 +43,7 @@ var (
 )
 
 const (
-	scope = "github.com/deislabs/ratify"
+	scope = "github.com/ratify-project/ratify"
 
 	// metric names
 	metricNameVerificationDuration = "ratify_verification_request"
@@ -202,6 +203,7 @@ func ReportMutationRequest(ctx context.Context, duration int64) {
 // subjectReference: the subject reference of the verification
 // success: whether the verification succeeded
 // isError: whether the verification failed due to an error
+// workload_namespace: the namespace where workload is deployed
 func ReportVerifierDuration(ctx context.Context, duration int64, veriferName string, subjectReference string, success bool, isError bool) {
 	if verifierDuration != nil {
 		verifierDuration.Record(ctx, duration, instrument.WithAttributes(
@@ -221,6 +223,10 @@ func ReportVerifierDuration(ctx context.Context, duration int64, veriferName str
 				Key:   "error",
 				Value: attribute.BoolValue(isError),
 			},
+			attribute.KeyValue{
+				Key:   "workload_namespace",
+				Value: attribute.StringValue(ctxUtils.GetNamespace(ctx)),
+			},
 		))
 	}
 }
@@ -228,9 +234,12 @@ func ReportVerifierDuration(ctx context.Context, duration int64, veriferName str
 // ReportSystemError reports a system error from the server handler
 // Attributes:
 // errorString: the error message
+// workload_namespace: the namespace where workload is deployed
 func ReportSystemError(ctx context.Context, errorString string) {
 	if systemErrorCount != nil {
-		systemErrorCount.Add(ctx, 1, instrument.WithAttributes(attribute.KeyValue{Key: "error", Value: attribute.StringValue(errorString)}))
+		systemErrorCount.Add(ctx, 1, instrument.WithAttributes(
+			attribute.KeyValue{Key: "error", Value: attribute.StringValue(errorString)},
+			attribute.KeyValue{Key: "workload_namespace", Value: attribute.StringValue(ctxUtils.GetNamespace(ctx))}))
 	}
 }
 
@@ -238,44 +247,60 @@ func ReportSystemError(ctx context.Context, errorString string) {
 // Attributes:
 // statusCode: the status code of the request
 // registryHost: the host name of the registry
+// workload_namespace: the namespace where workload is deployed
 func ReportRegistryRequestCount(ctx context.Context, statusCode int, registryHost string) {
 	if registryRequestCount != nil {
-		registryRequestCount.Add(ctx, 1, instrument.WithAttributes(attribute.KeyValue{Key: "status_code", Value: attribute.IntValue(statusCode)}, attribute.KeyValue{Key: "registry_host", Value: attribute.StringValue(registryHost)}))
+		registryRequestCount.Add(ctx, 1, instrument.WithAttributes(
+			attribute.KeyValue{Key: "status_code", Value: attribute.IntValue(statusCode)},
+			attribute.KeyValue{Key: "registry_host", Value: attribute.StringValue(registryHost)},
+			attribute.KeyValue{Key: "workload_namespace", Value: attribute.StringValue(ctxUtils.GetNamespace(ctx))}))
 	}
 }
 
 // ReportAADExchangeDuration reports the duration of an AAD exchange
 // Attributes:
 // resourceType: the scope of resource being exchanged (AKV or ACR)
+// workload_namespace: the namespace where workload is deployed
 func ReportAADExchangeDuration(ctx context.Context, duration int64, resourceType string) {
 	if aadExchangeDuration != nil {
-		aadExchangeDuration.Record(ctx, duration, instrument.WithAttributes(attribute.KeyValue{Key: "resource_type", Value: attribute.StringValue(resourceType)}))
+		aadExchangeDuration.Record(ctx, duration, instrument.WithAttributes(
+			attribute.KeyValue{Key: "resource_type", Value: attribute.StringValue(resourceType)},
+			attribute.KeyValue{Key: "workload_namespace", Value: attribute.StringValue(ctxUtils.GetNamespace(ctx))}))
 	}
 }
 
 // ReportACRExchangeDuration reports the duration of an ACR exchange (AAD token for ACR refresh token)
 // Attributes:
 // repository: the repository being accessed
+// workload_namespace: the namespace where workload is deployed
 func ReportACRExchangeDuration(ctx context.Context, duration int64, repository string) {
 	if acrExchangeDuration != nil {
-		acrExchangeDuration.Record(ctx, duration, instrument.WithAttributes(attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)}))
+		acrExchangeDuration.Record(ctx, duration, instrument.WithAttributes(
+			attribute.KeyValue{Key: "repository", Value: attribute.StringValue(repository)},
+			attribute.KeyValue{Key: "workload_namespace", Value: attribute.StringValue(ctxUtils.GetNamespace(ctx))}))
 	}
 }
 
 // ReportAKVCertificateDuration reports the duration of an AKV certificate fetch
 // Attributes:
 // certificateName: the object name of the certificate
+// workload_namespace: the namespace where workload is deployed
 func ReportAKVCertificateDuration(ctx context.Context, duration int64, certificateName string) {
 	if akvCertificateDuration != nil {
-		akvCertificateDuration.Record(ctx, duration, instrument.WithAttributes(attribute.KeyValue{Key: "certificate_name", Value: attribute.StringValue(certificateName)}))
+		akvCertificateDuration.Record(ctx, duration, instrument.WithAttributes(
+			attribute.KeyValue{Key: "certificate_name", Value: attribute.StringValue(certificateName)},
+			attribute.KeyValue{Key: "workload_namespace", Value: attribute.StringValue(ctxUtils.GetNamespace(ctx))}))
 	}
 }
 
 // ReportBlobCacheCount reports a blob cache hit or miss
 // Attributes:
 // hit: whether the blob was found in the cache
+// workload_namespace: the namespace where workload is deployed
 func ReportBlobCacheCount(ctx context.Context, hit bool) {
 	if cacheBlobCount != nil {
-		cacheBlobCount.Add(ctx, 1, instrument.WithAttributes(attribute.KeyValue{Key: "hit", Value: attribute.BoolValue(hit)}))
+		cacheBlobCount.Add(ctx, 1, instrument.WithAttributes(
+			attribute.KeyValue{Key: "hit", Value: attribute.BoolValue(hit)},
+			attribute.KeyValue{Key: "workload_namespace", Value: attribute.StringValue(ctxUtils.GetNamespace(ctx))}))
 	}
 }

@@ -23,7 +23,7 @@ package v1beta1
 import (
 	unsafe "unsafe"
 
-	unversioned "github.com/deislabs/ratify/api/unversioned"
+	unversioned "github.com/ratify-project/ratify/api/unversioned"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"

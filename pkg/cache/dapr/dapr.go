@@ -23,10 +23,10 @@ import (
 	"time"
 
 	"github.com/dapr/go-sdk/client"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/cache"
-	"github.com/deislabs/ratify/pkg/featureflag"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/cache"
+	"github.com/ratify-project/ratify/pkg/featureflag"
 )
 
 const DaprCacheType = "dapr"

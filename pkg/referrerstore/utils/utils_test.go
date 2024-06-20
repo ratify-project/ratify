@@ -19,10 +19,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/mocks"
-	"github.com/deislabs/ratify/pkg/utils"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/mocks"
+	"github.com/ratify-project/ratify/pkg/utils"
 )
 
 func TestResolveSubjectDescriptor_Success(t *testing.T) {

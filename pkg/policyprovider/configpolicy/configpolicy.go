@@ -20,15 +20,15 @@ import (
 	"encoding/json"
 	"fmt"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/executor/types"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	pf "github.com/deislabs/ratify/pkg/policyprovider/factory"
-	vt "github.com/deislabs/ratify/pkg/policyprovider/types"
-	"github.com/deislabs/ratify/pkg/verifier"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/executor/types"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/policyprovider"
+	"github.com/ratify-project/ratify/pkg/policyprovider/config"
+	pf "github.com/ratify-project/ratify/pkg/policyprovider/factory"
+	vt "github.com/ratify-project/ratify/pkg/policyprovider/types"
+	"github.com/ratify-project/ratify/pkg/verifier"
 )
 
 // PolicyEnforcer describes different polices that are enforced during verification

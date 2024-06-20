@@ -8,6 +8,10 @@ on:
     branches:
       - main
       - dev
+  pull_request:
+    branches:
+      - dev
+      - main
   workflow_dispatch:
 
 permissions: read-all
@@ -23,8 +27,13 @@ jobs:
       contents: read
     
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          egress-policy: audit
+
       - name: "Checkout code"
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # tag=3.0.2
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # tag=3.0.2
         with:
           persist-credentials: false
 
@@ -44,6 +53,6 @@ jobs:
           retention-days: 5
       
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@9fdb3e49720b44c48891d036bb502feb25684276 # tag=v3.25.6
+        uses: github/codeql-action/upload-sarif@23acc5c183826b7a8a97bce3cecc52db901f8251 # tag=v3.25.10
         with:
           sarif_file: results.sarif

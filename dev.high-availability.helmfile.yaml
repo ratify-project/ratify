@@ -6,9 +6,9 @@ repositories:
   - name: bitnami
     url: https://charts.bitnami.com/bitnami
   - name: ratify
-    url: ghcr.io/deislabs/ratify-chart-dev # PRERELEASE: Change to 'https://deislabs.github.io/ratify' before copying to helmfile.yaml
+    url: ghcr.io/ratify-project/ratify-chart-dev # PRERELEASE: Change to 'https://ratify-project.github.io/ratify' before copying to helmfile.yaml
     oci: true # PRERELEASE: Remove before copying to helmfile.yaml
-    
+
 releases:
   - name: dapr
     namespace: dapr-system
@@ -63,14 +63,14 @@ releases:
         command: "bash"
         args:
           - "-c"
-          - "export SIGN_KEY=$(openssl rand 16 | hexdump -v -e '/1 \"%02x\"' | base64) && curl https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/dapr/dapr-redis-secret.yaml | yq e '.data.signingKey = strenv(SIGN_KEY)' | kubectl apply -f -"
+          - "export SIGN_KEY=$(openssl rand 16 | hexdump -v -e '/1 \"%02x\"' | base64) && curl https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/dapr/dapr-redis-secret.yaml | yq e '.data.signingKey = strenv(SIGN_KEY)' | kubectl apply -f -"
       - events: ["presync"]
         showlogs: true
         command: "kubectl"
         args:
           - "apply"
           - "-f"
-          - "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/dapr/dapr-redis.yaml"
+          - "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/dapr/dapr-redis.yaml"
           - "-n"
           - "gatekeeper-system"
       - events: ["presync"]
@@ -78,14 +78,14 @@ releases:
         command: "bash"
         args:
           - "-c"
-          - "kubectl apply -f https://deislabs.github.io/ratify/library/default/template.yaml && kubectl apply -f https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "kubectl apply -f https://ratify-project.github.io/ratify/library/default/template.yaml && kubectl apply -f https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
         args:
           - "delete"
           - "-f"
-          - "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/dapr/dapr-redis-secret.yaml"
+          - "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/dapr/dapr-redis-secret.yaml"
           - "-n"
           - "gatekeeper-system"
           - "--ignore-not-found=true"
@@ -95,7 +95,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/dapr/dapr-redis.yaml"
+          - "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/dapr/dapr-redis.yaml"
           - "-n"
           - "gatekeeper-system"
           - "--ignore-not-found=true"
@@ -105,7 +105,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/template.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/template.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -113,7 +113,7 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://deislabs.github.io/ratify/library/default/samples/constraint.yaml"
+          - "https://ratify-project.github.io/ratify/library/default/samples/constraint.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -146,7 +146,7 @@ releases:
       - name: logger.level
         value: debug
       - name: notationCerts[0]
-        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
+        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/notation.crt") | quote }}
       - name: replicaCount
         value: 2
       - name: provider.cache.type

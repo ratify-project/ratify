@@ -22,9 +22,9 @@ import (
 	"os"
 	"slices"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/utils"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/utils"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
@@ -39,8 +39,11 @@ type KeyConfig struct {
 }
 
 type KeylessConfig struct {
-	RekorURL    string `json:"rekorURL,omitempty"`
-	CTLogVerify *bool  `json:"ctLogVerify,omitempty"`
+	CTLogVerify                 *bool  `json:"ctLogVerify,omitempty"`
+	CertificateIdentity         string `json:"certificateIdentity,omitempty"`
+	CertificateIdentityRegExp   string `json:"certificateIdentityRegExp,omitempty"`
+	CertificateOIDCIssuer       string `json:"certificateOIDCIssuer,omitempty"`
+	CertificateOIDCIssuerRegExp string `json:"certificateOIDCIssuerRegExp,omitempty"`
 }
 
 type TrustPolicyConfig struct {
@@ -50,10 +53,11 @@ type TrustPolicyConfig struct {
 	Keys       []KeyConfig   `json:"keys,omitempty"`
 	Keyless    KeylessConfig `json:"keyless,omitempty"`
 	TLogVerify *bool         `json:"tLogVerify,omitempty"`
+	RekorURL   string        `json:"rekorURL,omitempty"`
 }
 
 type PKKey struct {
-	Provider string `json:"provider"`
+	Provider string `json:"provider,omitempty"`
 	Name     string `json:"name,omitempty"`
 	Version  string `json:"version,omitempty"`
 }
@@ -109,8 +113,8 @@ func CreateTrustPolicy(config TrustPolicyConfig, verifierName string) (TrustPoli
 		}
 	}
 
-	if config.Keyless.RekorURL == "" {
-		config.Keyless.RekorURL = DefaultRekorURL
+	if config.RekorURL == "" {
+		config.RekorURL = DefaultRekorURL
 	}
 
 	if config.TLogVerify == nil {
@@ -177,16 +181,31 @@ func (tp *trustPolicy) GetScopes() []string {
 
 func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, error) {
 	cosignOpts := cosign.CheckOpts{}
+	var err error
+	// if tlog verification is enabled, set the rekor client and public keys
+	if tp.config.TLogVerify != nil && *tp.config.TLogVerify {
+		cosignOpts.IgnoreTlog = false
+		// create the rekor client
+		cosignOpts.RekorClient, err = rekor.NewClient(tp.config.RekorURL)
+		if err != nil {
+			return cosignOpts, fmt.Errorf("failed to create Rekor client from URL %s: %w", tp.config.RekorURL, err)
+		}
+		// Fetches the Rekor public keys from the Rekor server
+		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
+		if err != nil {
+			return cosignOpts, fmt.Errorf("failed to fetch Rekor public keys: %w", err)
+		}
+	} else {
+		cosignOpts.IgnoreTlog = true
+	}
+
+	// if keyless verification is enabled, set the root certificates, intermediate certificates, and certificate transparency log public keys
 	if tp.isKeyless {
 		roots, err := fulcio.GetRoots()
 		if err != nil || roots == nil {
 			return cosignOpts, fmt.Errorf("failed to get fulcio roots: %w", err)
 		}
 		cosignOpts.RootCerts = roots
-		cosignOpts.RekorClient, err = rekor.NewClient(tp.config.Keyless.RekorURL)
-		if err != nil {
-			return cosignOpts, fmt.Errorf("failed to create Rekor client from URL %s: %w", tp.config.Keyless.RekorURL, err)
-		}
 		if tp.config.Keyless.CTLogVerify != nil && *tp.config.Keyless.CTLogVerify {
 			cosignOpts.CTLogPubKeys, err = cosign.GetCTLogPubs(ctx)
 			if err != nil {
@@ -195,19 +214,21 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 		} else {
 			cosignOpts.IgnoreSCT = true
 		}
-		// Fetches the Rekor public keys from the Rekor server
-		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
-		if err != nil {
-			return cosignOpts, fmt.Errorf("failed to fetch Rekor public keys: %w", err)
-		}
 		cosignOpts.IntermediateCerts, err = fulcio.GetIntermediates()
 		if err != nil {
 			return cosignOpts, fmt.Errorf("failed to get fulcio intermediate certificates: %w", err)
 		}
+		// Set the certificate identity and issuer for keyless verification
+		cosignOpts.Identities = []cosign.Identity{
+			{
+				IssuerRegExp:  tp.config.Keyless.CertificateOIDCIssuerRegExp,
+				Issuer:        tp.config.Keyless.CertificateOIDCIssuer,
+				SubjectRegExp: tp.config.Keyless.CertificateIdentityRegExp,
+				Subject:       tp.config.Keyless.CertificateIdentity,
+			},
+		}
 	}
-	if tp.config.TLogVerify != nil && *tp.config.TLogVerify {
-		cosignOpts.IgnoreTlog = true
-	}
+
 	return cosignOpts, nil
 }
 
@@ -246,13 +267,29 @@ func validate(config TrustPolicyConfig, verifierName string) error {
 		if keyConfig.File != "" && keyConfig.Provider != "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: 'name' and 'file' cannot be configured together", config.Name))
 		}
-		// key management provider is required when specific keys are configured
-		if keyConfig.Name != "" && keyConfig.Provider == "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key management provider name is required when key name is defined", config.Name))
-		}
 		// key name is required when key version is defined
 		if keyConfig.Version != "" && keyConfig.Name == "" {
 			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key name is required when key version is defined", config.Name))
+		}
+	}
+
+	// validate keyless configuration
+	if config.Keyless != (KeylessConfig{}) {
+		// validate certificate identity specified
+		if config.Keyless.CertificateIdentity == "" && config.Keyless.CertificateIdentityRegExp == "" {
+			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: certificate identity or identity regex pattern is required", config.Name))
+		}
+		// validate certificate OIDC issuer specified
+		if config.Keyless.CertificateOIDCIssuer == "" && config.Keyless.CertificateOIDCIssuerRegExp == "" {
+			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: certificate OIDC issuer or issuer regex pattern is required", config.Name))
+		}
+		// validate only expression or value is specified for certificate identity
+		if config.Keyless.CertificateIdentity != "" && config.Keyless.CertificateIdentityRegExp != "" {
+			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: only one of certificate identity or identity regex pattern should be specified", config.Name))
+		}
+		// validate only expression or value is specified for certificate OIDC issuer
+		if config.Keyless.CertificateOIDCIssuer != "" && config.Keyless.CertificateOIDCIssuerRegExp != "" {
+			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: only one of certificate OIDC issuer or issuer regex pattern should be specified", config.Name))
 		}
 	}
 

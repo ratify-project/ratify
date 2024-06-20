@@ -27,15 +27,15 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
-	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/httpserver"
-	"github.com/deislabs/ratify/pkg/featureflag"
-	_ "github.com/deislabs/ratify/pkg/policyprovider/configpolicy" // register config policy provider
-	_ "github.com/deislabs/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
-	_ "github.com/deislabs/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
-	"github.com/deislabs/ratify/pkg/utils"
-	_ "github.com/deislabs/ratify/pkg/verifier/notation" // register notation verifier
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
+	"github.com/ratify-project/ratify/config"
+	"github.com/ratify-project/ratify/httpserver"
+	"github.com/ratify-project/ratify/pkg/featureflag"
+	_ "github.com/ratify-project/ratify/pkg/policyprovider/configpolicy" // register config policy provider
+	_ "github.com/ratify-project/ratify/pkg/policyprovider/regopolicy"   // register rego policy provider
+	_ "github.com/ratify-project/ratify/pkg/referrerstore/oras"          // register ORAS referrer store
+	"github.com/ratify-project/ratify/pkg/utils"
+	_ "github.com/ratify-project/ratify/pkg/verifier/notation" // register notation verifier
 	"github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth" // import additional authentication methods
 
@@ -46,13 +46,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 
-	configv1alpha1 "github.com/deislabs/ratify/api/v1alpha1"
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/controllers/clusterresource"
-	"github.com/deislabs/ratify/pkg/controllers/namespaceresource"
-	ef "github.com/deislabs/ratify/pkg/executor/core"
+	configv1alpha1 "github.com/ratify-project/ratify/api/v1alpha1"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/ratify-project/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/pkg/controllers/clusterresource"
+	"github.com/ratify-project/ratify/pkg/controllers/namespaceresource"
+	ef "github.com/ratify-project/ratify/pkg/executor/core"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -130,7 +130,7 @@ func StartManager(certRotatorReady chan struct{}, probeAddr string) {
 		Port:                   9443,
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "1a306109.github.com/deislabs/ratify",
+		LeaderElectionID:       "1a306109.github.com/ratify-project/ratify",
 		// LeaderElectionReleaseOnCancel defines if the leader should step down voluntarily
 		// when the Manager ends. This requires the binary to immediately end when the
 		// Manager is stopped, otherwise, this setting is unsafe. Setting this significantly
