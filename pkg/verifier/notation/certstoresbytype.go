@@ -17,6 +17,7 @@ package notation
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/deislabs/ratify/internal/logger"
 	"github.com/notaryproject/notation-go/verifier/truststore"
@@ -33,10 +34,26 @@ func (certstoretype certStoreType) String() string {
 	return string(certstoretype)
 }
 
-// verificationCertStores implements certStores interface
+// verificationCertStores describes the configuration of verification certStores
+// type verificationCertStores supports new format map[string]map[string][]string
+//
+//	{
+//	  "ca": {
+//	    "certs": {"kv1", "kv2"},
+//	  },
+//	  "signingauthority": {
+//	    "certs": {"kv3"}
+//	  },
+//	}
+//
+// type verificationCertStores supports legacy format map[string][]string as well.
+//
+//	{
+//	  "certs": {"kv1", "kv2"},
+//	},
 type verificationCertStores map[string]interface{}
 
-// certStoresByType describes the configuration of verificationCertStores by certStoreType
+// certStoresByType implements certStores interface and place certs under the trustStoreType
 //
 //	{
 //	  "ca": {
@@ -53,18 +70,24 @@ func newCertStoreByType(confVerificationCertStores verificationCertStores) (cert
 	s := make(certStoresByType)
 	for certstoretype, certStores := range confVerificationCertStores {
 		s[certStoreType(certstoretype)] = make(map[string][]string)
-		if convertedCertStores, ok := certStores.(verificationCertStores); ok {
-			for certStore, certs := range convertedCertStores {
-				var reformedCerts []string
-				if convertedCerts, ok := certs.([]interface{}); ok {
-					for _, cert := range convertedCerts {
-						if reformedCert, ok := cert.(string); ok {
-							reformedCerts = append(reformedCerts, reformedCert)
-						}
-					}
-					s[certStoreType(certstoretype)][certStore] = reformedCerts
-				}
+		convertedCertStores, ok := certStores.(verificationCertStores)
+		if !ok {
+			return nil, fmt.Errorf("certStores: %s assertion to type verificationCertStores failed", certStores)
+		}
+		for certStore, certProviders := range convertedCertStores {
+			var reformedCerts []string
+			convertedCerts, ok := certProviders.([]interface{})
+			if !ok {
+				return nil, fmt.Errorf("certProviders: %s assertion to type []interface{} failed", certProviders)
 			}
+			for _, certProvider := range convertedCerts {
+				reformedCert, ok := certProvider.(string)
+				if !ok {
+					return nil, fmt.Errorf("certProvider: %s assertion to type string failed", certProvider)
+				}
+				reformedCerts = append(reformedCerts, reformedCert)
+			}
+			s[certStoreType(certstoretype)][certStore] = reformedCerts
 		}
 	}
 	return s, nil
@@ -77,6 +100,6 @@ func (s certStoresByType) GetCertGroupFromStore(ctx context.Context, storeType t
 			return
 		}
 	}
-	logger.GetLogger(ctx, logOpt).Debugf("unable to fetch certGroup from namedStore: %+v in type: %v", namedStore, storeType)
+	logger.GetLogger(ctx, logOpt).Warnf("unable to fetch certGroup from namedStore: %+v in type: %v", namedStore, storeType)
 	return
 }
