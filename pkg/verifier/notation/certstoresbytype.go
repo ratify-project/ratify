@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deislabs/ratify/internal/logger"
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	"github.com/ratify-project/ratify/internal/logger"
 )
 
 type certStoreType string
