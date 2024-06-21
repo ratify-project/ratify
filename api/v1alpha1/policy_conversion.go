@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
-	unversioned "github.com/deislabs/ratify/api/unversioned"
-	"github.com/deislabs/ratify/internal/constants"
+	unversioned "github.com/ratify-project/ratify/api/unversioned"
+	"github.com/ratify-project/ratify/internal/constants"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 )
 

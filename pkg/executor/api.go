@@ -19,7 +19,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/deislabs/ratify/pkg/executor/types"
+	"github.com/ratify-project/ratify/pkg/executor/types"
 )
 
 // VerifyParameters describes the subject verification parameters

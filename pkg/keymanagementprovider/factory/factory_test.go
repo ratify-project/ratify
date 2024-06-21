@@ -18,9 +18,9 @@ package factory
 import (
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/mocks"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/mocks"
 )
 
 type TestKeyManagementProviderFactory struct{}

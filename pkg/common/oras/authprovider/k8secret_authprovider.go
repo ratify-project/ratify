@@ -24,9 +24,9 @@ import (
 	"os"
 	"time"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/utils"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/utils"
 
 	"github.com/docker/cli/cli/config"
 	core "k8s.io/api/core/v1"

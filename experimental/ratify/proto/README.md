@@ -30,4 +30,4 @@ cd ./experimental
 ```sh
 go mod tidy
 ```
-4. _**Depending on the value of "go_package" for each proto file, you may have to move the generated code to an alternate directory.**_ _e.g. setting the `go_package` to "github.com/deislabs/ratify/experimental/proto/v1/referrerstore" will create such a directory structure. Moving the generated code to {root}/experimental/proto/v1/referrerstore will resolve errors since the project's module is "github.com/deislabs/ratify"_
+4. _**Depending on the value of "go_package" for each proto file, you may have to move the generated code to an alternate directory.**_ _e.g. setting the `go_package` to "github.com/ratify-project/ratify/experimental/proto/v1/referrerstore" will create such a directory structure. Moving the generated code to {root}/experimental/proto/v1/referrerstore will resolve errors since the project's module is "github.com/ratify-project/ratify"_

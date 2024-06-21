@@ -18,7 +18,7 @@ package types
 import (
 	"fmt"
 
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 )
 
 // VerifyResult describes the results of verifying a subject

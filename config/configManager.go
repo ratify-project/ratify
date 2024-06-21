@@ -20,9 +20,9 @@ import (
 	"os"
 	"time"
 
-	ef "github.com/deislabs/ratify/pkg/executor/core"
 	"github.com/fsnotify/fsnotify"
 	"github.com/pkg/errors"
+	ef "github.com/ratify-project/ratify/pkg/executor/core"
 	"github.com/sirupsen/logrus"
 )
 

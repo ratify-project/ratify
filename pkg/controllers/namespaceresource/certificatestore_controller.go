@@ -18,13 +18,13 @@ import (
 	"encoding/json"
 	"fmt"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/certificateprovider"
-	_ "github.com/deislabs/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
-	_ "github.com/deislabs/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
-	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/utils"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/ratify-project/ratify/pkg/certificateprovider"
+	_ "github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
+	_ "github.com/ratify-project/ratify/pkg/certificateprovider/inline"        // register inline certificate provider
+	"github.com/ratify-project/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/pkg/utils"
 
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"

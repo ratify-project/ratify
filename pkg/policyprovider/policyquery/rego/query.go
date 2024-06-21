@@ -19,9 +19,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/deislabs/ratify/pkg/policyprovider/policyquery"
 	"github.com/open-policy-agent/opa/rego"
 	"github.com/pkg/errors"
+	"github.com/ratify-project/ratify/pkg/policyprovider/policyquery"
 )
 
 const (

@@ -21,7 +21,7 @@ import (
 	"slices"
 	"strings"
 
-	re "github.com/deislabs/ratify/errors"
+	re "github.com/ratify-project/ratify/errors"
 )
 
 type TrustPolicies struct {

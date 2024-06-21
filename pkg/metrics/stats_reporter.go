@@ -18,7 +18,7 @@ package metrics
 import (
 	"context"
 
-	ctxUtils "github.com/deislabs/ratify/internal/context"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	instrument "go.opentelemetry.io/otel/metric"
@@ -43,7 +43,7 @@ var (
 )
 
 const (
-	scope = "github.com/deislabs/ratify"
+	scope = "github.com/ratify-project/ratify"
 
 	// metric names
 	metricNameVerificationDuration = "ratify_verification_request"

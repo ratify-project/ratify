@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/common/plugin/logger"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/plugin/skel"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/common/plugin/logger"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin/skel"
 )
 
 type PluginConfig struct {

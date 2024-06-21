@@ -17,12 +17,12 @@ import (
 	"os"
 	"testing"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/customresources/verifiers"
-	test "github.com/deislabs/ratify/pkg/utils"
-	vc "github.com/deislabs/ratify/pkg/verifier/config"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	"github.com/ratify-project/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/pkg/customresources/verifiers"
+	test "github.com/ratify-project/ratify/pkg/utils"
+	vc "github.com/ratify-project/ratify/pkg/verifier/config"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 )
 
 const (

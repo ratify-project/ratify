@@ -24,10 +24,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/constants"
-	ctxUtils "github.com/deislabs/ratify/internal/context"
-	vu "github.com/deislabs/ratify/pkg/verifier/utils"
+	"github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/constants"
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	vu "github.com/ratify-project/ratify/pkg/verifier/utils"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )
 

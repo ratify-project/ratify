@@ -28,14 +28,14 @@ import (
 	"strings"
 	"time"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/azurekeyvault/types"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/factory"
-	"github.com/deislabs/ratify/pkg/metrics"
 	"github.com/go-jose/go-jose/v3"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/factory"
+	"github.com/ratify-project/ratify/pkg/metrics"
 	"golang.org/x/crypto/pkcs12"
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
@@ -140,7 +140,7 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v,  keyvault %v", keyVaultCert.Name, s.vaultURI)
 
 		// fetch the object from Key Vault
-		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/deislabs/ratify/issues/695 for details
+		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/ratify-project/ratify/issues/695 for details
 		startTime := time.Now()
 		secretBundle, err := s.kvClient.GetSecret(ctx, s.vaultURI, keyVaultCert.Name, keyVaultCert.Version)
 		if err != nil {

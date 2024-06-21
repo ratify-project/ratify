@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deislabs/ratify/plugins/verifier/sbom/utils"
+	"github.com/ratify-project/ratify/plugins/verifier/sbom/utils"
 )
 
 func TestProcessSPDXJsonMediaType(t *testing.T) {

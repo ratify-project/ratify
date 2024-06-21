@@ -23,17 +23,17 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/common/plugin"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	storeConfig "github.com/deislabs/ratify/pkg/referrerstore/config"
-	"github.com/deislabs/ratify/pkg/referrerstore/factory"
-	"github.com/deislabs/ratify/pkg/utils"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/config"
-	vp "github.com/deislabs/ratify/pkg/verifier/plugin"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/common/plugin"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	storeConfig "github.com/ratify-project/ratify/pkg/referrerstore/config"
+	"github.com/ratify-project/ratify/pkg/referrerstore/factory"
+	"github.com/ratify-project/ratify/pkg/utils"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/config"
+	vp "github.com/ratify-project/ratify/pkg/verifier/plugin"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 )
 
 type pcontext struct {

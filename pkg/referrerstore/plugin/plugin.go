@@ -22,13 +22,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/common"
-	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
-	"github.com/deislabs/ratify/pkg/ocispecs"
-	"github.com/deislabs/ratify/pkg/referrerstore"
-	"github.com/deislabs/ratify/pkg/referrerstore/config"
-	"github.com/deislabs/ratify/pkg/referrerstore/types"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/pkg/common"
+	pluginCommon "github.com/ratify-project/ratify/pkg/common/plugin"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/pkg/referrerstore/config"
+	"github.com/ratify-project/ratify/pkg/referrerstore/types"
 )
 
 // StorePlugin describes a store that is implemented by invoking the plugins

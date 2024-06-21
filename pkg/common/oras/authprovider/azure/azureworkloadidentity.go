@@ -21,11 +21,11 @@ import (
 	"os"
 	"time"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/internal/logger"
-	provider "github.com/deislabs/ratify/pkg/common/oras/authprovider"
-	"github.com/deislabs/ratify/pkg/metrics"
-	"github.com/deislabs/ratify/pkg/utils/azureauth"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/internal/logger"
+	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
+	"github.com/ratify-project/ratify/pkg/metrics"
+	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"

@@ -21,13 +21,13 @@ import (
 	"path"
 	"strings"
 
-	re "github.com/deislabs/ratify/errors"
-	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
-	"github.com/deislabs/ratify/pkg/featureflag"
-	"github.com/deislabs/ratify/pkg/verifier"
-	"github.com/deislabs/ratify/pkg/verifier/config"
-	"github.com/deislabs/ratify/pkg/verifier/plugin"
-	"github.com/deislabs/ratify/pkg/verifier/types"
+	re "github.com/ratify-project/ratify/errors"
+	pluginCommon "github.com/ratify-project/ratify/pkg/common/plugin"
+	"github.com/ratify-project/ratify/pkg/featureflag"
+	"github.com/ratify-project/ratify/pkg/verifier"
+	"github.com/ratify-project/ratify/pkg/verifier/config"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin"
+	"github.com/ratify-project/ratify/pkg/verifier/types"
 	"github.com/sirupsen/logrus"
 )
 

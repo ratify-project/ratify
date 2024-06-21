@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	"github.com/deislabs/ratify/pkg/cache"
 	"github.com/dgraph-io/ristretto/z"
+	"github.com/ratify-project/ratify/pkg/cache"
 )
 
 // TestKeytoHash_Expected tests the keyToHash function

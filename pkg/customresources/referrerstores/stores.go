@@ -18,8 +18,8 @@ package referrerstores
 import (
 	"sync"
 
-	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/referrerstore"
+	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/ratify-project/ratify/pkg/referrerstore"
 )
 
 // ActiveStores implements the ReferrerStoreManager interface.

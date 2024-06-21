@@ -19,8 +19,8 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/deislabs/ratify/pkg/ocispecs"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
 )
 
 // Detect the loopback IP (127.0.0.1)

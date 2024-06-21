@@ -18,7 +18,7 @@ package azure
 import (
 	"time"
 
-	"github.com/deislabs/ratify/internal/logger"
+	"github.com/ratify-project/ratify/internal/logger"
 )
 
 const (

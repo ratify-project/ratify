@@ -22,9 +22,9 @@ import (
 	"os"
 	"slices"
 
-	re "github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/utils"
+	re "github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/utils"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/fulcio"
 	"github.com/sigstore/cosign/v2/cmd/cosign/cli/rekor"
 	"github.com/sigstore/cosign/v2/pkg/cosign"

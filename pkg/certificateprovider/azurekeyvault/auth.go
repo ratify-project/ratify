@@ -25,7 +25,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deislabs/ratify/pkg/utils/azureauth"
+	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
