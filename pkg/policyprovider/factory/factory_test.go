@@ -18,9 +18,9 @@ package factory
 import (
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/policyprovider"
-	"github.com/deislabs/ratify/pkg/policyprovider/config"
-	"github.com/deislabs/ratify/pkg/policyprovider/mocks"
+	"github.com/ratify-project/ratify/pkg/policyprovider"
+	"github.com/ratify-project/ratify/pkg/policyprovider/config"
+	"github.com/ratify-project/ratify/pkg/policyprovider/mocks"
 )
 
 type TestPolicyProviderFactory struct{}

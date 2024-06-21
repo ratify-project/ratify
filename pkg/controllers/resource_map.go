@@ -14,10 +14,10 @@ limitations under the License.
 package controllers
 
 import (
-	cs "github.com/deislabs/ratify/pkg/customresources/certificatestores"
-	"github.com/deislabs/ratify/pkg/customresources/policies"
-	rs "github.com/deislabs/ratify/pkg/customresources/referrerstores"
-	"github.com/deislabs/ratify/pkg/customresources/verifiers"
+	cs "github.com/ratify-project/ratify/pkg/customresources/certificatestores"
+	"github.com/ratify-project/ratify/pkg/customresources/policies"
+	rs "github.com/ratify-project/ratify/pkg/customresources/referrerstores"
+	"github.com/ratify-project/ratify/pkg/customresources/verifiers"
 )
 
 var (

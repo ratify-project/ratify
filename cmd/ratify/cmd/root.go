@@ -16,8 +16,8 @@ limitations under the License.
 package cmd
 
 import (
-	"github.com/deislabs/ratify/pkg/common"
-	"github.com/deislabs/ratify/pkg/featureflag"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/featureflag"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

@@ -19,7 +19,7 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
-      - -w -X github.com/deislabs/ratify/internal/version.GitTag={{.Version}} -X github.com/deislabs/ratify/internal/version.GitCommitHash={{.FullCommit}}
+      - -w -X github.com/ratify-project/ratify/internal/version.GitTag={{.Version}} -X github.com/ratify-project/ratify/internal/version.GitCommitHash={{.FullCommit}}
 
   - id: sbom
     dir: plugins/verifier/sbom

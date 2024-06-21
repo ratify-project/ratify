@@ -12,7 +12,7 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 
 ## Pull Requests
 
-If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/deislabs/ratify/labels/good%20first%20issue).
+If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/ratify-project/ratify/labels/good%20first%20issue).
 
 We use the `dev` branch as the our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud specific tests on `dev` before changes can be merged into `main`. All ratify release are cut from the `main` branch. A sample PR process is outlined below:
 1. Fork this repo and create your dev branch from default `dev` branch.
@@ -148,7 +148,7 @@ Sample JSON stdin
 
 Press `Ctrl+D` to send EOF character to terminate the stdin input. (Note: you may have to press `Ctrl+D` twice)
 
-View more plugin debugging information [here](https://github.com/deislabs/ratify-verifier-plugin#debugging-in-vs-code)
+View more plugin debugging information [here](https://github.com/ratify-project/ratify-verifier-plugin#debugging-in-vs-code)
 
 ### Test local changes in the k8s cluster scenario
 
@@ -161,14 +161,14 @@ Follow the steps below to build and deploy a Ratify image with your private chan
 export REGISTRY=yourregistry
 docker buildx create --use
 
-docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/deislabs/ratify:yourtag .
+docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/ratify-project/ratify:yourtag .
 docker build --progress=plain --build-arg KUBE_VERSION="1.29.2" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
 #### [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image
 
 ```bash
-docker push ${REGISTRY}/deislabs/ratify:yourtag
+docker push ${REGISTRY}/ratify-project/ratify:yourtag
 docker push ${REGISTRY}/localbuildcrd:yourtag
 ```
 
@@ -196,16 +196,16 @@ Development charts + images are published weekly and latest versions are tagged 
 
 Deploy to cluster:
 ```bash
-helmfile sync -f git::https://github.com/deislabs/ratify.git@dev.helmfile.yaml
+helmfile sync -f git::https://github.com/ratify-project/ratify.git@dev.helmfile.yaml
 ```
 
 ### Deploy from local helm chart
 
-#### Update [values.yaml](https://github.com/deislabs/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
+#### Update [values.yaml](https://github.com/ratify-project/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
 
 ```json
 image:
-  repository: yourregistry/deislabs/ratify
+  repository: yourregistry/ratify-project/ratify
   tag: yourtag
   pullPolicy: Always
 ```
@@ -314,13 +314,13 @@ If you'd like to contribute to the collection of plugins:
 
 ## Feature Suggestions
 
-* Please first search [Open Ratify Issues](https://github.com/deislabs/ratify/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
+* Please first search [Open Ratify Issues](https://github.com/ratify-project/ratify/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
 * Ensure you have included a "What?" - what your feature entails, being as specific as possible, and giving mocked-up syntax examples where possible.
 * Ensure you have included a "Why?" - what the benefit of including this feature will be.
 
 ## Bug Reports
 
-* Please first search [Open Ratify Issues](https://github.com/deislabs/ratify/issues) before opening an issue, to see if it has already been reported.
+* Please first search [Open Ratify Issues](https://github.com/ratify-project/ratify/issues) before opening an issue, to see if it has already been reported.
 * Try to be as specific as possible, including the version of the Ratify CLI used to reproduce the issue, and any example arguments needed to reproduce it.
 
 ## CLA

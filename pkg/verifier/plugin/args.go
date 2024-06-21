@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	pluginCommon "github.com/ratify-project/ratify/pkg/common/plugin"
 )
 
 // VerifierPluginArgs describes arguments that are passed to the verifier plugin

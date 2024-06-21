@@ -18,8 +18,8 @@ package httpserver
 import (
 	"testing"
 
-	"github.com/deislabs/ratify/pkg/executor/types"
-	pt "github.com/deislabs/ratify/pkg/policyprovider/types"
+	"github.com/ratify-project/ratify/pkg/executor/types"
+	pt "github.com/ratify-project/ratify/pkg/policyprovider/types"
 )
 
 func TestFromVerifyResult(t *testing.T) {

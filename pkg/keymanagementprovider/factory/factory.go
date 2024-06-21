@@ -18,9 +18,9 @@ package factory
 import (
 	"fmt"
 
-	"github.com/deislabs/ratify/pkg/keymanagementprovider"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/config"
-	"github.com/deislabs/ratify/pkg/keymanagementprovider/types"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/types"
 )
 
 // map of key management provider names to key management provider factories

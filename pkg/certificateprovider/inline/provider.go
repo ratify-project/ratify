@@ -19,8 +19,8 @@ import (
 	"context"
 	"crypto/x509"
 
-	"github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/certificateprovider"
+	"github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/certificateprovider"
 )
 
 const (

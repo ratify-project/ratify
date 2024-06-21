@@ -22,10 +22,10 @@ import (
 
 	_ "crypto/sha256" // required package for digest.Parse
 
-	"github.com/deislabs/ratify/errors"
-	"github.com/deislabs/ratify/pkg/common"
 	"github.com/distribution/reference"
 	"github.com/opencontainers/go-digest"
+	"github.com/ratify-project/ratify/errors"
+	"github.com/ratify-project/ratify/pkg/common"
 )
 
 const (

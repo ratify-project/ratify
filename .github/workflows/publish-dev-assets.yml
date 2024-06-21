@@ -14,8 +14,13 @@ jobs:
       packages: write
       contents: read
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
+        with:
+          egress-policy: audit
+
       - name: Checkout
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
       - name: prepare
         id: prepare
         run: |
@@ -51,7 +56,7 @@ jobs:
           docker buildx create --use         
           docker buildx build -f ./httpserver/Dockerfile \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --build-arg LDFLAGS="-X github.com/deislabs/ratify/internal/version.Version=$(TAG)" \
+            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$(TAG)" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }} \
             -t ${{ steps.prepare.outputs.baseref }} \
@@ -65,15 +70,15 @@ jobs:
             --build-arg build_licensechecker=true \
             --build-arg build_schemavalidator=true \
             --build-arg build_vulnerabilityreport=true \
-            --build-arg LDFLAGS="-X github.com/deislabs/ratify/internal/version.Version=$(TAG)" \
+            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$(TAG)" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }} \
             -t ${{ steps.prepare.outputs.ref }} \
             --push .
       - name: replace version
         run: |
-          sed -i '/^  repository:/c\  repository: ghcr.io/deislabs/ratify-dev' charts/ratify/values.yaml
-          sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/deislabs/ratify-crds-dev' charts/ratify/values.yaml
+          sed -i '/^  repository:/c\  repository: ghcr.io/ratify-project/ratify-dev' charts/ratify/values.yaml
+          sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/ratify-project/ratify-crds-dev' charts/ratify/values.yaml
           sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml 
       - name: helm package
         run: |

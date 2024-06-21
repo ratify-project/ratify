@@ -20,11 +20,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deislabs/ratify/config"
-	"github.com/deislabs/ratify/httpserver"
-	"github.com/deislabs/ratify/internal/logger"
-	"github.com/deislabs/ratify/pkg/cache"
-	"github.com/deislabs/ratify/pkg/manager"
+	"github.com/ratify-project/ratify/config"
+	"github.com/ratify-project/ratify/httpserver"
+	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/pkg/cache"
+	"github.com/ratify-project/ratify/pkg/manager"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )

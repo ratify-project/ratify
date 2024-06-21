@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"os"
 
-	pluginCommon "github.com/deislabs/ratify/pkg/common/plugin"
+	pluginCommon "github.com/ratify-project/ratify/pkg/common/plugin"
 )
 
 // ReferrerStorePluginArgs describes all arguments that are passed when a store plugin is invoked

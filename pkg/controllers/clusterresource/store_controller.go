@@ -24,10 +24,10 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	configv1beta1 "github.com/deislabs/ratify/api/v1beta1"
-	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/controllers"
-	"github.com/deislabs/ratify/pkg/controllers/utils"
+	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/ratify-project/ratify/pkg/controllers"
+	"github.com/ratify-project/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 )
 

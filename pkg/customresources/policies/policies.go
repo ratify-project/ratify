@@ -18,8 +18,8 @@ package policies
 import (
 	"sync"
 
-	"github.com/deislabs/ratify/internal/constants"
-	"github.com/deislabs/ratify/pkg/policyprovider"
+	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/ratify-project/ratify/pkg/policyprovider"
 )
 
 // PolicyWrapper wraps policy provider with its policy name.

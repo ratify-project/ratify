@@ -20,9 +20,12 @@ import (
 	"fmt"
 	"testing"
 
+	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	"go.opentelemetry.io/otel/attribute"
 	instrument "go.opentelemetry.io/otel/metric"
 )
+
+const testNamespace = "testNamespace"
 
 type MockInt64Histogram struct {
 	instrument.Int64Histogram
@@ -95,11 +98,12 @@ func TestReportVerifierDuration(t *testing.T) {
 
 	mockDuration := &MockInt64Histogram{Attributes: make(map[string]string)}
 	verifierDuration = mockDuration
-	ReportVerifierDuration(context.Background(), 5, "test_verifier", "test_subject", true, true)
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportVerifierDuration(ctx, 5, "test_verifier", "test_subject", true, true)
 	if mockDuration.Value != 5 {
 		t.Fatalf("ReportVerifierDuration() mockDuration.Value = %v, expected %v", mockDuration.Value, 5)
 	}
-	if len(mockDuration.Attributes) != 4 {
+	if len(mockDuration.Attributes) != 5 {
 		t.Fatalf("ReportVerifierDuration() len(mockDuration.Attributes) = %v, expected %v", len(mockDuration.Attributes), 2)
 	}
 	if mockDuration.Attributes["verifier"] != "test_verifier" {
@@ -111,6 +115,9 @@ func TestReportVerifierDuration(t *testing.T) {
 	if mockDuration.Attributes["error"] != "true" {
 		t.Fatalf("expected error attribute to be true but got %s", mockDuration.Attributes["error"])
 	}
+	if mockDuration.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockDuration.Attributes["workload_namespac"])
+	}
 }
 
 func TestReportSystemError(t *testing.T) {
@@ -120,15 +127,19 @@ func TestReportSystemError(t *testing.T) {
 
 	mockCounter := &MockInt64Counter{Attributes: make(map[string]string)}
 	systemErrorCount = mockCounter
-	ReportSystemError(context.Background(), "test_error")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportSystemError(ctx, "test_error")
 	if mockCounter.Value != 1 {
 		t.Fatalf("ReportSystemError() mockCounter.Value = %v, expected %v", mockCounter.Value, 1)
 	}
-	if len(mockCounter.Attributes) != 1 {
+	if len(mockCounter.Attributes) != 2 {
 		t.Fatalf("ReportSystemError() len(mockCounter.Attributes) = %v, expected %v", len(mockCounter.Attributes), 1)
 	}
 	if mockCounter.Attributes["error"] != "test_error" {
 		t.Fatalf("expected error attributes to be test_error but got %s", mockCounter.Attributes["error"])
+	}
+	if mockCounter.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockCounter.Attributes["workload_namespac"])
 	}
 }
 
@@ -139,11 +150,12 @@ func TestReportRequestCount(t *testing.T) {
 
 	mockCounter := &MockInt64Counter{Attributes: make(map[string]string)}
 	registryRequestCount = mockCounter
-	ReportRegistryRequestCount(context.Background(), 429, "test_registry_host")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportRegistryRequestCount(ctx, 429, "test_registry_host")
 	if mockCounter.Value != 1 {
 		t.Fatalf("ReportRequestCount() mockCounter.Value = %v, expected %v", mockCounter.Value, 1)
 	}
-	if len(mockCounter.Attributes) != 2 {
+	if len(mockCounter.Attributes) != 3 {
 		t.Fatalf("ReportRequestCount() len(mockCounter.Attributes) = %v, expected %v", len(mockCounter.Attributes), 2)
 	}
 	if mockCounter.Attributes["status_code"] != "429" {
@@ -151,6 +163,9 @@ func TestReportRequestCount(t *testing.T) {
 	}
 	if mockCounter.Attributes["registry_host"] != "test_registry_host" {
 		t.Fatalf("expected registry_host attribute to be test_registry_host but got %s", mockCounter.Attributes["registry_host"])
+	}
+	if mockCounter.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockCounter.Attributes["workload_namespac"])
 	}
 }
 
@@ -161,15 +176,19 @@ func TestReportAADExchangeDuration(t *testing.T) {
 
 	mockDuration := &MockInt64Histogram{Attributes: make(map[string]string)}
 	aadExchangeDuration = mockDuration
-	ReportAADExchangeDuration(context.Background(), 500, "test_scope")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportAADExchangeDuration(ctx, 500, "test_scope")
 	if mockDuration.Value != 500 {
 		t.Fatalf("ReportAADExchangeDuration() mockDuration.Value = %v, expected %v", mockDuration.Value, 500)
 	}
-	if len(mockDuration.Attributes) != 1 {
+	if len(mockDuration.Attributes) != 2 {
 		t.Fatalf("ReportAADExchangeDuration() len(mockDuration.Attributes) = %v, expected %v", len(mockDuration.Attributes), 1)
 	}
 	if mockDuration.Attributes["resource_type"] != "test_scope" {
 		t.Fatalf("expected resource_type attribute to be test_scope but got %s", mockDuration.Attributes["resource_type"])
+	}
+	if mockDuration.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockDuration.Attributes["workload_namespac"])
 	}
 }
 
@@ -180,15 +199,19 @@ func TestReportACRExchangeDuration(t *testing.T) {
 
 	mockDuration := &MockInt64Histogram{Attributes: make(map[string]string)}
 	acrExchangeDuration = mockDuration
-	ReportACRExchangeDuration(context.Background(), 500, "test_repo")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportACRExchangeDuration(ctx, 500, "test_repo")
 	if mockDuration.Value != 500 {
 		t.Fatalf("ReportACRExchangeDuration() mockDuration.Value = %v, expected %v", mockDuration.Value, 500)
 	}
-	if len(mockDuration.Attributes) != 1 {
+	if len(mockDuration.Attributes) != 2 {
 		t.Fatalf("ReportACRExchangeDuration() len(mockDuration.Attributes) = %v, expected %v", len(mockDuration.Attributes), 1)
 	}
 	if mockDuration.Attributes["repository"] != "test_repo" {
 		t.Fatalf("expected repository attribute to be test_repo but got %s", mockDuration.Attributes["repository"])
+	}
+	if mockDuration.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockDuration.Attributes["workload_namespac"])
 	}
 }
 
@@ -199,15 +222,19 @@ func TestReportAKVCertificateDuration(t *testing.T) {
 
 	mockDuration := &MockInt64Histogram{Attributes: make(map[string]string)}
 	akvCertificateDuration = mockDuration
-	ReportAKVCertificateDuration(context.Background(), 500, "test_cert")
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportAKVCertificateDuration(ctx, 500, "test_cert")
 	if mockDuration.Value != 500 {
 		t.Fatalf("ReportAKVCertificateDuration() mockDuration.Value = %v, expected %v", mockDuration.Value, 500)
 	}
-	if len(mockDuration.Attributes) != 1 {
+	if len(mockDuration.Attributes) != 2 {
 		t.Fatalf("ReportAKVCertificateDuration() len(mockDuration.Attributes) = %v, expected %v", len(mockDuration.Attributes), 1)
 	}
 	if mockDuration.Attributes["certificate_name"] != "test_cert" {
 		t.Fatalf("expected certificate_name attribute to be test_cert but got %s", mockDuration.Attributes["certificate_name"])
+	}
+	if mockDuration.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockDuration.Attributes["workload_namespac"])
 	}
 }
 
@@ -218,14 +245,18 @@ func TestReportBlobCacheCount(t *testing.T) {
 
 	mockCounter := &MockInt64Counter{Attributes: make(map[string]string)}
 	cacheBlobCount = mockCounter
-	ReportBlobCacheCount(context.Background(), true)
+	ctx := ctxUtils.SetContextWithNamespace(context.Background(), testNamespace)
+	ReportBlobCacheCount(ctx, true)
 	if mockCounter.Value != 1 {
 		t.Fatalf("ReportBlobCacheCount() mockCounter.Value = %v, expected %v", mockCounter.Value, 1)
 	}
-	if len(mockCounter.Attributes) != 1 {
+	if len(mockCounter.Attributes) != 2 {
 		t.Fatalf("ReportBlobCacheCount() len(mockCounter.Attributes) = %v, expected %v", len(mockCounter.Attributes), 1)
 	}
 	if mockCounter.Attributes["hit"] != "true" {
 		t.Fatalf("expected hit attribute to be true but got %s", mockCounter.Attributes["hit"])
+	}
+	if mockCounter.Attributes["workload_namespace"] != testNamespace {
+		t.Fatalf("expected workload_namespace attribute to be %s but got %s", testNamespace, mockCounter.Attributes["workload_namespac"])
 	}
 }
