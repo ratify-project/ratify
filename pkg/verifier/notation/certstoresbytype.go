@@ -75,19 +75,19 @@ func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, err
 			return nil, fmt.Errorf("certStores: %s assertion to type verificationCertStores failed", certStores)
 		}
 		for certStore, certProviders := range storesMapOfInterface {
-			var certProviderStr []string
+			var certProvidersStr []string
 			convertedCerts, ok := certProviders.([]interface{})
 			if !ok {
 				return nil, fmt.Errorf("certProviders: %s assertion to type []interface{} failed", certProviders)
 			}
 			for _, certProvider := range convertedCerts {
-				reformedCert, ok := certProvider.(string)
+				certProviderStr, ok := certProvider.(string)
 				if !ok {
 					return nil, fmt.Errorf("certProvider: %s assertion to type string failed", certProvider)
 				}
-				certProviderStr = append(certProviderStr, reformedCert)
+				certProvidersStr = append(certProvidersStr, certProviderStr)
 			}
-			s[certStoreType(certstoretype)][certStore] = certProviderStr
+			s[certStoreType(certstoretype)][certStore] = certProvidersStr
 		}
 	}
 	return s, nil
