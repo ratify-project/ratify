@@ -168,6 +168,42 @@ flowchart TD
   - Enqueue task in cache provider to write into OCI Store
   - Check read lock/availability map in cache provider to avoid dirty read
 
+```golang
+
+type CacheWorker interface {
+
+    // CreateMemoryOCIStore creates memory based OCI Store
+    CreateMemoryOCIStore () error
+
+    // GetAvailableOCIStore returns current OCI layout based OCI Store if exists
+    GetAvailableOCIStore() (*orasStore, error)
+
+    // GetBlobContent returns the blob with the given digest
+    // WARNING: This API is intended to use for small objects like signatures, SBoMs
+    GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error)
+
+    // GetReferenceManifest returns the reference artifact manifest as given by the descriptor
+    GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error)
+
+    // GetCachedResource checks read lock from cache provider and returns data cached in OCI layout based OCIStore
+    GetCachedResource() error
+
+    // EnqueueCacheTask adds caching task into message queue in Cache Provider
+    EnqueueCacheTask() error
+
+    // DequeueCacheTask handle the up-coming caching task
+    // checks write lock, availability map of resource
+    DequeueCacheTask() error
+
+    // CacheBlobContent cached target blob content into OCI layout based OCI Store
+    CacheBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) error
+
+    // CacheReferenceManifest cached target manifest into OCI layout based OCI Store
+    CacheReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) error
+}
+
+```
+
 ## Comparing with Other Design
 
 ### Single OCIStore VS multi-OCIStores(per verifier)
@@ -184,6 +220,8 @@ flowchart TD
 ## Supported Limits and Further Considerations
 
 In Ristretto using scenario, do we support multi-notation verifier, in other words do we have to support cache worker with Ristretto
+
+Message queue handling is event driven: when ever enqueue, dequeue finished cache worker should start trying dequeuing a new task
 
 ## Appendices
 
