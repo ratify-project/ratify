@@ -1,17 +1,94 @@
-# OCI Store Index Race Condition
+# OCI Store Index Race Condition and Cache Worker
+
+## Problem Statement
+
+Tracked issues in scope:
+<https://github.com/ratify-project/ratify/issues/1110>
+
+ORAS referrer store can fail to initialize for external verifiers with error:
+
+```log
+Original Error:(Original Error: (create store from input config failed with error Original Error: (invalid OCI Image Index: failed to decode index file: EOF), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Component Type: referrerStore, Detail: could not create local ORAS cache at path: /home/runner/.ratify/local_oras_cache))
+```
+
+This occurs when multiple external verifiers are executed for the same subject in parallel.
+Intermittent issue affecting e2e tests
+
+```json
+{
+  "verifierReports": [
+    {
+      "subject": "localhost:5000/all:v0",
+      "isSuccess": true,
+      "name": "notation",
+      "message": "signature verification success",
+      "extensions": {
+        "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
+        "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"
+      },
+      "artifactType": "application/vnd.cncf.notary.signature"
+    },
+    {
+      "isSuccess": false,
+      "name": "cosign",
+      "message": "Original Error: (Original Error: (create store from input config failed with error Original Error: (invalid OCI Image Index: failed to decode index file: EOF), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Component Type: referrerStore, Detail: could not create local oras cache at path: /home/runner/.ratify/local_oras_cache), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: cosign, Component Type: verifier), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: cosign, Component Type: verifier",
+      "artifactType": "application/vnd.dev.cosign.artifact.sig.v1+json"
+    },
+    {
+      "subject": "localhost:5000/all:v0",
+      "isSuccess": true,
+      "name": "licensechecker",
+      "message": "License Check: SUCCESS. All packages have allowed licenses",
+      "artifactType": "application/vnd.ratify.spdx.v0"
+    },
+    {
+      "subject": "localhost:5000/all:v0",
+      "isSuccess": true,
+      "name": "schemavalidator",
+      "message": "schema validation passed for configured media types",
+      "artifactType": "vnd.aquasecurity.trivy.report.sarif.v1"
+    },
+    {
+      "isSuccess": false,
+      "name": "sbom",
+      "message": "Original Error: (Original Error: (create store from input config failed with error Original Error: (invalid OCI Image Index: failed to decode index file: EOF), Error: plugin init failure, Code: PLUGIN_INIT_FAILURE, Component Type: referrerStore, Detail: could not create local oras cache at path: /home/runner/.ratify/local_oras_cache), Error: verify signature failure, Code: VERIFY_SIGNATURE_FAILURE, Plugin Name: sbom, Component Type: verifier), Error: verify reference failure, Code: VERIFY_REFERENCE_FAILURE, Plugin Name: sbom, Component Type: verifier",
+      "nestedResults": [
+        {
+          "subject": "localhost:5000/all@sha256:b71c1f874fbc92173278bcb7bb44c785b167f7efa3c44b52eb48e20d540741b5",
+          "isSuccess": true,
+          "name": "notation",
+          "message": "signature verification success",
+          "extensions": {
+            "Issuer": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US",
+            "SN": "CN=ratify-bats-test,O=Notary,L=Seattle,ST=WA,C=US"
+          },
+          "artifactType": "application/vnd.cncf.notary.signature"
+        }
+      ],
+      "artifactType": "org.example.sbom.v0"
+    }
+  ]
+}
+```
+
+## User Scenarios
+
+### Using multi-verifier
+
+1. Multiple different verifiers are executed for the same subject
+2. Multiple same verifiers with different version executed for the same subject
+
+### Multi-tenancy
+
+1. reusing OCI artifacts
 
 ## Purpose
-Resolve OCI Store race condition in multi-verifier scenarios
 
-## Table of Content
-- Data Flow
-- Component Description
-- User Scenarios
-- Performance
-- Supported Limits
-- Appendices
+- Resolve OCI Store race condition in multi-verifier scenarios
+- Ensure deduplication of OCI artifacts hold in local environment
 
-### Data Flow
+## Data Flow
+
 ```mermaid
 %% Initialize diagram configuration
 %%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffcc00', 'edgeLabelBackground':'#f8f8f8', 'tertiaryColor': '#fff'}}}%%
@@ -74,24 +151,41 @@ flowchart TD
     CacheProvider:::external
 ```
 
-### Component Description
+## Component Description
+
+- Referrer Store Architecture
+
 - Cache Provider: Set up to cache data for `GetSubjectDescriptor`, `GetReferenceManifest`.
 
 - OCI Store(local cache): A content store based on file system with the OCI-Image layout.
   - Both executor and plugin initiation would `CreateStoresFromConfig`, add cache check can help avoid duplication.
+  - task handler is event driven controlled by cache worker: new enqueue item created, last task finished
+  - a write lock is set in Cache Provider to avoid conflict
+  - a read lock/availability map is set for the writing content to avoid dirty read
 
-- Cache Worker: 
+- Cache Worker:
   - Manage memory backed content store
   - Enqueue task in cache provider to write into OCI Store
-  - Check read lock in cache provider to avoid dirty read
+  - Check read lock/availability map in cache provider to avoid dirty read
 
-### User Scenarios
-1. Using different version of same verifier
+## Comparing with Other Design
 
-2. Multi-tenancy
+### Single OCIStore VS multi-OCIStores(per verifier)
 
-### Performance
+1. Syncing in between those OCI stores will cause design difficulty.
+2. If if OCI stores are verifer-binded, when the verifier is recycled the OCI stores is gone. Otherwise another resource maintainer(provider) is needed.
+3. Maintaining multi-OCIStores means extra memory cost
 
-### Supported Limits
+### Async VS Sync
 
-### Appendices
+1. Sync write to OCIStore leads to racing condition. Using lock would naturally heads to more waiting in line.
+2. When doing sync write, both read write racing condition have be handled in verifier process which increase the complexity. When doing async write, those jobs are delegated to **Cache Provider**.
+
+## Supported Limits and Further Considerations
+
+In Ristretto using scenario, do we support multi-notation verifier, in other words do we have to support cache worker with Ristretto
+
+## Appendices
+
+- [Multi-tenancy](https://ratify.dev/docs/reference/multi-tenancy)
+- [Image Integrity](https://learn.microsoft.com/en-us/azure/aks/image-integrity?tabs=azure-cli#how-image-integrity-works)
