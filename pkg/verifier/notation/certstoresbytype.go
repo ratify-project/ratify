@@ -65,7 +65,7 @@ type verificationCertStores map[string]interface{}
 //	}
 type certStoresByType map[certStoreType]map[string][]string
 
-// newCertStoreByType do type assertion and convert certStores configuration into certStoresByType
+// newCertStoreByType performs type assertion and converts certificate stores configuration into certStoresByType
 func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, error) {
 	s := make(certStoresByType)
 	for certstoretype, certStores := range confInNewFormat {
