@@ -64,7 +64,7 @@ func (s *trustStore) GetCertificates(ctx context.Context, trustStoreType trustst
 func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType truststore.Type, namedStore string) ([]*x509.Certificate, error) {
 	certs := make([]*x509.Certificate, 0)
 
-	certGroup := s.certStores.GetCertGroupFromStore(ctx, storeType, namedStore)
+	certGroup := s.certStores.GetCertGroup(ctx, storeType, namedStore)
 	// certs configured for this namedStore overrides cert path
 	if len(certGroup) > 0 {
 		for _, certStore := range certGroup {

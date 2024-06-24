@@ -23,6 +23,6 @@ import (
 
 // certStores is an interface that defines the methods for managing certificate stores.
 type certStores interface {
-	// GetCertGroupFromStore returns certain type of cert group from namedStore
-	GetCertGroupFromStore(ctx context.Context, storeType truststore.Type, namedStore string) (certGroup []string)
+	// GetCertGroup returns certain type of cert group from namedStore
+	GetCertGroup(ctx context.Context, storeType truststore.Type, namedStore string) (certGroup []string)
 }
