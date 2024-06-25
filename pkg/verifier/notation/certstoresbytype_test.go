@@ -17,7 +17,7 @@ package notation
 
 import "testing"
 
-func TestNewCertStoreByTypInvalidInput(t *testing.T) {
+func TestNewCertStoreByTypeInvalidInput(t *testing.T) {
 	tests := []struct {
 		name      string
 		conf      verificationCertStores
