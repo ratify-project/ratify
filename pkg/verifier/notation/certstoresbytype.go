@@ -68,7 +68,7 @@ type certStoresByType map[certStoreType]map[string][]string
 // newCertStoreByType performs type assertion and converts certificate stores configuration into certStoresByType
 func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, error) {
 	s := make(certStoresByType)
-	for certstoretype, storeData:= range confInNewFormat {
+	for certstoretype, storeData := range confInNewFormat {
 		s[certStoreType(certstoretype)] = make(map[string][]string)
 		parsedStoreData, ok := storeData.(verificationCertStores)
 		if !ok {
@@ -78,16 +78,16 @@ func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, err
 			var certProviderNames []string
 			parsedCertProviders, ok := certProviderList.([]interface{})
 			if !ok {
-				return nil, fmt.Errorf("certProviders: %s assertion to type []interface{} failed", certProviders)
+				return nil, fmt.Errorf("certProviderList: %s assertion to type []interface{} failed", certProviderList)
 			}
 			for _, certProvider := range parsedCertProviders {
 				certProviderName, ok := certProvider.(string)
 				if !ok {
 					return nil, fmt.Errorf("certProvider: %s assertion to type string failed", certProvider)
 				}
-				certProviderNames = append(certProviderNames , certProviderName)
+				certProviderNames = append(certProviderNames, certProviderName)
 			}
-			s[certStoreType(certstoretype)][storeName] = certProviderNames 
+			s[certStoreType(certstoretype)][storeName] = certProviderNames
 		}
 	}
 	return s, nil
