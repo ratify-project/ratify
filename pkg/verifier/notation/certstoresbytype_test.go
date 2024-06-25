@@ -24,14 +24,14 @@ func TestNewCertStoreByTypeInvalidInput(t *testing.T) {
 		expectErr bool
 	}{
 		{
-			name: "",
+			name: "invalid certStores type",
 			conf: verificationCertStores{
 				trustStoreTypeCA: []string{},
 			},
 			expectErr: true,
 		},
 		{
-			name: "",
+			name: "invalid certProviderList type",
 			conf: verificationCertStores{
 				trustStoreTypeCA: verificationCertStores{
 					"certstore1": "akv1",
@@ -41,7 +41,7 @@ func TestNewCertStoreByTypeInvalidInput(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "",
+			name: "invalid certProvider type",
 			conf: verificationCertStores{
 				trustStoreTypeCA: verificationCertStores{
 					"certstore1": []interface{}{"akv1", []string{}},
