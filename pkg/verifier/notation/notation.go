@@ -41,12 +41,15 @@ import (
 	"github.com/notaryproject/notation-go"
 	notationVerifier "github.com/notaryproject/notation-go/verifier"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
+	"github.com/notaryproject/notation-go/verifier/truststore"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
-	verifierType    = "notation"
-	defaultCertPath = "ratify-certs/notation/truststore"
+	verifierType                      = "notation"
+	defaultCertPath                   = "ratify-certs/notation/truststore"
+	trustStoreTypeCA                  = string(truststore.TypeCA)
+	trustStoreTypeypeSigningAuthority = string(truststore.TypeSigningAuthority)
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -56,8 +59,21 @@ type NotationPluginVerifierConfig struct { //nolint:revive // ignore linter to h
 
 	// VerificationCerts is array of directories containing certificates.
 	VerificationCerts []string `json:"verificationCerts"`
-	// VerificationCerts is map defining which keyvault certificates belong to which trust store
-	VerificationCertStores map[string][]string `json:"verificationCertStores"`
+	// VerificationCertStores defines a collection of Notary Project Trust Stores.
+	// VerificationCertStores accepts new format map[string]map[string][]string
+	// {
+	//   "ca": {
+	//     "certs": {"kv1", "kv2"},
+	//   },
+	//   "signingauthority": {
+	//     "certs": {"kv3"}
+	//   },
+	// }
+	// VerificationCertStores accepts legacy format map[string][]string as well.
+	// {
+	//   "certs": {"kv1", "kv2"},
+	// },
+	VerificationCertStores verificationCertStores `json:"verificationCertStores"`
 	// TrustPolicyDoc represents a trustpolicy.json document. Reference: https://pkg.go.dev/github.com/notaryproject/notation-go@v0.12.0-beta.1.0.20221125022016-ab113ebd2a6c/verifier/trustpolicy#Document
 	TrustPolicyDoc trustpolicy.Document `json:"trustPolicyDoc"`
 }
@@ -168,11 +184,10 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 }
 
 func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string) (notation.Verifier, error) {
-	store := &trustStore{
-		certPaths:  conf.VerificationCerts,
-		certStores: conf.VerificationCertStores,
+	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
+	if err != nil {
+		return nil, err
 	}
-
 	return notationVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
 }
 
@@ -201,10 +216,37 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*Notat
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
 	conf.VerificationCerts = append(conf.VerificationCerts, defaultCertsDir)
+	if len(conf.VerificationCertStores) > 0 {
+		if err := normalizeVerificationCertsStores(conf); err != nil {
+			return nil, err
+		}
+	}
 	return conf, nil
 }
 
 // signatures should not have nested references
 func (v *notationPluginVerifier) GetNestedReferences() []string {
 	return []string{}
+}
+
+// normalizeVerificationCertsStores normalize the structure does not match the latest spec
+func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
+	isCertStoresByType, isLegacyCertStore := false, false
+	for key := range conf.VerificationCertStores {
+		if key != trustStoreTypeCA && key != trustStoreTypeypeSigningAuthority {
+			isLegacyCertStore = true
+			logger.GetLogger(context.Background(), logOpt).Debugf("Get VerificationCertStores in legacy format")
+		} else {
+			isCertStoresByType = true
+		}
+	}
+	if isCertStoresByType && isLegacyCertStore {
+		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
+	} else if !isCertStoresByType && isLegacyCertStore {
+		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
+		conf.VerificationCertStores = verificationCertStores{
+			trustStoreTypeCA: conf.VerificationCertStores,
+		}
+	}
+	return nil
 }
