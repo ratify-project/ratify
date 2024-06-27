@@ -71,91 +71,30 @@ Intermittent issue affecting e2e tests
 }
 ```
 
+## Proposed Solution
+
+- Remove ORAS `Push` operation, whose target is OCI store, from verifier. Resolve OCI Store race condition in multi-verifier scenarios.
+- Using shared memory to implement a queue for ORAS `Push`. Manage ORAS concurrency tasks.
+
 ## User Scenarios
 
-### Using multi-verifier
+### Using verifier of different types and different versions of same verifier
 
-1. Multiple different verifiers are executed for the same subject
-2. Multiple same verifiers with different version executed for the same subject
+When multiple verifiers are executed for the same artifiact can cause the racing condition issue.
+With the proposed solution, ORAS `Push` mentioned is only handled by cache worker.
 
-### Multi-tenancy
+### Reusing OCI artifacts
 
-1. reusing OCI artifacts
-
-## Purpose
-
-- Resolve OCI Store race condition in multi-verifier scenarios
-- Ensure deduplication of OCI artifacts hold in local environment
+The cache is very important when using the verifier to verify the same subject.
 
 ## Data Flow
 
-```mermaid
-%% Initialize diagram configuration
-%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#ffcc00', 'edgeLabelBackground':'#f8f8f8', 'tertiaryColor': '#fff'}}}%%
-flowchart TD
-    %% Define styles
-    classDef subProcess fill:#ffcc00,stroke:#333,stroke-width:2px;
-
-    %% Define components
-    subgraph VerifierSubsystem [Verifier Subsystem]
-        GetSubjectDescriptor[Get Subject Descriptor]
-        GetSubjectReferenceManifest[Get Subject Reference Manifest]
-        GetReferrerArtifact[Get Blob Content]
-        PerformVerification[Perform Verification]
-        ReturnVerifierResult[Return Verifier Result]
-        MemoryBasedStore[Memory Based Store]
-        OCIStoreCache[OCI Store Cache]
-        OCIStoreCacheWorker[Cache Worker]
-        CacheProvider[Cache Provider]
-        ORASFetch1[ORAS Fetch]
-        ORASFetch2[ORAS Fetch]
-        
-    end
-
-    %% Define relationships
-    GetSubjectDescriptor -->|Store operation| GetSubjectReferenceManifest
-    GetSubjectReferenceManifest -->|Store operation| Cache_Hit_1
-    Cache_Hit_1{Cache Hit?}
-    Cache_Hit_1 -->|Hit| GetReferrerArtifact
-    Cache_Hit_1 -->|Miss| ORASFetch1
-    ORASFetch1 -->|Fetch| MemoryBasedStore
-    GetReferrerArtifact --> Cache_Hit_2
-    Cache_Hit_2{Cache Hit?}
-    Cache_Hit_2 -->|Hit| PerformVerification
-    Cache_Hit_2 -->|Miss| ORASFetch2
-    ORASFetch2 -->|Fetch| MemoryBasedStore
-    PerformVerification --> ReturnVerifierResult
-    OCIStoreCache --> CacheProvider
-    CacheProvider --> OCIStoreCache
-
-    %% Highlight subprocesses
-    GetReferrerArtifact:::subProcess
-    ORASFetch1:::subProcess
-    ORASFetch2:::subProcess
-    PerformVerification:::subProcess
-
-    %% Add connections to the cache
-    Cache_Hit_1 -.-> OCIStoreCacheWorker
-    MemoryBasedStore -.-> GetReferrerArtifact
-    Cache_Hit_2 -.-> OCIStoreCacheWorker
-    MemoryBasedStore -.-> PerformVerification
-    MemoryBasedStore -.-> OCIStoreCacheWorker
-    OCIStoreCacheWorker -.-> CacheProvider
-    
-
-    %% Define external components
-    classDef external fill:#f0f0f0,stroke:#333,stroke-width:2px;
-    OCIStoreCacheWorker:::external
-    MemoryBasedStore:::external
-    OCIStoreCache:::external
-    CacheProvider:::external
-```
+![Current Data Flow](../img/verifier-store-prev.png)
+![New Design Data Flow](../img/verifier-store-new.png)
 
 ## Component Description
 
-- Referrer Store Architecture
-
-- Cache Provider: Set up to cache data for `GetSubjectDescriptor`, `GetReferenceManifest`.
+- Cache Provider: Set up to cache data for `GetSubjectDescriptor`, `ListReferrers`.
 
 - OCI Store(local cache): A content store based on file system with the OCI-Image layout.
   - Both executor and plugin initiation would `CreateStoresFromConfig`, add cache check can help avoid duplication.
@@ -163,7 +102,7 @@ flowchart TD
   - a write lock is set in Cache Provider to avoid conflict
   - a read lock/availability map is set for the writing content to avoid dirty read
 
-- Cache Worker:
+- Cache (Store) Worker: A Store related operations handler.
   - Manage memory backed content store
   - Enqueue task in cache provider to write into OCI Store
   - Check read lock/availability map in cache provider to avoid dirty read
@@ -173,7 +112,7 @@ flowchart TD
 type CacheWorker interface {
 
     // CreateMemoryOCIStore creates memory based OCI Store
-    CreateMemoryOCIStore () error
+    CreateMemoryOCIStore() error
 
     // GetAvailableOCIStore returns current OCI layout based OCI Store if exists
     GetAvailableOCIStore() (*orasStore, error)
@@ -204,18 +143,30 @@ type CacheWorker interface {
 
 ```
 
-## Comparing with Other Design
+## Alternative Considers and Comparisons
 
-### Single OCIStore VS multi-OCIStores(per verifier)
+### Async Caching VS Sync Caching
 
+Async Caching(with queue)
+1. Queue is helpful in efficient task handling, scalability, and fault tolerance which are critical requirements.
+
+Sync Caching
+1. Sync write to OCIStore leads to racing condition. Using lock would naturally heads to more waiting in line.
+2. When doing sync write, both read write racing condition have be handled in verifier process which increase the complexity. When doing async write, those jobs are delegated to **Cache Provider**.
+
+
+
+### One Store for All verifiers VS One Store per Verifier
+
+One Store for All verifiers
+1. Systems should be kept as simple as possible. Complexity should only be added where absolutely necessary.
+2. Easy for monitoring and gain insights into its behavior and performance
+3. Systems can scale out horizontally to handle increased load with no breaking change.
+
+One Store per Verifier
 1. Syncing in between those OCI stores will cause design difficulty.
 2. If if OCI stores are verifer-binded, when the verifier is recycled the OCI stores is gone. Otherwise another resource maintainer(provider) is needed.
 3. Maintaining multi-OCIStores means extra memory cost
-
-### Async VS Sync
-
-1. Sync write to OCIStore leads to racing condition. Using lock would naturally heads to more waiting in line.
-2. When doing sync write, both read write racing condition have be handled in verifier process which increase the complexity. When doing async write, those jobs are delegated to **Cache Provider**.
 
 ## Supported Limits and Further Considerations
 
