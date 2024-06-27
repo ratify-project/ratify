@@ -89,8 +89,8 @@ The cache is very important when using the verifier to verify the same subject.
 
 ## Data Flow
 
-![Current Data Flow](https://github.com/ratify-project/ratify/blob/OCIStoreDecorate/docs/img/verifier-store-prev.png)
-![New Design Data Flow](https://github.com/ratify-project/ratify/blob/OCIStoreDecorate/docs/img/verifier-store-new.png)
+![Current Data Flow](../img/verifier-store-prev.png)
+![New Design Data Flow](../img/verifier-store-new.png)
 
 ## Component Description
 
