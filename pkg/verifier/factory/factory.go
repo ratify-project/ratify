@@ -97,7 +97,11 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, "", re.EmptyLink, err, "plugin not found", re.HideStackTrace)
 	}
 
-	return plugin.NewVerifier(configVersion, verifierConfig, pluginBinDir)
+	pluginVersion := configVersion
+	if value, ok := verifierConfig[types.Version]; ok {
+		pluginVersion = value.(string)
+	}
+	return plugin.NewVerifier(pluginVersion, verifierConfig, pluginBinDir)
 }
 
 // TODO pointer to avoid copy
