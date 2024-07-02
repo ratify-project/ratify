@@ -1,7 +1,6 @@
 module github.com/ratify-project/ratify
 
-go 1.22
-toolchain go1.22.4
+go 1.22.0
 
 // Accidentally published prior to 1.0.0 release
 retract (
@@ -18,7 +17,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.27.23
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.23
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.28.6
-	github.com/cespare/xxhash/v2 v2.2.0
+	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dapr/go-sdk v1.8.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/distribution/reference v0.5.0
@@ -44,9 +43,9 @@ require (
 	github.com/spdx/tools-golang v0.5.5
 	github.com/spf13/cobra v1.8.1
 	github.com/xlab/treeprint v1.1.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
 	go.opentelemetry.io/otel/metric v1.27.0
-	go.opentelemetry.io/otel/sdk/metric v0.39.0
+	go.opentelemetry.io/otel/sdk/metric v1.27.0
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.64.0
 	google.golang.org/protobuf v1.34.1
@@ -201,10 +200,10 @@ require (
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/client_golang v1.19.0
-	github.com/prometheus/client_model v0.6.0 // indirect
-	github.com/prometheus/common v0.51.1 // indirect
-	github.com/prometheus/procfs v0.12.0 // indirect
+	github.com/prometheus/client_golang v1.19.1
+	github.com/prometheus/client_model v0.6.1 // indirect
+	github.com/prometheus/common v0.53.0 // indirect
+	github.com/prometheus/procfs v0.15.0 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 // indirect
 	github.com/sassoftware/relic v7.2.1+incompatible // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.8.0 // indirect
@@ -256,9 +255,4 @@ require (
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
-)
-
-replace (
-	github.com/prometheus/client_golang => github.com/prometheus/client_golang v1.12.2
-	k8s.io/apiserver => k8s.io/apiserver v0.22.5
 )
