@@ -58,7 +58,7 @@ func NewCmdServe(_ ...string) *cobra.Command {
 		Short:   "Run ratify as a server",
 		Example: "ratify server",
 		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return serve(opts)
 		},
 	}

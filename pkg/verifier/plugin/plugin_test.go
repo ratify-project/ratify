@@ -68,10 +68,10 @@ func TestNewVerifier_Expected(t *testing.T) {
 func TestVerify_IsSuccessTrue_Expected(t *testing.T) {
 	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
-		find: func(plugin string, paths []string) (string, error) {
+		find: func(_ string, _ []string) (string, error) {
 			return testPath, nil
 		},
-		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+		execute: func(_ context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 			if pluginPath != testPath {
 				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
@@ -145,10 +145,10 @@ func TestVerify_IsSuccessTrue_Expected(t *testing.T) {
 func TestVerify_IsSuccessFalse_Expected(t *testing.T) {
 	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
-		find: func(plugin string, paths []string) (string, error) {
+		find: func(_ string, _ []string) (string, error) {
 			return testPath, nil
 		},
-		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+		execute: func(_ context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 			if pluginPath != testPath {
 				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}

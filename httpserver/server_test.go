@@ -126,7 +126,7 @@ func TestServer_Timeout_Failed(t *testing.T) {
 			CanVerifyFunc: func(at string) bool {
 				return at == testArtifactType
 			},
-			VerifyResult: func(artifactType string) bool {
+			VerifyResult: func(_ string) bool {
 				time.Sleep(time.Duration(timeoutDuration) * time.Second)
 				return true
 			},
@@ -194,7 +194,7 @@ func TestServer_MultipleSubjects_Success(t *testing.T) {
 			CanVerifyFunc: func(at string) bool {
 				return at == testArtifactType
 			},
-			VerifyResult: func(artifactType string) bool {
+			VerifyResult: func(_ string) bool {
 				return true
 			},
 		}
@@ -268,7 +268,7 @@ func TestServer_Mutation_Success(t *testing.T) {
 			CanVerifyFunc: func(at string) bool {
 				return at == testArtifactType
 			},
-			VerifyResult: func(artifactType string) bool {
+			VerifyResult: func(_ string) bool {
 				time.Sleep(time.Duration(timeoutDuration) * time.Second)
 				return true
 			},
@@ -344,7 +344,7 @@ func TestServer_Mutation_ReferrerStoreConfigInvalid_Failure(t *testing.T) {
 			CanVerifyFunc: func(at string) bool {
 				return at == testArtifactType
 			},
-			VerifyResult: func(artifactType string) bool {
+			VerifyResult: func(_ string) bool {
 				time.Sleep(time.Duration(timeoutDuration) * time.Second)
 				return true
 			},
@@ -423,7 +423,7 @@ func TestServer_MultipleRequestsForSameSubject_Success(t *testing.T) {
 			CanVerifyFunc: func(at string) bool {
 				return at == testArtifactType
 			},
-			VerifyResult: func(artifactType string) bool {
+			VerifyResult: func(_ string) bool {
 				return true
 			},
 		}
@@ -552,7 +552,7 @@ func TestServer_Verify_PolicyEnforcerConfigInvalid_Failure(t *testing.T) {
 			CanVerifyFunc: func(at string) bool {
 				return at == testArtifactType
 			},
-			VerifyResult: func(artifactType string) bool {
+			VerifyResult: func(_ string) bool {
 				time.Sleep(time.Duration(timeoutDuration) * time.Second)
 				return true
 			},
@@ -671,7 +671,7 @@ func TestServer_Verify_VerifierConfigInvalid_Failure(t *testing.T) {
 // TestServe_serverGracefulShutdown tests the case where the server is shutdown gracefully
 func TestServer_serverGracefulShutdown(t *testing.T) {
 	// create a server that sleeps for 5 seconds before responding
-	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewUnstartedServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		time.Sleep(5 * time.Second)
 		fmt.Fprintln(w, "request succeeded")
 	}))
