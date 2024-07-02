@@ -111,8 +111,9 @@ func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T)
 	defer os.RemoveAll(dirPath)
 
 	verifierConfig := map[string]interface{}{
-		"name": "plugin-verifier-0",
-		"type": "sample",
+		"name":    "plugin-verifier-0",
+		"type":    "sample",
+		"version": "1.0.0",
 	}
 	verifiersConfig := config.VerifiersConfig{
 		Verifiers: []config.VerifierConfig{verifierConfig},

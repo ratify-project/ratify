@@ -17,9 +17,9 @@
       "args": [
         "verify",
         "-s",
-        "huishwabbit1.azurecr.io/sbombad:v0",
+        "${input:subject}",
         "-c",
-        "/home/azureuser/repo/susanFork/config_sbom.json"
+        "${input:configPath}"
       ]
     },
     {
