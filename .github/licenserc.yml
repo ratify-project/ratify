@@ -49,7 +49,7 @@ dependency:
     - go.mod
   licenses:
     - name: github.com/spdx/tools-golang
-      version: v0.5.4
+      version: v0.5.5
       license: Apache-2.0
     - name: github.com/alibabacloud-go/cr-20160607 # TODO: remove this when library is upgraded to v2.0.0
       version: v1.0.1

@@ -35,7 +35,7 @@ ratify version`
 		Short:   "Show the ratify version information",
 		Example: eg,
 		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return runVersion()
 		},
 	}
