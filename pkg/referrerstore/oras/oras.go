@@ -183,7 +183,7 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 	insecureTransport.MaxIdleConnsPerHost = HTTPMaxIdleConnsPerHost
 	// #nosec G402
 	insecureTransport.TLSClientConfig = &tls.Config{
-		InsecureSkipVerify: true,
+		InsecureSkipVerify: true, //nolint:gosec
 	}
 	insecureRetryTransport := retry.NewTransport(insecureTransport)
 	insecureRetryTransport.Policy = customRetryPolicy
@@ -437,7 +437,7 @@ func createDefaultRepository(ctx context.Context, store *orasStore, targetRef co
 	}
 
 	// set the provider to return the resolved credentials
-	credentialProvider := func(ctx context.Context, registry string) (auth.Credential, error) {
+	credentialProvider := func(_ context.Context, _ string) (auth.Credential, error) {
 		if authConfig.Username != "" || authConfig.Password != "" || authConfig.IdentityToken != "" {
 			return auth.Credential{
 				Username:     authConfig.Username,
