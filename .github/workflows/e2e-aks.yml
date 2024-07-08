@@ -69,7 +69,7 @@ jobs:
           make e2e-aks KUBERNETES_VERSION=${{ inputs.k8s_version }} GATEKEEPER_VERSION=${{ inputs.gatekeeper_version }} TENANT_ID=${{ env.AZURE_TENANT_ID }} AZURE_SP_OBJECT_ID=${{ env.AZURE_SP_OBJECT_ID }}
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        uses: actions/upload-artifact@0b2256b8c012f0828dc542b3febcab082c67f72b # v4.3.4
         if: ${{ always() }}
         with:
           name: e2e-logs-aks-${{ inputs.k8s_version }}-${{ inputs.gatekeeper_version }}
