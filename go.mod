@@ -14,8 +14,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2
 	github.com/aws/aws-sdk-go-v2 v1.30.1
-	github.com/aws/aws-sdk-go-v2/config v1.27.23
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.23
+	github.com/aws/aws-sdk-go-v2/config v1.27.24
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.24
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.28.6
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dapr/go-sdk v1.8.0
@@ -35,7 +35,7 @@ require (
 	github.com/open-policy-agent/opa v0.63.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.0
-	github.com/owenrumney/go-sarif/v2 v2.3.1
+	github.com/owenrumney/go-sarif/v2 v2.3.2
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.8.6
@@ -47,8 +47,8 @@ require (
 	go.opentelemetry.io/otel/metric v1.27.0
 	go.opentelemetry.io/otel/sdk/metric v1.27.0
 	golang.org/x/sync v0.7.0
-	google.golang.org/grpc v1.64.0
-	google.golang.org/protobuf v1.34.1
+	google.golang.org/grpc v1.64.1
+	google.golang.org/protobuf v1.34.2
 	k8s.io/api v0.28.11
 	k8s.io/apimachinery v0.28.11
 	k8s.io/client-go v0.28.11
@@ -143,7 +143,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.15 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.22.1 // indirect
-	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.1 // indirect
+	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.1 // indirect
 	github.com/aws/smithy-go v1.20.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
