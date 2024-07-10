@@ -31,6 +31,11 @@ type KeyManagementProviderSpec struct {
 	// Name of the key management provider
 	Type string `json:"type,omitempty"`
 
+	// +kubebuilder:default=1
+	Interval int32 `json:"interval,omitempty"`
+
+	Refreshable bool `json:"refreshable,omitempty"`
+
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters of the key management provider
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
