@@ -680,9 +680,10 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen conversion-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations. Also generate conversions between structs of different API versions.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
 	$(CONVERSION_GEN) \
-        --input-dirs "./api/v1beta1,./api/v1alpha1" \
         --go-header-file "./hack/boilerplate.go.txt" \
-        --output-file-base "zz_generated.conversion"
+        --output-file "zz_generated.conversion.go" \
+		./api/v1beta1 ./api/v1alpha1
+
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
@@ -730,8 +731,8 @@ CONVERSION_GEN ?= $(LOCALBIN)/conversion-gen
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v3.8.7
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
-CONVERSION_TOOLS_VERSION ?= v0.26.1
+CONTROLLER_TOOLS_VERSION ?= v0.15.0
+CONVERSION_TOOLS_VERSION ?= v0.30.2
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
