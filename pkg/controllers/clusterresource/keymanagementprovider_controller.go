@@ -20,12 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"maps"
 
 	"github.com/ratify-project/ratify/internal/constants"
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/refresh"         // register inline key management provider
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -33,7 +32,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
-	cutils "github.com/ratify-project/ratify/pkg/controllers/utils"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/sirupsen/logrus"
 )
@@ -48,74 +46,27 @@ type KeyManagementProviderReconciler struct {
 // +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders/finalizers,verbs=update
 func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	logger := logrus.WithContext(ctx)
 
-	var resource = req.Name
-	var keyManagementProvider configv1beta1.KeyManagementProvider
-
-	logger.Infof("reconciling cluster key management provider '%v'", resource)
-
-	if err := r.Get(ctx, req.NamespacedName, &keyManagementProvider); err != nil {
-		if apierrors.IsNotFound(err) {
-			logger.Infof("deletion detected, removing key management provider %v", resource)
-			kmp.DeleteCertificatesFromMap(resource)
-			kmp.DeleteKeysFromMap(resource)
-		} else {
-			logger.Error(err, "unable to fetch key management provider")
-		}
-
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+	kr := refresh.KubeRefresher{
+		Client: r.Client,
+		Request: req,
 	}
 
-	lastFetchedTime := metav1.Now()
-	isFetchSuccessful := false
-
-	// get certificate store list to check if certificate store is configured
-	// TODO: remove check in v2.0.0+
-	var certificateStoreList configv1beta1.CertificateStoreList
-	if err := r.List(ctx, &certificateStoreList); err != nil {
-		logger.Error(err, "unable to list certificate stores")
-		return ctrl.Result{}, err
-	}
-	// if certificate store is configured, return error. Only one of certificate store and key management provider can be configured
-	if len(certificateStoreList.Items) > 0 {
-		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log a warning statement.
-		logger.Warn("Certificate Store already exists. Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.")
+	// check if kr.client is nil
+	if kr.Client == nil {
+		return ctrl.Result{}, fmt.Errorf("client is nil")
 	}
 
-	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
+	err := kr.Refresh(ctx)
 	if err != nil {
-		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		return ctrl.Result{}, err
 	}
 
-	// fetch certificates and store in map
-	certificates, certAttributes, err := provider.GetCertificates(ctx)
-	if err != nil {
-		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
-		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
-	}
-
-	// fetch keys and store in map
-	keys, keyAttributes, err := provider.GetKeys(ctx)
-	if err != nil {
-		writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
-		return ctrl.Result{}, fmt.Errorf("Error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
-	}
-	kmp.SetCertificatesInMap(resource, certificates)
-	kmp.SetKeysInMap(resource, keyManagementProvider.Spec.Type, keys)
-	// merge certificates and keys status into one
-	maps.Copy(keyAttributes, certAttributes)
-	isFetchSuccessful = true
-	emptyErrorString := ""
-	writeKMProviderStatus(ctx, r, &keyManagementProvider, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, keyAttributes)
-
-	logger.Infof("%v certificate(s) & %v key(s) fetched for key management provider %v", len(certificates), len(keys), resource)
-
-	// returning empty result and no error to indicate we’ve successfully reconciled this object
-	return ctrl.Result{}, nil
+	return kr.Result, nil
 }
 
+
+//TODO: delete helpers, moved to kubeRefresh.go
 // SetupWithManager sets up the controller with the Manager.
 func (r *KeyManagementProviderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	pred := predicate.GenerationChangedPredicate{}
