@@ -1,3 +1,19 @@
+/*
+Copyright The Ratify Authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package refresh
 
 import (
@@ -22,7 +38,7 @@ import (
 type KubeRefresher struct {
 	client.Client
 	Request ctrl.Request
-	Result ctrl.Result
+	Result  ctrl.Result
 }
 
 func (kr *KubeRefresher) Refresh(ctx context.Context) error {
@@ -32,7 +48,6 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 	var keyManagementProvider configv1beta1.KeyManagementProvider
 
 	logger.Infof("reconciling cluster key management provider '%v'", resource)
-
 
 	if err := kr.Get(ctx, kr.Request.NamespacedName, &keyManagementProvider); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -44,10 +59,10 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 		}
 
 		kr.Result = ctrl.Result{}
-		
+
 		return client.IgnoreNotFound(err)
 	}
-	
+
 	lastFetchedTime := metav1.Now()
 	isFetchSuccessful := false
 
@@ -64,7 +79,6 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 		// Note: for backwards compatibility in upgrade scenarios, Ratify will only log a warning statement.
 		logger.Warn("Certificate Store already exists. Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.")
 	}
-
 
 	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
 	if err != nil {
@@ -105,7 +119,7 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 		kr.Request = ctrl.Request{}
 		return nil
 	}
-	
+
 	// resource is refreshable, requeue after interval
 	intervalDuration := time.Duration(keyManagementProvider.Spec.Interval) * time.Minute
 	logger.Info("Reconciled KeyManagementProvider", "intervalDuration", intervalDuration)

@@ -46,9 +46,8 @@ type KeyManagementProviderReconciler struct {
 // +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=keymanagementproviders/finalizers,verbs=update
 func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-
 	kr := refresh.KubeRefresher{
-		Client: r.Client,
+		Client:  r.Client,
 		Request: req,
 	}
 
@@ -65,8 +64,7 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	return kr.Result, nil
 }
 
-
-//TODO: delete helpers, moved to kubeRefresh.go
+// TODO: delete helpers, moved to kubeRefresh.go
 // SetupWithManager sets up the controller with the Manager.
 func (r *KeyManagementProviderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	pred := predicate.GenerationChangedPredicate{}
