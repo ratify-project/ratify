@@ -1,17 +1,18 @@
 # Periodic Key & Certificate Retrieval for KMP
+
 Author: Josh Duffney (@duffney)
 
 Tracked issues in scope:
+
 - https://github.com/ratify-project/ratify/issues/1131
 
 Proposal ref:
+
 - https://github.com/ratify-project/ratify/blob/dev/docs/proposals/Automated-Certificate-and-Key-Updates.md
 
 ## Problem Statement
 
-Ensuring the integrity and authenticity of images through signing and verification involves using tools like Notation with code-signing certificates in Azure Key Vault (AKV) or Cosign with key pairs stored in AKV. In Kubernetes (K8s), verification of these signed images with Ratify requires configuring corresponding certificates or keys using a custom resource called KeyManagementProvider (KMP). However, a significant challenge arises due to the key and certificate rotation practices within a Key Management System (KMS).
-
-In v1.2.0 or earlier, Ratify does not support automatic key rotation, requiring manual updates to the KMP resource to accommodate key rotation. Meaning that Ratify continues to use the cached versions of keys or certificates, leading to potential issues such as: 
+In v1.2.0 and earlier, Ratify does not support automatic refreshing, requiring manual updates to the KMP resource to accommodate key and certificate changes. This also means that Ratify continues to use the cached versions of keys or certificates, leading to potential issues such as:
 
 **Signature Verification Failures**: When images are signed with a newly rotated key version, Ratify’s cached key version fails to verify these signatures.
 
@@ -23,21 +24,25 @@ Manual updates to KMP resources to accommodate key rotation are cumbersome and p
 
 ## Proposed Solution
 
-To address these challenges, this proposal suggests automating the update process of KMP resources in Ratify. This can be achieved by implementing a mechanism within Ratify to dynamically fetch and update the latest key or certificate versions upon rotation without requiring manual intervention. 
+To address these challenges, this proposal suggests automating the update process of KMP resources in Ratify. This can be achieved by implementing a requeue mechanism on the KMP resource at a user defined interval.
 
 ## Implementation Details
 
-### Periodic Key & Certificate Retrieval
+Kubernetes has a built-in feature to requeue the controller's reconcile methods, which is responsible for populating the certificate and key values from the providers in Ratify's KMP resources. This feature is used by passing `{Requeue: true, RequeueAfter: interval}` to the `ctrl.Request` return by the KMP controller's reconcile method.
 
-To automate the update process of KMP resources, Ratify can periodically fetch the latest key or certificate versions from the KMS. This can be achieved by adding an interval field to the operator configuration and implementing a `reconciliation loop` within the KMP controller to periodically fetch the latest key or certificate versions from the KMS.
+However, since not all of the providers support being refreshed. Inline, for example, would not benefit from being requeued after the creation of the resource. And for that reason, two new fields will be added to the spec of the CRD, interval and refreshable. Interval defined the value to wait inbetween refreshes and refreshable indicates if the resources can be refreshed. These values determine the value passed to the `ctrl.Result` returned by the reconcile method of the resource.
+
+Refreshing the resources consists of calling the `getCertificate` and `getKeys` methods of the provider configured per resource. Meaning, if a resource is not refreshable these methods will only be called once to set up the resource and populate the in-memory maps that contain the keys and certificates configured on the provider. And if the provider is refreshable the get methods will be called again each time the interval is triggered.
 
 An example of this implementation can be found below:
 
 ```go
 // keymanagementprovider_controller.go
 func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-    //.....
-    return ctrl.Result{RequeueAfter: getRequeueDuration(now, updateInterval)}, nil
+    //Do not requeue
+    return ctrl.Result{}
+    //Requeue
+    return ctrl.Result{Requeue: true, RequeueAfter: time.Second * 10}, nil
 }
 ```
 
@@ -48,94 +53,38 @@ kind: KeyManagementProvider
 metadata:
 name: keymanagementprovider-akv
 spec:
-type: azurekeyvault
-parameters:
+  type: azurekeyvault
+  interval: 1 #defined in minutes
+  refreshable: true #indicates that the provider is able to refresh state
+  parameters:
     vaultURI: https://${AKV_NAME}.vault.azure.net/
     keys:
-    - name: ${KEY_NAME}
+      - name: ${KEY_NAME}
     tenantID: ${TENANT_ID}
     clientID: ${IDENTITY_CLIENT_ID}
-    updateInterval: 1h
-```
-
-### Key & Certificate Rotation
-
-**Scenario 1**: Versions Not Specified for Keys or Certificates
-
-```yml
+---
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: KeyManagementProvider
 metadata:
-name: keymanagementprovider-akv
+name: keymanagementprovider-inline
 spec:
-type: azurekeyvault
-parameters:
-    vaultURI: https://${AKV_NAME}.vault.azure.net/
-    keys:
-    - name: ${KEY_NAME}
-    tenantID: ${TENANT_ID}
-    clientID: ${IDENTITY_CLIENT_ID}
+  type: inline
+  #   refreshable: false (default value is false and do not need to be explicity stated)
+  parameters:
+    contentType: key
+    value: ${Public_Key}
 ```
-
-1. The Reconiliation Loop retrieves the most recent key or certificate version from the provider and verifies the status of existing versions to ensure they are enabled and not disabled or revoked.
-2. The KMP provider retrieves the most recent key or certificate version.
-3. If the most recent version differs from the cached one, the cache is updated with the latest version of the key or certificate.
-4. If the KMP cache contains more than three versions of the key or certificate, the oldest version is deleted.
-
-When a key or certificate version isn't provided in the KMP resource, Ratify should fetch the latest key or certificate version from the KMS. By default, the KPM will store the last three versions of the key or certificate.
-
-**Scenario 2**: Versioned Keys or Certificates
-
-When a key or certificate version is provided in the KMP resource, Ratify should fetch the specified key or certificate version from the KMS.
-
-```yml
-apiVersion: config.ratify.deislabs.io/v1beta1
-kind: KeyManagementProvider
-metadata:
-name: keymanagementprovider-akv
-spec:
-type: azurekeyvault
-parameters:
-    vaultURI: https://${AKV_NAME}.vault.azure.net/
-    keys:
-    - name: ${KEY_NAME}
-        version: ${KEY_VER1}
-    tenantID: ${TENANT_ID}
-    clientID: ${IDENTITY_CLIENT_ID}
-```
-
-1. When the Reconiliation Loop is activated, it prompts the KMP provider to retrieve the designated key or certificate version.
-2. The KMP provider then confirms the validity of the designated key or certificate version, ensuring it is enabled and not disabled or revoked.
-3. In case the specified latest version differs from the cached one, info logs are generated, and the system continues to utilize the cached version specified by the config.
-4. If the specified version matches the cached one, no further action is required.
-5. If the specified version cannot be located, the key or certificate is removed from the cache.
-
-### Key Disabling or Certificate Revocation
-
-When a key or certificate is disabled or revoked in the KMS, Ratify should remove the key or certificate from the cache and generate warning logs. This ensures that Ratify does not use disabled keys or revoked certificates, thereby enhancing security.
-
-1. The Reconiliation Loop retrieves the most recent key or certificate version from the provider and verifies the status of existing versions to ensure they are enabled and not disabled or expired.
-2. If the KMP provider detects that a key or certificate has been disabled or revoked, it removes the key or certificate from the cache and generates warning logs.
-
-## Update certificates and keys manually
-
-In some cases, it may be necessary to manually update the certificates or keys in the KMP cache. This can be achieved by updating the KMP resource with the new key or certificate version.
-
-TODO: 
 
 ## Dev Work Items
 
 Suggested steps to implement the proposed solution:
-- Implement the `reconciliation loop` within the KMP controller to periodically fetch the latest key or certificate versions from the KMS.
-- Update KMP providers to retrieve the most recent key or certificate version and verify the status of existing versions.
-- Implement logic in verifiers to utilize multiple versions of keys or certificates.
-- Support manually triggering the reconcile method. 
+
+- Add `interval` and `refreshable` fields to the spec of the KMP CRD
+- Implement a `refresh` interface that encapsulates the reconcile logic
 
 ## Open Questions
 
 - How frequently should Ratify fetch the latest key or certificate versions from the KMS?
-- Should the reconciliation interval be defined at the operator level or the KMP resource level?
-- Do verifiers support the use of multiple versions of keys or certificates?
 - How should Ratify support manual updates to the KMP cache?
 
 ## Future Considerations
