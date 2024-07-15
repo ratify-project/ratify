@@ -1,5 +1,6 @@
 ignore:
-  - "./api"  # ignore folders and all its contents
+  - "./api" # ignore folders and all its contents
+  - "./experimental/proto/v1"
 coverage:
   status:
     patch:
