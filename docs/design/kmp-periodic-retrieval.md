@@ -28,11 +28,13 @@ To address these challenges, this proposal suggests automating the update proces
 
 ## Implementation Details
 
-Kubernetes has a built-in feature to requeue the controller's reconcile methods, which is responsible for populating the certificate and key values from the providers in Ratify's KMP resources. This feature is used by passing `{Requeue: true, RequeueAfter: interval}` to the `ctrl.Request` return by the KMP controller's reconcile method.
+Kubernetes has a built-in feature that allows the controller's reconcile methods to be requeued, which is responsible for populating the certificate and key values from the providers in Ratify's KMP resources. This is achieved by passing {Requeue: true, RequeueAfter: interval} to the ctrl.Request returned by the KMP controller's reconcile method.
 
-However, since not all of the providers support being refreshed. Inline, for example, would not benefit from being requeued after the creation of the resource. And for that reason, two new fields will be added to the spec of the CRD, interval and refreshable. Interval defined the value to wait inbetween refreshes and refreshable indicates if the resources can be refreshed. These values determine the value passed to the `ctrl.Result` returned by the reconcile method of the resource.
+However, not all providers support being refreshed. For example, an Inline provider would not benefit from being requeued after the resource is created. To address this, the KMP interface will be updated with an isRefreshable method. This allows the provider author to indicate whether the provider supports refreshing the certificates and keys for the resource.
 
-Refreshing the resources consists of calling the `getCertificate` and `getKeys` methods of the provider configured per resource. Meaning, if a resource is not refreshable these methods will only be called once to set up the resource and populate the in-memory maps that contain the keys and certificates configured on the provider. And if the provider is refreshable the get methods will be called again each time the interval is triggered.
+A new spec field called interval will be added to the keymanagementprovider_types.go file to determine when the refresh will occur. The interval can be specified as Xs, Xm, Xh, etc., indicating how often the KMP resource should refresh its certificates and keys.
+
+Refreshing the resources involves calling the getCertificate and getKeys methods of the provider configured for each resource. If a resource is not refreshable, these methods will only be called once to set up the resource and populate the in-memory maps containing the provider's keys and certificates. If the provider is refreshable, the get methods will be called again each time the interval triggers.
 
 An example of this implementation can be found below:
 
@@ -46,6 +48,17 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 }
 ```
 
+```go
+type KeyManagementProvider interface {
+	// Returns an array of certificates and the provider specific cert attributes
+	GetCertificates(ctx context.Context) (map[KMPMapKey][]*x509.Certificate, KeyManagementProviderStatus, error)
+	// Returns an array of keys and the provider specific key attributes
+	GetKeys(ctx context.Context) (map[KMPMapKey]crypto.PublicKey, KeyManagementProviderStatus, error)
+	// Returns if the provider supports refreshing of certificates & keys
+	isRefreshable() bool
+}
+```
+
 ```yml
 ## Example KMP Resource
 apiVersion: config.ratify.deislabs.io/v1beta1
@@ -54,8 +67,7 @@ metadata:
 name: keymanagementprovider-akv
 spec:
   type: azurekeyvault
-  interval: 1 #defined in minutes
-  refreshable: true #indicates that the provider is able to refresh state
+  interval: "1m" # defines the requeue interval of the resource. Aslo supports 1s,1m,1h formats.
   parameters:
     vaultURI: https://${AKV_NAME}.vault.azure.net/
     keys:
@@ -69,7 +81,6 @@ metadata:
 name: keymanagementprovider-inline
 spec:
   type: inline
-  #   refreshable: false (default value is false and do not need to be explicity stated)
   parameters:
     contentType: key
     value: ${Public_Key}
@@ -79,8 +90,9 @@ spec:
 
 Suggested steps to implement the proposed solution:
 
-- Add `interval` and `refreshable` fields to the spec of the KMP CRD
+- Add `isRefreshable` method to the KMP interface
 - Implement a `refresh` interface that encapsulates the reconcile logic
+- Add an `Interval` field to the KMP CRD spec that supports the format "Xs,Xm,Xh"
 
 ## Open Questions
 
