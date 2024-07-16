@@ -14,7 +14,7 @@
 # See here for image contents: https://github.com/microsoft/vscode-dev-containers/tree/v0.245.2/containers/go/.devcontainer/base.Dockerfile
 
 # [Choice] Go version (use -bullseye variants on local arm64/Apple Silicon): 1.22-bullseye, 1.21-bullseye, 1, 1.19, 1.18, 1-bullseye, 1.19-bullseye, 1.18-bullseye, 1-buster, 1.19-buster, 1.18-buster
-FROM mcr.microsoft.com/vscode/devcontainers/go:1.22-bullseye@sha256:a80cd1df0fed16f2a6f6854b87df49940100449aa193fb55dc30acfdc7fd7309
+FROM mcr.microsoft.com/vscode/devcontainers/go:1.22-bullseye@sha256:dca0f2ca25750feda8233b2d23c43da5ec1cf1a2afcd04f791981d9e647612ff
 
 # [Choice] Node.js version: none, lts/*, 18, 16, 14
 ARG NODE_VERSION="none"
