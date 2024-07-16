@@ -168,6 +168,11 @@ One Store per Verifier
 2. If if OCI stores are verifer-binded, when the verifier is recycled the OCI stores is gone. Otherwise another resource maintainer(provider) is needed.
 3. Maintaining multi-OCIStores means extra memory cost
 
+### Using OCI Storage instead of OCI Store
+
+Based on investigation, all function of OCI Store used by ratify can be implemented by OCI Storage or OCI ReadOnlyStorage.
+And for further feature requirements GC would be take into consideration.
+
 ## Supported Limits and Further Considerations
 
 In Ristretto using scenario, do we support multi-notation verifier, in other words do we have to support cache worker with Ristretto
