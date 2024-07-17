@@ -114,8 +114,7 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	// will not reconcile again unless resource is recreated
-	if !keyManagementProvider.Spec.Refreshable {
-		// resource is not refreshable, no need to requeue
+	if !provider.IsRefreshable() {
 		kr.Request = ctrl.Request{}
 		return nil
 	}

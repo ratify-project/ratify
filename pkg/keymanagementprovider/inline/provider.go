@@ -114,3 +114,7 @@ func (s *inlineKMProvider) GetCertificates(_ context.Context) (map[keymanagement
 func (s *inlineKMProvider) GetKeys(_ context.Context) (map[keymanagementprovider.KMPMapKey]crypto.PublicKey, keymanagementprovider.KeyManagementProviderStatus, error) {
 	return s.keys, nil, nil
 }
+
+func (s *inlineKMProvider) IsRefreshable() bool {
+	return false
+}
