@@ -51,9 +51,8 @@ spec:
             description: KeyManagementProviderSpec defines the desired state of KeyManagementProvider
             properties:
               interval:
-                default: 1
-                format: int32
-                type: integer
+                default: 1m
+                type: string
               parameters:
                 description: Parameters of the key management provider
                 type: object

@@ -22,7 +22,7 @@ import (
 
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
-	"github.com/ratify-project/ratify/pkg/keymanagementprovider/refresh"         // register inline key management provider
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/refresh"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"

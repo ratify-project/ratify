@@ -120,30 +120,18 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 	}
 
 	// resource is refreshable, requeue after interval
-	intervalDuration := time.Duration(keyManagementProvider.Spec.Interval) * time.Minute
+	intervalDuration, err := time.ParseDuration(keyManagementProvider.Spec.Interval)
+	if err != nil {
+		logger.Error(err, "unable to parse interval duration")
+		kr.Result = ctrl.Result{}
+		return err
+	}
+
 	logger.Info("Reconciled KeyManagementProvider", "intervalDuration", intervalDuration)
 	kr.Result = ctrl.Result{RequeueAfter: intervalDuration}
 
 	return nil
 }
-
-/*
-reconcile method logic
-
-"path/to/your/project/refresher"
-lastRefresh, err := c.Refresher.Refresh()
-
-func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-    refreshResult := r.KubeRefresher.Refresh(ctx)
-    if refreshResult.Error != nil {
-        // Handle error
-        return ctrl.Result{}, refreshResult.Error
-    }
-
-    // Continue with reconcile logic using refreshResult.Result if necessary
-    return refreshResult.Result, nil
-}
-*/
 
 func writeKMProviderStatus(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.KeyManagementProvider, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
 	if isSuccess {
