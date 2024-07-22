@@ -14,8 +14,8 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2
 	github.com/aws/aws-sdk-go-v2 v1.30.3
-	github.com/aws/aws-sdk-go-v2/config v1.27.26
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.26
+	github.com/aws/aws-sdk-go-v2/config v1.27.27
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.27
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.28.6
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dapr/go-sdk v1.8.0
@@ -26,7 +26,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-jose/go-jose/v3 v3.0.3
 	github.com/golang/protobuf v1.5.4
-	github.com/google/go-containerregistry v0.20.0
+	github.com/google/go-containerregistry v0.20.1
 	github.com/gorilla/mux v1.8.1
 	github.com/notaryproject/notation-core-go v1.0.3
 	github.com/notaryproject/notation-go v1.0.1
@@ -49,8 +49,8 @@ require (
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2
-	k8s.io/api v0.28.11
-	k8s.io/apimachinery v0.28.11
+	k8s.io/api v0.28.12
+	k8s.io/apimachinery v0.28.12
 	k8s.io/client-go v0.28.11
 	oras.land/oras-go/v2 v2.5.0
 )
@@ -142,7 +142,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.15 // indirect
 	github.com/aws/aws-sdk-go-v2/internal/ini v1.8.0 // indirect
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.17 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sso v1.22.3 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sso v1.22.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.30.3 // indirect
 	github.com/aws/smithy-go v1.20.3 // indirect
