@@ -55,7 +55,7 @@ type KeyManagementProvider interface {
 	// Returns an array of keys and the provider specific key attributes
 	GetKeys(ctx context.Context) (map[KMPMapKey]crypto.PublicKey, KeyManagementProviderStatus, error)
 	// Returns if the provider supports refreshing of certificates & keys
-	isRefreshable() bool
+	IsRefreshable() bool
 }
 ```
 
