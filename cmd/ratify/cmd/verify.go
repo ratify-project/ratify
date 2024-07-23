@@ -18,7 +18,6 @@ package cmd
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/ratify-project/ratify/config"
 	"github.com/ratify-project/ratify/internal/constants"
@@ -35,6 +34,10 @@ import (
 const (
 	verifyUse = "verify"
 )
+
+var logOpt = logger.Option{
+	ComponentType: logger.CommandLine,
+}
 
 type verifyCmdOptions struct {
 	configFilePath string
@@ -81,10 +84,6 @@ func verify(opts verifyCmdOptions) error {
 		return err
 	}
 
-	if subRef.Digest == "" {
-		fmt.Println(taggedReferenceWarning)
-	}
-
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
 		return err
@@ -92,6 +91,10 @@ func verify(opts verifyCmdOptions) error {
 
 	if err := logger.InitLogConfig(cf.LoggerConfig); err != nil {
 		return err
+	}
+
+	if subRef.Digest == "" {
+		logger.GetLogger(context.Background(), logOpt).Warn(taggedReferenceWarning)
 	}
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())

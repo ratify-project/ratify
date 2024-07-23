@@ -184,10 +184,6 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return err
 	}
 
-	if subRef.Digest == "" {
-		fmt.Println(taggedReferenceWarning)
-	}
-
 	digest, err := utils.ParseDigest(opts.digest)
 	if err != nil {
 		return err
@@ -196,6 +192,10 @@ func showRefManifest(opts referrerCmdOptions) error {
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
 		return err
+	}
+
+	if subRef.Digest == "" {
+		logger.GetLogger(context.Background(), logOpt).Warn(taggedReferenceWarning)
 	}
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
