@@ -17,7 +17,7 @@ spec:
     - target: admission.k8s.gatekeeper.sh
       rego: |
         package notationissuervalidation
-        
+
         # Get data from Ratify
         remote_data := response {
           images := [img | img = input.review.object.spec.containers[_].image]
@@ -32,25 +32,25 @@ spec:
         violation[{"msg": msg}] {
           general_violation[{"result": msg}]
         }
-        
+
         # Check if there are any system errors
         general_violation[{"result": result}] {
           err := remote_data.system_error
           err != ""
           result := sprintf("System error calling external data provider: %s", [err])
         }
-        
+
         # Check if there are errors for any of the images
         general_violation[{"result": result}] {
           count(remote_data.errors) > 0
           result := sprintf("Error validating one or more images: %s", remote_data.errors)
         }
-        
+
         # Check if the success criteria is true
         general_violation[{"result": result}] {
           subject_validation := remote_data.responses[_]
           subject_validation[1].isSuccess == false
-          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+          result := sprintf("Failed to verify the artifact: %s", [subject_validation[0]])
         }
 
         # Check that signature result for Issuer exists
@@ -62,7 +62,7 @@ spec:
           count(issuer_results) == 0
           result := sprintf("Subject %s has no signatures for certificate with Issuer: %s", [subject_results[0], input.parameters.issuer])
         }
-        
+
         # Check for valid signature
         general_violation[{"result": result}] {
           subject_results := remote_data.responses[_]
