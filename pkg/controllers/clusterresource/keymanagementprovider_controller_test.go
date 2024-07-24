@@ -19,7 +19,6 @@ import (
 	"testing"
 )
 
-// write a fake test to leaves a todo for the developer
 func TestKeyManagementProviderReconciler_Reconcile(t *testing.T) {
 	todo := "fake test"
 	t.Logf("TODO: %s", todo)
