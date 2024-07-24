@@ -59,7 +59,6 @@ func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctr
 	return kr.Result, nil
 }
 
-// TODO: delete helpers, moved to kubeRefresh.go
 // SetupWithManager sets up the controller with the Manager.
 func (r *KeyManagementProviderReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	pred := predicate.GenerationChangedPredicate{}
