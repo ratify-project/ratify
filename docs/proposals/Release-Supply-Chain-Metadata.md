@@ -1,6 +1,6 @@
 # Supply Chain Metadata for Ratify Assets
 
-Ratify currently publishes multiple forms of release assets both for production and development uses. Currently, these assets are not published with accompanying supply chain metadata including signatures, SBOMs, and provenance. Shipping each of these forms of metadata with all binaries and container images produced by Ratify will provide consumers a verifiable way to guarantee integrity of Ratify assets. Furthermore, this will improve Ratify's OSSF scorecard.
+Ratify currently publishes multiple forms of release assets both for production and development uses. Currently, these assets are not published with accompanying supply chain metadata including signatures, SBOMs, and provenance. Shipping each of these forms of metadata with all binaries and container images produced by Ratify will provide consumers a verifiable way to guarantee integrity of Ratify assets. Furthermore, this will improve Ratify's OSSF scorecard. In general, Ratify will prioritize addressing HIGH, MEDIUM risks surfaced by OSSF scorecard. Learn more about the OSSF checks performed [here](https://github.com/ossf/scorecard/blob/main/docs/checks.md)
 
 ## What does Ratify currently publish?
 
@@ -30,10 +30,24 @@ Ratify should support signing all container images and binaries with both Sigsto
 Ratify can utilize Notary Project's install and sign github actions published.
 Notation requires a KMS to store the signing certificate. There is no support for Github Encrypted Secrets for storing the certificate.
 
-1. Generate a self-signed certificate stored in Azure Key Vault
-2. Configure Notation action to sign using the cert stored in AKV
-3. Sign CRD, base, plugin images
-4. Store the public verification certificate at `ratify.dev/.well-known/ratify-verification.crt` & `github.com/ratify-project/ratify/dev/.well-known/ratify-verification.crt`
+1. Configure Notation action to sign using certificate's associated key stored in AKV.
+2. Sign CRD, base, plugin images
+
+#### Certificate Lifecycle Management
+
+Ratify will use a self-signed certificate stored in Azure Key Vault. This certificate is valid for 1 year. A new version is auto-generated after 9.5 months.
+The notation signing action will be configured to always use the latest certificate version.
+
+The verification certificate will be published in 2 different directories:
+
+* Ratify website @ `ratify.dev/.well-known/pki-validation/...`
+* Root of Ratify github repository @ `https://github.com/ratify-project/ratify/main/.well-known/pki-validation/...`
+
+The verification steps in the security section of Ratify website will recommend downloading certificates from the ratify website.
+
+The latest certificate can always be found at `ratify.dev/.well-known/pki-validation/ratify-verification.crt`. When a new version of the certificate is generated, the `./ratify-verification.crt` content MUST be updated to contain the new certificate. The previous version will be preserved as a separate file following convention: `./ratify-verification_<YYYYMMDD>.crt` where `<YYYYMMDD>` is the last date where that particular certificate version was valid. Ratify will NOT re-sign any dev release assets so older versions of certificates must be published so users can continue to validate those.
+
+NOTE: certificate update operations will be a MANUAL process and maintainers must track certificate regeneration date and make updates accordingly as specified by convention above.
 
 ### Cosign Image Signatures
 
