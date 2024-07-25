@@ -285,11 +285,13 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 
 	if hasValidSignature {
 		return verifier.VerifierResult{
-			Name:       v.name,
-			Type:       v.verifierType,
-			IsSuccess:  true,
-			Message:    "cosign verification success. valid signatures found. please refer to extensions field for verifications performed.",
-			Extensions: Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
+			Name:         v.name,
+			Type:         v.verifierType,
+			VerifierName: v.name,
+			VerifierType: v.verifierType,
+			IsSuccess:    true,
+			Message:      "cosign verification success. valid signatures found. please refer to extensions field for verifications performed.",
+			Extensions:   Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
 		}, nil
 	}
 
@@ -396,11 +398,13 @@ func (v *cosignVerifier) verifyLegacy(ctx context.Context, subjectReference comm
 
 	if len(signatures) > 0 {
 		return verifier.VerifierResult{
-			Name:       v.name,
-			Type:       v.verifierType,
-			IsSuccess:  true,
-			Message:    "cosign verification success. valid signatures found",
-			Extensions: LegacyExtension{SignatureExtension: sigExtensions},
+			Name:         v.name,
+			Type:         v.verifierType,
+			VerifierName: v.name,
+			VerifierType: v.verifierType,
+			IsSuccess:    true,
+			Message:      "cosign verification success. valid signatures found",
+			Extensions:   LegacyExtension{SignatureExtension: sigExtensions},
 		}, nil
 	}
 
@@ -482,10 +486,13 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 // ErrorToVerifyResult returns a verifier result with the error message and isSuccess set to false
 func errorToVerifyResult(name string, verifierType string, err error) verifier.VerifierResult {
 	return verifier.VerifierResult{
-		IsSuccess: false,
-		Name:      name,
-		Type:      verifierType,
-		Message:   errors.Wrap(err, "cosign verification failed").Error(),
+		IsSuccess:    false,
+		Name:         name,
+		Type:         verifierType,
+		VerifierName: name,
+		VerifierType: verifierType,
+		Message:      "cosign verification failed",
+		ErrorReason:  err.Error(),
 	}
 }
 

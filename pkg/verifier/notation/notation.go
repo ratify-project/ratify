@@ -175,11 +175,13 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	}
 
 	return verifier.VerifierResult{
-		Name:       v.name,
-		Type:       v.verifierType,
-		IsSuccess:  true,
-		Message:    "signature verification success",
-		Extensions: extensions,
+		Name:         v.name,
+		Type:         v.verifierType,
+		VerifierName: v.name,
+		VerifierType: v.verifierType,
+		IsSuccess:    true,
+		Message:      "signature verification success",
+		Extensions:   extensions,
 	}, nil
 }
 

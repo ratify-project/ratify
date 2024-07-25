@@ -28,8 +28,11 @@ type VerifierResult struct { //nolint:revive // ignore linter to have unique typ
 	Subject       string           `json:"subject,omitempty"`
 	IsSuccess     bool             `json:"isSuccess"`
 	Name          string           `json:"name,omitempty"`
+	VerifierName  string           `json:"verifierName,omitempty"`
 	Type          string           `json:"type,omitempty"`
+	VerifierType  string           `json:"verifierType,omitempty"`
 	Message       string           `json:"message,omitempty"`
+	ErrorReason   string           `json:"errorReason,omitempty"`
 	Extensions    interface{}      `json:"extensions,omitempty"`
 	NestedResults []VerifierResult `json:"nestedResults,omitempty"`
 	ArtifactType  string           `json:"artifactType,omitempty"`
