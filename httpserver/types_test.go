@@ -32,12 +32,12 @@ func TestFromVerifyResult(t *testing.T) {
 		{
 			name:            "Rego policy",
 			policyType:      pt.RegoPolicy,
-			expectedVersion: "1.0.0",
+			expectedVersion: "1.1.0",
 		},
 		{
 			name:            "Config policy",
 			policyType:      pt.ConfigPolicy,
-			expectedVersion: "0.1.0",
+			expectedVersion: "0.2.0",
 		},
 	}
 
