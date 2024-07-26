@@ -68,12 +68,6 @@ func NewCmdVerify(_ ...string) *cobra.Command {
 	return cmd
 }
 
-func TestVerify(subject string) {
-	_ = verify((verifyCmdOptions{
-		subject: subject,
-	}))
-}
-
 func verify(opts verifyCmdOptions) error {
 	if opts.subject == "" {
 		return errors.New("subject parameter is required")
