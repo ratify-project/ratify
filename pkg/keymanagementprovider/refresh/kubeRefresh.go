@@ -82,7 +82,7 @@ func (kr *KubeRefresher) Refresh(ctx context.Context) error {
 
 	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
 	if err != nil {
-		writeKMProviderStatus(ctx, kr.Client, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		writeKMProviderStatus(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
 		kr.Request = ctrl.Request{}
 		return err
 	}
