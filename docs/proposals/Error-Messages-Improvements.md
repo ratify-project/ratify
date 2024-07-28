@@ -26,7 +26,9 @@ Error message example 2:
   {
         subject: "docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6",
         "isSuccess": false,
-        "message: "verification failed: Error: no verifier report, Code: NO_VERIFIER _REPORT, Component Type: executor, Description: No verifier report was generatec preventing access to the registry, or the absence of appropriate verifiers corresponding to the referenced image artifacts."
+        "message: "verification failed: Error: no verifier report, Code: NO_VERIFIER _REPORT, Component Type: 
+        executor, Description: No verifier report was generatec preventing access to the registry, or the absence 
+        of appropriate verifiers corresponding to the referenced image artifacts."
   }
 ]
 ```
