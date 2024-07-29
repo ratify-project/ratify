@@ -1,0 +1,60 @@
+name: publish-cosign-sample
+
+on: 
+  workflow_dispatch:
+   
+env:
+  REGISTRY: ghcr.io
+  
+permissions:
+  contents: read
+
+jobs:
+  build-publish:
+    name: "Build and publish cosign signed sample image"
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+    steps:            
+      - name: Harden Runner
+        uses: step-security/harden-runner@0d381219ddf674d61a7572ddd19d7941e271515c # v2.9.0
+        with:
+          egress-policy: audit
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 # v3.5.0
+
+      - name: Get repo
+        run: |          
+          echo "REPOSITORY=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_ENV
+
+      - name: Write signing key to disk
+        run: 'echo "$KEY" > cosign.key'
+        shell: bash
+        env:
+          KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build sample images
+        run: |
+          docker build -t ${REPOSITORY}/cosign-image:signed-key https://github.com/wabbit-networks/net-monitor.git
+          docker build --no-cache -t ${REPOSITORY}/cosign-image:signed-keyless https://github.com/wabbit-networks/net-monitor.git
+          docker build --no-cache -t ${REPOSITORY}/cosign-image:unsigned https://github.com/wabbit-networks/net-monitor.git
+      - name: Push images
+        run: |
+          docker push ${REPOSITORY}/cosign-image:signed-key
+          docker push ${REPOSITORY}/cosign-image:signed-keyless
+          docker push ${REPOSITORY}/cosign-image:unsigned
+      - name: Sign image with cosign
+        run: |
+          cosign sign --yes --key cosign.key ${REPOSITORY}/cosign-image:signed-key
+          cosign sign --yes ${REPOSITORY}/cosign-image:signed-keyless

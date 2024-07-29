@@ -57,7 +57,7 @@ spec:
           subject_validation := remote_data.responses[_]
           subject_result := subject_validation[1]
           failed_verify(subject_result)
-          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+          result := sprintf("Failed to verify the artifact: %s", [subject_validation[0]])
         }
 
         failed_verify(reports) if {
@@ -85,4 +85,3 @@ spec:
           ]
           number := count(sigs)
         }
-        

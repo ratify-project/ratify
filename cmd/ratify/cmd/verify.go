@@ -54,7 +54,7 @@ func NewCmdVerify(_ ...string) *cobra.Command {
 		Short:   "Verify a subject",
 		Example: "sample example",
 		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return verify(opts)
 		},
 	}
