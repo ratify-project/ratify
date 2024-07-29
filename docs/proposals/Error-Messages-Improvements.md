@@ -45,7 +45,7 @@ test8may24@sha256:c780036bc8a6f577910bf01151013aaa18e255057a1653c76d8f3572aa3f6f
 
 The policy engine, for instance, Gatekeeper, has produced the above error message using a constraint template supplied by Ratify. It is the responsibility of the policy engine to tailor the constraint template for proper error messages to their requirements, however, it requires Ratify to provided useful verification reports as data inputs. In this example, the error message is not clear to users regarding the meaning of the term `Subject`, and fails to specify the context of failure, such as whether it was related to signature verification or SBOM verification or other verifications. Additionally, reasons behind the error were not provided. Furthermore, users may not be able to locate this error in the complete K8s logs to view more logs during error happened, because only artifact digest was shown and it is not enough to pinpoint the exact error in K8s logs.
 
-Further findings covering a range of cases such as KMP, Store, Verifier, Policy configuration, access control, and signature verification issues are recorded at https://hackmd.io/@H7a8_rG4SuaKwzu4NLT-9Q/rkMLwv1F0 (This link will be refreshed when the document is transferred to the Ratify repository.)
+Further findings covering a range of cases such as KMP, Store, Verifier, Policy configuration, access control, and signature verification issues are recorded at [Ratify Error Handling Scenarios.md](../discussion/Ratify%20Error%20Handling%20Scenarios.md)
 
 In summary, the areas that need enhancement include:
 
