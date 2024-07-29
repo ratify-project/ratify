@@ -23,6 +23,8 @@ import (
 const (
 	configFilePath = "../../../config/config.json"
 	subject        = "localhost:5000/net-monitor:v1"
+	storeName      = "oras"
+	digest         = "sha256:17490f904cf278d4314a1ccba407fc8fd00fb45303589b8cc7f5174ac35554f4"
 )
 
 func TestVerify(t *testing.T) {
@@ -32,32 +34,50 @@ func TestVerify(t *testing.T) {
 		configFilePath: configFilePath,
 	}))
 
+	// TODO: make ratify cli more unit testable
+	// unit test should not have dependency for real image
 	if !strings.Contains(err.Error(), "plugin not found") {
 		t.Errorf("error expected")
 	}
 }
 
 func TestDiscover(t *testing.T) {
-	// validate discover command does not crash
 	err := discover((discoverCmdOptions{
 		subject:        subject,
 		artifactTypes:  []string{""},
 		configFilePath: configFilePath,
 	}))
 
+	// TODO: make ratify cli more unit testable
+	// unit test should not need to resolve real image
 	if !strings.Contains(err.Error(), "referrer store failure") {
 		t.Errorf("error expected")
 	}
 }
 
 func TestShowRefManifest(t *testing.T) {
-	// validate discover command does not crash
 	err := showRefManifest((referrerCmdOptions{
 		subject:        subject,
 		configFilePath: configFilePath,
+		storeName:      storeName,
+		digest:         digest,
 	}))
 
-	if !strings.Contains(err.Error(), "store name parameter is required") {
+	// TODO: make ratify cli more unit testable
+	// unit test should not need to resolve real image
+	if !strings.Contains(err.Error(), "failed to resolve subject descriptor") {
+		t.Errorf("error expected")
+	}
+
+	// validate show blob returns error
+	err = showBlob((referrerCmdOptions{
+		subject:        subject,
+		configFilePath: configFilePath,
+		storeName:      storeName,
+		digest:         "invalid-digest",
+	}))
+
+	if !strings.Contains(err.Error(), "the digest of the subject is invalid") {
 		t.Errorf("error expected")
 	}
 }

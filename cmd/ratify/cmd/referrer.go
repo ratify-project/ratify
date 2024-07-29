@@ -97,7 +97,7 @@ func NewCmdShowRefManifest(argv ...string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "show-manifest [OPTIONS]",
-		Short:   "show rference manifest at a digest",
+		Short:   "show reference manifest at a digest",
 		Example: eg,
 		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
