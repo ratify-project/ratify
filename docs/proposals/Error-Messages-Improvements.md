@@ -17,16 +17,16 @@ failed to resolve the subject descriptor component-type=referrerStore go.version
 trace-id=34b27888-5402-443e-9836-77124c840561
 ```
 
-The above example indicated the an error happened, however, a warning level was set for the log. It contained nested errors. The first original error message correctly described the source of the problem "401 unauthorized" and pointed to a document for resolution, however, errors following the original error were redundant and not well formatted, thus complicated the overall message. The overall message failed to describe the context of the error, although "401 unauthorized" explained the reason, but did this error happen during signature verification or else? What does the `subject` mean?
+The above example indicated the an error happened, however, a warning level was set for the log. The error message was set to the field `msg`. It contained nested errors. The first original error message correctly described the source of the problem "401 unauthorized" and pointed to a document for resolution, however, errors following the original error were redundant and not well formatted, thus complicated the overall message. The overall message failed to describe the context of the error, although "401 unauthorized" explained the reason, but did this error happen during signature verification or else? What does the `subject` mean?
 
 Error message example 2:
 
 ```text
 "verifierReports": [
   {
-        subject: "docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6",
+        "subject": "docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6",
         "isSuccess": false,
-        "message: "verification failed: Error: no verifier report, Code: NO_VERIFIER _REPORT, Component Type: 
+        "message": "verification failed: Error: no verifier report, Code: NO_VERIFIER _REPORT, Component Type: 
         executor, Description: No verifier report was generatec preventing access to the registry, or the absence 
         of appropriate verifiers corresponding to the referenced image artifacts."
   }
@@ -71,24 +71,60 @@ Gina is a software engineer on the CI/CD team at Contoso, where she creates pipe
 
 ## Proposed solutions
 
-[Azure CLI Error Handling Guidelines](https://github.com/Azure/azure-cli/blob/dev/doc/error_handling_guidelines.md#error-message) outlined a general pattern for error messages, consisting of:
+We won’t create new error message guidelines; instead, we’ll refer to the existing ones. [Azure CLI Error Handling Guidelines](https://github.com/Azure/azure-cli/blob/dev/doc/error_handling_guidelines.md#error-message) outlined a general pattern for error messages, consisting of:
 
 1. __What the error is.__
 2. __Why it happens.__
 3. __What users need to do to fix it.__
 
-The proposed improvements for Ratify error messages adhere to this general pattern and the detailed DOs and DON'Ts provided in the guidelines. The recommended format for an error message is
+The proposed improvements for Ratify error messages adhere to this general pattern and the detailed DOs and DON'Ts provided in the guidelines. The error message will also include an error code. Since Ratify already supports a list of error codes, these can be used to search for remediation in the troubleshooting guide. For example, search error code `CERT_INVALID` in [the troubleshooting guide](https://ratify.dev/docs/troubleshoot/key-management-provider/kmp-tsg#cert_invalid).
+
+The recommended format for an error message in the Ratify log is as following.
 
 ```text
-[Error description]:[Error reason],[Error Recommendation]
+"<Error Code>: <Error Description>: <Error Reason>: <Remediation>"
 ```
 
-So, for the above first example, the error message in the Ratify log can be improved to:
+For the error messages displayed in `verifierReports`, it is recommended to add two new optional fields `errorReason` and `remediation`, which will be used when the field `isSuccess` is set to `false`:
 
 ```text
-Failed to resolve the artifact descriptor: HEAD "https://roacr.azurecr.io/v2/net-monitor/manifests/v2": GET "https://roacr.azurecr.io/oauth2/token?
+"verifierReports": [
+  {
+        "subject": "<Digest of the Artifact>"
+        "isSuccess": false,
+        "message": "<Error Description>",
+        "errorReason": "<Error Reason>",
+        "remediation": "<Remediation>"
+  }
+]
+```
+
+## Examples
+
+### Error messages displayed in the Ratify logs or returned by Ratify CLI commands
+
+For the above first example, the error message in the Ratify log can be improved to:
+
+```text
+REPOSITORY_OPERATION_FAILURE: Failed to resolve the artifact descriptor: HEAD "https://roacr.azurecr.io/v2/net-monitor/manifests/v2": GET "https://roacr.azurecr.io/oauth2/token?
 scope=repository%3Anet-monitor%3Apull&service=roacr.azurecr.io": response status code 401: unauthorized: 
-authentication required, visit https://aka.ms/acr/authorization for more information
+authentication required, visit https://aka.ms/acr/authorization for more information.
+```
+
+### Error messages displayed in `verifierReports`
+
+For the second example, the error message can be improved to:
+
+```text
+"verifierReports": [
+  {
+        "subject": "docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6",
+        "isSuccess": false,
+        "message": "NO_VERIFIER_REPORT: Failed to verify artifact docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6: 
+        "errorReason": "No signature verification report is found."
+        "remediation": "The artifact was either not signed and should not be trusted, signed but missing a Verifier configuration for verification, or needs to be signed if it should be."
+  }
+]
 ```
 
 ## References
