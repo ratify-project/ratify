@@ -175,8 +175,8 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	}
 
 	return verifier.VerifierResult{
-		Name:         v.name,
-		Type:         v.verifierType,
+		Name:         v.name,         // Deprecating Name in v2, switch to VerifierName instead.
+		Type:         v.verifierType, // Deprecating Type in v2, switch to VerifierType instead.
 		VerifierName: v.name,
 		VerifierType: v.verifierType,
 		IsSuccess:    true,

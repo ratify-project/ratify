@@ -285,8 +285,8 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 
 	if hasValidSignature {
 		return verifier.VerifierResult{
-			Name:         v.name,
-			Type:         v.verifierType,
+			Name:         v.name,         // Deprecating Name in v2, switch to VerifierName instead.
+			Type:         v.verifierType, // Deprecating Type in v2, switch to VerifierType instead.
 			VerifierName: v.name,
 			VerifierType: v.verifierType,
 			IsSuccess:    true,
@@ -398,8 +398,8 @@ func (v *cosignVerifier) verifyLegacy(ctx context.Context, subjectReference comm
 
 	if len(signatures) > 0 {
 		return verifier.VerifierResult{
-			Name:         v.name,
-			Type:         v.verifierType,
+			Name:         v.name,         // Deprecating Name in v2, switch to VerifierName instead.
+			Type:         v.verifierType, // Deprecating Type in v2, switch to VerifierType instead.
 			VerifierName: v.name,
 			VerifierType: v.verifierType,
 			IsSuccess:    true,
@@ -487,8 +487,8 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 func errorToVerifyResult(name string, verifierType string, err error) verifier.VerifierResult {
 	return verifier.VerifierResult{
 		IsSuccess:    false,
-		Name:         name,
-		Type:         verifierType,
+		Name:         name,         // Deprecating Name in v2, switch to VerifierName instead.
+		Type:         verifierType, // Deprecating Type in v2, switch to VerifierType instead.
 		VerifierName: name,
 		VerifierType: verifierType,
 		Message:      "cosign verification failed",

@@ -50,6 +50,7 @@ type VerifierResult struct {
 	IsSuccess    bool        `json:"isSuccess"`
 	Message      string      `json:"message"`
 	ErrorReason  string      `json:"errorReason,omitempty"`
+	Remediation  string      `json:"remediation,omitempty"`
 	Name         string      `json:"name"`
 	VerifierName string      `json:"verifierName,omitempty"`
 	Type         string      `json:"type,omitempty"`
@@ -90,5 +91,7 @@ func NewVerifierResult(result verifier.VerifierResult) VerifierResult {
 		VerifierName: result.VerifierName,
 		VerifierType: result.VerifierType,
 		Extensions:   result.Extensions,
+		ErrorReason:  result.ErrorReason,
+		Remediation:  result.Remediation,
 	}
 }

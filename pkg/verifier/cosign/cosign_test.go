@@ -407,8 +407,11 @@ func TestErrorToVerifyResult(t *testing.T) {
 	if verifierResult.Type != "cosign" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Type, "cosign")
 	}
-	if verifierResult.Message != "cosign verification failed: test error" {
-		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "cosign verification failed: test error")
+	if verifierResult.Message != "cosign verification failed" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "cosign verification failed")
+	}
+	if verifierResult.ErrorReason != "test error" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.ErrorReason, "test error")
 	}
 }
 
@@ -990,8 +993,9 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 				t.Fatalf("Create() error = %v", err)
 			}
 			result, _ := cosignVerifier.Verify(context.Background(), subjectRef, refDescriptor, tt.store)
-			if !strings.HasPrefix(result.Message, tt.expectedResultMessagePrefix) {
-				t.Errorf("Verify() = %v, want %v", result.Message, tt.expectedResultMessagePrefix)
+			concatenatedErrMsg := result.Message + ": " + result.ErrorReason
+			if !strings.HasPrefix(concatenatedErrMsg, tt.expectedResultMessagePrefix) {
+				t.Errorf("Verify() = %v, want %v", concatenatedErrMsg, tt.expectedResultMessagePrefix)
 			}
 		})
 	}
