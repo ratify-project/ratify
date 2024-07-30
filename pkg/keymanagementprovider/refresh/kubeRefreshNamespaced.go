@@ -116,6 +116,13 @@ func (kr *KubeRefresherNamespaced) Refresh(ctx context.Context) error {
 		return nil
 	}
 
+	// if interval is not set, disable refresh
+	if keyManagementProvider.Spec.Interval == "" {
+		logger.Infof("KeyManagementProvider %v is refreshable but interval is not set", resource)
+		kr.Result = ctrl.Result{}
+		return nil
+	}
+
 	intervalDuration, err := time.ParseDuration(keyManagementProvider.Spec.Interval)
 	if err != nil {
 		logger.Error(err, "unable to parse interval duration")

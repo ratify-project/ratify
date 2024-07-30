@@ -52,7 +52,7 @@ spec:
               of NamespacedKeyManagementProvider
             properties:
               interval:
-                default: 1m
+                default: ""
                 type: string
               parameters:
                 description: Parameters of the key management provider

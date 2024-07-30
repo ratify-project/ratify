@@ -49,7 +49,7 @@ spec:
               description: KeyManagementProviderSpec defines the desired state of KeyManagementProvider
               properties:
                 interval:
-                  default: 1m
+                  default: ""
                   type: string
                 parameters:
                   description: Parameters of the key management provider

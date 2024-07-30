@@ -32,7 +32,7 @@ type NamespacedKeyManagementProviderSpec struct {
 	// Name of the key management provider
 	Type string `json:"type,omitempty"`
 
-	// +kubebuilder:default="1m"
+	// +kubebuilder:default=""
 	Interval string `json:"interval,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields

@@ -63,6 +63,37 @@ func TestKubeRefresherNamespaced_Refresh_notRefreshable(t *testing.T) {
 	}
 }
 
+func TestKubeRefresherNamespaced_Refresh_Disabled(t *testing.T) {
+	provider := &configv1beta1.NamespacedKeyManagementProvider{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: "",
+			Name:      "kmpName",
+		},
+		Spec: configv1beta1.NamespacedKeyManagementProviderSpec{
+			Type:     "test-kmp",
+			Interval: "",
+			Parameters: runtime.RawExtension{
+				Raw: []byte(`{"vaultURI": "https://yourkeyvault.vault.azure.net/", "certificates": [{"name": "cert1", "version": "1"}], "tenantID": "yourtenantID", "clientID": "yourclientID"}`),
+			},
+		},
+	}
+	request := ctrl.Request{
+		NamespacedName: client.ObjectKey{
+			Namespace: "",
+			Name:      "kmpName",
+		},
+	}
+	scheme, _ := test.CreateScheme()
+	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(provider).Build()
+	kr := &KubeRefresherNamespaced{
+		Client:  client,
+		Request: request,
+	}
+	err := kr.Refresh(context.Background())
+	if kr.Result.RequeueAfter != 0 && kr.Result.Requeue == false {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
 func TestKubeRefresherNamespaced_Refresh_refreshable(t *testing.T) {
 	provider := &configv1beta1.NamespacedKeyManagementProvider{
 		ObjectMeta: metav1.ObjectMeta{
