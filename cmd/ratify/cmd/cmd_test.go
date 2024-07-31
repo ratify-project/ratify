@@ -50,8 +50,8 @@ func TestDiscover(t *testing.T) {
 
 	// TODO: make ratify cli more unit testable
 	// unit test should not need to resolve real image
-	if !strings.Contains(err.Error(), "referrer store failure") {
-		t.Errorf("error expected")
+	if !strings.Contains(err.Error(), "REFERRER_STORE_FAILURE") {
+		t.Errorf("expected containing: %s, but got: %s", "REFERRER_STORE_FAILURE", err.Error())
 	}
 }
 
