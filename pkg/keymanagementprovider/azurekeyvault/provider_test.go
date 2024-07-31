@@ -238,6 +238,26 @@ func TestGetKeys(t *testing.T) {
 	assert.Nil(t, keyStatus)
 }
 
+func TestIsRefreshable(t *testing.T) {
+	factory := &akvKMProviderFactory{}
+	config := config.KeyManagementProviderConfig{
+		"vaultUri": "https://testkv.vault.azure.net/",
+		"tenantID": "tid",
+		"clientID": "clientid",
+		"certificates": []map[string]interface{}{
+			{
+				"name":    "cert1",
+				"version": "",
+			},
+		},
+	}
+
+	provider, _ := factory.Create("v1", config, "")
+	if provider.IsRefreshable() != true {
+		t.Fatalf("expected true, got false")
+	}
+}
+
 // TestGetStatusMap tests the getStatusMap function
 func TestGetStatusMap(t *testing.T) {
 	certsStatus := []map[string]string{}

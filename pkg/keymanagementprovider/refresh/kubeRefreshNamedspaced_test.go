@@ -23,6 +23,7 @@ import (
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
+	"github.com/ratify-project/ratify/pkg/keymanagementprovider/mocks"
 	test "github.com/ratify-project/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -149,6 +150,24 @@ func TestKubeRefresherNamespaced_Refresh_invalidInterval(t *testing.T) {
 	}
 	scheme, _ := test.CreateScheme()
 	client := fake.NewClientBuilder().WithScheme(scheme).WithObjects(provider).Build()
+	kr := &KubeRefresherNamespaced{
+		Client:  client,
+		Request: request,
+	}
+	err := kr.Refresh(context.Background())
+	if err == nil {
+		t.Fatalf("Expected error but got nil")
+	}
+}
+
+func TestKubeRefresherNamespaced_Refresh_UnableToFetchKMP(t *testing.T) {
+	request := ctrl.Request{
+		NamespacedName: client.ObjectKey{
+			Namespace: "",
+			Name:      "kmpName",
+		},
+	}
+	client := mocks.TestClient{}
 	kr := &KubeRefresherNamespaced{
 		Client:  client,
 		Request: request,
