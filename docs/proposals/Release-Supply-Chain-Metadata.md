@@ -163,7 +163,7 @@ Ratify should also sign each Provenance release file with notation and cosign.
 1. Is it ok to use a self-signed certificate for Ratify's signing purposes? Yes, we are ok with this.
 2. How do we handle certificate revocation scenarios? Is it Ratify's responsibility to resign all the release and dev images? Ratify will follow the supportability promise and only resign the **latest** minor release assets.
 3. For binary signing, should Ratify only sign the `checksums.txt` or should Ratify sign all the assets individually? All assets should be signed.
-4. Do we need to publish the same artifacts as referrers as well or is it sufficient to use docker buildx attestations? Ratify will consider this in the future as need arises.
+4. Do we need to publish the same artifacts as referrers as well or is it sufficient to use docker buildx attestations? Ratify will consider this in the future as need arises. Right now, other OSS projects, like OPA Gatekeeper. have adopted buildx attestations.
 
 ### Stage 1
 
