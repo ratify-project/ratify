@@ -312,7 +312,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     sed 's/licensechecker/invalidlicensechecker/' ./config/samples/clustered/verifier/config_v1beta1_verifier_complete_licensechecker.yaml >invalidVerifier.yaml
     run kubectl apply -f invalidVerifier.yaml
     assert_success
-    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  Original Error:'"
+    run bash -c "kubectl describe verifiers.config.ratify.deislabs.io/verifier-license-checker -n ${RATIFY_NAMESPACE} | grep 'Brieferror:  PLUGIN_NOT_FOUND:'"
     assert_success
 
     # apply a valid verifier, validate status property shows success

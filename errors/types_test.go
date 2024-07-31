@@ -22,26 +22,31 @@ import (
 )
 
 const (
-	testGroup         = "test-group"
-	testValue         = "test-value"
-	testMessage       = "test-message"
-	testDescription   = "test-description"
-	testDetail        = "test-detail"
-	testComponentType = "test-component-type"
-	testLink          = "test-link"
-	testPluginName    = "test-plugin-name"
-	testErrorString   = "Original Error: (Error: , Code: UNKNOWN), Error: test-message, Code: test-value, Plugin Name: test-plugin-name, Component Type: test-component-type, Documentation: test-link, Detail: test-detail"
-	nonexistentEC     = 2000
+	testGroup          = "test-group"
+	testErrCode1       = "TEST_ERROR_CODE_1"
+	testErrCode2       = "TEST_ERROR_CODE_2"
+	testMessage        = "test-message"
+	testDescription    = "test-description"
+	testDetail1        = "test-detail-1"
+	testDetail2        = "test-detail-2"
+	testComponentType1 = "test-component-type-1"
+	testComponentType2 = "test-component-type-2"
+	testLink1          = "test-link-1"
+	testLink2          = "test-link-2"
+	testPluginName     = "test-plugin-name"
+	nonexistentEC      = 2000
 )
 
 var (
 	testEC = Register(testGroup, ErrorDescriptor{
-		Value:       testValue,
+		Value:       testErrCode1,
 		Message:     testMessage,
 		Description: testDescription,
 	})
 
-	testEC2 = Register(testGroup, ErrorDescriptor{})
+	testEC2 = Register(testGroup, ErrorDescriptor{
+		Value: testErrCode2,
+	})
 )
 
 func TestErrorCode(t *testing.T) {
@@ -52,8 +57,9 @@ func TestErrorCode(t *testing.T) {
 }
 
 func TestError(t *testing.T) {
-	if testEC.Error() != testValue {
-		t.Fatalf("expected: %s, got: %s", testValue, testEC.Error())
+	expectedStr := "test error code 1"
+	if testEC.Error() != expectedStr {
+		t.Fatalf("expected: %s, got: %s", expectedStr, testEC.Error())
 	}
 }
 
@@ -66,7 +72,7 @@ func TestDescriptor(t *testing.T) {
 		{
 			name:          "existing error code",
 			ec:            testEC,
-			expectedValue: testValue,
+			expectedValue: testErrCode1,
 		},
 		{
 			name:          "nonexistent error code",
@@ -92,9 +98,9 @@ func TestMessage(t *testing.T) {
 }
 
 func TestWithDetail(t *testing.T) {
-	err := testEC.WithDetail(testDetail)
-	if err.Detail != testDetail {
-		t.Fatalf("expected detail: %s, got: %s", testDetail, err.Detail)
+	err := testEC.WithDetail(testDetail1)
+	if err.detail != testDetail1 {
+		t.Fatalf("expected detail: %s, got: %s", testDetail1, err.detail)
 	}
 }
 
@@ -106,35 +112,35 @@ func TestWithError(t *testing.T) {
 }
 
 func TestWithComponentType(t *testing.T) {
-	err := testEC.WithComponentType(testComponentType)
-	if err.ComponentType != testComponentType {
-		t.Fatalf("expected component type: %s, got: %s", testComponentType, err.ComponentType)
+	err := testEC.WithComponentType(testComponentType1)
+	if err.componentType != testComponentType1 {
+		t.Fatalf("expected component type: %s, got: %s", testComponentType1, err.componentType)
 	}
 }
 
 func TestWithLinkToDoc(t *testing.T) {
-	err := testEC.WithLinkToDoc(testLink)
-	if err.LinkToDoc != testLink {
-		t.Fatalf("expected link to doc: %s, got: %s", testLink, err.LinkToDoc)
+	err := testEC.WithLinkToDoc(testLink1)
+	if err.remediation != testLink1 {
+		t.Fatalf("expected link to doc: %s, got: %s", testLink1, err.remediation)
 	}
 }
 
 func TestWithPluginName(t *testing.T) {
 	err := testEC.WithPluginName(testPluginName)
-	if err.PluginName != testPluginName {
-		t.Fatalf("expected plugin name: %s, got: %s", testPluginName, err.PluginName)
+	if err.pluginName != testPluginName {
+		t.Fatalf("expected plugin name: %s, got: %s", testPluginName, err.pluginName)
 	}
 }
 
 func TestWithDescription(t *testing.T) {
 	err := testEC.WithDescription()
-	if err.Description != testDescription {
-		t.Fatalf("expected description: %s, got: %s", testDescription, err.Description)
+	if err.description != testDescription {
+		t.Fatalf("expected description: %s, got: %s", testDescription, err.description)
 	}
 }
 
 func TestIs(t *testing.T) {
-	err := testEC.WithDetail(testDetail)
+	err := testEC.WithDetail(testDetail1)
 	result := err.Is(err)
 	if !result {
 		t.Fatalf("expected true, got: %v", result)
@@ -149,7 +155,7 @@ func TestIs(t *testing.T) {
 
 func TestError_ErrorCode(t *testing.T) {
 	err := Error{
-		Code: 1,
+		code: 1,
 	}
 	if err.ErrorCode() != 1 {
 		t.Fatalf("expected 1, got: %d", err.ErrorCode())
@@ -168,17 +174,64 @@ func TestIsEmpty(t *testing.T) {
 }
 
 func TestError_Error(t *testing.T) {
-	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType).WithLinkToDoc(testLink).WithDetail(testDetail).WithError(Error{}).WithDescription()
-	result := err.Error()
-	if !strings.HasPrefix(result, testErrorString) {
-		t.Fatalf("expected string starts with: %s, but got: %s", testErrorString, result)
+	// Nested errors.
+	rootErr := testEC.NewError(testComponentType1, "", testLink1, errors.New(testMessage), testDetail1, false)
+	err := testEC2.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
+
+	expectedErrStr := strings.Join([]string{testErrCode1, testDetail2, testDetail1, testMessage, testLink1}, ": ")
+	if err.Error() != expectedErrStr {
+		t.Fatalf("expected string: %s, but got: %s", expectedErrStr, err.Error())
+	}
+
+	// Single error.
+	err = testEC.WithDetail(testDetail1)
+	expectedErrStr = "TEST_ERROR_CODE_1: test-detail-1"
+	if err.Error() != expectedErrStr {
+		t.Fatalf("expected string: %s, but got: %s", expectedErrStr, err.Error())
+	}
+}
+
+func TestError_GetRootCause(t *testing.T) {
+	// rootErr contains original error.
+	rootErr := testEC.NewError(testComponentType1, "", testLink1, errors.New(testMessage), testDetail1, false)
+	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
+
+	if err.GetRootCause() != testMessage {
+		t.Fatalf("expected root cause: %v, but got: %v", err.GetRootCause(), testMessage)
+	}
+
+	// rootErr does not contain original error.
+	rootErr = testEC.NewError(testComponentType1, "", testLink1, nil, testDetail1, false)
+	err = testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
+
+	if err.GetRootCause() != testDetail1 {
+		t.Fatalf("expected root cause: %v, but got: %v", err.GetRootCause(), testDetail1)
+	}
+}
+
+func TestError_GetFullDetails(t *testing.T) {
+	rootErr := testEC.NewError(testComponentType1, "", testLink1, errors.New(testMessage), testDetail1, false)
+	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
+
+	expectedDetails := strings.Join([]string{testDetail2, testDetail1}, ": ")
+	if err.GetFullDetails() != expectedDetails {
+		t.Fatalf("expected full details: %v, but got: %v", expectedDetails, err.GetFullDetails())
+	}
+}
+
+func TestError_GetRootRemediation(t *testing.T) {
+	rootErr := testEC.NewError(testComponentType1, "", testLink1, errors.New(testMessage), testDetail1, false)
+	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
+
+	if err.GetRootRemediation() != testLink1 {
+		t.Fatalf("expected root remediation: %v, but got: %v", err.GetRootRemediation(), testLink1)
 	}
 }
 
 func TestNewError(t *testing.T) {
-	err := testEC.NewError(testComponentType, testPluginName, testLink, Error{}, testDetail, false)
+	err := testEC.NewError(testComponentType1, testPluginName, testLink1, Error{}, testDetail1, false)
 
-	if err.ComponentType != testComponentType || err.PluginName != testPluginName || err.LinkToDoc != testLink || err.Detail != testDetail {
-		t.Fatalf("expected component type: %s, plugin name: %s, link to doc: %s, detail: %s, but got: %s, %s, %s, %s", testComponentType, testPluginName, testLink, testDetail, err.ComponentType, err.PluginName, err.LinkToDoc, err.Detail)
+	if err.componentType != testComponentType1 || err.pluginName != testPluginName || err.remediation != testLink1 || err.detail != testDetail1 {
+		t.Fatalf("expected component type: %s, plugin name: %s, link to doc: %s, detail: %s, but got: %s, %s, %s, %s", testComponentType1, testPluginName, testLink1, testDetail1, err.componentType, err.pluginName, err.remediation, err.detail)
 	}
 }
