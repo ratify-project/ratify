@@ -245,7 +245,7 @@ spec:
         general_violation[{"result": result}] {
           subject_validation := remote_data.responses[_]
           failed_verify(subject_validation[1].nestedReports)
-          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+          result := sprintf("Failed to verify the artifact: %s", [subject_validation[0]])
         }
       libs:
         - |
@@ -309,7 +309,7 @@ spec:
         general_violation[{"result": result}] {
           subject_validation := remote_data.responses[_]
           failed_verify(subject_validation[1].nestedReports)
-          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+          result := sprintf("Failed to verify the artifact: %s", [subject_validation[0]])
         }
       libs:
         - |
@@ -367,7 +367,7 @@ spec:
         general_violation[{"result": result}] {
           subject_validation := remote_data.responses[_]
           failed_verify(subject_validate[1])
-          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+          result := sprintf("Failed to verify the artifact: %s", [subject_validation[0]])
         }
       libs:
         - |
@@ -466,7 +466,7 @@ spec:
         general_violation[{"result": result}] {
           subject_validation := remote_data.responses[_]
           failed_verify(subject_validate[1])
-          result := sprintf("Subject failed verification: %s", [subject_validation[0]])
+          result := sprintf("Failed to verify the artifact: %s", [subject_validation[0]])
         }
 
         # check if there is an invalid subject

@@ -51,7 +51,7 @@ require (
 	google.golang.org/protobuf v1.34.2
 	k8s.io/api v0.28.12
 	k8s.io/apimachinery v0.28.12
-	k8s.io/client-go v0.28.11
+	k8s.io/client-go v0.28.12
 	oras.land/oras-go/v2 v2.5.0
 )
 
@@ -91,7 +91,7 @@ require (
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
-	github.com/docker/docker v24.0.9+incompatible // indirect
+	github.com/docker/docker v26.1.4+incompatible // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
