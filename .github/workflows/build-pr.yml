@@ -60,10 +60,6 @@ jobs:
     secrets: inherit
   
   aks-test-cleanup:
-    env:
-      AZURE_SUBSCRIPTION_ID: daae1e1a-63dc-454f-825d-b39289070f79
-      AZURE_CLIENT_ID: 814e6e97-120c-4534-b8a9-f1645bc99500
-      AZURE_TENANT_ID: 72f988bf-86f1-41af-91ab-2d7cd011db47
     needs: ['build_test_aks_e2e_conditional']
     runs-on: ubuntu-latest
     permissions:
@@ -86,10 +82,10 @@ jobs:
       - name: Az CLI login
         uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a # v2.1.1
         with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: clean up
         run: |
-          make e2e-cleanup AZURE_SUBSCRIPTION_ID=${{ env.AZURE_SUBSCRIPTION_ID }}
+          make e2e-cleanup AZURE_SUBSCRIPTION_ID=${{ secrets.AZURE_SUBSCRIPTION_ID }}
