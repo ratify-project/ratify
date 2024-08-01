@@ -61,6 +61,8 @@ const (
 	Executor componentType = "executor"
 	// Server is the component type for the Ratify http server.
 	Server componentType = "server"
+	// CommandLine is the component type for the Ratify command line.
+	CommandLine componentType = "commandLine"
 	// ReferrerStore is the component type for the referrer store.
 	ReferrerStore componentType = "referrerStore"
 	// Cache is the component type for the cache.
