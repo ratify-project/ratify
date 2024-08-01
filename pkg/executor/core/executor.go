@@ -176,13 +176,17 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
 			if err != nil {
+				verifierErr := errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace)
 				verifyResult = vr.VerifierResult{
 					IsSuccess:    false,
 					Name:         verifier.Name(), // Deprecating Name in v2, switch to VerifierName instead.
 					Type:         verifier.Type(), // Deprecating Type in v2, switch to VerifierType instead.
 					VerifierName: verifier.Name(),
 					VerifierType: verifier.Type(),
-					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+					Message:      verifierErr.GetFullDetails(),
+					ErrorReason:  verifierErr.GetRootCause(),
+					Remediation:  verifierErr.GetRootRemediation(),
+				}
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
@@ -228,13 +232,17 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 			verifierStartTime := time.Now()
 			verifierResult, err := verifier.Verify(errCtx, subjectRef, referenceDesc, referrerStore)
 			if err != nil {
+				verifierErr := errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace)
 				verifierReport = vt.VerifierResult{
 					IsSuccess:    false,
 					Name:         verifier.Name(), // Deprecating Name in v2, switch to VerifierName instead.
 					Type:         verifier.Type(), // Deprecating Type in v2, switch to VerifierType instead.
 					VerifierName: verifier.Name(),
 					VerifierType: verifier.Type(),
-					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+					Message:      verifierErr.GetFullDetails(),
+					ErrorReason:  verifierErr.GetRootCause(),
+					Remediation:  verifierErr.GetRootRemediation(),
+				}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
 			}

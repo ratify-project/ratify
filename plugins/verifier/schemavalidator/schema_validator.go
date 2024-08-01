@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
@@ -72,10 +73,12 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 	if len(referenceManifest.Blobs) == 0 {
 		return &verifier.VerifierResult{
-			Name:      input.Name,
-			Type:      verifierType,
-			IsSuccess: false,
-			Message:   fmt.Sprintf("schema validation failed: no blobs found for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
+			Name:         input.Name,
+			Type:         verifierType,
+			VerifierName: input.Name,
+			VerifierType: verifierType,
+			IsSuccess:    false,
+			Message:      fmt.Sprintf("No blobs found for referrer %s@%s.", subjectReference.Path, referenceDescriptor.Digest.String()),
 		}, nil
 	}
 
@@ -87,20 +90,27 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		err = processMediaType(schemaMap, blobDesc.MediaType, refBlob)
 		if err != nil {
+			verifierErr := re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("schema validation failed for digest:[%s], media type:[%s].", blobDesc.Digest, blobDesc.MediaType)).WithError(err)
 			return &verifier.VerifierResult{
-				Name:      input.Name,
-				Type:      verifierType,
-				IsSuccess: false,
-				Message:   fmt.Sprintf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blobDesc.Digest, blobDesc.MediaType, err.Error()),
+				Name:         input.Name,
+				Type:         verifierType,
+				VerifierName: input.Name,
+				VerifierType: verifierType,
+				IsSuccess:    false,
+				Message:      verifierErr.GetFullDetails(),
+				ErrorReason:  verifierErr.GetRootCause(),
+				Remediation:  verifierErr.GetRootRemediation(),
 			}, nil
 		}
 	}
 
 	return &verifier.VerifierResult{
-		Name:      input.Name,
-		Type:      verifierType,
-		IsSuccess: true,
-		Message:   "schema validation passed for configured media types",
+		Name:         input.Name,
+		Type:         verifierType,
+		VerifierName: input.Name,
+		VerifierType: verifierType,
+		IsSuccess:    true,
+		Message:      "schema validation passed for configured media types",
 	}, nil
 }
 

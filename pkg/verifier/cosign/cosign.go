@@ -485,14 +485,16 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 
 // ErrorToVerifyResult returns a verifier result with the error message and isSuccess set to false
 func errorToVerifyResult(name string, verifierType string, err error) verifier.VerifierResult {
+	verifierErr := re.ErrorCodeVerifyReferenceFailure.WithDetail("cosign verification failed").WithError(err)
 	return verifier.VerifierResult{
 		IsSuccess:    false,
 		Name:         name,         // Deprecating Name in v2, switch to VerifierName instead.
 		Type:         verifierType, // Deprecating Type in v2, switch to VerifierType instead.
 		VerifierName: name,
 		VerifierType: verifierType,
-		Message:      "cosign verification failed",
-		ErrorReason:  err.Error(),
+		Message:      verifierErr.GetFullDetails(),
+		ErrorReason:  verifierErr.GetRootCause(),
+		Remediation:  verifierErr.GetRootRemediation(),
 	}
 }
 

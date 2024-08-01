@@ -97,10 +97,13 @@ func (enforcer PolicyEnforcer) ContinueVerifyOnFailure(_ context.Context, _ comm
 
 // ErrorToVerifyResult converts an error to a properly formatted verify result
 func (enforcer PolicyEnforcer) ErrorToVerifyResult(_ context.Context, subjectRefString string, verifyError error) types.VerifyResult {
+	verifierErr := re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("failed to verify artifact: %s", subjectRefString)).WithError(verifyError)
 	errorReport := verifier.VerifierResult{
-		Subject:   subjectRefString,
-		IsSuccess: false,
-		Message:   fmt.Sprintf("verification failed: %v", verifyError),
+		Subject:     subjectRefString,
+		IsSuccess:   false,
+		Message:     verifierErr.GetFullDetails(),
+		ErrorReason: verifierErr.GetRootCause(),
+		Remediation: verifierErr.GetRootRemediation(),
 	}
 	var reports []interface{}
 	reports = append(reports, errorReport)
