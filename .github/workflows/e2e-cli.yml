@@ -2,6 +2,9 @@ name: e2e-cli
 
 on:
   workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: true
 
 permissions:
   contents: read
@@ -50,8 +53,8 @@ jobs:
         run: bin/ratify version
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          token: $${{ secrets.CODECOV_TOKEN }}
       - name: Run helm lint
         run: helm lint charts/ratify
   build_test_cli:
@@ -83,8 +86,8 @@ jobs:
           make test-e2e-cli GOCOVERDIR=${GITHUB_WORKSPACE}/test/e2e/.cover
       - name: Upload coverage to codecov.io
         uses: codecov/codecov-action@e28ff129e5465c2c0dcc6f003fc735cb6ae0c673 # v4.5.0
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        with:
+          token: $${{ secrets.CODECOV_TOKEN }}
   markdown-link-check:
       runs-on: ubuntu-latest
       steps:
