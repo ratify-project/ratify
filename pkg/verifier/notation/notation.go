@@ -46,10 +46,10 @@ import (
 )
 
 const (
-	verifierType                      = "notation"
-	defaultCertPath                   = "ratify-certs/notation/truststore"
-	trustStoreTypeCA                  = string(truststore.TypeCA)
-	trustStoreTypeypeSigningAuthority = string(truststore.TypeSigningAuthority)
+	verifierType                   = "notation"
+	defaultCertPath                = "ratify-certs/notation/truststore"
+	trustStoreTypeCA               = string(truststore.TypeCA)
+	trustStoreTypeSigningAuthority = string(truststore.TypeSigningAuthority)
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -233,7 +233,7 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
 	isCertStoresByType, isLegacyCertStore := false, false
 	for key := range conf.VerificationCertStores {
-		if key != trustStoreTypeCA && key != trustStoreTypeypeSigningAuthority {
+		if key != trustStoreTypeCA && key != trustStoreTypeSigningAuthority {
 			isLegacyCertStore = true
 			logger.GetLogger(context.Background(), logOpt).Debugf("Get VerificationCertStores in legacy format")
 		} else {
