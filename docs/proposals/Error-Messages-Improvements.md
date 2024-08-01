@@ -33,7 +33,7 @@ Error message example 2:
 ]
 ```
 
-The json object `verifierReports` appears in the info level logs. It is structured and returned to the policy engine as external data inputs for policy decisions. If `isSuccess` field is set to `false`, the `message` field is set to error messages. In above example, the message is not well formatted and lacked clarity on the problem, its cause, and remediation methods. It's hard for users to understand in what context the error happened and what users need to do. For example, is it an error for signature verification? What does "no verifier report" mean? We also observed that the `verifierReports` contains different supported fields when compared with the Ratify Config policy and Ratify Rego policy, which is inconsistent.
+When Ratify completes artifact verification, the result is returned to the policy engine in the format of the json object `verifierReports`. The `verifierReports` is also recorded in an INFO log of Ratify. If `isSuccess` field is set to `false`, the `message` field is set to error messages. In above example, the message is not well formatted and lacked clarity on the problem, its cause, and remediation methods. It's hard for users to understand in what context the error happened and what users need to do. For example, is it an error for signature verification? What does "no verifier report" mean? We also observed that the `verifierReports` contains different supported fields when compared with the Ratify Config policy and Ratify Rego policy, which is inconsistent.
 
 Error message example 3:
 
@@ -45,12 +45,12 @@ test8may24@sha256:c780036bc8a6f577910bf01151013aaa18e255057a1653c76d8f3572aa3f6f
 
 The policy engine, for instance, Gatekeeper, has produced the above error message using a constraint template supplied by Ratify. It is the responsibility of the policy engine to tailor the constraint template for proper error messages to their requirements, however, it requires Ratify to provided useful verification reports as data inputs. In this example, the error message is not clear to users regarding the meaning of the term `Subject`, and fails to specify the context of failure, such as whether it was related to signature verification or SBOM verification or other verifications. Additionally, reasons behind the error were not provided. Furthermore, users may not be able to locate this error in the complete K8s logs to view more logs during error happened, because only artifact digest was shown and it is not enough to pinpoint the exact error in K8s logs.
 
-Further findings covering a range of cases such as KMP, Store, Verifier, Policy configuration, access control, and signature verification issues are recorded at [Ratify Error Handling Scenarios.md](../discussion/Ratify%20Error%20Handling%20Scenarios.md)
+Further findings covering a range of cases such as Key Management Provider (KMP), Store, Verifier, Policy configuration, access control, and signature verification issues are recorded at [Ratify Error Handling Scenarios.md](../discussion/Ratify%20Error%20Handling%20Scenarios.md)
 
 In summary, the areas that need enhancement include:
 
 - Error messages similar to the first example will appear in Ratify logs. These may be found in the logs of Ratify Pods if Ratify is set up as a Kubernetes service, or they might be output by the Ratify CLI. The primary concerns include excessive nested errors, lacking error context, and not user-friendly error descriptions.
-- Error messages contained within `verifierReport` that are sent back to the policy engine, as seen in the second example. They share issues similar to those mentioned for the first example.
+- Error messages contained within `verifierReports` that are sent back to the policy engine, as seen in the second example. These error messages share issues similar to those mentioned for the first example. The policy engine can customize their Rego policies using the messages inside the `verifierReports` to return to users in the logs or UI of the policy engine.
 - Ratify failed to provide sufficient information for the policy engine to generate error messages, which is demonstrated in the third example.
 
 The document aims to provide solutions and guidelines to improve error messages.
@@ -121,8 +121,8 @@ For the second example, the error message can be improved to:
         "subject": "docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6",
         "isSuccess": false,
         "message": "NO_VERIFIER_REPORT: Failed to verify artifact docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6: 
-        "errorReason": "No signature verification report is found."
-        "remediation": "The artifact was either not signed and should not be trusted, signed but missing a Verifier configuration for verification, or needs to be signed if it should be."
+        "errorReason": "No signature is found or wrong configuration"
+        "remediation": "Please either sign the artifact or set up signature verification for it."
   }
 ]
 ```
