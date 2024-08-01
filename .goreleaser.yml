@@ -1,4 +1,5 @@
 # Check the documentation at https://goreleaser.com for more options
+version: 2
 before:
   hooks:
     - go mod tidy
@@ -57,15 +58,15 @@ release:
   prerelease: auto
   draft: true
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-    format_overrides:
+  - format_overrides:
       - goos: windows
         format: zip
 checksum:
   name_template: 'checksums.txt'
+sboms:
+  - artifacts: archive
+  - id: source
+    artifacts: source
 snapshot:
   name_template: '{{ incpatch .Version }}-next'
 changelog:
