@@ -97,7 +97,7 @@ func NewCmdShowRefManifest(argv ...string) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:     "show-manifest [OPTIONS]",
-		Short:   "show rference manifest at a digest",
+		Short:   "show reference manifest at a digest",
 		Example: eg,
 		Args:    cobra.NoArgs,
 		RunE: func(_ *cobra.Command, _ []string) error {
@@ -184,10 +184,6 @@ func showRefManifest(opts referrerCmdOptions) error {
 		return err
 	}
 
-	if subRef.Digest == "" {
-		fmt.Println(taggedReferenceWarning)
-	}
-
 	digest, err := utils.ParseDigest(opts.digest)
 	if err != nil {
 		return err
@@ -196,6 +192,10 @@ func showRefManifest(opts referrerCmdOptions) error {
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
 		return err
+	}
+
+	if subRef.Digest == "" {
+		logger.GetLogger(context.Background(), logOpt).Warn(taggedReferenceWarning)
 	}
 
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
