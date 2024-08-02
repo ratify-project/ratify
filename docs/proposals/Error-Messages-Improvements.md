@@ -122,10 +122,12 @@ For the second example, the error message can be improved to:
         "isSuccess": false,
         "message": "NO_VERIFIER_REPORT: Failed to verify artifact docker.io/library/hello-world@sha256:1408fec50309afee38f3535383f5b09419e6dc0925bc69891e79d84cc4cdce6: 
         "errorReason": "No signature is found or wrong configuration"
-        "remediation": "Please either sign the artifact or set up signature verification for it."
+        "remediation": "Please either sign the artifact or configure verifiers for signature verification. Learn more at https://ratify.dev/docs/plugins/verifier/notation."
   }
 ]
 ```
+
+> This link https://ratify.dev/docs/plugins/verifier/notation is used as an example to illustrate the improvements. The link should vary depending on the particular error encountered.
 
 ## References
 
