@@ -261,6 +261,10 @@ func TestParseVerifierConfig(t *testing.T) {
 						"certstore1": []interface{}{"akv1", "akv2"},
 						"certstore2": []interface{}{"akv3", "akv4"},
 					},
+					trustStoreTypeTSA: verificationCertStores{
+						"certstore1": []interface{}{"akv1", "akv2"},
+						"certstore2": []interface{}{"akv3", "akv4"},
+					},
 				},
 			},
 		},
