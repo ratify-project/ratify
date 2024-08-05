@@ -305,9 +305,9 @@ e2e-notation-setup:
 
 	rm -rf ~/.config/notation
 	.staging/notation/notation cert generate-test --default "ratify-bats-test"
-	curl -L https://github.com/notaryproject/notation/raw/a034721a7e3088250bbb04c5fccedbfca966d49e/internal/testdata/tsaRootCA.cer --output ~/.staging/notation/tsa/tsaRootCA.cer
+	curl --create-dirs -L https://github.com/notaryproject/notation/raw/a034721a7e3088250bbb04c5fccedbfca966d49e/internal/testdata/tsaRootCA.cer --output ~/.staging/tsa/tsaRootCA.cer
 	
-	NOTATION_EXPERIMENTAL=1 .staging/notation/notation cert add --type tsa --store certs ~/.staging/notation/tsa/tsaRootCA.cer
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation cert add --type tsa --store certs ~/.staging/tsa/tsaRootCA.cer
 
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:signed --descriptor | jq .digest | xargs`
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --timestamp-url ${TIMESTAMP_URL} --timestamp-root-cert ~/.staging/notation/tsa/tsaRootCA.cer --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:tsa --descriptor | jq .digest | xargs`
