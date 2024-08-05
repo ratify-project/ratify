@@ -97,9 +97,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 				VerifierName: input.Name,
 				VerifierType: verifierType,
 				IsSuccess:    false,
-				Message:      verifierErr.GetFullDetails(),
-				ErrorReason:  verifierErr.GetRootCause(),
-				Remediation:  verifierErr.GetRootRemediation(),
+				Message:      verifierErr.GetDetail(),
+				ErrorReason:  verifierErr.GetErrorReason(),
+				Remediation:  verifierErr.GetRemediation(),
 			}, nil
 		}
 	}

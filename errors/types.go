@@ -228,8 +228,8 @@ func (e Error) Error() string {
 	return fmt.Sprintf("%s: %s", err.ErrorCode().Descriptor().Value, strings.Join(details, ": "))
 }
 
-// GetFullDetails returns details from all nested errors.
-func (e Error) GetFullDetails() string {
+// GetDetail returns details from all nested errors.
+func (e Error) GetDetail() string {
 	err, details := e.getRootError()
 	if err.originalError != nil && err.detail != nil {
 		details = append(details, fmt.Sprintf("%s", err.detail))
@@ -238,8 +238,8 @@ func (e Error) GetFullDetails() string {
 	return strings.Join(details, ": ")
 }
 
-// GetRootCause returns the root cause of the error.
-func (e Error) GetRootCause() string {
+// GetErrorReason returns the root cause of the error.
+func (e Error) GetErrorReason() string {
 	err, _ := e.getRootError()
 	if err.originalError != nil {
 		return err.originalError.Error()
@@ -247,7 +247,8 @@ func (e Error) GetRootCause() string {
 	return fmt.Sprintf("%s", err.detail)
 }
 
-func (e Error) GetRootRemediation() string {
+// GetRemiation returns the remediation of the root error.
+func (e Error) GetRemediation() string {
 	err, _ := e.getRootError()
 	return err.remediation
 }

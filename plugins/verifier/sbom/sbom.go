@@ -90,9 +90,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 			VerifierName: input.Name,
 			VerifierType: verifierType,
 			IsSuccess:    false,
-			Message:      storeErr.GetFullDetails(),
-			ErrorReason:  storeErr.GetRootCause(),
-			Remediation:  storeErr.GetRootRemediation(),
+			Message:      storeErr.GetDetail(),
+			ErrorReason:  storeErr.GetErrorReason(),
+			Remediation:  storeErr.GetRemediation(),
 		}, nil
 	}
 
@@ -120,9 +120,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 				VerifierName: input.Name,
 				VerifierType: verifierType,
 				IsSuccess:    false,
-				Message:      storeErr.GetFullDetails(),
-				ErrorReason:  storeErr.GetRootCause(),
-				Remediation:  storeErr.GetRootRemediation(),
+				Message:      storeErr.GetDetail(),
+				ErrorReason:  storeErr.GetErrorReason(),
+				Remediation:  storeErr.GetRemediation(),
 			}, nil
 		}
 
@@ -225,8 +225,8 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, 
 		VerifierName: name,
 		VerifierType: verifierType,
 		IsSuccess:    false,
-		Message:      verifierErr.GetFullDetails(),
-		ErrorReason:  verifierErr.GetRootCause(),
+		Message:      verifierErr.GetDetail(),
+		ErrorReason:  verifierErr.GetErrorReason(),
 	}
 }
 

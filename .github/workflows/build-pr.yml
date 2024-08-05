@@ -13,6 +13,8 @@ permissions: read-all
 jobs:
   call_test_cli:
     uses: ./.github/workflows/e2e-cli.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
    
   call_test_e2e_basic:
     name: "run e2e on basic matrix"

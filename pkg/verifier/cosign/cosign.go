@@ -290,7 +290,7 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 			VerifierName: v.name,
 			VerifierType: v.verifierType,
 			IsSuccess:    true,
-			Message:      "cosign verification success. valid signatures found. please refer to extensions field for verifications performed.",
+			Message:      "Verification success. Valid signatures found. Please refer to extensions field for verifications performed.",
 			Extensions:   Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
 		}, nil
 	}
@@ -403,7 +403,7 @@ func (v *cosignVerifier) verifyLegacy(ctx context.Context, subjectReference comm
 			VerifierName: v.name,
 			VerifierType: v.verifierType,
 			IsSuccess:    true,
-			Message:      "cosign verification success. valid signatures found",
+			Message:      "Verification success. Valid signatures found",
 			Extensions:   LegacyExtension{SignatureExtension: sigExtensions},
 		}, nil
 	}
@@ -485,16 +485,16 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 
 // ErrorToVerifyResult returns a verifier result with the error message and isSuccess set to false
 func errorToVerifyResult(name string, verifierType string, err error) verifier.VerifierResult {
-	verifierErr := re.ErrorCodeVerifyReferenceFailure.WithDetail("cosign verification failed").WithError(err)
+	verifierErr := re.ErrorCodeVerifyReferenceFailure.WithDetail("Verification failed").WithError(err)
 	return verifier.VerifierResult{
 		IsSuccess:    false,
 		Name:         name,         // Deprecating Name in v2, switch to VerifierName instead.
 		Type:         verifierType, // Deprecating Type in v2, switch to VerifierType instead.
 		VerifierName: name,
 		VerifierType: verifierType,
-		Message:      verifierErr.GetFullDetails(),
-		ErrorReason:  verifierErr.GetRootCause(),
-		Remediation:  verifierErr.GetRootRemediation(),
+		Message:      verifierErr.GetDetail(),
+		ErrorReason:  verifierErr.GetErrorReason(),
+		Remediation:  verifierErr.GetRemediation(),
 	}
 }
 

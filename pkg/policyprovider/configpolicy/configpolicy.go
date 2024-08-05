@@ -101,9 +101,9 @@ func (enforcer PolicyEnforcer) ErrorToVerifyResult(_ context.Context, subjectRef
 	errorReport := verifier.VerifierResult{
 		Subject:     subjectRefString,
 		IsSuccess:   false,
-		Message:     verifierErr.GetFullDetails(),
-		ErrorReason: verifierErr.GetRootCause(),
-		Remediation: verifierErr.GetRootRemediation(),
+		Message:     verifierErr.GetDetail(),
+		ErrorReason: verifierErr.GetErrorReason(),
+		Remediation: verifierErr.GetRemediation(),
 	}
 	var reports []interface{}
 	reports = append(reports, errorReport)

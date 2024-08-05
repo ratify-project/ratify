@@ -183,16 +183,18 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 					Type:         verifier.Type(), // Deprecating Type in v2, switch to VerifierType instead.
 					VerifierName: verifier.Name(),
 					VerifierType: verifier.Type(),
-					Message:      verifierErr.GetFullDetails(),
-					ErrorReason:  verifierErr.GetRootCause(),
-					Remediation:  verifierErr.GetRootRemediation(),
+					Message:      verifierErr.GetDetail(),
+					ErrorReason:  verifierErr.GetErrorReason(),
+					Remediation:  verifierErr.GetRemediation(),
 				}
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
 				executor.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
+
 			verifyResult.Subject = subjectRef.String()
+			verifyResult.ReferenceDigest = referenceDesc.Digest.String()
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
 			verifyResult.ReferenceDigest = referenceDesc.Digest.String()
 			verifyResults = append(verifyResults, verifyResult)
@@ -239,9 +241,9 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 					Type:         verifier.Type(), // Deprecating Type in v2, switch to VerifierType instead.
 					VerifierName: verifier.Name(),
 					VerifierType: verifier.Type(),
-					Message:      verifierErr.GetFullDetails(),
-					ErrorReason:  verifierErr.GetRootCause(),
-					Remediation:  verifierErr.GetRootRemediation(),
+					Message:      verifierErr.GetDetail(),
+					ErrorReason:  verifierErr.GetErrorReason(),
+					Remediation:  verifierErr.GetRemediation(),
 				}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)

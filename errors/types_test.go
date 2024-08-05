@@ -196,16 +196,16 @@ func TestError_GetRootCause(t *testing.T) {
 	rootErr := testEC.NewError(testComponentType1, "", testLink1, errors.New(testMessage), testDetail1, false)
 	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
 
-	if err.GetRootCause() != testMessage {
-		t.Fatalf("expected root cause: %v, but got: %v", err.GetRootCause(), testMessage)
+	if err.GetErrorReason() != testMessage {
+		t.Fatalf("expected root cause: %v, but got: %v", err.GetErrorReason(), testMessage)
 	}
 
 	// rootErr does not contain original error.
 	rootErr = testEC.NewError(testComponentType1, "", testLink1, nil, testDetail1, false)
 	err = testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
 
-	if err.GetRootCause() != testDetail1 {
-		t.Fatalf("expected root cause: %v, but got: %v", err.GetRootCause(), testDetail1)
+	if err.GetErrorReason() != testDetail1 {
+		t.Fatalf("expected root cause: %v, but got: %v", err.GetErrorReason(), testDetail1)
 	}
 }
 
@@ -214,8 +214,8 @@ func TestError_GetFullDetails(t *testing.T) {
 	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
 
 	expectedDetails := strings.Join([]string{testDetail2, testDetail1}, ": ")
-	if err.GetFullDetails() != expectedDetails {
-		t.Fatalf("expected full details: %v, but got: %v", expectedDetails, err.GetFullDetails())
+	if err.GetDetail() != expectedDetails {
+		t.Fatalf("expected full details: %v, but got: %v", expectedDetails, err.GetDetail())
 	}
 }
 
@@ -223,8 +223,8 @@ func TestError_GetRootRemediation(t *testing.T) {
 	rootErr := testEC.NewError(testComponentType1, "", testLink1, errors.New(testMessage), testDetail1, false)
 	err := testEC.WithPluginName(testPluginName).WithComponentType(testComponentType2).WithRemediation(testLink2).WithDetail(testDetail2).WithError(rootErr)
 
-	if err.GetRootRemediation() != testLink1 {
-		t.Fatalf("expected root remediation: %v, but got: %v", err.GetRootRemediation(), testLink1)
+	if err.GetRemediation() != testLink1 {
+		t.Fatalf("expected root remediation: %v, but got: %v", err.GetRemediation(), testLink1)
 	}
 }
 
