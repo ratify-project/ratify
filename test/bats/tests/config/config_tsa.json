@@ -43,7 +43,7 @@
                 "artifactTypes": "application/vnd.cncf.notary.signature",
                 "verificationCerts": [
                     "~/.config/notation/localkeys/ratify-bats-test.crt",
-                    "~/.config/notation/localkeys/tsaroot.cer"
+                    ".staging/tsa/tsaroot.cer"
                 ],
                 "trustPolicyDoc": {
                     "version": "1.0",
