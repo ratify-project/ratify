@@ -96,10 +96,6 @@ func discover(opts discoverCmdOptions) error {
 		return err
 	}
 
-	if subRef.Digest == "" {
-		fmt.Println(taggedReferenceWarning)
-	}
-
 	cf, err := config.Load(opts.configFilePath)
 	if err != nil {
 		return err
@@ -107,6 +103,10 @@ func discover(opts discoverCmdOptions) error {
 
 	if err := logger.InitLogConfig(cf.LoggerConfig); err != nil {
 		return err
+	}
+
+	if subRef.Digest == "" {
+		logger.GetLogger(context.Background(), logOpt).Warn(taggedReferenceWarning)
 	}
 
 	rootImage := treeprint.NewWithRoot(subRef.String())
