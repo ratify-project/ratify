@@ -100,7 +100,6 @@ install:
 ratify-config:
 	cp ./test/bats/tests/config/* ${INSTALL_DIR}
 	cp ./test/bats/tests/certificates/wabbit-networks.io.crt ${INSTALL_DIR}/ratify-certs/notation/wabbit-networks.io.crt
-	cp ./test/bats/tests/certificates/tsaroot.cer ${INSTALL_DIR}/ratify-certs/notation/tsaroot.cer
 	cp ./test/bats/tests/certificates/cosign.pub ${INSTALL_DIR}/ratify-certs/cosign/cosign.pub
 	cp -r ./test/bats/tests/schemas/ ${INSTALL_DIR}
 	
