@@ -31,7 +31,7 @@ KIND_KUBERNETES_VERSION ?= 1.29.2
 GATEKEEPER_VERSION ?= 3.16.0
 DAPR_VERSION ?= 1.12.5
 COSIGN_VERSION ?= 2.2.3
-NOTATION_VERSION ?= v1.2.0-beta.1
+NOTATION_VERSION ?= 1.2.0-beta.1
 ORAS_VERSION ?= 1.1.0
 
 HELM_VERSION ?= 3.14.2
@@ -282,7 +282,7 @@ e2e-docker-credential-store-setup:
 e2e-notation-setup:
 	rm -rf .staging/notation
 	mkdir -p .staging/notation
-	curl -L https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz --output .staging/notation/notation.tar.gz
+	curl -L https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz --output ${GITHUB_WORKSPACE}/.staging/notation/notation.tar.gz
 	tar -zxvf ${GITHUB_WORKSPACE}/.staging/notation/notation.tar.gz -C ${GITHUB_WORKSPACE}/.staging/notation
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation signed image"]' > .staging/notation/Dockerfile
