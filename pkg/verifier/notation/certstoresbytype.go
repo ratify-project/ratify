@@ -28,6 +28,7 @@ type certStoreType string
 const (
 	CA               certStoreType = "CA"
 	SigningAuthority certStoreType = "signingAuthority"
+	TSA              certStoreType = "tsa"
 )
 
 func (certstoretype certStoreType) String() string {

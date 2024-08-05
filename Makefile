@@ -56,6 +56,8 @@ TRIVY_VERSION ?= 0.49.1
 GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
 
+TIMESTAMP_URL = http://timestamp.digicert.com
+
 # Local Registry Setup
 LOCAL_REGISTRY_IMAGE ?= ghcr.io/project-zot/zot-linux-amd64:v2.0.2
 TEST_REGISTRY = localhost:5000
@@ -98,6 +100,7 @@ install:
 ratify-config:
 	cp ./test/bats/tests/config/* ${INSTALL_DIR}
 	cp ./test/bats/tests/certificates/wabbit-networks.io.crt ${INSTALL_DIR}/ratify-certs/notation/wabbit-networks.io.crt
+	cp ./test/bats/tests/certificates/tsaroot.cer ${INSTALL_DIR}/ratify-certs/notation/tsaroot.cer
 	cp ./test/bats/tests/certificates/cosign.pub ${INSTALL_DIR}/ratify-certs/cosign/cosign.pub
 	cp -r ./test/bats/tests/schemas/ ${INSTALL_DIR}
 	
@@ -295,10 +298,20 @@ e2e-notation-setup:
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:unsigned
 	rm .staging/notation/notation.tar
 
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation tsa signed image"]' > .staging/notation/Dockerfile
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:tsa
+	rm .staging/notation/notation.tar
+
 	rm -rf ~/.config/notation
 	.staging/notation/notation cert generate-test --default "ratify-bats-test"
+	curl -L https://github.com/notaryproject/notation/raw/a034721a7e3088250bbb04c5fccedbfca966d49e/internal/testdata/tsaRootCA.cer --output ~/.staging/notation/tsa/tsaRootCA.cer
+	
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation cert add --type tsa --store certs ~/.staging/notation/tsa/tsaRootCA.cer
 
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:signed --descriptor | jq .digest | xargs`
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --timestamp-url ${TIMESTAMP_URL} --timestamp-root-cert ~/.staging/notation/tsa/tsaRootCA.cer --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:tsa --descriptor | jq .digest | xargs`
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/all:v0 --descriptor | jq .digest | xargs`
 
 e2e-notation-leaf-cert-setup:

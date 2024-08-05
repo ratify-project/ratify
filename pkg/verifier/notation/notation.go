@@ -50,6 +50,7 @@ const (
 	defaultCertPath                   = "ratify-certs/notation/truststore"
 	trustStoreTypeCA                  = string(truststore.TypeCA)
 	trustStoreTypeypeSigningAuthority = string(truststore.TypeSigningAuthority)
+	trustStoreTypeTSA                 = string(truststore.TypeTSA)
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -233,7 +234,7 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
 	isCertStoresByType, isLegacyCertStore := false, false
 	for key := range conf.VerificationCertStores {
-		if key != trustStoreTypeCA && key != trustStoreTypeypeSigningAuthority {
+		if key != trustStoreTypeCA && key != trustStoreTypeypeSigningAuthority && key != trustStoreTypeTSA {
 			isLegacyCertStore = true
 			logger.GetLogger(context.Background(), logOpt).Debugf("Get VerificationCertStores in legacy format")
 		} else {
@@ -244,8 +245,11 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
 	} else if !isCertStoresByType && isLegacyCertStore {
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
+		legacyCertStore := conf.VerificationCertStores
 		conf.VerificationCertStores = verificationCertStores{
-			trustStoreTypeCA: conf.VerificationCertStores,
+			trustStoreTypeCA: legacyCertStore,
+			// support legacy verfier config format for backward compatibility
+			trustStoreTypeTSA: legacyCertStore,
 		}
 	}
 	return nil
