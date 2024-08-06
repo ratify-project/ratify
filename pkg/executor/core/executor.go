@@ -196,7 +196,6 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 			verifyResult.Subject = subjectRef.String()
 			verifyResult.ReferenceDigest = referenceDesc.Digest.String()
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
-			verifyResult.ReferenceDigest = referenceDesc.Digest.String()
 			verifyResults = append(verifyResults, verifyResult)
 			isSuccess = verifyResult.IsSuccess
 			metrics.ReportVerifierDuration(ctx, time.Since(verifierStartTime).Milliseconds(), verifier.Name(), subjectRef.String(), isSuccess, err != nil)
