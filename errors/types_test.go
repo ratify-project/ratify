@@ -118,10 +118,10 @@ func TestWithComponentType(t *testing.T) {
 	}
 }
 
-func TestWithLinkToDoc(t *testing.T) {
-	err := testEC.WithLinkToDoc(testLink1)
+func TestWithRemediation(t *testing.T) {
+	err := testEC.WithRemediation(testLink1)
 	if err.remediation != testLink1 {
-		t.Fatalf("expected link to doc: %s, got: %s", testLink1, err.remediation)
+		t.Fatalf("expected remediation: %s, got: %s", testLink1, err.remediation)
 	}
 }
 

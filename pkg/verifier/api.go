@@ -34,13 +34,13 @@ type VerifierResult struct { //nolint:revive // ignore linter to have unique typ
 	// Type will be deprecated in v2, switch to VerifierType instead.
 	Type            string           `json:"type,omitempty"`
 	VerifierType    string           `json:"verifierType,omitempty"`
+	ReferenceDigest string           `json:"referenceDigest,omitempty"`
+	ArtifactType    string           `json:"artifactType,omitempty"`
 	Message         string           `json:"message,omitempty"`
 	ErrorReason     string           `json:"errorReason,omitempty"`
+	Remediation     string           `json:"remediation,omitempty"`
 	Extensions      interface{}      `json:"extensions,omitempty"`
 	NestedResults   []VerifierResult `json:"nestedResults,omitempty"`
-	ArtifactType    string           `json:"artifactType,omitempty"`
-	ReferenceDigest string           `json:"referenceDigest,omitempty"`
-	Remediation     string           `json:"remediation,omitempty"`
 }
 
 // ReferenceVerifier is an interface that defines methods to verify a reference
