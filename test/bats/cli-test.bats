@@ -24,6 +24,15 @@ load helpers
 
     run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
     assert_cmd_verify_success
+
+	run CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
+	run NEW_TIME=$(date -d "next week" "+%Y-%m-%d %H:%M:%S")
+    run sudo date -s "${NEW_TIME}"
+
+    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:sign-after-expired
+    assert_cmd_verify_failure
+    
+    run sudo date -s "${CURRENT_TIME}"
 }
 
 @test "notation verifier leaf cert test" {
