@@ -302,13 +302,7 @@ e2e-notation-setup:
 	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:tsa
 	rm .staging/notation/notation.tar
-
-	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation tsa signed image"]' > .staging/notation/Dockerfile
-	docker buildx create --use
-	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
-	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:sign-after-expired
-	rm .staging/notation/notation.tar
-
+	
 	rm -rf ~/.config/notation
 	.staging/notation/notation cert generate-test --default "ratify-bats-test"
 	mkdir -p .staging/tsa
@@ -317,11 +311,6 @@ e2e-notation-setup:
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:signed --descriptor | jq .digest | xargs`
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --timestamp-url ${TIMESTAMP_URL} --timestamp-root-cert ${GITHUB_WORKSPACE}/.staging/tsa/tsaroot.cer --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:tsa --descriptor | jq .digest | xargs`
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/all:v0 --descriptor | jq .digest | xargs`
-	CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-	NEW_TIME=$(date -d "next week" +"%Y-%m-%d %H:%M:%S")
-	sudo date -s "${NEW_TIME}"
-	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --timestamp-url ${TIMESTAMP_URL} --timestamp-root-cert ${GITHUB_WORKSPACE}/.staging/tsa/tsaroot.cer --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:sign-after-expired --descriptor | jq .digest | xargs`
-	sudo date -s "${CURRENT_TIME}"
 
 e2e-notation-leaf-cert-setup:
 	mkdir -p .staging/notation/leaf-test

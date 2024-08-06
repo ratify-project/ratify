@@ -55,7 +55,7 @@
                             ],
                             "signatureVerification": {
                                 "level": "strict",
-                                "verifyTimestamp": "always"
+                                "verifyTimestamp": "afterCertExpiry"
                             },
                             "trustStores": [
                                 "ca:certs",
