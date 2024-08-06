@@ -99,6 +99,33 @@ SLEEP_TIME=1
     assert_failure
 }
 
+@test "notation test timestamping" {
+    teardown() {
+        
+    }
+
+    # verify that the image cannot be run due to an invalid cert
+    sleep 10
+    run kubectl run demo-tsa --namespace default --image=registry:5000/notation:tsa
+    assert_failure
+    sleep 10
+
+    # add the alternate certificate as an inline key management provider
+    cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    assert_success
+    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+
+    # configure the notation verifier to use the inline key management provider
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
+    assert_success
+    sleep 10
+
+    # verify that the image can now be run
+    run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
+    assert_success
+}
+
 @test "cosign test" {
     teardown() {
         echo "cleaning up"
