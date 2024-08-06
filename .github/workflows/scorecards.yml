@@ -8,10 +8,12 @@ on:
     branches:
       - main
       - dev
+      - release-*
   pull_request:
     branches:
       - dev
       - main
+      - release-*
   workflow_dispatch:
 
 permissions: read-all
