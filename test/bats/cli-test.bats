@@ -14,8 +14,12 @@
 #!/usr/bin/env bats
 
 load helpers
+set CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
 
 @test "notation verifier test" {
+    teardown() {
+        run sudo date -s "${CURRENT_TIME}"
+    }
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:signed
     assert_cmd_verify_success
 
@@ -25,17 +29,15 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
     assert_cmd_verify_success
 
-    set CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
     set NEW_TIME=$(date -d "next week" +"%Y-%m-%d %H:%M:%S")
     run sudo date -s "${NEW_TIME}"
 
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:tsa
     assert_cmd_verify_failure
 
+    run echo $(date)
     run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
     assert_cmd_verify_success
-    
-    run sudo date -s "${CURRENT_TIME}"
 }
 
 @test "notation verifier leaf cert test" {
