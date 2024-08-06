@@ -318,8 +318,8 @@ e2e-notation-setup:
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --timestamp-url ${TIMESTAMP_URL} --timestamp-root-cert ${GITHUB_WORKSPACE}/.staging/tsa/tsaroot.cer --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:tsa --descriptor | jq .digest | xargs`
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/all:v0 --descriptor | jq .digest | xargs`
 	CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-	NEW_TIME=$(date -d "next week" "+%Y-%m-%d %H:%M:%S")
-    sudo date -s "${NEW_TIME}"
+	NEW_TIME=$(date -d "next week" +"%Y-%m-%d %H:%M:%S")
+	sudo date -s "${NEW_TIME}"
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign --timestamp-url ${TIMESTAMP_URL} --timestamp-root-cert ${GITHUB_WORKSPACE}/.staging/tsa/tsaroot.cer --allow-referrers-api -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:sign-after-expired --descriptor | jq .digest | xargs`
 	sudo date -s "${CURRENT_TIME}"
 

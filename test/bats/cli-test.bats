@@ -26,7 +26,7 @@ load helpers
     assert_cmd_verify_success
 
 	run CURRENT_TIME=$(date +"%Y-%m-%d %H:%M:%S")
-	run NEW_TIME=$(date -d "next week" "+%Y-%m-%d %H:%M:%S")
+	run NEW_TIME=$(date -d "next week" +"%Y-%m-%d %H:%M:%S")
     run sudo date -s "${NEW_TIME}"
 
     run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:sign-after-expired
