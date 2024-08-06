@@ -9,7 +9,6 @@ spec:
     verificationCertStores:
       certs:
         - keymanagementprovider-inline1
-        - keymanagementprovider-inline2
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:

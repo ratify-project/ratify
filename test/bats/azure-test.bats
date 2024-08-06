@@ -105,7 +105,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-tsa --namespace default --force --ignore-not-found=true'
 
-        sed -i '4s/keymanagementprovider-inline2/keymanagementprovider-inline/' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+        sed -i '4s/keymanagementprovider-inline1/keymanagementprovider-inline/' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
         sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
         run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
     }
@@ -113,12 +113,6 @@ RATIFY_NAMESPACE=gatekeeper-system
     # add the certificate as an inline key management provider
     cat /.config/notation/localkeys/ratify-bats-test.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     sed -i '4s/keymanagementprovider-inline/keymanagementprovider-inline1/' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
-    assert_success
-    
-    # add the tsa certificate as an inline key management provider
-    cat ~/.staging/tsa/tsaroot.cer | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
-    sed -i '4s/keymanagementprovider-inline1/keymanagementprovider-inline2/' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
 
