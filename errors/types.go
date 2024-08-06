@@ -151,8 +151,8 @@ func (ec ErrorCode) WithComponentType(componentType ComponentType) Error {
 	return newError(ec, ec.Message()).WithComponentType(componentType)
 }
 
-// WithLinkToDoc returns a new Error object with attached link to the documentation.
-func (ec ErrorCode) WithLinkToDoc(link string) Error {
+// WithRemediation returns a new Error object with remediation.
+func (ec ErrorCode) WithRemediation(link string) Error {
 	return newError(ec, ec.Message()).WithRemediation(link)
 }
 
