@@ -22,9 +22,11 @@ import (
 
 const (
 	VerificationResultVersion = "0.1.0"
+	ResultVersion0_2_0        = "0.2.0"
 	// Starting from this version, the verification result can be
 	// evaluated by Ratify embedded OPA engine.
 	ResultVersionSupportingRego = "1.0.0"
+	ResultVersion1_1_0          = "1.1.0"
 )
 
 type VerificationResponse struct {
@@ -34,9 +36,9 @@ type VerificationResponse struct {
 }
 
 func fromVerifyResult(res types.VerifyResult, policyType string) VerificationResponse {
-	version := VerificationResultVersion
+	version := ResultVersion0_2_0
 	if policyType == pt.RegoPolicy {
-		version = ResultVersionSupportingRego
+		version = ResultVersion1_1_0
 	}
 	return VerificationResponse{
 		Version:         version,
