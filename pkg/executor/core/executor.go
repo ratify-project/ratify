@@ -175,19 +175,22 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 		if verifier.CanVerify(ctx, referenceDesc) {
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
-			verifyResult.Subject = subjectRef.String()
 			if err != nil {
 				verifyResult = vr.VerifierResult{
-					IsSuccess: false,
-					Name:      verifier.Name(),
-					Type:      verifier.Type(),
-					Message:   errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+					IsSuccess:    false,
+					Name:         verifier.Name(),
+					Type:         verifier.Type(),
+					VerifierName: verifier.Name(),
+					VerifierType: verifier.Type(),
+					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
 				executor.addNestedVerifierResult(ctx, referenceDesc, subjectRef, &verifyResult)
 			}
 
+			verifyResult.Subject = subjectRef.String()
+			verifyResult.ReferenceDigest = referenceDesc.Digest.String()
 			verifyResult.ArtifactType = referenceDesc.ArtifactType
 			verifyResults = append(verifyResults, verifyResult)
 			isSuccess = verifyResult.IsSuccess
@@ -227,10 +230,12 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 			verifierResult, err := verifier.Verify(errCtx, subjectRef, referenceDesc, referrerStore)
 			if err != nil {
 				verifierReport = vt.VerifierResult{
-					IsSuccess: false,
-					Name:      verifier.Name(),
-					Type:      verifier.Type(),
-					Message:   errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+					IsSuccess:    false,
+					Name:         verifier.Name(), // Deprecating Name in next release, reference to VerifierName instead.
+					Type:         verifier.Type(), // Deprecating Type in next release, reference to VerifierType instead.
+					VerifierName: verifier.Name(),
+					VerifierType: verifier.Type(),
+					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
 			}

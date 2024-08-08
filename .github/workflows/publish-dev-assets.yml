@@ -13,13 +13,30 @@ jobs:
     permissions:
       packages: write
       contents: read
+      id-token: write
+    environment: azure-publish
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@0d381219ddf674d61a7572ddd19d7941e271515c # v2.9.0
+        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
         with:
           egress-policy: audit
       - name: Checkout
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - name: Install Notation
+        uses: notaryproject/notation-action/setup@104aa999103172f827373af8ac14dde7aa6d28f1 # v1.1.0
+      - name: Install cosign
+        uses: sigstore/cosign-installer@59acb6260d9c0ba8f4a2f9d9b48431a222b68e20 # v3.5.0
+      - name: Az CLI login
+        uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a # v2.1.1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Cache AAD tokens
+        run: |
+          az version
+          # Key Vault: 
+          az account get-access-token --scope https://vault.azure.net/.default --output none
       - name: prepare
         id: prepare
         run: |
@@ -100,6 +117,27 @@ jobs:
         run: |
           helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
           helm push ratify-${{ steps.prepare.outputs.semversionrolling }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
+      - name: Sign with Notation
+        uses: notaryproject/notation-action/sign@104aa999103172f827373af8ac14dde7aa6d28f1 # v1.1.0
+        with:
+          plugin_name: azure-kv
+          plugin_url: ${{ vars.AZURE_KV_PLUGIN_URL }}
+          plugin_checksum: ${{ vars.AZURE_KV_CHECKSUM }}
+          key_id: ${{ secrets.AZURE_KV_KEY_ID }}
+          target_artifact_reference: |-
+            ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }}
+            ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }}
+            ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }}
+            ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
+            ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}
+          signature_format: cose
+      - name: Sign with Cosign
+        run: |
+          cosign sign --yes ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }}
+          cosign sign --yes ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }}
+          cosign sign --yes ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }}
+          cosign sign --yes ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
+          cosign sign --yes ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}
       - name: clear
         if: always()
         run: |
