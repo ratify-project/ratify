@@ -12,7 +12,6 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9334/badge)](https://www.bestpractices.dev/projects/9334)
 [![Go Reference](https://pkg.go.dev/badge/github.com/deislabs/ratify.svg)](https://pkg.go.dev/github.com/deislabs/ratify)
 
-
 ## Table of Contents
 
 - [Ratify](#ratify)
