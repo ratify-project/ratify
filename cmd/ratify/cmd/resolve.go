@@ -54,7 +54,7 @@ func NewCmdResolve(argv ...string) *cobra.Command {
 		Short:   "Resolve digest of a subject that is referenced by a tag",
 		Example: eg,
 		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return resolve(opts)
 		},
 	}
