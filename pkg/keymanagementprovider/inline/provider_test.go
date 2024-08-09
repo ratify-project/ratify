@@ -116,3 +116,40 @@ func TestGetCertificates(t *testing.T) {
 		})
 	}
 }
+
+func TestGetKeys(t *testing.T) {
+	factory := &inlineKMProviderFactory{}
+	config := config.KeyManagementProviderConfig{
+		"type":        "inline",
+		"contentType": "key",
+		"value": `-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEozC27QupU+1GvAL0tqR7bT3Vpyyf
+OSeWVmPjy6J5x8+6OIpmTs8PKQB1vTF0gErwa1gS/QaOElLaxDKy0GS9Jg==
+-----END PUBLIC KEY-----`,
+	}
+
+	provider, err := factory.Create("v1.0", config, "")
+	if err != nil {
+		t.Fatalf("failed to create provider: %v", err)
+	}
+	keys, _, _ := provider.GetKeys(context.TODO())
+	if len(keys) != 1 {
+		t.Fatalf("expected 1 key, got %d", len(keys))
+	}
+}
+
+func TestIsRefreshable(t *testing.T) {
+	config := config.KeyManagementProviderConfig{
+		"type":        "inline",
+		"contentType": "certificate",
+		"value":       "-----BEGIN CERTIFICATE-----\nMIIEeDCCAmCgAwIBAgIUbztxbi/gSPMZGN53oZQZW1h/lbAwDQYJKoZIhvcNAQEL\nBQAwazELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAldBMRAwDgYDVQQHDAdSZWRtb25k\nMRMwEQYDVQQKDApNeSBDb21wYW55MQ8wDQYDVQQLDAZNeSBPcmcxFzAVBgNVBAMM\nDmNhLmV4YW1wbGUuY29tMB4XDTIzMDIwMTIyNTMxMFoXDTI0MDIwMTIyNTMxMFow\nbTEZMBcGA1UEAxMQbGVhZi5leGFtcGxlLmNvbTEPMA0GA1UECxMGTXkgT3JnMRMw\nEQYDVQQKEwpNeSBDb21wYW55MRAwDgYDVQQHEwdSZWRtb25kMQswCQYDVQQIEwJX\nQTELMAkGA1UEBhMCVVMwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCs\nMixf+WT34edYXs2c80zOg4Z/cxOVHU05gywjuISeaP+KS+Joc3emgbub1t5dPclk\nieIwrj3Olk3tvkrPiarOJIcrNR2zfBmQAufR4AUjoc4n1GQSp/voGgw1Hvh0wTkO\nYjhzLomrF242Ond8WTVO3Vq6/tfApfZMFM59eK9LMBkuvwTV4NeLnEnPvpLAoAvV\n9ZvCu7FuQ849R93Aoag2bZc3Tc3UCbahoJs9rTE/rnAqOhJWMGv2J1Y2Wu2eIvkD\n2uCmcVlY+7owG3TwLHTuIOBFl/5MXMvfR+B7yp1OkG23rTwwuSEBlMhYRzJFvssv\n8FX0sea7zhIg5dtoRjIlAgMBAAGjEjAQMA4GA1UdDwEB/wQEAwIHgDANBgkqhkiG\n9w0BAQsFAAOCAgEANRUu+9aBAuRf3OsdUWJflMAvuyzREp3skWSOUs4dw0MhcB6x\nb7BSyNdrBgPImLBpqYzNU6IT2eIlLXrYnKLehvPyZQx7LHvIeompA09aKMFFesqi\ngVoW5GRtp3qL3oNuuZJ80r/uKlB6Cj51TWqUbLcctBGHX7TWxFeWmFRnN0Bki00U\nJW/ElaTsr4GB+ltgZM+5USUqSNQqTa8t3d+vH6oVikyV1oYunM41xAfiRZtID04z\no15sLSkWTjavfmZ3+NjllipXFY2tnLqymCcObgdKtJHmTMFSDRngDjY+3+RVj4EY\npNaCCCepvtmXz1C5f06tlgY4ofaautJuAL7K93p/Q9ZcsIhmYWkCUZ0dkWq+eMdT\n9/lB9rQHbrDTaRxEQNIUezFMQEBxR9eC5JQfpw98LobAgA3r4vizQjQPsN0UZ54h\ncAHiyoo1VeckkotXaToRsoLjixPO9Fmss4H3urJTLpcU0drbVoG3emNh4K289vgR\nrjV11TenqvvR3+jJ2AX2ewSsF25m0afheZbrq2ZtyITPAbOqwMwTbTOvJT3HUztt\nhUP3qwsKNPR/hF3FSqZewiYOSqJi5Dk28Vd6mUEQzZa/Ma9RpBR+BAmfgH3Z9gX5\n0TqmAVQn1P8yh+bhEjiNa20bTJ+y5vQ9OrA7fiQ+6vpZCio4NFiEbYK4UBI=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIFxzCCA6+gAwIBAgIUY1fnGcYJFIGNk8fevKdGtOuZ5vcwDQYJKoZIhvcNAQEL\nBQAwazELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAldBMRAwDgYDVQQHDAdSZWRtb25k\nMRMwEQYDVQQKDApNeSBDb21wYW55MQ8wDQYDVQQLDAZNeSBPcmcxFzAVBgNVBAMM\nDmNhLmV4YW1wbGUuY29tMB4XDTIzMDIwMTIyNTIwN1oXDTMzMDEyOTIyNTIwN1ow\nazELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAldBMRAwDgYDVQQHDAdSZWRtb25kMRMw\nEQYDVQQKDApNeSBDb21wYW55MQ8wDQYDVQQLDAZNeSBPcmcxFzAVBgNVBAMMDmNh\nLmV4YW1wbGUuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAtQXd\n+qySVVMHx7iGz9xRdpDKb+zATK3asMFnMXWBn0MCkcOMJvhjajA8yrCpfMudjiW0\nReQ6xcjEfnJqkzwxrK7tPE9cQ6JzQGCxsmscRzKf1NoJL2ske5xBteKuJhSfZ9la\ncIZn/EU2F6eMAl9U4Y+ncIIrl4UoB5H/AJJj62WMl5QAvzXXwCBwlLHQe4/T3Axu\n9xmD3HTC7iQExOUFLdJx86fK3ym0futi1RgOUgD+OrnyDEIkD8mGxffPYPgszS71\nUuJX+NTsLZ/JW3ER/PMAPnBsMsMTTxEIGnrp1CXf2RnwQnDHVsxZFMgkLTS6dksT\nTGevnulTNtVvSKsZ7MpzE01j7zDie4V4dQJzBJMktbeVq9KRoPIEX0WcKpg8bGS8\nd5p5pr+Lu/NOv6ur+av8M649qCPwJAv5i2P6ggT4YMNtY0wMD2kjcHJ9/l2gYpZj\n3DG0Hy3Xo8uKUmTSC7iGhLsSjleNhJkKyh3RCsuMKB9juE4qeXPoaoPWBIuarbkq\neVVZJu2PlgN8UcxM/ym+9GNJIfNJ18WGWm+5P3IDvfBbJ39yvzZlG2czju4BUzYn\nlPOHA/Z18TxZhlPrPVnyKSVbeg7sW17yMUI2LCeaFIOYdIFvM09RaCyLIGrQwhpe\nkLh56xXk702oNHaLxyh/v5kz8EyxnpXIlDntis0CAwEAAaNjMGEwHQYDVR0OBBYE\nFCESfoahHMx7GyBdTBARen7mc37nMB8GA1UdIwQYMBaAFCESfoahHMx7GyBdTBAR\nen7mc37nMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgEGMA0GCSqGSIb3\nDQEBCwUAA4ICAQBst1MbRJd3FLSY36qaNuDhGncvcXIcYqP2A/SXVhjuAhVOTsrE\nejDYBSkjfxCgoA3LZnQLTcbcPwRL5dTBEvqBqzbyArOjc+G3kbjOeuZYv09M8kUU\nYG1bVnxXV17GMk7zcBUnr1iwnp4E0pzB9gTv+Jv1oV+EtAHe5QOTOmW9mm2SUXbH\nmIya+KlzkIgVJJ8kiGOyXsr8i4wpyDXZf720tqTzPQFTf6rUXo9PhYzOWrrj8c7V\n+bmJurV3XkgvdOiwNase17wXUG9Ad8FhVYpUicq3Csfx5M87IXUIlx51AxaOQK3G\n3skyJyAm8R8pHzhcsEuVV7bGZlbFPZeWAHpbIEwpKHlLoN6qMINk2kEbcVahL2Mu\nXBUcvJdO2LbmEvfS+1imr32YbJ5Ufetru+G4mwAp6a0P6u5FU8lbE1ZoFHhflsVq\nErvOcRKhKjAim4iwIVGS55Xyx1IpF7YSTYpL89vlMmaJsssEoCQAkf+lxmC3eEuy\n2kBu3QB3cUHZXJK+01krC5MqeHcEVuc/fbNcTsCBp+RYXNRjYsp6IzGjqltUfInE\n3Tywg3P0ZLPO06WLNjNeAFZw6T8yV5gLcTJ1xc5pEf4UiY1uCf4NmDpeWhT+vvto\n2AxC/+7x7EkEfZnYiD6tcyHyY+iuroptws8lc5wRis859kydnq3vtxbXPQ==\n-----END CERTIFICATE-----\n",
+	}
+	factory := &inlineKMProviderFactory{}
+	provider, err := factory.Create("v1.0", config, "")
+	if err != nil {
+		t.Fatalf("failed to create provider: %v", err)
+	}
+	if provider.IsRefreshable() != false {
+		t.Fatalf("expected false")
+	}
+}

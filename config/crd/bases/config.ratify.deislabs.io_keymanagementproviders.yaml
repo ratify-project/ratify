@@ -50,6 +50,9 @@ spec:
           spec:
             description: KeyManagementProviderSpec defines the desired state of KeyManagementProvider
             properties:
+              interval:
+                default: ""
+                type: string
               parameters:
                 description: Parameters of the key management provider
                 type: object
