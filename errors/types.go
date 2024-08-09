@@ -60,15 +60,16 @@ type ErrorCode int
 
 // Error provides a wrapper around ErrorCode with extra Details provided.
 type Error struct {
-	OriginalError error         `json:"originalError,omitempty"`
-	Code          ErrorCode     `json:"code"`
-	Message       string        `json:"message"`
-	Detail        interface{}   `json:"detail,omitempty"`
-	ComponentType ComponentType `json:"componentType,omitempty"`
-	PluginName    string        `json:"pluginName,omitempty"`
-	LinkToDoc     string        `json:"linkToDoc,omitempty"`
-	Stack         string        `json:"stack,omitempty"`
-	Description   string        `json:"description,omitempty"`
+	originalError error
+	code          ErrorCode
+	message       string
+	detail        interface{}
+	componentType ComponentType
+	remediation   string
+	pluginName    string
+	stack         string
+	description   string
+	isRootError   bool // isRootError is true if the originalError is either nil or not an Error type
 }
 
 // ErrorDescriptor provides relevant information about a given error code.
@@ -150,9 +151,9 @@ func (ec ErrorCode) WithComponentType(componentType ComponentType) Error {
 	return newError(ec, ec.Message()).WithComponentType(componentType)
 }
 
-// WithLinkToDoc returns a new Error object with attached link to the documentation.
-func (ec ErrorCode) WithLinkToDoc(link string) Error {
-	return newError(ec, ec.Message()).WithLinkToDoc(link)
+// WithRemediation returns a new Error object with remediation.
+func (ec ErrorCode) WithRemediation(link string) Error {
+	return newError(ec, ec.Message()).WithRemediation(link)
 }
 
 func (ec ErrorCode) WithDescription() Error {
@@ -165,27 +166,29 @@ func (ec ErrorCode) WithPluginName(pluginName string) Error {
 }
 
 // NewError returns a new Error object.
-func (ec ErrorCode) NewError(componentType ComponentType, pluginName, link string, err error, detail interface{}, printStackTrace bool) Error {
+func (ec ErrorCode) NewError(componentType ComponentType, pluginName, remediation string, err error, detail interface{}, printStackTrace bool) Error {
 	stack := ""
 	if printStackTrace {
 		stack = getStackTrace()
 	}
 	return Error{
-		Code:          ec,
-		Message:       ec.Message(),
-		OriginalError: err,
-		Detail:        detail,
-		ComponentType: componentType,
-		PluginName:    pluginName,
-		LinkToDoc:     link,
-		Stack:         stack,
+		code:          ec,
+		message:       ec.Message(),
+		originalError: err,
+		detail:        detail,
+		componentType: componentType,
+		pluginName:    pluginName,
+		remediation:   remediation,
+		stack:         stack,
+		isRootError:   err == nil || !errors.As(err, &Error{}),
 	}
 }
 
 func newError(code ErrorCode, message string) Error {
 	return Error{
-		Code:    code,
-		Message: message,
+		code:        code,
+		message:     message,
+		isRootError: true,
 	}
 }
 
@@ -193,90 +196,114 @@ func newError(code ErrorCode, message string) Error {
 func (e Error) Is(target error) bool {
 	t := &Error{}
 	if errors.As(target, t) {
-		return e.Code.ErrorCode() == t.Code.ErrorCode()
+		return e.code.ErrorCode() == t.code.ErrorCode()
 	}
 	return false
 }
 
 // ErrorCode returns the ID/Value of this Error
 func (e Error) ErrorCode() ErrorCode {
-	return e.Code
+	return e.code
 }
 
 // Unwrap returns the original error
 func (e Error) Unwrap() error {
-	return e.OriginalError
+	return e.originalError
 }
 
 // Error returns a human readable representation of the error.
+// An Error message includes the error code, detail from nested errors, root cause and remediation, all separated by ": ".
 func (e Error) Error() string {
-	var errStr string
-	if e.OriginalError != nil {
-		errStr += fmt.Sprintf("Original Error: (%s), ", e.OriginalError.Error())
+	err, details := e.getRootError()
+	if err.detail != nil {
+		details = append(details, fmt.Sprintf("%s", err.detail))
+	}
+	if err.originalError != nil {
+		details = append(details, err.originalError.Error())
 	}
 
-	errStr += fmt.Sprintf("Error: %s, Code: %s", e.Message, e.Code.String())
+	if err.remediation != "" {
+		details = append(details, err.remediation)
+	}
+	return fmt.Sprintf("%s: %s", err.ErrorCode().Descriptor().Value, strings.Join(details, ": "))
+}
 
-	if e.PluginName != "" {
-		errStr += fmt.Sprintf(", Plugin Name: %s", e.PluginName)
+// GetDetail returns details from all nested errors.
+func (e Error) GetDetail() string {
+	err, details := e.getRootError()
+	if err.originalError != nil && err.detail != nil {
+		details = append(details, fmt.Sprintf("%s", err.detail))
 	}
 
-	if e.ComponentType != "" {
-		errStr += fmt.Sprintf(", Component Type: %s", e.ComponentType)
-	}
+	return strings.Join(details, ": ")
+}
 
-	if e.LinkToDoc != "" {
-		errStr += fmt.Sprintf(", Documentation: %s", e.LinkToDoc)
+// GetErrorReason returns the root cause of the error.
+func (e Error) GetErrorReason() string {
+	err, _ := e.getRootError()
+	if err.originalError != nil {
+		return err.originalError.Error()
 	}
+	return fmt.Sprintf("%s", err.detail)
+}
 
-	if e.Detail != nil {
-		errStr += fmt.Sprintf(", Detail: %v", e.Detail)
+// GetRemiation returns the remediation of the root error.
+func (e Error) GetRemediation() string {
+	err, _ := e.getRootError()
+	return err.remediation
+}
+
+func (e Error) getRootError() (err Error, details []string) {
+	err = e
+	for !err.isRootError {
+		if err.detail != nil {
+			details = append(details, fmt.Sprintf("%s", err.detail))
+		}
+		var ratifyError Error
+		if errors.As(err.originalError, &ratifyError) {
+			err = ratifyError
+		} else {
+			// break is unnecessary, but added for safety
+			break
+		}
 	}
-
-	if e.Description != "" {
-		errStr += fmt.Sprintf(", Description: %v", e.Description)
-	}
-
-	if e.Stack != "" {
-		errStr += fmt.Sprintf(", Stack trace: %s", e.Stack)
-	}
-
-	return errStr
+	return err, details
 }
 
 // WithDetail will return a new Error, based on the current one, but with
 // some Detail info added
 func (e Error) WithDetail(detail interface{}) Error {
-	e.Detail = detail
+	e.detail = detail
 	return e
 }
 
 // WithPluginName returns a new Error object with pluginName set.
 func (e Error) WithPluginName(pluginName string) Error {
-	e.PluginName = pluginName
+	e.pluginName = pluginName
 	return e
 }
 
 // WithComponentType returns a new Error object with ComponentType set.
 func (e Error) WithComponentType(componentType ComponentType) Error {
-	e.ComponentType = componentType
+	e.componentType = componentType
 	return e
 }
 
 // WithError returns a new Error object with original error.
 func (e Error) WithError(err error) Error {
-	e.OriginalError = err
+	e.originalError = err
+	e.isRootError = err == nil || !errors.As(err, &Error{})
 	return e
 }
 
-// WithLinkToDoc returns a new Error object attached with link to documentation.
-func (e Error) WithLinkToDoc(link string) Error {
-	e.LinkToDoc = link
+// WithRemediation returns a new Error object attached with remediation.
+func (e Error) WithRemediation(remediation string) Error {
+	e.remediation = remediation
 	return e
 }
 
 func (e Error) WithDescription() Error {
-	e.Description = e.Code.Description()
+	e.description = e.code.Description()
 	return e
 }
 
