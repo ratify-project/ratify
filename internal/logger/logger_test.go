@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	logstash "github.com/bshuster-repo/logrus-logstash-hook"
-	dcontext "github.com/docker/distribution/context"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -75,7 +74,7 @@ func TestInitContext(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			traceIDHeaderNames = tc.headerNames
 			ctx := InitContext(context.Background(), tc.r)
-			traceID := dcontext.GetStringValue(ctx, ContextKeyTraceID)
+			traceID := GetTraceID(ctx)
 			if traceID == "" {
 				t.Fatalf("expected non-empty traceID, but got empty one")
 			}
