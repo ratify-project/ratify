@@ -410,6 +410,9 @@ func TestErrorToVerifyResult(t *testing.T) {
 	if verifierResult.Message != "Verification failed" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "Verification failed")
 	}
+	if verifierResult.ErrorReason != "test error" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.ErrorReason, "test error")
+	}
 }
 
 // TestDecodeASN1Signature tests the decodeASN1Signature function
