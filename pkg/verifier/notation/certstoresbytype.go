@@ -71,7 +71,7 @@ func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, err
 	s := make(certStoresByType)
 	for certstoretype, storeData := range confInNewFormat {
 		s[certStoreType(certstoretype)] = make(map[string][]string)
-		parsedStoreData, ok := storeData.(verificationCertStores)
+		parsedStoreData, ok := storeData.(map[string]interface{})
 		if !ok {
 			return nil, fmt.Errorf("certStores: %s assertion to type verificationCertStores failed", storeData)
 		}
