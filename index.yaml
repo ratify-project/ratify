@@ -2,6 +2,17 @@ apiVersion: v1
 entries:
   ratify:
   - apiVersion: v2
+    appVersion: v1.2.2
+    created: "2024-08-12T02:39:06.078275948Z"
+    description: A Helm chart for Ratify
+    digest: e411a8d095b82a769daad1569a7edfb61e86d17742eb3567800d663a9b853df8
+    home: https://github.com/ratify-project/ratify
+    icon: https://raw.githubusercontent.com/ratify-project/ratify/main/logo.svg
+    name: ratify
+    urls:
+    - https://ratify-project.github.io/ratify/ratify-1.13.3.tgz
+    version: 1.13.3
+  - apiVersion: v2
     appVersion: v1.2.1
     created: "2024-07-05T07:46:49.911958744Z"
     description: A Helm chart for Ratify
@@ -207,4 +218,4 @@ entries:
     urls:
     - https://ratify-project.github.io/ratify/ratify-0.1.0.tgz
     version: 0.1.0
-generated: "2024-07-05T07:46:49.909923514Z"
+generated: "2024-08-12T02:39:06.076254731Z"
