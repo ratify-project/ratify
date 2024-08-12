@@ -279,5 +279,5 @@ func TestKMPReconcile(t *testing.T) {
 }
 
 func resetKMP() {
-	keymanagementprovider.DeleteCertificatesFromMap(storeName)
+	keymanagementprovider.DeleteResourceFromMap(storeName)
 }

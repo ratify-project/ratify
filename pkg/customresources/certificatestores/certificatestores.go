@@ -21,6 +21,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/constants"
 	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	"github.com/ratify-project/ratify/pkg/utils"
@@ -37,6 +38,15 @@ type ActiveCertStores struct {
 	//   "namespace2/store2": []*x509.Certificate
 	// }
 	scopedCertStores sync.Map
+
+	// scopedStoreErrors is mapping from cert store name to error generated while reconciling the store.
+	// The certificate store name is prefixed with the namespace.
+	// Example:
+	// {
+	//   "namespace1/store1": error,
+	//   "namespace2/store2": error
+	// }
+	scopedStoreErrors sync.Map
 }
 
 func NewActiveCertStores() CertStoreManager {
@@ -52,24 +62,34 @@ func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName stri
 	}
 
 	if !hasAccessToStore(ctx, storeName) {
-		return []*x509.Certificate{}, fmt.Errorf("namespace: [%s] does not have access to certificate store: %s", ctxUtils.GetNamespace(ctx), storeName)
+		return []*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace: [%s] does not have access to certificate store: %s", ctxUtils.GetNamespace(ctx), storeName))
 	}
+	if err, ok := c.scopedStoreErrors.Load(prependedName); ok && err != nil {
+		return []*x509.Certificate{}, err.(error)
+	}
+
 	if certs, ok := c.scopedCertStores.Load(prependedName); ok {
 		return certs.([]*x509.Certificate), nil
 	}
-	return []*x509.Certificate{}, fmt.Errorf("failed to access non-existent certificate store: %s", storeName)
+	return []*x509.Certificate{}, errors.ErrorCodeNotFound.WithDetail(fmt.Sprintf("failed to access non-existent certificate store: %s", storeName))
 }
 
 // AddStore fulfills the CertStoreManager interface.
 // It adds the given certificate under cert store.
 func (c *ActiveCertStores) AddStore(storeName string, cert []*x509.Certificate) {
 	c.scopedCertStores.Store(storeName, cert)
+	c.scopedStoreErrors.Delete(storeName)
 }
 
 // DeleteStore fulfills the CertStoreManager interface.
 // It deletes the given cert store.
 func (c *ActiveCertStores) DeleteStore(storeName string) {
 	c.scopedCertStores.Delete(storeName)
+	c.scopedStoreErrors.Delete(storeName)
+}
+
+func (c *ActiveCertStores) AddStoreError(storeName string, err error) {
+	c.scopedStoreErrors.Store(storeName, err)
 }
 
 // A namespaced verification request could access certStores in the same namespace.

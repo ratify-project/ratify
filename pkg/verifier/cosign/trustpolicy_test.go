@@ -19,6 +19,7 @@ import (
 	"context"
 	"crypto"
 	"crypto/ecdsa"
+	"crypto/x509"
 	"fmt"
 	"testing"
 
@@ -171,7 +172,7 @@ func TestGetKeys(t *testing.T) {
 	inputMap := map[keymanagementprovider.KMPMapKey]crypto.PublicKey{
 		{Name: "key1"}: &ecdsa.PublicKey{},
 	}
-	keymanagementprovider.SetKeysInMap("ns/kmp", "", inputMap)
+	keymanagementprovider.SaveSecrets("ns/kmp", "", inputMap, map[keymanagementprovider.KMPMapKey][]*x509.Certificate{})
 	tc := []struct {
 		name    string
 		cfg     TrustPolicyConfig

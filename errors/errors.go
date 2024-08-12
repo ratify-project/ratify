@@ -118,4 +118,18 @@ var (
 		Message:     "data encoding failure",
 		Description: "Failed to encode data. Please verify the encoding data.",
 	})
+
+	// ErrorCodeNotFound is returned when the requested resource is not found.
+	ErrorCodeNotFound = Register("errcode", ErrorDescriptor{
+		Value:       "NOT_FOUND",
+		Message:     "not found",
+		Description: "The requested resource is not found. Please verify the resource exists.",
+	})
+
+	// ErrorCodeForbidden is returned when the requested operation is forbidden.
+	ErrorCodeForbidden = Register("errcode", ErrorDescriptor{
+		Value:       "FORBIDDEN",
+		Message:     "forbidden",
+		Description: "The requested operation is forbidden. Please verify the permission to the requested resource.",
+	})
 )
