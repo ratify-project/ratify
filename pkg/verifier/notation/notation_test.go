@@ -257,11 +257,11 @@ func TestParseVerifierConfig(t *testing.T) {
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: verificationCertStores{
-					trustStoreTypeCA: verificationCertStores{
+					trustStoreTypeCA: map[string]interface{}{
 						"certstore1": []interface{}{"akv1", "akv2"},
 						"certstore2": []interface{}{"akv3", "akv4"},
 					},
-					trustStoreTypeTSA: verificationCertStores{
+					trustStoreTypeTSA: map[string]interface{}{
 						"certstore1": []interface{}{"akv1", "akv2"},
 						"certstore2": []interface{}{"akv3", "akv4"},
 					},
@@ -427,7 +427,7 @@ func TestNormalizeVerificationCertsStores(t *testing.T) {
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: verificationCertStores{
-					trustStoreTypeCA: verificationCertStores{
+					trustStoreTypeCA: map[string]interface{}{
 						"certstore1": []interface{}{"akv1", "akv2"},
 						"certstore2": []interface{}{"akv3", "akv4"},
 					},
@@ -442,7 +442,7 @@ func TestNormalizeVerificationCertsStores(t *testing.T) {
 				Name:              test,
 				VerificationCerts: []string{testPath, defaultCertDir},
 				VerificationCertStores: verificationCertStores{
-					trustStoreTypeCA: verificationCertStores{
+					trustStoreTypeCA: map[string]interface{}{
 						"certstore1": []interface{}{"akv1", "akv2"},
 					},
 					"certstore2": []interface{}{"akv3", "akv4"},
