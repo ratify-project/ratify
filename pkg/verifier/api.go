@@ -23,26 +23,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/referrerstore"
 )
 
-// VerifierResult describes the result of verifying a reference manifest for a subject.
-// Note: This struct is used to represent the result of verification in v0.
-type VerifierResult struct { //nolint:revive // ignore linter to have unique type name
-	Subject   string `json:"subject,omitempty"`
-	IsSuccess bool   `json:"isSuccess"`
-	// Name will be deprecated in v2, switch to VerifierName instead.
-	Name         string `json:"name,omitempty"`
-	VerifierName string `json:"verifierName,omitempty"`
-	// Type will be deprecated in v2, switch to VerifierType instead.
-	Type            string           `json:"type,omitempty"`
-	VerifierType    string           `json:"verifierType,omitempty"`
-	ReferenceDigest string           `json:"referenceDigest,omitempty"`
-	ArtifactType    string           `json:"artifactType,omitempty"`
-	Message         string           `json:"message,omitempty"`
-	ErrorReason     string           `json:"errorReason,omitempty"`
-	Remediation     string           `json:"remediation,omitempty"`
-	Extensions      interface{}      `json:"extensions,omitempty"`
-	NestedResults   []VerifierResult `json:"nestedResults,omitempty"`
-}
-
 // ReferenceVerifier is an interface that defines methods to verify a reference
 // for a subject by a verifier.
 type ReferenceVerifier interface {

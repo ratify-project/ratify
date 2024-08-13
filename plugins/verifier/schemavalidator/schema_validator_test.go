@@ -87,7 +87,7 @@ func TestVerifyReference(t *testing.T) {
 				},
 			},
 			want: want{
-				message: fmt.Sprintf("No blobs found for referrer %s@%s.", "test_subject_path", manifestDigest.String()),
+				errorReason: fmt.Sprintf("No blobs found for referrer %s@%s.", "test_subject_path", manifestDigest.String()),
 			},
 		},
 		{

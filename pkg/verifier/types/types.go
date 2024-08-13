@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/verifier"
 )
 
@@ -78,6 +79,30 @@ func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 // WriteVerifyResultResult writes the given result as JSON data to the writer w
 func WriteVerifyResultResult(result *verifier.VerifierResult, w io.Writer) error {
 	return json.NewEncoder(w).Encode(result)
+}
+
+// CreateVerifierResult creates a new verifier result object from given input.
+func CreateVerifierResult(verifierName, verifierType, message string, isSuccess bool, err *errors.Error) VerifierResult {
+	var errorReason string
+	var remediation string
+	if err != nil {
+		if err.GetDetail() != "" {
+			message = err.GetDetail()
+		}
+		errorReason = err.GetErrorReason()
+		remediation = err.GetRemediation()
+	}
+
+	return VerifierResult{
+		IsSuccess:    isSuccess,
+		Name:         verifierName, // Name will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
+		Type:         verifierType, // Type will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
+		VerifierName: verifierName,
+		VerifierType: verifierType,
+		Message:      message,
+		ErrorReason:  errorReason,
+		Remediation:  remediation,
+	}
 }
 
 // NewVerifierResult creates a new verifier result object from the given

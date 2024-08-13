@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
@@ -84,28 +85,14 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	referenceManifest, err := referrerStore.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
 		storeErr := re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to fetch reference manifest for subject: %s reference descriptor: %v", subjectReference, referenceDescriptor.Descriptor)).WithError(err)
-		return &verifier.VerifierResult{
-			Name:         input.Name,
-			Type:         verifierType,
-			VerifierName: input.Name,
-			VerifierType: verifierType,
-			IsSuccess:    false,
-			Message:      storeErr.GetDetail(),
-			ErrorReason:  storeErr.GetErrorReason(),
-			Remediation:  storeErr.GetRemediation(),
-		}, nil
+		result := verifier.NewVerifierResult("", input.Name, verifierType, "", false, &storeErr, nil)
+		return &result, nil
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
-		return &verifier.VerifierResult{
-			Name:         input.Name,
-			Type:         verifierType,
-			VerifierName: input.Name,
-			VerifierType: verifierType,
-			IsSuccess:    false,
-			Message:      "SBOM validation failed",
-			ErrorReason:  fmt.Sprintf("No layers found in manifest for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
-		}, nil
+		noBlobErr := re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("No layers found in manifest for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()))
+		result := verifier.NewVerifierResult("", input.Name, verifierType, "SBOM validation failed", false, &noBlobErr, nil)
+		return &result, nil
 	}
 
 	artifactType := referenceDescriptor.ArtifactType
@@ -114,42 +101,21 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		if err != nil {
 			storeErr := re.ErrorCodeGetBlobContentFailure.WithDetail(fmt.Sprintf("Failed to fetch blob for subject: %s digest: %s", subjectReference, blobDesc.Digest)).WithError(err)
-			return &verifier.VerifierResult{
-				Name:         input.Name,
-				Type:         verifierType,
-				VerifierName: input.Name,
-				VerifierType: verifierType,
-				IsSuccess:    false,
-				Message:      storeErr.GetDetail(),
-				ErrorReason:  storeErr.GetErrorReason(),
-				Remediation:  storeErr.GetRemediation(),
-			}, nil
+			result := verifier.NewVerifierResult("", input.Name, verifierType, "", false, &storeErr, nil)
+			return &result, nil
 		}
 
 		switch artifactType {
 		case SpdxJSONMediaType:
 			return processSpdxJSONMediaType(input.Name, verifierType, refBlob, input.DisallowedLicenses, input.DisallowedPackages), nil
 		default:
-			return &verifier.VerifierResult{
-				Name:         input.Name,
-				Type:         verifierType,
-				VerifierName: input.Name,
-				VerifierType: verifierType,
-				IsSuccess:    false,
-				Message:      "Failed to process SBOM blobs.",
-				ErrorReason:  fmt.Sprintf("Unsupported artifactType: %s", artifactType),
-			}, nil
+			storeErr := re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("Unsupported artifactType: %s", artifactType))
+			result := verifier.NewVerifierResult("", input.Name, verifierType, "Failed to process SBOM blobs.", false, &storeErr, nil)
+			return &result, nil
 		}
 	}
-
-	return &verifier.VerifierResult{
-		Name:         input.Name,
-		Type:         verifierType,
-		VerifierName: input.Name,
-		VerifierType: verifierType,
-		IsSuccess:    true,
-		Message:      "SBOM verification success. No license or package violation found.",
-	}, nil
+	result := verifier.NewVerifierResult("", input.Name, verifierType, "SBOM verification success. No license or package violation found.", true, nil, nil)
+	return &result, nil
 }
 
 // getViolations returns the package and license violations based on the deny list
@@ -197,37 +163,26 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, 
 			}
 
 			if len(licenseViolation) != 0 || len(packageViolation) != 0 {
-				return &verifier.VerifierResult{
-					Name:        name,
-					IsSuccess:   false,
-					Extensions:  extensionData,
-					Message:     "SBOM validation failed.",
-					ErrorReason: "License or package violation found.",
-					Remediation: "Please review extensions data for license and package violation found.",
-				}
+				sbomErr := errors.ErrorCodeVerifyPluginFailure.WithDetail("License or package violation found.").WithRemediation("Please review extensions data for license and package violation found.")
+				result := verifier.NewVerifierResult("", name, verifierType, "SBOM validation failed", false, &sbomErr, extensionData)
+				return &result
 			}
 		}
 
-		return &verifier.VerifierResult{
-			Name:      name,
-			Type:      verifierType,
-			IsSuccess: true,
-			Extensions: map[string]interface{}{
-				CreationInfo: spdxDoc.CreationInfo,
-			},
-			Message: "SBOM verification success. No license or package violation found.",
-		}
+		result := verifier.NewVerifierResult(
+			"",
+			name,
+			verifierType,
+			"SBOM verification success. No license or package violation found.",
+			true,
+			nil,
+			map[string]interface{}{CreationInfo: spdxDoc.CreationInfo},
+		)
+		return &result
 	}
 	verifierErr := re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("failed to verify artifact: %s", name)).WithError(err)
-	return &verifier.VerifierResult{
-		Name:         name,
-		Type:         verifierType,
-		VerifierName: name,
-		VerifierType: verifierType,
-		IsSuccess:    false,
-		Message:      verifierErr.GetDetail(),
-		ErrorReason:  verifierErr.GetErrorReason(),
-	}
+	result := verifier.NewVerifierResult("", name, verifierType, "", false, &verifierErr, nil)
+	return &result
 }
 
 // iterate through all package info and check against the deny list
