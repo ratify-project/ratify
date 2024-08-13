@@ -247,9 +247,15 @@ func TestParseVerifierConfig(t *testing.T) {
 			configMap: map[string]interface{}{
 				"name":              test,
 				"verificationCerts": []string{testPath},
-				"verificationCertStores": map[string][]string{
-					"certstore1": {"akv1", "akv2"},
-					"certstore2": {"akv3", "akv4"},
+				"verificationCertStores": verificationCertStores{
+					"ca": map[string]interface{}{
+						"certstore1": []string{"akv1", "akv2"},
+						"certstore2": []string{"akv3", "akv4"},
+					},
+					"tsa": map[string]interface{}{
+						"certstore1": []string{"akv1", "akv2"},
+						"certstore2": []string{"akv3", "akv4"},
+					},
 				},
 			},
 			expectErr: false,
