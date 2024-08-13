@@ -1,6 +1,6 @@
 module github.com/ratify-project/ratify
 
-go 1.22.0
+go 1.22.5
 // Accidentally published prior to 1.0.0 release
 retract (
 	v1.1.0-alpha.2 // contains retractions only
