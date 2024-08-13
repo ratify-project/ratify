@@ -48,12 +48,14 @@ const (
 
 // VerifierResult describes the verification result returned from the verifier plugin
 type VerifierResult struct {
-	IsSuccess    bool        `json:"isSuccess"`
-	Message      string      `json:"message"`
-	ErrorReason  string      `json:"errorReason,omitempty"`
-	Remediation  string      `json:"remediation,omitempty"`
-	Name         string      `json:"name"`
-	VerifierName string      `json:"verifierName,omitempty"`
+	IsSuccess   bool   `json:"isSuccess"`
+	Message     string `json:"message"`
+	ErrorReason string `json:"errorReason,omitempty"`
+	Remediation string `json:"remediation,omitempty"`
+	// Name will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
+	Name         string `json:"name"`
+	VerifierName string `json:"verifierName,omitempty"`
+	// Type will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
 	Type         string      `json:"type,omitempty"`
 	VerifierType string      `json:"verifierType,omitempty"`
 	Extensions   interface{} `json:"extensions"`
@@ -95,8 +97,8 @@ func CreateVerifierResult(verifierName, verifierType, message string, isSuccess 
 
 	return VerifierResult{
 		IsSuccess:    isSuccess,
-		Name:         verifierName, // Name will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
-		Type:         verifierType, // Type will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
+		Name:         verifierName,
+		Type:         verifierType,
 		VerifierName: verifierName,
 		VerifierType: verifierType,
 		Message:      message,
