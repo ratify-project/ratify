@@ -28,7 +28,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
 )
 
 const (
@@ -37,7 +36,6 @@ const (
 	// the format for expires_on in UTC without AM/PM
 	expiresOnDateFormat = "1/2/2006 15:04:05 +00:00"
 
-	tokenTypeBearer = "Bearer"
 	// For Azure AD Workload Identity, the audience recommended for use is
 	// "api://AzureADTokenExchange"
 	DefaultTokenAudience = "api://AzureADTokenExchange" //nolint
@@ -64,13 +62,7 @@ func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, r
 		return nil, fmt.Errorf("failed to acquire token: %w", err)
 	}
 
-	token := adal.Token{
-		AccessToken: result.AccessToken,
-		Resource:    resource,
-		Type:        tokenTypeBearer,
-	}
-	token.ExpiresOn, err = parseExpiresOn(result.ExpiresOn.UTC().Local().Format(expiresOnDateFormat))
-	if err != nil {
+	if _, err = parseExpiresOn(result.ExpiresOn.UTC().Local().Format(expiresOnDateFormat)); err != nil {
 		return nil, fmt.Errorf("failed to parse expires_on: %w", err)
 	}
 

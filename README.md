@@ -9,6 +9,7 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
 [![Go Report Card](https://goreportcard.com/badge/github.com/ratify-project/ratify)](https://goreportcard.com/report/github.com/ratify-project/ratify)
 [![build-pr](https://github.com/ratify-project/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/ratify-project/ratify/actions/workflows/build-pr.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9334/badge)](https://www.bestpractices.dev/projects/9334)
 [![Go Reference](https://pkg.go.dev/badge/github.com/deislabs/ratify.svg)](https://pkg.go.dev/github.com/deislabs/ratify)
 
 ## Table of Contents
