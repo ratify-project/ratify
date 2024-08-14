@@ -20,6 +20,11 @@ import (
 	"context"
 )
 
+const (
+	KubeRefresherType           = "kubeRefresher"
+	KubeRefresherNamespacedType = "kubeRefresherNamespaced"
+)
+
 // Refresher is an interface that defines methods to be implemented by a each refresher
 type Refresher interface {
 	// Refresh is a method that refreshes the certificates/keys

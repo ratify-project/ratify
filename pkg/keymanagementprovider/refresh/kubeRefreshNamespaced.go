@@ -42,7 +42,7 @@ type KubeRefresherNamespaced struct {
 
 // Register registers the kubeRefresherNamespaced factory
 func init() {
-	Register("kubeRefresherNamespaced", &KubeRefresherNamespaced{})
+	Register(KubeRefresherNamespacedType, &KubeRefresherNamespaced{})
 }
 
 // Refresh the certificates/keys for the key management provider by calling the GetCertificates and GetKeys methods

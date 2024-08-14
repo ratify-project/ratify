@@ -43,7 +43,7 @@ type KubeRefresher struct {
 
 // Register registers the kubeRefresher factory
 func init() {
-	Register("kubeRefresher", &KubeRefresher{})
+	Register(KubeRefresherType, &KubeRefresher{})
 }
 
 // Refresh the certificates/keys for the key management provider by calling the GetCertificates and GetKeys methods
