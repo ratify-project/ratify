@@ -107,7 +107,7 @@ RATIFY_NAMESPACE=gatekeeper-system
 
     # add the tsaroot certificate as an inline key management provider
     mkdir -p .staging/tsa
-	curl -L https://github.com/notaryproject/notation/raw/a034721a7e3088250bbb04c5fccedbfca966d49e/internal/testdata/tsaRootCA.cer --output .staging/tsa/tsaroot.cer
+	curl -sSL https://github.com/notaryproject/notation/raw/a034721a7e3088250bbb04c5fccedbfca966d49e/internal/testdata/tsaRootCA.cer --output .staging/tsa/tsaroot.cer
 	openssl x509 -inform der -in .staging/tsa/tsaroot.cer -out .staging/tsa/tsaroot.cer
     cat .staging/tsa/tsaroot.cer | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
