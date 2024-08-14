@@ -18,6 +18,7 @@ package clusterresource
 
 import (
 	"context"
+	"fmt"
 
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/inline"        // register inline key management provider
@@ -48,7 +49,7 @@ func (r *KeyManagementProviderReconciler) ReconcileWithConfig(ctx context.Contex
 
 	result, ok := refresher.GetResult().(ctrl.Result)
 	if !ok {
-		return ctrl.Result{}, err
+		return ctrl.Result{}, fmt.Errorf("unexpected type returned from GetResult: %T", refresher.GetResult())
 	}
 	return result, nil
 }
