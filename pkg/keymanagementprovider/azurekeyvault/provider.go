@@ -227,12 +227,12 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 
 	err := kvClient.AddToUserAgent("ratify")
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to add user agent to keyvault client", re.PrintStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to add user agent to keyvault client", re.HideStackTrace)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
-		return nil, re.ErrorCodeAuthDenied.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.PrintStackTrace)
+		return nil, re.ErrorCodeAuthDenied.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.HideStackTrace)
 	}
 	return &kvClient, nil
 }
