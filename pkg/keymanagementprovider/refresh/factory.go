@@ -39,6 +39,9 @@ func Register(name string, factory RefresherFactory) {
 // CreateRefresherFromConfig creates a new instance of the refresher using the provided configuration
 func CreateRefresherFromConfig(refresherConfig map[string]interface{}) (Refresher, error) {
 	refresherType, ok := refresherConfig["type"].(string)
+	if !ok {
+		return nil, fmt.Errorf("refresher type is not a string")
+	}
 	if !ok || refresherType == "" {
 		return nil, fmt.Errorf("refresher type cannot be empty")
 	}

@@ -46,7 +46,11 @@ func (r *KeyManagementProviderReconciler) ReconcileWithConfig(ctx context.Contex
 		return ctrl.Result{}, err
 	}
 
-	return refresher.GetResult().(ctrl.Result), nil
+	result, ok := refresher.GetResult().(ctrl.Result)
+	if !ok {
+		return ctrl.Result{}, err
+	}
+	return result, nil
 }
 
 // +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedkeymanagementproviders,verbs=get;list;watch;create;update;patch;delete
@@ -54,7 +58,7 @@ func (r *KeyManagementProviderReconciler) ReconcileWithConfig(ctx context.Contex
 // +kubebuilder:rbac:groups=config.ratify.deislabs.io,resources=namespacedkeymanagementproviders/finalizers,verbs=update
 func (r *KeyManagementProviderReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	refresherConfig := map[string]interface{}{
-		"type":    "kubeRefresherNamespaced",
+		"type":    refresh.KubeRefresherNamespacedType,
 		"client":  r.Client,
 		"request": req,
 	}
