@@ -4,7 +4,7 @@ metadata:
   name: keymanagementprovider-akv
 spec:
   type: azurekeyvault
-  refreshinterval: 1m
+  refreshInterval: 1m
   parameters:
     vaultURI: https://yourkeyvault.vault.azure.net/
     certificates:
