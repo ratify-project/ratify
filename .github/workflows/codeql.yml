@@ -38,7 +38,7 @@ jobs:
         with:
           go-version: "1.22"
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@eb055d739abdc2e8de2e5f4ba1a8b246daa779aa # tag=v3.26.0
+        uses: github/codeql-action/init@29d86d22a34ea372b1bbf3b2dced2e25ca6b3384 # tag=v3.26.1
         with:
           languages: go
       - name: Run tidy
@@ -46,4 +46,4 @@ jobs:
       - name: Build CLI
         run: make build
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@eb055d739abdc2e8de2e5f4ba1a8b246daa779aa # tag=v3.26.0
+        uses: github/codeql-action/analyze@29d86d22a34ea372b1bbf3b2dced2e25ca6b3384 # tag=v3.26.1
