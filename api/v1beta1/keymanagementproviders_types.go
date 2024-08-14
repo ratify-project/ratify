@@ -33,7 +33,7 @@ type KeyManagementProviderSpec struct {
 
 	// Refresh interval for fetching the certificate/key files from the provider. Only for providers that are refreshable. The value is in the format of "1h30m" where "h" means hour and "m" means minute. Valid time units are units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
 	// +kubebuilder:default=""
-	RefreshInterval string `json:"refreshinterval,omitempty"`
+	RefreshInterval string `json:"refreshInterval,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters of the key management provider

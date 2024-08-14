@@ -48,7 +48,7 @@ spec:
             spec:
               description: KeyManagementProviderSpec defines the desired state of KeyManagementProvider
               properties:
-                refreshinterval:
+                refreshInterval:
                   default: ""
                   description:
                     Refresh interval for fetching the certificate/key files

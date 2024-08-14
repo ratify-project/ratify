@@ -54,7 +54,7 @@ spec:
                 description: Parameters of the key management provider
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
-              refreshinterval:
+              refreshInterval:
                 default: ""
                 description: Refresh interval for fetching the certificate/key files
                   from the provider. Only for providers that are refreshable. The

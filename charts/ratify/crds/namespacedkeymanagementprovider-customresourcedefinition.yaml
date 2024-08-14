@@ -50,7 +50,7 @@ spec:
                 NamespacedKeyManagementProviderSpec defines the desired state
                 of NamespacedKeyManagementProvider
               properties:
-                refreshinterval:
+                refreshInterval:
                   default: ""
                   description:
                     Refresh interval for fetching the certificate/key files
