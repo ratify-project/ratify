@@ -16,18 +16,9 @@
 #
 ##--------------------------------------------------------------------
 
-# This is script to set env time and expire cert for tsa feat e2e validation
+set -o errexit
+set -o nounset
+set -o pipefail
 
-# Get the current system time
-current_time=$(date "+%Y-%m-%d %H:%M:%S")
-echo "Current system time: $current_time"
-
-# Add 5 days to the current time
-new_time=$(date -d "$current_time + 5 days" "+%Y-%m-%d %H:%M:%S")
-echo "New system time: $new_time"
-
-# Set the system time to the new time
-sudo date -s "$new_time"
-
-# Verify the time change
-echo "Updated system time: $(date "+%Y-%m-%d %H:%M:%S")"
+# convert cert from DER format to Base64 which can be used as inline-cert
+openssl x509 -inform der -in $1 -out $2

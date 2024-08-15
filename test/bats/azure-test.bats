@@ -101,28 +101,33 @@ SLEEP_TIME=1
 
 @test "notation test timestamping" {
     teardown() {
-        
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-tsa --namespace default --force --ignore-not-found=true'
+
+        sed -i '4s/keymanagementprovider-inline2/keymanagementprovider-inline' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+        sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+        run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
     }
 
-    # verify that the image cannot be run due to an invalid cert
-    sleep 10
-    run kubectl run demo-tsa --namespace default --image=registry:5000/notation:tsa
-    assert_failure
-    sleep 10
-
-    # add the alternate certificate as an inline key management provider
-    cat ~/.config/notation/truststore/x509/ca/alternate-cert/alternate-cert.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    # add the certificate as an inline key management provider
+    cat /.config/notation/localkeys/ratify-bats-test.crt | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    sed -i '4s/keymanagementprovider-inline/keymanagementprovider-inline1' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
     run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
-    sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    
+    # add the tsa certificate as an inline key management provider
+    cat ~/.staging/tsa/tsaroot.cer | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    sed -i '4s/keymanagementprovider-inline1/keymanagementprovider-inline2' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    assert_success
 
     # configure the notation verifier to use the inline key management provider
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_kmprovider.yaml
+    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_tsa.yaml
     assert_success
     sleep 10
 
     # verify that the image can now be run
-    run kubectl run demo-alternate --namespace default --image=registry:5000/notation:signed-alternate
+    run kubectl run demo-tsa --namespace default --image=registry:5000/notation:tsa
     assert_success
 }
 
