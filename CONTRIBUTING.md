@@ -10,15 +10,25 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 * Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
+
+## Feature Enhancements
+For non-trivial enhancements or bug fixes, please start by raising a design PR. You can refer to the example [here](https://github.com/ratify-project/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
+The design document should include:
+- The proposed changes
+- The impacted code paths
+
+This approach ensures that the changes are well-documented and reviewed before implementation.
+
 ## Pull Requests
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/ratify-project/ratify/labels/good%20first%20issue).
 
 We use the `dev` branch as the our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud specific tests on `dev` before changes can be merged into `main`. All ratify release are cut from the `main` branch. A sample PR process is outlined below:
 1. Fork this repo and create your dev branch from default `dev` branch.
-2. Create a PR against default branch
-3. Maintainer approval and e2e test validation is required for completing the PR.
-4. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
+2. Create a PR against default branch.
+3. Add new unit test and [e2e test](https://github.com/ratify-project/ratify/tree/dev/test/bats) where approriate.
+4. Maintainer approval and e2e test validation is required for completing the PR.
+5. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
 6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
 
 If the PR contains a regression that could not pass the full validation, please revert the change to unblock others:
