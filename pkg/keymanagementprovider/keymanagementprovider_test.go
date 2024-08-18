@@ -167,7 +167,7 @@ func TestGetCertificatesFromMap_FailedToFetch(t *testing.T) {
 // TestGetCertificatesFromMap_ErrorFromReconcile checks if error is returned from reconcile
 func TestGetCertificatesFromMap_ErrorFromReconcile(t *testing.T) {
 	DeleteResourceFromMap("test")
-	SetResourceError("test", errors.New("test error"))
+	SetCertificateError("test", errors.New("test error"))
 	if _, err := GetCertificatesFromMap(context.Background(), "test"); err == nil {
 		t.Fatalf("expected error, but got nil")
 	}
@@ -225,7 +225,7 @@ func TestGetKeysFromMap(t *testing.T) {
 		t.Fatalf("keys should have been fetched from the map")
 	}
 
-	SetResourceError("test", errors.New("test error"))
+	SetKeyError("test", errors.New("test error"))
 	if _, err := GetKeysFromMap(context.Background(), "test"); err == nil {
 		t.Fatalf("expected error, but got nil")
 	}

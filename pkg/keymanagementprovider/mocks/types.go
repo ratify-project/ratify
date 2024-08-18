@@ -37,3 +37,7 @@ func (c *TestKeyManagementProvider) GetCertificates(_ context.Context) (map[keym
 func (c *TestKeyManagementProvider) GetKeys(_ context.Context) (map[keymanagementprovider.KMPMapKey]crypto.PublicKey, keymanagementprovider.KeyManagementProviderStatus, error) {
 	return c.keys, c.status, c.err
 }
+
+func (c *TestKeyManagementProvider) IsRefreshable() bool {
+	return true
+}
