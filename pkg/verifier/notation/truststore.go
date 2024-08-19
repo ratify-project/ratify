@@ -26,6 +26,7 @@ import (
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/utils"
+	re "github.com/ratify-project/ratify/errors"
 )
 
 var logOpt = logger.Option{
@@ -40,7 +41,7 @@ type trustStore struct {
 func newTrustStore(certPaths []string, verificationCertStores verificationCertStores) (*trustStore, error) {
 	certStores, err := newCertStoreByType(verificationCertStores)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create trust store from verificationCertStores").WithError(err).WithRemediation("Please check the configuration of verificationCertStores. Refer to Notation verifier configuration: https://ratify.dev/docs/next/plugins/verifier/notation#configuration")
 	}
 	store := &trustStore{
 		certPaths:  certPaths,

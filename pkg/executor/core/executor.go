@@ -61,7 +61,7 @@ type Executor struct {
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	if executor.PolicyEnforcer == nil {
-		return types.VerifyResult{}, errors.ErrorCodePolicyProviderNotFound.WithComponentType(errors.Executor)
+		return types.VerifyResult{}, errors.ErrorCodePolicyProviderNotFound.WithDetail("Policy Provider not found")
 	}
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
@@ -83,7 +83,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
 		if len(verifierReports) == 0 {
-			return types.VerifyResult{}, errors.ErrorCodeNoVerifierReport.WithComponentType(errors.Executor).WithDescription()
+			return types.VerifyResult{}, errors.ErrorCodeNoVerifierReport.WithDetail("No verifier report generated.")
 		}
 	}
 	// If it requires embedded Rego Policy Engine make the decision, execute
@@ -182,7 +182,7 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 					Type:         verifier.Type(),
 					VerifierName: verifier.Name(),
 					VerifierType: verifier.Type(),
-					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+					Message:      errors.ErrorCodeVerifyReferenceFailure.WithError(err).Error()}
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
@@ -235,7 +235,7 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 					Type:         verifier.Type(), // Deprecating Type in next release, reference to VerifierType instead.
 					VerifierName: verifier.Name(),
 					VerifierType: verifier.Type(),
-					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+					Message:      errors.ErrorCodeVerifyReferenceFailure.WithError(err).Error()}
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
 			}
@@ -298,7 +298,7 @@ func (executor Executor) addNestedReports(ctx context.Context, referenceDes ocis
 	for _, report := range reports.VerifierReports {
 		nestedReport, err := types.NewNestedVerifierReport(report)
 		if err != nil {
-			return errors.ErrorCodeExecutorFailure.WithError(err).WithComponentType(errors.Executor)
+			return errors.ErrorCodeExecutorFailure.WithError(err)
 		}
 		nestedReports = append(nestedReports, nestedReport)
 	}

@@ -299,7 +299,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, re.ErrorCodeCreateRepositoryFailure.NewError(re.ReferrerStore, storeName, re.EmptyLink, err, nil, re.HideStackTrace)
+		return ocispecs.ReferenceManifest{}, re.ErrorCodeCreateRepositoryFailure.WithDetail("Failed to create client to remote registry").WithError(err)
 	}
 	var manifestBytes []byte
 	// check if manifest exists in local ORAS cache
@@ -314,12 +314,12 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
 			evictOnError(ctx, err, subjectReference.Original)
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.NewError(re.ReferrerStore, storeName, re.EmptyLink, err, nil, re.HideStackTrace)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to fetch manifest content from repository").WithError(err)
 		}
 
 		manifestBytes, err = io.ReadAll(manifestReader)
 		if err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeManifestInvalid.WithError(err).WithPluginName(storeName).WithComponentType(re.ReferrerStore)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeManifestInvalid.WithDetail("Failed to parse fetched manifest.").WithError(err)
 		}
 
 		// push fetched manifest to local ORAS cache
@@ -341,15 +341,15 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	if referenceDesc.Descriptor.MediaType == oci.MediaTypeImageManifest {
 		var imageManifest oci.Manifest
 		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(re.ReferrerStore)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse Notation signature envelope.").WithError(err).WithRemediation("Please check if the Notation signature was created correctly.")
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
 	} else if referenceDesc.Descriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithError(err).WithComponentType(re.ReferrerStore)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse Notation signature envelope.").WithError(err).WithRemediation("Please check if the Notation signature was created correctly.")
 		}
 	} else {
-		return ocispecs.ReferenceManifest{}, fmt.Errorf("unsupported manifest media type: %s", referenceDesc.Descriptor.MediaType)
+		return ocispecs.ReferenceManifest{}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Unsupported manifest media type: %s", referenceDesc.Descriptor.MediaType)).WithRemediation("Please check if the Notation signature was created correctly.")
 	}
 
 	return referenceManifest, nil
@@ -358,13 +358,13 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return nil, re.ErrorCodeCreateRepositoryFailure.WithError(err).WithComponentType(re.ReferrerStore).WithPluginName(storeName)
+		return nil, re.ErrorCodeCreateRepositoryFailure.WithDetail("Failed to create client to remote registry").WithError(err)
 	}
 
 	desc, err := repository.Resolve(ctx, subjectReference.Original)
 	if err != nil {
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, re.ErrorCodeRepositoryOperationFailure.WithError(err).WithPluginName(storeName)
+		return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail(fmt.Sprintf("Unable to resolve the reference: %s", subjectReference.Original)).WithError(err)
 	}
 
 	return &ocispecs.SubjectDescriptor{Descriptor: desc}, nil
