@@ -1,6 +1,7 @@
 module github.com/ratify-project/ratify
 
 go 1.22.5
+
 // Accidentally published prior to 1.0.0 release
 retract (
 	v1.1.0-alpha.2 // contains retractions only
@@ -48,9 +49,9 @@ require (
 	golang.org/x/sync v0.7.0
 	google.golang.org/grpc v1.64.1
 	google.golang.org/protobuf v1.34.2
-	k8s.io/api v0.28.12
-	k8s.io/apimachinery v0.28.12
-	k8s.io/client-go v0.28.12
+	k8s.io/api v0.28.13
+	k8s.io/apimachinery v0.28.13
+	k8s.io/client-go v0.28.13
 	oras.land/oras-go/v2 v2.5.0
 )
 
