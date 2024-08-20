@@ -22,11 +22,11 @@ import (
 	"fmt"
 
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/utils"
-	re "github.com/ratify-project/ratify/errors"
 )
 
 var logOpt = logger.Option{
