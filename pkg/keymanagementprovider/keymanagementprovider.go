@@ -74,12 +74,16 @@ var certificatesMap sync.Map
 //	 where PublicKey is a struct containing the public key and the provider type
 var keyMap sync.Map
 
-// static concurrency-safe map to store errors during key management provider reconciliation.
+// static concurrency-safe map to store errors while fetching certificates from key management provider.
 // layout:
 //
 //	map["<namespace>/<name>"] = error
 var certificateErrMap sync.Map
 
+// static concurrency-safe map to store errors while fetching keys from key management provider.
+// layout:
+//
+//	map["<namespace>/<name>"] = error
 var keyErrMap sync.Map
 
 // DecodeCertificates decodes PEM-encoded bytes into an x509.Certificate chain.
@@ -193,10 +197,12 @@ func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicK
 	return map[KMPMapKey]PublicKey{}, fmt.Errorf("failed to access non-existent key management provider: %s", resource)
 }
 
+// SetCertificateError sets the error while fetching certificates from key management provider.
 func SetCertificateError(resource string, err error) {
 	certificateErrMap.Store(resource, err)
 }
 
+// SetKeyError sets the error while fetching keys from key management provider.
 func SetKeyError(resource string, err error) {
 	keyErrMap.Store(resource, err)
 }
