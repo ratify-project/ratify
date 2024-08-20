@@ -36,6 +36,8 @@ export AZURE_SP_OBJECT_ID=$6
 export NOTATION_PEM_NAME="notation"
 export NOTATION_CHAIN_PEM_NAME="notationchain"
 export KEYVAULT_KEY_NAME="test-key"
+export IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
+export VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
 
 TAG="test${SUFFIX}"
 REGISTRY="${ACR_NAME}.azurecr.io"
@@ -56,8 +58,6 @@ deploy_gatekeeper() {
 
 deploy_ratify() {
   echo "deploying ratify"
-  local IDENTITY_CLIENT_ID=$(az identity show --name ${USER_ASSIGNED_IDENTITY_NAME} --resource-group ${GROUP_NAME} --query 'clientId' -o tsv)
-  local VAULT_URI=$(az keyvault show --name ${KEYVAULT_NAME} --resource-group ${GROUP_NAME} --query "properties.vaultUri" -otsv)
 
   helm install ratify \
     ./charts/ratify --atomic \
@@ -142,7 +142,7 @@ trap cleanup EXIT
 main() {
   ./scripts/create-azure-resources.sh
   create_key_akv
-  
+
   local ACR_USER_NAME="00000000-0000-0000-0000-000000000000"
   local ACR_PASSWORD=$(az acr login --name ${ACR_NAME} --expose-token --output tsv --query accessToken)
   make e2e-azure-setup TEST_REGISTRY=$REGISTRY TEST_REGISTRY_USERNAME=${ACR_USER_NAME} TEST_REGISTRY_PASSWORD=${ACR_PASSWORD} KEYVAULT_KEY_NAME=${KEYVAULT_KEY_NAME} KEYVAULT_NAME=${KEYVAULT_NAME}

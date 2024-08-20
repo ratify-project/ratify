@@ -318,3 +318,47 @@ SLEEP_TIME=1
     result=$(kubectl get pod mutate-demo --namespace default -o json | jq -r ".spec.containers[0].image" | grep @sha)
     assert_mutate_success
 }
+
+@test "validate refresher reconcile count" {
+    sed -i -e "s/keymanagementprovider-akv/kmp-akv-refresh/" \
+        -e "s/1m/1s/" \
+        -e "s/yourCertName/${NOTATION_PEM_NAME}/" \
+        -e '/version: yourCertVersion/d' \
+        -e "s|https://yourkeyvault.vault.azure.net/|${VAULT_URI}|" \
+        -e "s/tenantID:/tenantID: ${TENANT_ID}/" \
+        -e "s/clientID:/clientID: ${IDENTITY_CLIENT_ID}/" \
+        ./config/samples/clustered/kmp/config_v1beta1_keymanagementprovider_akv_refresh_enabled.yaml
+    run kubectl apply -f ./config/samples/clustered/kmp/config_v1beta1_keymanagementprovider_akv_refresh_enabled.yaml
+    assert_success
+    sleep 10
+    count=$(kubectl logs deployment/ratify -n gatekeeper-system | grep "Reconciled KeyManagementProvider" | wc -l)
+    [ $count -ge 4 ]
+}
+
+@test "validate certificate version update" {
+    result=$(kubectl get keymanagementprovider kmp-akv-refresh -o jsonpath='{.status.properties.Certificates[0].Version}')
+    az keyvault certificate get-default-policy -o json >>policy.json
+    wait_for_process 20 10 "az keyvault certificate create --vault-name $KEYVAULT_NAME --name $NOTATION_PEM_NAME --policy @policy.json"
+    sleep 15
+    run rm policy.json
+    refreshResult=$(kubectl get keymanagementprovider kmp-akv-refresh -o jsonpath='{.status.properties.Certificates[0].Version}')
+    [ "$result" != "$refreshResult" ]
+}
+
+@test "validate certificate specified version" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete keymanagementprovider kmp-akv-refresh --ignore-not-found=true'
+        rm policy.json
+    }
+    version=$(az keyvault certificate show --vault-name $KEYVAULT_NAME --name $NOTATION_PEM_NAME --query 'sid' -o tsv | rev | cut -d'/' -f1 | rev)
+    sed -i "/- name: default/a\ \ \ \     version: ${version}" ./config/samples/clustered/kmp/config_v1beta1_keymanagementprovider_akv_refresh_enabled.yaml
+    run kubectl apply -f ./config/samples/clustered/kmp/config_v1beta1_keymanagementprovider_akv_refresh_enabled.yaml
+    assert_success
+    result=$(kubectl get keymanagementprovider kmp-akv-refresh -o jsonpath='{.status.properties.Certificates[0].Version}')
+    az keyvault certificate get-default-policy -o json >>policy.json
+    wait_for_process 20 10 "az keyvault certificate create --vault-name $KEYVAULT_NAME --name $NOTATION_PEM_NAME --policy @policy.json"
+    sleep 15
+    refreshResult=$(kubectl get keymanagementprovider kmp-akv-refresh -o jsonpath='{.status.properties.Certificates[0].Version}')
+    [ "$result" = "$refreshResult" ]
+}
