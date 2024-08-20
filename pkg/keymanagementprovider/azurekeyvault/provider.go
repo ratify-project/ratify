@@ -31,6 +31,7 @@ import (
 	"github.com/go-jose/go-jose/v3"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/ratify-project/ratify/internal/version"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
@@ -122,7 +123,7 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 
 	logger.GetLogger(context.Background(), logOpt).Debugf("vaultURI %s", provider.vaultURI)
 
-	kvClient, err := initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID)
+	kvClient, err := initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID, version.UserAgent)
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to create keyvault client", re.HideStackTrace)
 	}
@@ -225,18 +226,18 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*kv.BaseClient, error) {
+func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID, userAgent string) (*kv.BaseClient, error) {
 	kvClient := kv.New()
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 
-	err := kvClient.AddToUserAgent("ratify")
+	err := kvClient.AddToUserAgent(userAgent)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to add user agent to keyvault client", re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to add user agent to keyvault client.").WithRemediation(re.AKVLink).WithError(err)
 	}
 
 	kvClient.Authorizer, err = getAuthorizerForWorkloadIdentity(ctx, tenantID, clientID, kvEndpoint)
 	if err != nil {
-		return nil, re.ErrorCodeAuthDenied.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to get authorizer for keyvault client", re.HideStackTrace)
+		return nil, re.ErrorCodeAuthDenied.WithDetail("failed to get authorizer for keyvault client").WithRemediation(re.AKVLink).WithError(err)
 	}
 	return &kvClient, nil
 }
