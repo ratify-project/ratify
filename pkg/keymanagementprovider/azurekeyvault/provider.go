@@ -193,6 +193,10 @@ func (s *akvKMProvider) GetKeys(ctx context.Context) (map[keymanagementprovider.
 	return keysMap, getStatusMap(keysStatus, types.KeysStatus), nil
 }
 
+func (s *akvKMProvider) IsRefreshable() bool {
+	return true
+}
+
 // azure keyvault provider certificate/key status is a map from "certificates" key or "keys" key to an array of key management provider status
 func getStatusMap(statusMap []map[string]string, contentType string) keymanagementprovider.KeyManagementProviderStatus {
 	status := keymanagementprovider.KeyManagementProviderStatus{}
