@@ -54,6 +54,14 @@ spec:
                 description: Parameters of the key management provider
                 type: object
                 x-kubernetes-preserve-unknown-fields: true
+              refreshInterval:
+                default: ""
+                description: Refresh interval for fetching the certificate/key files
+                  from the provider. Only for providers that are refreshable. The
+                  value is in the format of "1h30m" where "h" means hour and "m" means
+                  minute. Valid time units are units are "ns", "us" (or "µs"), "ms",
+                  "s", "m", "h".
+                type: string
               type:
                 description: Name of the key management provider
                 type: string
