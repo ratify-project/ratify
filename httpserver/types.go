@@ -16,6 +16,10 @@ limitations under the License.
 package httpserver
 
 import (
+	"context"
+	"time"
+
+	"github.com/ratify-project/ratify/internal/logger"
 	"github.com/ratify-project/ratify/pkg/executor/types"
 	pt "github.com/ratify-project/ratify/pkg/policyprovider/types"
 )
@@ -32,10 +36,12 @@ const (
 type VerificationResponse struct {
 	Version         string        `json:"version"`
 	IsSuccess       bool          `json:"isSuccess"`
+	TraceID         string        `json:"traceID,omitempty"`
+	Timestamp       string        `json:"timestamp,omitempty"`
 	VerifierReports []interface{} `json:"verifierReports,omitempty"`
 }
 
-func fromVerifyResult(res types.VerifyResult, policyType string) VerificationResponse {
+func fromVerifyResult(ctx context.Context, res types.VerifyResult, policyType string) VerificationResponse {
 	version := ResultVersion0_2_0
 	if policyType == pt.RegoPolicy {
 		version = ResultVersion1_1_0
@@ -43,6 +49,8 @@ func fromVerifyResult(res types.VerifyResult, policyType string) VerificationRes
 	return VerificationResponse{
 		Version:         version,
 		IsSuccess:       res.IsSuccess,
+		Timestamp:       time.Now().Format(time.RFC3339Nano),
+		TraceID:         logger.GetTraceID(ctx),
 		VerifierReports: res.VerifierReports,
 	}
 }
