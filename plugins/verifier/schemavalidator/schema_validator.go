@@ -20,6 +20,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/ratify-project/ratify/errors"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
@@ -71,12 +73,9 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
-		return &verifier.VerifierResult{
-			Name:      input.Name,
-			Type:      verifierType,
-			IsSuccess: false,
-			Message:   fmt.Sprintf("schema validation failed: no blobs found for referrer %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()),
-		}, nil
+		noBlobErr := errors.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("No blobs found for referrer %s@%s.", subjectReference.Path, referenceDescriptor.Digest.String()))
+		result := verifier.NewVerifierResult("", input.Name, verifierType, "", false, &noBlobErr, nil)
+		return &result, nil
 	}
 
 	for _, blobDesc := range referenceManifest.Blobs {
@@ -87,21 +86,14 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 
 		err = processMediaType(schemaMap, blobDesc.MediaType, refBlob)
 		if err != nil {
-			return &verifier.VerifierResult{
-				Name:      input.Name,
-				Type:      verifierType,
-				IsSuccess: false,
-				Message:   fmt.Sprintf("schema validation failed for digest:[%s],media type:[%s],parse errors:[%v]", blobDesc.Digest, blobDesc.MediaType, err.Error()),
-			}, nil
+			verifierErr := re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("schema validation failed for digest:[%s], media type:[%s].", blobDesc.Digest, blobDesc.MediaType)).WithError(err)
+			result := verifier.NewVerifierResult("", input.Name, verifierType, "", false, &verifierErr, nil)
+			return &result, nil
 		}
 	}
 
-	return &verifier.VerifierResult{
-		Name:      input.Name,
-		Type:      verifierType,
-		IsSuccess: true,
-		Message:   "schema validation passed for configured media types",
-	}, nil
+	result := verifier.NewVerifierResult("", input.Name, verifierType, "schema validation passed for configured media types", true, nil, nil)
+	return &result, nil
 }
 
 func processMediaType(schemaMap map[string]string, mediaType string, refBlob []byte) error {
