@@ -29,6 +29,7 @@ type VerifyResult struct {
 
 // NestedVerifierReport describes the results of verifying an artifact and its
 // nested artifacts by available verifiers.
+// Note: NestedVerifierReport is used for verification results in v1.
 type NestedVerifierReport struct {
 	Subject         string                 `json:"subject"`
 	ReferenceDigest string                 `json:"referenceDigest"`
