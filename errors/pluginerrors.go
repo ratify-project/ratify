@@ -168,4 +168,11 @@ var (
 		Message:     "Key vault operation failed",
 		Description: "Key vault operation failed. Please validate correct key vault configuration is provided or check the error details for further investigation.",
 	})
+
+	// ErrorCodeKeyManagementProviderFailure is returned when a key management provider operation fails.
+	ErrorCodeKeyManagementProviderFailure = Register("errcode", ErrorDescriptor{
+		Value:       "KEY_MANAGEMENT_PROVIDER_FAILURE",
+		Message:     "Key management provider failure",
+		Description: "Generic failure in key management provider. Please validate correct key management provider configuration is provided or check the error details for further investigation.",
+	})
 )

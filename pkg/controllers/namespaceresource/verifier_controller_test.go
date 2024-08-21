@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/customresources/verifiers"
 	"github.com/ratify-project/ratify/pkg/utils"
@@ -191,11 +192,12 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 func TestWriteVerifierStatus(t *testing.T) {
 	logger := logrus.WithContext(context.Background())
 	testCases := []struct {
-		name       string
-		isSuccess  bool
-		verifier   *configv1beta1.NamespacedVerifier
-		errString  string
-		reconciler client.StatusClient
+		name              string
+		isSuccess         bool
+		verifier          *configv1beta1.NamespacedVerifier
+		errString         string
+		expectedErrString string
+		reconciler        client.StatusClient
 	}{
 		{
 			name:       "success status",
@@ -205,11 +207,12 @@ func TestWriteVerifierStatus(t *testing.T) {
 			reconciler: &mockStatusClient{},
 		},
 		{
-			name:       "error status",
-			isSuccess:  false,
-			verifier:   &configv1beta1.NamespacedVerifier{},
-			errString:  "a long error string that exceeds the max length of 30 characters",
-			reconciler: &mockStatusClient{},
+			name:              "error status",
+			isSuccess:         false,
+			verifier:          &configv1beta1.NamespacedVerifier{},
+			errString:         "a long error string that exceeds the max length of 30 characters",
+			expectedErrString: "UNKNOWN: a long error string that exceeds the max length of 30 characters",
+			reconciler:        &mockStatusClient{},
 		},
 		{
 			name:      "status update failed",
@@ -223,14 +226,15 @@ func TestWriteVerifierStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			writeVerifierStatus(context.Background(), tc.reconciler, tc.verifier, logger, tc.isSuccess, tc.errString)
+			err := re.ErrorCodeUnknown.WithDetail(tc.errString)
+			writeVerifierStatus(context.Background(), tc.reconciler, tc.verifier, logger, tc.isSuccess, &err)
 
 			if tc.verifier.Status.IsSuccess != tc.isSuccess {
 				t.Fatalf("Expected isSuccess to be %+v , actual %+v", tc.isSuccess, tc.verifier.Status.IsSuccess)
 			}
 
-			if tc.verifier.Status.Error != tc.errString {
-				t.Fatalf("Expected Error to be %+v , actual %+v", tc.errString, tc.verifier.Status.Error)
+			if tc.verifier.Status.Error != tc.expectedErrString {
+				t.Fatalf("Expected Error to be %+v , actual %+v", tc.expectedErrString, tc.verifier.Status.Error)
 			}
 		})
 	}

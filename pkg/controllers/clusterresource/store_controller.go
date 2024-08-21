@@ -25,6 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/controllers/utils"
@@ -65,12 +66,13 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	if err := storeAddOrReplace(store.Spec, resource); err != nil {
-		storeLogger.Error(err, "unable to create store from store crd")
-		writeStoreStatus(ctx, r, &store, storeLogger, false, err.Error())
-		return ctrl.Result{}, err
+		storeErr := re.ErrorCodeReferrerStoreFailure.WithError(err).WithDetail("Unable to create store from store crd")
+		storeLogger.Error(err)
+		writeStoreStatus(ctx, r, &store, storeLogger, false, &storeErr)
+		return ctrl.Result{}, storeErr
 	}
 
-	writeStoreStatus(ctx, r, &store, storeLogger, true, "")
+	writeStoreStatus(ctx, r, &store, storeLogger, true, nil)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
@@ -93,17 +95,15 @@ func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, constants.EmptyNamespace, storeConfig)
 }
 
-func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.Store, logger *logrus.Entry, isSuccess bool, errorString string) {
+func writeStoreStatus(ctx context.Context, r client.StatusClient, store *configv1beta1.Store, logger *logrus.Entry, isSuccess bool, err *re.Error) {
 	if isSuccess {
 		store.Status.IsSuccess = true
 		store.Status.Error = ""
 		store.Status.BriefError = ""
 	} else {
 		store.Status.IsSuccess = false
-		store.Status.Error = errorString
-		if len(errorString) > constants.MaxBriefErrLength {
-			store.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
-		}
+		store.Status.Error = err.Error()
+		store.Status.BriefError = err.GetConciseError(constants.MaxBriefErrLength)
 	}
 
 	if statusErr := r.Status().Update(ctx, store); statusErr != nil {

@@ -253,6 +253,18 @@ func (e Error) GetRemediation() string {
 	return err.remediation
 }
 
+// GetConciseError returns a formatted error message consisting of the error code and reason.
+// If the generated error message exceeds the specified maxLength, it truncates the message and appends an ellipsis ("...").
+// The function ensures that the returned error message is concise and within the length limit.
+func (e Error) GetConciseError(maxLength int) string {
+	err, _ := e.getRootError()
+	errMsg := fmt.Sprintf("%s: %s", err.ErrorCode().Descriptor().Value, e.GetErrorReason())
+	if len(errMsg) > maxLength {
+		return fmt.Sprintf("%s...", errMsg[:maxLength-3])
+	}
+	return errMsg
+}
+
 func (e Error) getRootError() (err Error, details []string) {
 	err = e
 	for !err.isRootError {
