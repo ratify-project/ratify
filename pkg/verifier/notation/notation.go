@@ -174,15 +174,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 		extensions["SN"] = cert.Subject.String()
 	}
 
-	return verifier.VerifierResult{
-		Name:         v.name,
-		Type:         v.verifierType,
-		VerifierName: v.name,
-		VerifierType: v.verifierType,
-		IsSuccess:    true,
-		Message:      "Signature verification success",
-		Extensions:   extensions,
-	}, nil
+	return verifier.NewVerifierResult("", v.name, v.verifierType, "Signature verification success", true, nil, extensions), nil
 }
 
 func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string) (notation.Verifier, error) {
