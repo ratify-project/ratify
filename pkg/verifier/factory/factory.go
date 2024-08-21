@@ -113,11 +113,11 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 
 	err := validateVerifiersConfig(&verifiersConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail("verifiers config should have at least one verifier")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Verifiers config should have at least one verifier.")
 	}
 
 	verifiers := make([]verifier.ReferenceVerifier, 0)
@@ -131,7 +131,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	for _, verifierConfig := range verifiersConfig.Verifiers {
 		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs, namespace)
 		if err != nil {
-			return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithError(err)
+			return nil, re.ErrorCodePluginInitFailure.WithError(err)
 		}
 		verifiers = append(verifiers, verifier)
 	}

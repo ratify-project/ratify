@@ -36,8 +36,8 @@ func TestVerify(t *testing.T) {
 
 	// TODO: make ratify cli more unit testable
 	// unit test should not have dependency for real image
-	if !strings.Contains(err.Error(), "plugin not found") {
-		t.Errorf("error expected")
+	if !strings.Contains(err.Error(), "PLUGIN_NOT_FOUND") {
+		t.Fatalf("expected containing: %s, but got: %s", "PLUGIN_NOT_FOUND", err.Error())
 	}
 }
 
