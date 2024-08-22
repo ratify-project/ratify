@@ -150,29 +150,27 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to resolve reference manifest: %+v.", referenceDescriptor)).WithError(err)
 	}
 
-	if len(referenceManifest.Blobs) == 0 {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeSignatureNotFound.NewError(re.Verifier, v.name, re.EmptyLink, nil, fmt.Sprintf("no signature content found for referrer: %s@%s", subjectReference.Path, referenceDescriptor.Digest.String()), re.HideStackTrace)
+	if len(referenceManifest.Blobs) != 1 {
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("Notation signature manifest requires exactly one signature envelope blob, got %d", len(referenceManifest.Blobs))).WithRemediation(fmt.Sprintf("Please inspect the artifact [%s@%s] is correctly signed by Notation signer", subjectReference.Path, referenceDescriptor.Digest.String()))
+	}
+	blobDesc := referenceManifest.Blobs[0]
+	refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
+	if err != nil {
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetBlobContentFailure.WithDetail(fmt.Sprintf("failed to get blob content of digest: %s", blobDesc.Digest)).WithError(err)
 	}
 
-	for _, blobDesc := range referenceManifest.Blobs {
-		refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
-		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetBlobContentFailure.WithDetail(fmt.Sprintf("failed to get blob content of digest: %s", blobDesc.Digest)).WithError(err)
-		}
-
-		// TODO: notation verify API only accepts digested reference now.
-		// Pass in tagged reference instead once notation-go supports it.
-		subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
-		outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
-		if err != nil {
-			return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("Failed to verify signature with digest: %v", referenceDescriptor.Digest)).WithError(err)
-		}
-
-		// Note: notation verifier already validates certificate chain is not empty.
-		cert := outcome.EnvelopeContent.SignerInfo.CertificateChain[0]
-		extensions["Issuer"] = cert.Issuer.String()
-		extensions["SN"] = cert.Subject.String()
+	// TODO: notation verify API only accepts digested reference now.
+	// Pass in tagged reference instead once notation-go supports it.
+	subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
+	outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
+	if err != nil {
+		return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("Failed to verify signature with digest: %v", referenceDescriptor.Digest)).WithError(err)
 	}
+
+	// Note: notation verifier already validates certificate chain is not empty.
+	cert := outcome.EnvelopeContent.SignerInfo.CertificateChain[0]
+	extensions["Issuer"] = cert.Issuer.String()
+	extensions["SN"] = cert.Subject.String()
 
 	return verifier.NewVerifierResult("", v.name, v.verifierType, "Signature verification success", true, nil, extensions), nil
 }

@@ -36,11 +36,57 @@ import (
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore/config"
 	"github.com/ratify-project/ratify/pkg/referrerstore/oras/mocks"
+	"oras.land/oras-go/v2/content"
 	"oras.land/oras-go/v2/registry"
 	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
-const inputOriginalPath = "localhost:5000/net-monitor:v0"
+const (
+	inputOriginalPath       = "localhost:5000/net-monitor:v0"
+	wrongReferenceMediatype = "application/vnd.oci.image.manifest.wrong.v1+json"
+	validReferenceMediatype = "application/vnd.oci.image.manifest.right.v1+json"
+)
+
+var manifestNotCachedBytes []byte
+var manifestCachedBytesWithWrongType []byte
+var manifestCachedBytes []byte
+var invalidManifestBytes = []byte("invalid manifest")
+var firstDigest = digest.FromString("testDigest")
+var artifactDigest = digest.FromString("testArtifactDigest")
+var artifactDigestNotCached = digest.FromString("testArtifactDigestNotCached")
+
+func init() {
+	manifestNotCached := oci.Manifest{
+		MediaType: validReferenceMediatype,
+		Config:    oci.Descriptor{},
+		Layers:    []oci.Descriptor{},
+	}
+	manifestNotCachedBytes, _ = json.Marshal(manifestNotCached)
+
+	manifestCachedWithWrongType := oci.Manifest{
+		MediaType: wrongReferenceMediatype,
+		Config:    oci.Descriptor{},
+		Layers:    []oci.Descriptor{},
+	}
+	manifestCachedBytesWithWrongType, _ = json.Marshal(manifestCachedWithWrongType)
+
+	manifestCached := oci.Manifest{
+		MediaType: validReferenceMediatype,
+		Config:    oci.Descriptor{},
+		Layers:    []oci.Descriptor{},
+	}
+	manifestCachedBytes, _ = json.Marshal(manifestCached)
+}
+
+type errorReader struct{}
+
+func (r *errorReader) Read(_ []byte) (int, error) {
+	return 0, errors.New("error reading")
+}
+
+func (r *errorReader) Close() error {
+	return nil
+}
 
 // TestORASName tests the Name method of the oras store.
 func TestORASName(t *testing.T) {
@@ -189,130 +235,267 @@ func TestORASListReferrers_NoSubjectDesc(t *testing.T) {
 
 // TODO: add cosign test for List Referrers
 
-// TestORASGetReferenceManifest_CachedDesc tests that the reference manifest is returned from the cache if it exists
-func TestORASGetReferenceManifest_CachedDesc(t *testing.T) {
-	conf := config.StorePluginConfig{
-		"name": "oras",
-	}
-	ctx := context.Background()
-	firstDigest := digest.FromString("testDigest")
-	artifactDigest := digest.FromString("testArtifactDigest")
-	expectedReferenceMediatype := "application/vnd.oci.image.manifest.right.v1+json"
-	wrongReferenceMediatype := "application/vnd.oci.image.manifest.wrong.v1+json"
-	store, err := createBaseStore("1.0.0", conf)
-	if err != nil {
-		t.Fatalf("failed to create oras store: %v", err)
-	}
-	manifestCached := oci.Manifest{
-		MediaType: expectedReferenceMediatype,
-		Config:    oci.Descriptor{},
-		Layers:    []oci.Descriptor{},
-	}
-	manifestCachedBytes, err := json.Marshal(manifestCached)
-	if err != nil {
-		t.Fatalf("failed to marshal cached manifest: %v", err)
-	}
-	manifestNotCached := oci.Manifest{
-		MediaType: wrongReferenceMediatype,
-		Config:    oci.Descriptor{},
-		Layers:    []oci.Descriptor{},
-	}
-	manifestNotCachedBytes, err := json.Marshal(manifestNotCached)
-	if err != nil {
-		t.Fatalf("failed to marshal not cached manifest: %v", err)
-	}
-	testRepo := mocks.TestRepository{
-		FetchMap: map[digest.Digest]io.ReadCloser{
-			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
+func TestORASGetReferenceManifest(t *testing.T) {
+	tests := []struct {
+		name              string
+		inputRef          common.Reference
+		referenceDesc     ocispecs.ReferenceDescriptor
+		repo              registry.Repository
+		repoCreateErr     error
+		localCache        content.Storage
+		expectedErr       bool
+		expectedMediaType string
+	}{
+		{
+			name: "cache exists failure",
+			inputRef: common.Reference{
+				Original: "inputOriginalPath",
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{},
+			},
+			localCache: mocks.TestStorage{
+				ExistsErr: errors.New("cache exists error"),
+			},
+			expectedErr: true,
+		},
+		{
+			name: "cache fetch manifest failure",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
+				},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigest: bytes.NewReader(manifestCachedBytes),
+				},
+				FetchErr: errors.New("cache fetch error"),
+			},
+			expectedErr:       false,
+			expectedMediaType: validReferenceMediatype,
+		},
+		{
+			name: "not cached desc and fetch failed",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigestNotCached: bytes.NewReader(manifestCachedBytesWithWrongType),
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name:          "create repository failed",
+			inputRef:      common.Reference{},
+			referenceDesc: ocispecs.ReferenceDescriptor{},
+			repo:          mocks.TestRepository{},
+			repoCreateErr: errors.New("create repository error"),
+			expectedErr:   true,
+		},
+		{
+			name: "cached descriptor",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
+				},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigest: bytes.NewReader(manifestCachedBytes),
+				},
+			},
+			expectedErr:       false,
+			expectedMediaType: validReferenceMediatype,
+		},
+		{
+			name: "not cached descriptor",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
+				},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigestNotCached: bytes.NewReader(manifestCachedBytesWithWrongType),
+				},
+			},
+			expectedErr:       false,
+			expectedMediaType: validReferenceMediatype,
+		},
+		{
+			name: "descriptor not cached and fail during io.ReadAll from manifest",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: &errorReader{},
+				},
+			},
+			localCache: mocks.TestStorage{
+				FetchErr: errors.New("cache fetch error"),
+			},
+			expectedErr: true,
+		},
+		{
+			name: "failed to unmarshal to oci manifest",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: oci.MediaTypeImageManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: io.NopCloser(bytes.NewReader(invalidManifestBytes)),
+				},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigestNotCached: bytes.NewReader(manifestCachedBytesWithWrongType),
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "failed to unmarshal to artifact manifest",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: ocispecs.MediaTypeArtifactManifest,
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: io.NopCloser(bytes.NewReader(invalidManifestBytes)),
+				},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigestNotCached: bytes.NewReader(manifestCachedBytesWithWrongType),
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "unsupported manifest media type",
+			inputRef: common.Reference{
+				Original: inputOriginalPath,
+				Digest:   firstDigest,
+			},
+			referenceDesc: ocispecs.ReferenceDescriptor{
+				Descriptor: oci.Descriptor{
+					MediaType: "unsupported media type",
+					Digest:    artifactDigest,
+				},
+			},
+			repo: mocks.TestRepository{
+				FetchMap: map[digest.Digest]io.ReadCloser{
+					artifactDigest: io.NopCloser(bytes.NewReader(invalidManifestBytes)),
+				},
+			},
+			localCache: mocks.TestStorage{
+				ExistsMap: map[digest.Digest]io.Reader{
+					artifactDigestNotCached: bytes.NewReader(manifestCachedBytesWithWrongType),
+				},
+			},
+			expectedErr: true,
 		},
 	}
-	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
-		return testRepo, nil
-	}
-	store.localCache = mocks.TestStorage{
-		ExistsMap: map[digest.Digest]io.Reader{
-			artifactDigest: bytes.NewReader(manifestCachedBytes),
-		},
-	}
-	inputRef := common.Reference{
-		Original: inputOriginalPath,
-		Digest:   firstDigest,
-	}
-	manifest, err := store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
-		Descriptor: oci.Descriptor{
-			MediaType: ocispecs.MediaTypeArtifactManifest,
-			Digest:    artifactDigest,
-		},
-	})
-	if err != nil {
-		t.Fatalf("failed to get reference manifest: %v", err)
-	}
-	if manifest.MediaType != expectedReferenceMediatype {
-		t.Fatalf("expected media type %s, got %s", expectedReferenceMediatype, manifest.MediaType)
-	}
-}
 
-// TestORASGetReferenceManifest_NotCachedDesc tests that the reference manifest is fetched from the registry if it is not cached
-func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
-	conf := config.StorePluginConfig{
-		"name": "oras",
-	}
-	ctx := context.Background()
-	firstDigest := digest.FromString("testDigest")
-	artifactDigest := digest.FromString("testArtifactDigest")
-	artifactDigestNotCached := digest.FromString("testArtifactDigestNotCached")
-	expectedReferenceMediatype := "application/vnd.oci.image.manifest.right.v1+json"
-	wrongReferenceMediatype := "application/vnd.oci.image.manifest.wrong.v1+json"
-	store, err := createBaseStore("1.0.0", conf)
-	if err != nil {
-		t.Fatalf("failed to create oras store: %v", err)
-	}
-	manifestCached := oci.Manifest{
-		MediaType: wrongReferenceMediatype,
-		Config:    oci.Descriptor{},
-		Layers:    []oci.Descriptor{},
-	}
-	manifestCachedBytes, err := json.Marshal(manifestCached)
-	if err != nil {
-		t.Fatalf("failed to marshal cached manifest: %v", err)
-	}
-	manifestNotCached := oci.Manifest{
-		MediaType: expectedReferenceMediatype,
-		Config:    oci.Descriptor{},
-		Layers:    []oci.Descriptor{},
-	}
-	manifestNotCachedBytes, err := json.Marshal(manifestNotCached)
-	if err != nil {
-		t.Fatalf("failed to marshal not cached manifest: %v", err)
-	}
-	testRepo := mocks.TestRepository{
-		FetchMap: map[digest.Digest]io.ReadCloser{
-			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
-		},
-	}
-	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
-		return testRepo, nil
-	}
-	store.localCache = mocks.TestStorage{
-		ExistsMap: map[digest.Digest]io.Reader{
-			artifactDigestNotCached: bytes.NewReader(manifestCachedBytes),
-		},
-	}
-	inputRef := common.Reference{
-		Original: inputOriginalPath,
-		Digest:   firstDigest,
-	}
-	manifest, err := store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
-		Descriptor: oci.Descriptor{
-			MediaType: ocispecs.MediaTypeArtifactManifest,
-			Digest:    artifactDigest,
-		},
-	})
-	if err != nil {
-		t.Fatalf("failed to get reference manifest: %v", err)
-	}
-	if manifest.MediaType != expectedReferenceMediatype {
-		t.Fatalf("expected media type %s, got %s", expectedReferenceMediatype, manifest.MediaType)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			conf := config.StorePluginConfig{
+				"name": "oras",
+			}
+			store, err := createBaseStore("1.0.0", conf)
+			if err != nil {
+				t.Fatalf("failed to create oras store: %v", err)
+			}
+			store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
+				return tc.repo, tc.repoCreateErr
+			}
+			store.localCache = tc.localCache
+
+			manifest, err := store.GetReferenceManifest(context.Background(), tc.inputRef, tc.referenceDesc)
+			if tc.expectedErr {
+				if err == nil {
+					t.Fatalf("expected error fetching reference manifest")
+				}
+			} else {
+				if err != nil {
+					t.Fatalf("failed to get reference manifest: %v", err)
+				}
+				if manifest.MediaType != tc.expectedMediaType {
+					t.Fatalf("expected media type %s, got %s", tc.expectedMediaType, manifest.MediaType)
+				}
+			}
+		})
 	}
 }
 
