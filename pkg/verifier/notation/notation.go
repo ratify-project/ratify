@@ -246,10 +246,9 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 	} else if !isCertStoresByType && isLegacyCertStore {
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
 		legacyCertStore := conf.VerificationCertStores
+		// support legacy verfier config format for backward compatibility
 		conf.VerificationCertStores = verificationCertStores{
 			trustStoreTypeCA: legacyCertStore,
-			// support legacy verfier config format for backward compatibility
-			trustStoreTypeTSA: legacyCertStore,
 		}
 	}
 	return nil
