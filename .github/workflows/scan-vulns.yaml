@@ -11,7 +11,7 @@ on:
       - "library/**"
       - "**.md"
   schedule:
-    - cron: '30 8 * * 0'  # early morning (08:30 UTC) every Sunday
+    - cron: "30 8 * * 0" # early morning (08:30 UTC) every Sunday
   workflow_dispatch:
 
 permissions: read-all

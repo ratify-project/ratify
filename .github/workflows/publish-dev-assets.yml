@@ -2,7 +2,7 @@ name: publish-dev-assets
 
 on:
   schedule:
-    - cron: '30 8 * * 0'  # early morning (08:30 UTC) every Sunday
+    - cron: "30 8 * * 0" # early morning (08:30 UTC) every Sunday
   workflow_dispatch:
 
 permissions: read-all
@@ -108,11 +108,11 @@ jobs:
         run: |
           sed -i '/^  repository:/c\  repository: ghcr.io/ratify-project/ratify-dev' charts/ratify/values.yaml
           sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/ratify-project/ratify-crds-dev' charts/ratify/values.yaml
-          sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml 
+          sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml
       - name: helm package
         run: |
-            helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversion }}
-            helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversionrolling }}
+          helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversion }}
+          helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversionrolling }}
       - name: helm push
         run: |
           helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
