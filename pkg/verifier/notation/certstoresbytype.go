@@ -26,7 +26,7 @@ import (
 type certStoreType string
 
 const (
-	CA               certStoreType = "CA"
+	CA               certStoreType = "ca"
 	SigningAuthority certStoreType = "signingAuthority"
 	TSA              certStoreType = "tsa"
 )
