@@ -128,10 +128,16 @@ func (s *trustStore) filterValidCerts(certs []*x509.Certificate) ([]*x509.Certif
 	return filteredCerts, nil
 }
 
-// parseErrFromKmpAndCertStore returns the error from KMP or CertStore based on the priority.
-// When the certStoreErr is a reconcile error and kmpErr is not, it returns certStoreErr,
+// parseErrFromKmpAndCertStore prioritizes and returns the appropriate error from either KMP or CertStore.
+// If the certStoreErr is a reconcile error while kmpErr is not, it returns certStoreErr,
 // otherwise it returns kmpErr.
-// Note: this method should be deleted once certificate store is deprecated.
+// A reconcile error occurs during CR reconciliation, indicating that the resource
+// was applied by users.
+// Since key management provider and certificate store are mutually exclusive,
+// a reconcile error will only originate from one of them.
+// Consequently, the reconcile error from one resource takes precedence over
+// errors from the other.
+// Note: this method should be deleted once certificate store is completely removed.
 func parseErrFromKmpAndCertStore(kmpErr, certStoreErr error) error {
 	if kmpErr == nil || certStoreErr == nil {
 		return nil

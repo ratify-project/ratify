@@ -62,7 +62,7 @@ func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName stri
 	}
 
 	if !hasAccessToStore(ctx, storeName) {
-		return []*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace: [%s] does not have access to certificate store: %s", ctxUtils.GetNamespace(ctx), storeName))
+		return []*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace: [%s] does not have access to certificate store: %s", ctxUtils.GetNamespace(ctx), storeName)).WithRemediation(fmt.Sprintf("Ensure the certificate store: %s is created under namespace: [%s]", storeName, ctxUtils.GetNamespace(ctx)))
 	}
 	if err, ok := c.scopedStoreErrors.Load(prependedName); ok && err != nil {
 		return []*x509.Certificate{}, err.(error)

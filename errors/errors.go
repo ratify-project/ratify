@@ -121,15 +121,15 @@ var (
 
 	// ErrorCodeNotFound is returned when the requested resource is not found.
 	ErrorCodeNotFound = Register("errcode", ErrorDescriptor{
-		Value:       "NOT_FOUND",
-		Message:     "not found",
+		Value:       "RESOURCE_NOT_FOUND",
+		Message:     "resource not found",
 		Description: "The requested resource is not found. Please verify the resource exists.",
 	})
 
 	// ErrorCodeForbidden is returned when the requested operation is forbidden.
 	ErrorCodeForbidden = Register("errcode", ErrorDescriptor{
-		Value:       "FORBIDDEN",
-		Message:     "forbidden",
+		Value:       "OPERATION_FORBIDDEN",
+		Message:     "operation forbidden",
 		Description: "The requested operation is forbidden. Please verify the permission to the requested resource.",
 	})
 )

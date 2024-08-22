@@ -136,7 +136,7 @@ func setCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certifica
 // GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found or an error happened.
 func GetCertificatesFromMap(ctx context.Context, resource string) (map[KMPMapKey][]*x509.Certificate, error) {
 	if !hasAccessToProvider(ctx, resource) {
-		return map[KMPMapKey][]*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace: [%s] does not have access to key management provider: %s", ctxUtils.GetNamespace(ctx), resource))
+		return map[KMPMapKey][]*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace: [%s] does not have access to key management provider: %s", ctxUtils.GetNamespace(ctx), resource)).WithRemediation(fmt.Sprintf("Ensure the key management provider: %s is created under namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
 	}
 	if err, ok := certificateErrMap.Load(resource); ok && err != nil {
 		return map[KMPMapKey][]*x509.Certificate{}, err.(error)
