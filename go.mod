@@ -28,8 +28,8 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-containerregistry v0.20.1
 	github.com/gorilla/mux v1.8.1
-	github.com/notaryproject/notation-core-go v1.1.0-beta.1
-	github.com/notaryproject/notation-go v1.2.0-beta.1
+	github.com/notaryproject/notation-core-go v1.1.0-rc.1
+	github.com/notaryproject/notation-go v1.2.0-rc.1
 	github.com/open-policy-agent/cert-controller v0.8.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa
 	github.com/open-policy-agent/opa v0.63.0
@@ -109,7 +109,7 @@ require (
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mozillazg/docker-credential-acr-helper v0.3.0 // indirect
 	github.com/notaryproject/notation-plugin-framework-go v1.0.0 // indirect
-	github.com/notaryproject/tspclient-go v0.1.1-0.20240715235637-df25ef8d2172 // indirect
+	github.com/notaryproject/tspclient-go v0.2.0 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
