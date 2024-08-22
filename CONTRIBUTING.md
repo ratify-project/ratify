@@ -54,7 +54,9 @@ The Ratify project is composed of the following main components:
 
 Ratify can run through cli command or run as a http server. Create a [launch.json](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) file in the .vscode directory, then hit F5 to debug. Note the first debug session may take a few minutes to load, subsequent session will be much faster.
 
-Sample json for cli:
+Here is a sample json for cli. Note that for the following sample json to successfully work, you need to make sure that `verificationCerts` attribute of the verifier in your config file points to the notation verifier's certificate file. In order to do that, you can download the cert file with the following command:
+`curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt`, 
+and then modify the config file by setting the `verificationCerts` attribute in the notation verifier to the downloaded cert file path.
 
 ```json
 {
@@ -65,7 +67,11 @@ Sample json for cli:
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/cmd/ratify",
-      "args": ["verify", "-s", "ratify.azurecr.io/testimage@sha256:9515b691095051d68b4409a30c4819c98bd6f4355d5993a7487687cdc6d47cc3"]
+      "args": [
+                "verify", 
+                "-s", "ghcr.io/deislabs/ratify/notary-image:signed", 
+                "-c", "${workspaceFolder}/test/bats/tests/config/config_cli.json"
+      ]
     }]
 }
 ```
