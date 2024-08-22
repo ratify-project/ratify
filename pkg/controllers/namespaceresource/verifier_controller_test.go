@@ -285,6 +285,21 @@ func TestVerifierReconcile(t *testing.T) {
 			expectedVerifierCount: 0,
 		},
 		{
+			name: "unsupported verifier",
+			verifier: &configv1beta1.NamespacedVerifier{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      verifierName,
+				},
+				Spec: configv1beta1.NamespacedVerifierSpec{
+					Name:    "unsupported",
+					Address: dirPath,
+				},
+			},
+			expectedErr:           true,
+			expectedVerifierCount: 0,
+		},
+		{
 			name: "valid spec",
 			verifier: &configv1beta1.NamespacedVerifier{
 				ObjectMeta: metav1.ObjectMeta{

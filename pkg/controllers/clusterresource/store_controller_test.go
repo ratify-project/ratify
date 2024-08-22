@@ -240,6 +240,21 @@ func TestStoreReconcile(t *testing.T) {
 			expectedErr:        true,
 			expectedStoreCount: 0,
 		},
+		{
+			name: "unsupported store",
+			store: &configv1beta1.Store{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: constants.EmptyNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.StoreSpec{
+					Name:    "unsupported",
+					Address: dirPath,
+				},
+			},
+			expectedErr:        true,
+			expectedStoreCount: 0,
+		},
 	}
 
 	for _, tt := range tests {
