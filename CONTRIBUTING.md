@@ -23,6 +23,7 @@ Consider adding the following section where applicable:
 - Backward compatibility
 - Performance impact
 - Security consideration
+- Open questions
   
 This approach ensures that the changes are well-documented and reviewed before implementation.
 
