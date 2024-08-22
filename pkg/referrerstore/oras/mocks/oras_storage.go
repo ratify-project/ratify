@@ -28,9 +28,14 @@ import (
 type TestStorage struct {
 	content.Storage
 	ExistsMap map[digest.Digest]io.Reader
+	ExistsErr error
+	FetchErr  error
 }
 
 func (s TestStorage) Exists(_ context.Context, target oci.Descriptor) (bool, error) {
+	if s.ExistsErr != nil {
+		return false, s.ExistsErr
+	}
 	if _, ok := s.ExistsMap[target.Digest]; ok {
 		return true, nil
 	}
@@ -43,6 +48,9 @@ func (s TestStorage) Push(_ context.Context, expected oci.Descriptor, content io
 }
 
 func (s TestStorage) Fetch(_ context.Context, target oci.Descriptor) (io.ReadCloser, error) {
+	if s.FetchErr != nil {
+		return nil, s.FetchErr
+	}
 	if reader, ok := s.ExistsMap[target.Digest]; ok {
 		return io.NopCloser(reader), nil
 	}

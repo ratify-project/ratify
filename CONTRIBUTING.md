@@ -10,15 +10,33 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 * Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
+## Feature Enhancements
+For non-trivial enhancements or bug fixes, please start by raising a document PR. You can refer to the example [here](https://github.com/ratify-project/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
+
+Major user experience updates should be documented in [/doc/proposals](https://github.com/ratify-project/ratify/tree/dev/docs/proposals). Changes to technical implementation should be added to [/doc/design](https://github.com/ratify-project/ratify/tree/dev/docs/design).  
+
+Consider adding the following section where applicable:
+- Proposed changes
+- Proposed feature flag
+- Impacted code paths
+- Required test coverage
+- Backward compatibility
+- Performance impact
+- Security consideration
+- Open questions
+  
+This approach ensures that the changes are well-documented and reviewed before implementation.
+
 ## Pull Requests
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/ratify-project/ratify/labels/good%20first%20issue).
 
 We use the `dev` branch as the our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud specific tests on `dev` before changes can be merged into `main`. All ratify release are cut from the `main` branch. A sample PR process is outlined below:
 1. Fork this repo and create your dev branch from default `dev` branch.
-2. Create a PR against default branch
-3. Maintainer approval and e2e test validation is required for completing the PR.
-4. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
+2. Create a PR against default branch.
+3. Add new unit test and [e2e test](https://github.com/ratify-project/ratify/tree/dev/test/bats) where approriate.
+4. Maintainer approval and e2e test validation is required for completing the PR.
+5. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
 6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
 
 If the PR contains a regression that could not pass the full validation, please revert the change to unblock others:
@@ -54,7 +72,9 @@ The Ratify project is composed of the following main components:
 
 Ratify can run through cli command or run as a http server. Create a [launch.json](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) file in the .vscode directory, then hit F5 to debug. Note the first debug session may take a few minutes to load, subsequent session will be much faster.
 
-Sample json for cli:
+Here is a sample json for cli. Note that for the following sample json to successfully work, you need to make sure that `verificationCerts` attribute of the verifier in your config file points to the notation verifier's certificate file. In order to do that, you can download the cert file with the following command:
+`curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt`, 
+and then modify the config file by setting the `verificationCerts` attribute in the notation verifier to the downloaded cert file path.
 
 ```json
 {
@@ -65,7 +85,11 @@ Sample json for cli:
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}/cmd/ratify",
-      "args": ["verify", "-s", "ratify.azurecr.io/testimage@sha256:9515b691095051d68b4409a30c4819c98bd6f4355d5993a7487687cdc6d47cc3"]
+      "args": [
+                "verify", 
+                "-s", "ghcr.io/deislabs/ratify/notary-image:signed", 
+                "-c", "${workspaceFolder}/test/bats/tests/config/config_cli.json"
+      ]
     }]
 }
 ```

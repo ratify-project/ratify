@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"io"
 
+	"github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/verifier"
 )
 
@@ -47,11 +48,17 @@ const (
 
 // VerifierResult describes the verification result returned from the verifier plugin
 type VerifierResult struct {
-	IsSuccess  bool        `json:"isSuccess"`
-	Message    string      `json:"message"`
-	Name       string      `json:"name"`
-	Type       string      `json:"type,omitempty"`
-	Extensions interface{} `json:"extensions"`
+	IsSuccess   bool   `json:"isSuccess"`
+	Message     string `json:"message"`
+	ErrorReason string `json:"errorReason,omitempty"`
+	Remediation string `json:"remediation,omitempty"`
+	// Name will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
+	Name         string `json:"name"`
+	VerifierName string `json:"verifierName,omitempty"`
+	// Type will be deprecated in v2, tracking issue: https://github.com/ratify-project/ratify/issues/1707
+	Type         string      `json:"type,omitempty"`
+	VerifierType string      `json:"verifierType,omitempty"`
+	Extensions   interface{} `json:"extensions"`
 }
 
 // GetVerifierResult encodes the given JSON data into verify result object
@@ -61,11 +68,13 @@ func GetVerifierResult(result []byte) (*verifier.VerifierResult, error) {
 		return nil, err
 	}
 	return &verifier.VerifierResult{
-		IsSuccess:  vResult.IsSuccess,
-		Message:    vResult.Message,
-		Name:       vResult.Name,
-		Type:       vResult.Type,
-		Extensions: vResult.Extensions,
+		IsSuccess:    vResult.IsSuccess,
+		Message:      vResult.Message,
+		Name:         vResult.Name,
+		Type:         vResult.Type,
+		VerifierName: vResult.Name,
+		VerifierType: vResult.Type,
+		Extensions:   vResult.Extensions,
 	}, nil
 }
 
@@ -74,13 +83,42 @@ func WriteVerifyResultResult(result *verifier.VerifierResult, w io.Writer) error
 	return json.NewEncoder(w).Encode(result)
 }
 
+// CreateVerifierResult creates a new verifier result object from given input.
+func CreateVerifierResult(verifierName, verifierType, message string, isSuccess bool, err *errors.Error) VerifierResult {
+	var errorReason string
+	var remediation string
+	if err != nil {
+		if err.GetDetail() != "" {
+			message = err.GetDetail()
+		}
+		errorReason = err.GetErrorReason()
+		remediation = err.GetRemediation()
+	}
+
+	return VerifierResult{
+		IsSuccess:    isSuccess,
+		Name:         verifierName,
+		Type:         verifierType,
+		VerifierName: verifierName,
+		VerifierType: verifierType,
+		Message:      message,
+		ErrorReason:  errorReason,
+		Remediation:  remediation,
+	}
+}
+
 // NewVerifierResult creates a new verifier result object from the given
 // verifier.VerifierResult.
 func NewVerifierResult(result verifier.VerifierResult) VerifierResult {
 	return VerifierResult{
-		IsSuccess:  result.IsSuccess,
-		Message:    result.Message,
-		Name:       result.Name,
-		Extensions: result.Extensions,
+		IsSuccess:    result.IsSuccess,
+		Message:      result.Message,
+		Name:         result.Name,
+		Type:         result.Type,
+		VerifierName: result.VerifierName,
+		VerifierType: result.VerifierType,
+		Extensions:   result.Extensions,
+		ErrorReason:  result.ErrorReason,
+		Remediation:  result.Remediation,
 	}
 }

@@ -16,6 +16,7 @@ limitations under the License.
 package httpserver
 
 import (
+	"context"
 	"testing"
 
 	"github.com/ratify-project/ratify/pkg/executor/types"
@@ -32,18 +33,18 @@ func TestFromVerifyResult(t *testing.T) {
 		{
 			name:            "Rego policy",
 			policyType:      pt.RegoPolicy,
-			expectedVersion: "1.0.0",
+			expectedVersion: "1.1.0",
 		},
 		{
 			name:            "Config policy",
 			policyType:      pt.ConfigPolicy,
-			expectedVersion: "0.1.0",
+			expectedVersion: "0.2.0",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if res := fromVerifyResult(result, tc.policyType); res.Version != tc.expectedVersion {
+			if res := fromVerifyResult(context.Background(), result, tc.policyType); res.Version != tc.expectedVersion {
 				t.Fatalf("Expected version to be %s, got %s", tc.expectedVersion, res.Version)
 			}
 		})

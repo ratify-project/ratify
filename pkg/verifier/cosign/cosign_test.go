@@ -407,8 +407,11 @@ func TestErrorToVerifyResult(t *testing.T) {
 	if verifierResult.Type != "cosign" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Type, "cosign")
 	}
-	if verifierResult.Message != "cosign verification failed: test error" {
-		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "cosign verification failed: test error")
+	if verifierResult.Message != "Verification failed" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "Verification failed")
+	}
+	if verifierResult.ErrorReason != "test error" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.ErrorReason, "test error")
 	}
 }
 
@@ -562,6 +565,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 		cosignOpts                  cosign.CheckOpts
 		store                       *mocks.MemoryTestStore
 		expectedResultMessagePrefix string
+		expectedErrorReason         string
 		defaultCosignOpts           bool
 	}{
 		{
@@ -569,14 +573,16 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
 			getKeysError:                true,
 			store:                       &mocks.MemoryTestStore{},
-			expectedResultMessagePrefix: "cosign verification failed: error",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "error",
 		},
 		{
 			name:                        "manifest fetch error",
 			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
 			getKeysError:                false,
 			store:                       &mocks.MemoryTestStore{},
-			expectedResultMessagePrefix: "cosign verification failed: failed to get reference manifest",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to get reference manifest: manifest not found",
 		},
 		{
 			name:         "incorrect reference manifest media type error",
@@ -589,7 +595,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: reference manifest is not an image",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "reference manifest is not an image",
 		},
 		{
 			name:         "failed subject descriptor fetch",
@@ -602,7 +609,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to create subject hash",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to create subject hash: subject not found for sha256:5678",
 		},
 		{
 			name:         "failed to fetch blob",
@@ -628,7 +636,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to get blob content",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to get blob content: blob not found",
 		},
 		{
 			name: "invalid key type for AKV",
@@ -659,7 +668,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to verify with keys: failed to process AKV signature: unsupported public key type",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to verify with keys: failed to process AKV signature: unsupported public key type: *ecdh.PublicKey",
 		},
 		{
 			name: "invalid RSA key size for AKV",
@@ -690,7 +700,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to verify with keys: failed to process AKV signature: RSA key check: unsupported key size",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to verify with keys: failed to process AKV signature: RSA key check: unsupported key size: 128",
 		},
 		{
 			name: "invalid ECDSA curve type for AKV",
@@ -721,7 +732,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed: failed to verify with keys: failed to process AKV signature: ECDSA key check: unsupported key curve",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to verify with keys: failed to process AKV signature: ECDSA key check: unsupported key curve: P-224",
 		},
 		{
 			name: "valid hash: 256 keysize: 2048 RSA key AKV",
@@ -761,7 +773,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification success",
+			expectedResultMessagePrefix: "Verification success",
 		},
 		{
 			name: "valid hash: 256 keysize: 3072 RSA key",
@@ -801,7 +813,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification success",
+			expectedResultMessagePrefix: "Verification success",
 		},
 		{
 			name: "valid hash: 256 curve: P256 ECDSA key AKV",
@@ -841,7 +853,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification success",
+			expectedResultMessagePrefix: "Verification success",
 		},
 		{
 			name: "valid hash: 256 curve: P384 ECDSA key",
@@ -881,7 +893,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:6e1ffef2ba058cda5d1aa7ed792cb1e63b4207d8195a469bee1b5fc662cd9b70": []byte(`{"critical":{"identity":{"docker-reference":"artifactstest.azurecr.io/4-15-24/cosign/hello-world"},"image":{"docker-manifest-digest":"sha256:d37ada95d47ad12224c205a938129df7a3e52345828b4fa27b03a98825d1e2e7"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification success",
+			expectedResultMessagePrefix: "Verification success",
 		},
 		{
 			name:              "successful keyless verification",
@@ -917,7 +929,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6": []byte(`{"critical":{"identity":{"docker-reference":"wabbitnetworks.azurecr.io/test/cosign-image"},"image":{"docker-manifest-digest":"sha256:623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification success",
+			expectedResultMessagePrefix: "Verification success",
 		},
 		{
 			name:              "failed keyless verification",
@@ -953,7 +965,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6": []byte(`{"critical":{"identity":{"docker-reference":"wabbitnetworks.azurecr.io/test/cosign-image"},"image":{"docker-manifest-digest":"sha256:623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "cosign verification failed",
+			expectedResultMessagePrefix: "Verification failed",
+			expectedErrorReason:         "failed to parse static signature opts: failed to unmarshal bundle from blob payload: illegal base64 data at input byte 91",
 		},
 	}
 
@@ -991,7 +1004,10 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			}
 			result, _ := cosignVerifier.Verify(context.Background(), subjectRef, refDescriptor, tt.store)
 			if !strings.HasPrefix(result.Message, tt.expectedResultMessagePrefix) {
-				t.Errorf("Verify() = %v, want %v", result.Message, tt.expectedResultMessagePrefix)
+				t.Errorf("result.Message = %v, want %v", result.Message, tt.expectedResultMessagePrefix)
+			}
+			if result.ErrorReason != tt.expectedErrorReason {
+				t.Fatalf("expected error reason: %s, but got: %s", tt.expectedErrorReason, result.ErrorReason)
 			}
 		})
 	}

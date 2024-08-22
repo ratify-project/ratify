@@ -305,9 +305,17 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	// check if manifest exists in local ORAS cache
 	isCached, err := store.localCache.Exists(ctx, referenceDesc.Descriptor)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, err
+		logger.GetLogger(ctx, logOpt).Warnf("failed to check if manifest [%s] exists in cache: %v", referenceDesc.Descriptor.Digest, err)
 	}
 	metrics.ReportBlobCacheCount(ctx, isCached)
+
+	if isCached {
+		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
+		if err != nil {
+			isCached = false
+			logger.GetLogger(ctx, logOpt).Warnf("failed to get manifest [%s] from cache: %v", referenceDesc.Descriptor.Digest, err)
+		}
+	}
 
 	if !isCached {
 		// fetch manifest content from repository
@@ -326,12 +334,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
 		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
-			return ocispecs.ReferenceManifest{}, err
-		}
-	} else {
-		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
-		if err != nil {
-			return ocispecs.ReferenceManifest{}, err
+			logger.GetLogger(ctx, logOpt).Warnf("failed to save manifest [%s] in cache: %v", referenceDesc.Descriptor.Digest, err)
 		}
 	}
 

@@ -26,6 +26,7 @@ import (
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/ratify-project/ratify/internal/version"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/stretchr/testify/assert"
@@ -62,11 +63,11 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
+		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "", version.UserAgent)
 		assert.NoError(t, err)
 		assert.NotNil(t, kvBaseClient)
 		assert.NotNil(t, kvBaseClient.Authorizer)
-		assert.Contains(t, kvBaseClient.UserAgent, "ratify")
+		assert.Contains(t, kvBaseClient.UserAgent, version.UserAgent)
 	}
 }
 
@@ -173,7 +174,7 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initKVClient = func(_ context.Context, _, _, _ string) (*kv.BaseClient, error) {
+			initKVClient = func(_ context.Context, _, _, _, _ string) (*kv.BaseClient, error) {
 				return &kv.BaseClient{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
@@ -224,7 +225,7 @@ func TestGetKeys(t *testing.T) {
 		},
 	}
 
-	initKVClient = func(_ context.Context, _, _, _ string) (*kv.BaseClient, error) {
+	initKVClient = func(_ context.Context, _, _, _, _ string) (*kv.BaseClient, error) {
 		return &kv.BaseClient{}, nil
 	}
 	provider, err := factory.Create("v1", config, "")
@@ -236,6 +237,26 @@ func TestGetKeys(t *testing.T) {
 	assert.NotNil(t, err)
 	assert.Nil(t, keys)
 	assert.Nil(t, keyStatus)
+}
+
+func TestIsRefreshable(t *testing.T) {
+	factory := &akvKMProviderFactory{}
+	config := config.KeyManagementProviderConfig{
+		"vaultUri": "https://testkv.vault.azure.net/",
+		"tenantID": "tid",
+		"clientID": "clientid",
+		"certificates": []map[string]interface{}{
+			{
+				"name":    "cert1",
+				"version": "",
+			},
+		},
+	}
+
+	provider, _ := factory.Create("v1", config, "")
+	if provider.IsRefreshable() != true {
+		t.Fatalf("expected true, got false")
+	}
 }
 
 // TestGetStatusMap tests the getStatusMap function
@@ -482,6 +503,41 @@ func TestValidate(t *testing.T) {
 				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
+			}
+		})
+	}
+}
+
+func TestInitializeKvClient(t *testing.T) {
+	tests := []struct {
+		name        string
+		kvEndpoint  string
+		userAgent   string
+		tenantID    string
+		clientID    string
+		expectedErr bool
+	}{
+		{
+			name:        "Empty user agent",
+			kvEndpoint:  "https://test.vault.azure.net",
+			userAgent:   "",
+			expectedErr: true,
+		},
+		{
+			name:        "Auth failure",
+			kvEndpoint:  "https://test.vault.azure.net",
+			userAgent:   version.UserAgent,
+			tenantID:    "testTenantID",
+			clientID:    "testClientID",
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID, tt.userAgent)
+			if tt.expectedErr != (err != nil) {
+				t.Fatalf("expected error: %v, got: %v", tt.expectedErr, err)
 			}
 		})
 	}

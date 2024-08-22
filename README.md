@@ -9,6 +9,7 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
 [![Go Report Card](https://goreportcard.com/badge/github.com/ratify-project/ratify)](https://goreportcard.com/report/github.com/ratify-project/ratify)
 [![build-pr](https://github.com/ratify-project/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/ratify-project/ratify/actions/workflows/build-pr.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9334/badge)](https://www.bestpractices.dev/projects/9334)
 [![Go Reference](https://pkg.go.dev/badge/github.com/deislabs/ratify.svg)](https://pkg.go.dev/github.com/deislabs/ratify)
 
 ## Table of Contents
@@ -20,6 +21,7 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
   - [Pull Request Review Series](#pull-request-review-series)
   - [Documents](#documents)
   - [Code of Conduct](#code-of-conduct)
+  - [Project Governance](#project-governance)
   - [Release Management](#release-management)
   - [Licensing](#licensing)
   - [Trademark](#trademark)
@@ -43,13 +45,19 @@ Get Ratify Community Meeting Calendar [here](https://calendar.google.com/calenda
 
 ## Documents
 
-Please see the [Ratify website](https://ratify.dev/docs/what-is-ratify)  for more in-depth information.
+Please see the [Ratify website](https://ratify.dev/docs/what-is-ratify) for more in-depth information.
 
-Meeting notes for weekly project syncs can be found [here](https://hackmd.io/ABueHjizRz2iFQpWnQrnNA?both)
+Meeting notes for weekly project syncs can be found [here](https://hackmd.io/ABueHjizRz2iFQpWnQrnNA?both).
+
+The Ratify community documents can be found in the repository [`.github`](https://github.com/ratify-project/.github).
 
 ## Code of Conduct
 
 Ratify follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blob/master/code-of-conduct.md).
+
+## Project Governance
+
+The Ratify project governance can be found [here](https://github.com/ratify-project/.github/blob/main/GOVERNANCE.md).
 
 ## Release Management
 
