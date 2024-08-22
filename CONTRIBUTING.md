@@ -10,13 +10,20 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 * Checkout the repo locally with `git clone git@github.com:{your_username}/ratify.git`.
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
-
 ## Feature Enhancements
-For non-trivial enhancements or bug fixes, please start by raising a design PR. You can refer to the example [here](https://github.com/ratify-project/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
-The design document should include:
-- The proposed changes
-- The impacted code paths
+For non-trivial enhancements or bug fixes, please start by raising a document PR. You can refer to the example [here](https://github.com/ratify-project/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
 
+Major user experience updates should be documented in [/doc/proposals](https://github.com/ratify-project/ratify/tree/dev/docs/proposals). Changes to technical implementation should be added to [/doc/design](https://github.com/ratify-project/ratify/tree/dev/docs/design).  
+
+Consider adding the following section where applicable:
+- Proposed changes
+- Proposed feature flag
+- Impacted code paths
+- Required test coverage
+- Backward compatibility
+- Performance impact
+- Security consideration
+  
 This approach ensures that the changes are well-documented and reviewed before implementation.
 
 ## Pull Requests
