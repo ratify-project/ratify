@@ -54,6 +54,8 @@ type KeyManagementProvider interface {
 	GetCertificates(ctx context.Context) (map[KMPMapKey][]*x509.Certificate, KeyManagementProviderStatus, error)
 	// Returns an array of keys and the provider specific key attributes
 	GetKeys(ctx context.Context) (map[KMPMapKey]crypto.PublicKey, KeyManagementProviderStatus, error)
+	// Returns if the provider supports refreshing of certificates/keys
+	IsRefreshable() bool
 }
 
 // static concurrency-safe map to store certificates fetched from key management provider

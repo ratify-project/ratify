@@ -40,7 +40,11 @@ import (
 	"oras.land/oras-go/v2/registry/remote/errcode"
 )
 
-const inputOriginalPath = "localhost:5000/net-monitor:v0"
+const (
+	inputOriginalPath       = "localhost:5000/net-monitor:v0"
+	wrongReferenceMediatype = "application/vnd.oci.image.manifest.wrong.v1+json"
+	validReferenceMediatype = "application/vnd.oci.image.manifest.right.v1+json"
+)
 
 // TestORASName tests the Name method of the oras store.
 func TestORASName(t *testing.T) {
@@ -197,14 +201,12 @@ func TestORASGetReferenceManifest_CachedDesc(t *testing.T) {
 	ctx := context.Background()
 	firstDigest := digest.FromString("testDigest")
 	artifactDigest := digest.FromString("testArtifactDigest")
-	expectedReferenceMediatype := "application/vnd.oci.image.manifest.right.v1+json"
-	wrongReferenceMediatype := "application/vnd.oci.image.manifest.wrong.v1+json"
 	store, err := createBaseStore("1.0.0", conf)
 	if err != nil {
 		t.Fatalf("failed to create oras store: %v", err)
 	}
 	manifestCached := oci.Manifest{
-		MediaType: expectedReferenceMediatype,
+		MediaType: validReferenceMediatype,
 		Config:    oci.Descriptor{},
 		Layers:    []oci.Descriptor{},
 	}
@@ -247,8 +249,8 @@ func TestORASGetReferenceManifest_CachedDesc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get reference manifest: %v", err)
 	}
-	if manifest.MediaType != expectedReferenceMediatype {
-		t.Fatalf("expected media type %s, got %s", expectedReferenceMediatype, manifest.MediaType)
+	if manifest.MediaType != validReferenceMediatype {
+		t.Fatalf("expected media type %s, got %s", validReferenceMediatype, manifest.MediaType)
 	}
 }
 
@@ -261,8 +263,6 @@ func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
 	firstDigest := digest.FromString("testDigest")
 	artifactDigest := digest.FromString("testArtifactDigest")
 	artifactDigestNotCached := digest.FromString("testArtifactDigestNotCached")
-	expectedReferenceMediatype := "application/vnd.oci.image.manifest.right.v1+json"
-	wrongReferenceMediatype := "application/vnd.oci.image.manifest.wrong.v1+json"
 	store, err := createBaseStore("1.0.0", conf)
 	if err != nil {
 		t.Fatalf("failed to create oras store: %v", err)
@@ -277,7 +277,7 @@ func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
 		t.Fatalf("failed to marshal cached manifest: %v", err)
 	}
 	manifestNotCached := oci.Manifest{
-		MediaType: expectedReferenceMediatype,
+		MediaType: validReferenceMediatype,
 		Config:    oci.Descriptor{},
 		Layers:    []oci.Descriptor{},
 	}
@@ -311,8 +311,156 @@ func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get reference manifest: %v", err)
 	}
-	if manifest.MediaType != expectedReferenceMediatype {
-		t.Fatalf("expected media type %s, got %s", expectedReferenceMediatype, manifest.MediaType)
+	if manifest.MediaType != validReferenceMediatype {
+		t.Fatalf("expected media type %s, got %s", validReferenceMediatype, manifest.MediaType)
+	}
+}
+
+func TestORASGetReferenceManifest_CacheFetchManifestFailure(t *testing.T) {
+	conf := config.StorePluginConfig{
+		"name": "oras",
+	}
+	ctx := context.Background()
+	firstDigest := digest.FromString("testDigest")
+	artifactDigest := digest.FromString("testArtifactDigest")
+	store, err := createBaseStore("1.0.0", conf)
+	if err != nil {
+		t.Fatalf("failed to create oras store: %v", err)
+	}
+	manifestCached := oci.Manifest{
+		MediaType: wrongReferenceMediatype,
+		Config:    oci.Descriptor{},
+		Layers:    []oci.Descriptor{},
+	}
+	manifestCachedBytes, err := json.Marshal(manifestCached)
+	if err != nil {
+		t.Fatalf("failed to marshal cached manifest: %v", err)
+	}
+	manifestNotCached := oci.Manifest{
+		MediaType: validReferenceMediatype,
+		Config:    oci.Descriptor{},
+		Layers:    []oci.Descriptor{},
+	}
+	manifestNotCachedBytes, err := json.Marshal(manifestNotCached)
+	if err != nil {
+		t.Fatalf("failed to marshal not cached manifest: %v", err)
+	}
+	testRepo := mocks.TestRepository{
+		FetchMap: map[digest.Digest]io.ReadCloser{
+			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
+		},
+	}
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
+		return testRepo, nil
+	}
+	store.localCache = mocks.TestStorage{
+		ExistsMap: map[digest.Digest]io.Reader{
+			artifactDigest: bytes.NewReader(manifestCachedBytes),
+		},
+		FetchErr: errors.New("cache fetch error"),
+	}
+	inputRef := common.Reference{
+		Original: inputOriginalPath,
+		Digest:   firstDigest,
+	}
+	manifest, err := store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
+		Descriptor: oci.Descriptor{
+			MediaType: ocispecs.MediaTypeArtifactManifest,
+			Digest:    artifactDigest,
+		},
+	})
+	if err != nil {
+		t.Fatalf("failed to get reference manifest: %v", err)
+	}
+	if manifest.MediaType != validReferenceMediatype {
+		t.Fatalf("expected media type %s, got %s", validReferenceMediatype, manifest.MediaType)
+	}
+}
+
+func TestORASGetReferenceManifest_CacheExistsFailure(t *testing.T) {
+	conf := config.StorePluginConfig{
+		"name": "oras",
+	}
+	ctx := context.Background()
+	firstDigest := digest.FromString("testDigest")
+	artifactDigest := digest.FromString("testArtifactDigest")
+	store, err := createBaseStore("1.0.0", conf)
+	if err != nil {
+		t.Fatalf("failed to create oras store: %v", err)
+	}
+	if err != nil {
+		t.Fatalf("failed to marshal cached manifest: %v", err)
+	}
+
+	testRepo := mocks.TestRepository{
+		FetchMap: map[digest.Digest]io.ReadCloser{},
+	}
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
+		return testRepo, nil
+	}
+	store.localCache = mocks.TestStorage{
+		ExistsErr: errors.New("cache exists error"),
+	}
+	inputRef := common.Reference{
+		Original: inputOriginalPath,
+		Digest:   firstDigest,
+	}
+	_, err = store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
+		Descriptor: oci.Descriptor{
+			MediaType: ocispecs.MediaTypeArtifactManifest,
+			Digest:    artifactDigest,
+		},
+	})
+	if err == nil {
+		t.Fatalf("expected error fetching reference manifest")
+	}
+}
+
+func TestORASGetReferenceManifest_NotCachedDescAndFetchFailed(t *testing.T) {
+	conf := config.StorePluginConfig{
+		"name": "oras",
+	}
+	ctx := context.Background()
+	firstDigest := digest.FromString("testDigest")
+	artifactDigest := digest.FromString("testArtifactDigest")
+	artifactDigestNotCached := digest.FromString("testArtifactDigestNotCached")
+	store, err := createBaseStore("1.0.0", conf)
+	if err != nil {
+		t.Fatalf("failed to create oras store: %v", err)
+	}
+	manifestCached := oci.Manifest{
+		MediaType: wrongReferenceMediatype,
+		Config:    oci.Descriptor{},
+		Layers:    []oci.Descriptor{},
+	}
+	manifestCachedBytes, err := json.Marshal(manifestCached)
+	if err != nil {
+		t.Fatalf("failed to marshal cached manifest: %v", err)
+	}
+
+	testRepo := mocks.TestRepository{
+		FetchMap: map[digest.Digest]io.ReadCloser{},
+	}
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
+		return testRepo, nil
+	}
+	store.localCache = mocks.TestStorage{
+		ExistsMap: map[digest.Digest]io.Reader{
+			artifactDigestNotCached: bytes.NewReader(manifestCachedBytes),
+		},
+	}
+	inputRef := common.Reference{
+		Original: inputOriginalPath,
+		Digest:   firstDigest,
+	}
+	_, err = store.GetReferenceManifest(ctx, inputRef, ocispecs.ReferenceDescriptor{
+		Descriptor: oci.Descriptor{
+			MediaType: ocispecs.MediaTypeArtifactManifest,
+			Digest:    artifactDigest,
+		},
+	})
+	if err == nil {
+		t.Fatalf("expected error fetching reference manifest")
 	}
 }
 
