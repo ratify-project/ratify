@@ -28,4 +28,7 @@ type CertStoreManager interface {
 
 	// DeleteStore deletes the certificate from the given scope.
 	DeleteStore(storeName string)
+
+	// AddStoreError adds an error to the given certificate store.
+	AddStoreError(storeName string, err error)
 }
