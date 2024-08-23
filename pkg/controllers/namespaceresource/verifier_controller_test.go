@@ -19,7 +19,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"strings"
 	"testing"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
@@ -141,12 +140,12 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 
 func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
 	resetVerifierMap()
-	var resource = "invalidplugin"
-	expectedMsg := "PLUGIN_NOT_FOUND: Plugin: pluginnotfound not found."
+	resource := "invalidplugin"
+	expectedMsg := "PLUGIN_NOT_FOUND: Plugin: pluginnotfound not found.: failed to find plugin \"pluginnotfound\" in paths [test/path]"
 	var testVerifierSpec = getInvalidVerifierSpec()
 	err := verifierAddOrReplace(testVerifierSpec, resource, testNamespace)
 
-	if !strings.Contains(err.Error(), expectedMsg) {
+	if err.Error() != expectedMsg {
 		t.Fatalf("TestVerifierAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
 	}
 }

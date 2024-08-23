@@ -100,12 +100,12 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create notation verifier.").WithError(err)
 	}
 
 	verifyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier.").WithError(err)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")

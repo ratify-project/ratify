@@ -66,7 +66,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if strings.ContainsRune(verifierTypeStr, os.PathSeparator) {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid plugin name for a verifier: %s", verifierTypeStr))
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid verifier plugin name [%s], [%v] is disallowed.", verifierTypeStr, os.PathSeparator))
 	}
 
 	// if source is specified, download the plugin
