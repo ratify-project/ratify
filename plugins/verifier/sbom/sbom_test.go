@@ -15,13 +15,23 @@ limitations under the License.
 package main
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
+	"github.com/opencontainers/go-digest"
+	oci "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/ocispecs"
+	"github.com/ratify-project/ratify/pkg/referrerstore/mocks"
+	"github.com/ratify-project/ratify/pkg/verifier/plugin/skel"
 	"github.com/ratify-project/ratify/plugins/verifier/sbom/utils"
 )
+
+const mediaType string = "application/vnd.syft+json"
 
 func TestProcessSPDXJsonMediaType(t *testing.T) {
 	b, err := os.ReadFile(filepath.Join("testdata", "bom.json"))
@@ -41,8 +51,178 @@ func TestProcessInvalidSPDXJsonMediaType(t *testing.T) {
 	}
 	report := processSpdxJSONMediaType("test", "", b, nil, nil)
 
-	if !strings.Contains(report.Message, "SBOM failed to parse") {
-		t.Fatalf("expected to have an error processing spdx json file: %s", filepath.Join("testdata", "bom.json"))
+	if !strings.Contains(report.Message, "failed to verify artifact") {
+		t.Fatalf("report message: %s does not contain expected error message", report.Message)
+	}
+	if report.ErrorReason != "JSON document does not contain spdxVersion field" {
+		t.Fatalf("expected error reason: %s, got: %s", "JSON document does not contain spdxVersion field", report.ErrorReason)
+	}
+}
+
+func TestVerifyReference(t *testing.T) {
+	manifestDigest := digest.FromString("test_manifest_digest")
+	manifestDigest2 := digest.FromString("test_manifest_digest_2")
+	blobDigest := digest.FromString("test_blob_digest")
+	blobDigest2 := digest.FromString("test_blob_digest_2")
+	type args struct {
+		stdinData         string
+		referenceManifest ocispecs.ReferenceManifest
+		blobContent       string
+		refDesc           ocispecs.ReferenceDescriptor
+	}
+	type want struct {
+		message     string
+		errorReason string
+		err         error
+	}
+
+	tests := []struct {
+		name string
+		args args
+		want want
+	}{
+		{
+			name: "invalid stdin data",
+			args: args{},
+			want: want{
+				err: errors.New("failed to parse stdin for the input: unexpected end of JSON input"),
+			},
+		},
+		{
+			name: "failed to get reference manifest",
+			args: args{
+				stdinData:         `{"config":{"name":"sbom","type":"sbom"}}`,
+				referenceManifest: ocispecs.ReferenceManifest{},
+				refDesc: ocispecs.ReferenceDescriptor{
+					Descriptor: oci.Descriptor{
+						Digest: manifestDigest2,
+					},
+					ArtifactType: mediaType,
+				},
+			},
+			want: want{
+				message:     "Failed to fetch reference manifest for subject: test_subject reference descriptor: { sha256:b55e209647d87fcd95a94c59ff4d342e42bf10f02a7c10b5192131f8d959ff5a 0 [] map[] [] <nil> }",
+				errorReason: "manifest not found",
+			},
+		},
+		{
+			name: "empty blobs",
+			args: args{
+				stdinData:         `{"config":{"name":"sbom","type":"sbom"}}`,
+				referenceManifest: ocispecs.ReferenceManifest{},
+				refDesc: ocispecs.ReferenceDescriptor{
+					Descriptor: oci.Descriptor{
+						Digest: manifestDigest,
+					},
+					ArtifactType: mediaType,
+				},
+			},
+			want: want{
+				message:     "SBOM validation failed",
+				errorReason: fmt.Sprintf("No layers found in manifest for referrer %s@%s", "test_subject_path", manifestDigest.String()),
+			},
+		},
+		{
+			name: "get blob content error",
+			args: args{
+				stdinData: `{"config":{"name":"sbom","type":"sbom"}}`,
+				referenceManifest: ocispecs.ReferenceManifest{
+					Blobs: []oci.Descriptor{
+						{
+							MediaType: mediaType,
+							Digest:    blobDigest2,
+						},
+					},
+				},
+				refDesc: ocispecs.ReferenceDescriptor{
+					Descriptor: oci.Descriptor{
+						Digest: manifestDigest,
+					},
+					ArtifactType: mediaType,
+				},
+			},
+			want: want{
+				message:     fmt.Sprintf("Failed to fetch blob for subject: test_subject digest: %s", blobDigest2.String()),
+				errorReason: "blob not found",
+			},
+		},
+		{
+			name: "unsupported artifactType",
+			args: args{
+				stdinData: `{"config":{"name":"sbom","type":"sbom"}}`,
+				referenceManifest: ocispecs.ReferenceManifest{
+					Blobs: []oci.Descriptor{
+						{
+							MediaType: mediaType,
+							Digest:    blobDigest,
+						},
+					},
+				},
+				refDesc: ocispecs.ReferenceDescriptor{
+					Descriptor: oci.Descriptor{
+						Digest: manifestDigest,
+					},
+					ArtifactType: mediaType,
+				},
+			},
+			want: want{
+				message:     "Failed to process SBOM blobs.",
+				errorReason: "Unsupported artifactType: application/vnd.syft+json",
+			},
+		},
+		{
+			name: "process spdx json mediaType error",
+			args: args{
+				stdinData: `{"config":{"name":"sbom","type":"sbom"}}`,
+				referenceManifest: ocispecs.ReferenceManifest{
+					Blobs: []oci.Descriptor{
+						{
+							MediaType: mediaType,
+							Digest:    blobDigest,
+						},
+					},
+				},
+				refDesc: ocispecs.ReferenceDescriptor{
+					Descriptor: oci.Descriptor{
+						Digest: manifestDigest,
+					},
+					ArtifactType: SpdxJSONMediaType,
+				},
+			},
+			want: want{
+				message:     "failed to verify artifact: sbom",
+				errorReason: "unexpected end of JSON input",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cmdArgs := &skel.CmdArgs{
+				Version:   "1.0.0",
+				Subject:   "test_subject",
+				StdinData: []byte(tt.args.stdinData),
+			}
+			testStore := &mocks.MemoryTestStore{
+				Manifests: map[digest.Digest]ocispecs.ReferenceManifest{manifestDigest: tt.args.referenceManifest},
+				Blobs:     map[digest.Digest][]byte{blobDigest: []byte(tt.args.blobContent)},
+			}
+			subjectRef := common.Reference{
+				Path:     "test_subject_path",
+				Original: "test_subject",
+			}
+			verifierResult, err := VerifyReference(cmdArgs, subjectRef, tt.args.refDesc, testStore)
+			if err != nil && err.Error() != tt.want.err.Error() {
+				t.Fatalf("verifyReference() error = %v, wantErr %v", err, tt.want.err)
+			}
+			if verifierResult != nil {
+				if verifierResult.Message != tt.want.message {
+					t.Fatalf("verifyReference() verifier report message = %s, want = %s", verifierResult.Message, tt.want.message)
+				}
+				if verifierResult.ErrorReason != tt.want.errorReason {
+					t.Fatalf("verifyReference() verifier report error reason = %s, want = %s", verifierResult.ErrorReason, tt.want.errorReason)
+				}
+			}
+		})
 	}
 }
 

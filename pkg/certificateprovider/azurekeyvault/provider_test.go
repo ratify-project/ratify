@@ -26,6 +26,7 @@ import (
 
 	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/ratify-project/ratify/internal/version"
 	"github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -105,7 +106,7 @@ func SkipTestInitializeKVClient(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, kvBaseClient)
 		assert.NotNil(t, kvBaseClient.Authorizer)
-		assert.Contains(t, kvBaseClient.UserAgent, "ratify")
+		assert.Contains(t, kvBaseClient.UserAgent, version.UserAgent)
 	}
 }
 
