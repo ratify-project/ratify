@@ -208,7 +208,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return referrerstore.ListReferrersResult{}, re.ErrorCodeCreateRepositoryFailure.WithError(err).WithComponentType(re.ReferrerStore)
+		return referrerstore.ListReferrersResult{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to create client to remote registry").WithError(err)
 	}
 
 	// resolve subject descriptor if not provided
@@ -260,7 +260,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodeGetBlobContentFailure.WithDetail("Failed to connect to the remote registry").WithError(err)
 	}
 
 	// create a dummy Descriptor to check the local store cache
@@ -292,10 +292,10 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		blobDesc, rc, err := repository.Blobs().FetchReference(ctx, ref)
 		if err != nil {
 			evictOnError(ctx, err, subjectReference.Original)
-			return nil, err
+			return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to fetch the artifact metadata from the registry").WithError(err)
 		}
 		if blobContent, err = io.ReadAll(rc); err != nil {
-			return nil, re.ErrorCodeGetBlobContentFailure.WithError(err)
+			return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to parse the artifact metadata").WithError(err)
 		}
 
 		// push fetched content to local ORAS cache

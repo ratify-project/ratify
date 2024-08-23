@@ -46,7 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 			return nil, nil
 		}
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, re.ErrorCodeRepositoryOperationFailure.WithError(err).WithComponentType(re.ReferrerStore)
+		return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to resolve Cosign signature reference to descriptor").WithError(err)
 	}
 
 	references = append(references, ocispecs.ReferenceDescriptor{
@@ -64,7 +64,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 func attachedImageTag(subjectReference common.Reference, tagSuffix string) (string, error) {
 	// sha256:d34db33f -> sha256-d34db33f.suffix
 	if subjectReference.Digest.String() == "" {
-		return "", re.ErrorCodeReferenceInvalid.WithComponentType(re.ReferrerStore).WithDetail("Cosign subject digest is empty")
+		return "", re.ErrorCodeReferenceInvalid.WithDetail("Cosign subject digest is empty").WithRemediation("Ensure the Cosign signature was generated correctly.")
 	}
 	tagStr := strings.ReplaceAll(subjectReference.Digest.String(), ":", "-") + tagSuffix
 	return fmt.Sprintf("%s:%s", subjectReference.Path, tagStr), nil
