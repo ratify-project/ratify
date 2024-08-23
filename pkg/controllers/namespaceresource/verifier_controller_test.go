@@ -141,7 +141,7 @@ func TestVerifierAdd_WithParameters(t *testing.T) {
 func TestVerifierAddOrReplace_PluginNotFound(t *testing.T) {
 	resetVerifierMap()
 	resource := "invalidplugin"
-	expectedMsg := "PLUGIN_NOT_FOUND: Plugin: pluginnotfound not found.: failed to find plugin \"pluginnotfound\" in paths [test/path]"
+	expectedMsg := "PLUGIN_NOT_FOUND: Plugin: pluginnotfound not found: failed to find plugin \"pluginnotfound\" in paths [test/path]"
 	var testVerifierSpec = getInvalidVerifierSpec()
 	err := verifierAddOrReplace(testVerifierSpec, resource, testNamespace)
 

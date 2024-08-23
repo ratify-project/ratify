@@ -58,7 +58,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	if value, ok := verifierConfig[types.Name]; ok {
 		verifierTypeStr = value.(string)
 	} else {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Name field is required in verifier config.")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Name field is required in verifier config")
 	}
 
 	if value, ok := verifierConfig[types.Type]; ok {
@@ -66,7 +66,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if strings.ContainsRune(verifierTypeStr, os.PathSeparator) {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid verifier plugin name [%s], [%v] is disallowed.", verifierTypeStr, os.PathSeparator))
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid verifier plugin name [%s], [%v] is disallowed", verifierTypeStr, os.PathSeparator))
 	}
 
 	// if source is specified, download the plugin
@@ -94,7 +94,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if _, err := pluginCommon.FindInPaths(verifierTypeStr, pluginBinDir); err != nil {
-		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Plugin: %s not found.", verifierTypeStr)).WithError(err)
+		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Plugin: %s not found", verifierTypeStr)).WithError(err)
 	}
 
 	pluginVersion := configVersion
@@ -117,7 +117,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Verifiers config should have at least one verifier.")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Verifiers config should have at least one verifier")
 	}
 
 	verifiers := make([]verifier.ReferenceVerifier, 0)

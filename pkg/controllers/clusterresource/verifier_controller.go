@@ -87,7 +87,7 @@ func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) er
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
 		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return re.ErrorCodeConfigInvalid.WithDetail("Unable to convert crd specification to verifier config.").WithError(err)
+		return re.ErrorCodeConfigInvalid.WithDetail("Unable to convert crd specification to verifier config").WithError(err)
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, constants.EmptyNamespace, objectName, verifierConfig)

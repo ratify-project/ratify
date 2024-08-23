@@ -100,12 +100,12 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create notation verifier.").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create notation verifier").WithError(err)
 	}
 
 	verifyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier.").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier").WithError(err)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
@@ -142,12 +142,12 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetSubjectDescriptorFailure.WithDetail(fmt.Sprintf("Failed to resolve subject: %+v.", subjectReference)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetSubjectDescriptorFailure.WithDetail(fmt.Sprintf("Failed to resolve subject: %+v", subjectReference)).WithError(err)
 	}
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to resolve reference manifest: %+v.", referenceDescriptor)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to resolve reference manifest: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	if len(referenceManifest.Blobs) != 1 {
@@ -182,7 +182,7 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	}
 	verifier, err := notationVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier.").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier").WithError(err)
 	}
 	return verifier, nil
 }
@@ -202,11 +202,11 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*Notat
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to marshal verifierConfig to bytes.").WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to marshal verifierConfig to bytes").WithError(err)
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to unmarshal to notationPluginVerifierConfig from: %+v.", verifierConfig)).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to unmarshal to notationPluginVerifierConfig from: %+v", verifierConfig)).WithError(err)
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)

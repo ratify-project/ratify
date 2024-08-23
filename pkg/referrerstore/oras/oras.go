@@ -327,7 +327,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 
 		manifestBytes, err = io.ReadAll(manifestReader)
 		if err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeManifestInvalid.WithDetail("Failed to parse fetched manifest.").WithError(err)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeManifestInvalid.WithDetail("Failed to parse fetched manifest").WithError(err)
 		}
 
 		// push fetched manifest to local ORAS cache
@@ -344,12 +344,12 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	if referenceDesc.Descriptor.MediaType == oci.MediaTypeImageManifest {
 		var imageManifest oci.Manifest
 		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse manifest content in `application/vnd.oci.image.manifest.v1+json` mediatype.").WithError(err).WithRemediation("Please check if the manifest was created correctly.")
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse manifest content in `application/vnd.oci.image.manifest.v1+json` mediatype").WithError(err).WithRemediation("Please check if the manifest was created correctly.")
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
 	} else if referenceDesc.Descriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse manifest content in `application/vnd.oci.artifact.manifest.v1+json` mediatype.").WithError(err).WithRemediation("Please check if the manifest was created correctly.")
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse manifest content in `application/vnd.oci.artifact.manifest.v1+json` mediatype").WithError(err).WithRemediation("Please check if the manifest was created correctly.")
 		}
 	} else {
 		return ocispecs.ReferenceManifest{}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Unsupported manifest media type: %s", referenceDesc.Descriptor.MediaType)).WithRemediation("Please check if the manifest was created correctly.")
