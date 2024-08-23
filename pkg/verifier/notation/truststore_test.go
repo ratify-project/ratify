@@ -50,7 +50,7 @@ func (m *mockCertStores) DeleteStore(_ string) {}
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	resetCertStore()
 	certStore := verificationCertStores{
-		trustStoreTypeCA: verificationCertStores{
+		trustStoreTypeCA: map[string]interface{}{
 			"certstore1": []interface{}{"akv1", "akv2"},
 			"certstore2": []interface{}{"akv3", "akv4"},
 		},
@@ -67,7 +67,7 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 func TestGetCertificates_NamedStore(t *testing.T) {
 	resetCertStore()
 	certStore := verificationCertStores{
-		trustStoreTypeCA: verificationCertStores{
+		trustStoreTypeCA: map[string]interface{}{
 			"certstore1": []interface{}{"default/kv1"},
 			"certstore2": []interface{}{"projecta/kv2"},
 		},
