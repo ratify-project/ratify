@@ -243,7 +243,9 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 			return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, nil, re.HideStackTrace)
 		}
 		var legacyCertStore map[string]interface{}
-		json.Unmarshal(legacyCertStoreBytes, &legacyCertStore)
+		if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
+			return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to legacyCertStore from: %+v.", legacyCertStoreBytes), re.HideStackTrace)
+		}
 		// support legacy verfier config format for backward compatibility
 		conf.VerificationCertStores = verificationCertStores{
 			trustStoreTypeCA: legacyCertStore,
