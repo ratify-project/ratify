@@ -101,8 +101,6 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo-tsa --namespace default --force --ignore-not-found=true'
 
-        sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
-
         # restore the original notation verifier for other tests
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
@@ -110,10 +108,11 @@ RATIFY_NAMESPACE=gatekeeper-system
     # validate key management provider status property shows success
     run bash -c "kubectl get keymanagementproviders.config.ratify.deislabs.io/ratify-notation-inline-cert-0 -o yaml | grep 'issuccess: true'"
     assert_success
-    
+
     # add the tsaroot certificate as an inline key management provider
-    cat ./test/bats/tests/certificates/tsarootca.cer | sed 's/^/      /g' >>./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml --namespace ${RATIFY_NAMESPACE}
+    ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> tsakmprovider.yaml
+    cat ./test/bats/tests/certificates/tsarootca.cer | sed 's/^/      /g' >> tsakmprovider.yaml
+    run kubectl apply -f tsakmprovider.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
 
     # configure the notation verifier to use the inline key management provider

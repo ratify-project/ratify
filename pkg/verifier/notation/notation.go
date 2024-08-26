@@ -242,6 +242,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 			return err
 		}
 		// support legacy verfier config format for backward compatibility
+		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
 		conf.VerificationCertStores = verificationCertStores{
 			trustStoreTypeCA: legacyCertStore,
 		}
@@ -250,7 +251,6 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 }
 
 func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
-	// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
 	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, nil, re.HideStackTrace)
