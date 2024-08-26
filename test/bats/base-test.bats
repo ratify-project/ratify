@@ -110,7 +110,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 
     # add the tsaroot certificate as an inline key management provider
-    ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> tsakmprovider.yaml
+    cat ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> tsakmprovider.yaml
     cat ./test/bats/tests/certificates/tsarootca.cer | sed 's/^/      /g' >> tsakmprovider.yaml
     run kubectl apply -f tsakmprovider.yaml --namespace ${RATIFY_NAMESPACE}
     assert_success
