@@ -14,6 +14,7 @@
 #!/usr/bin/env bats
 
 load helpers
+current_time=$((date "+%Y-%m-%d %H:%M:%S"))
 
 @test "notation verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:signed
@@ -25,6 +26,11 @@ load helpers
 }
 
 @test "notation verifier tsa test" {
+    teardown() {
+        # reset current_time
+        run sudo date -s $current_time
+    }
+
     run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
     assert_cmd_verify_success
 
