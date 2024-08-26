@@ -14,7 +14,7 @@
 #!/usr/bin/env bats
 
 load helpers
-current_time=$((date "+%Y-%m-%d %H:%M:%S"))
+current_time=$(date "+%Y-%m-%d %H:%M:%S")
 
 @test "notation verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:signed
