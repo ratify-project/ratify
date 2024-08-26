@@ -14,7 +14,6 @@
 #!/usr/bin/env bats
 
 load helpers
-current_time=$(date "+%Y-%m-%d %H:%M:%S")
 
 @test "notation verifier test" {
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:signed
@@ -23,25 +22,6 @@ current_time=$(date "+%Y-%m-%d %H:%M:%S")
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:unsigned
     assert_cmd_verify_failure
     
-}
-
-@test "notation verifier tsa test" {
-    teardown() {
-        # reset current_time
-        run sudo date -s $current_time
-    }
-
-    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
-    assert_cmd_verify_success
-
-    # update system date to expire the cert and trigger timestamp verification
-    run sudo date -s "2 days" 
-
-    run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:tsa
-    assert_cmd_verify_failure
-
-    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
-    assert_cmd_verify_success
 }
 
 @test "notation verifier leaf cert test" {
@@ -162,4 +142,23 @@ current_time=$(date "+%Y-%m-%d %H:%M:%S")
     # ensure the plugin is downloaded and marked executable
     test -x $RATIFY_DIR/plugins/dynamicstore
     assert_success
+}
+
+@test "notation verifier tsa test" {
+    teardown() {
+        # reset current_time
+        run sudo date -s "-2 days"
+    }
+
+    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
+    assert_cmd_verify_success
+
+    # update system date to expire the cert and trigger timestamp verification
+    run sudo date -s "2 days" 
+
+    run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:tsa
+    assert_cmd_verify_failure
+
+    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
+    assert_cmd_verify_success
 }
