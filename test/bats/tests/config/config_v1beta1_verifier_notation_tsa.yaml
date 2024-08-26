@@ -7,6 +7,9 @@ spec:
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:
+      ca:
+        certs:
+          - certstore-inline
       tsa:
         tsa-certs:
           - keymanagementprovider-inline
