@@ -237,14 +237,9 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 	if isCertStoresByType && isLegacyCertStore {
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
 	} else if !isCertStoresByType && isLegacyCertStore {
-		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
-		legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
+		legacyCertStore, err := normalizeLegacyCertStore(conf)
 		if err != nil {
-			return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, nil, re.HideStackTrace)
-		}
-		var legacyCertStore map[string]interface{}
-		if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
-			return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to legacyCertStore from: %+v.", legacyCertStoreBytes), re.HideStackTrace)
+			return err
 		}
 		// support legacy verfier config format for backward compatibility
 		conf.VerificationCertStores = verificationCertStores{
@@ -252,4 +247,17 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		}
 	}
 	return nil
+}
+
+func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
+	// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
+	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, nil, re.HideStackTrace)
+	}
+	var legacyCertStore map[string]interface{}
+	if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
+		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to legacyCertStore from: %+v.", legacyCertStoreBytes), re.HideStackTrace)
+	}
+	return legacyCertStore, nil
 }

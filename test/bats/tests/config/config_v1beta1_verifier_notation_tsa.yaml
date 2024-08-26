@@ -8,8 +8,8 @@ spec:
   parameters:
     verificationCertStores:
       ca:
-        certs:
-          - default/ratify-notation-inline-cert-0
+        ca-certs:
+          - ratify-notation-inline-cert-0
       tsa:
         tsa-certs:
           - keymanagementprovider-inline
@@ -22,7 +22,7 @@ spec:
           signatureVerification:
             level: strict
           trustStores:
-            - ca:certs
+            - ca:ca-certs
             - tsa:tsa-certs
           trustedIdentities:
             - "*"

@@ -21,7 +21,9 @@ load helpers
 
     run bin/ratify verify -c $RATIFY_DIR/config.json -s $TEST_REGISTRY/notation:unsigned
     assert_cmd_verify_failure
-    
+
+    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
+    assert_cmd_verify_success
 }
 
 @test "notation verifier leaf cert test" {
@@ -149,9 +151,6 @@ load helpers
         # reset current_time
         run sudo date -s "-2 days"
     }
-
-    run bin/ratify verify -c $RATIFY_DIR/config_tsa.json -s $TEST_REGISTRY/notation:tsa
-    assert_cmd_verify_success
 
     # update system date to expire the cert and trigger timestamp verification
     run sudo date -s "2 days" 
