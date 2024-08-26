@@ -104,7 +104,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         sed -i '10,$d' ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml
 
         # restore the original notation verifier for other tests
-        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl apply -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
 
     # add the tsaroot certificate as an inline key management provider
@@ -113,7 +113,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 
     # configure the notation verifier to use the inline key management provider
-    run kubectl apply -f ./test/bats/tests/config/config_v1beta1_verifier_notation_tsa.yaml
+    run kubectl replace -f ./test/bats/tests/config/config_v1beta1_verifier_notation_tsa.yaml
     assert_success
     sleep 10
 

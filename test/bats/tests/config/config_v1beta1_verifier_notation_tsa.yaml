@@ -9,7 +9,7 @@ spec:
     verificationCertStores:
       ca:
         certs:
-          - certstore-inline
+          - default/ratify-notation-inline-cert-0
       tsa:
         tsa-certs:
           - keymanagementprovider-inline
