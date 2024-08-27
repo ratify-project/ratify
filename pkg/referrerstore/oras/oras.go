@@ -299,6 +299,8 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 		}
 
 		// push fetched content to local ORAS cache
+		// If multiple goroutines try to push the same blob to the cache, oras-go
+		// may return `ErrAlreadyExists` error. This is expected and can be ignored.
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", blobDesc.Digest, blobDesc.MediaType, errdef.ErrAlreadyExists)
 		if err = store.localCache.Push(ctx, blobDesc, bytes.NewReader(blobContent)); err != nil && err.Error() != orasExistsExpectedError.Error() {
 			logger.GetLogger(ctx, logOpt).Warnf("failed to save blob [%s] in cache: %v", blobDesc.Digest, err)
@@ -343,6 +345,8 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
+		// If multiple goroutines try to push the same manifest to the cache, oras-go
+		// may return `ErrAlreadyExists` error. This is expected and can be ignored.
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
 		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
