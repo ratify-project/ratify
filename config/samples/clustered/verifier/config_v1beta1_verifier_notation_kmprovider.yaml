@@ -9,10 +9,8 @@ spec:
     verificationCertStores:
       certs:
         - kmprovider-akv
-        - kmprovider-akv1
       certs1:
-        - kmprovider-akv2
-        - kmprovider-akv3
+        - kmprovider-akv1
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
