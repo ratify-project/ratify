@@ -17,11 +17,13 @@ import (
 	"context"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"os"
 	"reflect"
 	"testing"
 
 	"github.com/notaryproject/notation-go/verifier/truststore"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/controllers"
 )
 
@@ -33,10 +35,14 @@ const (
 )
 
 type mockCertStores struct {
-	certMap map[string][]*x509.Certificate
+	certMap      map[string][]*x509.Certificate
+	reconcileErr error
 }
 
 func (m *mockCertStores) GetCertsFromStore(_ context.Context, storeName string) ([]*x509.Certificate, error) {
+	if m.reconcileErr != nil {
+		return nil, m.reconcileErr
+	}
 	if m.certMap == nil {
 		return nil, nil
 	}
@@ -46,6 +52,59 @@ func (m *mockCertStores) GetCertsFromStore(_ context.Context, storeName string) 
 func (m *mockCertStores) AddStore(_ string, _ []*x509.Certificate) {}
 
 func (m *mockCertStores) DeleteStore(_ string) {}
+
+func (m *mockCertStores) AddStoreError(_ string, _ error) {}
+
+func TestIsReconcileError(t *testing.T) {
+	err := errors.New("reconcile error")
+	if !isReconcileError(err) {
+		t.Fatalf("expected to be a reconcile error")
+	}
+
+	err = re.ErrorCodeNotFound.WithDetail("not found")
+	if isReconcileError(err) {
+		t.Fatalf("expected not to be a reconcile error")
+	}
+}
+
+func TestParseErrFromKmpAndCertStore(t *testing.T) {
+	reconcileErr := errors.New("reconcile error")
+	notFoundErr := re.ErrorCodeNotFound.WithDetail("not found")
+	tests := []struct {
+		name         string
+		kmpErr       error
+		certStoreErr error
+		expectedErr  error
+	}{
+		{
+			name:         "nil errors",
+			kmpErr:       nil,
+			certStoreErr: nil,
+			expectedErr:  nil,
+		},
+		{
+			name:         "kmpErr should be returned",
+			kmpErr:       reconcileErr,
+			certStoreErr: notFoundErr,
+			expectedErr:  reconcileErr,
+		},
+		{
+			name:         "certStoreErr should be returned",
+			kmpErr:       notFoundErr,
+			certStoreErr: reconcileErr,
+			expectedErr:  reconcileErr,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseErrFromKmpAndCertStore(tt.kmpErr, tt.certStoreErr)
+			if !errors.Is(result, tt.expectedErr) {
+				t.Fatalf("expected %+v, got %+v", tt.expectedErr, result)
+			}
+		})
+	}
+}
 
 func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	resetCertStore()
@@ -61,6 +120,29 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 	}
 	if _, err := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "certstore1"); err == nil {
 		t.Fatalf("error expected if cert map is empty")
+	}
+}
+
+func TestGetCertificates_ErrorFromKMPReconcile(t *testing.T) {
+	resetCertStore()
+	certStore := verificationCertStores{
+		trustStoreTypeCA: verificationCertStores{
+			"certstore1": []interface{}{"default/kv1"},
+			"certstore2": []interface{}{"projecta/kv2"},
+		},
+	}
+	store, err := newTrustStore(nil, certStore)
+	if err != nil {
+		t.Fatalf("failed to parse verificationCertStores: " + err.Error())
+	}
+
+	controllers.NamespacedCertStores = &mockCertStores{
+		reconcileErr: errors.New("reconcile error"),
+	}
+
+	// only the certificate in the specified namedStore should be returned
+	if _, err := store.getCertificatesInternal(context.Background(), truststore.TypeCA, "certstore1"); err == nil {
+		t.Fatalf("error expected if error from KMP reconcile")
 	}
 }
 

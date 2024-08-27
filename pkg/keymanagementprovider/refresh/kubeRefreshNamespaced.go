@@ -58,8 +58,7 @@ func (kr *KubeRefresherNamespaced) Refresh(ctx context.Context) error {
 	if err := kr.Get(ctx, kr.Request.NamespacedName, &keyManagementProvider); err != nil {
 		if apierrors.IsNotFound(err) {
 			logger.Infof("deletion detected, removing key management provider %v", resource)
-			kmp.DeleteCertificatesFromMap(resource)
-			kmp.DeleteKeysFromMap(resource)
+			kmp.DeleteResourceFromMap(resource)
 		} else {
 			logger.Error(err, "unable to fetch key management provider")
 		}
@@ -88,7 +87,10 @@ func (kr *KubeRefresherNamespaced) Refresh(ctx context.Context) error {
 
 	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
 	if err != nil {
-		kmpErr := re.ErrorCodePluginInitFailure.WithError(err)
+		kmpErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Failed to create key management provider from CR")
+
+		kmp.SetCertificateError(resource, kmpErr)
+		kmp.SetKeyError(resource, kmpErr)
 		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, &kmpErr, lastFetchedTime, nil)
 		kr.Result = ctrl.Result{}
 		return kmpErr
@@ -98,6 +100,8 @@ func (kr *KubeRefresherNamespaced) Refresh(ctx context.Context) error {
 	certificates, certAttributes, err := provider.GetCertificates(ctx)
 	if err != nil {
 		kmpErr := re.ErrorCodeKeyManagementProviderFailure.WithError(err).WithDetail(fmt.Sprintf("Unable to fetch certificates from key management provider: %s of type: %s", resource, keyManagementProvider.Spec.Type))
+
+		kmp.SetCertificateError(resource, kmpErr)
 		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, &kmpErr, lastFetchedTime, nil)
 		kr.Result = ctrl.Result{}
 		return kmpErr
@@ -107,12 +111,13 @@ func (kr *KubeRefresherNamespaced) Refresh(ctx context.Context) error {
 	keys, keyAttributes, err := provider.GetKeys(ctx)
 	if err != nil {
 		kmpErr := re.ErrorCodeKeyManagementProviderFailure.WithError(err).WithDetail(fmt.Sprintf("Unable to fetch keys from key management provider: %s of type: %s", resource, keyManagementProvider.Spec.Type))
+
+		kmp.SetKeyError(resource, kmpErr)
 		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, &kmpErr, lastFetchedTime, nil)
 		kr.Result = ctrl.Result{}
 		return kmpErr
 	}
-	kmp.SetCertificatesInMap(resource, certificates)
-	kmp.SetKeysInMap(resource, keyManagementProvider.Spec.Type, keys)
+	kmp.SaveSecrets(resource, keyManagementProvider.Spec.Type, keys, certificates)
 	// merge certificates and keys status into one
 	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true

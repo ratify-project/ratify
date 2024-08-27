@@ -17,7 +17,6 @@ package clusterresource
 
 import (
 	"context"
-	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -66,7 +65,7 @@ func (r *StoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl
 	}
 
 	if err := storeAddOrReplace(store.Spec, resource); err != nil {
-		storeErr := re.ErrorCodeReferrerStoreFailure.WithError(err).WithDetail("Unable to create store from store crd")
+		storeErr := re.ErrorCodeReferrerStoreFailure.WithError(err).WithDetail("Unable to create store from store CR")
 		storeLogger.Error(err)
 		writeStoreStatus(ctx, r, &store, storeLogger, false, &storeErr)
 		return ctrl.Result{}, storeErr
@@ -89,7 +88,7 @@ func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func storeAddOrReplace(spec configv1beta1.StoreSpec, fullname string) error {
 	storeConfig, err := utils.CreateStoreConfig(spec.Parameters.Raw, spec.Name, spec.Source)
 	if err != nil {
-		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
+		return err
 	}
 
 	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, constants.EmptyNamespace, storeConfig)

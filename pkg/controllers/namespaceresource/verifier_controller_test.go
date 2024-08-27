@@ -192,12 +192,13 @@ func TestVerifier_UpdateAndDelete(t *testing.T) {
 func TestWriteVerifierStatus(t *testing.T) {
 	logger := logrus.WithContext(context.Background())
 	testCases := []struct {
-		name              string
-		isSuccess         bool
-		verifier          *configv1beta1.NamespacedVerifier
-		errString         string
-		expectedErrString string
-		reconciler        client.StatusClient
+		name                   string
+		isSuccess              bool
+		verifier               *configv1beta1.NamespacedVerifier
+		errString              string
+		expectedErrString      string
+		expectedBriefErrString string
+		reconciler             client.StatusClient
 	}{
 		{
 			name:       "success status",
@@ -207,12 +208,13 @@ func TestWriteVerifierStatus(t *testing.T) {
 			reconciler: &mockStatusClient{},
 		},
 		{
-			name:              "error status",
-			isSuccess:         false,
-			verifier:          &configv1beta1.NamespacedVerifier{},
-			errString:         "a long error string that exceeds the max length of 30 characters",
-			expectedErrString: "UNKNOWN: a long error string that exceeds the max length of 30 characters",
-			reconciler:        &mockStatusClient{},
+			name:                   "error status",
+			isSuccess:              false,
+			verifier:               &configv1beta1.NamespacedVerifier{},
+			errString:              "a long error string that exceeds the max length of 100 characters, a long error string that exceeds the max length of 100 characters",
+			expectedErrString:      "UNKNOWN: a long error string that exceeds the max length of 100 characters, a long error string that exceeds the max length of 100 characters",
+			expectedBriefErrString: "UNKNOWN: a long error string that exceeds the max length of 100 characters, a long error string t...",
+			reconciler:             &mockStatusClient{},
 		},
 		{
 			name:      "status update failed",
@@ -235,6 +237,10 @@ func TestWriteVerifierStatus(t *testing.T) {
 
 			if tc.verifier.Status.Error != tc.expectedErrString {
 				t.Fatalf("Expected Error to be %+v , actual %+v", tc.expectedErrString, tc.verifier.Status.Error)
+			}
+
+			if tc.verifier.Status.BriefError != tc.expectedBriefErrString {
+				t.Fatalf("Expected BriefError to be %+v , actual %+v", tc.expectedBriefErrString, tc.verifier.Status.BriefError)
 			}
 		})
 	}

@@ -17,7 +17,6 @@ package namespaceresource
 
 import (
 	"context"
-	"fmt"
 
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -89,7 +88,7 @@ func (r *StoreReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func storeAddOrReplace(spec configv1beta1.NamespacedStoreSpec, fullname, namespace string) error {
 	storeConfig, err := utils.CreateStoreConfig(spec.Parameters.Raw, spec.Name, spec.Source)
 	if err != nil {
-		return fmt.Errorf("unable to convert store spec to store config, err: %w", err)
+		return err
 	}
 
 	return utils.UpsertStoreMap(spec.Version, spec.Address, fullname, namespace, storeConfig)

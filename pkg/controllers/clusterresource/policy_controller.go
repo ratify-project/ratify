@@ -71,7 +71,7 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if err := policyAddOrReplace(policy.Spec); err != nil {
-		policyErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Unable to create policy from policy crd.")
+		policyErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Unable to create policy from policy CR")
 		policyLogger.Error(policyErr)
 		writePolicyStatus(ctx, r, &policy, policyLogger, false, &policyErr)
 		return ctrl.Result{}, policyErr
@@ -91,7 +91,7 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func policyAddOrReplace(spec configv1beta1.PolicySpec) error {
 	policyEnforcer, err := utils.SpecToPolicyEnforcer(spec.Parameters.Raw, spec.Type)
 	if err != nil {
-		return fmt.Errorf("failed to create policy enforcer: %w", err)
+		return err
 	}
 
 	controllers.NamespacedPolicies.AddPolicy(constants.EmptyNamespace, constants.RatifyPolicy, policyEnforcer)

@@ -70,8 +70,8 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if err := verifierAddOrReplace(verifier.Spec, resource); err != nil {
-		verifierErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("unable to create verifier from verifier crd")
-		verifierLogger.Error(err)
+		verifierErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Unable to create verifier from verifier CR")
+		verifierLogger.Error(verifierErr)
 		writeVerifierStatus(ctx, r, &verifier, verifierLogger, false, &verifierErr)
 		return ctrl.Result{}, verifierErr
 	}
@@ -86,9 +86,8 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
-		verifierErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Unable to create verifier from verifier crd.")
-		logrus.Error(verifierErr)
-		return verifierErr
+		logrus.Error(err)
+		return err
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, constants.EmptyNamespace, objectName, verifierConfig)

@@ -19,4 +19,4 @@ package constants
 const RatifyPolicy = "ratify-policy"
 const EmptyNamespace = ""
 const NamespaceSeperator = "/"
-const MaxBriefErrLength = 150
+const MaxBriefErrLength = 100
