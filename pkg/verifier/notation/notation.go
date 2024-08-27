@@ -250,6 +250,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 	return nil
 }
 
+// TODO: remove this function once the refactor is done [refactore tracking issue](https://github.com/ratify-project/ratify/issues/1752)
 func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
 	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
 	if err != nil {
