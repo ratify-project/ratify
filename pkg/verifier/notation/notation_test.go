@@ -368,6 +368,26 @@ func TestVerify(t *testing.T) {
 			expectErr: true,
 		},
 		{
+			name:    "multiple signature blobs",
+			ref:     validRef2,
+			refBlob: testRefBlob2,
+			manifest: ocispecs.ReferenceManifest{
+				Blobs: []ocispec.Descriptor{validBlobDesc, validBlobDesc2},
+			},
+			expect:    failedResult,
+			expectErr: true,
+		},
+		{
+			name:    "get blob content failed",
+			ref:     validRef,
+			refBlob: nil,
+			manifest: ocispecs.ReferenceManifest{
+				Blobs: []ocispec.Descriptor{validBlobDesc},
+			},
+			expect:    failedResult,
+			expectErr: true,
+		},
+		{
 			name:    "verified successfully",
 			ref:     validRef,
 			refBlob: testRefBlob,

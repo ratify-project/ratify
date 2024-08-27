@@ -32,6 +32,10 @@ type NamespacedKeyManagementProviderSpec struct {
 	// Name of the key management provider
 	Type string `json:"type,omitempty"`
 
+	// Refresh interval for the key management provider. Only used if the key management provider is refreshable. Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".
+	// +kubebuilder:default=""
+	RefreshInterval string `json:"refreshInterval,omitempty"`
+
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters of the key management provider
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
