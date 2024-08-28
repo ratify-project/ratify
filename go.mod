@@ -14,14 +14,14 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.6.0
 	github.com/AzureAD/microsoft-authentication-library-for-go v1.2.2
 	github.com/aws/aws-sdk-go-v2 v1.30.4
-	github.com/aws/aws-sdk-go-v2/config v1.27.28
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.28
+	github.com/aws/aws-sdk-go-v2/config v1.27.30
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.29
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.28.6
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dapr/go-sdk v1.8.0
 	github.com/dgraph-io/ristretto v0.1.1
 	github.com/distribution/reference v0.5.0
-	github.com/docker/cli v27.1.1+incompatible
+	github.com/docker/cli v27.1.2+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/go-jose/go-jose/v3 v3.0.3
@@ -143,7 +143,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.11.18 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.22.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.26.5 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.30.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.30.5 // indirect
 	github.com/aws/smithy-go v1.20.4 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
