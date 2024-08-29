@@ -126,7 +126,7 @@ func TestGetCertificates_EmptyCertMap(t *testing.T) {
 func TestGetCertificates_ErrorFromKMPReconcile(t *testing.T) {
 	resetCertStore()
 	certStore := verificationCertStores{
-		trustStoreTypeCA: verificationCertStores{
+		trustStoreTypeCA: map[string]interface{}{
 			"certstore1": []interface{}{"default/kv1"},
 			"certstore2": []interface{}{"projecta/kv2"},
 		},
