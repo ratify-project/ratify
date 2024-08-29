@@ -12,6 +12,9 @@ tolerations: []
 notationCerts: []
 cosignKeys: []
 
+notation:
+  enabled: true
+
 cosign:
   enabled: true
   scopes: ["*"] # corresponds to a single trust policy
