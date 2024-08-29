@@ -101,6 +101,15 @@ func GetLogger(ctx context.Context, opt Option) dcontext.Logger {
 	return dcontext.GetLogger(ctx, ContextKeyComponentType)
 }
 
+// GetTraceID returns the trace ID from the context.
+func GetTraceID(ctx context.Context) string {
+	traceID := ctx.Value(ContextKeyTraceID)
+	if traceID == nil {
+		return ""
+	}
+	return traceID.(string)
+}
+
 // setTraceID sets the trace ID in the context. If the trace ID is not present in the request headers, a new one is generated.
 func setTraceID(ctx context.Context, r *http.Request) context.Context {
 	traceID := ""

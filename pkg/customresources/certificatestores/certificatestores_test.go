@@ -19,6 +19,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"errors"
 	"math/big"
 	"os"
 	"testing"
@@ -51,6 +52,11 @@ func TestCertStoresOperations(t *testing.T) {
 	activeCertStores := NewActiveCertStores()
 	ctx := context.Background()
 	certStore1 := []*x509.Certificate{cert1}
+
+	activeCertStores.AddStoreError(store1, errors.New("error1"))
+	if _, err := activeCertStores.GetCertsFromStore(ctx, store1); err == nil {
+		t.Fatalf("expect to get error, but got nil")
+	}
 
 	activeCertStores.AddStore(store1, certStore1)
 	certs, _ := activeCertStores.GetCertsFromStore(ctx, store1)

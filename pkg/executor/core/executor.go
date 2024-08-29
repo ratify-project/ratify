@@ -176,13 +176,8 @@ func (executor Executor) verifyReferenceForJSONPolicy(ctx context.Context, subje
 			verifierStartTime := time.Now()
 			verifyResult, err := verifier.Verify(ctx, subjectRef, referenceDesc, referrerStore)
 			if err != nil {
-				verifyResult = vr.VerifierResult{
-					IsSuccess:    false,
-					Name:         verifier.Name(),
-					Type:         verifier.Type(),
-					VerifierName: verifier.Name(),
-					VerifierType: verifier.Type(),
-					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+				verifierErr := errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace)
+				verifyResult = vr.NewVerifierResult("", verifier.Name(), verifier.Type(), "", false, &verifierErr, nil)
 			}
 
 			if len(verifier.GetNestedReferences()) > 0 {
@@ -229,13 +224,8 @@ func (executor Executor) verifyReferenceForRegoPolicy(ctx context.Context, subje
 			verifierStartTime := time.Now()
 			verifierResult, err := verifier.Verify(errCtx, subjectRef, referenceDesc, referrerStore)
 			if err != nil {
-				verifierReport = vt.VerifierResult{
-					IsSuccess:    false,
-					Name:         verifier.Name(), // Deprecating Name in next release, reference to VerifierName instead.
-					Type:         verifier.Type(), // Deprecating Type in next release, reference to VerifierType instead.
-					VerifierName: verifier.Name(),
-					VerifierType: verifier.Type(),
-					Message:      errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace).Error()}
+				verifierErr := errors.ErrorCodeVerifyReferenceFailure.NewError(errors.Verifier, verifier.Name(), errors.EmptyLink, err, nil, errors.HideStackTrace)
+				verifierReport = vt.CreateVerifierResult(verifier.Name(), verifier.Type(), "", false, &verifierErr)
 			} else {
 				verifierReport = vt.NewVerifierResult(verifierResult)
 			}

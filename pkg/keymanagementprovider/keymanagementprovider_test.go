@@ -139,7 +139,7 @@ func TestDecodeCertificates_FailedX509ParseError(t *testing.T) {
 // TestSetCertificatesInMap checks if certificates are set in the map
 func TestSetCertificatesInMap(t *testing.T) {
 	certificatesMap.Delete("test")
-	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
+	setCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
 	if _, ok := certificatesMap.Load("test"); !ok {
 		t.Fatalf("certificatesMap should have been set for key")
 	}
@@ -147,8 +147,8 @@ func TestSetCertificatesInMap(t *testing.T) {
 
 // TestGetCertificatesFromMap checks if certificates are fetched from the map
 func TestGetCertificatesFromMap(t *testing.T) {
-	certificatesMap.Delete("test")
-	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
+	DeleteResourceFromMap("test")
+	setCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
 	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 1 {
 		t.Fatalf("certificates should have been fetched from the map")
@@ -157,18 +157,28 @@ func TestGetCertificatesFromMap(t *testing.T) {
 
 // TestGetCertificatesFromMap_FailedToFetch checks if certificates are fetched from the map
 func TestGetCertificatesFromMap_FailedToFetch(t *testing.T) {
-	certificatesMap.Delete("test")
+	DeleteResourceFromMap("test")
 	certs, _ := GetCertificatesFromMap(context.Background(), "test")
 	if len(certs) != 0 {
 		t.Fatalf("certificates should not have been fetched from the map")
 	}
 }
 
+// TestGetCertificatesFromMap_ErrorFromReconcile checks if error is returned from reconcile
+func TestGetCertificatesFromMap_ErrorFromReconcile(t *testing.T) {
+	DeleteResourceFromMap("test")
+	SetCertificateError("test", errors.New("test error"))
+	if _, err := GetCertificatesFromMap(context.Background(), "test"); err == nil {
+		t.Fatalf("expected error, but got nil")
+	}
+	DeleteResourceFromMap("test")
+}
+
 // TestDeleteCertificatesFromMap checks if certificates are deleted from the map
 func TestDeleteCertificatesFromMap(t *testing.T) {
 	certificatesMap.Delete("test")
-	SetCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
-	DeleteCertificatesFromMap("test")
+	setCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
+	DeleteResourceFromMap("test")
 	if _, ok := certificatesMap.Load("test"); ok {
 		t.Fatalf("certificatesMap should have been deleted for key")
 	}
@@ -185,20 +195,41 @@ func TestFlattenKMPMap(t *testing.T) {
 // TestSetKeysInMap checks if keys are set in the map
 func TestSetKeysInMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	setKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
 	if _, ok := keyMap.Load("test"); !ok {
 		t.Fatalf("keysMap should have been set for key")
 	}
 }
 
+// TestSaveSecrets checks if secrets are saved in the map.
+func TestSaveSecrets(t *testing.T) {
+	DeleteResourceFromMap("test")
+
+	SaveSecrets("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}}, map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
+	if _, ok := certificatesMap.Load("test"); !ok {
+		t.Fatalf("certificatesMap should have been set for key")
+	}
+	if _, ok := certificatesMap.Load("test"); !ok {
+		t.Fatalf("certificatesMap should have been set for key")
+	}
+
+	DeleteResourceFromMap("test")
+}
+
 // TestGetKeysFromMap checks if keys are fetched from the map
 func TestGetKeysFromMap(t *testing.T) {
-	keyMap.Delete("test")
-	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	DeleteResourceFromMap("test")
+	setKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
 	keys, _ := GetKeysFromMap(context.Background(), "test")
 	if len(keys) != 1 {
 		t.Fatalf("keys should have been fetched from the map")
 	}
+
+	SetKeyError("test", errors.New("test error"))
+	if _, err := GetKeysFromMap(context.Background(), "test"); err == nil {
+		t.Fatalf("expected error, but got nil")
+	}
+	DeleteResourceFromMap("test")
 }
 
 // TestGetKeysFromMap_FailedToFetch checks if keys fail to fetch from map
@@ -222,8 +253,8 @@ func TestGetKeysFromMap_AccessDifferentNamespace_ReturnsFalse(t *testing.T) {
 // TestDeleteKeysFromMap checks if key map entry is deleted from the map
 func TestDeleteKeysFromMap(t *testing.T) {
 	keyMap.Delete("test")
-	SetKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
-	DeleteKeysFromMap("test")
+	setKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
+	DeleteResourceFromMap("test")
 	if _, ok := keyMap.Load("test"); ok {
 		t.Fatalf("keysMap should have been deleted for key")
 	}

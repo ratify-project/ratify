@@ -284,15 +284,15 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 	}
 
 	if hasValidSignature {
-		return verifier.VerifierResult{
-			Name:         v.name,
-			Type:         v.verifierType,
-			VerifierName: v.name,
-			VerifierType: v.verifierType,
-			IsSuccess:    true,
-			Message:      "Verification success. Valid signatures found. Please refer to extensions field for verifications performed.",
-			Extensions:   Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
-		}, nil
+		return verifier.NewVerifierResult(
+			"",
+			v.name,
+			v.verifierType,
+			"Verification success. Valid signatures found. Please refer to extensions field for verifications performed.",
+			true,
+			nil,
+			Extension{SignatureExtension: sigExtensions, TrustPolicy: trustPolicy.GetName()},
+		), nil
 	}
 
 	errorResult := errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("no valid signatures found"))
@@ -397,15 +397,15 @@ func (v *cosignVerifier) verifyLegacy(ctx context.Context, subjectReference comm
 	}
 
 	if len(signatures) > 0 {
-		return verifier.VerifierResult{
-			Name:         v.name,
-			Type:         v.verifierType,
-			VerifierName: v.name,
-			VerifierType: v.verifierType,
-			IsSuccess:    true,
-			Message:      "Verification success. Valid signatures found",
-			Extensions:   LegacyExtension{SignatureExtension: sigExtensions},
-		}, nil
+		return verifier.NewVerifierResult(
+			"",
+			v.name,
+			v.verifierType,
+			"Verification success. Valid signatures found",
+			true,
+			nil,
+			LegacyExtension{SignatureExtension: sigExtensions},
+		), nil
 	}
 
 	errorResult := errorToVerifyResult(v.name, v.verifierType, fmt.Errorf("no valid signatures found"))
@@ -485,15 +485,16 @@ func staticLayerOpts(desc imgspec.Descriptor) ([]static.Option, error) {
 
 // ErrorToVerifyResult returns a verifier result with the error message and isSuccess set to false
 func errorToVerifyResult(name string, verifierType string, err error) verifier.VerifierResult {
-	return verifier.VerifierResult{
-		IsSuccess:    false,
-		Name:         name,
-		Type:         verifierType,
-		VerifierName: name,
-		VerifierType: verifierType,
-		Message:      "Verification failed",
-		ErrorReason:  err.Error(),
-	}
+	verifierErr := re.ErrorCodeVerifyReferenceFailure.WithDetail("Verification failed").WithError(err)
+	return verifier.NewVerifierResult(
+		"",
+		name,
+		verifierType,
+		"",
+		false,
+		&verifierErr,
+		nil,
+	)
 }
 
 // decodeASN1Signature decodes the ASN.1 signature to raw signature bytes

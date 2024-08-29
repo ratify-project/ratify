@@ -256,6 +256,8 @@ func (store *orasStore) ListReferrers(ctx context.Context, subjectReference comm
 
 func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference common.Reference, digest digest.Digest) ([]byte, error) {
 	var err error
+	var blobContent []byte
+
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
 		return nil, err
@@ -270,9 +272,17 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 	// check if blob exists in local ORAS cache
 	isCached, err := store.localCache.Exists(ctx, blobDescriptor)
 	if err != nil {
-		return nil, err
+		logger.GetLogger(ctx, logOpt).Warnf("failed to check if blob [%s] exists in cache: %v", blobDescriptor.Digest.String(), err)
 	}
 	metrics.ReportBlobCacheCount(ctx, isCached)
+
+	if isCached {
+		blobContent, err = store.getRawContentFromCache(ctx, blobDescriptor)
+		if err != nil {
+			isCached = false
+			logger.GetLogger(ctx, logOpt).Warnf("failed to get blob [%s] from cache: %v", blobDescriptor.Digest.String(), err)
+		}
+	}
 
 	if !isCached {
 		// generate the reference path with digest
@@ -284,16 +294,20 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 			evictOnError(ctx, err, subjectReference.Original)
 			return nil, err
 		}
+		if blobContent, err = io.ReadAll(rc); err != nil {
+			return nil, re.ErrorCodeGetBlobContentFailure.WithError(err)
+		}
 
 		// push fetched content to local ORAS cache
+		// If multiple goroutines try to push the same blob to the cache, oras-go
+		// may return `ErrAlreadyExists` error. This is expected and can be ignored.
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", blobDesc.Digest, blobDesc.MediaType, errdef.ErrAlreadyExists)
-		err = store.localCache.Push(ctx, blobDesc, rc)
-		if err != nil && err.Error() != orasExistsExpectedError.Error() {
-			return nil, err
+		if err = store.localCache.Push(ctx, blobDesc, bytes.NewReader(blobContent)); err != nil && err.Error() != orasExistsExpectedError.Error() {
+			logger.GetLogger(ctx, logOpt).Warnf("failed to save blob [%s] in cache: %v", blobDesc.Digest, err)
 		}
 	}
 
-	return store.getRawContentFromCache(ctx, blobDescriptor)
+	return blobContent, nil
 }
 
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
@@ -305,9 +319,17 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	// check if manifest exists in local ORAS cache
 	isCached, err := store.localCache.Exists(ctx, referenceDesc.Descriptor)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, err
+		logger.GetLogger(ctx, logOpt).Warnf("failed to check if manifest [%s] exists in cache: %v", referenceDesc.Descriptor.Digest, err)
 	}
 	metrics.ReportBlobCacheCount(ctx, isCached)
+
+	if isCached {
+		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
+		if err != nil {
+			isCached = false
+			logger.GetLogger(ctx, logOpt).Warnf("failed to get manifest [%s] from cache: %v", referenceDesc.Descriptor.Digest, err)
+		}
+	}
 
 	if !isCached {
 		// fetch manifest content from repository
@@ -323,15 +345,12 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		}
 
 		// push fetched manifest to local ORAS cache
+		// If multiple goroutines try to push the same manifest to the cache, oras-go
+		// may return `ErrAlreadyExists` error. This is expected and can be ignored.
 		orasExistsExpectedError := fmt.Errorf("%s: %s: %w", referenceDesc.Descriptor.Digest, referenceDesc.Descriptor.MediaType, errdef.ErrAlreadyExists)
 		err = store.localCache.Push(ctx, referenceDesc.Descriptor, bytes.NewReader(manifestBytes))
 		if err != nil && err.Error() != orasExistsExpectedError.Error() {
-			return ocispecs.ReferenceManifest{}, err
-		}
-	} else {
-		manifestBytes, err = store.getRawContentFromCache(ctx, referenceDesc.Descriptor)
-		if err != nil {
-			return ocispecs.ReferenceManifest{}, err
+			logger.GetLogger(ctx, logOpt).Warnf("failed to save manifest [%s] in cache: %v", referenceDesc.Descriptor.Digest, err)
 		}
 	}
 
