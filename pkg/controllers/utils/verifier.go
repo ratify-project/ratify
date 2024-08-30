@@ -60,7 +60,7 @@ func SpecToVerifierConfig(raw []byte, verifierName, verifierType, artifactTypes 
 		if err := json.Unmarshal(raw, &verifierConfig); err != nil {
 			errMsg := fmt.Sprintf("Unable to decode verifier parameters, Parameters.Raw: %s", string(raw))
 			logrus.Error(err, errMsg)
-			return vc.VerifierConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithDetail(errMsg).WithRemediation("Please revise verifier parameters and try again. Refer to verifier configuration: https://ratify.dev/docs/next/reference/custom%20resources/verifiers")
+			return vc.VerifierConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithDetail(errMsg).WithRemediation("Please revise verifier parameters and try again. Refer to verifier configuration: https://ratify.dev/docs/reference/custom%20resources/verifiers")
 		}
 	}
 	verifierConfig[types.Name] = verifierName
