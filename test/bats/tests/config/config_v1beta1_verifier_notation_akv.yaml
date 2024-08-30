@@ -7,8 +7,9 @@ spec:
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:
-      certs:
-        - kmprovider-akv
+      ca:
+        ca-certs:
+          - kmprovider-akv
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
@@ -18,6 +19,6 @@ spec:
           signatureVerification:
             level: strict
           trustStores:
-            - ca:certs
+            - ca:ca-certs
           trustedIdentities:
             - "*"

@@ -12,19 +12,20 @@ spec:
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:
-      certs:
-        {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
-        - kmprovider-akv
-        {{- end }}
-        {{- if .Values.notationCert }}
-          {{- if .Values.notationCerts }}
-          {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
+      ca:
+        ca-certs:
+          {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
+          - kmprovider-akv
           {{- end }}
-        - {{$fullname}}-notation-inline-cert
-        {{- end }} 
-        {{- range $i, $cert := .Values.notationCerts }}
-        - {{$fullname}}-notation-inline-cert-{{$i}}
-        {{- end }} 
+          {{- if .Values.notationCert }}
+            {{- if .Values.notationCerts }}
+            {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
+            {{- end }}
+          - {{$fullname}}-notation-inline-cert
+          {{- end }} 
+          {{- range $i, $cert := .Values.notationCerts }}
+          - {{$fullname}}-notation-inline-cert-{{$i}}
+          {{- end }} 
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
@@ -34,7 +35,7 @@ spec:
           signatureVerification:
             level: strict
           trustStores:
-            - ca:certs
+            - ca:ca-certs
           trustedIdentities:
             - "*"
 ---
