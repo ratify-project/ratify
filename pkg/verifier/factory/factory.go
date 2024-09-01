@@ -58,7 +58,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	if value, ok := verifierConfig[types.Name]; ok {
 		verifierTypeStr = value.(string)
 	} else {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Name field is required in verifier config")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("The name field is required in the Verifier configuration: %+v", verifierConfig))
 	}
 
 	if value, ok := verifierConfig[types.Type]; ok {
@@ -66,7 +66,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if strings.ContainsRune(verifierTypeStr, os.PathSeparator) {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid verifier plugin name [%s], [%v] is disallowed", verifierTypeStr, os.PathSeparator))
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid name [%s] in the Verifier configuration, [%v] is disallowed", verifierTypeStr, os.PathSeparator))
 	}
 
 	// if source is specified, download the plugin
@@ -94,7 +94,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if _, err := pluginCommon.FindInPaths(verifierTypeStr, pluginBinDir); err != nil {
-		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Plugin: %s not found", verifierTypeStr)).WithError(err)
+		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Verifier plugin %s not found", verifierTypeStr)).WithError(err).WithRemediation("Please check if the correct built-in verifier is specified or if required custom verifier plugin is available.")
 	}
 
 	pluginVersion := configVersion
@@ -117,7 +117,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Verifiers config should have at least one verifier")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("At least one verifier must be specified in the Verifiers configuration")
 	}
 
 	verifiers := make([]verifier.ReferenceVerifier, 0)

@@ -61,7 +61,7 @@ type Executor struct {
 // VerifySubject verifies the subject and returns results.
 func (executor Executor) VerifySubject(ctx context.Context, verifyParameters e.VerifyParameters) (types.VerifyResult, error) {
 	if executor.PolicyEnforcer == nil {
-		return types.VerifyResult{}, errors.ErrorCodePolicyProviderNotFound.WithDetail("Policy Provider not found")
+		return types.VerifyResult{}, errors.ErrorCodePolicyProviderNotFound.WithDetail("Policy configuration not found")
 	}
 	result, err := executor.verifySubjectInternal(ctx, verifyParameters)
 	if err != nil {
@@ -83,7 +83,7 @@ func (executor Executor) verifySubjectInternal(ctx context.Context, verifyParame
 	}
 	if executor.PolicyEnforcer.GetPolicyType(ctx) == pt.ConfigPolicy {
 		if len(verifierReports) == 0 {
-			return types.VerifyResult{}, errors.ErrorCodeNoVerifierReport.WithDetail("No verifier report generated")
+			return types.VerifyResult{}, errors.ErrorCodeNoVerifierReport.WithDetail(fmt.Sprintf("No verification results for the artifact %s. Ensure verifiers are properly configured and that artifact metadata is attached", verifyParameters.Subject))
 		}
 	}
 	// If it requires embedded Rego Policy Engine make the decision, execute

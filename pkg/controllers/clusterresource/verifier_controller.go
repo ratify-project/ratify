@@ -82,12 +82,13 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-// creates a verifier reference from CRD spec and add store to map
+// creates a verifier reference from CR spec and add verifier to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
-		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return re.ErrorCodeConfigInvalid.WithDetail("Unable to convert crd specification to verifier config").WithError(err)
+		errMsg := fmt.Sprintf("Unable to apply cluster-wide resource %s of Verifier kind", objectName)
+		logrus.Error(err, errMsg)
+		return re.ErrorCodeConfigInvalid.WithDetail(errMsg).WithError(err)
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, constants.EmptyNamespace, objectName, verifierConfig)

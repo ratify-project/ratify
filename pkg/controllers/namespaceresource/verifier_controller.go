@@ -86,8 +86,9 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 func verifierAddOrReplace(spec configv1beta1.NamespacedVerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
-		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return re.ErrorCodeConfigInvalid.WithDetail("Unable to convert crd specification to verifier config").WithError(err)
+		errMsg := fmt.Sprintf("Unable to apply the resource %s of NamespacedVerifier kind in the namespace %s", objectName, namespace)
+		logrus.Error(err, errMsg)
+		return re.ErrorCodeConfigInvalid.WithDetail(errMsg).WithError(err)
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, namespace, objectName, verifierConfig)

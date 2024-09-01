@@ -313,7 +313,7 @@ func (store *orasStore) GetBlobContent(ctx context.Context, subjectReference com
 func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReference common.Reference, referenceDesc ocispecs.ReferenceDescriptor) (ocispecs.ReferenceManifest, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return ocispecs.ReferenceManifest{}, re.ErrorCodeCreateRepositoryFailure.WithDetail("Failed to create client to remote registry").WithError(err)
+		return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to connect to the remote registry").WithError(err)
 	}
 	var manifestBytes []byte
 	// check if manifest exists in local ORAS cache
@@ -336,12 +336,12 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 		manifestReader, err := repository.Fetch(ctx, referenceDesc.Descriptor)
 		if err != nil {
 			evictOnError(ctx, err, subjectReference.Original)
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to fetch manifest content from repository").WithError(err)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to fetch the artifact metadata from the registry").WithError(err)
 		}
 
 		manifestBytes, err = io.ReadAll(manifestReader)
 		if err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeManifestInvalid.WithDetail("Failed to parse fetched manifest").WithError(err)
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeManifestInvalid.WithDetail("Failed to parse the artifact metadata").WithError(err)
 		}
 
 		// push fetched manifest to local ORAS cache
@@ -360,15 +360,15 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 	if referenceDesc.Descriptor.MediaType == oci.MediaTypeImageManifest {
 		var imageManifest oci.Manifest
 		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse manifest content in `application/vnd.oci.image.manifest.v1+json` mediatype").WithError(err).WithRemediation("Please check if the manifest was created correctly.")
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse artifact metadata of mediatype `application/vnd.oci.image.manifest.v1+json`").WithError(err).WithRemediation("Please check if the artifact metadata was created correctly.")
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
 	} else if referenceDesc.Descriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
-			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse manifest content in `application/vnd.oci.artifact.manifest.v1+json` mediatype").WithError(err).WithRemediation("Please check if the manifest was created correctly.")
+			return ocispecs.ReferenceManifest{}, re.ErrorCodeDataDecodingFailure.WithDetail("Failed to parse artifact metadata of mediatype `application/vnd.oci.artifact.manifest.v1+json`").WithError(err).WithRemediation("Please check if the artifact metadata was created correctly.")
 		}
 	} else {
-		return ocispecs.ReferenceManifest{}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Unsupported manifest media type: %s", referenceDesc.Descriptor.MediaType)).WithRemediation("Please check if the manifest was created correctly.")
+		return ocispecs.ReferenceManifest{}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Unsupported artifact metadata of media type %s", referenceDesc.Descriptor.MediaType)).WithRemediation("Please check if the artifact metadata was created correctly.")
 	}
 
 	return referenceManifest, nil
@@ -377,7 +377,7 @@ func (store *orasStore) GetReferenceManifest(ctx context.Context, subjectReferen
 func (store *orasStore) GetSubjectDescriptor(ctx context.Context, subjectReference common.Reference) (*ocispecs.SubjectDescriptor, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return nil, re.ErrorCodeCreateRepositoryFailure.WithDetail("Failed to create client to remote registry").WithError(err)
+		return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to connect to remote registry").WithError(err)
 	}
 
 	desc, err := repository.Resolve(ctx, subjectReference.Original)

@@ -72,18 +72,18 @@ func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, err
 		s[certStoreType(certstoretype)] = make(map[string][]string)
 		parsedStoreData, ok := storeData.(verificationCertStores)
 		if !ok {
-			return nil, fmt.Errorf("configuration is unsupported: %+v", storeData)
+			return nil, fmt.Errorf("provided verificationCertStores configuration is invalid: %+v", confInNewFormat)
 		}
 		for storeName, certProviderList := range parsedStoreData {
 			var certProviderNames []string
 			parsedCertProviders, ok := certProviderList.([]interface{})
 			if !ok {
-				return nil, fmt.Errorf("configuration is unsupported: %+v", certProviderList)
+				return nil, fmt.Errorf("provided verificationCertStores configuration is invalid: %+v", confInNewFormat)
 			}
 			for _, certProvider := range parsedCertProviders {
 				certProviderName, ok := certProvider.(string)
 				if !ok {
-					return nil, fmt.Errorf("configuration is unsupported: %+v", certProvider)
+					return nil, fmt.Errorf("provided verificationCertStores configuration is invalid: %+v", confInNewFormat)
 				}
 				certProviderNames = append(certProviderNames, certProviderName)
 			}

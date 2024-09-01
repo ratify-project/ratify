@@ -136,7 +136,7 @@ func setCertificatesInMap(resource string, certs map[KMPMapKey][]*x509.Certifica
 // GetCertificatesFromMap gets the certificates from the map and returns an empty map of certificate arrays if not found or an error happened.
 func GetCertificatesFromMap(ctx context.Context, resource string) (map[KMPMapKey][]*x509.Certificate, error) {
 	if !hasAccessToProvider(ctx, resource) {
-		return map[KMPMapKey][]*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace [%s] does not have access to key management provider [%s]", ctxUtils.GetNamespace(ctx), resource)).WithRemediation(fmt.Sprintf("Ensure the key management provider: %s is created under namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
+		return map[KMPMapKey][]*x509.Certificate{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("Resources in namespace [%s] do not have access to key management provider [%s]", ctxUtils.GetNamespace(ctx), resource)).WithRemediation(fmt.Sprintf("Make sure the key management provider: %s is created in the namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
 	}
 	if err, ok := certificateErrMap.Load(resource); ok && err != nil {
 		return map[KMPMapKey][]*x509.Certificate{}, err.(error)
@@ -144,7 +144,7 @@ func GetCertificatesFromMap(ctx context.Context, resource string) (map[KMPMapKey
 	if certs, ok := certificatesMap.Load(resource); ok {
 		return certs.(map[KMPMapKey][]*x509.Certificate), nil
 	}
-	return map[KMPMapKey][]*x509.Certificate{}, errors.ErrorCodeNotFound.WithDetail(fmt.Sprintf("failed to access non-existent key management provider [%s]", resource)).WithRemediation(fmt.Sprintf("Ensure the key management provider: %s is created under namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
+	return map[KMPMapKey][]*x509.Certificate{}, errors.ErrorCodeNotFound.WithDetail(fmt.Sprintf("The key management provider [%s] does not exist", resource)).WithRemediation(fmt.Sprintf("Make sure the key management provider: %s is created in the namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
 }
 
 // DeleteResourceFromMap deletes the certificates, keys and errors from the map
@@ -186,7 +186,7 @@ func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicK
 	// A cluster-wide operation can access cluster-wide provider
 	// A namespaced operation can only fetch the provider in the same namespace or cluster-wide provider.
 	if !hasAccessToProvider(ctx, resource) {
-		return map[KMPMapKey]PublicKey{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("namespace [%s] does not have access to key management provider [%s]", ctxUtils.GetNamespace(ctx), resource)).WithRemediation(fmt.Sprintf("Ensure the key management provider: %s is created under namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
+		return map[KMPMapKey]PublicKey{}, errors.ErrorCodeForbidden.WithDetail(fmt.Sprintf("The resources in namespace [%s] do not have access to key management provider [%s]", ctxUtils.GetNamespace(ctx), resource)).WithRemediation(fmt.Sprintf("Make sure the key management provider [%s] is created in the namespace [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
 	}
 	if err, ok := keyErrMap.Load(resource); ok && err != nil {
 		return map[KMPMapKey]PublicKey{}, err.(error)
@@ -194,7 +194,7 @@ func GetKeysFromMap(ctx context.Context, resource string) (map[KMPMapKey]PublicK
 	if keys, ok := keyMap.Load(resource); ok {
 		return keys.(map[KMPMapKey]PublicKey), nil
 	}
-	return map[KMPMapKey]PublicKey{}, errors.ErrorCodeNotFound.WithDetail(fmt.Sprintf("failed to access non-existent key management provider [%s]", resource)).WithRemediation(fmt.Sprintf("Ensure the key management provider: %s is created under namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
+	return map[KMPMapKey]PublicKey{}, errors.ErrorCodeNotFound.WithDetail(fmt.Sprintf("The key management provider [%s] does not exist", resource)).WithRemediation(fmt.Sprintf("Make sure the key management provider: %s is created in the namespace: [%s] or as a cluster-wide resource.", resource, ctxUtils.GetNamespace(ctx)))
 }
 
 // SetCertificateError sets the error while fetching certificates from key management provider.

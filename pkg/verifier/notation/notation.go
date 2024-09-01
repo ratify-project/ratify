@@ -100,12 +100,12 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create notation verifier").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation Verifier").WithError(err)
 	}
 
 	verifyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation Verifier").WithError(err)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
@@ -147,7 +147,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to resolve reference manifest: %+v", referenceDescriptor)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to get artifact metadata: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	if len(referenceManifest.Blobs) != 1 {
@@ -156,7 +156,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	blobDesc := referenceManifest.Blobs[0]
 	refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetBlobContentFailure.WithDetail(fmt.Sprintf("failed to get blob content of digest: %s", blobDesc.Digest)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetBlobContentFailure.WithDetail(fmt.Sprintf("Failed to get blob content of digest: %s", blobDesc.Digest)).WithError(err)
 	}
 
 	// TODO: notation verify API only accepts digested reference now.
@@ -182,7 +182,7 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	}
 	verifier, err := notationVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation verifier").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation Verifier").WithError(err)
 	}
 	return verifier, nil
 }
@@ -202,11 +202,11 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*Notat
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to marshal verifierConfig to bytes").WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation Verifier configuration: %+v", verifierConfig)).WithError(err)
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to unmarshal to notationPluginVerifierConfig from: %+v", verifierConfig)).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation Verifier configuration: %+v", verifierConfig)).WithError(err)
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
