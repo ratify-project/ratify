@@ -18,12 +18,12 @@ package refresh
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/inline"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/mocks"
@@ -246,20 +246,19 @@ func TestKMProviderUpdateErrorStatus(t *testing.T) {
 	keyManagementProvider := configv1beta1.KeyManagementProvider{
 		Status: status,
 	}
-	expectedErr := "it's a long error from unit test"
+	expectedErr := re.ErrorCodeUnknown.WithDetail("it's a long error from unit test")
 	lastFetchedTime := metav1.Now()
-	updateKMProviderErrorStatus(&keyManagementProvider, expectedErr, &lastFetchedTime)
+	updateKMProviderErrorStatus(&keyManagementProvider, &expectedErr, &lastFetchedTime)
 
 	if keyManagementProvider.Status.IsSuccess != false {
 		t.Fatalf("Unexpected error, expected isSuccess to be false , actual %+v", keyManagementProvider.Status.IsSuccess)
 	}
 
-	if keyManagementProvider.Status.Error != expectedErr {
+	if keyManagementProvider.Status.Error != expectedErr.Error() {
 		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr, keyManagementProvider.Status.Error)
 	}
-	expectedBriedErr := fmt.Sprintf("%s...", expectedErr[:30])
-	if keyManagementProvider.Status.BriefError != expectedBriedErr {
-		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedBriedErr, keyManagementProvider.Status.Error)
+	if keyManagementProvider.Status.BriefError != expectedErr.GetConciseError(150) {
+		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr.GetConciseError(150), keyManagementProvider.Status.Error)
 	}
 
 	//make sure properties of last cached cert was not overridden
@@ -334,11 +333,12 @@ func TestWriteKMProviderStatus(t *testing.T) {
 	logger := logrus.WithContext(context.Background())
 	lastFetchedTime := metav1.Now()
 	testCases := []struct {
-		name       string
-		isSuccess  bool
-		kmProvider *configv1beta1.KeyManagementProvider
-		errString  string
-		reconciler client.StatusClient
+		name              string
+		isSuccess         bool
+		kmProvider        *configv1beta1.KeyManagementProvider
+		errString         string
+		expectedErrString string
+		reconciler        client.StatusClient
 	}{
 		{
 			name:       "success status",
@@ -348,11 +348,12 @@ func TestWriteKMProviderStatus(t *testing.T) {
 			reconciler: &test.MockStatusClient{},
 		},
 		{
-			name:       "error status",
-			isSuccess:  false,
-			kmProvider: &configv1beta1.KeyManagementProvider{},
-			errString:  "a long error string that exceeds the max length of 30 characters",
-			reconciler: &test.MockStatusClient{},
+			name:              "error status",
+			isSuccess:         false,
+			kmProvider:        &configv1beta1.KeyManagementProvider{},
+			errString:         "a long error string that exceeds the max length of 150 characters",
+			expectedErrString: "UNKNOWN: a long error string that exceeds the max length of 150 characters",
+			reconciler:        &test.MockStatusClient{},
 		},
 		{
 			name:       "status update failed",
@@ -366,14 +367,15 @@ func TestWriteKMProviderStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			writeKMProviderStatus(context.Background(), tc.reconciler, tc.kmProvider, logger, tc.isSuccess, tc.errString, lastFetchedTime, nil)
+			err := re.ErrorCodeUnknown.WithDetail(tc.errString)
+			writeKMProviderStatus(context.Background(), tc.reconciler, tc.kmProvider, logger, tc.isSuccess, &err, lastFetchedTime, nil)
 
 			if tc.kmProvider.Status.IsSuccess != tc.isSuccess {
-				t.Fatalf("Expected isSuccess to be %+v , actual %+v", tc.isSuccess, tc.kmProvider.Status.IsSuccess)
+				t.Fatalf("Expected isSuccess to be: %+v, actual: %+v", tc.isSuccess, tc.kmProvider.Status.IsSuccess)
 			}
 
-			if tc.kmProvider.Status.Error != tc.errString {
-				t.Fatalf("Expected Error to be %+v , actual %+v", tc.errString, tc.kmProvider.Status.Error)
+			if tc.kmProvider.Status.Error != tc.expectedErrString {
+				t.Fatalf("Expected Error to be: %+v, actual: %+v", tc.expectedErrString, tc.kmProvider.Status.Error)
 			}
 		})
 	}

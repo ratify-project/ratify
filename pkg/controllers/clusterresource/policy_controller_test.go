@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/customresources/policies"
@@ -110,7 +111,8 @@ func TestWritePolicyStatus(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(_ *testing.T) {
-			writePolicyStatus(context.Background(), tc.reconciler, tc.policy, logger, tc.isSuccess, tc.errString)
+			err := re.ErrorCodeUnknown.WithDetail(tc.errString)
+			writePolicyStatus(context.Background(), tc.reconciler, tc.policy, logger, tc.isSuccess, &err)
 		})
 	}
 }
