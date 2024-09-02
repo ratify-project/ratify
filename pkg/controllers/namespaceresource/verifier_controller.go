@@ -17,12 +17,12 @@ package namespaceresource
 
 import (
 	"context"
-	"fmt"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
 	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/controllers"
 
+	re "github.com/ratify-project/ratify/errors"
 	cutils "github.com/ratify-project/ratify/pkg/controllers/utils"
 	"github.com/sirupsen/logrus"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -70,12 +70,12 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	}
 
 	if err := verifierAddOrReplace(verifier.Spec, resource, req.Namespace); err != nil {
-		verifierLogger.Error(err, "unable to create verifier from verifier crd")
-		writeVerifierStatus(ctx, r, &verifier, verifierLogger, false, err.Error())
-		return ctrl.Result{}, err
+		verifierErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Unable to create verifier from verifier CR")
+		writeVerifierStatus(ctx, r, &verifier, verifierLogger, false, &verifierErr)
+		return ctrl.Result{}, verifierErr
 	}
 
-	writeVerifierStatus(ctx, r, &verifier, verifierLogger, true, "")
+	writeVerifierStatus(ctx, r, &verifier, verifierLogger, true, nil)
 
 	// returning empty result and no error to indicate we’ve successfully reconciled this object
 	return ctrl.Result{}, nil
@@ -85,8 +85,8 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 func verifierAddOrReplace(spec configv1beta1.NamespacedVerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
-		logrus.Error(err, "unable to convert crd specification to verifier config")
-		return fmt.Errorf("unable to convert crd specification to verifier config, err: %w", err)
+		logrus.Error(err)
+		return err
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, namespace, objectName, verifierConfig)
@@ -99,17 +99,15 @@ func (r *VerifierReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Complete(r)
 }
 
-func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.NamespacedVerifier, logger *logrus.Entry, isSuccess bool, errorString string) {
+func writeVerifierStatus(ctx context.Context, r client.StatusClient, verifier *configv1beta1.NamespacedVerifier, logger *logrus.Entry, isSuccess bool, err *re.Error) {
 	if isSuccess {
 		verifier.Status.IsSuccess = true
 		verifier.Status.Error = ""
 		verifier.Status.BriefError = ""
 	} else {
 		verifier.Status.IsSuccess = false
-		verifier.Status.Error = errorString
-		if len(errorString) > constants.MaxBriefErrLength {
-			verifier.Status.BriefError = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
-		}
+		verifier.Status.Error = err.Error()
+		verifier.Status.BriefError = err.GetConciseError(constants.MaxBriefErrLength)
 	}
 
 	if statusErr := r.Status().Update(ctx, verifier); statusErr != nil {

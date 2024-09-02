@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	c "github.com/ratify-project/ratify/config"
+	re "github.com/ratify-project/ratify/errors"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/factory"
@@ -28,13 +29,13 @@ import (
 func SpecToKeyManagementProvider(raw []byte, keyManagamentSystemName string) (kmp.KeyManagementProvider, error) {
 	kmProviderConfig, err := rawToKeyManagementProviderConfig(raw, keyManagamentSystemName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse key management provider config: %w", err)
+		return nil, err
 	}
 
 	// TODO: add Version and Address to KeyManagementProviderSpec
 	keyManagementProviderProvider, err := factory.CreateKeyManagementProviderFromConfig(kmProviderConfig, "0.1.0", c.GetDefaultPluginPath())
 	if err != nil {
-		return nil, fmt.Errorf("failed to create key management provider provider: %w", err)
+		return nil, err
 	}
 
 	return keyManagementProviderProvider, nil
@@ -48,7 +49,7 @@ func rawToKeyManagementProviderConfig(raw []byte, keyManagamentSystemName string
 		return config.KeyManagementProviderConfig{}, fmt.Errorf("no key management provider parameters provided")
 	}
 	if err := json.Unmarshal(raw, &pluginConfig); err != nil {
-		return config.KeyManagementProviderConfig{}, fmt.Errorf("unable to decode key management provider parameters.Raw: %s, err: %w", raw, err)
+		return config.KeyManagementProviderConfig{}, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Unable to decode key management provider parameters.Raw: %s", string(raw))).WithError(err)
 	}
 
 	pluginConfig[types.Type] = keyManagamentSystemName
