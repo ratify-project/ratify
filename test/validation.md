@@ -12,6 +12,7 @@ While we are working on improving our coverage, here is the list of scenarios th
 ### CLI
 - Verifier Scenarios
     - Notation
+        - TSA
     - Cosign
         - Keyed
         - Keyless 
@@ -25,6 +26,7 @@ While we are working on improving our coverage, here is the list of scenarios th
 ### Kubernetes
 - Verifier Scenarios
     - Notation
+        - TSA
     - Cosign
     - SBOM
     - License Checker

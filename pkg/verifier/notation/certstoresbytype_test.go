@@ -33,7 +33,7 @@ func TestNewCertStoreByTypeInvalidInput(t *testing.T) {
 		{
 			name: "invalid certProviderList type",
 			conf: verificationCertStores{
-				trustStoreTypeCA: verificationCertStores{
+				trustStoreTypeCA: map[string]interface{}{
 					"certstore1": "akv1",
 					"certstore2": []interface{}{"akv3", "akv4"},
 				},
@@ -43,7 +43,7 @@ func TestNewCertStoreByTypeInvalidInput(t *testing.T) {
 		{
 			name: "invalid certProvider type",
 			conf: verificationCertStores{
-				trustStoreTypeCA: verificationCertStores{
+				trustStoreTypeCA: map[string]interface{}{
 					"certstore1": []interface{}{"akv1", []string{}},
 				},
 			},
