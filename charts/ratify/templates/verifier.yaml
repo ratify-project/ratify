@@ -1,4 +1,5 @@
 {{- $fullname := include "ratify.fullname" . -}}
+{{- if .Values.notation.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
 kind: Verifier
 metadata:
@@ -37,6 +38,7 @@ spec:
             - ca:certs
           trustedIdentities:
             - "*"
+{{- end }}
 ---
 {{- if .Values.cosign.enabled }}
 apiVersion: config.ratify.deislabs.io/v1beta1
