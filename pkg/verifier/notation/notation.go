@@ -235,7 +235,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		}
 	}
 	if isCertStoresByType && isLegacyCertStore {
-		return re.ErrorCodeConfigInvalid.WithDetail("Failed to normalize VerificationCertsStores with both old VerificationCertStores and new VerificationCertStores are provided, please provide only one")
+		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
 	} else if !isCertStoresByType && isLegacyCertStore {
 		legacyCertStore, err := normalizeLegacyCertStore(conf)
 		if err != nil {
