@@ -235,11 +235,11 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		}
 	}
 	if isCertStoresByType && isLegacyCertStore {
-		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
+		return re.ErrorCodeConfigInvalid.WithDetail("Failed to normalize VerificationCertsStores with both old VerificationCertStores and new VerificationCertStores are provided, please provide only one")
 	} else if !isCertStoresByType && isLegacyCertStore {
 		legacyCertStore, err := normalizeLegacyCertStore(conf)
 		if err != nil {
-			return err
+			return re.ErrorCodeConfigInvalid.WithDetail("Failed to normalize VerificationCertsStores in legacy format").WithError(err)
 		}
 		// support legacy verfier config format for backward compatibility
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
@@ -254,11 +254,11 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
 	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, nil, re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation CertStore configuration: %+v", conf.VerificationCertStores)).WithError(err)
 	}
 	var legacyCertStore map[string]interface{}
 	if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to legacyCertStore from: %+v.", legacyCertStoreBytes), re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation CertStore configuration: %+v", conf.VerificationCertStores)).WithError(err)
 	}
 	return legacyCertStore, nil
 }
