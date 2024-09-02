@@ -139,6 +139,18 @@ func TestWithDescription(t *testing.T) {
 	}
 }
 
+func TestGetConciseError(t *testing.T) {
+	err := testEC.WithDetail("long message, long message, long message")
+	if err.GetConciseError(30) != "TEST_ERROR_CODE_1: long mes..." {
+		t.Fatalf("expected: TEST_ERROR_CODE_1: long mes..., got: %s", err.GetConciseError(30))
+	}
+
+	err = testEC.WithDetail("short message")
+	if err.GetConciseError(100) != "TEST_ERROR_CODE_1: short message" {
+		t.Fatalf("expected: TEST_ERROR_CODE_1: short message, got: %s", err.GetConciseError(100))
+	}
+}
+
 func TestIs(t *testing.T) {
 	err := testEC.WithDetail(testDetail1)
 	result := err.Is(err)

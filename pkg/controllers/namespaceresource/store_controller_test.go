@@ -20,12 +20,15 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/customresources/referrerstores"
 	test "github.com/ratify-project/ratify/pkg/utils"
+	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -104,6 +107,46 @@ func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
 
 	if !strings.Contains(err.Error(), expectedMsg) {
 		t.Fatalf("TestStoreAddOrReplace_PluginNotFound expected msg: '%v', actual %v", expectedMsg, err.Error())
+	}
+}
+
+func TestWriteStoreStatus(t *testing.T) {
+	logger := logrus.WithContext(context.Background())
+	testCases := []struct {
+		name       string
+		isSuccess  bool
+		store      *configv1beta1.NamespacedStore
+		errString  string
+		reconciler client.StatusClient
+	}{
+		{
+			name:       "success status",
+			isSuccess:  true,
+			store:      &configv1beta1.NamespacedStore{},
+			reconciler: &test.MockStatusClient{},
+		},
+		{
+			name:       "error status",
+			isSuccess:  false,
+			store:      &configv1beta1.NamespacedStore{},
+			errString:  "a long error string that exceeds the max length of 30 characters",
+			reconciler: &test.MockStatusClient{},
+		},
+		{
+			name:      "status update failed",
+			isSuccess: true,
+			store:     &configv1beta1.NamespacedStore{},
+			reconciler: &test.MockStatusClient{
+				UpdateFailed: true,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(_ *testing.T) {
+			err := re.ErrorCodeUnknown.WithDetail(tc.errString)
+			writeStoreStatus(context.Background(), tc.reconciler, tc.store, logger, tc.isSuccess, &err)
+		})
 	}
 }
 
@@ -203,6 +246,21 @@ func TestStoreReconcile(t *testing.T) {
 					Parameters: runtime.RawExtension{
 						Raw: []byte("test"),
 					},
+				},
+			},
+			expectedErr:        true,
+			expectedStoreCount: 0,
+		},
+		{
+			name: "unsupported store",
+			store: &configv1beta1.NamespacedStore{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: testNamespace,
+					Name:      storeName,
+				},
+				Spec: configv1beta1.NamespacedStoreSpec{
+					Name:    "unsupported",
+					Address: dirPath,
 				},
 			},
 			expectedErr:        true,
