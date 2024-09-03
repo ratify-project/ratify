@@ -390,7 +390,7 @@ SLEEP_TIME=1
     result=$(kubectl get keymanagementprovider kmp-akv-refresh -o jsonpath='{.status.properties.Certificates[0].Version}')
     az keyvault certificate get-default-policy -o json >>policy.json
     wait_for_process 20 10 "az keyvault certificate create --vault-name $KEYVAULT_NAME --name $NOTATION_PEM_NAME --policy @policy.json"
-    sleep 15
+    sleep 30
     refreshResult=$(kubectl get keymanagementprovider kmp-akv-refresh -o jsonpath='{.status.properties.Certificates[0].Version}')
     [ "$result" = "$refreshResult" ]
 }
