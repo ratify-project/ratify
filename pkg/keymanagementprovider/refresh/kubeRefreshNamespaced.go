@@ -23,6 +23,7 @@ import (
 	"time"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/constants"
 	cutils "github.com/ratify-project/ratify/pkg/controllers/utils"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
@@ -86,36 +87,41 @@ func (kr *KubeRefresherNamespaced) Refresh(ctx context.Context) error {
 
 	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
 	if err != nil {
-		kmp.SetCertificateError(resource, err)
-		kmp.SetKeyError(resource, err)
-		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		kmpErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Failed to create key management provider from CR")
+
+		kmp.SetCertificateError(resource, kmpErr)
+		kmp.SetKeyError(resource, kmpErr)
+		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, &kmpErr, lastFetchedTime, nil)
 		kr.Result = ctrl.Result{}
-		return err
+		return kmpErr
 	}
 
 	// fetch certificates and store in map
 	certificates, certAttributes, err := provider.GetCertificates(ctx)
 	if err != nil {
-		kmp.SetCertificateError(resource, err)
-		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		kmpErr := re.ErrorCodeKeyManagementProviderFailure.WithError(err).WithDetail(fmt.Sprintf("Unable to fetch certificates from key management provider: %s of type: %s", resource, keyManagementProvider.Spec.Type))
+
+		kmp.SetCertificateError(resource, kmpErr)
+		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, &kmpErr, lastFetchedTime, nil)
 		kr.Result = ctrl.Result{}
-		return fmt.Errorf("error fetching certificates in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
+		return kmpErr
 	}
 
 	// fetch keys and store in map
 	keys, keyAttributes, err := provider.GetKeys(ctx)
 	if err != nil {
-		kmp.SetKeyError(resource, err)
-		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
+		kmpErr := re.ErrorCodeKeyManagementProviderFailure.WithError(err).WithDetail(fmt.Sprintf("Unable to fetch keys from key management provider: %s of type: %s", resource, keyManagementProvider.Spec.Type))
+
+		kmp.SetKeyError(resource, kmpErr)
+		writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, &kmpErr, lastFetchedTime, nil)
 		kr.Result = ctrl.Result{}
-		return fmt.Errorf("error fetching keys in KMProvider %v with %v provider, error: %w", resource, keyManagementProvider.Spec.Type, err)
+		return kmpErr
 	}
 	kmp.SaveSecrets(resource, keyManagementProvider.Spec.Type, keys, certificates)
 	// merge certificates and keys status into one
 	maps.Copy(keyAttributes, certAttributes)
 	isFetchSuccessful = true
-	emptyErrorString := ""
-	writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, emptyErrorString, lastFetchedTime, keyAttributes)
+	writeKMProviderStatusNamespaced(ctx, kr, &keyManagementProvider, logger, isFetchSuccessful, nil, lastFetchedTime, keyAttributes)
 
 	logger.Infof("%v certificate(s) & %v key(s) fetched for key management provider %v", len(certificates), len(keys), resource)
 
@@ -167,11 +173,11 @@ func (kr *KubeRefresherNamespaced) Create(config map[string]interface{}) (Refres
 }
 
 // writeKMProviderStatus updates the status of the key management provider resource
-func writeKMProviderStatusNamespaced(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, logger *logrus.Entry, isSuccess bool, errorString string, operationTime metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
+func writeKMProviderStatusNamespaced(ctx context.Context, r client.StatusClient, keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, logger *logrus.Entry, isSuccess bool, err *re.Error, operationTime metav1.Time, kmProviderStatus kmp.KeyManagementProviderStatus) {
 	if isSuccess {
 		updateKMProviderSuccessStatusNamespaced(keyManagementProvider, &operationTime, kmProviderStatus)
 	} else {
-		updateKMProviderErrorStatusNamespaced(keyManagementProvider, errorString, &operationTime)
+		updateKMProviderErrorStatusNamespaced(keyManagementProvider, err, &operationTime)
 	}
 	if statusErr := r.Status().Update(ctx, keyManagementProvider); statusErr != nil {
 		logger.Error(statusErr, ",unable to update key management provider error status")
@@ -179,15 +185,10 @@ func writeKMProviderStatusNamespaced(ctx context.Context, r client.StatusClient,
 }
 
 // updateKMProviderErrorStatus updates the key management provider status with error, brief error and last fetched time
-func updateKMProviderErrorStatusNamespaced(keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, errorString string, operationTime *metav1.Time) {
-	// truncate brief error string to maxBriefErrLength
-	briefErr := errorString
-	if len(errorString) > constants.MaxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errorString[:constants.MaxBriefErrLength])
-	}
+func updateKMProviderErrorStatusNamespaced(keyManagementProvider *configv1beta1.NamespacedKeyManagementProvider, err *re.Error, operationTime *metav1.Time) {
 	keyManagementProvider.Status.IsSuccess = false
-	keyManagementProvider.Status.Error = errorString
-	keyManagementProvider.Status.BriefError = briefErr
+	keyManagementProvider.Status.Error = err.Error()
+	keyManagementProvider.Status.BriefError = err.GetConciseError(constants.MaxBriefErrLength)
 	keyManagementProvider.Status.LastFetchedTime = operationTime
 }
 
