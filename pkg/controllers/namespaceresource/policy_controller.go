@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	"github.com/ratify-project/ratify/pkg/controllers/utils"
@@ -63,19 +64,20 @@ func (r *PolicyReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	if resource != constants.RatifyPolicy {
-		errStr := fmt.Sprintf("metadata.name must be ratify-policy, got %s", resource)
-		policyLogger.Error(errStr)
-		writePolicyStatus(ctx, r, &policy, policyLogger, false, errStr)
+		err := re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("metadata.name must be ratify-policy, got %s", resource))
+		policyLogger.Error(err)
+		writePolicyStatus(ctx, r, &policy, policyLogger, false, &err)
 		return ctrl.Result{}, nil
 	}
 
 	if err := policyAddOrReplace(policy.Spec, req.Namespace); err != nil {
-		policyLogger.Error("unable to create policy from policy crd: ", err)
-		writePolicyStatus(ctx, r, &policy, policyLogger, false, err.Error())
-		return ctrl.Result{}, err
+		policyErr := re.ErrorCodePluginInitFailure.WithError(err).WithDetail("Unable to create policy from policy CR")
+		policyLogger.Error(policyErr)
+		writePolicyStatus(ctx, r, &policy, policyLogger, false, &policyErr)
+		return ctrl.Result{}, policyErr
 	}
 
-	writePolicyStatus(ctx, r, &policy, policyLogger, true, "")
+	writePolicyStatus(ctx, r, &policy, policyLogger, true, nil)
 	return ctrl.Result{}, nil
 }
 
@@ -89,18 +91,18 @@ func (r *PolicyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func policyAddOrReplace(spec configv1beta1.NamespacedPolicySpec, namespace string) error {
 	policyEnforcer, err := utils.SpecToPolicyEnforcer(spec.Parameters.Raw, spec.Type)
 	if err != nil {
-		return fmt.Errorf("failed to create policy enforcer: %w", err)
+		return err
 	}
 
 	controllers.NamespacedPolicies.AddPolicy(namespace, constants.RatifyPolicy, policyEnforcer)
 	return nil
 }
 
-func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.NamespacedPolicy, logger *logrus.Entry, isSuccess bool, errString string) {
+func writePolicyStatus(ctx context.Context, r client.StatusClient, policy *configv1beta1.NamespacedPolicy, logger *logrus.Entry, isSuccess bool, err *re.Error) {
 	if isSuccess {
 		updatePolicySuccessStatus(policy)
 	} else {
-		updatePolicyErrorStatus(policy, errString)
+		updatePolicyErrorStatus(policy, err)
 	}
 	if statusErr := r.Status().Update(ctx, policy); statusErr != nil {
 		logger.Error(statusErr, ", unable to update policy error status")
@@ -113,12 +115,8 @@ func updatePolicySuccessStatus(policy *configv1beta1.NamespacedPolicy) {
 	policy.Status.BriefError = ""
 }
 
-func updatePolicyErrorStatus(policy *configv1beta1.NamespacedPolicy, errString string) {
-	briefErr := errString
-	if len(errString) > constants.MaxBriefErrLength {
-		briefErr = fmt.Sprintf("%s...", errString[:constants.MaxBriefErrLength])
-	}
+func updatePolicyErrorStatus(policy *configv1beta1.NamespacedPolicy, err *re.Error) {
 	policy.Status.IsSuccess = false
-	policy.Status.Error = errString
-	policy.Status.BriefError = briefErr
+	policy.Status.Error = err.Error()
+	policy.Status.BriefError = err.GetConciseError(constants.MaxBriefErrLength)
 }

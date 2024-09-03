@@ -30,6 +30,7 @@ type TestStorage struct {
 	ExistsMap map[digest.Digest]io.Reader
 	ExistsErr error
 	FetchErr  error
+	PushErr   error
 }
 
 func (s TestStorage) Exists(_ context.Context, target oci.Descriptor) (bool, error) {
@@ -43,6 +44,9 @@ func (s TestStorage) Exists(_ context.Context, target oci.Descriptor) (bool, err
 }
 
 func (s TestStorage) Push(_ context.Context, expected oci.Descriptor, content io.Reader) error {
+	if s.PushErr != nil {
+		return s.PushErr
+	}
 	s.ExistsMap[expected.Digest] = content
 	return nil
 }

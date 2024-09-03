@@ -17,7 +17,6 @@ package namespaceresource
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
@@ -106,9 +105,8 @@ func TestUpdateErrorStatus(t *testing.T) {
 	if certStore.Status.Error != expectedErr {
 		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr, certStore.Status.Error)
 	}
-	expectedBriedErr := fmt.Sprintf("%s...", expectedErr[:30])
-	if certStore.Status.BriefError != expectedBriedErr {
-		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedBriedErr, certStore.Status.Error)
+	if certStore.Status.BriefError != expectedErr {
+		t.Fatalf("Unexpected error string, expected %+v, got %+v", expectedErr, certStore.Status.Error)
 	}
 
 	//make sure properties of last cached cert was not overridden
