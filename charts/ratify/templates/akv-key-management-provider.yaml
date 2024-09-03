@@ -10,7 +10,7 @@ spec:
   type: azurekeyvault
   {{- if .Values.azurekeyvault.refreshInterval }}
   refreshInterval: {{ .Values.azurekeyvault.refreshInterval  }}
-  {{ end }}
+  {{- end }}
   parameters:
     {{- if .Values.azurekeyvault.vaultURI }}
     vaultURI: {{ .Values.azurekeyvault.vaultURI  }}
