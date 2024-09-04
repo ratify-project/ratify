@@ -74,13 +74,13 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 		if featureflag.DynamicPlugins.Enabled {
 			source, err := pluginCommon.ParsePluginSource(source)
 			if err != nil {
-				return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to parse plugin source").WithError(err)
+				return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to parse the plugin source").WithError(err)
 			}
 
 			targetPath := path.Join(pluginBinDir[0], verifierTypeStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
-				return nil, re.ErrorCodeDownloadPluginFailure.WithDetail("Failed to download plugin from source").WithError(err)
+				return nil, re.ErrorCodeDownloadPluginFailure.WithDetail("Failed to download the plugin from the source").WithError(err)
 			}
 			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierTypeStr, source.Artifact, targetPath)
 		} else {
@@ -94,7 +94,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if _, err := pluginCommon.FindInPaths(verifierTypeStr, pluginBinDir); err != nil {
-		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Verifier plugin %s not found", verifierTypeStr)).WithError(err).WithRemediation("Please check if the correct built-in verifier is specified or if required custom verifier plugin is available.")
+		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Verifier plugin %s not found", verifierTypeStr)).WithError(err).WithRemediation("Please ensure that the correct type is specified for the built-in Verifier configuration or the custom Verifier plugin is configured.")
 	}
 
 	pluginVersion := configVersion
@@ -117,7 +117,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("At least one verifier must be specified in the Verifiers configuration")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("The configuration for verifier.plugins must include at least one plugin")
 	}
 
 	verifiers := make([]verifier.ReferenceVerifier, 0)
