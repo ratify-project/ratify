@@ -82,6 +82,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 }
 
 // creates a verifier reference from CRD spec and add store to map
+// rename spec.Name to spec.Type
 func verifierAddOrReplace(spec configv1beta1.NamespacedVerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
