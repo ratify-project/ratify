@@ -239,7 +239,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 	} else if !isCertStoresByType && isLegacyCertStore {
 		legacyCertStore, err := normalizeLegacyCertStore(conf)
 		if err != nil {
-			return re.ErrorCodeConfigInvalid.WithDetail("Failed to normalize VerificationCertsStores in legacy format").WithError(err)
+			return err
 		}
 		// support legacy verfier config format for backward compatibility
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
@@ -254,11 +254,11 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
 	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation CertStore configuration: %+v", conf.VerificationCertStores)).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize `verificationCertStores` value of Notation Verifier configuration: %+v", conf.VerificationCertStores)).WithError(err)
 	}
 	var legacyCertStore map[string]interface{}
 	if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation CertStore configuration: %+v", conf.VerificationCertStores)).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize `verificationCertStores` value of Notation Verifier configuration: %+v", conf.VerificationCertStores)).WithError(err)
 	}
 	return legacyCertStore, nil
 }
