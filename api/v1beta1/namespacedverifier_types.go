@@ -29,10 +29,12 @@ type NamespacedVerifierSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
+	// TODO: update all docs spec to use type and add deprecation warning in spec to name field
 	// Name of the verifier
 	Name string `json:"name"`
-	// should be Type of the verifier
-	// Type string `json:"type,omitempty"`
+
+	// Type of the verifier
+	Type string `json:"type,omitempty"`
 
 	// Version of the verifier plugin. Optional
 	Version string `json:"version,omitempty"`
@@ -49,6 +51,14 @@ type NamespacedVerifierSpec struct {
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this verifier
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
+}
+
+// GetType returns verifier spec type and is backward compatible with the old name field
+func (spec *NamespacedVerifierSpec) GetType() string {
+	if spec.Type == "" {
+		return spec.Name
+	}
+	return spec.Type
 }
 
 // NamespacedVerifierStatus defines the observed state of NamespacedVerifier
