@@ -254,11 +254,11 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
 	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, nil, re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize `verificationCertStores` value of Notation Verifier configuration: %+v", conf.VerificationCertStores)).WithError(err)
 	}
 	var legacyCertStore map[string]interface{}
 	if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, err, fmt.Sprintf("failed to unmarshal to legacyCertStore from: %+v.", legacyCertStoreBytes), re.HideStackTrace)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize `verificationCertStores` value of Notation Verifier configuration: %+v", conf.VerificationCertStores)).WithError(err)
 	}
 	return legacyCertStore, nil
 }
