@@ -26,10 +26,10 @@ import (
 type VerifierSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Name of the verifier
+	// Name of the verifier. Deprecated
 	Name string `json:"name,omitempty"`
 
-	// # Optional. Type of the verifier
+	// Type of the verifier. Deprecated
 	Type string `json:"type,omitempty"`
 
 	// Version of the verifier plugin. Optional
@@ -38,10 +38,10 @@ type VerifierSpec struct {
 	// The type of artifact this verifier handles
 	ArtifactTypes string `json:"artifactTypes,omitempty"`
 
-	// # Optional. URL/file path
+	// URL/file path. Deprecated
 	Address string `json:"address,omitempty"`
 
-	// OCI Artifact source to download the plugin from, optional
+	// OCI Artifact source to download the plugin from. Optional
 	Source *PluginSource `json:"source,omitempty"`
 
 	// Parameters for this verifier

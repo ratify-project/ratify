@@ -84,7 +84,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
-	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, cutils.GetType(spec), spec.ArtifactTypes, spec.Source)
+	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, cutils.GetVerifierType(spec), spec.ArtifactTypes, spec.Source)
 	if err != nil {
 		logrus.Error(err)
 		return err

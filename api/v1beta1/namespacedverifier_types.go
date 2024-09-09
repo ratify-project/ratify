@@ -29,8 +29,7 @@ type NamespacedVerifierSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// TODO: update all docs spec to use type and add deprecation warning in spec to name field
-	// Name of the verifier
+	// Name of the verifier. Deprecated
 	Name string `json:"name"`
 
 	// Type of the verifier. Optional

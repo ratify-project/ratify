@@ -70,9 +70,9 @@ func SpecToVerifierConfig(raw []byte, verifierName, verifierType, artifactTypes 
 	return verifierConfig, nil
 }
 
-// GetType returns verifier spec type and is backward compatible with the old name field
-func GetType(input interface{}) string {
-	switch spec := input.(type) {
+// GetVerifierType returns verifier spec type and is backward compatible with the old name field
+func GetVerifierType(verifierSpec interface{}) string {
+	switch spec := verifierSpec.(type) {
 	case configv1beta1.VerifierSpec:
 		if spec.Type == "" {
 			return spec.Name
