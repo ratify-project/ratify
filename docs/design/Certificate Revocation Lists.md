@@ -31,16 +31,17 @@ Implementations of the [Notary Project verification specification](./signing-and
 ```mermaid
 flowchart TD
   A["Load kmp"]
-  A["Load CertPath"]
-  B["CacheFetcher.Fetch"]
-  C["Cache CRL"]
-  D["Standalone"]
-  E["AKS"]
+  B["Load CertPath"]
+  C["CacheFetcher.Fetch"]
+  D["Cache CRL"]
+  E["Standalone"]
+  F["AKS"]
 
-  A --> B
+  A --> C
   B --> C
   C --> D
-  C --> E
+  D --> E
+  D --> F
 ```
 
 **Why Caching**
