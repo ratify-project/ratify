@@ -29,7 +29,7 @@ type VerifierSpec struct {
 	// Name of the verifier
 	Name string `json:"name"`
 
-	// # Optional. Type of the verifier
+	// Type of the verifier. Optional
 	Type string `json:"type,omitempty"`
 
 	// Version of the verifier plugin. Optional
@@ -38,23 +38,15 @@ type VerifierSpec struct {
 	// The type of artifact this verifier handles
 	ArtifactTypes string `json:"artifactTypes"`
 
-	// # Optional. URL/file path
+	// URL/file path. Optional
 	Address string `json:"address,omitempty"`
 
-	// OCI Artifact source to download the plugin from, optional
+	// OCI Artifact source to download the plugin from. Optional
 	Source *PluginSource `json:"source,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
 	// Parameters for this verifier
 	Parameters runtime.RawExtension `json:"parameters,omitempty"`
-}
-
-// GetType returns verifier spec type and is backward compatible with the old name field
-func (spec *VerifierSpec) GetType() string {
-	if spec.Type == "" {
-		return spec.Name
-	}
-	return spec.Type
 }
 
 // VerifierStatus defines the observed state of Verifier
