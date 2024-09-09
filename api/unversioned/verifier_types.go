@@ -29,6 +29,9 @@ type VerifierSpec struct {
 	// Name of the verifier
 	Name string `json:"name,omitempty"`
 
+	// # Optional. Type of the verifier
+	Type string `json:"type,omitempty"`
+
 	// Version of the verifier plugin. Optional
 	Version string `json:"version,omitempty"`
 
