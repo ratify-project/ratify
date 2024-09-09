@@ -10,8 +10,6 @@ spec:
       ca:
         ca-certs:
           - kmprovider-akv
-        ca-certs1:
-         - kmprovider-akv1
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
@@ -22,6 +20,5 @@ spec:
             level: strict
           trustStores:
             - ca:ca-certs
-            - ca:ca-certs1
           trustedIdentities:
             - "*"
