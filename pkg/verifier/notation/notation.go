@@ -100,12 +100,12 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation Verifier").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
 
 	verifyService, err := getVerifierService(conf, pluginDirectory)
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation Verifier").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
 
 	artifactTypes := strings.Split(conf.ArtifactTypes, ",")
@@ -142,21 +142,21 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetSubjectDescriptorFailure.WithDetail(fmt.Sprintf("Failed to resolve subject: %+v", subjectReference)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature of the artifact: %+v", subjectReference)).WithError(err)
 	}
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetReferenceManifestFailure.WithDetail(fmt.Sprintf("Failed to get artifact metadata: %+v", referenceDescriptor)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	if len(referenceManifest.Blobs) != 1 {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("Notation signature manifest requires exactly one signature envelope blob, got %d", len(referenceManifest.Blobs))).WithRemediation(fmt.Sprintf("Please inspect the artifact [%s@%s] is correctly signed by Notation signer", subjectReference.Path, referenceDescriptor.Digest.String()))
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Notation signature manifest requires exactly one signature envelope blob, got %d", len(referenceManifest.Blobs))).WithRemediation(fmt.Sprintf("Please inspect the artifact [%s@%s] is correctly signed by Notation signer", subjectReference.Path, referenceDescriptor.Digest.String()))
 	}
 	blobDesc := referenceManifest.Blobs[0]
 	refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeGetBlobContentFailure.WithDetail(fmt.Sprintf("Failed to get blob content of digest: %s", blobDesc.Digest)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature of the artifact: %+v", subjectReference)).WithError(err)
 	}
 
 	// TODO: notation verify API only accepts digested reference now.
@@ -164,7 +164,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 	outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("Failed to verify signature with digest: %v", referenceDescriptor.Digest)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	// Note: notation verifier already validates certificate chain is not empty.
@@ -202,11 +202,11 @@ func parseVerifierConfig(verifierConfig config.VerifierConfig, _ string) (*Notat
 
 	verifierConfigBytes, err := json.Marshal(verifierConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation Verifier configuration: %+v", verifierConfig)).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to parse the Notation Verifier configuration: %+v", verifierConfig)).WithError(err)
 	}
 
 	if err := json.Unmarshal(verifierConfigBytes, &conf); err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize Notation Verifier configuration: %+v", verifierConfig)).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to parse the Notation Verifier configuration: %+v", verifierConfig)).WithError(err)
 	}
 
 	defaultCertsDir := paths.Join(homedir.Get(), ratifyconfig.ConfigFileDir, defaultCertPath)
@@ -236,7 +236,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		}
 	}
 	if isCertStoresByType && isLegacyCertStore {
-		return re.ErrorCodeConfigInvalid.WithDetail("VerificationCertStores is misconfigured with both legacy and new format").WithRemediation("Please provide only one format for VerificationCertStores. Refer to Notation verifier configuration: https://ratify.dev/docs/plugins/verifier/notation#configuration")
+		return re.ErrorCodeConfigInvalid.WithDetail("The verificationCertStores is misconfigured with both legacy and new formats").WithRemediation("Please provide only one format for the VerificationCertStores. Refer to the Notation Verifier configuration guide: https://ratify.dev/docs/plugins/verifier/notation#configuration")
 	} else if !isCertStoresByType && isLegacyCertStore {
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
 		conf.VerificationCertStores = verificationCertStores{
