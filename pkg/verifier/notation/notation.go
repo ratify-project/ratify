@@ -50,6 +50,7 @@ const (
 	defaultCertPath                = "ratify-certs/notation/truststore"
 	trustStoreTypeCA               = string(truststore.TypeCA)
 	trustStoreTypeSigningAuthority = string(truststore.TypeSigningAuthority)
+	trustStoreTypeTSA              = string(truststore.TypeTSA)
 )
 
 // NotationPluginVerifierConfig describes the configuration of notation verifier
@@ -228,7 +229,7 @@ func (v *notationPluginVerifier) GetNestedReferences() []string {
 func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error {
 	isCertStoresByType, isLegacyCertStore := false, false
 	for key := range conf.VerificationCertStores {
-		if key != trustStoreTypeCA && key != trustStoreTypeSigningAuthority {
+		if key != trustStoreTypeCA && key != trustStoreTypeSigningAuthority && key != trustStoreTypeTSA {
 			isLegacyCertStore = true
 			logger.GetLogger(context.Background(), logOpt).Debugf("Get VerificationCertStores in legacy format")
 		} else {
@@ -238,10 +239,28 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 	if isCertStoresByType && isLegacyCertStore {
 		return re.ErrorCodeConfigInvalid.WithDetail("The verificationCertStores is misconfigured with both legacy and new formats").WithRemediation("Please provide only one format for the VerificationCertStores. Refer to the Notation Verifier configuration guide: https://ratify.dev/docs/plugins/verifier/notation#configuration")
 	} else if !isCertStoresByType && isLegacyCertStore {
+		legacyCertStore, err := normalizeLegacyCertStore(conf)
+		if err != nil {
+			return err
+		}
+		// support legacy verfier config format for backward compatibility
 		// normalize <store>:<certs> to ca:<store><certs> if no store type is provided
 		conf.VerificationCertStores = verificationCertStores{
-			trustStoreTypeCA: conf.VerificationCertStores,
+			trustStoreTypeCA: legacyCertStore,
 		}
 	}
 	return nil
+}
+
+// TODO: remove this function once the refactor is done [refactore tracking issue](https://github.com/ratify-project/ratify/issues/1752)
+func normalizeLegacyCertStore(conf *NotationPluginVerifierConfig) (map[string]interface{}, error) {
+	legacyCertStoreBytes, err := json.Marshal(conf.VerificationCertStores)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize `verificationCertStores` value of Notation Verifier configuration: %+v", conf.VerificationCertStores)).WithError(err)
+	}
+	var legacyCertStore map[string]interface{}
+	if err := json.Unmarshal(legacyCertStoreBytes, &legacyCertStore); err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to recognize `verificationCertStores` value of Notation Verifier configuration: %+v", conf.VerificationCertStores)).WithError(err)
+	}
+	return legacyCertStore, nil
 }

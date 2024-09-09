@@ -29,7 +29,7 @@ header:
       limitations under the License.
 
   paths-ignore:
-    - "**/*.{md,svg,yaml,crt,json,pub,yml,pb.go,proto}"
+    - "**/*.{md,svg,yaml,crt,cer,json,pub,yml,pb.go,proto}"
     - "CODEOWNERS"
     - "PROJECT"
     - "NOTICE"
