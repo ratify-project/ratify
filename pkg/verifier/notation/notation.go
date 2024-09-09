@@ -93,7 +93,7 @@ func init() {
 }
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
-	logger.GetLogger(context.Background(), logOpt).Debugf("creating notation with config %v, namespace '%v'", verifierConfig, namespace)
+	logger.GetLogger(context.Background(), logOpt).Debugf("creating Notation verifier with config %v, namespace '%v'", verifierConfig, namespace)
 	verifierName := fmt.Sprintf("%s", verifierConfig[types.Name])
 	verifierTypeStr := ""
 	if _, ok := verifierConfig[types.Type]; ok {
@@ -143,12 +143,12 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 
 	subjectDesc, err := store.GetSubjectDescriptor(ctx, subjectReference)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature of the artifact: %+v", subjectReference)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the Notation signature of the artifact: %+v", subjectReference)).WithError(err)
 	}
 
 	referenceManifest, err := store.GetReferenceManifest(ctx, subjectReference, referenceDescriptor)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature: %+v", referenceDescriptor)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the Notation signature: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	if len(referenceManifest.Blobs) != 1 {
@@ -157,7 +157,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	blobDesc := referenceManifest.Blobs[0]
 	refBlob, err := store.GetBlobContent(ctx, subjectReference, blobDesc.Digest)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature of the artifact: %+v", subjectReference)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the Notation signature of the artifact: %+v", subjectReference)).WithError(err)
 	}
 
 	// TODO: notation verify API only accepts digested reference now.
@@ -165,7 +165,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	subjectRef := fmt.Sprintf("%s@%s", subjectReference.Path, subjectReference.Digest.String())
 	outcome, err := v.verifySignature(ctx, subjectRef, blobDesc.MediaType, subjectDesc.Descriptor, refBlob)
 	if err != nil {
-		return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the signature: %+v", referenceDescriptor)).WithError(err)
+		return verifier.VerifierResult{IsSuccess: false, Extensions: extensions}, re.ErrorCodeVerifyReferenceFailure.WithDetail(fmt.Sprintf("Failed to validate the Notation signature: %+v", referenceDescriptor)).WithError(err)
 	}
 
 	// Note: notation verifier already validates certificate chain is not empty.
@@ -173,7 +173,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	extensions["Issuer"] = cert.Issuer.String()
 	extensions["SN"] = cert.Subject.String()
 
-	return verifier.NewVerifierResult("", v.name, v.verifierType, "Signature verification success", true, nil, extensions), nil
+	return verifier.NewVerifierResult("", v.name, v.verifierType, "Notation signature verification success", true, nil, extensions), nil
 }
 
 func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string) (notation.Verifier, error) {
@@ -183,7 +183,7 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	}
 	verifier, err := notationVerifier.New(&conf.TrustPolicyDoc, store, NewRatifyPluginManager(pluginDirectory))
 	if err != nil {
-		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create Notation Verifier").WithError(err)
+		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
 	return verifier, nil
 }
