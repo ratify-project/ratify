@@ -125,8 +125,8 @@ github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 h1:DklsrG3d
 github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2/go.mod h1:WaHUgvxTVq04UNunO+XhnAqY/wQc+bxr74GqbsZ/Jqw=
 github.com/aws/aws-sdk-go v1.51.6 h1:Ld36dn9r7P9IjU8WZSaswQ8Y/XUCRpewim5980DwYiU=
 github.com/aws/aws-sdk-go v1.51.6/go.mod h1:LF8svs817+Nz+DmiMQKTO3ubZ/6IaTpq3TjupRn3Eqk=
-github.com/aws/aws-sdk-go-v2 v1.30.4 h1:frhcagrVNrzmT95RJImMHgabt99vkXGslubDaDagTk8=
-github.com/aws/aws-sdk-go-v2 v1.30.4/go.mod h1:CT+ZPWXbYrci8chcARI3OmI/qgd+f6WtuLOoaIA8PR0=
+github.com/aws/aws-sdk-go-v2 v1.30.5 h1:mWSRTwQAb0aLE17dSzztCVJWI9+cRMgqebndjwDyK0g=
+github.com/aws/aws-sdk-go-v2 v1.30.5/go.mod h1:CT+ZPWXbYrci8chcARI3OmI/qgd+f6WtuLOoaIA8PR0=
 github.com/aws/aws-sdk-go-v2/config v1.27.31 h1:kxBoRsjhT3pq0cKthgj6RU6bXTm/2SgdoUMyrVw0rAI=
 github.com/aws/aws-sdk-go-v2/config v1.27.31/go.mod h1:z04nZdSWFPaDwK3DdJOG2r+scLQzMYuJeW0CujEm9FM=
 github.com/aws/aws-sdk-go-v2/credentials v1.17.30 h1:aau/oYFtibVovr2rDt8FHlU17BTicFEMAi29V1U+L5Q=
