@@ -428,8 +428,8 @@ func TestErrorToVerifyResult(t *testing.T) {
 	if verifierResult.Type != "cosign" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Type, "cosign")
 	}
-	if verifierResult.Message != "Cosign signature verification failed" {
-		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "Cosign signature verification failed")
+	if verifierResult.Message != "Failed to validate the Cosign signature" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "Failed to validate the Cosign signature")
 	}
 	if verifierResult.ErrorReason != "test error" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.ErrorReason, "test error")
@@ -594,7 +594,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
 			getKeysError:                true,
 			store:                       &mocks.MemoryTestStore{},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "error",
 		},
 		{
@@ -602,7 +602,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
 			getKeysError:                false,
 			store:                       &mocks.MemoryTestStore{},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "manifest not found",
 		},
 		{
@@ -616,8 +616,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
-			expectedErrorReason:         "The artifact metadata is not an oci image",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "The artifact metadata is not an OCI image",
 		},
 		{
 			name:         "failed subject descriptor fetch",
@@ -630,7 +630,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "subject not found for sha256:5678",
 		},
 		{
@@ -657,7 +657,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "blob not found",
 		},
 		{
@@ -689,7 +689,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "unsupported public key type [*ecdh.PublicKey]",
 		},
 		{
@@ -721,7 +721,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "RSA key check: unsupported key size: 128",
 		},
 		{
@@ -753,7 +753,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "ECDSA key check: unsupported key curve [P-224]",
 		},
 		{
@@ -986,7 +986,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6": []byte(`{"critical":{"identity":{"docker-reference":"wabbitnetworks.azurecr.io/test/cosign-image"},"image":{"docker-manifest-digest":"sha256:623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "Cosign signature verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature:",
 			expectedErrorReason:         "failed to unmarshal bundle from blob payload: illegal base64 data at input byte 91",
 		},
 	}

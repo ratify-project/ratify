@@ -208,7 +208,7 @@ func (store *orasStore) GetConfig() *config.StoreConfig {
 func (store *orasStore) ListReferrers(ctx context.Context, subjectReference common.Reference, _ []string, _ string, subjectDesc *ocispecs.SubjectDescriptor) (referrerstore.ListReferrersResult, error) {
 	repository, err := store.createRepository(ctx, store, subjectReference)
 	if err != nil {
-		return referrerstore.ListReferrersResult{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to create client to remote registry").WithError(err)
+		return referrerstore.ListReferrersResult{}, re.ErrorCodeRepositoryOperationFailure.WithDetail("Failed to connect to the remote registry").WithError(err)
 	}
 
 	// resolve subject descriptor if not provided

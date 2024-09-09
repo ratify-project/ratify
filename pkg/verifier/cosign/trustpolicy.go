@@ -193,7 +193,7 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 		// Fetches the Rekor public keys from the Rekor server
 		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
 		if err != nil {
-			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch Rekor public keys").WithRemediation(fmt.Sprintf("Please check if the Rekor server %s is experiencing any outages", tp.config.RekorURL)).WithError(err)
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch Rekor public keys").WithRemediation(fmt.Sprintf("Please check if the Rekor server %s is available", tp.config.RekorURL)).WithError(err)
 		}
 	} else {
 		cosignOpts.IgnoreTlog = true
@@ -203,20 +203,20 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 	if tp.isKeyless {
 		roots, err := fulcio.GetRoots()
 		if err != nil || roots == nil {
-			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to get fulcio root").WithError(err).WithRemediation("Please check if Fulcio is experiencing any outages")
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to get fulcio root").WithError(err).WithRemediation("Please check if Fulcio is available")
 		}
 		cosignOpts.RootCerts = roots
 		if tp.config.Keyless.CTLogVerify != nil && *tp.config.Keyless.CTLogVerify {
 			cosignOpts.CTLogPubKeys, err = cosign.GetCTLogPubs(ctx)
 			if err != nil {
-				return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch certificate transparency log public keys").WithError(err).WithRemediation("Please check if TUF root is experiencing any outages")
+				return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch certificate transparency log public keys").WithError(err).WithRemediation("Please check if TUF root is available")
 			}
 		} else {
 			cosignOpts.IgnoreSCT = true
 		}
 		cosignOpts.IntermediateCerts, err = fulcio.GetIntermediates()
 		if err != nil {
-			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to get fulcio intermediate certificates").WithError(err).WithRemediation("Please check if Fulcio is experiencing any outages")
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to get fulcio intermediate certificates").WithError(err).WithRemediation("Please check if Fulcio is available")
 		}
 		// Set the certificate identity and issuer for keyless verification
 		cosignOpts.Identities = []cosign.Identity{

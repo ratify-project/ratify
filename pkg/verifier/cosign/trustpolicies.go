@@ -35,7 +35,7 @@ var validScopeRegex = regexp.MustCompile(`^[a-z0-9\.\-:@\/]*\*?$`)
 // CreateTrustPolicies creates a set of trust policies from the given configuration
 func CreateTrustPolicies(configs []TrustPolicyConfig, verifierName string) (*TrustPolicies, error) {
 	if len(configs) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create trust policies: no policies found").WithRemediation("Ensure that the trust policy configuration is correct.")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create trust policies: policy configuration not found").WithRemediation("Ensure that the trust policy configuration is correct.")
 	}
 
 	policies := make([]TrustPolicy, 0, len(configs))
@@ -86,7 +86,7 @@ func (tps *TrustPolicies) GetScopedPolicy(reference string) (TrustPolicy, error)
 	if globalPolicy != nil {
 		return globalPolicy, nil
 	}
-	return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("No policy found for reference %s", reference))
+	return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("No policy found for the artifact %s", reference))
 }
 
 // validateScopes validates the scopes in the trust policies
