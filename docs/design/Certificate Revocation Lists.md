@@ -1,13 +1,14 @@
 # CRL and CRL Cache Design
 
+## Intro
+
+What to implement and why. e.g. CRL is not support for now but it is a necessary feat mentioned in notation spec.
+
 ## Goals
 
 - Bump-up CRL support
 - Define a cache provider interface for CRL
-- Update CRL and CRL caching related documentation 
-
-## Non-goals
-
+- Update CRL and CRL caching related documentation
 - Implement default file-based cache implementation for both CLI and K8S
 - Implement preload CRL when cert added from KMP
 
@@ -25,7 +26,14 @@ An entry is added to the CRL as part of the next update following notification o
 
 Implementations of the [Notary Project verification specification](./signing-and-verification-workflow.md) support only HTTP CRL URLs.
 
-    
+## Design Points
+
+**Why Caching**
+
+Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 64MiB.
+
+Prefer ratify cache for reuse the cache provider interface. Reusing interfaces reduces redundant expressions, helps you easily maintain application objects
+
 ## Proposed Design
 
 ```mermaid
@@ -35,7 +43,7 @@ flowchart TD
   C["CacheFetcher.Fetch"]
   D["Cache CRL"]
   E["Standalone"]
-  F["AKS"]
+  F["K8S"]
 
   A --> C
   B --> C
@@ -43,12 +51,6 @@ flowchart TD
   D --> E
   D --> F
 ```
-
-**Why Caching**
-
-Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 64MiB.
-
-Prefer ratify cache for reuse the cache provider interface. Reusing interfaces reduces redundant expressions, helps you easily maintain application objects
 
 ### CRLCacheProvider interface
 ```
