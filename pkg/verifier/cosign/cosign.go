@@ -264,14 +264,14 @@ func (v *cosignVerifier) verifyInternal(ctx context.Context, subjectReference co
 		}
 		sig, err := static.NewSignature(blobBytes, blob.Annotations[static.SignatureAnnotationKey], staticOpts...)
 		if err != nil {
-			return errorToVerifyResult(v.name, v.verifierType, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to verify Cosign signature").WithError(err)), nil
+			return errorToVerifyResult(v.name, v.verifierType, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to validate the Cosign signature").WithError(err)), nil
 		}
 		if len(keysMap) > 0 {
 			// if keys are found, perform verification with keys
 			var verifications []cosignExtension
 			verifications, hasValidSignature, err = verifyWithKeys(ctx, keysMap, sig, blob.Annotations[static.SignatureAnnotationKey], blobBytes, staticOpts, &cosignOpts, subjectDescHash)
 			if err != nil {
-				return errorToVerifyResult(v.name, v.verifierType, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to verify Cosign signature with keys").WithError(err)), nil
+				return errorToVerifyResult(v.name, v.verifierType, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to validate the Cosign signature with keys").WithError(err)), nil
 			}
 			extensionListEntry.Verifications = append(extensionListEntry.Verifications, verifications...)
 		} else {
