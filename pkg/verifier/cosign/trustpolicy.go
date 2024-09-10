@@ -107,7 +107,7 @@ func CreateTrustPolicy(config TrustPolicyConfig, verifierName string) (TrustPoli
 		if keyConfig.File != "" {
 			pubKey, err := loadKeyFromPath(keyConfig.File)
 			if err != nil {
-				return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Trust policy [%s] failed to load key from file %s", config.Name, keyConfig.File)).WithError(err).WithRemediation("Ensure that the key file path is correct and public key is correctly saved.")
+				return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy [%s]: failed to load the key from file %s", config.Name, keyConfig.File)).WithError(err).WithRemediation("Ensure that the key file path is correct and public key is correctly saved.")
 			}
 			keyMap[PKKey{Provider: fileProviderName, Name: keyConfig.File}] = keymanagementprovider.PublicKey{Key: pubKey, ProviderType: fileProviderName}
 		}
@@ -155,13 +155,13 @@ func (tp *trustPolicy) GetKeys(ctx context.Context, _ string) (map[PKKey]keymana
 		// get the key management provider resource which contains a map of keys
 		kmpResource, kmpErr := keymanagementprovider.GetKeysFromMap(ctx, keyConfig.Provider)
 		if kmpErr != nil {
-			return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Trust policy [%s] failed to access key management provider %s", tp.config.Name, keyConfig.Provider)).WithError(kmpErr)
+			return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy [%s]: failed to access key management provider %s", tp.config.Name, keyConfig.Provider)).WithError(kmpErr)
 		}
 		// get a specific key from the key management provider resource
 		if keyConfig.Name != "" {
 			pubKey, exists := kmpResource[keymanagementprovider.KMPMapKey{Name: keyConfig.Name, Version: keyConfig.Version}]
 			if !exists {
-				return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Trust policy [%s] cannot find key %s with version %s in key management provider %s", tp.config.Name, keyConfig.Name, keyConfig.Version, keyConfig.Provider))
+				return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy [%s]: key %s with version %s not found in key management provider %s", tp.config.Name, keyConfig.Name, keyConfig.Version, keyConfig.Provider))
 			}
 			keyMap[PKKey{Provider: keyConfig.Provider, Name: keyConfig.Name, Version: keyConfig.Version}] = pubKey
 		} else {
