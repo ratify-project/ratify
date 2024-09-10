@@ -29,7 +29,7 @@ type VerifierSpec struct {
 	// Name of the verifier. Deprecated
 	Name string `json:"name,omitempty"`
 
-	// Type of the verifier. Deprecated
+	// Type of the verifier. Optional
 	Type string `json:"type,omitempty"`
 
 	// Version of the verifier plugin. Optional
@@ -38,7 +38,7 @@ type VerifierSpec struct {
 	// The type of artifact this verifier handles
 	ArtifactTypes string `json:"artifactTypes,omitempty"`
 
-	// URL/file path. Deprecated
+	// URL/file path. Optional
 	Address string `json:"address,omitempty"`
 
 	// OCI Artifact source to download the plugin from. Optional
