@@ -101,7 +101,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	}
 	conf, err := parseVerifierConfig(verifierConfig, namespace)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName)
+		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithError(err)
 	}
 
 	verifyService, err := getVerifierService(conf, pluginDirectory)
@@ -235,6 +235,7 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		}
 	}
 	if isCertStoresByType && isLegacyCertStore {
+		logger.GetLogger(context.Background(), logOpt).Debugf("Get VerificationCertStores in mixed format")
 		return re.ErrorCodeConfigInvalid.NewError(re.Verifier, conf.Name, re.EmptyLink, nil, "both old VerificationCertStores and new VerificationCertStores are provided, please provide only one", re.HideStackTrace)
 	} else if !isCertStoresByType && isLegacyCertStore {
 		legacyCertStore, err := normalizeLegacyCertStore(conf)
