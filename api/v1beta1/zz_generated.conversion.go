@@ -569,6 +569,7 @@ func Convert_unversioned_KeyManagementProviderList_To_v1beta1_KeyManagementProvi
 
 func autoConvert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProviderSpec(in *KeyManagementProviderSpec, out *unversioned.KeyManagementProviderSpec, s conversion.Scope) error {
 	out.Type = in.Type
+	out.RefreshInterval = in.RefreshInterval
 	out.Parameters = in.Parameters
 	return nil
 }
@@ -580,6 +581,7 @@ func Convert_v1beta1_KeyManagementProviderSpec_To_unversioned_KeyManagementProvi
 
 func autoConvert_unversioned_KeyManagementProviderSpec_To_v1beta1_KeyManagementProviderSpec(in *unversioned.KeyManagementProviderSpec, out *KeyManagementProviderSpec, s conversion.Scope) error {
 	out.Type = in.Type
+	out.RefreshInterval = in.RefreshInterval
 	out.Parameters = in.Parameters
 	return nil
 }
@@ -673,6 +675,7 @@ func Convert_unversioned_NamespacedKeyManagementProviderList_To_v1beta1_Namespac
 
 func autoConvert_v1beta1_NamespacedKeyManagementProviderSpec_To_unversioned_NamespacedKeyManagementProviderSpec(in *NamespacedKeyManagementProviderSpec, out *unversioned.NamespacedKeyManagementProviderSpec, s conversion.Scope) error {
 	out.Type = in.Type
+	out.RefreshInterval = in.RefreshInterval
 	out.Parameters = in.Parameters
 	return nil
 }
@@ -684,6 +687,7 @@ func Convert_v1beta1_NamespacedKeyManagementProviderSpec_To_unversioned_Namespac
 
 func autoConvert_unversioned_NamespacedKeyManagementProviderSpec_To_v1beta1_NamespacedKeyManagementProviderSpec(in *unversioned.NamespacedKeyManagementProviderSpec, out *NamespacedKeyManagementProviderSpec, s conversion.Scope) error {
 	out.Type = in.Type
+	out.RefreshInterval = in.RefreshInterval
 	out.Parameters = in.Parameters
 	return nil
 }
@@ -983,6 +987,7 @@ func Convert_unversioned_NamespacedVerifierList_To_v1beta1_NamespacedVerifierLis
 
 func autoConvert_v1beta1_NamespacedVerifierSpec_To_unversioned_NamespacedVerifierSpec(in *NamespacedVerifierSpec, out *unversioned.NamespacedVerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Type = in.Type
 	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
@@ -998,6 +1003,7 @@ func Convert_v1beta1_NamespacedVerifierSpec_To_unversioned_NamespacedVerifierSpe
 
 func autoConvert_unversioned_NamespacedVerifierSpec_To_v1beta1_NamespacedVerifierSpec(in *unversioned.NamespacedVerifierSpec, out *NamespacedVerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Type = in.Type
 	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
@@ -1319,6 +1325,7 @@ func Convert_unversioned_VerifierList_To_v1beta1_VerifierList(in *unversioned.Ve
 
 func autoConvert_v1beta1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec, out *unversioned.VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Type = in.Type
 	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
@@ -1334,6 +1341,7 @@ func Convert_v1beta1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec, 
 
 func autoConvert_unversioned_VerifierSpec_To_v1beta1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	out.Type = in.Type
 	out.Version = in.Version
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address

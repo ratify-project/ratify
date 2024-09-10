@@ -25,8 +25,11 @@ import (
 type VerifierSpec struct {
 	// Important: Run "make install-crds" to regenerate code after modifying this file
 
-	// Name of the verifier
+	// Name of the verifier. Deprecated
 	Name string `json:"name"`
+
+	// Type of the verifier. Optional
+	Type string `json:"type,omitempty"`
 
 	// Version of the verifier plugin. Optional
 	Version string `json:"version,omitempty"`
@@ -34,10 +37,10 @@ type VerifierSpec struct {
 	// The type of artifact this verifier handles
 	ArtifactTypes string `json:"artifactTypes"`
 
-	// # Optional. URL/file path
+	// URL/file path. Optional
 	Address string `json:"address,omitempty"`
 
-	// OCI Artifact source to download the plugin from, optional
+	// OCI Artifact source to download the plugin from. Optional
 	Source *PluginSource `json:"source,omitempty"`
 
 	// +kubebuilder:pruning:PreserveUnknownFields
