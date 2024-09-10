@@ -97,7 +97,7 @@ func CreateTrustPolicy(config TrustPolicyConfig, verifierName string) (TrustPoli
 		config.Version = DefaultTrustPolicyConfigVersion
 	}
 
-	if err := validate(config, verifierName); err != nil {
+	if err := validate(config); err != nil {
 		return nil, err
 	}
 
@@ -107,7 +107,7 @@ func CreateTrustPolicy(config TrustPolicyConfig, verifierName string) (TrustPoli
 		if keyConfig.File != "" {
 			pubKey, err := loadKeyFromPath(keyConfig.File)
 			if err != nil {
-				return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: failed to load key from file %s", config.Name, keyConfig.File)).WithError(err)
+				return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy [%s]: failed to load the key from file %s", config.Name, keyConfig.File)).WithError(err).WithRemediation("Ensure that the key file path is correct and public key is correctly saved.")
 			}
 			keyMap[PKKey{Provider: fileProviderName, Name: keyConfig.File}] = keymanagementprovider.PublicKey{Key: pubKey, ProviderType: fileProviderName}
 		}
@@ -155,13 +155,13 @@ func (tp *trustPolicy) GetKeys(ctx context.Context, _ string) (map[PKKey]keymana
 		// get the key management provider resource which contains a map of keys
 		kmpResource, kmpErr := keymanagementprovider.GetKeysFromMap(ctx, keyConfig.Provider)
 		if kmpErr != nil {
-			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy [%s] failed to access key management provider %s, err: %s", tp.config.Name, keyConfig.Provider, kmpErr.Error()))
+			return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy [%s]: failed to access key management provider %s", tp.config.Name, keyConfig.Provider)).WithError(kmpErr)
 		}
 		// get a specific key from the key management provider resource
 		if keyConfig.Name != "" {
 			pubKey, exists := kmpResource[keymanagementprovider.KMPMapKey{Name: keyConfig.Name, Version: keyConfig.Version}]
 			if !exists {
-				return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(tp.verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key %s with version %s not found in key management provider %s", tp.config.Name, keyConfig.Name, keyConfig.Version, keyConfig.Provider))
+				return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy [%s]: key %s with version %s not found in key management provider %s", tp.config.Name, keyConfig.Name, keyConfig.Version, keyConfig.Provider))
 			}
 			keyMap[PKKey{Provider: keyConfig.Provider, Name: keyConfig.Name, Version: keyConfig.Version}] = pubKey
 		} else {
@@ -188,12 +188,12 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 		// create the rekor client
 		cosignOpts.RekorClient, err = rekor.NewClient(tp.config.RekorURL)
 		if err != nil {
-			return cosignOpts, fmt.Errorf("failed to create Rekor client from URL %s: %w", tp.config.RekorURL, err)
+			return cosignOpts, re.ErrorCodeConfigInvalid.WithDetail(fmt.Errorf("Failed to create Rekor client from URL %s", tp.config.RekorURL)).WithRemediation("Ensure that the Rekor URL is valid.").WithError(err)
 		}
 		// Fetches the Rekor public keys from the Rekor server
 		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
 		if err != nil {
-			return cosignOpts, fmt.Errorf("failed to fetch Rekor public keys: %w", err)
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch Rekor public keys").WithRemediation(fmt.Sprintf("Please check if the Rekor server %s is available", tp.config.RekorURL)).WithError(err)
 		}
 	} else {
 		cosignOpts.IgnoreTlog = true
@@ -203,20 +203,20 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 	if tp.isKeyless {
 		roots, err := fulcio.GetRoots()
 		if err != nil || roots == nil {
-			return cosignOpts, fmt.Errorf("failed to get fulcio roots: %w", err)
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to get fulcio root").WithError(err).WithRemediation("Please check if Fulcio is available")
 		}
 		cosignOpts.RootCerts = roots
 		if tp.config.Keyless.CTLogVerify != nil && *tp.config.Keyless.CTLogVerify {
 			cosignOpts.CTLogPubKeys, err = cosign.GetCTLogPubs(ctx)
 			if err != nil {
-				return cosignOpts, fmt.Errorf("failed to fetch certificate transparency log public keys: %w", err)
+				return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch certificate transparency log public keys").WithError(err).WithRemediation("Please check if TUF root is available")
 			}
 		} else {
 			cosignOpts.IgnoreSCT = true
 		}
 		cosignOpts.IntermediateCerts, err = fulcio.GetIntermediates()
 		if err != nil {
-			return cosignOpts, fmt.Errorf("failed to get fulcio intermediate certificates: %w", err)
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to get fulcio intermediate certificates").WithError(err).WithRemediation("Please check if Fulcio is available")
 		}
 		// Set the certificate identity and issuer for keyless verification
 		cosignOpts.Identities = []cosign.Identity{
@@ -234,42 +234,42 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 
 // validate checks if the trust policy configuration is valid
 // returns an error if the configuration is invalid
-func validate(config TrustPolicyConfig, verifierName string) error {
+func validate(config TrustPolicyConfig) error {
 	// check if the trust policy version is supported
 	if !slices.Contains(SupportedTrustPolicyConfigVersions, config.Version) {
-		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: unsupported version %s", config.Name, config.Version))
+		return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: unsupported version %s", config.Name, config.Version)).WithRemediation(fmt.Sprintf("Supported versions are: %v", SupportedTrustPolicyConfigVersions))
 	}
 
 	if config.Name == "" {
-		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("missing trust policy name")
+		return re.ErrorCodeConfigInvalid.WithDetail("name parameter is required in trust policy configuration").WithRemediation("Please provide a name for the trust policy.")
 	}
 
 	if len(config.Scopes) == 0 {
-		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: no scopes defined", config.Name))
+		return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("scopes parameter is required in trust policy configuration %s", config.Name)).WithRemediation("Please provide at least one scope for the trust policy.")
 	}
 
 	// keys or keyless must be defined
 	if len(config.Keys) == 0 && config.Keyless == (KeylessConfig{}) {
-		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: no keys defined and keyless section not configured", config.Name))
+		return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("keys or keyless parameter is required in trust policy configuration %s", config.Name))
 	}
 
 	// only one of keys or keyless can be defined
 	if len(config.Keys) > 0 && config.Keyless != (KeylessConfig{}) {
-		return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: both keys and keyless sections are defined", config.Name))
+		return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Only one of keys or keyless parameter is required in trust policy configuration %s", config.Name))
 	}
 
 	for _, keyConfig := range config.Keys {
 		// check if the key is defined by file path or by key management provider
 		if keyConfig.File == "" && keyConfig.Provider == "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key management provider name is required when not using file path", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: key management provider name is required when not using file path", config.Name))
 		}
 		// both file path and key management provider cannot be defined together
 		if keyConfig.File != "" && keyConfig.Provider != "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: 'name' and 'file' cannot be configured together", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: 'name' and 'file' cannot be configured together", config.Name))
 		}
 		// key name is required when key version is defined
 		if keyConfig.Version != "" && keyConfig.Name == "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: key name is required when key version is defined", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: key name is required when key version is defined", config.Name))
 		}
 	}
 
@@ -277,19 +277,19 @@ func validate(config TrustPolicyConfig, verifierName string) error {
 	if config.Keyless != (KeylessConfig{}) {
 		// validate certificate identity specified
 		if config.Keyless.CertificateIdentity == "" && config.Keyless.CertificateIdentityRegExp == "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: certificate identity or identity regex pattern is required", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: certificate identity or identity regex pattern is required", config.Name))
 		}
 		// validate certificate OIDC issuer specified
 		if config.Keyless.CertificateOIDCIssuer == "" && config.Keyless.CertificateOIDCIssuerRegExp == "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: certificate OIDC issuer or issuer regex pattern is required", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: certificate OIDC issuer or issuer regex pattern is required", config.Name))
 		}
 		// validate only expression or value is specified for certificate identity
 		if config.Keyless.CertificateIdentity != "" && config.Keyless.CertificateIdentityRegExp != "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: only one of certificate identity or identity regex pattern should be specified", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: only one of certificate identity or identity regex pattern should be specified", config.Name))
 		}
 		// validate only expression or value is specified for certificate OIDC issuer
 		if config.Keyless.CertificateOIDCIssuer != "" && config.Keyless.CertificateOIDCIssuerRegExp != "" {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("trust policy %s failed: only one of certificate OIDC issuer or issuer regex pattern should be specified", config.Name))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid trust policy %s: only one of certificate OIDC issuer or issuer regex pattern should be specified", config.Name))
 		}
 	}
 

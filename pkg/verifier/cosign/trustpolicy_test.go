@@ -21,6 +21,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"fmt"
+	"os"
 	"testing"
 
 	ctxUtils "github.com/ratify-project/ratify/internal/context"
@@ -199,6 +200,20 @@ func TestGetKeys(t *testing.T) {
 				Keys: []KeyConfig{
 					{
 						Provider: "nonexistent",
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "access nonexistent key from KMP",
+			cfg: TrustPolicyConfig{
+				Name:   "test",
+				Scopes: []string{"*"},
+				Keys: []KeyConfig{
+					{
+						Provider: "ns/kmp",
+						Name:     "nonexistent",
 					},
 				},
 			},
@@ -423,7 +438,7 @@ func TestValidate(t *testing.T) {
 
 	for _, tt := range tc {
 		t.Run(tt.name, func(t *testing.T) {
-			actual := validate(tt.policyConfig, "test-verifier")
+			actual := validate(tt.policyConfig)
 			if (actual != nil) != tt.wantErr {
 				t.Fatalf("expected %v, got %v", tt.wantErr, actual)
 			}
@@ -445,5 +460,78 @@ func TestLoadKeyFromPath(t *testing.T) {
 	case *ecdsa.PublicKey:
 	default:
 		t.Fatalf("expected ecdsa.PublicKey, got %v", keyType)
+	}
+}
+
+func TestGetCosignOpts(t *testing.T) {
+	testCases := []struct {
+		name           string
+		tlogVerify     bool
+		rekorURL       string
+		rekorPubKeyEnv string
+		isKeyless      bool
+		CTLogVerify    bool
+		CTLogPubKeyEnv string
+		expectedErr    bool
+	}{
+		{
+			name:        "invalid rekor url",
+			tlogVerify:  true,
+			rekorURL:    string([]byte{0x7f}),
+			expectedErr: true,
+		},
+		{
+			name:           "failed to get rekor public key",
+			tlogVerify:     true,
+			rekorURL:       "https://rekor.sigstore.dev",
+			rekorPubKeyEnv: "invalid",
+			expectedErr:    true,
+		},
+		{
+			name:           "failed to get CT log public key",
+			tlogVerify:     false,
+			isKeyless:      true,
+			CTLogVerify:    true,
+			CTLogPubKeyEnv: "invalid",
+			expectedErr:    true,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.rekorPubKeyEnv != "" {
+				val := os.Getenv("SIGSTORE_REKOR_PUBLIC_KEY")
+				os.Setenv("SIGSTORE_REKOR_PUBLIC_KEY", tc.rekorPubKeyEnv)
+				t.Cleanup(func() {
+					os.Setenv("SIGSTORE_REKOR_PUBLIC_KEY", val)
+				})
+			}
+
+			if tc.CTLogPubKeyEnv != "" {
+				val := os.Getenv("SIGSTORE_CT_LOG_PUBLIC_KEY_FILE")
+				os.Setenv("SIGSTORE_CT_LOG_PUBLIC_KEY_FILE", tc.CTLogPubKeyEnv)
+				t.Cleanup(func() {
+					os.Setenv("SIGSTORE_CT_LOG_PUBLIC_KEY_FILE", val)
+				})
+			}
+
+			tp := trustPolicy{
+				config: TrustPolicyConfig{
+					TLogVerify: &tc.tlogVerify,
+					RekorURL:   tc.rekorURL,
+					Keyless: KeylessConfig{
+						CTLogVerify: &tc.CTLogVerify,
+					},
+				},
+				isKeyless: tc.isKeyless,
+			}
+			_, err := tp.GetCosignOpts(context.Background())
+			if tc.expectedErr {
+				if err == nil {
+					t.Fatalf("expected error, got nil")
+				}
+			}
+		})
 	}
 }
