@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM golang:1.22@sha256:367bb5295d3103981a86a572651d8297d6973f2ec8b62f716b007860e22cbc25 as builder
+FROM --platform=$BUILDPLATFORM golang:1.22@sha256:192683db8982323952988c7b86c098ee7ecc6cbeb202bf7c113ff9be5358367c as builder
 
 ARG TARGETPLATFORM
 ARG TARGETOS
@@ -41,7 +41,7 @@ RUN if [ "$build_licensechecker" = "true" ]; then go build -o /app/out/plugins/ 
 RUN if [ "$build_schemavalidator" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/schemavalidator; fi
 RUN if [ "$build_vulnerabilityreport" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/vulnerabilityreport; fi
 
-FROM gcr.io/distroless/static:nonroot@sha256:8dd8d3ca2cf283383304fd45a5c9c74d5f2cd9da8d3b077d720e264880077c65
+FROM gcr.io/distroless/static:nonroot@sha256:42d15c647a762d3ce3a67eab394220f5268915d6ddba9006871e16e4698c3a24
 LABEL org.opencontainers.image.source https://github.com/ratify-project/ratify
 
 ARG RATIFY_FOLDER=$HOME/.ratify/

@@ -17,6 +17,7 @@ package namespaceresource
 
 import (
 	"context"
+	"fmt"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
 	"github.com/ratify-project/ratify/internal/constants"
@@ -85,8 +86,9 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 func verifierAddOrReplace(spec configv1beta1.NamespacedVerifierSpec, objectName string, namespace string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
-		logrus.Error(err)
-		return err
+		errMsg := fmt.Sprintf("Unable to apply the resource %s of NamespacedVerifier kind in the namespace %s", objectName, namespace)
+		logrus.Error(err, errMsg)
+		return re.ErrorCodeConfigInvalid.WithDetail(errMsg).WithError(err)
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, namespace, objectName, verifierConfig)

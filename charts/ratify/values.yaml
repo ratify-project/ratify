@@ -76,6 +76,7 @@ azurekeyvault:
   tenantId:
   certificates: []
   keys: []
+  refreshInterval:
 
 oras:
   useHttp: false

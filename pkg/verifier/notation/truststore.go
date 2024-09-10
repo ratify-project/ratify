@@ -41,7 +41,7 @@ type trustStore struct {
 func newTrustStore(certPaths []string, verificationCertStores verificationCertStores) (*trustStore, error) {
 	certStores, err := newCertStoreByType(verificationCertStores)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create the trust store from the verificationCertStores parameter in Notation Verifier configuration: %+v", verificationCertStores)).WithError(err).WithRemediation("Please check the value of the verificationCertStores parameter according to the Notation Verifier configuration guide: https://ratify.dev/docs/plugins/verifier/notation#configuration")
 	}
 	store := &trustStore{
 		certPaths:  certPaths,

@@ -9,6 +9,9 @@ spec:
     verificationCertStores:
       ca:
         ca-certs:
+          - ratify-notation-inline-cert-0
+      tsa:
+        tsa-certs:
           - keymanagementprovider-inline
     trustPolicyDoc:
       version: "1.0"
@@ -20,5 +23,6 @@ spec:
             level: strict
           trustStores:
             - ca:ca-certs
+            - tsa:tsa-certs
           trustedIdentities:
             - "*"

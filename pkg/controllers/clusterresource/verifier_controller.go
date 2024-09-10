@@ -17,6 +17,7 @@ package clusterresource
 
 import (
 	"context"
+	"fmt"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
 	re "github.com/ratify-project/ratify/errors"
@@ -82,12 +83,13 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	return ctrl.Result{}, nil
 }
 
-// creates a verifier reference from CRD spec and add store to map
+// creates a verifier reference from CR spec and add verifier to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
 	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
 	if err != nil {
-		logrus.Error(err)
-		return err
+		errMsg := fmt.Sprintf("Unable to apply cluster-wide resource %s of Verifier kind", objectName)
+		logrus.Error(err, errMsg)
+		return re.ErrorCodeConfigInvalid.WithDetail(errMsg).WithError(err)
 	}
 
 	return cutils.UpsertVerifier(spec.Version, spec.Address, constants.EmptyNamespace, objectName, verifierConfig)

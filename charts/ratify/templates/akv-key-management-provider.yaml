@@ -8,6 +8,9 @@ metadata:
     helm.sh/hook-weight: "5"
 spec:
   type: azurekeyvault
+  {{- if .Values.azurekeyvault.refreshInterval }}
+  refreshInterval: {{ .Values.azurekeyvault.refreshInterval  }}
+  {{- end }}
   parameters:
     {{- if .Values.azurekeyvault.vaultURI }}
     vaultURI: {{ .Values.azurekeyvault.vaultURI  }}

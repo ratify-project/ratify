@@ -30,7 +30,7 @@ RUN curl -Lo bats.tar.gz https://github.com/bats-core/bats-core/archive/v${BATS_
   && bash ./bats-core-${BATS_VERSION}/install.sh /usr/local \
   && rm -rf bats.tar.gz ./bats-core-${BATS_VERSION}
 
-ARG NOTATION_VERSION="1.0.0-rc.1"
+ARG NOTATION_VERSION="1.2.0"
 RUN curl -Lo notation.tar.gz https://github.com/notaryproject/notation/releases/download/v${NOTATION_VERSION}/notation_${NOTATION_VERSION}_linux_amd64.tar.gz \
   && tar -zxf notation.tar.gz \
   && mv ./notation /usr/local/bin/notation \
