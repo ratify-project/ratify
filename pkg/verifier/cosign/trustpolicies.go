@@ -35,14 +35,14 @@ var validScopeRegex = regexp.MustCompile(`^[a-z0-9\.\-:@\/]*\*?$`)
 // CreateTrustPolicies creates a set of trust policies from the given configuration
 func CreateTrustPolicies(configs []TrustPolicyConfig, verifierName string) (*TrustPolicies, error) {
 	if len(configs) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail("failed to create trust policies: no policies found")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create trust policies: policy configuration not found").WithRemediation("Ensure that the trust policy configuration is correct.")
 	}
 
 	policies := make([]TrustPolicy, 0, len(configs))
 	names := make(map[string]struct{})
 	for _, policyConfig := range configs {
 		if _, ok := names[policyConfig.Name]; ok {
-			return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithPluginName(verifierName).WithDetail(fmt.Sprintf("failed to create trust policies: duplicate policy name %s", policyConfig.Name))
+			return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: duplicate policy name %s", policyConfig.Name)).WithRemediation("Ensure that trust policy names are unique.")
 		}
 		names[policyConfig.Name] = struct{}{}
 		policy, err := CreateTrustPolicy(policyConfig, verifierName)
@@ -86,7 +86,7 @@ func (tps *TrustPolicies) GetScopedPolicy(reference string) (TrustPolicy, error)
 	if globalPolicy != nil {
 		return globalPolicy, nil
 	}
-	return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to get trust policy: no policy found for reference %s", reference))
+	return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("No policy found for the artifact %s", reference))
 }
 
 // validateScopes validates the scopes in the trust policies
@@ -97,16 +97,16 @@ func validateScopes(policies []TrustPolicy) error {
 		policyName := policy.GetName()
 		scopes := policy.GetScopes()
 		if len(scopes) == 0 {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: no scopes defined for trust policy %s", policyName))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: scope parameter is required for trust policy %s", policyName))
 		}
 		// check for global wildcard character along with other scopes in the same policy
 		if len(scopes) > 1 && slices.Contains(scopes, string(GlobalWildcardCharacter)) {
-			return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: global wildcard character %c cannot be used with other scopes within the same trust policy %s", GlobalWildcardCharacter, policyName))
+			return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: global wildcard character %c cannot be used with other scopes within the same trust policy %s", GlobalWildcardCharacter, policyName))
 		}
 		// check for duplicate global wildcard characters across policies
 		if slices.Contains(scopes, string(GlobalWildcardCharacter)) {
 			if hasGlobalWildcard {
-				return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: global wildcard character %c can only be used once", GlobalWildcardCharacter))
+				return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: global wildcard character %c can only be used once", GlobalWildcardCharacter))
 			}
 			hasGlobalWildcard = true
 			continue
@@ -114,15 +114,15 @@ func validateScopes(policies []TrustPolicy) error {
 		for _, scope := range scopes {
 			// check for empty scope
 			if scope == "" {
-				return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: scope defined is empty for trust policy %s", policyName))
+				return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: scope value cannot be empty in trust policy %s", policyName))
 			}
 			// check scope is formatted correctly
 			if !validScopeRegex.MatchString(scope) {
-				return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: invalid scope %s for trust policy %s", scope, policyName))
+				return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: invalid scope %s for trust policy %s", scope, policyName))
 			}
 			// check for duplicate scopes
 			if _, ok := scopesMap[scope]; ok {
-				return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: duplicate scope %s for trust policy %s", scope, policyName))
+				return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: duplicate scope %s for trust policy %s", scope, policyName))
 			}
 			// check wildcard overlaps
 			for existingScope := range scopesMap {
@@ -144,7 +144,7 @@ func validateScopes(policies []TrustPolicy) error {
 					isConflict = strings.HasPrefix(existingScope, trimmedScope)
 				}
 				if isConflict {
-					return re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to create trust policies: overlapping scopes %s and %s for trust policy %s", scope, existingScope, policyName))
+					return re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Failed to create trust policies: overlapping scopes %s and %s for trust policy %s", scope, existingScope, policyName))
 				}
 			}
 			scopesMap[scope] = struct{}{}

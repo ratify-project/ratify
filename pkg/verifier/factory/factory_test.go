@@ -22,6 +22,7 @@ import (
 
 	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/common"
+	"github.com/ratify-project/ratify/pkg/featureflag"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
 
@@ -103,6 +104,21 @@ func TestCreateVerifiersFromConfig_BuiltInVerifiers_ReturnsExpected(t *testing.T
 	}
 }
 
+func TestCreateVerifiersFromConfig_InvalidConfig_ReturnsErr(t *testing.T) {
+	verifierConfig := map[string]interface{}{
+		"name": "test-verifier-0",
+	}
+	verifiersConfig := config.VerifiersConfig{
+		Verifiers: []config.VerifierConfig{verifierConfig},
+	}
+
+	_, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir", constants.EmptyNamespace)
+
+	if err == nil {
+		t.Fatalf("expected to have an error")
+	}
+}
+
 func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T) {
 	dirPath, err := utils.CreatePlugin("sample")
 	if err != nil {
@@ -135,5 +151,85 @@ func TestCreateVerifiersFromConfig_PluginVerifiers_ReturnsExpected(t *testing.T)
 
 	if _, ok := verifiers[0].(*plugin.VerifierPlugin); !ok {
 		t.Fatalf("type assertion failed expected a plugin in verifier")
+	}
+}
+
+func TestCreateVerifiersFromConfig_EmptyVerifiers_ReturnsErr(t *testing.T) {
+	verifiersConfig := config.VerifiersConfig{}
+
+	_, err := CreateVerifiersFromConfig(verifiersConfig, "test/dir", "")
+
+	if err == nil {
+		t.Fatalf("expected to have an error")
+	}
+}
+
+func TestCreateVerifierFromConfig(t *testing.T) {
+	tests := []struct {
+		name                 string
+		verifierConfig       config.VerifierConfig
+		configVersion        string
+		pluginBinDir         []string
+		namespace            string
+		dynamicPluginEnabled bool
+		expectedErr          bool
+	}{
+		{
+			name:           "missing name",
+			verifierConfig: config.VerifierConfig{},
+			expectedErr:    true,
+		},
+		{
+			name: "verifier type contains path separator",
+			verifierConfig: config.VerifierConfig{
+				"name": "test/verifier",
+			},
+			expectedErr: true,
+		},
+		{
+			name: "external verifier plugin not found",
+			verifierConfig: config.VerifierConfig{
+				"name": "not-found",
+			},
+			pluginBinDir: []string{"test/path"},
+			expectedErr:  true,
+		},
+		{
+			name: "parse plugin source failed",
+			verifierConfig: config.VerifierConfig{
+				"name":   "test-verifier",
+				"source": "invalid",
+			},
+			dynamicPluginEnabled: true,
+			expectedErr:          true,
+		},
+		{
+			name: "download plugin failed",
+			verifierConfig: config.VerifierConfig{
+				"name": "test-verifier",
+				"source": map[string]interface{}{
+					"artifact": "invalid",
+				},
+			},
+			pluginBinDir:         []string{"test/path"},
+			dynamicPluginEnabled: true,
+			expectedErr:          true,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.dynamicPluginEnabled {
+				dynamicVal := featureflag.DynamicPlugins.Enabled
+				t.Cleanup(func() { featureflag.DynamicPlugins.Enabled = dynamicVal })
+				featureflag.DynamicPlugins.Enabled = true
+			}
+
+			_, err := CreateVerifierFromConfig(tt.verifierConfig, tt.configVersion, tt.pluginBinDir, tt.namespace)
+			if tt.expectedErr != (err != nil) {
+				t.Fatalf("expected error %v, actual %v", tt.expectedErr, err)
+			}
+		})
 	}
 }
