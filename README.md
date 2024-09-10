@@ -11,6 +11,7 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9334/badge)](https://www.bestpractices.dev/projects/9334)
 [![Go Reference](https://pkg.go.dev/badge/github.com/deislabs/ratify.svg)](https://pkg.go.dev/github.com/deislabs/ratify)
+[![codecov](https://codecov.io/gh/ratify-project/ratify/graph/badge.svg?token=3X0BIPI4VD)](https://codecov.io/gh/ratify-project/ratify)
 
 ## Table of Contents
 
