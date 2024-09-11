@@ -2,15 +2,14 @@
 
 ## Intro
 
-What to implement and why. e.g. CRL is not support for now but it is a necessary feat mentioned in notation spec.
+Certificate validation is an essential step during signature validation. Currently Ratify supports checking for revoked certificates through OCSP supported by notation-go library. However, OCSP validation requires internet connection for each validation while CRL could be cached for better performance. As notary-project is adding the CRL support for notation signature validation, Ratify could utilize it.
 
 ## Goals
 
-- Bump-up CRL support
 - Define a cache provider interface for CRL
-- Update CRL and CRL caching related documentation
 - Implement default file-based cache implementation for both CLI and K8S
 - Implement preload CRL when cert added from KMP
+- Update CRL and CRL caching related documentation
 
 ## Brief Aside about CRL and CRL Cache
 
