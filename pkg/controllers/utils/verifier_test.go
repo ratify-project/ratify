@@ -119,3 +119,46 @@ func TestSpecToVerifierConfig(t *testing.T) {
 func resetVerifierMap() {
 	controllers.NamespacedVerifiers = verifiers.NewActiveVerifiers()
 }
+
+func TestGetType(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected string
+	}{
+		{
+			name:     "cluster verifier spec with name",
+			input:    configv1beta1.VerifierSpec{Name: "clusterV"},
+			expected: "clusterV",
+		},
+		{
+			name:     "cluster verifier spec with type",
+			input:    configv1beta1.VerifierSpec{Type: "clusterV"},
+			expected: "clusterV",
+		},
+		{
+			name:     "namespaced verifier spec with name",
+			input:    configv1beta1.NamespacedVerifierSpec{Name: "namespacedV"},
+			expected: "namespacedV",
+		},
+		{
+			name:     "namespaced verifier spec with type",
+			input:    configv1beta1.NamespacedVerifierSpec{Type: "namespacedV"},
+			expected: "namespacedV",
+		},
+		{
+			name:     "verifier spec with no name or type",
+			input:    "",
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			output := GetVerifierType(tt.input)
+			if tt.expected != output {
+				t.Fatalf("GetType() expected %v, actual %v", tt.expected, output)
+			}
+		})
+	}
+}

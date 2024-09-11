@@ -53,12 +53,12 @@ func Register(name string, factory VerifierFactory) {
 // namespace is only applicable in K8s environment, namespace is appended to the certstore of the truststore so it is uniquely identifiable in a cluster env
 // the first element of pluginBinDir will be used as the plugin directory
 func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersion string, pluginBinDir []string, namespace string) (verifier.ReferenceVerifier, error) {
-	// in cli mode both `type` and `name`` are read from config, if `type` is not specified, `name` is used as `type`
+	// in cli mode both `type` and `name` are read from config, if `type` is not specified, `name` is used as `type`
 	var verifierTypeStr string
 	if value, ok := verifierConfig[types.Name]; ok {
 		verifierTypeStr = value.(string)
 	} else {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("failed to find verifier name in the verifier config with key %s", "name"))
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("The name field is required in the Verifier configuration: %+v", verifierConfig))
 	}
 
 	if value, ok := verifierConfig[types.Type]; ok {
@@ -66,7 +66,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if strings.ContainsRune(verifierTypeStr, os.PathSeparator) {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail(fmt.Sprintf("invalid plugin name for a verifier: %s", verifierTypeStr))
+		return nil, re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("Invalid name [%s] in the Verifier configuration, [%v] is disallowed", verifierTypeStr, os.PathSeparator))
 	}
 
 	// if source is specified, download the plugin
@@ -74,13 +74,13 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 		if featureflag.DynamicPlugins.Enabled {
 			source, err := pluginCommon.ParsePluginSource(source)
 			if err != nil {
-				return nil, re.ErrorCodeConfigInvalid.NewError(re.Verifier, "", re.EmptyLink, err, "failed to parse plugin source", re.HideStackTrace)
+				return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to parse the plugin source").WithError(err)
 			}
 
 			targetPath := path.Join(pluginBinDir[0], verifierTypeStr)
 			err = pluginCommon.DownloadPlugin(source, targetPath)
 			if err != nil {
-				return nil, re.ErrorCodeDownloadPluginFailure.NewError(re.Verifier, "", re.EmptyLink, err, "failed to download plugin", re.HideStackTrace)
+				return nil, re.ErrorCodeDownloadPluginFailure.WithDetail("Failed to download the plugin from the source").WithError(err)
 			}
 			logrus.Infof("downloaded verifier plugin %s from %s to %s", verifierTypeStr, source.Artifact, targetPath)
 		} else {
@@ -94,7 +94,7 @@ func CreateVerifierFromConfig(verifierConfig config.VerifierConfig, configVersio
 	}
 
 	if _, err := pluginCommon.FindInPaths(verifierTypeStr, pluginBinDir); err != nil {
-		return nil, re.ErrorCodePluginNotFound.NewError(re.Verifier, "", re.EmptyLink, err, "plugin not found", re.HideStackTrace)
+		return nil, re.ErrorCodePluginNotFound.WithDetail(fmt.Sprintf("Verifier plugin %s not found", verifierTypeStr)).WithError(err).WithRemediation("Please ensure that the correct type is specified for the built-in Verifier configuration or the custom Verifier plugin is configured.")
 	}
 
 	pluginVersion := configVersion
@@ -113,11 +113,11 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 
 	err := validateVerifiersConfig(&verifiersConfig)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
 	}
 
 	if len(verifiersConfig.Verifiers) == 0 {
-		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.Verifier).WithDetail("verifiers config should have at least one verifier")
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("The configuration for verifier.plugins must include at least one plugin")
 	}
 
 	verifiers := make([]verifier.ReferenceVerifier, 0)
@@ -131,7 +131,7 @@ func CreateVerifiersFromConfig(verifiersConfig config.VerifiersConfig, defaultPl
 	for _, verifierConfig := range verifiersConfig.Verifiers {
 		verifier, err := CreateVerifierFromConfig(verifierConfig, verifiersConfig.Version, verifiersConfig.PluginBinDirs, namespace)
 		if err != nil {
-			return nil, re.ErrorCodePluginInitFailure.WithComponentType(re.Verifier).WithError(err)
+			return nil, re.ErrorCodePluginInitFailure.WithError(err)
 		}
 		verifiers = append(verifiers, verifier)
 	}

@@ -15,8 +15,10 @@ package utils
 
 import (
 	"encoding/json"
+	"fmt"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
+	re "github.com/ratify-project/ratify/errors"
 	vc "github.com/ratify-project/ratify/pkg/verifier/config"
 	vf "github.com/ratify-project/ratify/pkg/verifier/factory"
 	"github.com/ratify-project/ratify/pkg/verifier/types"
@@ -56,8 +58,9 @@ func SpecToVerifierConfig(raw []byte, verifierName, verifierType, artifactTypes 
 
 	if string(raw) != "" {
 		if err := json.Unmarshal(raw, &verifierConfig); err != nil {
-			logrus.Error(err, "unable to decode verifier parameters", "Parameters.Raw", raw)
-			return vc.VerifierConfig{}, err
+			errMsg := fmt.Sprintf("Unable to recognize the parameters of the Verifier resource %s", string(raw))
+			logrus.Error(err, errMsg)
+			return vc.VerifierConfig{}, re.ErrorCodeConfigInvalid.WithError(err).WithDetail(errMsg).WithRemediation("Please update the Verifier parameters and try again. Refer to the Verifier configuration guide: https://ratify.dev/docs/reference/custom%20resources/verifiers")
 		}
 	}
 	verifierConfig[types.Name] = verifierName
@@ -68,4 +71,23 @@ func SpecToVerifierConfig(raw []byte, verifierName, verifierType, artifactTypes 
 	}
 
 	return verifierConfig, nil
+}
+
+// GetVerifierType returns verifier type and is backward compatible with the deprecated name field
+func GetVerifierType(verifierSpec interface{}) string {
+	switch spec := verifierSpec.(type) {
+	case configv1beta1.VerifierSpec:
+		if spec.Type == "" {
+			return spec.Name
+		}
+		return spec.Type
+	case configv1beta1.NamespacedVerifierSpec:
+		if spec.Type == "" {
+			return spec.Name
+		}
+		return spec.Type
+	default:
+		logrus.Error("unable to assert verifierSpec type", spec)
+	}
+	return ""
 }
