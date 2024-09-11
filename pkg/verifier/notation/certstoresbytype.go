@@ -73,18 +73,18 @@ func newCertStoreByType(confInNewFormat verificationCertStores) (certStores, err
 		s[certStoreType(certstoretype)] = make(map[string][]string)
 		parsedStoreData, ok := storeData.(map[string]interface{})
 		if !ok {
-			return nil, fmt.Errorf("certStores: %s assertion to type verificationCertStores failed", storeData)
+			return nil, fmt.Errorf("the verificationCertStores configuration is invalid: %+v", confInNewFormat)
 		}
 		for storeName, certProviderList := range parsedStoreData {
 			var certProviderNames []string
 			parsedCertProviders, ok := certProviderList.([]interface{})
 			if !ok {
-				return nil, fmt.Errorf("certProviderList: %s assertion to type []interface{} failed", certProviderList)
+				return nil, fmt.Errorf("the verificationCertStores configuration is invalid: %+v", confInNewFormat)
 			}
 			for _, certProvider := range parsedCertProviders {
 				certProviderName, ok := certProvider.(string)
 				if !ok {
-					return nil, fmt.Errorf("certProvider: %s assertion to type string failed", certProvider)
+					return nil, fmt.Errorf("the verificationCertStores configuration is invalid: %+v", confInNewFormat)
 				}
 				certProviderNames = append(certProviderNames, certProviderName)
 			}
