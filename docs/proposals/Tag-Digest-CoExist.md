@@ -7,9 +7,6 @@ Current User scenarios:
    1. This results in the engineer’s time being wasted on manually mapping between the image digest and the version from the image repository.
    1. All my observability dashboards rely on tags but now I need to manually know which tags belong to which digests and somehow also make my dashboards map between those. This is a big hassle.
 
-Other user scenarios that encompass tag mutations NOT related to the current issue which users might want:
-1. In case of the pod spec already having both tag and digest, I want to be able to mutate the tag regardless and update the digest accordingly instead of leaving the digest in place.
-
 ## Solution Overview
 
 The current solution has been chosen on the basis that Ratify is only meant to mutate from tags to digest as tags are mutable and digests are the ultimate source of truth. This solution is also prepared with the community recommendation of using digests instead of tags in mind with digests being the ultimate source of truth for artifact verification. 
@@ -43,20 +40,23 @@ The options can work in conjunction to provide the required mutation output.
 Here, 
 
 `Latest` tag’s digest = `xxxx`
+
 `v1.2.4` tag’s digest = `yyyy`
 
 
 | Config | Input | Output |
 | ------ | ----- | ------ |
-| retainMutatedTag: false | docker.io/nginx | docker.io/nginx@sha256:xxxxx |
-| | docker.io/nginx:latest | docker.io/nginx@sha256:xxxxx |
+| retainMutatedTag: false | docker.io/nginx | docker.io/nginx@sha256:xxxx |
+| | docker.io/nginx:latest | docker.io/nginx@sha256:xxxx |
 | | docker.io/nginx:v1.2.4 | docker.io/nginx@sha256:yyyy |
 | | docker.io/nginx:latest@sha256:xxxx | docker.io/nginx@sha256:xxxx |
 | | docker.io/nginx:v1.2.4@sha256:yyyy | docker.io/nginx@sha256:yyyy |
+| | docker.io/nginx@sha256:xxxx | docker.io/nginx@sha256:xxxx |
 | retainMutatedTag: true | docker.io/nginx | docker.io/nginx:latest@sha256:xxxx |
 | | docker.io/nginx:v1.2.4 | docker.io/nginx:v1.2.4@sha256:yyyy |
 | | docker.io/nginx:latest@sha256:xxxx | docker.io/nginx:latest@sha256:xxxx |
 | | docker.io/nginx:v1.2.4@sha256:yyyy | docker.io/nginx:v1.2.4@sha256:yyyy | 
+| | docker.io/nginx@sha256:xxxx | docker.io/nginx:latest@sha256:xxxx |
 
 ### Implementation
 
@@ -71,8 +71,9 @@ provider:
     crt: ""
 ...
   mutation:
-    enable: true
+    // enable: true
     retainMutatedTag: false // (default)
+  enableMutation: true // deprecated, enable and use mutation.enabled instead. If both are used, `mutation.enable` will be preferred
 ```
 
 The `retainMutatedTag` option will be available for anyone wanting to control if they want to completely remove tags (the default) or have both tags + digest in the resulting output.
