@@ -24,7 +24,7 @@ This section discusses the various additions to the current Ratify Mutator and t
 
 The solution proposes tweaks to the following sections to fix the problem at hand:
 1. The helm chart shall be changed to add the corresponding new configs facilitating these new features for mutation.
-1. The new configs shall be respectively passed to /app/ratify serve called through the deployment.yaml file to then handle the additional configs.
+1. The new configs shall be respectively passed to `/app/ratify serve` called through the `deployment.yaml` file to then handle the additional configs.
 1. These configs then trickle down to the corresponding mutation code block to handle the mutations according to those config.
 
 ### Configurations
