@@ -85,7 +85,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CR spec and add verifier to map
 func verifierAddOrReplace(spec configv1beta1.VerifierSpec, objectName string) error {
-	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
+	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, cutils.GetVerifierType(spec), spec.ArtifactTypes, spec.Source)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to apply cluster-wide resource %s of Verifier kind", objectName)
 		logrus.Error(err, errMsg)

@@ -72,3 +72,22 @@ func SpecToVerifierConfig(raw []byte, verifierName, verifierType, artifactTypes 
 
 	return verifierConfig, nil
 }
+
+// GetVerifierType returns verifier type and is backward compatible with the deprecated name field
+func GetVerifierType(verifierSpec interface{}) string {
+	switch spec := verifierSpec.(type) {
+	case configv1beta1.VerifierSpec:
+		if spec.Type == "" {
+			return spec.Name
+		}
+		return spec.Type
+	case configv1beta1.NamespacedVerifierSpec:
+		if spec.Type == "" {
+			return spec.Name
+		}
+		return spec.Type
+	default:
+		logrus.Error("unable to assert verifierSpec type", spec)
+	}
+	return ""
+}
