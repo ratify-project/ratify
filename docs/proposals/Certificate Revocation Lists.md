@@ -11,99 +11,54 @@ Certificate validation is an essential step during signature validation. Current
 - Implement preload CRL when cert added from KMP
 - Update CRL and CRL caching related documentation
 
-## Brief Aside about CRL and CRL Cache
-
-X.509 defines one method of certificate revocation. This method involves each CA periodically issuing a signed data structure called a certificate revocation list (CRL).
-
-A CRL is a time stamped list identifying revoked certificates which is signed by a CA or CRL issuer and made freely available in a public repository. Each revoked certificate is identified in a CRL by its certificate serial number.
-
-When a certificate-using system uses a certificate (e.g., for verifying a remote user's digital signature), that system not only checks the certificate signature and validity but also acquires a suitably-recent CRL and checks that the certificate serial number is not on that CRL.
-The meaning of "suitably-recent" may vary with local policy, but it usually means the most recently-issued CRL.
-
-A new CRL is issued on a regular periodic basis (e.g., hourly, daily, or weekly).
-An entry is added to the CRL as part of the next update following notification of revocation. An entry MUST NOT be removed from the CRL until it appears on one regularly scheduled CRL issued beyond the revoked certificate's validity period.
-
-Implementations of the [Notary Project verification specification](./signing-and-verification-workflow.md) support only HTTP CRL URLs.
-
 ## Design Points
+
+**How to Get CRL**
+
+With no extra configuration, CRL download location (URL) can be obtained from the certificate's CRL Distribution Point (CDP) extension. If the CRL cannot be downloaded within the timeout threshold the revocation result will be "revocation unavailable". More details are showing in the Download CRL section
 
 **Why Caching**
 
-Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 64MiB.
+Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 64MiB. Prefer ratify cache for reuse the cache provider interface. Reusing interfaces reduces redundant expressions, helps you easily maintain application objects
 
-Prefer ratify cache for reuse the cache provider interface. Reusing interfaces reduces redundant expressions, helps you easily maintain application objects
+**Why Refresh CRL Cache**
+
+A CRL is considered expired if the current date is after the `NextUpdate` field in the CRL. Verify that the CRL is valid (not expired) is necessary for revocation check. Monitoring and refreshing CRL on a regular basis can help avoid CRL download timetaken when doing verification by ensure the CRL is valid.
 
 ## Proposed Design
 
-```mermaid
-flowchart TD
-  A["Load kmp"]
-  B["Load CertPath"]
-  C["CacheFetcher.Fetch"]
-  D["Cache CRL"]
-  E["Standalone"]
-  F["K8S"]
+![image](../img/CRL/CRL-workflow.png)
 
-  A --> C
-  B --> C
-  C --> D
-  D --> E
-  D --> F
-```
 
-### CRLCacheProvider interface
-```
-// an interface that support CRL cache 
-// a combination of current CacheProvider and Fetcher 
+### Cache Content Design
 
-type CRLCacheProvider interface {
-    // Get returns the string, json-marshalled value linked to key. Returns true/false for existence
-    Get(ctx context.Context, key string) (string, bool)
-
-    // Set adds value based on key to cache. Assume there will be no ttl. Returns true/false for success
-    Set(ctx context.Context, key string, value interface{}) bool
-
-    // SetWithTTL adds value based on key to cache. Ties ttl of entry to ttl provided. Returns true/false for success
-    SetWithTTL(ctx context.Context, key string, value interface{}, ttl time.Duration) bool
-
-    // Delete removes the specified key/value from the cache
-    Delete(ctx context.Context, key string) bool
     
-    // SetNextUpdate update the latest nextUpdate value for cache data metadata
-    SetNextUpdate(ctx context.Context, value interface{}) bool
-    
-    // Fetch fetches crl from cache or CRL Distribution Point (CDP)
-    Fetch(ctx context.Context, crlURL string) (bundle *cache.Bundle, fromCache bool, err error)
-}
-```
-
-### What is in cache
-    
-key: 
+Key: 
 - `uri` in type `string`
 
-value: 
+Value: 
 - `bundle` in type `*Bundle`
 - `ttl` / `NextUpdate`: in type `time.Time`
 
+
+Check CRL Cache Validity
 ```
-// creates an expiring cache
+// OPTION 1 creates an expiring cache
 expires := bundle.Metadata.CreatedAt.Add(cache.MaxAge)
 if cache.MaxAge > 0 && time.Now().After(expires) {
 	return nil, ErrCacheMiss
 }
 
-// check validity
+// OPTION 2 directly checks CRL validity
 now := time.Now()
 if !crl.NextUpdate.IsZero() && now.After(crl.NextUpdate) {
 	return fmt.Errorf("expired CRL. Current time %v is after CRL NextUpdate %v", now, crl.NextUpdate)
 }
 ```
 
-### Create Cache
+### Load CRL Cache
 
-Create cache is triggerred after load certed either from Path(CLI) or KMP(K8s)
-
+Load cache is triggerred after cert loaded from the configurations.
 
 #### Download CRL
 
@@ -140,9 +95,10 @@ func (c *CRLCache) Set(ctx context.Context, uri string, bundle *Bundle) error {
 
 ```
 
-### Provide Cache
+### Provide CRL Cache
 
-#### Get Cache
+#### Get Cache from Provider
+
 ```
 // Get retrieves the CRL bundle from the file system
 //
@@ -176,11 +132,13 @@ func (c *CRLCache) Get(ctx context.Context, uri string) (bundle *Bundle, err err
 	return bundle, nil
 }
 ```
+
 #### Refresh Cache
 
 - When set cache, check closest expired date and set to `CRLCacheProvider`. Similar to `SetWithTTL`
 - Config a refresh interval, monitor and refresh `CRLCacheProvider`
 - Concurrency
+
 Use synchronization primitives like mutexes to ensure thread safety during cache updates.
 
 ```
@@ -214,6 +172,20 @@ func (c *CRLCacheProvider) ScanExpiredCRL(interval time.Duration) {
 
 # More details
 
+**Brief Aside about CRL and CRL Cache**
+
+X.509 defines one method of certificate revocation. This method involves each CA periodically issuing a signed data structure called a certificate revocation list (CRL).
+
+A CRL is a time stamped list identifying revoked certificates which is signed by a CA or CRL issuer and made freely available in a public repository. Each revoked certificate is identified in a CRL by its certificate serial number.
+
+When a certificate-using system uses a certificate (e.g., for verifying a remote user's digital signature), that system not only checks the certificate signature and validity but also acquires a suitably-recent CRL and checks that the certificate serial number is not on that CRL.
+The meaning of "suitably-recent" may vary with local policy, but it usually means the most recently-issued CRL.
+
+A new CRL is issued on a regular periodic basis (e.g., hourly, daily, or weekly).
+An entry is added to the CRL as part of the next update following notification of revocation. An entry MUST NOT be removed from the CRL until it appears on one regularly scheduled CRL issued beyond the revoked certificate's validity period.
+
+Implementations of the [Notary Project verification specification](./signing-and-verification-workflow.md) support only HTTP CRL URLs.
+
 **Revocation Checking with CRL**
 
 To check the revocation status of a certificate against CRL, the following steps must be performed:
@@ -230,6 +202,35 @@ To check the revocation status of a certificate against CRL, the following steps
     1. If the certificate is not listed in the CRL or the revocation reason is `certificate hold`, a new CRL is retrieved if the current time is past the time in the `NextPublish` field in the current CRL.
        The new CRL is then checked to determine if the certificate is revoked.
        If the original reason was `certificate hold`, the CRL is checked to determine if the certificate is unrevoked by looking for the `RemoveFromCRL` revocation code.
+
+```mermaid
+    flowchart TD
+    A[Start] --> B[Verify CRL Signature]
+    B --> C[Check CRL Expiration]
+    C -->|Expired| D[Retrieve New CRL]
+    C -->|Valid| E[Look Up Certificate in CRL]
+
+    E -->|Not Listed| D
+    E -->|Listed| F[Check InvalidityDate in CRL]
+
+    F -->|InvalidityDate Present| G[Compare InvalidityDate with Timestamping Date]
+    G -->|InvalidityDate Before Timestamp| Z[Certificate Revoked]
+    G -->|InvalidityDate Not Before Timestamp| Y[Certificate Valid]
+
+    F -->|No InvalidityDate| Z
+
+    C -->|CRL Expired and Reason Not Certificate Hold| Z
+
+    F -->|Certificate Hold| D
+
+    D --> H[Check New CRL for RemoveFromCRL Code]
+    H -->|Unrevoked| Y
+    H -->|Not Unrevoked| Z
+    
+    Z --> I[End]
+    Y --> I
+
+```
 
 **rfc3280** 
 
