@@ -30,11 +30,13 @@ A new config block shall be added in the helm chart’s `values.yaml` which will
 
 This feature will be available through the new `provider.mutation` config block which will make the `provider.enableMutation` option obsolete. A new boolean sub-config of `provider.mutation.enable` will be added to facilitate this existing feature.
 
+A new sub config `mutationStyle` will be added to facilitate the type of mutation the user owuld want.
 The following sub-options will be added to incorporate additional configuration during mutation.
 
-| Option Name | Implemented / Designed in the current solution? | Summary | Incoming Spec Condition | Upstream calls for Subject Descriptor? | Default Option |
+| `mutationStyle` | Implemented / Designed in the current solution? | Summary | Incoming Spec Condition | Upstream calls for Subject Descriptor? | Default Option |
 | ----------- | ----------------------------------------------- | ------- | ----------------------- | -------------------------------------- | -------------- |
-| retainMutatedTag | Y | Retain the pre-existing tag during mutation / Do not strip the tag away if both tag & digest pre-exists |Contains Tag, Does not contain Digest / Contains Tag, Contains Digest | Y / N | false |
+| `retain-mutated-tag` | Y | Retain the pre-existing tag during mutation / Do not strip the tag away if both tag & digest pre-exists |Contains Tag, Does not contain Digest / Contains Tag, Contains Digest | Y / N | false |
+| `digest-only` | Y | Mutate tag to digest, stripping the tag away | Contains Tag, Does not contain Digest / Contains Tag, Contains Digest | Y / N | true |
 
 The options can work in conjunction to provide the required mutation output.
 Here, 
@@ -46,21 +48,23 @@ Here,
 
 | Config | Input | Output |
 | ------ | ----- | ------ |
-| retainMutatedTag: false | docker.io/nginx | docker.io/nginx@sha256:xxxx |
+| `mutationStyle: "digest-only"` | docker.io/nginx | docker.io/nginx@sha256:xxxx |
 | | docker.io/nginx:latest | docker.io/nginx@sha256:xxxx |
 | | docker.io/nginx:v1.2.4 | docker.io/nginx@sha256:yyyy |
 | | docker.io/nginx:latest@sha256:xxxx | docker.io/nginx@sha256:xxxx |
 | | docker.io/nginx:v1.2.4@sha256:yyyy | docker.io/nginx@sha256:yyyy |
 | | docker.io/nginx@sha256:xxxx | docker.io/nginx@sha256:xxxx |
-| retainMutatedTag: true | docker.io/nginx | docker.io/nginx:latest@sha256:xxxx |
+| `mutationStyle: "retain-mutated-tag"` | docker.io/nginx | docker.io/nginx:latest@sha256:xxxx |
 | | docker.io/nginx:v1.2.4 | docker.io/nginx:v1.2.4@sha256:yyyy |
 | | docker.io/nginx:latest@sha256:xxxx | docker.io/nginx:latest@sha256:xxxx |
 | | docker.io/nginx:v1.2.4@sha256:yyyy | docker.io/nginx:v1.2.4@sha256:yyyy | 
-| | docker.io/nginx@sha256:xxxx | docker.io/nginx:latest@sha256:xxxx |
+| | docker.io/nginx@sha256:xxxx | docker.io/nginx@sha256:xxxx |
+
+An enum style config has been proposed so it does not overcrowd the `provider.mutation` block. Both, addition of new mutation styles as well as parsing on the code side will be easier with this approach.
 
 ### Implementation
 
-The `retainMutatedTag` config will be implemented to retain the tag in the resulting spec image. The default option for this config will be `false` to keep supporting the existing config parameter.
+The `mutationStyle` config will be implemented to retain the tag in the resulting spec image. The default option for this config will be `digest-only` to keep supporting the existing config parameter.
 
 Options of provider.mutation.enable and provider.mutation.retainMutatedTag shall be added into Helm.
 Example:
@@ -72,11 +76,11 @@ provider:
 ...
   mutation:
     // enable: true
-    retainMutatedTag: false // (default)
+    mutationStyle: "digest-only" // (default), other options are "retain-mutated-tag"
   enableMutation: true // deprecated, enable and use mutation.enabled instead. If both are used, `mutation.enable` will be preferred
 ```
 
-The `retainMutatedTag` option will be available for anyone wanting to control if they want to completely remove tags (the default) or have both tags + digest in the resulting output.
+The `retain-mutated-tag` option will be available for anyone wanting to control if they want to completely remove tags (the default) or have both tags + digest in the resulting output.
 
 ## Performance Impact
 The solution should have very little performance impact considering addition of code will not have any network connectivity related feature. Addition of code mostly should adhere to if-else clauses and other small regex additions.
