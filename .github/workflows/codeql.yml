@@ -1,19 +1,18 @@
-
 name: "CodeQL Scan"
 
 on:
   push:
-    branches: 
+    branches:
       - main
       - dev
       - 1.0.0*
   pull_request:
-    branches: 
+    branches:
       - main
       - dev
       - 1.0.0*
   schedule:
-    - cron: '30 1 * * 0'
+    - cron: "30 1 * * 0"
   workflow_dispatch:
 
 permissions: read-all

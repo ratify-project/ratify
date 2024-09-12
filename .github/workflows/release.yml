@@ -3,7 +3,7 @@ name: Release Ratify
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
 
 permissions: read-all
@@ -15,41 +15,41 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Harden Runner
-      uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
-      with:
-        egress-policy: audit
+      - name: Harden Runner
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
+        with:
+          egress-policy: audit
 
-    - name: Checkout
-      uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # tag=3.0.2
-      with:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # tag=3.0.2
+        with:
           fetch-depth: 0
-    
-    - name: Install Syft
-      uses: anchore/sbom-action/download-syft@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
-          
-    - name: Set up Go
-      uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
-      with:
-        go-version: '1.22'
 
-    - name: Goreleaser
-      id: goreleaser
-      uses: goreleaser/goreleaser-action@286f3b13b1b49da4ac219696163fb8c1c93e1200 # v6.0.0
-      with:
-        version: '2.0.1'
-        args: release --clean
-      env:
+      - name: Install Syft
+        uses: anchore/sbom-action/download-syft@61119d458adab75f756bc0b9e4bde25725f86a7a # v0.17.2
+
+      - name: Set up Go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
+        with:
+          go-version: "1.22"
+
+      - name: Goreleaser
+        id: goreleaser
+        uses: goreleaser/goreleaser-action@286f3b13b1b49da4ac219696163fb8c1c93e1200 # v6.0.0
+        with:
+          version: "2.0.1"
+          args: release --clean
+        env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Generate SBOM
-      run: |
-        curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
-        chmod +x $RUNNER_TEMP/sbom-tool
-        $RUNNER_TEMP/sbom-tool generate -b . -bc . -pn ratify -pv $GITHUB_REF_NAME -ps Microsoft -nsb https://microsoft.com -V Verbose
+      - name: Generate SBOM
+        run: |
+          curl -Lo $RUNNER_TEMP/sbom-tool https://github.com/microsoft/sbom-tool/releases/latest/download/sbom-tool-linux-x64
+          chmod +x $RUNNER_TEMP/sbom-tool
+          $RUNNER_TEMP/sbom-tool generate -b . -bc . -pn ratify -pv $GITHUB_REF_NAME -ps Microsoft -nsb https://microsoft.com -V Verbose
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # tag=v4.4.0
-      with:
-        name: SBOM SPDX files
-        path: _manifest/spdx_2.2/**
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # tag=v4.4.0
+        with:
+          name: SBOM SPDX files
+          path: _manifest/spdx_2.2/**

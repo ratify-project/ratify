@@ -1,11 +1,11 @@
 name: publish-cosign-sample
 
-on: 
+on:
   workflow_dispatch:
-   
+
 env:
   REGISTRY: ghcr.io
-  
+
 permissions:
   contents: read
 
@@ -18,7 +18,7 @@ jobs:
       contents: write
       packages: write
       id-token: write
-    steps:            
+    steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
@@ -28,7 +28,7 @@ jobs:
         uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382 # v3.6.0
 
       - name: Get repo
-        run: |          
+        run: |
           echo "REPOSITORY=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_ENV
 
       - name: Write signing key to disk

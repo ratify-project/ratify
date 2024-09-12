@@ -29,8 +29,7 @@ jobs:
         uses: apache/skywalking-eyes/dependency@cd7b195c51fd3d6ad52afceb760719ddc6b3ee91
         with:
           config: .github/licenserc.yml
-          flags:
-            --weak-compatible=true
+          flags: --weak-compatible=true
   build:
     runs-on: ubuntu-latest
     steps:
@@ -89,8 +88,8 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   markdown-link-check:
-      runs-on: ubuntu-latest
-      steps:
+    runs-on: ubuntu-latest
+    steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
@@ -103,7 +102,7 @@ jobs:
       - name: Run link check
         uses: gaurav-nelson/github-action-markdown-link-check@d53a906aa6b22b8979d33bc86170567e619495ec #3.10.3
         with:
-          use-quiet-mode: 'no'
-          use-verbose-mode: 'yes'
-          config-file: '.github/workflows/markdown.links.config.json'
-          folder-path: 'docs/'
+          use-quiet-mode: "no"
+          use-verbose-mode: "yes"
+          config-file: ".github/workflows/markdown.links.config.json"
+          folder-path: "docs/"
