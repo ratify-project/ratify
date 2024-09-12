@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         KUBERNETES_VERSION: ["1.29.2"]
-        GATEKEEPER_VERSION: ["3.16.0"]
+        GATEKEEPER_VERSION: ["3.17.0"]
     uses: ./.github/workflows/e2e-k8s.yml 
     with:
       k8s_version: ${{ matrix.KUBERNETES_VERSION }}
@@ -38,7 +38,7 @@ jobs:
       fail-fast: false
       matrix:
         KUBERNETES_VERSION: ["1.28.12", "1.29.2"]
-        GATEKEEPER_VERSION: ["3.14.0", "3.15.0", "3.16.0"]
+        GATEKEEPER_VERSION: ["3.15.0", "3.16.0", "3.17.0"]
     uses: ./.github/workflows/e2e-k8s.yml 
     with:
       k8s_version: ${{ matrix.KUBERNETES_VERSION }}
@@ -54,7 +54,7 @@ jobs:
       fail-fast: false
       matrix:
         KUBERNETES_VERSION: ["1.28.12", "1.29.2"]
-        GATEKEEPER_VERSION: ["3.14.0", "3.15.0", "3.16.0"]
+        GATEKEEPER_VERSION: ["3.15.0", "3.16.0", "3.17.0"]
     uses: ./.github/workflows/e2e-aks.yml
     with:
       k8s_version: ${{ matrix.KUBERNETES_VERSION }}
@@ -70,7 +70,7 @@ jobs:
     environment: azure-test
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
         with:
           egress-policy: audit
 
