@@ -84,7 +84,7 @@ func (r *VerifierReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 
 // creates a verifier reference from CRD spec and add store to map
 func verifierAddOrReplace(spec configv1beta1.NamespacedVerifierSpec, objectName string, namespace string) error {
-	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, spec.Name, spec.ArtifactTypes, spec.Source)
+	verifierConfig, err := cutils.SpecToVerifierConfig(spec.Parameters.Raw, objectName, cutils.GetVerifierType(spec), spec.ArtifactTypes, spec.Source)
 	if err != nil {
 		errMsg := fmt.Sprintf("Unable to apply the resource %s of NamespacedVerifier kind in the namespace %s", objectName, namespace)
 		logrus.Error(err, errMsg)

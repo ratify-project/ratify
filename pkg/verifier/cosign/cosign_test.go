@@ -23,6 +23,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"fmt"
 	"io"
 	"slices"
@@ -113,6 +114,26 @@ func TestCreate(t *testing.T) {
 				"trustPolicies": []TrustPolicyConfig{},
 			},
 			wantErr: false,
+		},
+		{
+			name: "duplicate trust policies in config",
+			config: config.VerifierConfig{
+				"name":          "test",
+				"artifactTypes": "testtype",
+				"trustPolicies": []TrustPolicyConfig{
+					{
+						Name:    "test",
+						Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
+						Scopes:  []string{"*"},
+					},
+					{
+						Name:    "test",
+						Keyless: KeylessConfig{CertificateIdentity: testIdentity, CertificateOIDCIssuer: testIssuer},
+						Scopes:  []string{"*"},
+					},
+				},
+			},
+			wantErr: true,
 		},
 		{
 			name: "invalid config with legacy and trust policies",
@@ -407,8 +428,8 @@ func TestErrorToVerifyResult(t *testing.T) {
 	if verifierResult.Type != "cosign" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Type, "cosign")
 	}
-	if verifierResult.Message != "Verification failed" {
-		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "Verification failed")
+	if verifierResult.Message != "Failed to validate the Cosign signature" {
+		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.Message, "Failed to validate the Cosign signature")
 	}
 	if verifierResult.ErrorReason != "test error" {
 		t.Errorf("errorToVerifyResult() = %v, want %v", verifierResult.ErrorReason, "test error")
@@ -573,7 +594,7 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
 			getKeysError:                true,
 			store:                       &mocks.MemoryTestStore{},
-			expectedResultMessagePrefix: "Verification failed",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
 			expectedErrorReason:         "error",
 		},
 		{
@@ -581,8 +602,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 			keys:                        map[PKKey]keymanagementprovider.PublicKey{},
 			getKeysError:                false,
 			store:                       &mocks.MemoryTestStore{},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to get reference manifest: manifest not found",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "manifest not found",
 		},
 		{
 			name:         "incorrect reference manifest media type error",
@@ -595,8 +616,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "reference manifest is not an image",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "The artifact metadata is not an OCI image",
 		},
 		{
 			name:         "failed subject descriptor fetch",
@@ -609,8 +630,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to create subject hash: subject not found for sha256:5678",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "subject not found for sha256:5678",
 		},
 		{
 			name:         "failed to fetch blob",
@@ -636,8 +657,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					},
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to get blob content: blob not found",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "blob not found",
 		},
 		{
 			name: "invalid key type for AKV",
@@ -668,8 +689,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to verify with keys: failed to process AKV signature: unsupported public key type: *ecdh.PublicKey",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "unsupported public key type [*ecdh.PublicKey]",
 		},
 		{
 			name: "invalid RSA key size for AKV",
@@ -700,8 +721,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to verify with keys: failed to process AKV signature: RSA key check: unsupported key size: 128",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "RSA key check: unsupported key size: 128",
 		},
 		{
 			name: "invalid ECDSA curve type for AKV",
@@ -732,8 +753,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					blobDigest: validSignatureBlob,
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to verify with keys: failed to process AKV signature: ECDSA key check: unsupported key curve: P-224",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature",
+			expectedErrorReason:         "ECDSA key check: unsupported key curve [P-224]",
 		},
 		{
 			name: "valid hash: 256 keysize: 2048 RSA key AKV",
@@ -965,8 +986,8 @@ mmBwUAwwW0Uc+Nt3bDOCiB1nUsICv1ry
 					"sha256:d1226e36bc8502978324cb2cb2116c6aa48edb2ea8f15b1c6f6f256ed43388f6": []byte(`{"critical":{"identity":{"docker-reference":"wabbitnetworks.azurecr.io/test/cosign-image"},"image":{"docker-manifest-digest":"sha256:623621b56649b5e0c2c7cf3ffd987932f8f9a5a01036e00d6f3ae9480087621c"},"type":"cosign container image signature"},"optional":null}`),
 				},
 			},
-			expectedResultMessagePrefix: "Verification failed",
-			expectedErrorReason:         "failed to parse static signature opts: failed to unmarshal bundle from blob payload: illegal base64 data at input byte 91",
+			expectedResultMessagePrefix: "Failed to validate the Cosign signature:",
+			expectedErrorReason:         "failed to unmarshal bundle from blob payload: illegal base64 data at input byte 91",
 		},
 	}
 
@@ -1047,6 +1068,84 @@ func TestVerificationMessage(t *testing.T) {
 			result := verificationPerformedMessage(tt.bundleVerified, &tc[i].checkOpts)
 			if !slices.Equal(result, tt.expectedMessages) {
 				t.Errorf("verificationMessage() = %v, want %v", result, tt.expectedMessages)
+			}
+		})
+	}
+}
+
+func TestProcessAKVSignature_RSAKey(t *testing.T) {
+	tests := []struct {
+		name             string
+		keySize          int
+		encodedSig       string
+		expectedErr      bool
+		expectedHashType crypto.Hash
+		expectedSigOut   bool
+	}{
+		{
+			name:             "RSA 2048 bits",
+			keySize:          256,
+			expectedErr:      false,
+			expectedHashType: crypto.SHA256,
+			expectedSigOut:   true,
+		},
+		{
+			name:             "RSA 3072 bits",
+			keySize:          384,
+			expectedErr:      false,
+			expectedHashType: crypto.SHA384,
+			expectedSigOut:   true,
+		},
+		{
+			name:             "RSA 4096 bits",
+			keySize:          512,
+			expectedErr:      false,
+			expectedHashType: crypto.SHA512,
+			expectedSigOut:   true,
+		},
+		{
+			name:        "Unsupported key size",
+			keySize:     128,
+			expectedErr: true,
+		},
+		{
+			name:        "Invalid base64 encoded signature",
+			keySize:     256,
+			encodedSig:  "ThisIsNot@ValidBase64%String!",
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a mock RSA public key
+			privateKey, err := rsa.GenerateKey(rand.Reader, tt.keySize*8)
+			if err != nil {
+				t.Fatalf("Failed to generate RSA key: %v", err)
+			}
+			rsaPublicKey := &privateKey.PublicKey
+
+			// Mock the signature as base64 encoded string
+			sig := "dummy_signature"
+			encodedSig := base64.StdEncoding.EncodeToString([]byte(sig))
+			if tt.encodedSig != "" {
+				encodedSig = tt.encodedSig
+			}
+
+			// Process the signature
+			hashType, sigOut, err := processAKVSignature(encodedSig, nil, rsaPublicKey, []byte("test payload"), []static.Option{})
+
+			if tt.expectedErr {
+				if err == nil {
+					t.Fatalf("Expected error but got nil")
+				}
+			} else {
+				if hashType != tt.expectedHashType {
+					t.Fatalf("Expected hash type %v but got %v", tt.expectedHashType, hashType)
+				}
+				if tt.expectedSigOut != (sigOut != nil) {
+					t.Fatalf("Expected signature output to be %v but got %v", tt.expectedSigOut, sigOut)
+				}
 			}
 		})
 	}

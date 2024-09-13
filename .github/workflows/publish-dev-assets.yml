@@ -2,7 +2,7 @@ name: publish-dev-assets
 
 on:
   schedule:
-    - cron: '30 8 * * 0'  # early morning (08:30 UTC) every Sunday
+    - cron: "30 8 * * 0" # early morning (08:30 UTC) every Sunday
   workflow_dispatch:
 
 permissions: read-all
@@ -17,7 +17,7 @@ jobs:
     environment: azure-publish
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           egress-policy: audit
       - name: Checkout
@@ -108,11 +108,11 @@ jobs:
         run: |
           sed -i '/^  repository:/c\  repository: ghcr.io/ratify-project/ratify-dev' charts/ratify/values.yaml
           sed -i '/^  crdRepository:/c\  crdRepository: ghcr.io/ratify-project/ratify-crds-dev' charts/ratify/values.yaml
-          sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml 
+          sed -i '/^  tag:/c\  tag: ${{ steps.prepare.outputs.version }}' charts/ratify/values.yaml
       - name: helm package
         run: |
-            helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversion }}
-            helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversionrolling }}
+          helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversion }}
+          helm package ./charts/ratify --version ${{ steps.prepare.outputs.semversionrolling }}
       - name: helm push
         run: |
           helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
