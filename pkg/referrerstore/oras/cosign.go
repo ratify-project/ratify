@@ -46,7 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 			return nil, nil
 		}
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, re.ErrorCodeRepositoryOperationFailure.WithError(err).WithComponentType(re.ReferrerStore)
+		return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail(fmt.Sprintf("Failed to validate existence of Cosign signature of the artifact: %+v", subjectReference)).WithError(err)
 	}
 
 	references = append(references, ocispecs.ReferenceDescriptor{
@@ -64,7 +64,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 func attachedImageTag(subjectReference common.Reference, tagSuffix string) (string, error) {
 	// sha256:d34db33f -> sha256-d34db33f.suffix
 	if subjectReference.Digest.String() == "" {
-		return "", re.ErrorCodeReferenceInvalid.WithComponentType(re.ReferrerStore).WithDetail("Cosign subject digest is empty")
+		return "", re.ErrorCodeReferenceInvalid.WithDetail("The digest of the artifact is empty")
 	}
 	tagStr := strings.ReplaceAll(subjectReference.Digest.String(), ":", "-") + tagSuffix
 	return fmt.Sprintf("%s:%s", subjectReference.Path, tagStr), nil

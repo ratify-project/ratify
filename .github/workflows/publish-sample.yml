@@ -1,11 +1,11 @@
 name: publish-sample
 
-on: 
- workflow_dispatch:
+on:
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
-  
+
 permissions:
   contents: read
 
@@ -17,14 +17,14 @@ jobs:
     permissions:
       contents: write
       packages: write
-    steps:            
+    steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@5c7944e73c4c2a096b17a9cb74d65b6c2bbafbde # v2.9.1
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           egress-policy: audit
 
       - name: Get repo
-        run: |          
+        run: |
           echo "REPOSITORY=${{ env.REGISTRY }}/${{ github.repository }}" >> $GITHUB_ENV
 
       - name: Log in to the GHCR
@@ -35,9 +35,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Copy signed sample test image
-        run: 
-          oras cp -r wabbitnetworks.azurecr.io/ratify/notary-image:signed ${REPOSITORY}/notary-image:signed
+        run: oras cp -r wabbitnetworks.azurecr.io/ratify/notary-image:signed ${REPOSITORY}/notary-image:signed
 
-      - name: Copy unsigned sample test image 
-        run: 
-          oras cp wabbitnetworks.azurecr.io/ratify/notary-image:unsigned ${REPOSITORY}/notary-image:unsigned
+      - name: Copy unsigned sample test image
+        run: oras cp wabbitnetworks.azurecr.io/ratify/notary-image:unsigned ${REPOSITORY}/notary-image:unsigned
