@@ -16,7 +16,6 @@ limitations under the License.
 package mocks
 
 import (
-	"context"
 	"crypto"
 	"crypto/x509"
 
@@ -25,19 +24,10 @@ import (
 )
 
 type TestKeyManagementProviderFactory struct {
-	GetCertsFunc      func(ctx context.Context) (map[keymanagementprovider.KMPMapKey][]*x509.Certificate, keymanagementprovider.KeyManagementProviderStatus, error)
-	GetKeysFunc       func(ctx context.Context) (map[keymanagementprovider.KMPMapKey]crypto.PublicKey, keymanagementprovider.KeyManagementProviderStatus, error)
-	IsRefreshableFunc func() bool
 }
 
 func (f *TestKeyManagementProviderFactory) Create(_ string, _ config.KeyManagementProviderConfig, _ string) (keymanagementprovider.KeyManagementProvider, error) {
 	var certMap map[keymanagementprovider.KMPMapKey][]*x509.Certificate
 	var keyMap map[keymanagementprovider.KMPMapKey]crypto.PublicKey
-	return &TestKeyManagementProvider{
-		certificates:        certMap,
-		keys:                keyMap,
-		GetCertificatesFunc: f.GetCertsFunc,
-		GetKeysFunc:         f.GetKeysFunc,
-		IsRefreshableFunc:   f.IsRefreshableFunc,
-	}, nil
+	return &TestKeyManagementProvider{certificates: certMap, keys: keyMap}, nil
 }

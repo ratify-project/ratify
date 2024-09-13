@@ -9,7 +9,7 @@ spec:
     verificationCertStores:
       ca:
         ca-certs:
-          - certstore-inline
+        - certstore-inline
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
