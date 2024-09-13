@@ -642,6 +642,7 @@ func Convert_v1alpha1_VerifierSpec_To_unversioned_VerifierSpec(in *VerifierSpec,
 
 func autoConvert_unversioned_VerifierSpec_To_v1alpha1_VerifierSpec(in *unversioned.VerifierSpec, out *VerifierSpec, s conversion.Scope) error {
 	out.Name = in.Name
+	// WARNING: in.Type requires manual conversion: does not exist in peer-type
 	// WARNING: in.Version requires manual conversion: does not exist in peer-type
 	out.ArtifactTypes = in.ArtifactTypes
 	out.Address = in.Address
