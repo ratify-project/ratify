@@ -22,7 +22,7 @@ import (
 
 type MockRefresher struct{}
 
-func (f *MockRefresher) Create(_ RefresherConfig) (Refresher, error) {
+func (f *MockRefresher) Create(_ map[string]interface{}) (Refresher, error) {
 	return &MockRefresher{}, nil
 }
 
@@ -34,14 +34,10 @@ func (f *MockRefresher) GetResult() interface{} {
 	return nil
 }
 
-func (f *MockRefresher) GetStatus() interface{} {
-	return nil
-}
-
 func TestRefreshFactory_Create(t *testing.T) {
 	Register("mockRefresher", &MockRefresher{})
-	refresherConfig := RefresherConfig{
-		RefresherType: "mockRefresher",
+	refresherConfig := map[string]interface{}{
+		"type": "mockRefresher",
 	}
 	factory := refresherFactories["mockRefresher"]
 	refresher, err := factory.Create(refresherConfig)
@@ -108,8 +104,8 @@ func TestCreateRefresherFromConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			refresherConfig := RefresherConfig{
-				RefresherType: tt.refresherType,
+			refresherConfig := map[string]interface{}{
+				"type": tt.refresherType,
 			}
 			_, err := CreateRefresherFromConfig(refresherConfig)
 			if tt.expectedError && err == nil {
