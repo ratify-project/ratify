@@ -237,7 +237,10 @@ func normalizeVerificationCertsStores(conf *NotationPluginVerifierConfig) error 
 		}
 	}
 	if isCertStoresByType && isLegacyCertStore {
-		return re.ErrorCodeConfigInvalid.WithDetail("The verificationCertStores is misconfigured with both legacy and new formats").WithRemediation("Please provide only one format for the VerificationCertStores. Refer to the Notation Verifier configuration guide: https://ratify.dev/docs/plugins/verifier/notation#configuration")
+		// showing configuration content in the log with error details for better user experience
+		err := re.ErrorCodeConfigInvalid.WithDetail(fmt.Sprintf("The verificationCertStores is misconfigured with both legacy and new formats: %+v", conf)).WithRemediation("Please provide only one format for the VerificationCertStores. Refer to the Notation Verifier configuration guide: https://ratify.dev/docs/plugins/verifier/notation#configuration")
+		logger.GetLogger(context.Background(), logOpt).Error(err)
+		return err
 	} else if !isCertStoresByType && isLegacyCertStore {
 		legacyCertStore, err := normalizeLegacyCertStore(conf)
 		if err != nil {
