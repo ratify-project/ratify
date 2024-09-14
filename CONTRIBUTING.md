@@ -297,7 +297,7 @@ Gatekeeper requires TLS for external data provider interactions. As such ratify 
       --set-file notationCerts[0]=./test/testdata/notation.crt \
       --set-file provider.tls.crt=./tls/certs/tls.crt \
       --set-file provider.tls.key=./tls/certs/tls.key \
-      --set-file provider.tls.cabundle="$(cat ./tls/certs/ca.crt | base64 | tr -d '\n\r')" \
+      --set provider.tls.cabundle="$(cat ./tls/certs/ca.crt | base64 | tr -d '\n\r')" \
       --set-file provider.tls.caCert=./tls/certs/ca.crt \
       --set-file provider.tls.caKey=./tls/certs/ca.key
     ```
