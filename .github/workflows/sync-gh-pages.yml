@@ -2,9 +2,9 @@ name: Sync GH Pages
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - library/**
+      - library/**
 
 permissions: read-all
 
@@ -17,7 +17,7 @@ jobs:
       repository-projects: write
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           egress-policy: audit
 
@@ -26,5 +26,5 @@ jobs:
         with:
           github_token: ${{ github.token }}
           source_ref: ${{ github.ref }}
-          target_branch: 'gh-pages'
-          commit_message_template: '[Automated] Merged {source_ref} into target {target_branch}'
+          target_branch: "gh-pages"
+          commit_message_template: "[Automated] Merged {source_ref} into target {target_branch}"

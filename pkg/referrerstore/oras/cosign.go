@@ -46,7 +46,7 @@ func getCosignReferences(ctx context.Context, subjectReference common.Reference,
 			return nil, nil
 		}
 		evictOnError(ctx, err, subjectReference.Original)
-		return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail(fmt.Sprintf("Failed to validate the signature of the artifact: %+v", subjectReference)).WithError(err)
+		return nil, re.ErrorCodeRepositoryOperationFailure.WithDetail(fmt.Sprintf("Failed to validate existence of Cosign signature of the artifact: %+v", subjectReference)).WithError(err)
 	}
 
 	references = append(references, ocispecs.ReferenceDescriptor{
