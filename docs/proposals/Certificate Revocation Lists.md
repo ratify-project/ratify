@@ -30,6 +30,21 @@ A CRL is considered expired if the current date is after the `NextUpdate` field 
 ![image](../img/CRL/CRL-workflow.png)
 
 
+Ratify Verification Request Path:
+
+Step 1: Apply the CRs including certs and CRL config
+Step 2: Load CRLs from cert provided URLs
+Step 3: Trigger Refresh Monitor and set up refresh schedule
+Step 4: Start verify task
+Step 5: Load trust policy
+Step 6: Load CRL cache
+
+CRL Handler:
+
+Step 1: Load cert URLs
+Step 2: Download CRL
+Step 3: Trigger Refresh Monitor, refresh monitor is `time` pkg based.
+
 ### Cache Content Design
 
     
