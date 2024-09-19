@@ -84,7 +84,7 @@ See details in [GitHub milestone v1.3.0](https://github.com/ratify-project/ratif
 **Major features**
 
 - Enable revocation checking using CRL (Certificate Revocation List) for Notary Project signatures
-- Add Azure Trusted Signing as a Key Management Provider
+- Add Trusted Signing as a Key Management Provider
 - Support retaining multiple previous versions of certificates/keys in Key Management Provider
 - Artifact filtering based on annotations
 
