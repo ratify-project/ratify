@@ -184,7 +184,7 @@ The meaning of "suitably-recent" may vary with local policy, but it usually mean
 A new CRL is issued on a regular periodic basis (e.g., hourly, daily, or weekly).
 An entry is added to the CRL as part of the next update following notification of revocation. An entry MUST NOT be removed from the CRL until it appears on one regularly scheduled CRL issued beyond the revoked certificate's validity period.
 
-Implementations of the [Notary Project verification specification](./signing-and-verification-workflow.md) support only HTTP CRL URLs.
+Implementations of the Notary Project verification specification support only HTTP CRL URLs.
 
 **Revocation Checking with CRL**
 
