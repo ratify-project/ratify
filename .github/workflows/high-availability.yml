@@ -30,7 +30,7 @@ jobs:
         DAPR_VERSION: ["1.13.2"]
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@446798f8213ac2e75931c1b0769676d927801858 # v2.10.0
+        uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
         with:
           egress-policy: audit
 
@@ -39,7 +39,7 @@ jobs:
       - name: Set up Go 1.22
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          go-version: '1.22'
+          go-version: "1.22"
 
       - name: Bootstrap e2e
         run: |
