@@ -75,6 +75,7 @@
         ":6001",
         "--cert-dir=${input:tlsDir}",
         "--ca-cert-file=${input:clientCACert}",
+        "--config=${input:configPath}"
       ]
     },
     {
