@@ -6,6 +6,7 @@ Certificate validation is an essential step during signature validation. Current
 
 ## Goals
 
+- CRL support, including CRL downloading, validation, and revocation list checks
 - Define a cache provider interface for CRL
 - Implement default file-based cache implementation for both CLI and K8S
 - Implement preload CRL when cert added from KMP
@@ -86,27 +87,9 @@ For each CDP location, Notary Project verification workflow will try to download
 
 ```
 // Set stores the CRL bundle in the file system
-func (c *CRLCache) Set(ctx context.Context, uri string, bundle *Bundle) error {
-	if err := bundle.Validate(); err != nil {
-		return err
-	}
-    
-    // check closest expired date and set to `CRLCacheProvider`. Similar to `SetWithTTL`
-    c.SetNextUpdate(bundle)
-
-	// save to temp file
-	tempFile, err := os.CreateTemp("", tempFileName)
-	if err != nil {
-		return err
-	}
-	if err := saveTar(tempFile, bundle); err != nil {
-		return err
-	}
-	tempFile.Close()
-
-	// rename is atomic on UNIX-like platforms
-	return os.Rename(tempFile.Name(), filepath.Join(c.root, fileName(uri)))
-}
+// check closest expired date and set to `CRLCacheProvider`. Similar to `SetWithTTL`
+// save to temp file and use `file` to avoid concurrency issue
+// rename is atomic on UNIX-like platforms
 
 ```
 
@@ -119,33 +102,6 @@ func (c *CRLCache) Set(ctx context.Context, uri string, bundle *Bundle) error {
 //
 // - if the key does not exist, return ErrNotFound
 // - if the CRL is expired, return ErrCacheMiss
-func (c *CRLCache) Get(ctx context.Context, uri string) (bundle *Bundle, err error) {
-	f, err := os.Open(filepath.Join(c.root, fileName(uri)))
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, ErrCacheMiss
-		}
-		return nil, err
-	}
-	defer func() {
-		if cerr := f.Close(); cerr != nil && err == nil {
-			err = cerr
-		}
-	}()
-
-	bundle, err = parseBundleFromTar(f)
-	if err != nil {
-		return nil, err
-	}
-
-	expires := bundle.Metadata.CreatedAt.Add(c.MaxAge)
-	if c.MaxAge > 0 && time.Now().After(expires) {
-		// do not delete the file to maintain the idempotent behavior
-		return nil, ErrCacheMiss
-	}
-
-	return bundle, nil
-}
 ```
 
 #### Refresh Cache
@@ -154,35 +110,20 @@ func (c *CRLCache) Get(ctx context.Context, uri string) (bundle *Bundle, err err
 - Config a refresh interval, monitor and refresh `CRLCacheProvider`
 - Concurrency
 
+Cache Data Structure: Store data along with expiration timestamps.
+Monitor Scheduler: Use a scheduler (e.g., time.Ticker) to check the cache at regular intervals.
+Concurrency: Use synchronization mechanisms like mutexes for thread-safe access to shared data.
+Expiration Handling: Compare the current time with the cache item's expiration. If expired, trigger the fetch process to update the data.
+Error Handling and Retries: Implement error handling with retry logic in case of failed refresh operations.
+
 Use synchronization primitives like mutexes to ensure thread safety during cache updates.
 
 ```
-// Monitor starts a goroutine to monitor and refresh expired cache in CRLCacheProviders.
-func (cf *CacheFactory) Monitor(refreshFunc func(string) interface{}, interval time.Duration) {
-    go func() {
-        for {
-            time.Sleep(interval)
-            for _, c := cf.getAllCRLCacheProvider() {
-                c.ScanExpiredCRL(interval)
-            }
-        }
-    }()
-}
+// OPTION 1: Monitor starts a goroutine to monitor and refresh expired cache in CRLCacheProviders.
 
-func (c *CRLCacheProvider) ScanExpiredCRL(interval time.Duration) {
-    c.mu.Lock()
-    for key, item := range c.CRLBundles {
-        if item.Expiration.Before(time.Now()) {
-            // Refresh the cache item
-            newData := refreshFunc(key)
-            c.items[key] = CacheItem{
-                Data:       newData,
-                Expiration: time.Now().Add(interval),
-            }
-        }
-    }
-    c.mu.Unlock()
-}
+// OPTION 2: time.ticker
+
+// Set TTL
 ```
 
 # More details
