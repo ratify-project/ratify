@@ -41,7 +41,7 @@ RUN if [ "$build_licensechecker" = "true" ]; then go build -o /app/out/plugins/ 
 RUN if [ "$build_schemavalidator" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/schemavalidator; fi
 RUN if [ "$build_vulnerabilityreport" = "true" ]; then go build -o /app/out/plugins/ /app/plugins/verifier/vulnerabilityreport; fi
 
-FROM gcr.io/distroless/static:nonroot@sha256:42d15c647a762d3ce3a67eab394220f5268915d6ddba9006871e16e4698c3a24
+FROM gcr.io/distroless/static:nonroot@sha256:dcd3f1f09adef5689088c9c4d96a8d98c889d8281d3946145074f89eafe7e1af
 LABEL org.opencontainers.image.source https://github.com/ratify-project/ratify
 
 ARG RATIFY_FOLDER=$HOME/.ratify/
