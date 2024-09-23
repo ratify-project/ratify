@@ -6,7 +6,8 @@ Certificate validation is an essential step during signature validation. Current
 
 ## Goals
 
-- CRL support, including CRL downloading, validation, and revocation list checks
+CRL support, including CRL downloading, validation, and revocation list checks.
+
 - Define a cache provider interface for CRL
 - Implement default file-based cache implementation for both CLI and K8S
 - Implement preload CRL when cert added from KMP
@@ -34,17 +35,17 @@ A CRL is considered expired if the current date is after the `NextUpdate` field 
 Ratify Verification Request Path:
 
 Step 1: Apply the CRs including certs and CRL config
-Step 2: Load CRLs from cert provided URLs
-Step 3: Trigger Refresh Monitor and set up refresh schedule
-Step 4: Start verify task
-Step 5: Load trust policy
+Step 2: Load CRLs from cert provided URLs // Implement CanCacheCRL() with GetCertificates() which includes all scenarios that introduce a new cert: KMP, KMP refresher and Verifer Config
+Step 3: Trigger Refresh Monitor and set up refresh schedule // Refresher is based on build-in ticker
+Step 4: Start verify task // Revocation list check is handled by notation verifier.
+Step 5: Load trust policy // Get `Opt.Fetcher`
 Step 6: Load CRL cache
 
 CRL Handler:
 
-Step 1: Load cert URLs
+Step 1: Load cert URLs from `[]*x509.Certificate`
 Step 2: Download CRL
-Step 3: Trigger Refresh Monitor, refresh monitor is `time` pkg based.
+Step 3: Trigger Refresh Monitor, refresh monitor is [`time`](https://pkg.go.dev/time#example-NewTicker) pkg based.
 
 ### Cache Content Design
 
@@ -53,19 +54,19 @@ Key:
 - `uri` in type `string`
 
 Value: 
-- `bundle` in type `*Bundle`
-- `ttl` / `NextUpdate`: in type `time.Time`
+- `*Bundle`
+    - `ttl`, `NextUpdate`
 
 
 Check CRL Cache Validity
 ```
-// OPTION 1 creates an expiring cache
+// creates an expiring cache, normal 1 week
 expires := bundle.Metadata.CreatedAt.Add(cache.MaxAge)
 if cache.MaxAge > 0 && time.Now().After(expires) {
 	return nil, ErrCacheMiss
 }
 
-// OPTION 2 directly checks CRL validity
+// directly checks CRL validity
 now := time.Now()
 if !crl.NextUpdate.IsZero() && now.After(crl.NextUpdate) {
 	return fmt.Errorf("expired CRL. Current time %v is after CRL NextUpdate %v", now, crl.NextUpdate)
@@ -74,9 +75,12 @@ if !crl.NextUpdate.IsZero() && now.After(crl.NextUpdate) {
 
 ### Load CRL Cache
 
-Load cache is triggerred after cert loaded from the configurations.
+Load cache is triggerred after cert loaded from the either configurations.
 
 #### Download CRL
+
+
+Download is implemented by CRL `fetcher`
 
 CRL download location (URL) can be obtained from the certificate's CRL Distribution Point (CDP) extension. 
 If the certificate contains multiple CDP locations then each location download is attempted in sequential order, until a 2xx response is received for any of the location. 
@@ -87,10 +91,9 @@ For each CDP location, Notary Project verification workflow will try to download
 
 ```
 // Set stores the CRL bundle in the file system
-// check closest expired date and set to `CRLCacheProvider`. Similar to `SetWithTTL`
-// save to temp file and use `file` to avoid concurrency issue
-// rename is atomic on UNIX-like platforms
-
+// Check closest expired date and set to `CRLCacheProvider`.
+// Save to temp file and avoid concurrency issue with atomic write operation
+// `rename()` is atomic on UNIX-like platforms
 ```
 
 ### Provide CRL Cache
@@ -100,31 +103,23 @@ For each CDP location, Notary Project verification workflow will try to download
 ```
 // Get retrieves the CRL bundle from the file system
 //
-// - if the key does not exist, return ErrNotFound
-// - if the CRL is expired, return ErrCacheMiss
+// If the key does not exist, return ErrNotFound
+// If the CRL is expired, return ErrCacheMiss
 ```
 
 #### Refresh Cache
 
-- When set cache, check closest expired date and set to `CRLCacheProvider`. Similar to `SetWithTTL`
-- Config a refresh interval, monitor and refresh `CRLCacheProvider`
-- Concurrency
-
 Cache Data Structure: Store data along with expiration timestamps.
+
 Monitor Scheduler: Use a scheduler (e.g., time.Ticker) to check the cache at regular intervals.
+
 Concurrency: Use synchronization mechanisms like mutexes for thread-safe access to shared data.
-Expiration Handling: Compare the current time with the cache item's expiration. If expired, trigger the fetch process to update the data.
+
+Expiration Handling: When setting cache, check closest expired date that set to `CRLCacheProvider`. Compare the current time with the cache item's expiration. If expired, trigger the fetch process to update the data.
+
 Error Handling and Retries: Implement error handling with retry logic in case of failed refresh operations.
 
 Use synchronization primitives like mutexes to ensure thread safety during cache updates.
-
-```
-// OPTION 1: Monitor starts a goroutine to monitor and refresh expired cache in CRLCacheProviders.
-
-// OPTION 2: time.ticker
-
-// Set TTL
-```
 
 # More details
 
