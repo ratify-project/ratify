@@ -29,7 +29,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
+	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 )
 
 type azureManagedIdentityProviderFactory struct{}
@@ -135,8 +135,21 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 	serverURL := "https://" + artifactHostName
 
 	// create registry client and exchange AAD token for registry refresh token
-	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
-	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
+	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, nil) // &AuthenticationClientOptions{ClientOptions: options})
+	if err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry by azure managed identity token", re.HideStackTrace)
+	}
+	// refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
+	rt, err := client.ExchangeAADAccessTokenForACRRefreshToken(
+		context.Background(),
+		"access_token",
+		artifactHostName,
+		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
+			AccessToken: &d.identityToken.Token,
+			Tenant:      &d.tenantID,
+		},
+	)
+	// rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to get refresh token for container registry by azure managed identity token", re.HideStackTrace)
 	}
