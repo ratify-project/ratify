@@ -82,7 +82,7 @@ For example, if Gatekeeper _supported_ versions are v3.13 and v3.14, and Kuberne
 
 ## Post Release Activity
 
-After a successful release, please prepare a PR to update the chart value in `dev` branch. Manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
+After a successful release, please prepare a PR to update the chart value in `dev` branch. After PR gets merged, manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
 
 ### Weekly Dev Release
 
