@@ -21,13 +21,13 @@ import (
 	"os"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 	"github.com/ratify-project/ratify/pkg/metrics"
 	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 
-	"github.com/Azure/azure-sdk-for-go/services/preview/containerregistry/runtime/2019-08-15-preview/containerregistry"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
 
@@ -130,9 +130,23 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	serverURL := "https://" + artifactHostName
 
 	// create registry client and exchange AAD token for registry refresh token
-	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
+	// TODO: Consider adding authentication client options for multicloud scenarios
+	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, nil) // &AuthenticationClientOptions{ClientOptions: options})
+	if err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry", re.HideStackTrace)
+	}
+	// refreshTokenClient := azcontainerregistry.NewRefreshTokensClient(serverURL)
 	startTime := time.Now()
-	rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
+	rt, err := client.ExchangeAADAccessTokenForACRRefreshToken(
+		context.Background(),
+		"access_token",
+		artifactHostName,
+		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
+			AccessToken: &d.aadToken.AccessToken,
+			Tenant:      &d.tenantID,
+		},
+	)
+	// rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to get refresh token for container registry", re.HideStackTrace)
 	}
