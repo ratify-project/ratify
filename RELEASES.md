@@ -59,7 +59,7 @@ When a major release is required, the release commits should be merged with the 
 
 **X.Y.Z** refers to the version (git tag) of Ratify that is released.
 
-1. Prepare the release with a [PR](https://github.com/ratify-project/ratify/pull/1031/files) to update the chart value.
+1. Prepare the release with a [PR](https://github.com/ratify-project/ratify/pull/1801/files) to update the chart value.
 2. When the `release-X.Y` branch is ready, a tag **X.Y.Z** should be pushed. e.g. `git tag v1.1.1` and `git push --tags`. This will trigger a [Goreleaser](https://goreleaser.com/) action that will build the binaries and creates a [GitHub release](https://help.github.com/articles/creating-releases/):
 
 * The release will be marked as a draft to allow an final editing before publishing.
@@ -82,7 +82,7 @@ For example, if Gatekeeper _supported_ versions are v3.13 and v3.14, and Kuberne
 
 ## Post Release Activity
 
-After a successful release, please prepare a PR to update the chart value in `dev` branch. After PR gets merged, manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
+After a successful release, please prepare a [PR](https://github.com/ratify-project/ratify/pull/1805/files) to update the chart value in `dev` branch. After PR gets merged, manually trigger [quick start action](.github/quick-start.yml) to validate the quick start test is passing. Validate in the run logs that the version of ratify matches the latest released version.
 
 ### Weekly Dev Release
 
