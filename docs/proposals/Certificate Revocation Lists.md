@@ -4,6 +4,10 @@
 
 Certificate validation is an essential step during signature validation. Currently Ratify supports checking for revoked certificates through OCSP supported by notation-go library. However, OCSP validation requires internet connection for each validation while CRL could be cached for better performance. As notary-project is adding the CRL support for notation signature validation, Ratify could utilize it.
 
+OCSP URLs can be obtained from the certificate's authority information access (AIA) extension as defined in RFC 6960. If the certificate contains multiple OCSP URLs, then each URL is invoked in sequential order, until a 2xx response is received for any of the URL. For each OCSP URL, wait for a default threshold of 2 seconds to receive an OCSP response. The user may be able to configure this threshold. If OCSP response is not available within the timeout threshold the revocation result will be "revocation unavailable".
+
+If both OCSP URLs and CDP URLs are present, then OCSP is preferred over CRLs. If revocation status cannot be determined using OCSP because of any reason such as unavailability then fallback to using CRLs for revocation check.
+
 ## Goals
 
 CRL support, including CRL downloading, validation, and revocation list checks.
@@ -11,6 +15,7 @@ CRL support, including CRL downloading, validation, and revocation list checks.
 - Define a cache provider interface for CRL
 - Implement default file-based cache implementation for both CLI and K8S
 - Implement preload CRL when cert added from KMP
+- Test plan for the CRL feature and performance test between CRL w/o cache.
 - Update CRL and CRL caching related documentation
 
 ## Design Points
@@ -21,7 +26,7 @@ With no extra configuration, CRL download location (URL) can be obtained from th
 
 **Why Caching**
 
-Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 64MiB. Prefer ratify cache for reuse the cache provider interface. Reusing interfaces reduces redundant expressions, helps you easily maintain application objects
+Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 32MiB. Prefer ratify cache for reuse the cache provider [interface](https://github.com/ratify-project/ratify/blob/dev/pkg/cache/api.go). Reusing interfaces reduces redundant expressions, helps you easily maintain application objects.
 
 **Why Refresh CRL Cache**
 
@@ -32,44 +37,51 @@ A CRL is considered expired if the current date is after the `NextUpdate` field 
 ![image](../img/CRL/CRL-workflow.png)
 
 
-Ratify Verification Request Path:
+**Ratify Verification Request Path**:
 
 Step 1: Apply the CRs including certs and CRL config
+
 Step 2: Load CRLs from cert provided URLs // Implement CanCacheCRL() with GetCertificates() which includes all scenarios that introduce a new cert: KMP, KMP refresher and Verifer Config
+
 Step 3: Trigger Refresh Monitor and set up refresh schedule // Refresher is based on build-in ticker
+
 Step 4: Start verify task // Revocation list check is handled by notation verifier.
+
 Step 5: Load trust policy // Get `Opt.Fetcher`
+
 Step 6: Load CRL cache
 
-CRL Handler:
+**CRL Handler**:
 
 Step 1: Load cert URLs from `[]*x509.Certificate`
+
 Step 2: Download CRL
+
 Step 3: Trigger Refresh Monitor, refresh monitor is [`time`](https://pkg.go.dev/time#example-NewTicker) pkg based.
 
 ### Cache Content Design
 
-    
 Key: 
 - `uri` in type `string`
 
 Value: 
 - `*Bundle`
-    - `ttl`, `NextUpdate`
+    - `ttl/MaxAge`, `NextUpdate` // nextUpdate can be get from bundle.BaseCRL.NextUpdate
 
+Reference: [revocation/crl/bundle.go](https://github.com/JeyJeyGao/notation-core-go/blob/4b3bd0efa57362cb6d7d42f3f0562600945d2167/revocation/crl/bundle.go)
 
 Check CRL Cache Validity
 ```
-// creates an expiring cache, normal 1 week
+// creates an expiring cache, in normal case the value is 1 week
 expires := bundle.Metadata.CreatedAt.Add(cache.MaxAge)
 if cache.MaxAge > 0 && time.Now().After(expires) {
-	return nil, ErrCacheMiss
+	// perform refresh
 }
 
 // directly checks CRL validity
 now := time.Now()
 if !crl.NextUpdate.IsZero() && now.After(crl.NextUpdate) {
-	return fmt.Errorf("expired CRL. Current time %v is after CRL NextUpdate %v", now, crl.NextUpdate)
+	// perform refresh
 }
 ```
 
@@ -94,6 +106,29 @@ For each CDP location, Notary Project verification workflow will try to download
 // Check closest expired date and set to `CRLCacheProvider`.
 // Save to temp file and avoid concurrency issue with atomic write operation
 // `rename()` is atomic on UNIX-like platforms
+
+
+// notation-go FScache
+
+type fileCacheContent struct {
+	// BaseCRL is the ASN.1 encoded base CRL
+	BaseCRL []byte `json:"baseCRL"`
+
+	// DeltaCRL is the ASN.1 encoded delta CRL
+	DeltaCRL []byte `json:"deltaCRL,omitempty"`
+}
+
+// This cache builds on top of the UNIX file system to leverage the file system's
+// atomic operations. The `rename` and `remove` operations will unlink the old
+// file but keep the inode and file descriptor for existing processes to access
+// the file. The old inode will be dereferenced when all processes close the old
+// file descriptor. Additionally, the operations are proven to be atomic on
+// UNIX-like platforms, so there is no need to handle file locking.
+//
+// NOTE: For Windows, the `open`, `rename` and `remove` operations need file
+// locking to ensure atomicity. The current implementation does not handle
+// file locking, so the concurrent write from multiple processes may be failed.
+// Please do not use this cache in a multi-process environment on Windows.
 ```
 
 ### Provide CRL Cache
@@ -105,7 +140,21 @@ For each CDP location, Notary Project verification workflow will try to download
 //
 // If the key does not exist, return ErrNotFound
 // If the CRL is expired, return ErrCacheMiss
+
+
+// Policy that uses custom verification level to relax the strict verification.
+// It logs expiry and skips the revocation check.
+"name": "use-expired-blobs",
+    "signatureVerification": {
+        "level" : "strict",
+        "override" : {
+            "expiry" : "log",
+            "revocation" : "skip"
+        }
+    },
+
 ```
+Reference: https://github.com/notaryproject/specifications/blob/main/specs/trust-store-trust-policy.md#signatureverification-details:~:text=Notary%20Project%20defines,scope%20(*).
 
 #### Refresh Cache
 
@@ -154,35 +203,11 @@ To check the revocation status of a certificate against CRL, the following steps
        The new CRL is then checked to determine if the certificate is revoked.
        If the original reason was `certificate hold`, the CRL is checked to determine if the certificate is unrevoked by looking for the `RemoveFromCRL` revocation code.
 
-```mermaid
-    flowchart TD
-    A[Start] --> B[Verify CRL Signature]
-    B --> C[Check CRL Expiration]
-    C -->|Expired| D[Retrieve New CRL]
-    C -->|Valid| E[Look Up Certificate in CRL]
-
-    E -->|Not Listed| D
-    E -->|Listed| F[Check InvalidityDate in CRL]
-
-    F -->|InvalidityDate Present| G[Compare InvalidityDate with Timestamping Date]
-    G -->|InvalidityDate Before Timestamp| Z[Certificate Revoked]
-    G -->|InvalidityDate Not Before Timestamp| Y[Certificate Valid]
-
-    F -->|No InvalidityDate| Z
-
-    C -->|CRL Expired and Reason Not Certificate Hold| Z
-
-    F -->|Certificate Hold| D
-
-    D --> H[Check New CRL for RemoveFromCRL Code]
-    H -->|Unrevoked| Y
-    H -->|Not Unrevoked| Z
-    
-    Z --> I[End]
-    Y --> I
-
-```
 
 **rfc3280** 
 
 REF: [Internet X.509 Public Key Infrastructure](https://www.rfc-editor.org/rfc/rfc3280#section-1)
+
+Q: Does the Notary Project trust policy support overriding of revocation endpoints to support signature verification in disconnected environments?
+
+A: TODO: Update after verification extensibility spec is ready. Not natively supported but a user can configure revocationValidations to skip and then use extended validations to check for revocation.
