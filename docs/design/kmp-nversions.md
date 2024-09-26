@@ -28,6 +28,10 @@ If a version is disabled, Ratify will remove it from the cache. This ensures tha
 
 ## Implementation Details
 
+- Add the `maxVersionCount` parameter to the KMP resource in Ratify.
+- Update the `azurekeyvalut` provider to support the `maxVersionCount` parameter
+- Update the `GetCertificates` and `GetKeys` methods to respect the `maxVersionCount` parameter retriving multiple versions of the certificate or key.
+
 ## Dev Work Items
 
 ## Open Questions
