@@ -32,7 +32,7 @@ import (
 )
 
 type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
-type azureWIAuthProvider struct {
+type WIAuthProvider struct {
 	aadToken          confidential.AuthResult
 	tenantID          string
 	clientID          string
@@ -54,8 +54,8 @@ type authClient interface {
 	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
 }
 
-func NewAzureWIAuthProvider() *azureWIAuthProvider {
-	return &azureWIAuthProvider{
+func NewAzureWIAuthProvider() *WIAuthProvider {
+	return &WIAuthProvider{
 		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error) {
 			client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
 			if err != nil {
@@ -114,7 +114,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "", re.HideStackTrace)
 	}
 
-	return &azureWIAuthProvider{
+	return &WIAuthProvider{
 		aadToken: token,
 		tenantID: tenant,
 		clientID: clientID,
@@ -122,7 +122,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
-func (d *azureWIAuthProvider) Enabled(_ context.Context) bool {
+func (d *WIAuthProvider) Enabled(_ context.Context) bool {
 	if d.tenantID == "" || d.clientID == "" {
 		return false
 	}
@@ -134,7 +134,7 @@ func (d *azureWIAuthProvider) Enabled(_ context.Context) bool {
 	return true
 }
 
-func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
+func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	if !d.Enabled(ctx) {
 		return provider.AuthConfig{}, re.ErrorCodeConfigInvalid.WithComponentType(re.AuthProvider).WithDetail("azure workload identity auth provider is not properly enabled")
 	}
