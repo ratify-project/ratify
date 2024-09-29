@@ -21,7 +21,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
+	azcontainerregistry "github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
@@ -33,9 +33,40 @@ import (
 
 type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
 type azureWIAuthProvider struct {
-	aadToken confidential.AuthResult
-	tenantID string
-	clientID string
+	aadToken          confidential.AuthResult
+	tenantID          string
+	clientID          string
+	authClientFactory func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error)
+	getRegistryHost   func(artifact string) (string, error)
+	getAADAccessToken func(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error)
+	reportMetrics     func(ctx context.Context, duration int64, artifactHostName string)
+}
+
+type authenticationClientWrapper struct {
+	client *azcontainerregistry.AuthenticationClient
+}
+
+func (w *authenticationClientWrapper) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
+	return w.client.ExchangeAADAccessTokenForACRRefreshToken(ctx, azcontainerregistry.PostContentSchemaGrantType(grantType), service, options)
+}
+
+type authClient interface {
+	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
+}
+
+func NewAzureWIAuthProvider() *azureWIAuthProvider {
+	return &azureWIAuthProvider{
+		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error) {
+			client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
+			if err != nil {
+				return nil, err
+			}
+			return &authenticationClientWrapper{client: client}, nil
+		},
+		getRegistryHost:   provider.GetRegistryHostName,
+		getAADAccessToken: azureauth.GetAADAccessToken,
+		reportMetrics:     metrics.ReportACRExchangeDuration,
+	}
 }
 
 type azureWIAuthProviderConf struct {
@@ -103,22 +134,18 @@ func (d *azureWIAuthProvider) Enabled(_ context.Context) bool {
 	return true
 }
 
-// Provide returns the credentials for a specified artifact.
-// Uses Azure Workload Identity to retrieve an AAD access token which can be
-// exchanged for a valid ACR refresh token for login.
 func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	if !d.Enabled(ctx) {
 		return provider.AuthConfig{}, re.ErrorCodeConfigInvalid.WithComponentType(re.AuthProvider).WithDetail("azure workload identity auth provider is not properly enabled")
 	}
-	// parse the artifact reference string to extract the registry host name
-	artifactHostName, err := provider.GetRegistryHostName(artifact)
+
+	artifactHostName, err := d.getRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}
 
-	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
-		newToken, err := azureauth.GetAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
+		newToken, err := d.getAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
 		if err != nil {
 			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, nil, "could not refresh AAD token", re.HideStackTrace)
 		}
@@ -126,19 +153,16 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 		logger.GetLogger(ctx, logOpt).Info("successfully refreshed AAD token")
 	}
 
-	// add protocol to generate complete URI
 	serverURL := "https://" + artifactHostName
-
-	// create registry client and exchange AAD token for registry refresh token
 	// TODO: Consider adding authentication client options for multicloud scenarios
-	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, nil) // &AuthenticationClientOptions{ClientOptions: options})
+	client, err := d.authClientFactory(serverURL, nil)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry", re.HideStackTrace)
 	}
-	// refreshTokenClient := azcontainerregistry.NewRefreshTokensClient(serverURL)
+
 	startTime := time.Now()
-	rt, err := client.ExchangeAADAccessTokenForACRRefreshToken(
-		context.Background(),
+	response, err := client.ExchangeAADAccessTokenForACRRefreshToken(
+		ctx,
 		"access_token",
 		artifactHostName,
 		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
@@ -146,11 +170,12 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 			Tenant:      &d.tenantID,
 		},
 	)
-	// rt, err := refreshTokenClient.GetFromExchange(context.Background(), "access_token", artifactHostName, d.tenantID, "", d.aadToken.AccessToken)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to get refresh token for container registry", re.HideStackTrace)
 	}
-	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
+	rt := response.ACRRefreshToken
+
+	d.reportMetrics(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 
 	refreshTokenExpiry := getACRExpiryIfEarlier(d.aadToken.ExpiresOn)
 	authConfig := provider.AuthConfig{

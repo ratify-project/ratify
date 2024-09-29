@@ -119,6 +119,7 @@ require (
 	github.com/sigstore/timestamp-authority v1.2.2 // indirect
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966 // indirect
 	github.com/sourcegraph/conc v0.3.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tchap/go-patricia/v2 v2.3.1 // indirect
 	github.com/thales-e-security/pool v0.0.2 // indirect
 	github.com/tjfoc/gmsm v1.4.1 // indirect
