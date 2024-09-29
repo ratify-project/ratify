@@ -32,7 +32,7 @@ import (
 
 // Verifies that Enabled checks if tenantID is empty or AAD token is empty
 func TestAzureWIEnabled_ExpectedResults(t *testing.T) {
-	azAuthProvider := azureWIAuthProvider{
+	azAuthProvider := WIAuthProvider{
 		tenantID: "test_tenant",
 		clientID: "test_client",
 		aadToken: confidential.AuthResult{
@@ -152,26 +152,26 @@ func TestProvide_Success(t *testing.T) {
 			ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &expectedRefreshToken},
 		}, nil)
 
-	provider := &azureWIAuthProvider{
+	provider := &WIAuthProvider{
 		aadToken: confidential.AuthResult{
 			AccessToken: "mockToken",
 			ExpiresOn:   time.Now().Add(time.Hour),
 		},
 		tenantID: "mockTenantID",
 		clientID: "mockClientID",
-		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error) {
+		authClientFactory: func(_ string, _ *azcontainerregistry.AuthenticationClientOptions) (authClient, error) {
 			return mockClient, nil
 		},
-		getRegistryHost: func(artifact string) (string, error) {
+		getRegistryHost: func(_ string) (string, error) {
 			return "myregistry.azurecr.io", nil
 		},
-		getAADAccessToken: func(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+		getAADAccessToken: func(_ context.Context, _, _, _ string) (confidential.AuthResult, error) {
 			return confidential.AuthResult{
 				AccessToken: "mockToken",
 				ExpiresOn:   time.Now().Add(time.Hour),
 			}, nil
 		},
-		reportMetrics: func(ctx context.Context, duration int64, artifactHostName string) {},
+		reportMetrics: func(_ context.Context, _ int64, _ string) {},
 	}
 
 	authConfig, err := provider.Provide(context.Background(), "artifact")
@@ -182,8 +182,8 @@ func TestProvide_Success(t *testing.T) {
 }
 
 func TestProvide_Failure_InvalidHostName(t *testing.T) {
-	provider := &azureWIAuthProvider{
-		getRegistryHost: func(artifact string) (string, error) {
+	provider := &WIAuthProvider{
+		getRegistryHost: func(_ string) (string, error) {
 			return "", errors.New("invalid hostname")
 		},
 	}
