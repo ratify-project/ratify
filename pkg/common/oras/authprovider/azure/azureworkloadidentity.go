@@ -155,7 +155,8 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 
 	serverURL := "https://" + artifactHostName
 	// TODO: Consider adding authentication client options for multicloud scenarios
-	client, err := d.authClientFactory(serverURL, nil)
+	var options *azcontainerregistry.AuthenticationClientOptions
+	client, err := d.authClientFactory(serverURL, options)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry", re.HideStackTrace)
 	}
