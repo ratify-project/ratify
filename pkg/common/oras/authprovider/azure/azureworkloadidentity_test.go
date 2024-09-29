@@ -22,9 +22,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	ratifyerrors "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // Verifies that Enabled checks if tenantID is empty or AAD token is empty
@@ -130,4 +133,61 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
+}
+
+type mockAuthClient struct {
+	mock.Mock
+}
+
+func (m *mockAuthClient) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
+	args := m.Called(ctx, grantType, service, options)
+	return args.Get(0).(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse), args.Error(1)
+}
+
+func TestProvide_Success(t *testing.T) {
+	mockClient := new(mockAuthClient)
+	expectedRefreshToken := "mocked_refresh_token"
+	mockClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "myregistry.azurecr.io", mock.Anything).
+		Return(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
+			ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &expectedRefreshToken},
+		}, nil)
+
+	provider := &azureWIAuthProvider{
+		aadToken: confidential.AuthResult{
+			AccessToken: "mockToken",
+			ExpiresOn:   time.Now().Add(time.Hour),
+		},
+		tenantID: "mockTenantID",
+		clientID: "mockClientID",
+		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error) {
+			return mockClient, nil
+		},
+		getRegistryHost: func(artifact string) (string, error) {
+			return "myregistry.azurecr.io", nil
+		},
+		getAADAccessToken: func(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+			return confidential.AuthResult{
+				AccessToken: "mockToken",
+				ExpiresOn:   time.Now().Add(time.Hour),
+			}, nil
+		},
+		reportMetrics: func(ctx context.Context, duration int64, artifactHostName string) {},
+	}
+
+	authConfig, err := provider.Provide(context.Background(), "artifact")
+
+	assert.NoError(t, err)
+	// Assert that the returned refresh token matches the expected one
+	assert.Equal(t, expectedRefreshToken, authConfig.Password)
+}
+
+func TestProvide_Failure_InvalidHostName(t *testing.T) {
+	provider := &azureWIAuthProvider{
+		getRegistryHost: func(artifact string) (string, error) {
+			return "", errors.New("invalid hostname")
+		},
+	}
+
+	_, err := provider.Provide(context.Background(), "artifact")
+	assert.Error(t, err)
 }
