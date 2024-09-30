@@ -134,16 +134,21 @@ func (d *WIAuthProvider) Enabled(_ context.Context) bool {
 	return true
 }
 
+// Provide returns the credentials for a specified artifact.
+// Uses Azure Workload Identity to retrieve an AAD access token which can be
+// exchanged for a valid ACR refresh token for login.
 func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	if !d.Enabled(ctx) {
 		return provider.AuthConfig{}, re.ErrorCodeConfigInvalid.WithComponentType(re.AuthProvider).WithDetail("azure workload identity auth provider is not properly enabled")
 	}
 
+	// parse the artifact reference string to extract the registry host name
 	artifactHostName, err := d.getRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}
 
+	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.aadToken.ExpiresOn) {
 		newToken, err := d.getAADAccessToken(ctx, d.tenantID, d.clientID, AADResource)
 		if err != nil {
@@ -153,7 +158,10 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 		logger.GetLogger(ctx, logOpt).Info("successfully refreshed AAD token")
 	}
 
+	// add protocol to generate complete URI
 	serverURL := "https://" + artifactHostName
+
+	// create registry client and exchange AAD token for registry refresh token
 	// TODO: Consider adding authentication client options for multicloud scenarios
 	var options *azcontainerregistry.AuthenticationClientOptions
 	client, err := d.authClientFactory(serverURL, options)
