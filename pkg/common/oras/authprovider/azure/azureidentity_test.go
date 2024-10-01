@@ -20,15 +20,28 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	ratifyerrors "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
+
+type MockGetManagedIdentityToken struct {
+	mock.Mock
+}
+
+func (m *MockGetManagedIdentityToken) GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
+	args := m.Called(ctx, clientID)
+	return args.Get(0).(azcore.AccessToken), args.Error(1)
+}
 
 // Verifies that Enabled checks if tenantID is empty or AAD token is empty
 func TestAzureMSIEnabled_ExpectedResults(t *testing.T) {
-	azAuthProvider := azureManagedIdentityAuthProvider{
+	azAuthProvider := MIAuthProvider{
 		tenantID: "test_tenant",
 		clientID: "test_client",
 		identityToken: azcore.AccessToken{
@@ -88,4 +101,145 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
+}
+
+func TestNewAzureMIAuthProvider_AuthenticationClientError(t *testing.T) {
+	// Create a new mock client factory
+	mockFactory := new(MockAuthClientFactory)
+
+	// Setup mock to return an error
+	mockFactory.On("NewAuthenticationClient", mock.Anything, mock.Anything).
+		Return(nil, errors.New("failed to create authentication client"))
+
+	// Create a new WIAuthProvider instance
+	provider := NewAzureMIAuthProvider()
+	provider.authClientFactory = mockFactory.NewAuthenticationClient
+
+	// Call authClientFactory to test error handling
+	_, err := provider.authClientFactory("https://myregistry.azurecr.io", nil)
+
+	// Assert that an error is returned
+	assert.Error(t, err)
+	assert.Equal(t, "failed to create authentication client", err.Error())
+
+	// Verify that the mock was called
+	mockFactory.AssertCalled(t, "NewAuthenticationClient", "https://myregistry.azurecr.io", mock.Anything)
+}
+
+func TestNewAzureMIAuthProvider_Success(t *testing.T) {
+	// Create a new mock client factory
+	mockFactory := new(MockAuthClientFactory)
+
+	// Create a mock auth client to return from the factory
+	mockAuthClient := new(MockAuthClient)
+
+	// Setup mock to return a successful auth client
+	mockFactory.On("NewAuthenticationClient", mock.Anything, mock.Anything).
+		Return(mockAuthClient, nil)
+
+	// Create a new WIAuthProvider instance
+	provider := NewAzureMIAuthProvider()
+
+	// Replace authClientFactory with the mock factory
+	provider.authClientFactory = mockFactory.NewAuthenticationClient
+
+	// Call authClientFactory to test successful return
+	client, err := provider.authClientFactory("https://myregistry.azurecr.io", nil)
+
+	// Assert that the client is returned without an error
+	assert.NoError(t, err)
+	assert.NotNil(t, client)
+
+	// Assert that the returned client is of the expected type
+	_, ok := client.(*MockAuthClient)
+	assert.True(t, ok, "expected client to be of type *MockAuthClient")
+
+	// Verify that the mock was called
+	mockFactory.AssertCalled(t, "NewAuthenticationClient", "https://myregistry.azurecr.io", mock.Anything)
+}
+
+func TestMIProvide_Success(t *testing.T) {
+	const registryHost = "myregistry.azurecr.io"
+	mockClient := new(MockAuthClient)
+	expectedRefreshToken := "mocked_refresh_token"
+	mockClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", registryHost, mock.Anything).
+		Return(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
+			ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &expectedRefreshToken},
+		}, nil)
+
+	provider := &MIAuthProvider{
+		identityToken: azcore.AccessToken{
+			Token:     "mockToken",
+			ExpiresOn: time.Now().Add(time.Hour),
+		},
+		tenantID: "mockTenantID",
+		clientID: "mockClientID",
+		authClientFactory: func(_ string, _ *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+			return mockClient, nil
+		},
+		getRegistryHost: func(_ string) (string, error) {
+			return registryHost, nil
+		},
+		getManagedIdentityToken: func(_ context.Context, _ string) (azcore.AccessToken, error) {
+			return azcore.AccessToken{
+				Token:     "mockToken",
+				ExpiresOn: time.Now().Add(time.Hour),
+			}, nil
+		},
+	}
+
+	authConfig, err := provider.Provide(context.Background(), "artifact")
+
+	assert.NoError(t, err)
+	// Assert that getManagedIdentityToken was not called
+	mockClient.AssertNotCalled(t, "getManagedIdentityToken", mock.Anything, mock.Anything)
+	// Assert that the returned refresh token matches the expected one
+	assert.Equal(t, expectedRefreshToken, authConfig.Password)
+}
+
+func TestMIProvide_RefreshAAD(t *testing.T) {
+	const registryHost = "myregistry.azurecr.io"
+	// Arrange
+	mockClient := new(MockAuthClient)
+
+	// Create a mock function for getManagedIdentityToken
+	mockGetManagedIdentityToken := new(MockGetManagedIdentityToken)
+
+	provider := &MIAuthProvider{
+		identityToken: azcore.AccessToken{
+			Token:     "mockToken",
+			ExpiresOn: time.Now(), // Expired token to force a refresh
+		},
+		tenantID: "mockTenantID",
+		clientID: "mockClientID",
+		authClientFactory: func(_ string, _ *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+			return mockClient, nil
+		},
+		getRegistryHost: func(_ string) (string, error) {
+			return registryHost, nil
+		},
+		getManagedIdentityToken: mockGetManagedIdentityToken.GetManagedIdentityToken, // Use the mock
+	}
+
+	mockClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", registryHost, mock.Anything).
+		Return(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
+			ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: new(string)},
+		}, nil)
+
+	// Set up the expectation for the mocked method
+	mockGetManagedIdentityToken.On("GetManagedIdentityToken", mock.Anything, "mockClientID").
+		Return(azcore.AccessToken{
+			Token:     "newMockToken",
+			ExpiresOn: time.Now().Add(time.Hour),
+		}, nil)
+
+	ctx := context.TODO()
+	artifact := "testArtifact"
+
+	// Act
+	_, err := provider.Provide(ctx, artifact)
+
+	// Assert
+	assert.NoError(t, err)
+	mockGetManagedIdentityToken.AssertCalled(t, "GetManagedIdentityToken", mock.Anything, "mockClientID") // Assert that getManagedIdentityToken was called
 }

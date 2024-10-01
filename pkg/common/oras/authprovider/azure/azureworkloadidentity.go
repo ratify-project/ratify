@@ -36,32 +36,33 @@ type WIAuthProvider struct {
 	aadToken          confidential.AuthResult
 	tenantID          string
 	clientID          string
-	authClientFactory func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error)
+	authClientFactory func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
 	getRegistryHost   func(artifact string) (string, error)
 	getAADAccessToken func(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error)
 	reportMetrics     func(ctx context.Context, duration int64, artifactHostName string)
 }
 
-type authenticationClientWrapper struct {
+type AuthenticationClientWrapper struct {
 	client *azcontainerregistry.AuthenticationClient
 }
 
-func (w *authenticationClientWrapper) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
+func (w *AuthenticationClientWrapper) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
 	return w.client.ExchangeAADAccessTokenForACRRefreshToken(ctx, azcontainerregistry.PostContentSchemaGrantType(grantType), service, options)
 }
 
-type authClient interface {
+type AuthClient interface {
 	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
 }
 
+// NewAzureWIAuthProvider is defined to enable mocking of some of the function in unit tests
 func NewAzureWIAuthProvider() *WIAuthProvider {
 	return &WIAuthProvider{
-		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (authClient, error) {
+		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
 			client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
 			if err != nil {
 				return nil, err
 			}
-			return &authenticationClientWrapper{client: client}, nil
+			return &AuthenticationClientWrapper{client: client}, nil
 		},
 		getRegistryHost:   provider.GetRegistryHostName,
 		getAADAccessToken: azureauth.GetAADAccessToken,
@@ -161,7 +162,6 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	// add protocol to generate complete URI
 	serverURL := "https://" + artifactHostName
 
-	// create registry client and exchange AAD token for registry refresh token
 	// TODO: Consider adding authentication client options for multicloud scenarios
 	var options *azcontainerregistry.AuthenticationClientOptions
 	client, err := d.authClientFactory(serverURL, options)
