@@ -33,10 +33,28 @@ import (
 )
 
 type azureManagedIdentityProviderFactory struct{}
-type azureManagedIdentityAuthProvider struct {
-	identityToken azcore.AccessToken
-	clientID      string
-	tenantID      string
+type MIAuthProvider struct {
+	identityToken           azcore.AccessToken
+	clientID                string
+	tenantID                string
+	authClientFactory       func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
+	getRegistryHost         func(artifact string) (string, error)
+	getManagedIdentityToken func(ctx context.Context, clientID string) (azcore.AccessToken, error)
+}
+
+// NewAzureWIAuthProvider is defined to enable mocking of some of the function in unit tests
+func NewAzureMIAuthProvider() *MIAuthProvider {
+	return &MIAuthProvider{
+		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+			client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
+			if err != nil {
+				return nil, err
+			}
+			return &AuthenticationClientWrapper{client: client}, nil
+		},
+		getRegistryHost:         provider.GetRegistryHostName,
+		getManagedIdentityToken: getManagedIdentityToken,
+	}
 }
 
 type azureManagedIdentityAuthProviderConf struct {
@@ -53,7 +71,7 @@ func init() {
 	provider.Register(azureManagedIdentityAuthProviderName, &azureManagedIdentityProviderFactory{})
 }
 
-// Create returns an azureManagedIdentityAuthProvider
+// Create returns an MIAuthProvider
 func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider.AuthProviderConfig) (provider.AuthProvider, error) {
 	conf := azureManagedIdentityAuthProviderConf{}
 	authProviderConfigBytes, err := json.Marshal(authProviderConfig)
@@ -85,7 +103,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "", re.HideStackTrace)
 	}
 
-	return &azureManagedIdentityAuthProvider{
+	return &MIAuthProvider{
 		identityToken: token,
 		clientID:      client,
 		tenantID:      tenant,
@@ -93,7 +111,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 }
 
 // Enabled checks for non empty tenant ID and AAD access token
-func (d *azureManagedIdentityAuthProvider) Enabled(_ context.Context) bool {
+func (d *MIAuthProvider) Enabled(_ context.Context) bool {
 	if d.clientID == "" {
 		return false
 	}
@@ -112,36 +130,39 @@ func (d *azureManagedIdentityAuthProvider) Enabled(_ context.Context) bool {
 // Provide returns the credentials for a specified artifact.
 // Uses Managed Identity to retrieve an AAD access token which can be
 // exchanged for a valid ACR refresh token for login.
-func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
+func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider.AuthConfig, error) {
 	if !d.Enabled(ctx) {
 		return provider.AuthConfig{}, fmt.Errorf("azure managed identity provider is not properly enabled")
 	}
+
 	// parse the artifact reference string to extract the registry host name
-	artifactHostName, err := provider.GetRegistryHostName(artifact)
+	artifactHostName, err := d.getRegistryHost(artifact)
 	if err != nil {
-		return provider.AuthConfig{}, err
+		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}
 
 	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.identityToken.ExpiresOn) {
-		newToken, err := getManagedIdentityToken(ctx, d.clientID)
+		newToken, err := d.getManagedIdentityToken(ctx, d.clientID)
 		if err != nil {
 			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "could not refresh azure managed identity token", re.HideStackTrace)
 		}
 		d.identityToken = newToken
 		logger.GetLogger(ctx, logOpt).Info("successfully refreshed azure managed identity token")
 	}
+
 	// add protocol to generate complete URI
 	serverURL := "https://" + artifactHostName
 
-	// create registry client and exchange AAD token for registry refresh token
-	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, nil) // &AuthenticationClientOptions{ClientOptions: options})
+	// TODO: Consider adding authentication client options for multicloud scenarios
+	var options *azcontainerregistry.AuthenticationClientOptions
+	client, err := d.authClientFactory(serverURL, options)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry by azure managed identity token", re.HideStackTrace)
 	}
-	// refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
-	rt, err := client.ExchangeAADAccessTokenForACRRefreshToken(
-		context.Background(),
+
+	response, err := client.ExchangeAADAccessTokenForACRRefreshToken(
+		ctx,
 		"access_token",
 		artifactHostName,
 		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
@@ -149,18 +170,17 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 			Tenant:      &d.tenantID,
 		},
 	)
-	// rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to get refresh token for container registry by azure managed identity token", re.HideStackTrace)
 	}
+	rt := response.ACRRefreshToken
 
-	expiresOn := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)
-
+	refreshTokenExpiry := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)
 	authConfig := provider.AuthConfig{
 		Username:  dockerTokenLoginUsernameGUID,
 		Password:  *rt.RefreshToken,
 		Provider:  d,
-		ExpiresOn: expiresOn,
+		ExpiresOn: refreshTokenExpiry,
 	}
 
 	return authConfig, nil
