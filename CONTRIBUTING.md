@@ -2,8 +2,14 @@
 
 Welcome! We are very happy to accept community contributions to Ratify, whether those are [Pull Requests](#pull-requests), [Plugins](#plugins), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)! Please note that by participating in this project, you agree to abide by the [Code of Conduct](./CODE_OF_CONDUCT.md), as well as the terms of the [CLA](#cla).
 
-# Table of Contents
-- [Getting Started](#GettingStarted)
+## Table of Contents
+- [Getting Started](#getting-started)
+- [Feature Enhancements](#feature-enhancements)
+- [Feature Suggestions](#feature-suggestions)
+- [Bug Reports](#bug-reports)
+- [Developing](#developing)
+- [Pull Requests](#pull-requests)
+- [Pull Requests](#feature-areas)
 
 ## Getting Started
 
@@ -85,6 +91,7 @@ The Ratify project is composed of the following main components:
 ### Debugging Ratify with VS Code
 
 Ratify can run through cli command or run as a http server. Create a [launch.json](https://code.visualstudio.com/docs/editor/debugging#_launch-configurations) file in the .vscode directory, then hit F5 to debug. Note the first debug session may take a few minutes to load, subsequent session will be much faster.
+A demo of VS Code debugging experience is available from ratify community meeting [recording](https://youtu.be/o5ufkZRDiIg?si=mzSw5XHPxBJmgq8i&t=2793) min 46:33. 
 
 Here is a sample json for cli. Note that for the following sample json to successfully work, you need to make sure that `verificationCerts` attribute of the verifier in your config file points to the notation verifier's certificate file. In order to do that, you can download the cert file with the following command:
 `curl -sSLO https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt`, 
