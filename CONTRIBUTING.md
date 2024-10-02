@@ -12,7 +12,6 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 
 ## Feature Enhancements
 For non-trivial enhancements or bug fixes, please start by raising a document PR. You can refer to the example [here](https://github.com/ratify-project/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
-
 Major user experience updates should be documented in [/doc/proposals](https://github.com/ratify-project/ratify/tree/dev/docs/proposals). Changes to technical implementation should be added to [/doc/design](https://github.com/ratify-project/ratify/tree/dev/docs/design).  
 
 Consider adding the following section where applicable:
@@ -44,6 +43,18 @@ If the PR contains a regression that could not pass the full validation, please 
 2. Open a revert PR against `dev`.
 3. Follow the same process to get this PR gets merged into `dev`.
 4. Work on the fix and follow the above PR process.
+
+### Commit
+
+You should follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to write commit message. As the Ratify Project repositories enforces the [DCO (Developer Certificate of Origin)](https://github.com/apps/dco) on Pull Requests, contributors are required to sign off that they adhere to those requirements by adding a `Signed-off-by` line to the commit messages. Git has even provided a `-s` command line option to append that automatically to your commit messages, please use it when you commit your changes. 
+
+The Ratify Project repositories require signed commits, please refer to [SSH commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#ssh-commit-signature-verification) on signing commits using SSH as it is easy to set up. You can find other methods to sign commits in the document [commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification). Git has provided a `-S` flag to create a signed commit.
+
+An example of `git commit` command:
+
+```shell
+git commit -s -S -m <commit_message>
+```
 
 ## Developing
 
