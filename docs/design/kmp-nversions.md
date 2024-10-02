@@ -65,8 +65,11 @@ Status:
 ## Implementation Details
 
 - Add the `maxVersionCount` parameter to the KMP resource in Ratify.
+  - ensure the value cannot be less than 1 or a negative number
 - Update the `azurekeyvalut` provider to support the `maxVersionCount` parameter
 - Update the `GetCertificates` and `GetKeys` methods to respect the `maxVersionCount` parameter retriving multiple versions of the certificate or key.
+- Update the `GetCertificates` and `GetKeys` methods to remove the oldest version from the cache if the number of versions exceeds the `maxVersionCount` parameter.
+- Update the `GetCertificates` and `GetKeys` methods to remove disabled versions from the cache.
 
 ## Dev Work Items
 
@@ -76,6 +79,7 @@ Status:
   - Retaining the disabled version would require changing the KMP data structure to hold a list of versions and their status.
 - If a version is disabled, does that count towards the nVersionCount? For example, if nVersionCount is set to 3 and one of the versions is disabled, should Ratify retain the last three active versions or the last three versions, regardless of their status?
 - What does the KMP status look like when multiple versions are retained in the cache?
-- Should the inlined provider support nVersionCount?
+- Should the existing KMP data structure be changed to group versions by key or certificate name?
+- Should the KMP status return a flat list of versions or group them by key or certificate name?
 
 ## Future Considerations
