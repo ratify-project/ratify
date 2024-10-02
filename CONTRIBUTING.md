@@ -2,6 +2,9 @@
 
 Welcome! We are very happy to accept community contributions to Ratify, whether those are [Pull Requests](#pull-requests), [Plugins](#plugins), [Feature Suggestions](#feature-suggestions) or [Bug Reports](#bug-reports)! Please note that by participating in this project, you agree to abide by the [Code of Conduct](./CODE_OF_CONDUCT.md), as well as the terms of the [CLA](#cla).
 
+# Table of Contents
+- [Getting Started](#GettingStarted)
+
 ## Getting Started
 
 * If you don't already have it, you will need [go](https://golang.org/dl/) v1.16+ installed locally to build the project.
