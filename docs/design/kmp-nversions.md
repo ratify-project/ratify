@@ -26,6 +26,42 @@ When a new version of a certificate or key is created, Ratify will check the `ma
 
 If a version is disabled, Ratify will remove it from the cache. This ensures that disabled versions are not retained in the cache, reducing the risk of using compromised keys or certificates being passed to the verifiers.
 
+Example: AKV KMP resource with `maxVersionCount` parameter
+
+```yaml
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: KeyManagementProvider
+metadata:
+  name: keymanagementprovider-akv
+spec:
+  type: azurekeyvault
+  refreshInterval: 1m
+  maxVersionCount: 3
+  parameters:
+    vaultURI: https://yourkeyvault.vault.azure.net/
+    certificates:
+      - name: yourCertName
+        version: yourCertVersion # Optional, fetch latest version if empty
+    tenantID:
+    clientID:
+```
+
+Example: AKV KMP resource status with multiple versions retained in the cache
+
+```yaml
+Status:
+  Issuccess:        true
+  Lastfetchedtime:  2024-10-02T14:58:54Z
+  Properties:
+    Certificates:
+      Last Refreshed:  2024-10-02T14:58:54Z
+      Name:            yourCertName
+      Version:         a1b2c3d4e5f67890abcdef1234567890
+      Last Refreshed:  2024-10-02T14:58:54Z
+      Name:            yourCertName
+      Version:         0ff373a9259c4578a247cfd7861a8805
+```
+
 ## Implementation Details
 
 - Add the `maxVersionCount` parameter to the KMP resource in Ratify.
