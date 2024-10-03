@@ -247,6 +247,11 @@ func TestWIProvide_RefreshAAD(t *testing.T) {
 
 func TestWIProvide_Failure_InvalidHostName(t *testing.T) {
 	provider := &WIAuthProvider{
+		aadToken: confidential.AuthResult{
+			AccessToken: "mockToken",
+			ExpiresOn:   time.Now(),
+		},
+		tenantID: "mockTenantID",
 		getRegistryHost: func(_ string) (string, error) {
 			return "", errors.New("invalid hostname")
 		},

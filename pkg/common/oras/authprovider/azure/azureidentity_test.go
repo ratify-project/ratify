@@ -191,6 +191,11 @@ func TestMIProvide_RefreshAAD(t *testing.T) {
 
 func TestMIProvide_Failure_InvalidHostName(t *testing.T) {
 	provider := &MIAuthProvider{
+		tenantID: "test_tenant",
+		clientID: "test_client",
+		identityToken: azcore.AccessToken{
+			Token: "test_token",
+		},
 		getRegistryHost: func(_ string) (string, error) {
 			return "", errors.New("invalid hostname")
 		},
