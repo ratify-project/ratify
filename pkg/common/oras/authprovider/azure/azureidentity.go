@@ -42,21 +42,6 @@ type MIAuthProvider struct {
 	getManagedIdentityToken func(ctx context.Context, clientID string) (azcore.AccessToken, error)
 }
 
-// NewAzureWIAuthProvider is defined to enable mocking of some of the function in unit tests
-func NewAzureMIAuthProvider() *MIAuthProvider {
-	return &MIAuthProvider{
-		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-			client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
-			if err != nil {
-				return nil, err
-			}
-			return &AuthenticationClientWrapper{client: client}, nil
-		},
-		getRegistryHost:         provider.GetRegistryHostName,
-		getManagedIdentityToken: getManagedIdentityToken,
-	}
-}
-
 type azureManagedIdentityAuthProviderConf struct {
 	Name     string `json:"name"`
 	ClientID string `json:"clientID"`

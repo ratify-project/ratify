@@ -25,7 +25,6 @@ import (
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
-	"github.com/ratify-project/ratify/pkg/metrics"
 	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
@@ -52,22 +51,6 @@ func (w *AuthenticationClientWrapper) ExchangeAADAccessTokenForACRRefreshToken(c
 
 type AuthClient interface {
 	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
-}
-
-// NewAzureWIAuthProvider is defined to enable mocking of some of the function in unit tests
-func NewAzureWIAuthProvider() *WIAuthProvider {
-	return &WIAuthProvider{
-		authClientFactory: func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-			client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
-			if err != nil {
-				return nil, err
-			}
-			return &AuthenticationClientWrapper{client: client}, nil
-		},
-		getRegistryHost:   provider.GetRegistryHostName,
-		getAADAccessToken: azureauth.GetAADAccessToken,
-		reportMetrics:     metrics.ReportACRExchangeDuration,
-	}
 }
 
 type azureWIAuthProviderConf struct {

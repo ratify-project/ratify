@@ -103,61 +103,6 @@ func TestAzureMSIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	}
 }
 
-func TestNewAzureMIAuthProvider_AuthenticationClientError(t *testing.T) {
-	// Create a new mock client factory
-	mockFactory := new(MockAuthClientFactory)
-
-	// Setup mock to return an error
-	mockFactory.On("NewAuthenticationClient", mock.Anything, mock.Anything).
-		Return(nil, errors.New("failed to create authentication client"))
-
-	// Create a new WIAuthProvider instance
-	provider := NewAzureMIAuthProvider()
-	provider.authClientFactory = mockFactory.NewAuthenticationClient
-
-	// Call authClientFactory to test error handling
-	_, err := provider.authClientFactory("https://myregistry.azurecr.io", nil)
-
-	// Assert that an error is returned
-	assert.Error(t, err)
-	assert.Equal(t, "failed to create authentication client", err.Error())
-
-	// Verify that the mock was called
-	mockFactory.AssertCalled(t, "NewAuthenticationClient", "https://myregistry.azurecr.io", mock.Anything)
-}
-
-func TestNewAzureMIAuthProvider_Success(t *testing.T) {
-	// Create a new mock client factory
-	mockFactory := new(MockAuthClientFactory)
-
-	// Create a mock auth client to return from the factory
-	mockAuthClient := new(MockAuthClient)
-
-	// Setup mock to return a successful auth client
-	mockFactory.On("NewAuthenticationClient", mock.Anything, mock.Anything).
-		Return(mockAuthClient, nil)
-
-	// Create a new WIAuthProvider instance
-	provider := NewAzureMIAuthProvider()
-
-	// Replace authClientFactory with the mock factory
-	provider.authClientFactory = mockFactory.NewAuthenticationClient
-
-	// Call authClientFactory to test successful return
-	client, err := provider.authClientFactory("https://myregistry.azurecr.io", nil)
-
-	// Assert that the client is returned without an error
-	assert.NoError(t, err)
-	assert.NotNil(t, client)
-
-	// Assert that the returned client is of the expected type
-	_, ok := client.(*MockAuthClient)
-	assert.True(t, ok, "expected client to be of type *MockAuthClient")
-
-	// Verify that the mock was called
-	mockFactory.AssertCalled(t, "NewAuthenticationClient", "https://myregistry.azurecr.io", mock.Anything)
-}
-
 func TestMIProvide_Success(t *testing.T) {
 	const registryHost = "myregistry.azurecr.io"
 	mockClient := new(MockAuthClient)
@@ -242,4 +187,15 @@ func TestMIProvide_RefreshAAD(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	mockGetManagedIdentityToken.AssertCalled(t, "GetManagedIdentityToken", mock.Anything, "mockClientID") // Assert that getManagedIdentityToken was called
+}
+
+func TestMIProvide_Failure_InvalidHostName(t *testing.T) {
+	provider := &MIAuthProvider{
+		getRegistryHost: func(_ string) (string, error) {
+			return "", errors.New("invalid hostname")
+		},
+	}
+
+	_, err := provider.Provide(context.Background(), "artifact")
+	assert.Error(t, err)
 }
