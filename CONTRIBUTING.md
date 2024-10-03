@@ -4,12 +4,12 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 
 ## Table of Contents
 - [Getting Started](#getting-started)
+- [Feature Areas](#feature-areas)
 - [Feature Enhancements](#feature-enhancements)
 - [Feature Suggestions](#feature-suggestions)
 - [Bug Reports](#bug-reports)
 - [Developing](#developing)
 - [Pull Requests](#pull-requests)
-- [Pull Requests](#feature-areas)
 
 ## Getting Started
 
