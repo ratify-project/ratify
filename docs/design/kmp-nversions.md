@@ -36,12 +36,11 @@ metadata:
 spec:
   type: azurekeyvault
   refreshInterval: 1m
-  maxVersionCount: 3
   parameters:
     vaultURI: https://yourkeyvault.vault.azure.net/
     certificates:
       - name: yourCertName
-        version: yourCertVersion # Optional, fetch latest version if empty
+        maxVersionCount: 3
     tenantID:
     clientID:
 ```
@@ -57,29 +56,51 @@ Status:
       Last Refreshed:  2024-10-02T14:58:54Z
       Name:            yourCertName
       Version:         a1b2c3d4e5f67890abcdef1234567890
+      Status:          Enabled
       Last Refreshed:  2024-10-02T14:58:54Z
       Name:            yourCertName
       Version:         0ff373a9259c4578a247cfd7861a8805
+      Status:          Disabled
 ```
 
 ## Implementation Details
 
+- Modify the KMP data structure to include the status of the version.
+    ```go
+    type KMPMapKey struct {
+    Name    string
+    Version string
+    Status  string // Enabled or Disabled
+    Created time.Time // Time the version was created used for determining the oldest version
+    }
+    ```
 - Add the `maxVersionCount` parameter to the KMP resource in Ratify.
   - ensure the value cannot be less than 1 or a negative number
-- Update the `azurekeyvalut` provider to support the `maxVersionCount` parameter
-- Update the `GetCertificates` and `GetKeys` methods to respect the `maxVersionCount` parameter retriving multiple versions of the certificate or key.
-- Update the `GetCertificates` and `GetKeys` methods to remove the oldest version from the cache if the number of versions exceeds the `maxVersionCount` parameter.
-- Update the `GetCertificates` and `GetKeys` methods to remove disabled versions from the cache.
+  - default to 0 if not specified
+  - maximum value should be (TBD)
+  - specify the value at the object level within the parameters of the KMP resource.
+- Changes to `azurekeyvault` provider:
+   - support for the `maxVersionCount` parameter.
+   - allowing retrieval of multiple versions of certificates or keys.
+   - remove the oldest version from the cache when the number of versions exceeds the `maxVersionCount` parameter.
+   - update disabled certs status in the cache & remove the certData from the cache.
+- Log when the status of a version changes.
+- Log when a conflict between the `maxVersionCount` and the number of specified certificate versions occurs.
 
 ## Dev Work Items
 
 ## Open Questions
 
 - If a version is disabled, should it be removed from the cache or retained based on the nVersionCount and marked as inactive\disabled?
-  - Retaining the disabled version would require changing the KMP data structure to hold a list of versions and their status.
+  - [x] Keep the disabled version in the cache and mark it as disabled.
 - If a version is disabled, does that count towards the nVersionCount? For example, if nVersionCount is set to 3 and one of the versions is disabled, should Ratify retain the last three active versions or the last three versions, regardless of their status?
-- What does the KMP status look like when multiple versions are retained in the cache?
+  - [x] Yes, disabled versions should count towards the nVersionCount. The reason for this is that disabled versions may be re-enabled in the future, and it is important to retain them in the cache.
 - Should the existing KMP data structure be changed to group versions by key or certificate name?
-- Should the KMP status return a flat list of versions or group them by key or certificate name?
+  - [x] No, a flat list of versions is sufficient. At this time, there is no need to group versions by key or certificate name because the verifiers do not need to know the history of the versions.
+- Should the KMP status return a flat list of versions?
+  - [x] Yes, the status should return a flat list of versions.
+- What should the maximum value for nVersionCount be?
+  - [ ] TBD
+
 
 ## Future Considerations
