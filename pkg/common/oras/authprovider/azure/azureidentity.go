@@ -89,9 +89,11 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	}
 
 	return &MIAuthProvider{
-		identityToken: token,
-		clientID:      client,
-		tenantID:      tenant,
+		identityToken:           token,
+		clientID:                client,
+		tenantID:                tenant,
+		authClientFactory:       defaultAuthClientFactory,
+		getManagedIdentityToken: getManagedIdentityToken,
 	}, nil
 }
 
