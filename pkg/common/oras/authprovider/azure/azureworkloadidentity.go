@@ -41,6 +41,22 @@ type WIAuthProvider struct {
 	reportMetrics     func(ctx context.Context, duration int64, artifactHostName string)
 }
 
+func defaultAuthClientFactory(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthenticationClientWrapper{client: client}, nil
+}
+
+func defaultGetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+	return azureauth.GetAADAccessToken(ctx, tenantID, clientID, resource)
+}
+
+func defaultReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
+	logger.GetLogger(ctx, logOpt).Infof("Metrics Report: Duration=%dms, Host=%s", duration, artifactHostName)
+}
+
 type AuthenticationClientWrapper struct {
 	client *azcontainerregistry.AuthenticationClient
 }
@@ -99,9 +115,12 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	return &WIAuthProvider{
-		aadToken: token,
-		tenantID: tenant,
-		clientID: clientID,
+		aadToken:          token,
+		tenantID:          tenant,
+		clientID:          clientID,
+		authClientFactory: defaultAuthClientFactory,
+		getAADAccessToken: defaultGetAADAccessToken,
+		reportMetrics:     defaultReportMetrics,
 	}, nil
 }
 
