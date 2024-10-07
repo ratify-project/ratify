@@ -25,7 +25,7 @@ jobs:
       - name: Install Notation
         uses: notaryproject/notation-action/setup@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
       - name: Install cosign
-        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382 # v3.6.0
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
       - name: Az CLI login
         uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
         with:
