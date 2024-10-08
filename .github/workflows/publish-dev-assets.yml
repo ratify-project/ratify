@@ -21,7 +21,7 @@ jobs:
         with:
           egress-policy: audit
       - name: Checkout
-        uses: actions/checkout@d632683dd7b4114ad314bca15554477dd762a938
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
       - name: Install Notation
         uses: notaryproject/notation-action/setup@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
       - name: Install cosign
