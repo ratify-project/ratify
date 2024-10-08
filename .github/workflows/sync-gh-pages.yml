@@ -2,9 +2,9 @@ name: Sync GH Pages
 on:
   push:
     branches:
-    - main
+      - main
     paths:
-    - library/**
+      - library/**
 
 permissions: read-all
 
@@ -21,10 +21,10 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+      - uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
       - uses: everlytic/branch-merge@c4a244dc23143f824ae6c022a10732566cb8e973
         with:
           github_token: ${{ github.token }}
           source_ref: ${{ github.ref }}
-          target_branch: 'gh-pages'
-          commit_message_template: '[Automated] Merged {source_ref} into target {target_branch}'
+          target_branch: "gh-pages"
+          commit_message_template: "[Automated] Merged {source_ref} into target {target_branch}"

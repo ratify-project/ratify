@@ -1,19 +1,18 @@
-
 name: "CodeQL Scan"
 
 on:
   push:
-    branches: 
+    branches:
       - main
       - dev
       - 1.0.0*
   pull_request:
-    branches: 
+    branches:
       - main
       - dev
       - 1.0.0*
   schedule:
-    - cron: '30 1 * * 0'
+    - cron: "30 1 * * 0"
   workflow_dispatch:
 
 permissions: read-all
@@ -32,13 +31,13 @@ jobs:
           egress-policy: audit
 
       - name: Checkout repository
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # tag=3.0.2
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # tag=3.0.2
       - name: setup go environment
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
           go-version: "1.22"
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@4dd16135b69a43b6c8efb853346f8437d92d3c93 # tag=v3.26.6
+        uses: github/codeql-action/init@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # tag=v3.26.11
         with:
           languages: go
       - name: Run tidy
@@ -46,4 +45,4 @@ jobs:
       - name: Build CLI
         run: make build
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@4dd16135b69a43b6c8efb853346f8437d92d3c93 # tag=v3.26.6
+        uses: github/codeql-action/analyze@6db8d6351fd0be61f9ed8ebd12ccd35dcec51fea # tag=v3.26.11
