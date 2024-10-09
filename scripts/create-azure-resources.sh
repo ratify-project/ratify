@@ -60,6 +60,7 @@ create_aks() {
     --generate-ssh-keys \
     --enable-workload-identity \
     --attach-acr ${ACR_NAME} \
+    --enable-addons "" \
     --enable-oidc-issuer >/dev/null
   echo "AKS '${AKS_NAME}' is created"
 
