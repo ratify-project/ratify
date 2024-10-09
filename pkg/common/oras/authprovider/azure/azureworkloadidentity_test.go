@@ -38,18 +38,6 @@ type MockAzureAuth struct {
 	mock.Mock
 }
 
-type MockAuthClientFactory struct {
-	mock.Mock
-}
-
-func (m *MockAuthClientFactory) NewAuthenticationClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-	args := m.Called(serverURL, options)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(AuthClient), args.Error(1)
-}
-
 func (m *MockAzureAuth) GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
 	args := m.Called(ctx, tenantID, clientID, resource)
 	return args.Get(0).(confidential.AuthResult), args.Error(1)
