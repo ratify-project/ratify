@@ -170,3 +170,8 @@ akvCertConfig: # DEPRECATED: Use azurekeyvault instead
   cert2Version: # DEPRECATED: Use azurekeyvault.certificates instead
   certificates: # DEPRECATED: Use azurekeyvault.certificates instead
   tenantId: # DEPRECATED: Use azurekeyvault.tenantId instead
+
+# env: environment variables for ratify container
+env: []
+#  - name: https_proxy
+#    value: http://proxy-server:80
