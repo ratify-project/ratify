@@ -21,7 +21,7 @@ jobs:
           egress-policy: audit
 
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # tag=3.0.2
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871 # tag=3.0.2
         with:
           fetch-depth: 0
 
@@ -49,7 +49,7 @@ jobs:
           $RUNNER_TEMP/sbom-tool generate -b . -bc . -pn ratify -pv $GITHUB_REF_NAME -ps Microsoft -nsb https://microsoft.com -V Verbose
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@50769540e7f4bd5e21e526ee35c689e35e0d6874 # tag=v4.4.0
+        uses: actions/upload-artifact@604373da6381bf24206979c74d06a550515601b9 # tag=v4.4.1
         with:
           name: SBOM SPDX files
           path: _manifest/spdx_2.2/**

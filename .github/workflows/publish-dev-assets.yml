@@ -21,11 +21,11 @@ jobs:
         with:
           egress-policy: audit
       - name: Checkout
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
       - name: Install Notation
-        uses: notaryproject/notation-action/setup@104aa999103172f827373af8ac14dde7aa6d28f1 # v1.1.0
+        uses: notaryproject/notation-action/setup@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
       - name: Install cosign
-        uses: sigstore/cosign-installer@4959ce089c160fddf62f7b42464195ba1a56d382 # v3.6.0
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
       - name: Az CLI login
         uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
         with:
@@ -118,7 +118,7 @@ jobs:
           helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
           helm push ratify-${{ steps.prepare.outputs.semversionrolling }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
       - name: Sign with Notation
-        uses: notaryproject/notation-action/sign@104aa999103172f827373af8ac14dde7aa6d28f1 # v1.1.0
+        uses: notaryproject/notation-action/sign@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
         with:
           plugin_name: azure-kv
           plugin_url: ${{ vars.AZURE_KV_PLUGIN_URL }}
