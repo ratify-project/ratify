@@ -22,30 +22,344 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
-	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 	ratifyerrors "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+
+	azcontainerregistry "github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
+	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
 
-type MockAuthClient struct {
+// MockAuthClientFactory for creating AuthClient
+type MockAuthClientFactory struct {
 	mock.Mock
 }
 
-type MockAzureAuth struct {
+func (m *MockAuthClientFactory) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+	args := m.Called(serverURL, options)
+	return args.Get(0).(AuthClient), args.Error(1)
+}
+
+// MockRegistryHostGetter for retrieving registry host
+type MockRegistryHostGetter struct {
 	mock.Mock
 }
 
-func (m *MockAzureAuth) GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+func (m *MockRegistryHostGetter) GetRegistryHost(artifact string) (string, error) {
+	args := m.Called(artifact)
+	return args.String(0), args.Error(1)
+}
+
+// MockAADAccessTokenGetter for retrieving AAD access token
+type MockAADAccessTokenGetter struct {
+	mock.Mock
+}
+
+func (m *MockAADAccessTokenGetter) GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
 	args := m.Called(ctx, tenantID, clientID, resource)
 	return args.Get(0).(confidential.AuthResult), args.Error(1)
+}
+
+// MockMetricsReporter for reporting metrics
+type MockMetricsReporter struct {
+	mock.Mock
+}
+
+func (m *MockMetricsReporter) ReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
+	m.Called(ctx, duration, artifactHostName)
+}
+
+// MockAuthClient for the Azure auth client
+type MockAuthClient struct {
+	mock.Mock
 }
 
 func (m *MockAuthClient) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
 	args := m.Called(ctx, grantType, service, options)
 	return args.Get(0).(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse), args.Error(1)
+}
+
+// Test for successful Provide function
+func TestWIAuthProvider_Provide_Success(t *testing.T) {
+	// Mock all dependencies
+	mockAuthClientFactory := new(MockAuthClientFactory)
+	mockRegistryHostGetter := new(MockRegistryHostGetter)
+	mockAADAccessTokenGetter := new(MockAADAccessTokenGetter)
+	mockMetricsReporter := new(MockMetricsReporter)
+	mockAuthClient := new(MockAuthClient)
+
+	// Mock AAD token
+	initialToken := confidential.AuthResult{AccessToken: "initial_token", ExpiresOn: time.Now().Add(10 * time.Minute)}
+	refreshTokenString := "new_refresh_token"
+	refreshToken := azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
+		ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &refreshTokenString},
+	}
+
+	// Set expectations for mocked functions
+	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
+	mockAuthClientFactory.On("CreateAuthClient", "https://example.azurecr.io", mock.Anything).Return(mockAuthClient, nil)
+	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
+	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(initialToken, nil)
+	mockMetricsReporter.On("ReportMetrics", mock.Anything, mock.Anything, "example.azurecr.io").Return()
+
+	// Create WIAuthProvider
+	provider := WIAuthProvider{
+		aadToken:          initialToken,
+		tenantID:          "tenantID",
+		clientID:          "clientID",
+		authClientFactory: mockAuthClientFactory,
+		getRegistryHost:   mockRegistryHostGetter,
+		getAADAccessToken: mockAADAccessTokenGetter,
+		reportMetrics:     mockMetricsReporter,
+	}
+
+	// Call Provide method
+	ctx := context.Background()
+	authConfig, err := provider.Provide(ctx, "artifact_name")
+
+	// Assertions
+	assert.NoError(t, err)
+	assert.Equal(t, "new_refresh_token", authConfig.Password)
+}
+
+// Test for AAD token refresh logic
+func TestWIAuthProvider_Provide_RefreshToken(t *testing.T) {
+	// Mock all dependencies
+	mockAuthClientFactory := new(MockAuthClientFactory)
+	mockRegistryHostGetter := new(MockRegistryHostGetter)
+	mockAADAccessTokenGetter := new(MockAADAccessTokenGetter)
+	mockMetricsReporter := new(MockMetricsReporter)
+	mockAuthClient := new(MockAuthClient)
+
+	// Mock expired AAD token, and refreshed token
+	expiredToken := confidential.AuthResult{AccessToken: "expired_token", ExpiresOn: time.Now().Add(-10 * time.Minute)}
+	newToken := confidential.AuthResult{AccessToken: "new_token", ExpiresOn: time.Now().Add(10 * time.Minute)}
+	refreshTokenString := "refreshed_token"
+	refreshToken := azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
+		ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &refreshTokenString},
+	}
+
+	// Set expectations for mocked functions
+	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
+	mockAuthClientFactory.On("CreateAuthClient", "https://example.azurecr.io", mock.Anything).Return(mockAuthClient, nil)
+	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
+	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(newToken, nil)
+	mockMetricsReporter.On("ReportMetrics", mock.Anything, mock.Anything, "example.azurecr.io").Return()
+
+	// Create WIAuthProvider with expired token
+	provider := WIAuthProvider{
+		aadToken:          expiredToken,
+		tenantID:          "tenantID",
+		clientID:          "clientID",
+		authClientFactory: mockAuthClientFactory,
+		getRegistryHost:   mockRegistryHostGetter,
+		getAADAccessToken: mockAADAccessTokenGetter,
+		reportMetrics:     mockMetricsReporter,
+	}
+
+	// Call Provide method
+	ctx := context.Background()
+	authConfig, err := provider.Provide(ctx, "artifact_name")
+
+	// Assertions
+	assert.NoError(t, err)
+	assert.Equal(t, "refreshed_token", authConfig.Password)
+}
+
+// Test for failure when GetAADAccessToken fails
+func TestWIAuthProvider_Provide_AADTokenFailure(t *testing.T) {
+	// Mock all dependencies
+	mockAuthClientFactory := new(MockAuthClientFactory)
+	mockRegistryHostGetter := new(MockRegistryHostGetter)
+	mockAADAccessTokenGetter := new(MockAADAccessTokenGetter)
+	mockMetricsReporter := new(MockMetricsReporter)
+
+	// Mock expired AAD token, and failure to refresh
+	expiredToken := confidential.AuthResult{AccessToken: "expired_token", ExpiresOn: time.Now().Add(-10 * time.Minute)}
+
+	// Set expectations for mocked functions
+	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
+	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(confidential.AuthResult{}, errors.New("token refresh failed"))
+
+	// Create WIAuthProvider with expired token
+	provider := WIAuthProvider{
+		aadToken:          expiredToken,
+		tenantID:          "tenantID",
+		clientID:          "clientID",
+		authClientFactory: mockAuthClientFactory,
+		getRegistryHost:   mockRegistryHostGetter,
+		getAADAccessToken: mockAADAccessTokenGetter,
+		reportMetrics:     mockMetricsReporter,
+	}
+
+	// Call Provide method
+	ctx := context.Background()
+	_, err := provider.Provide(ctx, "artifact_name")
+
+	// Assertions
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "could not refresh AAD token")
+}
+
+// Test when tenant ID is missing from the environment
+func TestAzureWIProviderFactory_Create_NoTenantID(t *testing.T) {
+	// Clear the tenant ID environment variable
+	t.Setenv("AZURE_TENANT_ID", "")
+
+	// Initialize provider factory
+	factory := &AzureWIProviderFactory{}
+
+	// Call Create with minimal configuration
+	_, err := factory.Create(map[string]interface{}{})
+
+	// Expect error related to missing tenant ID
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "azure tenant id environment variable is empty")
+}
+
+// Test when client ID is missing from the environment
+func TestAzureWIProviderFactory_Create_NoClientID(t *testing.T) {
+	// Set tenant ID but leave client ID empty
+	t.Setenv("AZURE_TENANT_ID", "tenantID")
+	t.Setenv("AZURE_CLIENT_ID", "")
+
+	// Initialize provider factory
+	factory := &AzureWIProviderFactory{}
+
+	// Call Create with minimal configuration
+	_, err := factory.Create(map[string]interface{}{})
+
+	// Expect error related to missing client ID
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no client ID provided and AZURE_CLIENT_ID environment variable is empty")
+}
+
+// Test for successful token refresh
+func TestWIAuthProvider_Provide_TokenRefresh_Success(t *testing.T) {
+	// Mock dependencies
+	mockAuthClientFactory := new(MockAuthClientFactory)
+	mockRegistryHostGetter := new(MockRegistryHostGetter)
+	mockAADAccessTokenGetter := new(MockAADAccessTokenGetter)
+	mockMetricsReporter := new(MockMetricsReporter)
+	mockAuthClient := new(MockAuthClient)
+
+	// Mock expired AAD token and refreshed token
+	expiredToken := confidential.AuthResult{AccessToken: "expired_token", ExpiresOn: time.Now().Add(-10 * time.Minute)}
+	refreshTokenString := "refreshed_token"
+	newToken := confidential.AuthResult{AccessToken: "new_token", ExpiresOn: time.Now().Add(10 * time.Minute)}
+	refreshToken := azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
+		ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &refreshTokenString},
+	}
+
+	// Set expectations
+	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
+	mockAuthClientFactory.On("CreateAuthClient", "https://example.azurecr.io", mock.Anything).Return(mockAuthClient, nil)
+	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
+	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(newToken, nil)
+	mockMetricsReporter.On("ReportMetrics", mock.Anything, mock.Anything, "example.azurecr.io").Return()
+
+	// Create WIAuthProvider with expired token
+	provider := WIAuthProvider{
+		aadToken:          expiredToken,
+		tenantID:          "tenantID",
+		clientID:          "clientID",
+		authClientFactory: mockAuthClientFactory,
+		getRegistryHost:   mockRegistryHostGetter,
+		getAADAccessToken: mockAADAccessTokenGetter,
+		reportMetrics:     mockMetricsReporter,
+	}
+
+	// Call Provide method
+	ctx := context.Background()
+	authConfig, err := provider.Provide(ctx, "artifact_name")
+
+	// Assertions
+	assert.NoError(t, err)
+	assert.Equal(t, "refreshed_token", authConfig.Password)
+}
+
+// Test when token refresh fails
+func TestWIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
+	// Mock dependencies
+	mockAuthClientFactory := new(MockAuthClientFactory)
+	mockRegistryHostGetter := new(MockRegistryHostGetter)
+	mockAADAccessTokenGetter := new(MockAADAccessTokenGetter)
+	mockMetricsReporter := new(MockMetricsReporter)
+
+	// Mock expired AAD token and failure to refresh
+	expiredToken := confidential.AuthResult{AccessToken: "expired_token", ExpiresOn: time.Now().Add(-10 * time.Minute)}
+
+	// Set expectations
+	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
+	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(confidential.AuthResult{}, errors.New("token refresh failed"))
+
+	// Create WIAuthProvider with expired token
+	provider := WIAuthProvider{
+		aadToken:          expiredToken,
+		tenantID:          "tenantID",
+		clientID:          "clientID",
+		authClientFactory: mockAuthClientFactory,
+		getRegistryHost:   mockRegistryHostGetter,
+		getAADAccessToken: mockAADAccessTokenGetter,
+		reportMetrics:     mockMetricsReporter,
+	}
+
+	// Call Provide method
+	ctx := context.Background()
+	_, err := provider.Provide(ctx, "artifact_name")
+
+	// Assertions
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "could not refresh AAD token")
+}
+
+// Test for handling empty AccessToken
+func TestWIAuthProvider_Enabled_NoAccessToken(t *testing.T) {
+	// Create a provider with no AccessToken
+	provider := WIAuthProvider{
+		tenantID: "tenantID",
+		clientID: "clientID",
+		aadToken: confidential.AuthResult{AccessToken: ""},
+	}
+
+	// Assert that provider is not enabled
+	enabled := provider.Enabled(context.Background())
+	assert.False(t, enabled)
+}
+
+// Test for invalid hostname retrieval
+func TestWIAuthProvider_Provide_InvalidHostName(t *testing.T) {
+	// Mock dependencies
+	mockAuthClientFactory := new(MockAuthClientFactory)
+	mockRegistryHostGetter := new(MockRegistryHostGetter)
+	mockAADAccessTokenGetter := new(MockAADAccessTokenGetter)
+	mockMetricsReporter := new(MockMetricsReporter)
+
+	// Mock valid AAD token
+	validToken := confidential.AuthResult{AccessToken: "valid_token", ExpiresOn: time.Now().Add(10 * time.Minute)}
+
+	// Set expectations for an invalid hostname
+	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("", errors.New("invalid hostname"))
+
+	// Create WIAuthProvider with valid token
+	provider := WIAuthProvider{
+		aadToken:          validToken,
+		tenantID:          "tenantID",
+		clientID:          "clientID",
+		authClientFactory: mockAuthClientFactory,
+		getRegistryHost:   mockRegistryHostGetter,
+		getAADAccessToken: mockAADAccessTokenGetter,
+		reportMetrics:     mockMetricsReporter,
+	}
+
+	// Call Provide method
+	ctx := context.Background()
+	_, err := provider.Provide(ctx, "artifact_name")
+
+	// Assertions
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "HOST_NAME_INVALID")
 }
 
 // Verifies that Enabled checks if tenantID is empty or AAD token is empty
@@ -151,100 +465,4 @@ func TestAzureWIValidation_EnvironmentVariables_ExpectedResults(t *testing.T) {
 	if err == nil || !errors.Is(err, expectedErr) {
 		t.Fatalf("create auth provider should have failed: expected err %s, but got err %s", expectedErr, err)
 	}
-}
-
-func TestWIProvide_Success(t *testing.T) {
-	mockClient := new(MockAuthClient)
-	expectedRefreshToken := "mocked_refresh_token"
-	mockClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "myregistry.azurecr.io", mock.Anything).
-		Return(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
-			ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &expectedRefreshToken},
-		}, nil)
-
-	provider := &WIAuthProvider{
-		aadToken: confidential.AuthResult{
-			AccessToken: "mockToken",
-			ExpiresOn:   time.Now().Add(time.Hour),
-		},
-		tenantID: "mockTenantID",
-		clientID: "mockClientID",
-		authClientFactory: func(_ string, _ *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-			return mockClient, nil
-		},
-		getRegistryHost: func(_ string) (string, error) {
-			return "myregistry.azurecr.io", nil
-		},
-		getAADAccessToken: func(_ context.Context, _, _, _ string) (confidential.AuthResult, error) {
-			return confidential.AuthResult{
-				AccessToken: "mockToken",
-				ExpiresOn:   time.Now().Add(time.Hour),
-			}, nil
-		},
-		reportMetrics: func(_ context.Context, _ int64, _ string) {},
-	}
-
-	authConfig, err := provider.Provide(context.Background(), "artifact")
-
-	assert.NoError(t, err)
-	// Assert that GetAADAccessToken was not called
-	mockClient.AssertNotCalled(t, "GetAADAccessToken", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-	// Assert that the returned refresh token matches the expected one
-	assert.Equal(t, expectedRefreshToken, authConfig.Password)
-}
-
-func TestWIProvide_RefreshAAD(t *testing.T) {
-	// Arrange
-	mockAzureAuth := new(MockAzureAuth)
-	mockClient := new(MockAuthClient)
-
-	provider := &WIAuthProvider{
-		aadToken: confidential.AuthResult{
-			AccessToken: "mockToken",
-			ExpiresOn:   time.Now(),
-		},
-		tenantID: "mockTenantID",
-		clientID: "mockClientID",
-		authClientFactory: func(_ string, _ *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-			return mockClient, nil
-		},
-		getRegistryHost: func(_ string) (string, error) {
-			return "myregistry.azurecr.io", nil
-		},
-		getAADAccessToken: mockAzureAuth.GetAADAccessToken,
-		reportMetrics:     func(_ context.Context, _ int64, _ string) {},
-	}
-
-	mockAzureAuth.On("GetAADAccessToken", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
-		Return(confidential.AuthResult{AccessToken: "newAccessToken", ExpiresOn: time.Now().Add(time.Hour)}, nil)
-
-	mockClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "myregistry.azurecr.io", mock.Anything).
-		Return(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
-			ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: new(string)},
-		}, nil)
-
-	ctx := context.TODO()
-	artifact := "testArtifact"
-
-	// Act
-	_, err := provider.Provide(ctx, artifact)
-
-	assert.NoError(t, err)
-	// Assert that GetAADAccessToken was not called
-	mockAzureAuth.AssertCalled(t, "GetAADAccessToken", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-}
-
-func TestWIProvide_Failure_InvalidHostName(t *testing.T) {
-	provider := &WIAuthProvider{
-		aadToken: confidential.AuthResult{
-			AccessToken: "mockToken",
-			ExpiresOn:   time.Now(),
-		},
-		tenantID: "mockTenantID",
-		getRegistryHost: func(_ string) (string, error) {
-			return "", errors.New("invalid hostname")
-		},
-	}
-
-	_, err := provider.Provide(context.Background(), "artifact")
-	assert.Error(t, err)
 }
