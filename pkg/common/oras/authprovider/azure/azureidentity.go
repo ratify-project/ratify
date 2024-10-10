@@ -33,13 +33,26 @@ import (
 )
 
 type azureManagedIdentityProviderFactory struct{}
+
+// ManagedIdentityTokenGetter defines an interface for getting a managed identity token.
+type ManagedIdentityTokenGetter interface {
+	GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error)
+}
+
+// DefaultManagedIdentityTokenGetterImpl is the default implementation of AADAccessTokenGetter.
+type DefaultManagedIdentityTokenGetterImpl struct{}
+
+func (g *DefaultManagedIdentityTokenGetterImpl) GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
+	return getManagedIdentityToken(ctx, clientID)
+}
+
 type MIAuthProvider struct {
 	identityToken           azcore.AccessToken
 	clientID                string
 	tenantID                string
-	authClientFactory       func(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
-	getRegistryHost         func(artifact string) (string, error)
-	getManagedIdentityToken func(ctx context.Context, clientID string) (azcore.AccessToken, error)
+	authClientFactory       AuthClientFactory
+	getRegistryHost         RegistryHostGetter
+	getManagedIdentityToken ManagedIdentityTokenGetter
 }
 
 type azureManagedIdentityAuthProviderConf struct {
@@ -92,8 +105,8 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		identityToken:           token,
 		clientID:                client,
 		tenantID:                tenant,
-		authClientFactory:       DefaultAuthClientFactory,
-		getManagedIdentityToken: getManagedIdentityToken,
+		authClientFactory:       &DefaultAuthClientFactoryImpl{},          // Concrete implementation
+		getManagedIdentityToken: &DefaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
 	}, nil
 }
 
@@ -123,14 +136,14 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	}
 
 	// parse the artifact reference string to extract the registry host name
-	artifactHostName, err := d.getRegistryHost(artifact)
+	artifactHostName, err := d.getRegistryHost.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}
 
 	// need to refresh AAD token if it's expired
 	if time.Now().Add(time.Minute * 5).After(d.identityToken.ExpiresOn) {
-		newToken, err := d.getManagedIdentityToken(ctx, d.clientID)
+		newToken, err := d.getManagedIdentityToken.GetManagedIdentityToken(ctx, d.clientID)
 		if err != nil {
 			return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "could not refresh azure managed identity token", re.HideStackTrace)
 		}
@@ -143,7 +156,7 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 
 	// TODO: Consider adding authentication client options for multicloud scenarios
 	var options *azcontainerregistry.AuthenticationClientOptions
-	client, err := d.authClientFactory(serverURL, options)
+	client, err := d.authClientFactory.CreateAuthClient(serverURL, options)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry by azure managed identity token", re.HideStackTrace)
 	}
