@@ -146,7 +146,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 
 	// Define token values
 	expiredToken := azcore.AccessToken{Token: "expired_token", ExpiresOn: time.Now().Add(-10 * time.Minute)}
-	newTokenString := "refreshed_token"
+	newTokenString := "refreshed"
 	newAADToken := azcore.AccessToken{Token: "new_token", ExpiresOn: time.Now().Add(10 * time.Minute)}
 	refreshToken := azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{
 		ACRRefreshToken: azcontainerregistry.ACRRefreshToken{RefreshToken: &newTokenString},
@@ -174,7 +174,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 
 	// Validate success and token refresh
 	assert.NoError(t, err)
-	assert.Equal(t, "refreshed_token", authConfig.Password)
+	assert.Equal(t, "refreshed", authConfig.Password)
 }
 
 // Test failed token refresh

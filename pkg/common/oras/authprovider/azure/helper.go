@@ -19,10 +19,20 @@ import (
 	"context"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
-	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
-	"github.com/ratify-project/ratify/internal/logger"
-	"github.com/ratify-project/ratify/pkg/utils/azureauth"
+	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 )
+
+// AuthClientFactory defines an interface for creating an authentication client.
+type AuthClientFactory interface {
+	CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
+}
+
+// DefaultAuthClientFactoryImpl is the default implementation of AuthClientFactory.
+type DefaultAuthClientFactoryImpl struct{}
+
+func (f *DefaultAuthClientFactoryImpl) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+	return DefaultAuthClientFactory(serverURL, options)
+}
 
 func DefaultAuthClientFactory(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
 	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
@@ -30,14 +40,6 @@ func DefaultAuthClientFactory(serverURL string, options *azcontainerregistry.Aut
 		return nil, err
 	}
 	return &AuthenticationClientWrapper{client: client}, nil
-}
-
-func DefaultGetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
-	return azureauth.GetAADAccessToken(ctx, tenantID, clientID, resource)
-}
-
-func DefaultReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
-	logger.GetLogger(ctx, logOpt).Infof("Metrics Report: Duration=%dms, Host=%s", duration, artifactHostName)
 }
 
 type AuthenticationClientWrapper struct {
@@ -50,4 +52,17 @@ func (w *AuthenticationClientWrapper) ExchangeAADAccessTokenForACRRefreshToken(c
 
 type AuthClient interface {
 	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
+}
+
+// RegistryHostGetter defines an interface for getting the registry host.
+type RegistryHostGetter interface {
+	GetRegistryHost(artifact string) (string, error)
+}
+
+// DefaultRegistryHostGetterImpl is the default implementation of RegistryHostGetter.
+type DefaultRegistryHostGetterImpl struct{}
+
+func (g *DefaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string, error) {
+	// Implement the logic to get the registry host
+	return provider.GetRegistryHostName(artifact)
 }

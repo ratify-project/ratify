@@ -25,44 +25,14 @@ import (
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
+	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
 
-// AuthClientFactory defines an interface for creating an authentication client.
-type AuthClientFactory interface {
-	CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
-}
-
-// RegistryHostGetter defines an interface for getting the registry host.
-type RegistryHostGetter interface {
-	GetRegistryHost(artifact string) (string, error)
-}
-
 // AADAccessTokenGetter defines an interface for getting an AAD access token.
 type AADAccessTokenGetter interface {
 	GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error)
-}
-
-// MetricsReporter defines an interface for reporting metrics.
-type MetricsReporter interface {
-	ReportMetrics(ctx context.Context, duration int64, artifactHostName string)
-}
-
-// DefaultAuthClientFactoryImpl is the default implementation of AuthClientFactory.
-type DefaultAuthClientFactoryImpl struct{}
-
-func (f *DefaultAuthClientFactoryImpl) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-	return DefaultAuthClientFactory(serverURL, options)
-}
-
-// DefaultRegistryHostGetterImpl is the default implementation of RegistryHostGetter.
-type DefaultRegistryHostGetterImpl struct{}
-
-func (g *DefaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string, error) {
-	// Implement the logic to get the registry host
-	return provider.GetRegistryHostName(artifact)
-	// return artifactHost, nil // Replace with actual logic
 }
 
 // DefaultAADAccessTokenGetterImpl is the default implementation of AADAccessTokenGetter.
@@ -72,6 +42,15 @@ func (g *DefaultAADAccessTokenGetterImpl) GetAADAccessToken(ctx context.Context,
 	return DefaultGetAADAccessToken(ctx, tenantID, clientID, resource)
 }
 
+func DefaultGetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+	return azureauth.GetAADAccessToken(ctx, tenantID, clientID, resource)
+}
+
+// MetricsReporter defines an interface for reporting metrics.
+type MetricsReporter interface {
+	ReportMetrics(ctx context.Context, duration int64, artifactHostName string)
+}
+
 // DefaultMetricsReporterImpl is the default implementation of MetricsReporter.
 type DefaultMetricsReporterImpl struct{}
 
@@ -79,7 +58,12 @@ func (r *DefaultMetricsReporterImpl) ReportMetrics(ctx context.Context, duration
 	DefaultReportMetrics(ctx, duration, artifactHostName)
 }
 
+func DefaultReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
+	logger.GetLogger(ctx, logOpt).Infof("Metrics Report: Duration=%dms, Host=%s", duration, artifactHostName)
+}
+
 type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
+
 type WIAuthProvider struct {
 	aadToken          confidential.AuthResult
 	tenantID          string

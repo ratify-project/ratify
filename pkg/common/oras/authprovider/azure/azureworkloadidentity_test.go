@@ -31,26 +31,6 @@ import (
 	"github.com/AzureAD/microsoft-authentication-library-for-go/apps/confidential"
 )
 
-// MockAuthClientFactory for creating AuthClient
-type MockAuthClientFactory struct {
-	mock.Mock
-}
-
-func (m *MockAuthClientFactory) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-	args := m.Called(serverURL, options)
-	return args.Get(0).(AuthClient), args.Error(1)
-}
-
-// MockRegistryHostGetter for retrieving registry host
-type MockRegistryHostGetter struct {
-	mock.Mock
-}
-
-func (m *MockRegistryHostGetter) GetRegistryHost(artifact string) (string, error) {
-	args := m.Called(artifact)
-	return args.String(0), args.Error(1)
-}
-
 // MockAADAccessTokenGetter for retrieving AAD access token
 type MockAADAccessTokenGetter struct {
 	mock.Mock
@@ -68,16 +48,6 @@ type MockMetricsReporter struct {
 
 func (m *MockMetricsReporter) ReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
 	m.Called(ctx, duration, artifactHostName)
-}
-
-// MockAuthClient for the Azure auth client
-type MockAuthClient struct {
-	mock.Mock
-}
-
-func (m *MockAuthClient) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
-	args := m.Called(ctx, grantType, service, options)
-	return args.Get(0).(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse), args.Error(1)
 }
 
 // Test for successful Provide function

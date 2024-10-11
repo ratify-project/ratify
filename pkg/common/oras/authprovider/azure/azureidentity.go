@@ -32,19 +32,33 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 )
 
-type azureManagedIdentityProviderFactory struct{}
-
 // ManagedIdentityTokenGetter defines an interface for getting a managed identity token.
 type ManagedIdentityTokenGetter interface {
 	GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error)
 }
 
-// DefaultManagedIdentityTokenGetterImpl is the default implementation of AADAccessTokenGetter.
+// DefaultManagedIdentityTokenGetterImpl is the default implementation of getManagedIdentityToken.
 type DefaultManagedIdentityTokenGetterImpl struct{}
 
 func (g *DefaultManagedIdentityTokenGetterImpl) GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
 	return getManagedIdentityToken(ctx, clientID)
 }
+
+func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
+	id := azidentity.ClientID(clientID)
+	opts := azidentity.ManagedIdentityCredentialOptions{ID: id}
+	cred, err := azidentity.NewManagedIdentityCredential(&opts)
+	if err != nil {
+		return azcore.AccessToken{}, err
+	}
+	scopes := []string{AADResource}
+	if cred != nil {
+		return cred.GetToken(ctx, policy.TokenRequestOptions{Scopes: scopes})
+	}
+	return azcore.AccessToken{}, re.ErrorCodeConfigInvalid.WithComponentType(re.AuthProvider).WithDetail("config is nil pointer for GetServicePrincipalToken")
+}
+
+type azureManagedIdentityProviderFactory struct{}
 
 type MIAuthProvider struct {
 	identityToken           azcore.AccessToken
@@ -184,18 +198,4 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	}
 
 	return authConfig, nil
-}
-
-func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
-	id := azidentity.ClientID(clientID)
-	opts := azidentity.ManagedIdentityCredentialOptions{ID: id}
-	cred, err := azidentity.NewManagedIdentityCredential(&opts)
-	if err != nil {
-		return azcore.AccessToken{}, err
-	}
-	scopes := []string{AADResource}
-	if cred != nil {
-		return cred.GetToken(ctx, policy.TokenRequestOptions{Scopes: scopes})
-	}
-	return azcore.AccessToken{}, re.ErrorCodeConfigInvalid.WithComponentType(re.AuthProvider).WithDetail("config is nil pointer for GetServicePrincipalToken")
 }
