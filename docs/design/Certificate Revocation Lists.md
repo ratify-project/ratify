@@ -170,6 +170,15 @@ Error Handling and Retries: Implement error handling with retry logic in case of
 
 Use synchronization primitives like mutexes to ensure thread safety during cache updates.
 
+# Dev Work Items
+
+- Implement CRL Fetcher based on notation-go library (~ 1-2 weeks)
+- Implement file-based CRL Cache Provider (~ 2-3 weeks)
+- Verifier performance test and Cache r/w performance test (~ 2-3 weeks)
+- Support loading CRLs from cert provided URLs (~ 1-2 weeks)
+- New e2e tests for different scenarios (~ 1 week)
+
+
 # More details
 
 **Brief Aside about CRL and CRL Cache**
