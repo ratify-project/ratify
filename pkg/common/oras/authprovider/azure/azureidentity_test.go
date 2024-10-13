@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	azcontainerregistry "github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	ratifyerrors "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
@@ -155,7 +156,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 	// Setup mock expectations
 	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
 	mockAuthClientFactory.On("CreateAuthClient", "https://example.azurecr.io", mock.Anything).Return(mockAuthClient, nil)
-	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, "access_token", "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
+	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, azcontainerregistry.PostContentSchemaGrantType("access_token"), "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
 	mockManagedIdentityTokenGetter.On("GetManagedIdentityToken", mock.Anything, "clientID").Return(newAADToken, nil)
 
 	// Initialize provider with expired token
@@ -240,4 +241,32 @@ func TestMIAuthProvider_Provide_InvalidHostName(t *testing.T) {
 	// Validate failure
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "HOST_NAME_INVALID")
+}
+
+// Unit tests
+func TestGetManagedIdentityToken(t *testing.T) {
+	ctx := context.Background()
+	clientID := "test-client-id"
+	expectedToken := azcore.AccessToken{Token: "test-token", ExpiresOn: time.Now().Add(time.Hour)}
+
+	mockGetter := new(MockManagedIdentityTokenGetter)
+	mockGetter.On("GetManagedIdentityToken", ctx, clientID).Return(expectedToken, nil)
+
+	token, err := mockGetter.GetManagedIdentityToken(ctx, clientID)
+	assert.Nil(t, err)
+	assert.Equal(t, expectedToken, token)
+}
+
+func TestGetManagedIdentityToken_Error(t *testing.T) {
+	ctx := context.Background()
+	clientID := "test-client-id"
+
+	// Mock the newCredentialFunc to return an error
+	mockNewCredentialFunc := func(_ *azidentity.ManagedIdentityCredentialOptions) (*azidentity.ManagedIdentityCredential, error) {
+		return nil, assert.AnError
+	}
+
+	token, err := getManagedIdentityToken(ctx, clientID, mockNewCredentialFunc)
+	assert.NotNil(t, err)
+	assert.Equal(t, azcore.AccessToken{}, token)
 }

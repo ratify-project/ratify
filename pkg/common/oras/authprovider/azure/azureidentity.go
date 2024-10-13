@@ -41,13 +41,13 @@ type ManagedIdentityTokenGetter interface {
 type DefaultManagedIdentityTokenGetterImpl struct{}
 
 func (g *DefaultManagedIdentityTokenGetterImpl) GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
-	return getManagedIdentityToken(ctx, clientID)
+	return getManagedIdentityToken(ctx, clientID, azidentity.NewManagedIdentityCredential)
 }
 
-func getManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
+func getManagedIdentityToken(ctx context.Context, clientID string, newCredentialFunc func(opts *azidentity.ManagedIdentityCredentialOptions) (*azidentity.ManagedIdentityCredential, error)) (azcore.AccessToken, error) {
 	id := azidentity.ClientID(clientID)
 	opts := azidentity.ManagedIdentityCredentialOptions{ID: id}
-	cred, err := azidentity.NewManagedIdentityCredential(&opts)
+	cred, err := newCredentialFunc(&opts)
 	if err != nil {
 		return azcore.AccessToken{}, err
 	}
@@ -110,7 +110,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		return nil, err
 	}
 	// retrieve an AAD Access token
-	token, err := getManagedIdentityToken(context.Background(), client)
+	token, err := getManagedIdentityToken(context.Background(), client, azidentity.NewManagedIdentityCredential)
 	if err != nil {
 		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "", re.HideStackTrace)
 	}
@@ -177,7 +177,7 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 
 	response, err := client.ExchangeAADAccessTokenForACRRefreshToken(
 		ctx,
-		"access_token",
+		azcontainerregistry.PostContentSchemaGrantType("access_token"),
 		artifactHostName,
 		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
 			AccessToken: &d.identityToken.Token,

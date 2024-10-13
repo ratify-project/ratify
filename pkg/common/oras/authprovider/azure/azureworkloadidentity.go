@@ -180,7 +180,7 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	startTime := time.Now()
 	response, err := client.ExchangeAADAccessTokenForACRRefreshToken(
 		ctx,
-		"access_token",
+		azcontainerregistry.PostContentSchemaGrantType("access_token"),
 		artifactHostName,
 		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
 			AccessToken: &d.aadToken.AccessToken,

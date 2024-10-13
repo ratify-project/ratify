@@ -17,8 +17,10 @@ package azure
 
 import (
 	"context"
+	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -28,7 +30,7 @@ type MockAuthClient struct {
 }
 
 // Mock method for ExchangeAADAccessTokenForACRRefreshToken
-func (m *MockAuthClient) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
+func (m *MockAuthClient) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType azcontainerregistry.PostContentSchemaGrantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
 	args := m.Called(ctx, grantType, service, options)
 	return args.Get(0).(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse), args.Error(1)
 }
@@ -55,82 +57,44 @@ func (m *MockRegistryHostGetter) GetRegistryHost(artifact string) (string, error
 	return args.String(0), args.Error(1)
 }
 
-// // TestDefaultAuthClientFactoryImpl tests the default factory implementation.
-// func TestDefaultAuthClientFactoryImpl(t *testing.T) {
-// 	mockFactory := new(MockAuthClientFactory)
-// 	mockAuthClient := new(MockAuthClient)
+func TestDefaultAuthClientFactoryImpl_CreateAuthClient(t *testing.T) {
+	factory := &DefaultAuthClientFactoryImpl{}
+	serverURL := "https://example.com"
+	options := &azcontainerregistry.AuthenticationClientOptions{}
 
-// 	serverURL := "https://example.azurecr.io"
-// 	options := &azcontainerregistry.AuthenticationClientOptions{}
+	client, err := factory.CreateAuthClient(serverURL, options)
+	assert.Nil(t, err)
+	assert.NotNil(t, client)
+}
 
-// 	// Set up expectations
-// 	mockFactory.On("CreateAuthClient", serverURL, options).Return(mockAuthClient, nil)
+func TestDefaultAuthClientFactory(t *testing.T) {
+	serverURL := "https://example.com"
+	options := &azcontainerregistry.AuthenticationClientOptions{}
 
-// 	factory := &DefaultAuthClientFactoryImpl{}
-// 	client, err := factory.CreateAuthClient(serverURL, options)
+	client, err := DefaultAuthClientFactory(serverURL, options)
+	assert.Nil(t, err)
+	assert.NotNil(t, client)
+}
 
-// 	// Verify expectations
-// 	mockFactory.AssertCalled(t, "CreateAuthClient", serverURL, options)
-// 	assert.NoError(t, err)
-// 	assert.NotNil(t, client)
-// }
+func TestDefaultRegistryHostGetterImpl_GetRegistryHost(t *testing.T) {
+	getter := &DefaultRegistryHostGetterImpl{}
+	artifact := "example.azurecr.io/myArtifact"
 
-// // TestDefaultAuthClientFactory_Error tests error handling during client creation.
-// func TestDefaultAuthClientFactory_Error(t *testing.T) {
-// 	mockFactory := new(MockAuthClientFactory)
+	host, err := getter.GetRegistryHost(artifact)
+	assert.Nil(t, err)
+	assert.Equal(t, "example.azurecr.io", host)
+}
 
-// 	serverURL := "https://example.azurecr.io"
-// 	options := &azcontainerregistry.AuthenticationClientOptions{}
-// 	expectedError := errors.New("failed to create client")
+func TestAuthenticationClientWrapper_ExchangeAADAccessTokenForACRRefreshToken(t *testing.T) {
+	mockClient := new(MockAuthClient)
+	wrapper := &AuthenticationClientWrapper{client: mockClient}
+	ctx := context.Background()
+	grantType := azcontainerregistry.PostContentSchemaGrantType("grantType")
+	service := "service"
+	options := &azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{}
 
-// 	// Set up expectations
-// 	mockFactory.On("CreateAuthClient", serverURL, options).Return(nil, expectedError)
+	mockClient.On("ExchangeAADAccessTokenForACRRefreshToken", ctx, grantType, service, options).Return(azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse{}, nil)
 
-// 	factory := &DefaultAuthClientFactoryImpl{}
-// 	client, err := factory.CreateAuthClient(serverURL, options)
-
-// 	// Verify expectations
-// 	mockFactory.AssertCalled(t, "CreateAuthClient", serverURL, options)
-// 	assert.Error(t, err)
-// 	assert.Nil(t, client)
-// 	assert.Equal(t, expectedError, err)
-// }
-
-// // TestGetRegistryHost tests the GetRegistryHost function.
-// func TestGetRegistryHost(t *testing.T) {
-// 	mockGetter := new(MockRegistryHostGetter)
-
-// 	artifact := "test/artifact"
-// 	expectedHost := "example.azurecr.io"
-
-// 	// Set up expectations
-// 	mockGetter.On("GetRegistryHost", artifact).Return(expectedHost, nil)
-
-// 	getter := &DefaultRegistryHostGetterImpl{}
-// 	host, err := getter.GetRegistryHost(artifact)
-
-// 	// Verify expectations
-// 	mockGetter.AssertCalled(t, "GetRegistryHost", artifact)
-// 	assert.NoError(t, err)
-// 	assert.Equal(t, expectedHost, host)
-// }
-
-// // TestGetRegistryHost_Error tests error handling in GetRegistryHost.
-// func TestGetRegistryHost_Error(t *testing.T) {
-// 	mockGetter := new(MockRegistryHostGetter)
-
-// 	artifact := "test/artifact"
-// 	expectedError := errors.New("failed to get registry host")
-
-// 	// Set up expectations
-// 	mockGetter.On("GetRegistryHost", artifact).Return("", expectedError)
-
-// 	getter := &DefaultRegistryHostGetterImpl{}
-// 	host, err := getter.GetRegistryHost(artifact)
-
-// 	// Verify expectations
-// 	mockGetter.AssertCalled(t, "GetRegistryHost", artifact)
-// 	assert.Error(t, err)
-// 	assert.Empty(t, host)
-// 	assert.Equal(t, expectedError, err)
-// }
+	_, err := wrapper.ExchangeAADAccessTokenForACRRefreshToken(ctx, grantType, service, options)
+	assert.Nil(t, err)
+}
