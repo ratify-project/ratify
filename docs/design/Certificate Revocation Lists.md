@@ -95,12 +95,12 @@ Load cache is triggerred after cert loaded from the either configurations.
 #### Download CRL
 
 
-Download is implemented by CRL `fetcher`
+Download is implemented by CRL `fetcher`, which can be done in parallel via start tasks in seperate go routines.
 
 CRL download location (URL) can be obtained from the certificate's CRL Distribution Point (CDP) extension. 
 If the certificate contains multiple CDP locations then each location download is attempted in sequential order, until a 2xx response is received for any of the location. 
 
-For each CDP location, Notary Project verification workflow will try to download the CRL for the default threshold of 5 seconds. The user may be able to configure this threshold. If the CRL cannot be downloaded within the timeout threshold the revocation result will be "revocation unavailable".
+For each CDP location, Notary Project verification workflow will try to download the CRL for the default threshold of 5 seconds. Ratify is able to configure this threshold. If the CRL cannot be downloaded within the timeout threshold the revocation result will be "revocation unavailable".
 
 #### Save CRL to Cache
 
