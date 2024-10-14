@@ -28,6 +28,9 @@ With no extra configuration, CRL download location (URL) can be obtained from th
 
 Preload CRL can help improve the performance verifier from download CRLs when a single CRL can be up to 32MiB. Prefer ratify cache for reuse the cache provider [interface](https://github.com/ratify-project/ratify/blob/dev/pkg/cache/api.go). Reusing interfaces reduces redundant expressions, helps you easily maintain application objects.
 
+This design prefer file-based cache over memory-based one to ensure cache would still be available after service restarted. And in CLI scenario memory-based cache would not be applied.
+Besides, by using memory-based cache, memory consumption and further cache expiring would increase the design complexity.
+
 **Why Refresh CRL Cache**
 
 A CRL is considered expired if the current date is after the `NextUpdate` field in the CRL. Verify that the CRL is valid (not expired) is necessary for revocation check. Monitoring and refreshing CRL on a regular basis can help avoid CRL download timetaken when doing verification by ensure the CRL is valid.
