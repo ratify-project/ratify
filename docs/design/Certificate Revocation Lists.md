@@ -69,18 +69,12 @@ Key:
 
 Value: 
 - `*Bundle`
-    - `ttl/MaxAge`, `NextUpdate` // nextUpdate can be get from bundle.BaseCRL.NextUpdate
+    - `NextUpdate` // nextUpdate can be get from bundle.BaseCRL.NextUpdate
 
-Reference: [revocation/crl/bundle.go](https://github.com/JeyJeyGao/notation-core-go/blob/4b3bd0efa57362cb6d7d42f3f0562600945d2167/revocation/crl/bundle.go)
+Reference: [revocation/crl/bundle.go](https://github.com/notaryproject/notation-core-go/blob/main/revocation/crl/bundle.go)
 
 Check CRL Cache Validity
 ```
-// creates an expiring cache, in normal case the value is 1 week
-expires := bundle.Metadata.CreatedAt.Add(cache.MaxAge)
-if cache.MaxAge > 0 && time.Now().After(expires) {
-	// perform refresh
-}
-
 // directly checks CRL validity
 now := time.Now()
 if !crl.NextUpdate.IsZero() && now.After(crl.NextUpdate) {
@@ -97,8 +91,8 @@ Load cache is triggerred after cert loaded from the either configurations.
 
 Download is implemented by CRL `fetcher`, which can be done in parallel via start tasks in seperate go routines.
 
-CRL download location (URL) can be obtained from the certificate's CRL Distribution Point (CDP) extension. 
-If the certificate contains multiple CDP locations then each location download is attempted in sequential order, until a 2xx response is received for any of the location. 
+CRL download location (URL) can be obtained from the certificate's CRL Distribution Point (CDP) extension.
+`notation-core-go` will download all CDP URLs because each CDP URL may belong to a different scope, and we cannot distinguish them.
 
 For each CDP location, Notary Project verification workflow will try to download the CRL for the default threshold of 5 seconds. Ratify is able to configure this threshold. If the CRL cannot be downloaded within the timeout threshold the revocation result will be "revocation unavailable".
 
@@ -140,8 +134,6 @@ type fileCacheContent struct {
 
 ```
 // Get retrieves the CRL bundle from the file system
-//
-// If the key does not exist, return ErrNotFound
 // If the CRL is expired, return ErrCacheMiss
 
 
