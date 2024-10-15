@@ -58,7 +58,7 @@ func (m *MockRegistryHostGetter) GetRegistryHost(artifact string) (string, error
 }
 
 func TestDefaultAuthClientFactoryImpl_CreateAuthClient(t *testing.T) {
-	factory := &DefaultAuthClientFactoryImpl{}
+	factory := &defaultAuthClientFactoryImpl{}
 	serverURL := "https://example.com"
 	options := &azcontainerregistry.AuthenticationClientOptions{}
 
@@ -71,13 +71,13 @@ func TestDefaultAuthClientFactory(t *testing.T) {
 	serverURL := "https://example.com"
 	options := &azcontainerregistry.AuthenticationClientOptions{}
 
-	client, err := DefaultAuthClientFactory(serverURL, options)
+	client, err := defaultAuthClientFactory(serverURL, options)
 	assert.Nil(t, err)
 	assert.NotNil(t, client)
 }
 
 func TestDefaultRegistryHostGetterImpl_GetRegistryHost(t *testing.T) {
-	getter := &DefaultRegistryHostGetterImpl{}
+	getter := &defaultRegistryHostGetterImpl{}
 	artifact := "example.azurecr.io/myArtifact"
 
 	host, err := getter.GetRegistryHost(artifact)

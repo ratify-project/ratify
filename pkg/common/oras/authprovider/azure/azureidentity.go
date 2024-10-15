@@ -37,10 +37,10 @@ type ManagedIdentityTokenGetter interface {
 	GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error)
 }
 
-// DefaultManagedIdentityTokenGetterImpl is the default implementation of getManagedIdentityToken.
-type DefaultManagedIdentityTokenGetterImpl struct{}
+// defaultManagedIdentityTokenGetterImpl is the default implementation of getManagedIdentityToken.
+type defaultManagedIdentityTokenGetterImpl struct{}
 
-func (g *DefaultManagedIdentityTokenGetterImpl) GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
+func (g *defaultManagedIdentityTokenGetterImpl) GetManagedIdentityToken(ctx context.Context, clientID string) (azcore.AccessToken, error) {
 	return getManagedIdentityToken(ctx, clientID, azidentity.NewManagedIdentityCredential)
 }
 
@@ -119,8 +119,8 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		identityToken:           token,
 		clientID:                client,
 		tenantID:                tenant,
-		authClientFactory:       &DefaultAuthClientFactoryImpl{},          // Concrete implementation
-		getManagedIdentityToken: &DefaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
+		authClientFactory:       &defaultAuthClientFactoryImpl{},          // Concrete implementation
+		getManagedIdentityToken: &defaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
 	}, nil
 }
 

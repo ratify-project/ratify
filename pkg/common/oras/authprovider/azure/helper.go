@@ -29,14 +29,14 @@ type AuthClientFactory interface {
 	CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
 }
 
-// DefaultAuthClientFactoryImpl is the default implementation of AuthClientFactory.
-type DefaultAuthClientFactoryImpl struct{}
+// defaultAuthClientFactoryImpl is the default implementation of AuthClientFactory.
+type defaultAuthClientFactoryImpl struct{}
 
-func (f *DefaultAuthClientFactoryImpl) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
-	return DefaultAuthClientFactory(serverURL, options)
+func (f *defaultAuthClientFactoryImpl) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+	return defaultAuthClientFactory(serverURL, options)
 }
 
-func DefaultAuthClientFactory(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
+func defaultAuthClientFactory(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
 	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
 	if err != nil {
 		return nil, err
@@ -66,10 +66,10 @@ type RegistryHostGetter interface {
 	GetRegistryHost(artifact string) (string, error)
 }
 
-// DefaultRegistryHostGetterImpl is the default implementation of RegistryHostGetter.
-type DefaultRegistryHostGetterImpl struct{}
+// defaultRegistryHostGetterImpl is the default implementation of RegistryHostGetter.
+type defaultRegistryHostGetterImpl struct{}
 
-func (g *DefaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string, error) {
+func (g *defaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string, error) {
 	// Implement the logic to get the registry host
 	return provider.GetRegistryHostName(artifact)
 }

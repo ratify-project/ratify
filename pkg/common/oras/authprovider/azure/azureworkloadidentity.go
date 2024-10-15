@@ -35,14 +35,14 @@ type AADAccessTokenGetter interface {
 	GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error)
 }
 
-// DefaultAADAccessTokenGetterImpl is the default implementation of AADAccessTokenGetter.
-type DefaultAADAccessTokenGetterImpl struct{}
+// defaultAADAccessTokenGetterImpl is the default implementation of AADAccessTokenGetter.
+type defaultAADAccessTokenGetterImpl struct{}
 
-func (g *DefaultAADAccessTokenGetterImpl) GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
-	return DefaultGetAADAccessToken(ctx, tenantID, clientID, resource)
+func (g *defaultAADAccessTokenGetterImpl) GetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+	return defaultGetAADAccessToken(ctx, tenantID, clientID, resource)
 }
 
-func DefaultGetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
+func defaultGetAADAccessToken(ctx context.Context, tenantID, clientID, resource string) (confidential.AuthResult, error) {
 	return azureauth.GetAADAccessToken(ctx, tenantID, clientID, resource)
 }
 
@@ -51,14 +51,14 @@ type MetricsReporter interface {
 	ReportMetrics(ctx context.Context, duration int64, artifactHostName string)
 }
 
-// DefaultMetricsReporterImpl is the default implementation of MetricsReporter.
-type DefaultMetricsReporterImpl struct{}
+// defaultMetricsReporterImpl is the default implementation of MetricsReporter.
+type defaultMetricsReporterImpl struct{}
 
-func (r *DefaultMetricsReporterImpl) ReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
-	DefaultReportMetrics(ctx, duration, artifactHostName)
+func (r *defaultMetricsReporterImpl) ReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
+	defaultReportMetrics(ctx, duration, artifactHostName)
 }
 
-func DefaultReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
+func defaultReportMetrics(ctx context.Context, duration int64, artifactHostName string) {
 	logger.GetLogger(ctx, logOpt).Infof("Metrics Report: Duration=%dms, Host=%s", duration, artifactHostName)
 }
 
@@ -114,7 +114,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	// retrieve an AAD Access token
-	token, err := DefaultGetAADAccessToken(context.Background(), tenant, clientID, AADResource)
+	token, err := defaultGetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
 		return nil, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "", re.HideStackTrace)
 	}
@@ -123,10 +123,10 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		aadToken:          token,
 		tenantID:          tenant,
 		clientID:          clientID,
-		authClientFactory: &DefaultAuthClientFactoryImpl{},    // Concrete implementation
-		getRegistryHost:   &DefaultRegistryHostGetterImpl{},   // Concrete implementation
-		getAADAccessToken: &DefaultAADAccessTokenGetterImpl{}, // Concrete implementation
-		reportMetrics:     &DefaultMetricsReporterImpl{},
+		authClientFactory: &defaultAuthClientFactoryImpl{},    // Concrete implementation
+		getRegistryHost:   &defaultRegistryHostGetterImpl{},   // Concrete implementation
+		getAADAccessToken: &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
+		reportMetrics:     &defaultMetricsReporterImpl{},
 	}, nil
 }
 
