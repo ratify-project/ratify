@@ -156,7 +156,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 	// Setup mock expectations
 	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
 	mockAuthClientFactory.On("CreateAuthClient", "https://example.azurecr.io", mock.Anything).Return(mockAuthClient, nil)
-	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, azcontainerregistry.PostContentSchemaGrantType("access_token"), "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
+	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, azcontainerregistry.PostContentSchemaGrantType(GrantTypeAccessToken), "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
 	mockManagedIdentityTokenGetter.On("GetManagedIdentityToken", mock.Anything, "clientID").Return(newAADToken, nil)
 
 	// Initialize provider with expired token

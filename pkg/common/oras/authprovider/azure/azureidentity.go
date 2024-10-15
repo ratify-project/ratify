@@ -177,7 +177,7 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 
 	response, err := client.ExchangeAADAccessTokenForACRRefreshToken(
 		ctx,
-		azcontainerregistry.PostContentSchemaGrantType("access_token"),
+		azcontainerregistry.PostContentSchemaGrantType(GrantTypeAccessToken),
 		artifactHostName,
 		&azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions{
 			AccessToken: &d.identityToken.Token,

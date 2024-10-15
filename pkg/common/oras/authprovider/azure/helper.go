@@ -22,6 +22,8 @@ import (
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 )
 
+const GrantTypeAccessToken = "access_token"
+
 // AuthClientFactory defines an interface for creating an authentication client.
 type AuthClientFactory interface {
 	CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error)
