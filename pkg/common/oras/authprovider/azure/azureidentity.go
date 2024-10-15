@@ -25,6 +25,7 @@ import (
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
+	"github.com/ratify-project/ratify/pkg/metrics"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
@@ -136,10 +137,15 @@ func (d *azureManagedIdentityAuthProvider) Provide(ctx context.Context, artifact
 
 	// create registry client and exchange AAD token for registry refresh token
 	refreshTokenClient := containerregistry.NewRefreshTokensClient(serverURL)
+	// The time to start recording the token exchange process
+	startTime := time.Now()
 	rt, err := refreshTokenClient.GetFromExchange(ctx, "access_token", artifactHostName, d.tenantID, "", d.identityToken.Token)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureManagedIdentityLink, err, "failed to get refresh token for container registry by azure managed identity token", re.HideStackTrace)
 	}
+
+	// Report the duration of the token exchange to the metrics system
+	metrics.ReportACRExchangeDuration(ctx, time.Since(startTime).Milliseconds(), artifactHostName)
 
 	expiresOn := getACRExpiryIfEarlier(d.identityToken.ExpiresOn)
 
