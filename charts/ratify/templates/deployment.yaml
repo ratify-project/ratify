@@ -110,6 +110,9 @@ spec:
               readOnly: true
             {{- end }}
           env:
+          {{- with .Values.env }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- if .Values.logger.level }}
             - name: RATIFY_LOG_LEVEL
               value: {{ .Values.logger.level }}
