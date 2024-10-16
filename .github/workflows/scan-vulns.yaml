@@ -55,7 +55,7 @@ jobs:
           version: ${{ env.TRIVY_VERSION }}
 
       - name: Run trivy on git repository
-        uses: aquasecurity/trivy-action@5681af892cd0f4997658e2bacc62bd0a894cf564 # 0.27.0
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -69,7 +69,7 @@ jobs:
           make e2e-build-crd-image
       
       - name: Run Trivy vulnerability scanner on localbuild:test
-        uses: aquasecurity/trivy-action@5681af892cd0f4997658e2bacc62bd0a894cf564 # 0.27.0
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
         with:
           scan-type: 'image'
           image-ref: 'localbuild:test'
@@ -77,7 +77,7 @@ jobs:
           version: ${{ env.TRIVY_VERSION }}
 
       - name: Run Trivy vulnerability scanner on localbuildcrd:test
-        uses: aquasecurity/trivy-action@5681af892cd0f4997658e2bacc62bd0a894cf564 # 0.27.0
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
         with:
           scan-type: 'image'
           image-ref: 'localbuildcrd:test'
@@ -85,7 +85,7 @@ jobs:
           version: ${{ env.TRIVY_VERSION }}
 
       - name: Run Trivy vulnerability scanner on localbuild:test and exit on HIGH severity
-        uses: aquasecurity/trivy-action@5681af892cd0f4997658e2bacc62bd0a894cf564 # 0.27.0
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
         with:
           scan-type: 'image'
           image-ref: 'localbuild:test'
@@ -95,7 +95,7 @@ jobs:
           version: ${{ env.TRIVY_VERSION }}
 
       - name: Run Trivy vulnerability scanner on localbuildcrd:test and exit on HIGH severity
-        uses: aquasecurity/trivy-action@5681af892cd0f4997658e2bacc62bd0a894cf564 # 0.27.0
+        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
         with:
           scan-type: 'image'
           image-ref: 'localbuildcrd:test'
