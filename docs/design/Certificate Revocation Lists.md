@@ -169,8 +169,8 @@ Use synchronization primitives like mutexes to ensure thread safety during cache
 
 - Implement CRL Fetcher based on notation-go library (~ 1-2 weeks)
 - Implement file-based CRL Cache Provider (~ 2-3 weeks)
+- Support loading CRLs from cert provided URLs, engage PM discussion (~ 1-2 weeks)
 - Verifier performance test and Cache r/w performance test (~ 2-3 weeks)
-- Support loading CRLs from cert provided URLs (~ 1-2 weeks)
 - New e2e tests for different scenarios (~ 1 week)
 
 
