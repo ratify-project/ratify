@@ -176,11 +176,19 @@ func TestGetCertificatesFromMap_ErrorFromReconcile(t *testing.T) {
 
 // TestDeleteCertificatesFromMap checks if certificates are deleted from the map
 func TestDeleteCertificatesFromMap(t *testing.T) {
-	certificatesMap.Delete("test")
-	setCertificatesInMap("test", map[KMPMapKey][]*x509.Certificate{{}: {{Raw: []byte("testcert")}}})
-	DeleteResourceFromMap("test")
-	if _, ok := certificatesMap.Load("test"); ok {
-		t.Fatalf("certificatesMap should have been deleted for key")
+	resource := "test"
+	disabledCert := KMPMapKey{Name: "test", Version: "0", Enabled: false}
+	enabledCert := KMPMapKey{Name: "test", Version: "1", Enabled: true}
+	certsMap := map[KMPMapKey][]*x509.Certificate{}
+	certsMap[disabledCert] = []*x509.Certificate{{Raw: []byte("testcert")}}
+	certsMap[enabledCert] = []*x509.Certificate{{Raw: []byte("testcert")}}
+	setCertificatesInMap(resource, certsMap)
+	DeleteCertificateFromMap(resource, disabledCert)
+
+	certs, _ := GetCertificatesFromMap(context.Background(), resource)
+
+	if len(certs) != 1 {
+		t.Fatalf("certificates should have been deleted from the map")
 	}
 }
 
@@ -252,11 +260,17 @@ func TestGetKeysFromMap_AccessDifferentNamespace_ReturnsFalse(t *testing.T) {
 
 // TestDeleteKeysFromMap checks if key map entry is deleted from the map
 func TestDeleteKeysFromMap(t *testing.T) {
-	keyMap.Delete("test")
-	setKeysInMap("test", "", map[KMPMapKey]crypto.PublicKey{{}: &rsa.PublicKey{}})
-	DeleteResourceFromMap("test")
-	if _, ok := keyMap.Load("test"); ok {
-		t.Fatalf("keysMap should have been deleted for key")
+	resource := "test"
+	keysMap := map[KMPMapKey]crypto.PublicKey{}
+	keyMapKey0 := KMPMapKey{Name: "test", Version: "0", Enabled: false}
+	keyMapKey1 := KMPMapKey{Name: "test", Version: "1", Enabled: true}
+	keysMap[keyMapKey0] = crypto.PublicKey(&rsa.PublicKey{})
+	keysMap[keyMapKey1] = crypto.PublicKey(&rsa.PublicKey{})
+	setKeysInMap(resource, "", keysMap)
+	DeleteKeyFromMap(resource, keyMapKey1)
+	keys, _ := GetKeysFromMap(context.Background(), resource)
+	if len(keys) != 1 {
+		t.Fatalf("keys should have been deleted from the map")
 	}
 }
 
