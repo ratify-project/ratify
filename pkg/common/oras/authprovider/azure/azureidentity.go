@@ -172,7 +172,8 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	var options *azcontainerregistry.AuthenticationClientOptions
 	client, err := d.authClientFactory.CreateAuthClient(serverURL, options)
 	if err != nil {
-		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry by azure managed identity token", re.HideStackTrace)
+		// return provider.AuthConfig{}, re.ErrorCodeAuthDenied.NewError(re.AuthProvider, "", re.AzureWorkloadIdentityLink, err, "failed to create authentication client for container registry by azure managed identity token", re.HideStackTrace)
+		return provider.AuthConfig{}, re.ErrorCodeAuthDenied.WithError(err).WithDetail("failed to create authentication client for container registry by azure managed identity token")
 	}
 
 	response, err := client.ExchangeAADAccessTokenForACRRefreshToken(
