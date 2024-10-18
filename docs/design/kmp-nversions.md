@@ -75,7 +75,7 @@ Status:
   }
   ```
 - Add the `versionHistory` parameter to the KMP resource in Ratify.
-  - ensure the value cannot be less than 1 or a negative number
+  - ensure the value cannot be less than 0 or a negative number
   - default to 2 if not specified by passing an empty value
   - maximum value should be (TBD)
   - specify the value at the object level within the parameters of the KMP resource.
