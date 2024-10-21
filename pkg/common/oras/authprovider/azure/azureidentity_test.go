@@ -165,7 +165,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 		clientID:                "clientID",
 		tenantID:                "tenantID",
 		authClientFactory:       mockAuthClientFactory,
-		getRegistryHost:         mockRegistryHostGetter,
+		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
 	}
 
@@ -198,7 +198,7 @@ func TestMIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 		clientID:                "clientID",
 		tenantID:                "tenantID",
 		authClientFactory:       mockAuthClientFactory,
-		getRegistryHost:         mockRegistryHostGetter,
+		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
 	}
 
@@ -230,7 +230,7 @@ func TestMIAuthProvider_Provide_InvalidHostName(t *testing.T) {
 		clientID:                "clientID",
 		tenantID:                "tenantID",
 		authClientFactory:       mockAuthClientFactory,
-		getRegistryHost:         mockRegistryHostGetter,
+		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
 	}
 

@@ -32,10 +32,13 @@ type AuthClientFactory interface {
 // defaultAuthClientFactoryImpl is the default implementation of AuthClientFactory.
 type defaultAuthClientFactoryImpl struct{}
 
+// creates an AuthClient using the default factory implementation.
+// Return an AuthClient and an error if the client creation fails.
 func (f *defaultAuthClientFactoryImpl) CreateAuthClient(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
 	return defaultAuthClientFactory(serverURL, options)
 }
 
+// Define a helper function that creates an instance of AuthenticationClientWrapper.
 func defaultAuthClientFactory(serverURL string, options *azcontainerregistry.AuthenticationClientOptions) (AuthClient, error) {
 	client, err := azcontainerregistry.NewAuthenticationClient(serverURL, options)
 	if err != nil {
@@ -49,14 +52,19 @@ type AuthenticationClientInterface interface {
 	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType azcontainerregistry.PostContentSchemaGrantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
 }
 
+// Define the wrapper for AuthenticationClientInterface
 type AuthenticationClientWrapper struct {
 	client AuthenticationClientInterface
 }
 
+// A wrapper method that calls the underlying AuthenticationClientInterface's method.
+// Exchanges an AAD access token for an ACR refresh token.
 func (w *AuthenticationClientWrapper) ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType azcontainerregistry.PostContentSchemaGrantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error) {
 	return w.client.ExchangeAADAccessTokenForACRRefreshToken(ctx, grantType, service, options)
 }
 
+// define the interface for authentication operations.
+// It includes the method for exchanging an AAD access token for an ACR refresh token.
 type AuthClient interface {
 	ExchangeAADAccessTokenForACRRefreshToken(ctx context.Context, grantType azcontainerregistry.PostContentSchemaGrantType, service string, options *azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenOptions) (azcontainerregistry.AuthenticationClientExchangeAADAccessTokenForACRRefreshTokenResponse, error)
 }
@@ -69,7 +77,8 @@ type RegistryHostGetter interface {
 // defaultRegistryHostGetterImpl is the default implementation of RegistryHostGetter.
 type defaultRegistryHostGetterImpl struct{}
 
+// Retrieves the registry host name for a given artifact.
+// It utilizes the provider's GetRegistryHostName function to perform the lookup.
 func (g *defaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string, error) {
-	// Implement the logic to get the registry host
 	return provider.GetRegistryHostName(artifact)
 }

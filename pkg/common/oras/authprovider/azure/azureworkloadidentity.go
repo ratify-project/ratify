@@ -65,13 +65,13 @@ func defaultReportMetrics(ctx context.Context, duration int64, artifactHostName 
 type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
 
 type WIAuthProvider struct {
-	aadToken          confidential.AuthResult
-	tenantID          string
-	clientID          string
-	authClientFactory AuthClientFactory
-	getRegistryHost   RegistryHostGetter
-	getAADAccessToken AADAccessTokenGetter
-	reportMetrics     MetricsReporter
+	aadToken           confidential.AuthResult
+	tenantID           string
+	clientID           string
+	authClientFactory  AuthClientFactory
+	registryHostGetter RegistryHostGetter
+	getAADAccessToken  AADAccessTokenGetter
+	reportMetrics      MetricsReporter
 }
 
 type azureWIAuthProviderConf struct {
@@ -120,13 +120,13 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	return &WIAuthProvider{
-		aadToken:          token,
-		tenantID:          tenant,
-		clientID:          clientID,
-		authClientFactory: &defaultAuthClientFactoryImpl{},    // Concrete implementation
-		getRegistryHost:   &defaultRegistryHostGetterImpl{},   // Concrete implementation
-		getAADAccessToken: &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
-		reportMetrics:     &defaultMetricsReporterImpl{},
+		aadToken:           token,
+		tenantID:           tenant,
+		clientID:           clientID,
+		authClientFactory:  &defaultAuthClientFactoryImpl{},    // Concrete implementation
+		registryHostGetter: &defaultRegistryHostGetterImpl{},   // Concrete implementation
+		getAADAccessToken:  &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
+		reportMetrics:      &defaultMetricsReporterImpl{},
 	}, nil
 }
 
@@ -152,7 +152,7 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	}
 
 	// parse the artifact reference string to extract the registry host name
-	artifactHostName, err := d.getRegistryHost.GetRegistryHost(artifact)
+	artifactHostName, err := d.registryHostGetter.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}

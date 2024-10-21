@@ -65,7 +65,7 @@ type MIAuthProvider struct {
 	clientID                string
 	tenantID                string
 	authClientFactory       AuthClientFactory
-	getRegistryHost         RegistryHostGetter
+	registryHostGetter      RegistryHostGetter
 	getManagedIdentityToken ManagedIdentityTokenGetter
 }
 
@@ -150,7 +150,7 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	}
 
 	// parse the artifact reference string to extract the registry host name
-	artifactHostName, err := d.getRegistryHost.GetRegistryHost(artifact)
+	artifactHostName, err := d.registryHostGetter.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}

@@ -75,13 +75,13 @@ func TestWIAuthProvider_Provide_Success(t *testing.T) {
 
 	// Create WIAuthProvider
 	provider := WIAuthProvider{
-		aadToken:          initialToken,
-		tenantID:          "tenantID",
-		clientID:          "clientID",
-		authClientFactory: mockAuthClientFactory,
-		getRegistryHost:   mockRegistryHostGetter,
-		getAADAccessToken: mockAADAccessTokenGetter,
-		reportMetrics:     mockMetricsReporter,
+		aadToken:           initialToken,
+		tenantID:           "tenantID",
+		clientID:           "clientID",
+		authClientFactory:  mockAuthClientFactory,
+		registryHostGetter: mockRegistryHostGetter,
+		getAADAccessToken:  mockAADAccessTokenGetter,
+		reportMetrics:      mockMetricsReporter,
 	}
 
 	// Call Provide method
@@ -119,13 +119,13 @@ func TestWIAuthProvider_Provide_RefreshToken(t *testing.T) {
 
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
-		aadToken:          expiredToken,
-		tenantID:          "tenantID",
-		clientID:          "clientID",
-		authClientFactory: mockAuthClientFactory,
-		getRegistryHost:   mockRegistryHostGetter,
-		getAADAccessToken: mockAADAccessTokenGetter,
-		reportMetrics:     mockMetricsReporter,
+		aadToken:           expiredToken,
+		tenantID:           "tenantID",
+		clientID:           "clientID",
+		authClientFactory:  mockAuthClientFactory,
+		registryHostGetter: mockRegistryHostGetter,
+		getAADAccessToken:  mockAADAccessTokenGetter,
+		reportMetrics:      mockMetricsReporter,
 	}
 
 	// Call Provide method
@@ -154,13 +154,13 @@ func TestWIAuthProvider_Provide_AADTokenFailure(t *testing.T) {
 
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
-		aadToken:          expiredToken,
-		tenantID:          "tenantID",
-		clientID:          "clientID",
-		authClientFactory: mockAuthClientFactory,
-		getRegistryHost:   mockRegistryHostGetter,
-		getAADAccessToken: mockAADAccessTokenGetter,
-		reportMetrics:     mockMetricsReporter,
+		aadToken:           expiredToken,
+		tenantID:           "tenantID",
+		clientID:           "clientID",
+		authClientFactory:  mockAuthClientFactory,
+		registryHostGetter: mockRegistryHostGetter,
+		getAADAccessToken:  mockAADAccessTokenGetter,
+		reportMetrics:      mockMetricsReporter,
 	}
 
 	// Call Provide method
@@ -231,13 +231,13 @@ func TestWIAuthProvider_Provide_TokenRefresh_Success(t *testing.T) {
 
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
-		aadToken:          expiredToken,
-		tenantID:          "tenantID",
-		clientID:          "clientID",
-		authClientFactory: mockAuthClientFactory,
-		getRegistryHost:   mockRegistryHostGetter,
-		getAADAccessToken: mockAADAccessTokenGetter,
-		reportMetrics:     mockMetricsReporter,
+		aadToken:           expiredToken,
+		tenantID:           "tenantID",
+		clientID:           "clientID",
+		authClientFactory:  mockAuthClientFactory,
+		registryHostGetter: mockRegistryHostGetter,
+		getAADAccessToken:  mockAADAccessTokenGetter,
+		reportMetrics:      mockMetricsReporter,
 	}
 
 	// Call Provide method
@@ -266,13 +266,13 @@ func TestWIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
-		aadToken:          expiredToken,
-		tenantID:          "tenantID",
-		clientID:          "clientID",
-		authClientFactory: mockAuthClientFactory,
-		getRegistryHost:   mockRegistryHostGetter,
-		getAADAccessToken: mockAADAccessTokenGetter,
-		reportMetrics:     mockMetricsReporter,
+		aadToken:           expiredToken,
+		tenantID:           "tenantID",
+		clientID:           "clientID",
+		authClientFactory:  mockAuthClientFactory,
+		registryHostGetter: mockRegistryHostGetter,
+		getAADAccessToken:  mockAADAccessTokenGetter,
+		reportMetrics:      mockMetricsReporter,
 	}
 
 	// Call Provide method
@@ -314,13 +314,13 @@ func TestWIAuthProvider_Provide_InvalidHostName(t *testing.T) {
 
 	// Create WIAuthProvider with valid token
 	provider := WIAuthProvider{
-		aadToken:          validToken,
-		tenantID:          "tenantID",
-		clientID:          "clientID",
-		authClientFactory: mockAuthClientFactory,
-		getRegistryHost:   mockRegistryHostGetter,
-		getAADAccessToken: mockAADAccessTokenGetter,
-		reportMetrics:     mockMetricsReporter,
+		aadToken:           validToken,
+		tenantID:           "tenantID",
+		clientID:           "clientID",
+		authClientFactory:  mockAuthClientFactory,
+		registryHostGetter: mockRegistryHostGetter,
+		getAADAccessToken:  mockAADAccessTokenGetter,
+		reportMetrics:      mockMetricsReporter,
 	}
 
 	// Call Provide method
