@@ -160,7 +160,7 @@ test-e2e: generate-rotation-certs
 	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs CERT_DIR=.staging/rotation GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-trivy-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup
 	rm ${GOCOVERDIR} -rf
 	mkdir ${GOCOVERDIR} -p
 	RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
@@ -459,13 +459,36 @@ e2e-sbom-setup:
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/sbom@`${GITHUB_WORKSPACE}/bin/oras discover --distribution-spec v1.1-referrers-api -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/sbom:v0 | jq -r ".manifests[0].digest"`
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} ${TEST_REGISTRY}/all@`${GITHUB_WORKSPACE}/bin/oras discover --distribution-spec v1.1-referrers-api -o json --artifact-type application/spdx+json ${TEST_REGISTRY}/all:v0 | jq -r ".manifests[0].digest"` 
 
+e2e-trivy-setup:
+	rm -rf .staging/trivy
+	mkdir -p .staging/trivy
+
+	# Install Trivy
+	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/trivy/trivy.tar.gz
+	tar -zxf .staging/trivy/trivy.tar.gz -C .staging/trivy
+
+	# Download vulnerability database in retry mode
+	max_retries=3; \
+	attempt=1; \
+	wait_time=2; \
+	while [ $$attempt -le $$max_retries ]; do \
+		echo "Attempt $$attempt of $$max_retries..."; \
+		if .staging/trivy/trivy image --download-db-only; then \
+			break; \
+		fi; \
+		if [ $$attempt -eq $$max_retries ]; then \
+			echo "Failed after $$max_retries attempts."; \
+			exit 1; \
+		fi; \
+		echo "Failed. Retrying in $$wait_time seconds..."; \
+		sleep $$wait_time; \
+		wait_time=$$(( wait_time * 2 )); \
+		attempt=$$(( attempt + 1 )); \
+	done
+
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
 	mkdir -p .staging/schemavalidator
-
-	# Install Trivy
-	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/schemavalidator/trivy.tar.gz
-	tar -zxf .staging/schemavalidator/trivy.tar.gz -C .staging/schemavalidator
 
 	# Build/Push Images
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "schemavalidator image"]' > .staging/schemavalidator/Dockerfile
@@ -475,7 +498,7 @@ e2e-schemavalidator-setup:
 	rm .staging/schemavalidator/schemavalidator.tar
 
 	# Create/Attach Scan Results
-	.staging/schemavalidator/trivy image --format sarif --output .staging/schemavalidator/trivy-scan.sarif ${TEST_REGISTRY}/schemavalidator:v0
+	.staging/trivy/trivy image --skip-db-update --format sarif --output .staging/schemavalidator/trivy-scan.sarif ${TEST_REGISTRY}/schemavalidator:v0
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/vnd.aquasecurity.trivy.report.sarif.v1 \
 		--distribution-spec v1.1-referrers-api \
@@ -491,10 +514,6 @@ e2e-vulnerabilityreport-setup:
 	rm -rf .staging/vulnerabilityreport
 	mkdir -p .staging/vulnerabilityreport
 
-	# Install Trivy
-	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/vulnerabilityreport/trivy.tar.gz
-	tar -zxf .staging/vulnerabilityreport/trivy.tar.gz -C .staging/vulnerabilityreport
-
 	# Build/Push Image
 	printf 'FROM ${ALPINE_IMAGE_VULNERABLE}\nCMD ["echo", "vulnerabilityreport image"]' > .staging/vulnerabilityreport/Dockerfile
 	docker buildx create --use
@@ -503,7 +522,7 @@ e2e-vulnerabilityreport-setup:
 	rm .staging/vulnerabilityreport/vulnerabilityreport.tar
 
 	# Create/Attach Scan Result
-	.staging/vulnerabilityreport/trivy image --format sarif --output .staging/vulnerabilityreport/trivy-sarif.json ${TEST_REGISTRY}/vulnerabilityreport:v0
+	.staging/trivy/trivy image --skip-db-update --format sarif --output .staging/vulnerabilityreport/trivy-sarif.json ${TEST_REGISTRY}/vulnerabilityreport:v0
 	${GITHUB_WORKSPACE}/bin/oras attach \
 		--artifact-type application/sarif+json \
 		--distribution-spec v1.1-referrers-api \
@@ -524,7 +543,7 @@ e2e-inlinecert-setup:
 	.staging/notation/notation cert generate-test "alternate-cert"
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "alternate-cert" ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:signed-alternate --descriptor | jq .digest | xargs`
 
-e2e-azure-setup: e2e-create-all-image e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-akv-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup
+e2e-azure-setup: e2e-create-all-image e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-akv-setup e2e-licensechecker-setup e2e-sbom-setup e2e-trivy-setup e2e-schemavalidator-setup
 
 e2e-deploy-gatekeeper: e2e-helm-install
 	./.staging/helm/linux-amd64/helm repo add gatekeeper https://open-policy-agent.github.io/gatekeeper/charts
@@ -560,7 +579,7 @@ e2e-deploy-base-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosi
 
 	rm mount_config.json
 
-e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image load-build-crd-image e2e-build-local-ratify-image load-local-ratify-image e2e-helm-deploy-ratify
+e2e-deploy-ratify: e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-trivy-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup e2e-inlinecert-setup e2e-build-crd-image load-build-crd-image e2e-build-local-ratify-image load-local-ratify-image e2e-helm-deploy-ratify
 
 e2e-build-local-ratify-base-image:
 	docker build --progress=plain --no-cache \
