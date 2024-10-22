@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     env:
-      TRIVY_VERSION: v0.49.1
+      TRIVY_VERSION: 0.49.1
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
@@ -48,58 +48,38 @@ jobs:
       - name: Check out code into the Go module directory
         uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
 
-      - name: Manual Trivy Setup
-        uses: aquasecurity/setup-trivy@eadb05c36f891dc855bba00f67174a1e61528cd4 # v0.2.1
+      - name: Download trivy
+        run: |
+          pushd $(mktemp -d)
+          wget https://github.com/aquasecurity/trivy/releases/download/v${{ env.TRIVY_VERSION }}/trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
+          tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
+          echo "$(pwd)" >> $GITHUB_PATH
+      
+      - name: Download vulnerability database
+        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
         with:
-          cache: true
-          version: ${{ env.TRIVY_VERSION }}
+          max_attempts: 3
+          retry_on: error
+          timeout_seconds: 30
+          retry_wait_seconds: 5
+          command: |
+            trivy image --download-db-only
 
       - name: Run trivy on git repository
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          ignore-unfixed: true
-          scanners: 'vuln'
-          version: ${{ env.TRIVY_VERSION }}
+        run: |
+          trivy fs --skip-db-update --format table --ignore-unfixed --scanners vuln .
 
       - name: Build docker images
         run: |
           make e2e-build-local-ratify-image
           make e2e-build-crd-image
-      
-      - name: Run Trivy vulnerability scanner on localbuild:test
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
-        with:
-          scan-type: 'image'
-          image-ref: 'localbuild:test'
-          ignore-unfixed: true
-          version: ${{ env.TRIVY_VERSION }}
-
-      - name: Run Trivy vulnerability scanner on localbuildcrd:test
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
-        with:
-          scan-type: 'image'
-          image-ref: 'localbuildcrd:test'
-          ignore-unfixed: true
-          version: ${{ env.TRIVY_VERSION }}
-
-      - name: Run Trivy vulnerability scanner on localbuild:test and exit on HIGH severity
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
-        with:
-          scan-type: 'image'
-          image-ref: 'localbuild:test'
-          ignore-unfixed: true
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          version: ${{ env.TRIVY_VERSION }}
-
-      - name: Run Trivy vulnerability scanner on localbuildcrd:test and exit on HIGH severity
-        uses: aquasecurity/trivy-action@915b19bbe73b92a6cf82a1bc12b087c9a19a5fe2 # 0.28.0
-        with:
-          scan-type: 'image'
-          image-ref: 'localbuildcrd:test'
-          ignore-unfixed: true
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-          version: ${{ env.TRIVY_VERSION }}
+      - name: Run trivy on images for all severity
+        run: |
+          for img in "localbuild:test" "localbuildcrd:test"; do
+              trivy image --skip-db-update --ignore-unfixed --vuln-type="os,library" "${img}"
+          done
+      - name: Run trivy on images and exit on HIGH/CRITICAL severity
+        run: |
+          for img in "localbuild:test" "localbuildcrd:test"; do
+              trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "${img}"
+          done
