@@ -288,8 +288,9 @@ func TestGetStatusProperty(t *testing.T) {
 	timeNow := time.Now().String()
 	certName := "certName"
 	certVersion := "versionABC"
+	isEnabled := "true"
 
-	status := getStatusProperty(certName, certVersion, timeNow)
+	status := getStatusProperty(certName, certVersion, isEnabled, timeNow)
 	assert.Equal(t, certName, status[types.StatusName])
 	assert.Equal(t, timeNow, status[types.StatusLastRefreshed])
 	assert.Equal(t, certVersion, status[types.StatusVersion])
@@ -349,7 +350,7 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 				ContentType: &cases[i].contentType,
 			}
 
-			certs, status, err := getCertsFromSecretBundle(context.Background(), testdata, "certName")
+			certs, status, err := getCertsFromSecretBundle(context.Background(), testdata, "certName", "true")
 			if tc.expectedErr {
 				assert.NotNil(t, err)
 				assert.Nil(t, certs)

@@ -25,6 +25,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -141,24 +142,47 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v,  keyvault %v", keyVaultCert.Name, s.vaultURI)
 
 		// fetch the object from Key Vault
-		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/ratify-project/ratify/issues/695 for details
 		startTime := time.Now()
+		certBundle, err := s.kvClient.GetCertificate(ctx, s.vaultURI, keyVaultCert.Name, keyVaultCert.Version)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
+		}
+
+		if keyVaultCert.Version == "" {
+			keyVaultCert.Version = getObjectVersion(*certBundle.Kid)
+		}
+
+		if !*certBundle.Attributes.Enabled {
+			fmt.Printf("debug: certificate %s version %s is disabled.", keyVaultCert.Name, keyVaultCert.Version)
+
+			isEnabled := false
+			startTime := time.Now()
+			lastRefreshed := startTime.Format(time.RFC3339)
+
+			certProperty := getStatusProperty(keyVaultCert.Name, keyVaultCert.Version, strconv.FormatBool(isEnabled), lastRefreshed)
+			certsStatus = append(certsStatus, certProperty)
+			certMapKey := keymanagementprovider.KMPMapKey{Name: keyVaultCert.Name, Version: keyVaultCert.Version, Enabled: isEnabled}
+			certsMap[certMapKey] = []*x509.Certificate{} // empty cert chain
+			continue
+		}
+
+		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/ratify-project/ratify/issues/695 for details
+		isEnabled := true
 		secretBundle, err := s.kvClient.GetSecret(ctx, s.vaultURI, keyVaultCert.Name, keyVaultCert.Version)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
 		}
 
-		certResult, certProperty, err := getCertsFromSecretBundle(ctx, secretBundle, keyVaultCert.Name)
+		certResult, certProperty, err := getCertsFromSecretBundle(ctx, secretBundle, keyVaultCert.Name, strconv.FormatBool(isEnabled))
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get certificates from secret bundle:%w", err)
 		}
 
 		metrics.ReportAKVCertificateDuration(ctx, time.Since(startTime).Milliseconds(), keyVaultCert.Name)
 		certsStatus = append(certsStatus, certProperty...)
-		certMapKey := keymanagementprovider.KMPMapKey{Name: keyVaultCert.Name, Version: keyVaultCert.Version}
+		certMapKey := keymanagementprovider.KMPMapKey{Name: keyVaultCert.Name, Version: keyVaultCert.Version, Enabled: isEnabled}
 		certsMap[certMapKey] = certResult
 	}
-
 	return certsMap, getStatusMap(certsStatus, types.CertificatesStatus), nil
 }
 
@@ -177,17 +201,30 @@ func (s *akvKMProvider) GetKeys(ctx context.Context) (map[keymanagementprovider.
 			return nil, nil, fmt.Errorf("failed to get key objectName:%s, objectVersion:%s, error: %w", keyVaultKey.Name, keyVaultKey.Version, err)
 		}
 
-		if keyBundle.Attributes != nil && keyBundle.Attributes.Enabled != nil && !*keyBundle.Attributes.Enabled {
-			return nil, nil, fmt.Errorf("key %s version %s is disabled. please re-enable in azure key vault or remove reference to this key", keyVaultKey.Name, keyVaultKey.Version)
+		if keyVaultKey.Version == "" {
+			keyVaultKey.Version = getObjectVersion(*keyBundle.Key.Kid)
 		}
 
+		if keyBundle.Attributes != nil && keyBundle.Attributes.Enabled != nil && !*keyBundle.Attributes.Enabled {
+			isEnabled := false
+			startTime := time.Now()
+			lastRefreshed := startTime.Format(time.RFC3339)
+
+			keysMap[keymanagementprovider.KMPMapKey{Name: keyVaultKey.Name, Version: keyVaultKey.Version, Enabled: isEnabled}] = nil
+			properties := getStatusProperty(keyVaultKey.Name, keyVaultKey.Version, strconv.FormatBool(isEnabled), lastRefreshed)
+			keysStatus = append(keysStatus, properties)
+
+			continue
+		}
+
+		isEnabled := true
 		publicKey, err := getKeyFromKeyBundle(keyBundle)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get key from key bundle:%w", err)
 		}
-		keysMap[keymanagementprovider.KMPMapKey{Name: keyVaultKey.Name, Version: keyVaultKey.Version}] = publicKey
+		keysMap[keymanagementprovider.KMPMapKey{Name: keyVaultKey.Name, Version: keyVaultKey.Version, Enabled: isEnabled}] = publicKey
 		metrics.ReportAKVCertificateDuration(ctx, time.Since(startTime).Milliseconds(), keyVaultKey.Name)
-		properties := getStatusProperty(keyVaultKey.Name, keyVaultKey.Version, time.Now().Format(time.RFC3339))
+		properties := getStatusProperty(keyVaultKey.Name, keyVaultKey.Version, strconv.FormatBool(isEnabled), time.Now().Format(time.RFC3339))
 		keysStatus = append(keysStatus, properties)
 	}
 
@@ -205,11 +242,12 @@ func getStatusMap(statusMap []map[string]string, contentType string) keymanageme
 	return status
 }
 
-// return a status object that consist of the cert/key name, version and last refreshed time
-func getStatusProperty(name, version, lastRefreshed string) map[string]string {
+// return a status object that consist of the cert/key name, version, enabled and last refreshed time
+func getStatusProperty(name, version, enabled, lastRefreshed string) map[string]string {
 	properties := map[string]string{}
 	properties[types.StatusName] = name
 	properties[types.StatusVersion] = version
+	properties[types.StatusEnabled] = enabled
 	properties[types.StatusLastRefreshed] = lastRefreshed
 	return properties
 }
@@ -244,7 +282,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 
 // Parse the secret bundle and return an array of certificates
 // In a certificate chain scenario, all certificates from root to leaf will be returned
-func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
+func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle, certName, enabled string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
 		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
 	}
@@ -297,7 +335,7 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle kv.SecretBundle,
 			}
 			for _, cert := range decodedCerts {
 				results = append(results, cert)
-				certProperty := getStatusProperty(certName, version, lastRefreshed)
+				certProperty := getStatusProperty(certName, version, enabled, lastRefreshed)
 				certsStatus = append(certsStatus, certProperty)
 			}
 		default:
