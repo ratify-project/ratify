@@ -17,16 +17,10 @@ package crlprovider
 
 import (
 	"crypto/x509"
-	"encoding/asn1"
-	"errors"
 	"fmt"
 
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 )
-
-// oidFreshestCRL is the object identifier for the distribution point
-// for the delta CRL. (See RFC 5280, Section 5.2.6)
-var oidFreshestCRL = asn1.ObjectIdentifier{2, 5, 29, 46}
 
 // maxCRLSize is the maximum size of CRL in bytes
 //
@@ -63,13 +57,8 @@ func (f *BytesFetcher) Fetch(data []byte) (*corecrl.Bundle, error) {
 	if err != nil {
 		return nil, err
 	}
-	// check delta CRL
+	// TODO: check delta CRL
 	// TODO: support delta CRL https://github.com/notaryproject/notation-core-go/issues/228
-	for _, ext := range base.Extensions {
-		if ext.Id.Equal(oidFreshestCRL) {
-			return nil, errors.New("delta CRL is not supported")
-		}
-	}
 
 	return &corecrl.Bundle{
 		BaseCRL: base,
