@@ -20,7 +20,7 @@ jobs:
         with:
           egress-policy: audit
       - name: Checkout
-        uses: actions/checkout@eef61447b9ff4aafe5dcd4e0bbf5d482be7e7871
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: prepare
         id: prepare
         run: |
@@ -64,7 +64,7 @@ jobs:
             --attest type=sbom \
             --attest type=provenance,mode=max \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$(TAG)" \
+            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$TAG" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.baseref }} \
             --push .
@@ -79,7 +79,7 @@ jobs:
             --build-arg build_licensechecker=true \
             --build-arg build_schemavalidator=true \
             --build-arg build_vulnerabilityreport=true \
-            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$(TAG)" \
+            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$TAG" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.ref }} \
             --push .
