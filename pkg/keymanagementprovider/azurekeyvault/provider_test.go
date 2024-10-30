@@ -26,7 +26,8 @@ import (
 	"testing"
 	"time"
 
-	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
@@ -67,11 +68,12 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "", version.UserAgent)
+		kvClientkeys, kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
 		assert.NoError(t, err)
-		assert.NotNil(t, kvBaseClient)
-		assert.NotNil(t, kvBaseClient.Authorizer)
-		assert.Contains(t, kvBaseClient.UserAgent, version.UserAgent)
+		assert.NotNil(t, kvClientkeys)
+		assert.NotNil(t, kvClientSecrets)
+		// assert.NotNil(t, kvClientkeys.Authorizer)
+		// assert.Contains(t, kvClientkeys.UserAgent, version.UserAgent)
 	}
 }
 
@@ -178,8 +180,8 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initKVClient = func(_ context.Context, _, _, _, _ string) (*kv.BaseClient, error) {
-				return &kv.BaseClient{}, nil
+			initKVClient = func(_ context.Context, _, _, _ string) (*azkeys.Client, *azsecrets.Client, error) {
+				return &azkeys.Client{}, &azsecrets.Client{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
 			if tc.expectErr != (err != nil) {
@@ -412,7 +414,8 @@ func TestGetKeys(t *testing.T) {
 						Version: "c1f03df1113d460491d970737dfdc35d",
 					},
 				},
-				kvClient: tc.mockKvClient,
+				kvClientKeys:     tc.mockKvClient,
+				kvClientSecretss: tc.mockKvClient,
 			}
 
 			_, _, err := provider.GetKeys(context.Background())
@@ -486,7 +489,7 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 		desc        string
 		value       string
 		contentType string
-		id          string
+		id          azsecrets.ID
 		expectedErr bool
 	}{
 		{
@@ -528,7 +531,7 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 
 	for i, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			testdata := kv.SecretBundle{
+			testdata := azsecrets.SecretBundle{
 				Value:       &cases[i].value,
 				ID:          &cases[i].id,
 				ContentType: &cases[i].contentType,
@@ -547,24 +550,37 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 }
 
 func TestGetKeyFromKeyBundle(t *testing.T) {
+	unsupportedType := azkeys.JSONWebKeyType("abc")
 	cases := []struct {
 		desc        string
-		keyBundle   kv.KeyBundle
+		keyBundle   azkeys.KeyBundle
 		expectedErr bool
 		output      crypto.PublicKey
 	}{
 		{
 			desc: "no key in key bundle",
-			keyBundle: kv.KeyBundle{
+			keyBundle: azkeys.KeyBundle{
 				Key: nil,
 			},
 			expectedErr: true,
 			output:      nil,
 		},
 		{
-			desc: "invalid key in key bundle",
-			keyBundle: kv.KeyBundle{
-				Key: &kv.JSONWebKey{},
+			desc: "invalid key in key bundle with nil Kty",
+			keyBundle: azkeys.KeyBundle{
+				Key: &azkeys.JSONWebKey{
+					Kty: nil,
+				},
+			},
+			expectedErr: true,
+			output:      nil,
+		},
+		{
+			desc: "key with unsupported Kty value",
+			keyBundle: azkeys.KeyBundle{
+				Key: &azkeys.JSONWebKey{
+					Kty: &unsupportedType, // Unsupported key type
+				},
 			},
 			expectedErr: true,
 			output:      nil,
@@ -720,7 +736,7 @@ func TestInitializeKvClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID, tt.userAgent)
+			_, _, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID)
 			if tt.expectedErr != (err != nil) {
 				t.Fatalf("expected error: %v, got: %v", tt.expectedErr, err)
 			}

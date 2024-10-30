@@ -24,9 +24,8 @@ import (
 	"testing"
 	"time"
 
-	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/ratify-project/ratify/internal/version"
 	"github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -102,11 +101,11 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
+		kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
 		assert.NoError(t, err)
-		assert.NotNil(t, kvBaseClient)
-		assert.NotNil(t, kvBaseClient.Authorizer)
-		assert.Contains(t, kvBaseClient.UserAgent, version.UserAgent)
+		assert.NotNil(t, kvClientSecrets)
+		// assert.NotNil(t, kvBaseClient.Authorizer)
+		// assert.Contains(t, kvClientSecrets.endpoint, testEnvs[i].KeyVaultEndpoint)
 	}
 }
 
@@ -280,7 +279,7 @@ func Test(t *testing.T) {
 		desc        string
 		value       string
 		contentType string
-		id          string
+		id          azsecrets.ID
 		expectedErr bool
 	}{
 		{
@@ -322,7 +321,7 @@ func Test(t *testing.T) {
 
 	for i, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			testdata := kv.SecretBundle{
+			testdata := azsecrets.SecretBundle{
 				Value:       &cases[i].value,
 				ID:          &cases[i].id,
 				ContentType: &cases[i].contentType,
