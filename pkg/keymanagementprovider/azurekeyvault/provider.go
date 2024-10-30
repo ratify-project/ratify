@@ -294,7 +294,6 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 }
 
 func initializeKvClient(keyVaultEndpoint, tenantID, clientID string) (*azkeys.Client, *azsecrets.Client, error) {
-
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 
