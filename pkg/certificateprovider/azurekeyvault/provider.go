@@ -96,7 +96,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 
 	logger.GetLogger(ctx, logOpt).Debugf("vaultURI %s", keyvaultURI)
 
-	kvClientSecrets, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
+	kvClientSecrets, err := initializeKvClient(azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
 	if err != nil {
 		return nil, nil, re.ErrorCodePluginInitFailure.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault client", re.HideStackTrace)
 	}
@@ -209,7 +209,7 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*azsecrets.Client, error) {
+func initializeKvClient(keyVaultEndpoint, tenantID, clientID string) (*azsecrets.Client, error) {
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 

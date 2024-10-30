@@ -68,7 +68,7 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvClientkeys, kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
+		kvClientkeys, kvClientSecrets, err := initializeKvClient(testEnvs[i].KeyVaultEndpoint, "", "")
 		assert.NoError(t, err)
 		assert.NotNil(t, kvClientkeys)
 		assert.NotNil(t, kvClientSecrets)
@@ -180,7 +180,7 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initKVClient = func(_ context.Context, _, _, _ string) (*azkeys.Client, *azsecrets.Client, error) {
+			initKVClient = func(_, _, _ string) (*azkeys.Client, *azsecrets.Client, error) {
 				return &azkeys.Client{}, &azsecrets.Client{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
@@ -736,7 +736,7 @@ func TestInitializeKvClient(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID)
+			_, _, err := initializeKvClient(tt.kvEndpoint, tt.tenantID, tt.clientID)
 			if tt.expectedErr != (err != nil) {
 				t.Fatalf("expected error: %v, got: %v", tt.expectedErr, err)
 			}
