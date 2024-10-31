@@ -22,7 +22,6 @@ import (
 	"net/http"
 	paths "path/filepath"
 	"strings"
-	"time"
 
 	ratifyconfig "github.com/ratify-project/ratify/config"
 	re "github.com/ratify-project/ratify/errors"
@@ -190,8 +189,9 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	}
 
 	// revocation check using corecrl from notation-core-go and crl from notation-go
-	// This is the implementation for revocation check from notation cli to support  cacheconfigurations
-	crlFetcher, err := corecrl.NewHTTPFetcher(&http.Client{Timeout: 5 * time.Second}) // Todo: replace with crlprovider notation implementation function
+	// This is the implementation for revocation check from notation cli to support crl and cache configurations
+	// removed timeout
+	crlFetcher, err := corecrl.NewHTTPFetcher(&http.Client{}) // Todo: replace with crlprovider notation implementation function
 	if err != nil {
 		return nil, err
 	}
