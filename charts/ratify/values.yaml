@@ -49,9 +49,13 @@ resources:
   requests:
     cpu: 600m
     memory: 512Mi
+
 serviceAccount:
   create: true
   name: ratify-admin
+  # Annotations to add to the service account
+  annotations: {}
+
 gatekeeper:
   version: "3.17.0"
   namespace: # default is gatekeeper-system
