@@ -101,7 +101,7 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvClientSecrets, err := initializeKvClient(testEnvs[i].KeyVaultEndpoint, "", "")
+		kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
 		assert.NoError(t, err)
 		assert.NotNil(t, kvClientSecrets)
 		// assert.NotNil(t, kvBaseClient.Authorizer)

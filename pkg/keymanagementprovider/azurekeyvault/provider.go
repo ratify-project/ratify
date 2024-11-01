@@ -38,6 +38,7 @@ import (
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/factory"
 	"github.com/ratify-project/ratify/pkg/metrics"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pkcs12"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -161,7 +162,7 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 
 	logger.GetLogger(context.Background(), logOpt).Debugf("vaultURI %s", provider.vaultURI)
 
-	kvClientKeys, kvClientSecrets, err := initKVClient(provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID)
+	kvClientKeys, kvClientSecrets, err := initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID)
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to create keyvault client", re.HideStackTrace)
 	}
@@ -293,9 +294,11 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(keyVaultEndpoint, tenantID, clientID string) (*azkeys.Client, *azsecrets.Client, error) {
+func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*azkeys.Client, *azsecrets.Client, error) {
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
+	logger.GetLogger(ctx, logOpt).Infof("kvEndpoint: '%s'", kvEndpoint)
+	logrus.WithContext(ctx).Infof("kvEndpoint: '%s'", kvEndpoint)
 
 	// Create the workload identity credential for authentication
 	credential, err := azidentity.NewWorkloadIdentityCredential(&azidentity.WorkloadIdentityCredentialOptions{
@@ -305,17 +308,23 @@ func initializeKvClient(keyVaultEndpoint, tenantID, clientID string) (*azkeys.Cl
 	if err != nil {
 		return nil, nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithRemediation(re.AKVLink).WithError(err)
 	}
+	logger.GetLogger(ctx, logOpt).Infof("credential created successfully")
+	logrus.WithContext(ctx).Infof("credential created successfully")
 
 	// create azkeys client
 	kvClientKeys, err := azkeys.NewClient(kvEndpoint, credential, nil)
 	if err != nil {
 		return nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
+	logger.GetLogger(ctx, logOpt).Infof("azkeys kvclient created successfully")
+	logrus.WithContext(ctx).Infof("azkeys kvclient created successfully")
 	// create azsecrets client
 	kvClientSecrets, err := azsecrets.NewClient(kvEndpoint, credential, nil)
 	if err != nil {
 		return nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
+	logger.GetLogger(ctx, logOpt).Infof("azsecrets kvclient created successfully")
+	logrus.WithContext(ctx).Infof("azsecrets kvclient created successfully")
 
 	return kvClientKeys, kvClientSecrets, nil
 }
