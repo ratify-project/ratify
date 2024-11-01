@@ -32,7 +32,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/certificateprovider"
 	"github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/metrics"
-	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/pkcs12"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
@@ -213,8 +212,6 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*azsecrets.Client, error) {
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
-	logger.GetLogger(ctx, logOpt).Infof("kvEndpoint: '%s'", kvEndpoint)
-	logrus.WithContext(ctx).Infof("kvEndpoint: '%s'", kvEndpoint)
 
 	// Create the workload identity credential for authentication
 	credential, err := azidentity.NewWorkloadIdentityCredential(&azidentity.WorkloadIdentityCredentialOptions{
@@ -224,7 +221,6 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 	if err != nil {
 		return nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithRemediation(re.AKVLink).WithError(err)
 	}
-	logger.GetLogger(ctx, logOpt).Infof("credential created successfully")
 
 	// create azsecrets client
 	kvClientSecrets, err := azsecrets.NewClient(kvEndpoint, credential, nil)

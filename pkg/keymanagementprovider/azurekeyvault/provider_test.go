@@ -26,15 +26,16 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/ratify-project/ratify/internal/version"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 // TestParseAzureEnvironment tests the parseAzureEnvironment function
@@ -709,14 +710,50 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+// Mock clients
+type MockAzKeysClient struct {
+	mock.Mock
+}
+
+type MockAzSecretsClient struct {
+	mock.Mock
+}
+
+type MockWorkloadIdentityCredential struct {
+	mock.Mock
+}
+
+// Mock functions
+func (m *MockWorkloadIdentityCredential) NewWorkloadIdentityCredential(options *azidentity.WorkloadIdentityCredentialOptions) (*MockWorkloadIdentityCredential, error) {
+	args := m.Called(options)
+	return args.Get(0).(*MockWorkloadIdentityCredential), args.Error(1)
+}
+
+func (m *MockAzKeysClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azkeys.ClientOptions) (*azkeys.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azkeys.Client), args.Error(1)
+}
+
+func (m *MockAzSecretsClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azsecrets.ClientOptions) (*azsecrets.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azsecrets.Client), args.Error(1)
+}
+
 func TestInitializeKvClient(t *testing.T) {
+	mockCredential := new(MockWorkloadIdentityCredential)
+	mockKeysClient := new(MockAzKeysClient)
+	mockSecretsClient := new(MockAzSecretsClient)
+
 	tests := []struct {
-		name        string
-		kvEndpoint  string
-		userAgent   string
-		tenantID    string
-		clientID    string
-		expectedErr bool
+		name              string
+		kvEndpoint        string
+		userAgent         string
+		tenantID          string
+		clientID          string
+		mockCredentialErr error
+		mockKeysErr       error
+		mockSecretsErr    error
+		expectedErr       bool
 	}{
 		{
 			name:        "Empty user agent",
@@ -727,18 +764,55 @@ func TestInitializeKvClient(t *testing.T) {
 		{
 			name:        "Auth failure",
 			kvEndpoint:  "https://test.vault.azure.net",
-			userAgent:   version.UserAgent,
 			tenantID:    "testTenantID",
 			clientID:    "testClientID",
 			expectedErr: true,
+		},
+		{
+			name:              "credential creation error",
+			kvEndpoint:        "https://test-keyvault.vault.azure.net",
+			tenantID:          "test-tenant-id",
+			clientID:          "test-client-id",
+			mockCredentialErr: errors.New("failed to create workload identity credential"),
+			expectedErr:       true,
+		},
+		{
+			name:        "azkeys client creation error",
+			kvEndpoint:  "https://test-keyvault.vault.azure.net",
+			tenantID:    "test-tenant-id",
+			clientID:    "test-client-id",
+			mockKeysErr: errors.New("failed to create azkeys client"),
+			expectedErr: true,
+		},
+		{
+			name:           "azsecrets client creation error",
+			kvEndpoint:     "https://test-keyvault.vault.azure.net",
+			tenantID:       "test-tenant-id",
+			clientID:       "test-client-id",
+			mockSecretsErr: errors.New("failed to create azsecrets client"),
+			expectedErr:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID)
-			if tt.expectedErr != (err != nil) {
-				t.Fatalf("expected error: %v, got: %v", tt.expectedErr, err)
+			// Set up mocks
+			mockCredential.On("NewWorkloadIdentityCredential", mock.Anything).Return(mockCredential, tt.mockCredentialErr)
+			mockKeysClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockKeysClient, tt.mockKeysErr)
+			mockSecretsClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockSecretsClient, tt.mockSecretsErr)
+
+			// Call function under test
+			keysClient, secretsClient, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID)
+
+			// Validate expectations
+			if tt.expectedErr {
+				assert.Error(t, err)
+				assert.Nil(t, keysClient)
+				assert.Nil(t, secretsClient)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, keysClient)
+				assert.NotNil(t, secretsClient)
 			}
 		})
 	}
