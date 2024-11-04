@@ -817,3 +817,46 @@ func TestInitializeKvClient(t *testing.T) {
 		})
 	}
 }
+
+// Test cases for keyType switch case handling
+func TestGetKeyFromKeyBundlex(t *testing.T) {
+	tests := []struct {
+		name     string
+		keyType  azkeys.JSONWebKeyType
+		expected azkeys.JSONWebKeyType
+		curve    azkeys.JSONWebKeyCurveName
+		x        []byte
+		y        []byte
+		n        []byte
+		e        []byte
+	}{
+		{
+			name:     "Test ECHSM to EC",
+			keyType:  azkeys.JSONWebKeyTypeECHSM,
+			expected: azkeys.JSONWebKeyTypeEC,
+			curve:    azkeys.JSONWebKeyCurveNameP256,                                                                                                                                                                         // Example curve name
+			x:        []byte{0x6b, 0x17, 0xd1, 0xf2, 0xe1, 0x2c, 0x42, 0x47, 0xf8, 0xbc, 0xe6, 0xe5, 0x63, 0xa4, 0x40, 0xf2, 0x77, 0x03, 0x7d, 0x81, 0x2d, 0xeb, 0x33, 0xa0, 0xf4, 0xa1, 0x39, 0x45, 0xd8, 0x98, 0xc2, 0x96}, // Valid x-coordinate for P-256
+			y:        []byte{0x4f, 0xe3, 0x42, 0xe2, 0xfe, 0x1a, 0x7f, 0x9b, 0x8e, 0xe7, 0xeb, 0x4a, 0x7c, 0x0f, 0x9e, 0x16, 0x2b, 0xce, 0x33, 0x57, 0x6b, 0x31, 0x5e, 0xce, 0xcb, 0xb6, 0x40, 0x68, 0x37, 0xbf, 0x51, 0xf5}, // Valid y-coordinate for P-256
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			webKey := &azkeys.JSONWebKey{
+				Kty: &tt.keyType,
+			}
+			if tt.keyType == azkeys.JSONWebKeyTypeECHSM {
+				webKey.Crv = &tt.curve
+				webKey.X = tt.x
+				webKey.Y = tt.y
+			}
+			keyBundle := azkeys.KeyBundle{
+				Key: webKey,
+			}
+
+			_, err := getKeyFromKeyBundle(keyBundle)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, *webKey.Kty)
+		})
+	}
+}

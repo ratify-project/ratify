@@ -311,7 +311,6 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 	if err != nil {
 		return nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
-	logger.GetLogger(ctx, logOpt).Infof("azkeys kvclient created successfully")
 
 	// create azsecrets client
 	kvClientSecrets, err := azsecrets.NewClient(kvEndpoint, credential, nil)
