@@ -1,7 +1,7 @@
 image:
   repository: ghcr.io/ratify-project/ratify
   crdRepository: ghcr.io/ratify-project/ratify-crds
-  tag: v1.3.0
+  tag: v1.3.1
   pullPolicy: IfNotPresent
 
 nameOverride: ""
@@ -49,9 +49,13 @@ resources:
   requests:
     cpu: 600m
     memory: 512Mi
+
 serviceAccount:
   create: true
   name: ratify-admin
+  # Annotations to add to the service account
+  annotations: {}
+
 gatekeeper:
   version: "3.17.0"
   namespace: # default is gatekeeper-system
