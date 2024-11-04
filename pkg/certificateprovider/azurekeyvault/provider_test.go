@@ -166,7 +166,7 @@ func TestInitializeKvClient(t *testing.T) {
 			mockSecretsClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockSecretsClient, tt.mockSecretsErr)
 
 			// Call function under test
-			secretsClient, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID)
+			secretsClient, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID, nil)
 
 			// Validate expectations
 			if tt.expectedErr {
@@ -178,6 +178,27 @@ func TestInitializeKvClient(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestInitializeKvClient_Success(t *testing.T) {
+	// Mock the context and input parameters
+	ctx := context.Background()
+	keyVaultEndpoint := "https://myvault.vault.azure.net/"
+	tenantID := "tenant-id"
+	clientID := "client-id"
+
+	// Create a mock credential provider
+	mockCredential, err := azidentity.NewClientSecretCredential(tenantID, clientID, "fake-secret", nil)
+	if err != nil {
+		t.Fatalf("Failed to create mock credential: %v", err)
+	}
+
+	// Run the function with the mock credential
+	kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, mockCredential)
+
+	// Assert the function succeeds without errors and clients are created
+	assert.NotNil(t, kvClientSecrets)
+	assert.NoError(t, err)
 }
 
 func TestGetCertificates(t *testing.T) {

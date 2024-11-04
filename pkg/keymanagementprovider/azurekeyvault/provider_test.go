@@ -26,12 +26,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/ratify-project/ratify/internal/version"
+	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +70,7 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvClientkeys, kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
+		kvClientkeys, kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "", nil)
 		assert.NoError(t, err)
 		assert.NotNil(t, kvClientkeys)
 		assert.NotNil(t, kvClientSecrets)
@@ -181,7 +182,7 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initKVClient = func(_ context.Context, _, _, _ string) (*azkeys.Client, *azsecrets.Client, error) {
+			initKVClient = func(_ context.Context, _, _, _ string, _ azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, error) {
 				return &azkeys.Client{}, &azsecrets.Client{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
@@ -802,7 +803,7 @@ func TestInitializeKvClient(t *testing.T) {
 			mockSecretsClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockSecretsClient, tt.mockSecretsErr)
 
 			// Call function under test
-			keysClient, secretsClient, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID)
+			keysClient, secretsClient, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID, nil)
 
 			// Validate expectations
 			if tt.expectedErr {
@@ -859,4 +860,62 @@ func TestGetKeyFromKeyBundlex(t *testing.T) {
 			assert.Equal(t, tt.expected, *webKey.Kty)
 		})
 	}
+}
+
+func TestInitializeKvClient_Success(t *testing.T) {
+	// Mock the context and input parameters
+	ctx := context.Background()
+	keyVaultEndpoint := "https://myvault.vault.azure.net/"
+	tenantID := "tenant-id"
+	clientID := "client-id"
+
+	// Create a mock credential provider
+	mockCredential, err := azidentity.NewClientSecretCredential(tenantID, clientID, "fake-secret", nil)
+	if err != nil {
+		t.Fatalf("Failed to create mock credential: %v", err)
+	}
+
+	// Run the function with the mock credential
+	kvClientKeys, kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, mockCredential)
+
+	// Assert the function succeeds without errors and clients are created
+	assert.NotNil(t, kvClientKeys)
+	assert.NotNil(t, kvClientSecrets)
+	assert.NoError(t, err)
+}
+
+func TestInitializeKvClient_FailureInAzKeysClient(t *testing.T) {
+	// Mock the context and input parameters
+	ctx := context.Background()
+	keyVaultEndpoint := "https://invalid-vault.vault.azure.net/"
+	tenantID := "mock_tenant-id"
+	clientID := "mock_client-id"
+
+	// Run the function
+	kvClientKeys, kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, nil)
+
+	// Assert that an error occurred and clients were not created
+	assert.Nil(t, kvClientKeys)
+	assert.Nil(t, kvClientSecrets)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create workload identity credential")
+}
+
+func TestInitializeKvClient_FailureInAzSecretsClient(t *testing.T) {
+	// Mock the context and input parameters
+	ctx := context.Background()
+	keyVaultEndpoint := "https://valid-vault.vault.azure.net/"
+	tenantID := "tenant-id"
+	clientID := "client-id"
+
+	// Modify the azsecrets.NewClient function to simulate failure
+	// Run the function
+	kvClientKeys, kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, nil)
+
+	// Assert that an error occurred and clients were not created
+	assert.Nil(t, kvClientKeys)
+	assert.Nil(t, kvClientSecrets)
+	assert.Error(t, err)
+	// assert.Contains(t, err.Error(), "Failed to create Key Vault client")
+	assert.Contains(t, err.Error(), "failed to create workload identity credential")
 }

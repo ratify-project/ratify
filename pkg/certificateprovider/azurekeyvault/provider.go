@@ -34,6 +34,7 @@ import (
 	"github.com/ratify-project/ratify/pkg/metrics"
 	"golang.org/x/crypto/pkcs12"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -96,7 +97,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 
 	logger.GetLogger(ctx, logOpt).Debugf("vaultURI %s", keyvaultURI)
 
-	kvClientSecrets, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID)
+	kvClientSecrets, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID, nil)
 	if err != nil {
 		return nil, nil, re.ErrorCodePluginInitFailure.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault client", re.HideStackTrace)
 	}
@@ -209,21 +210,24 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string) (*azsecrets.Client, error) {
+func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string, credProvider azcore.TokenCredential) (*azsecrets.Client, error) {
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 
-	// Create the workload identity credential for authentication
-	credential, err := azidentity.NewWorkloadIdentityCredential(&azidentity.WorkloadIdentityCredentialOptions{
-		ClientID: clientID,
-		TenantID: tenantID,
-	})
-	if err != nil {
-		return nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithRemediation(re.AKVLink).WithError(err)
+	// If credProvider is nil, create the default credential
+	if credProvider == nil {
+		var err error
+		credProvider, err = azidentity.NewWorkloadIdentityCredential(&azidentity.WorkloadIdentityCredentialOptions{
+			ClientID: clientID,
+			TenantID: tenantID,
+		})
+		if err != nil {
+			return nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithRemediation(re.AKVLink).WithError(err)
+		}
 	}
 
 	// create azsecrets client
-	kvClientSecrets, err := azsecrets.NewClient(kvEndpoint, credential, nil)
+	kvClientSecrets, err := azsecrets.NewClient(kvEndpoint, credProvider, nil)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
