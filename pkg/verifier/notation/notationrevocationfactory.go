@@ -24,7 +24,7 @@ import (
 type notationrevocationfactory struct{}
 
 // NewFetcher returns a new fetcher instance
-func (f *notationrevocationfactory) NewFetcher(client *http.Client) (corecrl.Fetcher, error) {
+func (f *notationrevocationfactory) NewFetcher(client *http.Client) (*corecrl.HTTPFetcher, error) {
 	return corecrl.NewHTTPFetcher(client)
 }
 

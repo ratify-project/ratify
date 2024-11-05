@@ -20,9 +20,9 @@ import (
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 )
 
-type revocationOptions interface {
+type revocationFactory interface {
 	// NewFetcher returns a new fetcher instance
-	NewFetcher(http.Client) (corecrl.Fetcher, error)
+	NewFetcher(*http.Client) (*corecrl.HTTPFetcher, error)
 
 	// NewFileCache returns a new file cache instance
 	NewFileCache(string) (corecrl.Cache, error)
