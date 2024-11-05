@@ -81,7 +81,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "clientID is not set", re.HideStackTrace)
 	}
 
-	azureCloudEnv, err := parseAzureEnvironment(cloudName)
+	_, err := parseAzureEnvironment(cloudName)
 	if err != nil {
 		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", cloudName), re.HideStackTrace)
 	}
@@ -97,7 +97,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 
 	logger.GetLogger(ctx, logOpt).Debugf("vaultURI %s", keyvaultURI)
 
-	kvClientSecrets, err := initializeKvClient(ctx, azureCloudEnv.KeyVaultEndpoint, tenantID, workloadIdentityClientID, nil)
+	kvClientSecrets, err := initializeKvClient(ctx, keyvaultURI, tenantID, workloadIdentityClientID, nil)
 	if err != nil {
 		return nil, nil, re.ErrorCodePluginInitFailure.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault client", re.HideStackTrace)
 	}
@@ -231,7 +231,7 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
-	logger.GetLogger(ctx, logOpt).Infof("azsecrets kvclient created successfully")
+	logger.GetLogger(ctx, logOpt).Debugf("azsecrets kvclient created successfully")
 
 	return kvClientSecrets, nil
 }

@@ -74,8 +74,6 @@ func SkipTestInitializeKVClient(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, kvClientkeys)
 		assert.NotNil(t, kvClientSecrets)
-		// assert.NotNil(t, kvClientkeys.Authorizer)
-		// assert.Contains(t, kvClientkeys.UserAgent, version.UserAgent)
 	}
 }
 
@@ -916,6 +914,5 @@ func TestInitializeKvClient_FailureInAzSecretsClient(t *testing.T) {
 	assert.Nil(t, kvClientKeys)
 	assert.Nil(t, kvClientSecrets)
 	assert.Error(t, err)
-	// assert.Contains(t, err.Error(), "Failed to create Key Vault client")
 	assert.Contains(t, err.Error(), "failed to create workload identity credential")
 }

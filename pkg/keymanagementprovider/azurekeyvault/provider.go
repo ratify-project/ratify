@@ -160,9 +160,8 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 		return nil, err
 	}
 
-	logger.GetLogger(context.Background(), logOpt).Debugf("vaultURI %s", provider.vaultURI)
-
-	kvClientKeys, kvClientSecrets, err := initKVClient(context.Background(), provider.cloudEnv.KeyVaultEndpoint, provider.tenantID, provider.clientID, nil)
+	// create keyvault clients
+	kvClientKeys, kvClientSecrets, err := initKVClient(context.Background(), provider.vaultURI, provider.tenantID, provider.clientID, nil)
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.NewError(re.KeyManagementProvider, ProviderName, re.AKVLink, err, "failed to create keyvault client", re.HideStackTrace)
 	}
@@ -178,7 +177,7 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 	certsMap := map[keymanagementprovider.KMPMapKey][]*x509.Certificate{}
 	certsStatus := []map[string]string{}
 	for _, keyVaultCert := range s.certificates {
-		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v,  keyvault %v", keyVaultCert.Name, s.vaultURI)
+		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v, certVersion %v", keyVaultCert.Name)
 
 		startTime := time.Now()
 		secretResponse, err := s.kvClientSecrets.GetSecret(ctx, keyVaultCert.Name, keyVaultCert.Version, nil)
@@ -294,9 +293,9 @@ func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
 	return &env, err
 }
 
-func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string, credProvider azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, error) {
+func initializeKvClient(ctx context.Context, keyVaultURI, tenantID, clientID string, credProvider azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, error) {
 	// Trim any trailing slash from the endpoint
-	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
+	kvEndpoint := strings.TrimSuffix(keyVaultURI, "/")
 
 	// If credProvider is nil, create the default credential
 	if credProvider == nil {
@@ -321,7 +320,8 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 	if err != nil {
 		return nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
-	logger.GetLogger(ctx, logOpt).Infof("azsecrets kvclient created successfully")
+
+	logger.GetLogger(ctx, logOpt).Debugf("azkeys and azsecrets clients created successfully")
 
 	return kvClientKeys, kvClientSecrets, nil
 }
