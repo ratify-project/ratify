@@ -36,7 +36,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/verifier"
 	"github.com/ratify-project/ratify/pkg/verifier/config"
 	"github.com/ratify-project/ratify/pkg/verifier/factory"
-	nr "github.com/ratify-project/ratify/pkg/verifier/notation/revocation"
 	"github.com/ratify-project/ratify/pkg/verifier/types"
 
 	"github.com/notaryproject/notation-core-go/revocation"
@@ -109,7 +108,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
 
-	verifyService, err := getVerifierService(conf, pluginDirectory, &nr.Notationrevocationfactory{})
+	verifyService, err := getVerifierService(conf, pluginDirectory, &Notationrevocationfactory{})
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
@@ -181,7 +180,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	return verifier.NewVerifierResult("", v.name, v.verifierType, "Notation signature verification success", true, nil, extensions), nil
 }
 
-func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, f nr.RevocationFactory) (notation.Verifier, error) {
+func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, f revocationFactory) (notation.Verifier, error) {
 	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
 	if err != nil {
 		return nil, err

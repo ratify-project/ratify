@@ -38,7 +38,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/referrerstore"
 	"github.com/ratify-project/ratify/pkg/referrerstore/config"
 	"github.com/ratify-project/ratify/pkg/verifier"
-	nr "github.com/ratify-project/ratify/pkg/verifier/notation/revocation"
 )
 
 const (
@@ -569,7 +568,7 @@ func TestGetVerifierService(t *testing.T) {
 		name              string
 		conf              *NotationPluginVerifierConfig
 		pluginDir         string
-		revocationFactory nr.RevocationFactory
+		revocationFactory revocationFactory
 		expectErr         bool
 	}{
 		{

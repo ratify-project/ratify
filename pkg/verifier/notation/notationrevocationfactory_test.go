@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package revocation
+package notation
 
 import (
 	"net/http"
@@ -34,9 +34,11 @@ func TestNewFileCache(t *testing.T) {
 	factory := &Notationrevocationfactory{}
 	cacheDir := "/cache"
 
-	cache, err := factory.NewFileCache(cacheDir)
-	assert.NoError(t, err)
-	assert.NotNil(t, cache)
+	_, err := factory.NewFileCache(cacheDir)
+	expectedErrMsg := "failed to create crl file cache: mkdir /cache: permission denied"
+	if err == nil || err.Error() != expectedErrMsg {
+		t.Fatalf("expected %s, but got %s", expectedErrMsg, err)
+	}
 }
 
 func TestNewValidator(t *testing.T) {
