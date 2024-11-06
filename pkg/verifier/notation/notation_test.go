@@ -28,6 +28,7 @@ import (
 	"github.com/notaryproject/notation-core-go/revocation/purpose"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/verifier/crl"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	ratifyconfig "github.com/ratify-project/ratify/config"
@@ -580,51 +581,42 @@ func TestGetVerifierService(t *testing.T) {
 			revocationFactory: mockRevocationFactory{failFetcher: true},
 			expectErr:         true,
 		},
-		// {
-		// 	name: "failed to create file cache",
-		// 	conf: &NotationPluginVerifierConfig{
-		// 		VerificationCerts: []string{defaultCertDir},
-		// 	},
-		// 	pluginDir:         "",
-		// 	revocationFactory: mockRevocationFactory{failFileCache: true},
-		// 	expectErr:         true,
-		// },
-		// {
-		// 	name: "failed to create code signing validator",
-		// 	conf: &NotationPluginVerifierConfig{
-		// 		VerificationCerts: []string{defaultCertDir},
-		// 	},
-		// 	pluginDir:         "",
-		// 	revocationFactory: mockRevocationFactory{failCodeSigningValidator: true},
-		// 	expectErr:         true,
-		// },
-		// {
-		// 	name: "failed to create timestamping validator",
-		// 	conf: &NotationPluginVerifierConfig{
-		// 		VerificationCerts: []string{defaultCertDir},
-		// 	},
-		// 	pluginDir:         "",
-		// 	revocationFactory: mockRevocationFactory{failTimestampingValidator: true},
-		// 	expectErr:         true,
-		// },
-		// {
-		// 	name: "failed to create verifier",
-		// 	conf: &NotationPluginVerifierConfig{
-		// 		VerificationCerts: []string{defaultCertDir},
-		// 	},
-		// 	pluginDir:         "",
-		// 	revocationFactory: mockRevocationFactory{failVerifier: true},
-		// 	expectErr:         true,
-		// },
-		// {
-		// 	name: "successfully created verifier",
-		// 	conf: &NotationPluginVerifierConfig{
-		// 		VerificationCerts: []string{defaultCertDir},
-		// 	},
-		// 	pluginDir:         "",
-		// 	revocationFactory: mockRevocationFactory{},
-		// 	expectErr:         false,
-		// },
+		{
+			name: "failed to create file cache",
+			conf: &NotationPluginVerifierConfig{
+				VerificationCerts: []string{defaultCertDir},
+			},
+			pluginDir:         "",
+			revocationFactory: mockRevocationFactory{failFileCache: true},
+			expectErr:         true,
+		},
+		{
+			name: "failed to create code signing validator",
+			conf: &NotationPluginVerifierConfig{
+				VerificationCerts: []string{defaultCertDir},
+			},
+			pluginDir:         "",
+			revocationFactory: mockRevocationFactory{failCodeSigningValidator: true},
+			expectErr:         true,
+		},
+		{
+			name: "failed to create timestamping validator",
+			conf: &NotationPluginVerifierConfig{
+				VerificationCerts: []string{defaultCertDir},
+			},
+			pluginDir:         "",
+			revocationFactory: mockRevocationFactory{failTimestampingValidator: true},
+			expectErr:         true,
+		},
+		{
+			name: "failed to create verifier",
+			conf: &NotationPluginVerifierConfig{
+				VerificationCerts: []string{defaultCertDir},
+			},
+			pluginDir:         "",
+			revocationFactory: mockRevocationFactory{failVerifier: true},
+			expectErr:         true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -649,14 +641,14 @@ func (m mockRevocationFactory) NewFetcher(client *http.Client) (*corecrl.HTTPFet
 	if m.failFetcher {
 		return nil, fmt.Errorf("failed to create fetcher")
 	}
-	return nil, nil
+	return corecrl.NewHTTPFetcher(client)
 }
 
 func (m mockRevocationFactory) NewFileCache(root string) (corecrl.Cache, error) {
 	if m.failFileCache {
 		return nil, fmt.Errorf("failed to create file cache")
 	}
-	return &mockCache{}, nil
+	return crl.NewFileCache(root)
 }
 
 func (m mockRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
@@ -666,27 +658,5 @@ func (m mockRevocationFactory) NewValidator(opts revocation.Options) (revocation
 	if m.failTimestampingValidator && opts.CertChainPurpose == purpose.Timestamping {
 		return nil, fmt.Errorf("failed to create timestamping validator")
 	}
-	return nil, nil
-}
-
-// type mockFetcher struct{}
-
-// func (m *mockFetcher) Fetch(ctx context.Context, url string) (*corecrl.Bundle, error) {
-// 	return nil, nil
-// }
-
-type mockCache struct{}
-
-func (m *mockCache) Get(ctx context.Context, key string) (*corecrl.Bundle, error) {
-	return nil, nil
-}
-
-func (m *mockCache) Set(ctx context.Context, key string, data *corecrl.Bundle) error {
-	return nil
-}
-
-type mockValidator struct{}
-
-func (m *mockValidator) ValidateContext(cert *x509.Certificate, chain []*x509.Certificate) error {
-	return nil
+	return revocation.NewWithOptions(opts)
 }
