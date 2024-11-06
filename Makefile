@@ -467,25 +467,6 @@ e2e-trivy-setup:
 	curl -L https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz --output .staging/trivy/trivy.tar.gz
 	tar -zxf .staging/trivy/trivy.tar.gz -C .staging/trivy
 
-	# Download vulnerability database in retry mode
-	max_retries=3; \
-	attempt=1; \
-	wait_time=2; \
-	while [ $$attempt -le $$max_retries ]; do \
-		echo "Attempt $$attempt of $$max_retries..."; \
-		if .staging/trivy/trivy image --download-db-only; then \
-			break; \
-		fi; \
-		if [ $$attempt -eq $$max_retries ]; then \
-			echo "Failed after $$max_retries attempts."; \
-			exit 1; \
-		fi; \
-		echo "Failed. Retrying in $$wait_time seconds..."; \
-		sleep $$wait_time; \
-		wait_time=$$(( wait_time * 2 )); \
-		attempt=$$(( attempt + 1 )); \
-	done
-
 e2e-schemavalidator-setup:
 	rm -rf .staging/schemavalidator
 	mkdir -p .staging/schemavalidator

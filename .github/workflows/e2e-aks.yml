@@ -52,6 +52,9 @@ jobs:
           # Container Registry:
           az account get-access-token --scope https://containerregistry.azure.net/.default --output none
 
+      - name: Restore Trivy cache
+        uses: ./.github/actions/restore_trivy_cache
+
       - name: Dependencies e2e
         run: |
           mkdir -p $GITHUB_WORKSPACE/bin
