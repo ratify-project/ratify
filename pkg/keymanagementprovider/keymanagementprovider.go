@@ -41,6 +41,7 @@ type KeyManagementProviderStatus map[string]interface{}
 type KMPMapKey struct {
 	Name    string
 	Version string
+	Enabled bool
 }
 
 type PublicKey struct {
@@ -154,6 +155,30 @@ func DeleteResourceFromMap(resource string) {
 	keyMap.Delete(resource)
 	certificateErrMap.Delete(resource)
 	keyErrMap.Delete(resource)
+}
+
+// DeleteKeyFromMap deletes the keys from the map
+func DeleteCertificateFromMap(resource string, certKey KMPMapKey) {
+	if certs, ok := certificatesMap.Load(resource); ok {
+		for k := range certs.(map[KMPMapKey][]*x509.Certificate) {
+			if k.Name == certKey.Name && k.Version == certKey.Version {
+				delete(certs.(map[KMPMapKey][]*x509.Certificate), k)
+				continue
+			}
+		}
+	}
+}
+
+// DeleteKeyFromMap deletes the keys from the map
+func DeleteKeyFromMap(resource string, key KMPMapKey) {
+	if keys, ok := keyMap.Load(resource); ok {
+		for k := range keys.(map[KMPMapKey]PublicKey) {
+			if k.Name == key.Name && k.Version == key.Version {
+				delete(keys.(map[KMPMapKey]PublicKey), k)
+				continue
+			}
+		}
+	}
 }
 
 // FlattenKMPMap flattens the map of certificates fetched for a single key management provider resource and returns a single array
