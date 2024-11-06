@@ -54,20 +54,10 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v${{ env.TRIVY_VERSION }}/trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           echo "$(pwd)" >> $GITHUB_PATH
-      
-      - name: Download vulnerability database
-        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
-        with:
-          max_attempts: 3
-          retry_on: error
-          timeout_seconds: 30
-          retry_wait_seconds: 5
-          command: |
-            trivy image --download-db-only
 
       - name: Run trivy on git repository
         run: |
-          trivy fs --skip-db-update --format table --ignore-unfixed --scanners vuln .
+          trivy fs --skip-db-update --cache-dir $GITHUB_WORKSPACE/.cache/trivy/ --format table --ignore-unfixed --scanners vuln .
 
       - name: Build docker images
         run: |
@@ -76,10 +66,10 @@ jobs:
       - name: Run trivy on images for all severity
         run: |
           for img in "localbuild:test" "localbuildcrd:test"; do
-              trivy image --skip-db-update --ignore-unfixed --vuln-type="os,library" "${img}"
+              trivy image --skip-db-update --cache-dir $GITHUB_WORKSPACE/.cache/trivy/ --ignore-unfixed --vuln-type="os,library" "${img}"
           done
       - name: Run trivy on images and exit on HIGH/CRITICAL severity
         run: |
           for img in "localbuild:test" "localbuildcrd:test"; do
-              trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "${img}"
+              trivy image --skip-db-update --cache-dir $GITHUB_WORKSPACE/.cache/trivy/ --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "${img}"
           done
