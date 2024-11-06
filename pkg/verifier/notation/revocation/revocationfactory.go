@@ -11,29 +11,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package notation
+package revocation
 
 import (
 	"net/http"
 
 	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
-	"github.com/notaryproject/notation-go/verifier/crl"
 )
 
-type notationrevocationfactory struct{}
+type RevocationFactory interface {
+	// NewFetcher returns a new fetcher instance
+	NewFetcher(*http.Client) (*corecrl.HTTPFetcher, error)
 
-// NewFetcher returns a new fetcher instance
-func (f *notationrevocationfactory) NewFetcher(client *http.Client) (*corecrl.HTTPFetcher, error) {
-	return corecrl.NewHTTPFetcher(client)
-}
+	// NewFileCache returns a new file cache instance
+	NewFileCache(string) (corecrl.Cache, error)
 
-// NewFileCache returns a new file cache instance
-func (f *notationrevocationfactory) NewFileCache(cacheDir string) (corecrl.Cache, error) {
-	return crl.NewFileCache(cacheDir)
-}
-
-// NewValidator returns a new validator instance
-func (f *notationrevocationfactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
-	return revocation.NewWithOptions(opts)
+	// NewValidator returns a new validator instance
+	NewValidator(revocation.Options) (revocation.Validator, error)
 }
