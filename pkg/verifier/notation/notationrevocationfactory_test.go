@@ -22,7 +22,7 @@ import (
 )
 
 func TestNewFetcher(t *testing.T) {
-	factory := &Notationrevocationfactory{}
+	factory := &NotationRevocationFactory{}
 	client := &http.Client{}
 
 	fetcher, err := factory.NewFetcher(client)
@@ -30,19 +30,8 @@ func TestNewFetcher(t *testing.T) {
 	assert.NotNil(t, fetcher)
 }
 
-func TestNewFileCache(t *testing.T) {
-	factory := &Notationrevocationfactory{}
-	cacheDir := "/cache"
-
-	_, err := factory.NewFileCache(cacheDir)
-	expectedErrMsg := "failed to create crl file cache: mkdir /cache: permission denied"
-	if err == nil || err.Error() != expectedErrMsg {
-		t.Fatalf("expected %s, but got %s", expectedErrMsg, err)
-	}
-}
-
 func TestNewValidator(t *testing.T) {
-	factory := &Notationrevocationfactory{}
+	factory := &NotationRevocationFactory{}
 	opts := revocation.Options{}
 
 	validator, err := factory.NewValidator(opts)

@@ -28,7 +28,6 @@ import (
 	"github.com/notaryproject/notation-core-go/revocation/purpose"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
-	"github.com/notaryproject/notation-go/verifier/crl"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	ratifyconfig "github.com/ratify-project/ratify/config"
@@ -636,18 +635,11 @@ type mockRevocationFactory struct {
 	failVerifier              bool
 }
 
-func (m mockRevocationFactory) NewFetcher(client *http.Client) (*corecrl.HTTPFetcher, error) {
+func (m mockRevocationFactory) NewFetcher(client *http.Client) (corecrl.Fetcher, error) {
 	if m.failFetcher {
 		return nil, fmt.Errorf("failed to create fetcher")
 	}
 	return corecrl.NewHTTPFetcher(client)
-}
-
-func (m mockRevocationFactory) NewFileCache(root string) (corecrl.Cache, error) {
-	if m.failFileCache {
-		return nil, fmt.Errorf("failed to create file cache")
-	}
-	return crl.NewFileCache(root)
 }
 
 func (m mockRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {

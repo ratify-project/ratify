@@ -22,10 +22,7 @@ import (
 
 type revocationFactory interface {
 	// NewFetcher returns a new fetcher instance
-	NewFetcher(*http.Client) (*corecrl.HTTPFetcher, error)
-
-	// NewFileCache returns a new file cache instance
-	NewFileCache(string) (corecrl.Cache, error)
+	NewFetcher(*http.Client) (corecrl.Fetcher, error)
 
 	// NewValidator returns a new validator instance
 	NewValidator(revocation.Options) (revocation.Validator, error)

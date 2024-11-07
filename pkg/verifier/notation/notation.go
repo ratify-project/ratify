@@ -29,7 +29,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/homedir"
 
-	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/log"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
@@ -108,7 +107,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
 
-	verifyService, err := getVerifierService(conf, pluginDirectory, &Notationrevocationfactory{})
+	verifyService, err := getVerifierService(conf, pluginDirectory, &NotationRevocationFactory{})
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
@@ -190,14 +189,6 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	// This is the implementation for revocation check from notation cli to support crl and cache configurations
 	// removed timeout
 	crlFetcher, err := f.NewFetcher(&http.Client{})
-	if err != nil {
-		return nil, err
-	}
-	cacheRoot, err := dir.CacheFS().SysPath(dir.PathCRLCache)
-	if err != nil {
-		return nil, err
-	}
-	crlFetcher.Cache, err = f.NewFileCache(cacheRoot)
 	if err != nil {
 		return nil, err
 	}
