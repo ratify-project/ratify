@@ -78,7 +78,6 @@ type akvKMProvider struct {
 	resource        string
 	certificates    []types.KeyVaultValue
 	keys            []types.KeyVaultValue
-	cloudEnv        *azure.Environment
 	kvClientKeys    *azkeys.Client
 	kvClientSecrets *azsecrets.Client
 }
@@ -134,11 +133,6 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 
 	if err := json.Unmarshal(keyManagementProviderConfigBytes, &conf); err != nil {
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, "", re.EmptyLink, err, "failed to parse AKV key management provider configuration", re.HideStackTrace)
-	}
-
-	azureCloudEnv, err := parseAzureEnvironment(conf.CloudName)
-	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.NewError(re.KeyManagementProvider, ProviderName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", conf.CloudName), re.HideStackTrace)
 	}
 
 	if len(conf.Certificates) == 0 && len(conf.Keys) == 0 {
@@ -279,18 +273,6 @@ func getStatusProperty(name, version, lastRefreshed string, enabled bool) map[st
 	properties[types.StatusEnabled] = strconv.FormatBool(enabled)
 	properties[types.StatusLastRefreshed] = lastRefreshed
 	return properties
-}
-
-// parseAzureEnvironment returns azure environment by name
-func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
-	var env azure.Environment
-	var err error
-	if cloudName == "" {
-		env = azure.PublicCloud
-	} else {
-		env, err = azure.EnvironmentFromName(cloudName)
-	}
-	return &env, err
 }
 
 func initializeKvClient(ctx context.Context, keyVaultURI, tenantID, clientID string, credProvider azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, error) {

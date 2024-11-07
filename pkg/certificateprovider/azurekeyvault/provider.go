@@ -37,7 +37,6 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
-	"github.com/Azure/go-autorest/autorest/azure"
 	"gopkg.in/yaml.v2"
 )
 
@@ -67,7 +66,6 @@ func Create() certificateprovider.CertificateProvider {
 // get certificate retrieve the entire cert chain using getSecret API call
 func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string]string) ([]*x509.Certificate, certificateprovider.CertificatesStatus, error) {
 	keyvaultURI := types.GetKeyVaultURI(attrib)
-	cloudName := types.GetCloudName(attrib)
 	tenantID := types.GetTenantID(attrib)
 	workloadIdentityClientID := types.GetClientID(attrib)
 
@@ -79,11 +77,6 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	}
 	if workloadIdentityClientID == "" {
 		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.AKVLink, nil, "clientID is not set", re.HideStackTrace)
-	}
-
-	_, err := parseAzureEnvironment(cloudName)
-	if err != nil {
-		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("cloudName %s is not valid", cloudName), re.HideStackTrace)
 	}
 
 	keyVaultCerts, err := getKeyvaultRequestObj(ctx, attrib)
@@ -196,18 +189,6 @@ func formatKeyVaultCertificate(object *types.KeyVaultCertificate) {
 		str = strings.TrimSpace(str)
 		field.SetString(str)
 	}
-}
-
-// parseAzureEnvironment returns azure environment by name
-func parseAzureEnvironment(cloudName string) (*azure.Environment, error) {
-	var env azure.Environment
-	var err error
-	if cloudName == "" {
-		env = azure.PublicCloud
-	} else {
-		env, err = azure.EnvironmentFromName(cloudName)
-	}
-	return &env, err
 }
 
 func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string, credProvider azcore.TokenCredential) (*azsecrets.Client, error) {
