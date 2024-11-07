@@ -20,18 +20,16 @@ package azurekeyvault
 import (
 	"context"
 	"crypto"
-	"encoding/base64"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azcertificates"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
-	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/stretchr/testify/assert"
@@ -47,10 +45,11 @@ func SkipTestInitializeKVClient(t *testing.T) {
 	}
 
 	for i := range testEnvs {
-		kvClientkeys, kvClientSecrets, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "", nil)
+		keyKVClient, secretKVClient, certificateKVClient, err := initializeKvClient(testEnvs[i].KeyVaultEndpoint, "", "", nil)
 		assert.NoError(t, err)
-		assert.NotNil(t, kvClientkeys)
-		assert.NotNil(t, kvClientSecrets)
+		assert.NotNil(t, keyKVClient)
+		assert.NotNil(t, secretKVClient)
+		assert.NotNil(t, certificateKVClient)
 	}
 }
 
@@ -157,8 +156,8 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initKVClient = func(_ context.Context, _, _, _ string, _ azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, error) {
-				return &azkeys.Client{}, &azsecrets.Client{}, nil
+			initKVClient = func(_, _, _ string, _ azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, *azcertificates.Client, error) {
+				return &azkeys.Client{}, &azsecrets.Client{}, &azcertificates.Client{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
 			if tc.expectErr != (err != nil) {
@@ -168,239 +167,58 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-type MockKvClient struct {
-	GetCertificateFunc func(ctx context.Context, certificateName string, certificateVersion string, arg string) (kv.CertificateBundle, error)
-	GetSecretFunc      func(ctx context.Context, secretName string, secretVersion string, arg string) (kv.SecretBundle, error)
-	GetKeyFunc         func(ctx context.Context, keyName string, keyVersion string, arg string) (kv.KeyBundle, error)
-}
-
-func (m *MockKvClient) GetCertificate(ctx context.Context, certificateName string, certificateVersion string, arg string) (kv.CertificateBundle, error) {
-	if m.GetCertificateFunc != nil {
-		return m.GetCertificateFunc(ctx, certificateName, certificateVersion, arg)
-	}
-	return kv.CertificateBundle{}, nil
-}
-func (m *MockKvClient) GetSecret(ctx context.Context, secretName string, secretVersion string, arg string) (kv.SecretBundle, error) {
-	if m.GetSecretFunc != nil {
-		return m.GetSecretFunc(ctx, secretName, secretVersion, arg)
-	}
-	return kv.SecretBundle{}, nil
-}
-func (m *MockKvClient) GetKey(ctx context.Context, keyName string, keyVersion string, arg string) (kv.KeyBundle, error) {
-	if m.GetKeyFunc != nil {
-		return m.GetKeyFunc(ctx, keyName, keyVersion, arg)
-	}
-	return kv.KeyBundle{}, nil
-}
-
 // TestGetCertificates tests the GetCertificates function
 func TestGetCertificates(t *testing.T) {
-	testCases := []struct {
-		name         string
-		mockKvClient *MockKvClient
-		expectedErr  bool
-	}{
-		{
-			name: "GetSecret error",
-			mockKvClient: &MockKvClient{
-				GetSecretFunc: func(_ context.Context, _ string, _ string, _ string) (kv.SecretBundle, error) {
-					return kv.SecretBundle{}, errors.New("error")
-				},
+	factory := &akvKMProviderFactory{}
+	config := config.KeyManagementProviderConfig{
+		"vaultUri": "https://testkv.vault.azure.net/",
+		"tenantID": "tid",
+		"clientID": "clientid",
+		"certificates": []map[string]interface{}{
+			{
+				"name":    "cert1",
+				"version": "",
 			},
-			expectedErr: true,
-		},
-		{
-			name: "Certificate disabled",
-			mockKvClient: &MockKvClient{
-				GetCertificateFunc: func(_ context.Context, _ string, _ string, _ string) (kv.CertificateBundle, error) {
-					return kv.CertificateBundle{
-						ID:  to.StringPtr("https://testkv.vault.azure.net/certificates/cert1"),
-						Kid: to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-						Attributes: &kv.CertificateAttributes{
-							Enabled: to.BoolPtr(false),
-						},
-					}, nil
-				},
-				GetSecretFunc: func(_ context.Context, _ string, _ string, _ string) (kv.SecretBundle, error) {
-					err := autorest.DetailedError{
-						Original: &azure.RequestError{
-							ServiceError: &azure.ServiceError{Code: "SecretDisabled"},
-						},
-					}
-					return kv.SecretBundle{}, err
-				},
-			},
-			expectedErr: false,
-		},
-		{
-			name: "Certificate disabled error",
-			mockKvClient: &MockKvClient{
-				GetCertificateFunc: func(_ context.Context, _ string, _ string, _ string) (kv.CertificateBundle, error) {
-					return kv.CertificateBundle{}, errors.New("error")
-				},
-				GetSecretFunc: func(_ context.Context, _ string, _ string, _ string) (kv.SecretBundle, error) {
-					err := autorest.DetailedError{
-						Original: &azure.RequestError{
-							ServiceError: &azure.ServiceError{Code: "SecretDisabled"},
-						},
-					}
-					return kv.SecretBundle{}, err
-				},
-			},
-			expectedErr: true,
-		},
-		{
-			name: "Certificate enabled",
-			mockKvClient: &MockKvClient{
-				GetCertificateFunc: func(_ context.Context, _ string, _ string, _ string) (kv.CertificateBundle, error) {
-					return kv.CertificateBundle{
-						ID:  to.StringPtr("https://testkv.vault.azure.net/certificates/cert1"),
-						Kid: to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-						Attributes: &kv.CertificateAttributes{
-							Enabled: to.BoolPtr(true),
-						},
-					}, nil
-				},
-				GetSecretFunc: func(_ context.Context, _ string, _ string, _ string) (kv.SecretBundle, error) {
-					return kv.SecretBundle{
-						ID:          to.StringPtr("https://testkv.vault.azure.net/secrets/secret1"),
-						Kid:         to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-						ContentType: to.StringPtr("application/x-pem-file"),
-						Attributes: &kv.SecretAttributes{
-							Enabled: to.BoolPtr(true),
-						},
-						Value: to.StringPtr("-----BEGIN CERTIFICATE-----\nMIIC8TCCAdmgAwIBAgIUaNrwbhs/I1ecqUYdzD2xuAVNdmowDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzdaFw0yNDA2MjAwMTIyMzdaMBkxFzAVBgNVBAMMDnJhdGlm\neS5kZWZhdWx0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtskG1BUt\n4Fw2lbm53KbwZb1hnLmWdwRotZyznhhk/yrUDcq3uF6klwpk/E2IKfUKIo6doHSk\nXaEZXR68UtXygvA4wdg7xZ6kKpXy0gu+RxGE6CGtDHTyDDzITu+NBjo21ZSsyGpQ\nJeIKftUCHdwdygKf0CdJx8A29GBRpHGCmJadmt7tTzOnYjmbuPVLeqJo/Ex9qXcG\nZbxoxnxr5NCocFeKx+EbLo+k/KjdFB2PKnhgzxAaMMMP6eXPr8l5AlzkC83EmPvN\ntveuaBbamdlFkD+53TZeZlxt3GIdq93Iw/UpbQ/pvhbrztMT+UVEkm15sShfX8Xn\nL2st5A4n0V+66QIDAQABoyAwHjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIH\ngDANBgkqhkiG9w0BAQsFAAOCAQEAGpOqozyfDSBjoTepsRroxxcZ4sq65gw45Bme\nm36BS6FG0WHIg3cMy6KIIBefTDSKrPkKNTtuF25AeGn9jM+26cnfDM78ZH0+Lnn7\n7hs0MA64WMPQaWs9/+89aM9NADV9vp2zdG4xMi6B7DruvKWyhJaNoRqK/qP6LdSQ\nw8M+21sAHvXgrRkQtJlVOzVhgwt36NOb1hzRlQiZB+nhv2Wbw7fbtAaADk3JAumf\nvM+YdPS1KfAFaYefm4yFd+9/C0KOkHico3LTbELO5hG0Mo/EYvtjM+Fljb42EweF\n3nAx1GSPe5Tn8p3h6RyJW5HIKozEKyfDuLS0ccB/nqT3oNjcTw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIDRTCCAi2gAwIBAgIUcC33VfaMhOnsl7avNTRVQozoVtUwDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzZaFw0yMzA2MjIwMTIyMzZaMCoxDzANBgNVBAoMBlJhdGlm\neTEXMBUGA1UEAwwOUmF0aWZ5IFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB\nDwAwggEKAoIBAQDDFhDnyPrVDZaeRu6Tbg1a/iTwus+IuX+h8aKhKS1yHz4EF/Lz\nxCy7lNSQ9srGMMVumWuNom/ydIphff6PejZM1jFKPU6OQR/0JX5epcVIjbKa562T\nDguUxJ+h5V3EIyM4RqOWQ2g/xZo86x5TzyNJXiVdHHRvmDvUNwPpMeDjr/EHVAni\n5YQObxkJRiiZ7XOa5zz3YztVm8sSZAwPWroY1HIfvtP+KHpiNDIKSymmuJkH4SEr\nJn++iqN8na18a9DFBPTTrLPe3CxATGrMfosCMZ6LP3iFLLc/FaSpwcnugWdewsUK\nYs+sUY7jFWR7x7/1nyFWyRrQviM4f4TY+K7NAgMBAAGjYzBhMB0GA1UdDgQWBBQH\nYePW7QPP2p1utr3r6gqzEkKs+DAfBgNVHSMEGDAWgBQHYePW7QPP2p1utr3r6gqz\nEkKs+DAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICBDANBgkqhkiG9w0B\nAQsFAAOCAQEAjKp4vx3bFaKVhAbQeTsDjWJgmXLK2vLgt74MiUwSF6t0wehlfszE\nIcJagGJsvs5wKFf91bnwiqwPjmpse/thPNBAxh1uEoh81tOklv0BN790vsVpq3t+\ncnUvWPiCZdRlAiGGFtRmKk3Keq4sM6UdiUki9s+wnxypHVb4wIpVxu5R271Lnp5I\n+rb2EQ48iblt4XZPczf/5QJdTgbItjBNbuO8WVPOqUIhCiFuAQziLtNUq3p81dHO\nQ2BPgmaitCpIUYHVYighLauBGCH8xOFzj4a4KbOxKdxyJTd0La/vRCKaUtJX67Lc\nfQYVR9HXQZ0YlmwPcmIG5v7wBfcW34NUvA==\n-----END CERTIFICATE-----\n"),
-					}, nil
-				},
-			},
-		},
-		{
-			name: "getCertsFromSecretBundle error",
-			mockKvClient: &MockKvClient{
-				GetSecretFunc: func(_ context.Context, _ string, _ string, _ string) (kv.SecretBundle, error) {
-					return kv.SecretBundle{
-						ContentType: to.StringPtr("test"),
-						ID:          to.StringPtr("https://testkv.vault.azure.net/secrets/secret1"),
-						Kid:         to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-						Attributes: &kv.SecretAttributes{
-							Enabled: to.BoolPtr(true),
-						},
-						Value: to.StringPtr("-----BEGIN CERTIFICATE-----\nMIIC8TCCAdmgAwIBAgIUaNrwbhs/I1ecqUYdzD2xuAVNdmowDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzdaFw0yNDA2MjAwMTIyMzdaMBkxFzAVBgNVBAMMDnJhdGlm\neS5kZWZhdWx0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtskG1BUt\n4Fw2lbm53KbwZb1hnLmWdwRotZyznhhk/yrUDcq3uF6klwpk/E2IKfUKIo6doHSk\nXaEZXR68UtXygvA4wdg7xZ6kKpXy0gu+RxGE6CGtDHTyDDzITu+NBjo21ZSsyGpQ\nJeIKftUCHdwdygKf0CdJx8A29GBRpHGCmJadmt7tTzOnYjmbuPVLeqJo/Ex9qXcG\nZbxoxnxr5NCocFeKx+EbLo+k/KjdFB2PKnhgzxAaMMMP6eXPr8l5AlzkC83EmPvN\ntveuaBbamdlFkD+53TZeZlxt3GIdq93Iw/UpbQ/pvhbrztMT+UVEkm15sShfX8Xn\nL2st5A4n0V+66QIDAQABoyAwHjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIH\ngDANBgkqhkiG9w0BAQsFAAOCAQEAGpOqozyfDSBjoTepsRroxxcZ4sq65gw45Bme\nm36BS6FG0WHIg3cMy6KIIBefTDSKrPkKNTtuF25AeGn9jM+26cnfDM78ZH0+Lnn7\n7hs0MA64WMPQaWs9/+89aM9NADV9vp2zdG4xMi6B7DruvKWyhJaNoRqK/qP6LdSQ\nw8M+21sAHvXgrRkQtJlVOzVhgwt36NOb1hzRlQiZB+nhv2Wbw7fbtAaADk3JAumf\nvM+YdPS1KfAFaYefm4yFd+9/C0KOkHico3LTbELO5hG0Mo/EYvtjM+Fljb42EweF\n3nAx1GSPe5Tn8p3h6RyJW5HIKozEKyfDuLS0ccB/nqT3oNjcTw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIDRTCCAi2gAwIBAgIUcC33VfaMhOnsl7avNTRVQozoVtUwDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzZaFw0yMzA2MjIwMTIyMzZaMCoxDzANBgNVBAoMBlJhdGlm\neTEXMBUGA1UEAwwOUmF0aWZ5IFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB\nDwAwggEKAoIBAQDDFhDnyPrVDZaeRu6Tbg1a/iTwus+IuX+h8aKhKS1yHz4EF/Lz\nxCy7lNSQ9srGMMVumWuNom/ydIphff6PejZM1jFKPU6OQR/0JX5epcVIjbKa562T\nDguUxJ+h5V3EIyM4RqOWQ2g/xZo86x5TzyNJXiVdHHRvmDvUNwPpMeDjr/EHVAni\n5YQObxkJRiiZ7XOa5zz3YztVm8sSZAwPWroY1HIfvtP+KHpiNDIKSymmuJkH4SEr\nJn++iqN8na18a9DFBPTTrLPe3CxATGrMfosCMZ6LP3iFLLc/FaSpwcnugWdewsUK\nYs+sUY7jFWR7x7/1nyFWyRrQviM4f4TY+K7NAgMBAAGjYzBhMB0GA1UdDgQWBBQH\nYePW7QPP2p1utr3r6gqzEkKs+DAfBgNVHSMEGDAWgBQHYePW7QPP2p1utr3r6gqz\nEkKs+DAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICBDANBgkqhkiG9w0B\nAQsFAAOCAQEAjKp4vx3bFaKVhAbQeTsDjWJgmXLK2vLgt74MiUwSF6t0wehlfszE\nIcJagGJsvs5wKFf91bnwiqwPjmpse/thPNBAxh1uEoh81tOklv0BN790vsVpq3t+\ncnUvWPiCZdRlAiGGFtRmKk3Keq4sM6UdiUki9s+wnxypHVb4wIpVxu5R271Lnp5I\n+rb2EQ48iblt4XZPczf/5QJdTgbItjBNbuO8WVPOqUIhCiFuAQziLtNUq3p81dHO\nQ2BPgmaitCpIUYHVYighLauBGCH8xOFzj4a4KbOxKdxyJTd0La/vRCKaUtJX67Lc\nfQYVR9HXQZ0YlmwPcmIG5v7wBfcW34NUvA==\n-----END CERTIFICATE-----\n"),
-					}, nil
-				},
-			},
-			expectedErr: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			provider := &akvKMProvider{
-				certificates: []types.KeyVaultValue{
-					{
-						Name:    "cert1",
-						Version: "c1f03df1113d460491d970737dfdc35d",
-					},
-				},
-				kvClient: tc.mockKvClient,
-			}
-
-			_, _, err := provider.GetCertificates(context.Background())
-			if tc.expectedErr != (err != nil) {
-				t.Fatalf("error = %v, expectedErr = %v", err, tc.expectedErr)
-			}
-		})
+	provider, err := factory.Create("v1", config, "")
+	if err != nil {
+		t.Fatalf("expected no err but got error = %v", err)
 	}
+
+	certs, certStatus, err := provider.GetCertificates(context.Background())
+	assert.NotNil(t, err)
+	assert.Nil(t, certs)
+	assert.Nil(t, certStatus)
 }
 
 // TestGetKeys tests the GetKeys function
 func TestGetKeys(t *testing.T) {
-	testCases := []struct {
-		name         string
-		mockKvClient *MockKvClient
-		expectedErr  bool
-	}{
-		{
-			name: "GetKey error",
-			mockKvClient: &MockKvClient{
-				GetKeyFunc: func(_ context.Context, _ string, _ string, _ string) (kv.KeyBundle, error) {
-					return kv.KeyBundle{}, errors.New("error")
-				},
+	factory := &akvKMProviderFactory{}
+	config := config.KeyManagementProviderConfig{
+		"vaultUri": "https://testkv.vault.azure.net/",
+		"tenantID": "tid",
+		"clientID": "clientid",
+		"keys": []map[string]interface{}{
+			{
+				"name": "key1",
 			},
-			expectedErr: true,
-		},
-		{
-			name: "Key disabled",
-			mockKvClient: &MockKvClient{
-				GetKeyFunc: func(_ context.Context, _ string, _ string, _ string) (kv.KeyBundle, error) {
-					return kv.KeyBundle{
-						Key: &kv.JSONWebKey{
-							Kid: to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-						},
-						Attributes: &kv.KeyAttributes{
-							Enabled: to.BoolPtr(false),
-						},
-					}, nil
-				},
-			},
-			expectedErr: false,
-		},
-		{
-			name: "getKeyFromKeyBundle error",
-			mockKvClient: &MockKvClient{
-				GetKeyFunc: func(_ context.Context, _ string, _ string, _ string) (kv.KeyBundle, error) {
-					return kv.KeyBundle{
-						Key: &kv.JSONWebKey{
-							Kid: to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-						},
-						Attributes: &kv.KeyAttributes{
-							Enabled: to.BoolPtr(true),
-						},
-					}, nil
-				},
-			},
-			expectedErr: true,
-		},
-		{
-			name: "Key enabled",
-			mockKvClient: &MockKvClient{
-				GetKeyFunc: func(_ context.Context, _ string, _ string, _ string) (kv.KeyBundle, error) {
-					return kv.KeyBundle{
-						Key: &kv.JSONWebKey{
-							Kid: to.StringPtr("https://testkv.vault.azure.net/keys/key1"),
-							Kty: kv.RSA,
-							N:   to.StringPtr(base64.StdEncoding.EncodeToString([]byte("n"))),
-							E:   to.StringPtr(base64.StdEncoding.EncodeToString([]byte("e"))),
-						},
-						Attributes: &kv.KeyAttributes{
-							Enabled: to.BoolPtr(true),
-						},
-					}, nil
-				},
-			},
-			expectedErr: false,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			provider := &akvKMProvider{
-				keys: []types.KeyVaultValue{
-					{
-						Name:    "key1",
-						Version: "c1f03df1113d460491d970737dfdc35d",
-					},
-				},
-				kvClientKeys:     tc.mockKvClient,
-				kvClientSecretss: tc.mockKvClient,
-			}
-
-			_, _, err := provider.GetKeys(context.Background())
-			if tc.expectedErr != (err != nil) {
-				t.Fatalf("error = %v, expectedErr = %v", err, tc.expectedErr)
-			}
-		})
+	initKVClient = func(_, _, _ string, _ azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, *azcertificates.Client, error) {
+		return &azkeys.Client{}, &azsecrets.Client{}, &azcertificates.Client{}, nil
 	}
+	provider, err := factory.Create("v1", config, "")
+	if err != nil {
+		t.Fatalf("expected no err but got error = %v", err)
+	}
+
+	keys, keyStatus, err := provider.GetKeys(context.Background())
+	assert.NotNil(t, err)
+	assert.Nil(t, keys)
+	assert.Nil(t, keyStatus)
 }
 
 func TestIsRefreshable(t *testing.T) {
@@ -695,6 +513,10 @@ type MockAzSecretsClient struct {
 	mock.Mock
 }
 
+type MockAzCertificatesClient struct {
+	mock.Mock
+}
+
 type MockWorkloadIdentityCredential struct {
 	mock.Mock
 }
@@ -715,10 +537,16 @@ func (m *MockAzSecretsClient) NewClient(endpoint string, credential *azidentity.
 	return args.Get(0).(*azsecrets.Client), args.Error(1)
 }
 
+func (m *MockAzCertificatesClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azcertificates.ClientOptions) (*azcertificates.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azcertificates.Client), args.Error(1)
+}
+
 func TestInitializeKvClient(t *testing.T) {
 	mockCredential := new(MockWorkloadIdentityCredential)
 	mockKeysClient := new(MockAzKeysClient)
 	mockSecretsClient := new(MockAzSecretsClient)
+	mockCertificatesClient := new(MockAzCertificatesClient)
 
 	tests := []struct {
 		name              string
@@ -776,19 +604,22 @@ func TestInitializeKvClient(t *testing.T) {
 			mockCredential.On("NewWorkloadIdentityCredential", mock.Anything).Return(mockCredential, tt.mockCredentialErr)
 			mockKeysClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockKeysClient, tt.mockKeysErr)
 			mockSecretsClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockSecretsClient, tt.mockSecretsErr)
+			mockCertificatesClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockCertificatesClient, tt.mockSecretsErr)
 
 			// Call function under test
-			keysClient, secretsClient, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID, nil)
+			keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(tt.kvEndpoint, tt.tenantID, tt.clientID, nil)
 
 			// Validate expectations
 			if tt.expectedErr {
 				assert.Error(t, err)
-				assert.Nil(t, keysClient)
-				assert.Nil(t, secretsClient)
+				assert.Nil(t, keysKVClient)
+				assert.Nil(t, secretsKVClient)
+				assert.Nil(t, certificatesKVClient)
 			} else {
 				assert.NoError(t, err)
-				assert.NotNil(t, keysClient)
-				assert.NotNil(t, secretsClient)
+				assert.NotNil(t, keysKVClient)
+				assert.NotNil(t, secretsKVClient)
+				assert.Nil(t, certificatesKVClient)
 			}
 		})
 	}
@@ -839,7 +670,6 @@ func TestGetKeyFromKeyBundlex(t *testing.T) {
 
 func TestInitializeKvClient_Success(t *testing.T) {
 	// Mock the context and input parameters
-	ctx := context.Background()
 	keyVaultEndpoint := "https://myvault.vault.azure.net/"
 	tenantID := "tenant-id"
 	clientID := "client-id"
@@ -851,45 +681,64 @@ func TestInitializeKvClient_Success(t *testing.T) {
 	}
 
 	// Run the function with the mock credential
-	kvClientKeys, kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, mockCredential)
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, mockCredential)
 
 	// Assert the function succeeds without errors and clients are created
-	assert.NotNil(t, kvClientKeys)
-	assert.NotNil(t, kvClientSecrets)
+	assert.NotNil(t, keysKVClient)
+	assert.NotNil(t, secretsKVClient)
+	assert.NotNil(t, certificatesKVClient)
 	assert.NoError(t, err)
 }
 
 func TestInitializeKvClient_FailureInAzKeysClient(t *testing.T) {
 	// Mock the context and input parameters
-	ctx := context.Background()
 	keyVaultEndpoint := "https://invalid-vault.vault.azure.net/"
 	tenantID := "mock_tenant-id"
 	clientID := "mock_client-id"
 
 	// Run the function
-	kvClientKeys, kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, nil)
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, nil)
 
 	// Assert that an error occurred and clients were not created
-	assert.Nil(t, kvClientKeys)
-	assert.Nil(t, kvClientSecrets)
+	assert.Nil(t, keysKVClient)
+	assert.Nil(t, secretsKVClient)
+	assert.Nil(t, certificatesKVClient)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create workload identity credential")
 }
 
 func TestInitializeKvClient_FailureInAzSecretsClient(t *testing.T) {
 	// Mock the context and input parameters
-	ctx := context.Background()
 	keyVaultEndpoint := "https://valid-vault.vault.azure.net/"
 	tenantID := "tenant-id"
 	clientID := "client-id"
 
 	// Modify the azsecrets.NewClient function to simulate failure
 	// Run the function
-	kvClientKeys, kvClientSecrets, err := initializeKvClient(ctx, keyVaultEndpoint, tenantID, clientID, nil)
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, nil)
 
 	// Assert that an error occurred and clients were not created
-	assert.Nil(t, kvClientKeys)
-	assert.Nil(t, kvClientSecrets)
+	assert.Nil(t, keysKVClient)
+	assert.Nil(t, secretsKVClient)
+	assert.Nil(t, certificatesKVClient)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create workload identity credential")
+}
+
+func TestInitializeKvClient_FailureInAzCertificatesClient(t *testing.T) {
+	// Mock the context and input parameters
+	keyVaultEndpoint := "https://valid-vault.vault.azure.net/"
+	tenantID := "tenant-id"
+	clientID := "client-id"
+
+	// Modify the azsecrets.NewClient function to simulate failure
+	// Run the function
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, nil)
+
+	// Assert that an error occurred and clients were not created
+	assert.Nil(t, keysKVClient)
+	assert.Nil(t, secretsKVClient)
+	assert.Nil(t, certificatesKVClient)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create workload identity credential")
 }

@@ -88,9 +88,10 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		return nil, nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "no keyvault certificate configured", re.HideStackTrace)
 	}
 
-	logger.GetLogger(ctx, logOpt).Debugf("vaultURI %s", keyvaultURI)
-
-	kvClientSecrets, err := initializeKvClient(ctx, keyvaultURI, tenantID, workloadIdentityClientID, nil)
+	// credProvider is nil, so we will create a new workload identity credential inside the function
+	// For testing purposes, we can pass in a mock credential provider
+	var credProvider azcore.TokenCredential
+	secretKVClient, err := initializeKvClient(keyvaultURI, tenantID, workloadIdentityClientID, credProvider)
 	if err != nil {
 		return nil, nil, re.ErrorCodePluginInitFailure.NewError(re.CertProvider, providerName, re.AKVLink, err, "failed to get keyvault client", re.HideStackTrace)
 	}
@@ -104,7 +105,7 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/ratify-project/ratify/issues/695 for details
 		startTime := time.Now()
 
-		secretResponse, err := kvClientSecrets.GetSecret(ctx, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion, nil)
+		secretResponse, err := secretKVClient.GetSecret(ctx, keyVaultCert.CertificateName, keyVaultCert.CertificateVersion, nil)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.CertificateName, keyVaultCert.CertificateVersion, err)
 		}
@@ -191,7 +192,7 @@ func formatKeyVaultCertificate(object *types.KeyVaultCertificate) {
 	}
 }
 
-func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientID string, credProvider azcore.TokenCredential) (*azsecrets.Client, error) {
+func initializeKvClient(keyVaultEndpoint, tenantID, clientID string, credProvider azcore.TokenCredential) (*azsecrets.Client, error) {
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultEndpoint, "/")
 
@@ -208,25 +209,22 @@ func initializeKvClient(ctx context.Context, keyVaultEndpoint, tenantID, clientI
 	}
 
 	// create azsecrets client
-	kvClientSecrets, err := azsecrets.NewClient(kvEndpoint, credProvider, nil)
+	secretKVClient, err := azsecrets.NewClient(kvEndpoint, credProvider, nil)
 	if err != nil {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
 	}
-	logger.GetLogger(ctx, logOpt).Debugf("azsecrets kvclient created successfully")
 
-	return kvClientSecrets, nil
+	return secretKVClient, nil
 }
 
 // Parse the secret bundle and return an array of certificates
 // In a certificate chain scenario, all certificates from root to leaf will be returned
 func getCertsFromSecretBundle(ctx context.Context, secretBundle azsecrets.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
-	logger.GetLogger(ctx, logOpt).Debugf("running getCertFromSecretBundle")
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
 		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
 	}
 
 	version := getObjectVersion(string(*secretBundle.ID))
-	logger.GetLogger(ctx, logOpt).Debugf("version: '%s'", version)
 
 	// This aligns with notation akv implementation
 	// akv plugin supports both PKCS12 and PEM. https://github.com/Azure/notation-azure-kv/blob/558e7345ef8318783530de6a7a0a8420b9214ba8/Notation.Plugin.AzureKeyVault/KeyVault/KeyVaultClient.cs#L192
