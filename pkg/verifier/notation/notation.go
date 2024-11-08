@@ -19,7 +19,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	paths "path/filepath"
 	"strings"
 
@@ -106,8 +105,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
-
-	verifyService, err := getVerifierService(conf, pluginDirectory, &NotationRevocationFactory{})
+	verifyService, err := getVerifierService(conf, pluginDirectory, NewNotationRevocationFactory())
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
@@ -188,7 +186,7 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	// revocation check using corecrl from notation-core-go and crl from notation-go
 	// This is the implementation for revocation check from notation cli to support crl and cache configurations
 	// removed timeout
-	crlFetcher, err := f.NewFetcher(&http.Client{})
+	crlFetcher, err := f.NewFetcher()
 	if err != nil {
 		return nil, err
 	}

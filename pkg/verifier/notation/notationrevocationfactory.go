@@ -22,19 +22,26 @@ import (
 	"github.com/notaryproject/notation-go/verifier/crl"
 )
 
-type NotationRevocationFactory struct{}
+type NotationRevocationFactory struct {
+	cacheRoot  string
+	httpClient *http.Client
+}
+
+// NewNotationRevocationFactory returns a new NotationRevocationFactory instance
+func NewNotationRevocationFactory() *NotationRevocationFactory {
+	return &NotationRevocationFactory{
+		cacheRoot:  dir.PathCRLCache,
+		httpClient: &http.Client{},
+	}
+}
 
 // NewFetcher returns a new fetcher instance
-func (f *NotationRevocationFactory) NewFetcher(client *http.Client) (corecrl.Fetcher, error) {
-	crlFetcher, err := corecrl.NewHTTPFetcher(client)
+func (f *NotationRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
+	crlFetcher, err := corecrl.NewHTTPFetcher(f.httpClient)
 	if err != nil {
 		return nil, err
 	}
-	cacheRoot, err := dir.CacheFS().SysPath(dir.PathCRLCache)
-	if err != nil {
-		return nil, err
-	}
-	crlFetcher.Cache, err = crl.NewFileCache(cacheRoot)
+	crlFetcher.Cache, err = newFileCache(f.cacheRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -44,4 +51,13 @@ func (f *NotationRevocationFactory) NewFetcher(client *http.Client) (corecrl.Fet
 // NewValidator returns a new validator instance
 func (f *NotationRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
 	return revocation.NewWithOptions(opts)
+}
+
+// newFileCache returns a new file cache instance
+func newFileCache(root string) (*crl.FileCache, error) {
+	cacheRoot, err := dir.CacheFS().SysPath(root)
+	if err != nil {
+		return nil, err
+	}
+	return crl.NewFileCache(cacheRoot)
 }

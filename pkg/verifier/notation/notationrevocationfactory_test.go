@@ -18,16 +18,53 @@ import (
 	"testing"
 
 	"github.com/notaryproject/notation-core-go/revocation"
+	"github.com/notaryproject/notation-go/dir"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewFetcher(t *testing.T) {
-	factory := &NotationRevocationFactory{}
-	client := &http.Client{}
+func TestNewNotationRevocationFactory(t *testing.T) {
+	factory := NewNotationRevocationFactory()
 
-	fetcher, err := factory.NewFetcher(client)
-	assert.NoError(t, err)
-	assert.NotNil(t, fetcher)
+	assert.NotNil(t, factory)
+	assert.Equal(t, dir.PathCRLCache, factory.cacheRoot)
+	assert.NotNil(t, factory.httpClient)
+}
+
+func TestNewFetcher(t *testing.T) {
+	tests := []struct {
+		name       string
+		cacheRoot  string
+		httpClient *http.Client
+		wantErr    bool
+	}{
+		{
+			name:       "valid fetcher",
+			cacheRoot:  "/valid/path",
+			httpClient: &http.Client{},
+			wantErr:    false,
+		},
+		{
+			name:       "invalid fetcher with nil httpClient",
+			cacheRoot:  "/valid/path",
+			httpClient: nil,
+			wantErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			factory := &NotationRevocationFactory{
+				cacheRoot:  tt.cacheRoot,
+				httpClient: tt.httpClient,
+			}
+
+			fetcher, err := factory.NewFetcher()
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, fetcher)
+			}
+		})
+	}
 }
 
 func TestNewValidator(t *testing.T) {
@@ -37,4 +74,30 @@ func TestNewValidator(t *testing.T) {
 	validator, err := factory.NewValidator(opts)
 	assert.NoError(t, err)
 	assert.NotNil(t, validator)
+}
+func TestNewFileCache(t *testing.T) {
+	tests := []struct {
+		name      string
+		cacheRoot string
+		wantErr   bool
+	}{
+		{
+			name:      "valid cache root",
+			cacheRoot: "/valid/path",
+			wantErr:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cache, err := newFileCache(tt.cacheRoot)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, cache)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, cache)
+			}
+		})
+	}
 }

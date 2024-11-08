@@ -633,13 +633,14 @@ type mockRevocationFactory struct {
 	failCodeSigningValidator  bool
 	failTimestampingValidator bool
 	failVerifier              bool
+	httpClient                *http.Client
 }
 
-func (m mockRevocationFactory) NewFetcher(client *http.Client) (corecrl.Fetcher, error) {
+func (m mockRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
 	if m.failFetcher {
 		return nil, fmt.Errorf("failed to create fetcher")
 	}
-	return corecrl.NewHTTPFetcher(client)
+	return corecrl.NewHTTPFetcher(m.httpClient)
 }
 
 func (m mockRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
