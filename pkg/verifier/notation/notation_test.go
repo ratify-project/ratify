@@ -569,6 +569,7 @@ func TestGetVerifierService(t *testing.T) {
 		pluginDir         string
 		RevocationFactory RevocationFactory
 		expectErr         bool
+		errContent        error
 	}{
 		{
 			name: "failed to create CRL fetcher",
@@ -576,8 +577,9 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{failFetcher: true},
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failFetcher: true},
 			expectErr:         true,
+			errContent:        nil,
 		},
 		{
 			name: "failed to create file cache",
@@ -585,8 +587,9 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{failFileCache: true},
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failFileCache: true},
 			expectErr:         true,
+			errContent:        nil,
 		},
 		{
 			name: "failed to create code signing validator",
@@ -594,8 +597,9 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{failCodeSigningValidator: true},
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failCodeSigningValidator: true},
 			expectErr:         true,
+			errContent:        fmt.Errorf("failed to create code signing validator"),
 		},
 		{
 			name: "failed to create timestamping validator",
@@ -603,8 +607,9 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{failTimestampingValidator: true},
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failTimestampingValidator: true},
 			expectErr:         true,
+			errContent:        fmt.Errorf("failed to create timestamping validator"),
 		},
 		{
 			name: "failed to create verifier",
@@ -612,8 +617,9 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{failVerifier: true},
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failVerifier: true},
 			expectErr:         true,
+			errContent:        nil,
 		},
 	}
 
@@ -622,6 +628,9 @@ func TestGetVerifierService(t *testing.T) {
 			_, err := getVerifierService(tt.conf, tt.pluginDir, tt.RevocationFactory)
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
+			}
+			if tt.errContent != nil && err.Error() != tt.errContent.Error() {
+				t.Errorf("error = %v, expectErr = %v, content = %v", err, tt.expectErr, tt.errContent)
 			}
 		})
 	}
