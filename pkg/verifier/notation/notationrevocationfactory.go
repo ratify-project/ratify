@@ -22,21 +22,21 @@ import (
 	"github.com/notaryproject/notation-go/verifier/crl"
 )
 
-type NotationRevocationFactory struct {
+type RevocationFactoryImpl struct {
 	cacheRoot  string
 	httpClient *http.Client
 }
 
-// NewNotationRevocationFactory returns a new NotationRevocationFactory instance
-func NewNotationRevocationFactory() *NotationRevocationFactory {
-	return &NotationRevocationFactory{
+// NewRevocationFactoryImpl returns a new NewRevocationFactoryImpl instance
+func NewRevocationFactoryImpl() *RevocationFactoryImpl {
+	return &RevocationFactoryImpl{
 		cacheRoot:  dir.PathCRLCache,
 		httpClient: &http.Client{},
 	}
 }
 
 // NewFetcher returns a new fetcher instance
-func (f *NotationRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
+func (f *RevocationFactoryImpl) NewFetcher() (corecrl.Fetcher, error) {
 	crlFetcher, err := corecrl.NewHTTPFetcher(f.httpClient)
 	if err != nil {
 		return nil, err
@@ -49,7 +49,7 @@ func (f *NotationRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
 }
 
 // NewValidator returns a new validator instance
-func (f *NotationRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
+func (f *RevocationFactoryImpl) NewValidator(opts revocation.Options) (revocation.Validator, error) {
 	return revocation.NewWithOptions(opts)
 }
 

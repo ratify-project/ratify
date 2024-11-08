@@ -18,7 +18,7 @@ import (
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 )
 
-type revocationFactory interface {
+type RevocationFactory interface {
 	// NewFetcher returns a new fetcher instance
 	NewFetcher() (corecrl.Fetcher, error)
 

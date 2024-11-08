@@ -567,7 +567,7 @@ func TestGetVerifierService(t *testing.T) {
 		name              string
 		conf              *NotationPluginVerifierConfig
 		pluginDir         string
-		revocationFactory revocationFactory
+		RevocationFactory RevocationFactory
 		expectErr         bool
 	}{
 		{
@@ -576,7 +576,7 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			revocationFactory: mockRevocationFactory{failFetcher: true},
+			RevocationFactory: mockRevocationFactory{failFetcher: true},
 			expectErr:         true,
 		},
 		{
@@ -585,7 +585,7 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			revocationFactory: mockRevocationFactory{failFileCache: true},
+			RevocationFactory: mockRevocationFactory{failFileCache: true},
 			expectErr:         true,
 		},
 		{
@@ -594,7 +594,7 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			revocationFactory: mockRevocationFactory{failCodeSigningValidator: true},
+			RevocationFactory: mockRevocationFactory{failCodeSigningValidator: true},
 			expectErr:         true,
 		},
 		{
@@ -603,7 +603,7 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			revocationFactory: mockRevocationFactory{failTimestampingValidator: true},
+			RevocationFactory: mockRevocationFactory{failTimestampingValidator: true},
 			expectErr:         true,
 		},
 		{
@@ -612,14 +612,14 @@ func TestGetVerifierService(t *testing.T) {
 				VerificationCerts: []string{defaultCertDir},
 			},
 			pluginDir:         "",
-			revocationFactory: mockRevocationFactory{failVerifier: true},
+			RevocationFactory: mockRevocationFactory{failVerifier: true},
 			expectErr:         true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := getVerifierService(tt.conf, tt.pluginDir, tt.revocationFactory)
+			_, err := getVerifierService(tt.conf, tt.pluginDir, tt.RevocationFactory)
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
 			}

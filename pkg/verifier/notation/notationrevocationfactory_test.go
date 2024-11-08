@@ -22,8 +22,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewNotationRevocationFactory(t *testing.T) {
-	factory := NewNotationRevocationFactory()
+func TestNewRevocationFactoryImpl(t *testing.T) {
+	factory := NewRevocationFactoryImpl()
 
 	assert.NotNil(t, factory)
 	assert.Equal(t, dir.PathCRLCache, factory.cacheRoot)
@@ -53,7 +53,7 @@ func TestNewFetcher(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			factory := &NotationRevocationFactory{
+			factory := &RevocationFactoryImpl{
 				cacheRoot:  tt.cacheRoot,
 				httpClient: tt.httpClient,
 			}
@@ -68,7 +68,7 @@ func TestNewFetcher(t *testing.T) {
 }
 
 func TestNewValidator(t *testing.T) {
-	factory := &NotationRevocationFactory{}
+	factory := &RevocationFactoryImpl{}
 	opts := revocation.Options{}
 
 	validator, err := factory.NewValidator(opts)

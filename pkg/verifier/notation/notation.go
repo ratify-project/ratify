@@ -105,7 +105,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
-	verifyService, err := getVerifierService(conf, pluginDirectory, NewNotationRevocationFactory())
+	verifyService, err := getVerifierService(conf, pluginDirectory, NewRevocationFactoryImpl())
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
@@ -177,7 +177,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	return verifier.NewVerifierResult("", v.name, v.verifierType, "Notation signature verification success", true, nil, extensions), nil
 }
 
-func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, f revocationFactory) (notation.Verifier, error) {
+func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, f RevocationFactory) (notation.Verifier, error) {
 	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
 	if err != nil {
 		return nil, err
