@@ -186,6 +186,8 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	// revocation check using corecrl from notation-core-go and crl from notation-go
 	// This is the implementation for revocation check from notation cli to support crl and cache configurations
 	// removed timeout
+	// Related PR: notaryproject/notation#1043
+	// Related File: https://github.com/notaryproject/notation/commits/main/cmd/notation/verify.go5
 	crlFetcher, err := revocationFactory.NewFetcher()
 	if err != nil {
 		return nil, err
