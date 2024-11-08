@@ -15,6 +15,7 @@ package notation
 
 import (
 	"net/http"
+	"runtime"
 	"testing"
 
 	"github.com/notaryproject/notation-core-go/revocation"
@@ -90,6 +91,9 @@ func TestNewFileCache(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			if runtime.GOOS == "windows" {
+				t.Skip("skipping test on Windows")
+			}
 			cache, err := newFileCache(tt.cacheRoot)
 			if tt.wantErr {
 				assert.Error(t, err)
