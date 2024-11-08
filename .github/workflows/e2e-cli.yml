@@ -75,6 +75,8 @@ jobs:
           go-version: "1.22"
       - name: Run tidy
         run: go mod tidy
+      - name: Restore Trivy cache
+        uses: ./.github/actions/restore_trivy_cache
       - name: Build CLI
         run: make
       - name: Check build

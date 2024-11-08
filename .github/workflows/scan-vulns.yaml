@@ -55,15 +55,8 @@ jobs:
           tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           echo "$(pwd)" >> $GITHUB_PATH
       
-      - name: Download vulnerability database
-        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
-        with:
-          max_attempts: 3
-          retry_on: error
-          timeout_seconds: 30
-          retry_wait_seconds: 5
-          command: |
-            trivy image --download-db-only
+      - name: Restore Trivy cache
+        uses: ./.github/actions/restore_trivy_cache
 
       - name: Run trivy on git repository
         run: |
