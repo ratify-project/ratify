@@ -28,7 +28,7 @@ type RevocationFactoryImpl struct {
 }
 
 // NewRevocationFactoryImpl returns a new NewRevocationFactoryImpl instance
-func NewRevocationFactoryImpl() *RevocationFactoryImpl {
+func NewRevocationFactoryImpl() RevocationFactory {
 	return &RevocationFactoryImpl{
 		cacheRoot:  dir.PathCRLCache,
 		httpClient: &http.Client{},

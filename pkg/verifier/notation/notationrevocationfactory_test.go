@@ -19,16 +19,12 @@ import (
 	"testing"
 
 	"github.com/notaryproject/notation-core-go/revocation"
-	"github.com/notaryproject/notation-go/dir"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewRevocationFactoryImpl(t *testing.T) {
 	factory := NewRevocationFactoryImpl()
-
 	assert.NotNil(t, factory)
-	assert.Equal(t, dir.PathCRLCache, factory.cacheRoot)
-	assert.NotNil(t, factory.httpClient)
 }
 
 func TestNewFetcher(t *testing.T) {

@@ -177,7 +177,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	return verifier.NewVerifierResult("", v.name, v.verifierType, "Notation signature verification success", true, nil, extensions), nil
 }
 
-func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, f RevocationFactory) (notation.Verifier, error) {
+func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, revocationFactory RevocationFactory) (notation.Verifier, error) {
 	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
 	if err != nil {
 		return nil, err
@@ -186,18 +186,18 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	// revocation check using corecrl from notation-core-go and crl from notation-go
 	// This is the implementation for revocation check from notation cli to support crl and cache configurations
 	// removed timeout
-	crlFetcher, err := f.NewFetcher()
+	crlFetcher, err := revocationFactory.NewFetcher()
 	if err != nil {
 		return nil, err
 	}
-	revocationCodeSigningValidator, err := f.NewValidator(revocation.Options{
+	revocationCodeSigningValidator, err := revocationFactory.NewValidator(revocation.Options{
 		CRLFetcher:       crlFetcher,
 		CertChainPurpose: purpose.CodeSigning,
 	})
 	if err != nil {
 		return nil, err
 	}
-	revocationTimestampingValidator, err := f.NewValidator(revocation.Options{
+	revocationTimestampingValidator, err := revocationFactory.NewValidator(revocation.Options{
 		CRLFetcher:       crlFetcher,
 		CertChainPurpose: purpose.Timestamping,
 	})
