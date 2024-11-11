@@ -1,0 +1,42 @@
+name: Update Trivy Cache
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight UTC
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  update-trivy-db:
+    runs-on: ubuntu-latest
+    if: ${{ github.ref_name == github.event.repository.default_branch }}
+    steps:
+      - name: Setup oras
+        uses: oras-project/setup-oras@9c92598691bfef1424de2f8fae81941568f5889c # v1.2.1
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: Prepare DB directory
+        run: |
+          mkdir -p $GITHUB_WORKSPACE/.cache/trivy/db
+      
+      - name: Download vulnerability database
+        uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e # v3.0.0
+        with:
+          max_attempts: 60
+          retry_on: error
+          timeout_seconds: 30
+          retry_wait_seconds: 60
+          command: |
+            oras pull ghcr.io/aquasecurity/trivy-db:2
+            tar -xzf db.tar.gz -C $GITHUB_WORKSPACE/.cache/trivy/db
+            rm db.tar.gz
+
+      - name: Cache DBs
+        uses: actions/cache/save@6849a6489940f00c2f30c0fb92c6274307ccb58a # v4.1.2
+        with:
+          path: ${{ github.workspace }}/.cache/trivy
+          key: cache-trivy-${{ steps.date.outputs.date }}
