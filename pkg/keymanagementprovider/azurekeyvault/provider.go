@@ -26,6 +26,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -189,14 +191,9 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 		startTime := time.Now()
 		secretResponse, err := s.secretKVClient.GetSecret(ctx, keyVaultCert.Name, keyVaultCert.Version)
 		if err != nil {
-			// I am aware that there are so many logs here and inside isSecretDisabledError, but I am trying to understand the structure of the error
-			// I'll make sure to remove them before merging
-			logger.GetLogger(ctx, logOpt).Infof("s.secretKVClient.GetSecret errored:, err %v", err)
 			if isSecretDisabledError(err) {
 				// if secret is disabled, get the version of the certificate for status
-				logger.GetLogger(ctx, logOpt).Infof("calling s.certificateKVClient.GetCertificate:, keyVaultCert.Name %v, keyVaultCert.Version %v", keyVaultCert.Name, keyVaultCert.Version)
 				certResponse, err := s.certificateKVClient.GetCertificate(ctx, keyVaultCert.Name, keyVaultCert.Version)
-				logger.GetLogger(ctx, logOpt).Infof("s.certificateKVClient.GetCertificate was called,checking for possible errors")
 				if err != nil {
 					return nil, nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
 				}
@@ -205,7 +202,6 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 				isEnabled := *certBundle.Attributes.Enabled
 				lastRefreshed := startTime.Format(time.RFC3339)
 				certProperty := getStatusProperty(keyVaultCert.Name, keyVaultCert.Version, lastRefreshed, isEnabled)
-				logger.GetLogger(ctx, logOpt).Infof("certProperty %v", certProperty)
 				certsStatus = append(certsStatus, certProperty)
 				mapKey := keymanagementprovider.KMPMapKey{Name: keyVaultCert.Name, Version: keyVaultCert.Version, Enabled: isEnabled}
 				keymanagementprovider.DeleteCertificateFromMap(s.resource, mapKey)
@@ -448,17 +444,38 @@ func getObjectVersion(id string) string {
 }
 
 func isSecretDisabledError(err error) bool {
-	logger.GetLogger(context.Background(), logOpt).Infof("Inside isSecretDisabledError ------------------")
-	var responseError *azcore.ResponseError
-	if errors.As(err, &responseError) {
-		// Is there a better way to check if the error is a secret disabled error?
-		// if responseError.ErrorCode == "Forbidden" && strings.Contains(responseError.Error(), "SecretDisabled") {
-		if strings.Contains(responseError.Error(), "Forbidden") && strings.Contains(responseError.Error(), "SecretDisabled") {
-			logger.GetLogger(context.Background(), logOpt).Infof("Leaving isSecretDisabledError returnning true ------------------")
-			return true
+	// AzureError defines the structure of the error response from Azure Key Vault
+	type AzureError struct {
+		Error struct {
+			Code       string `json:"code"`
+			Message    string `json:"message"`
+			InnerError struct {
+				Code string `json:"code"`
+			} `json:"innererror"`
+		} `json:"error"`
+	}
+
+	// Parse err and make sure it is a secretDisabled error and return true
+	const ErrorCodeForbidden = "Forbidden"
+	const SecretDisabledCode = "SecretDisabled"
+	var httpErr *azcore.ResponseError
+	if errors.As(err, &httpErr) {
+		if httpErr.StatusCode == http.StatusForbidden {
+			var azureError AzureError
+			errorResponseBody, readErr := io.ReadAll(httpErr.RawResponse.Body)
+			if readErr != nil {
+				return false
+			}
+			jsonErr := json.Unmarshal(errorResponseBody, &azureError)
+			if jsonErr == nil {
+				if azureError.Error.Code == ErrorCodeForbidden && azureError.Error.InnerError.Code == SecretDisabledCode {
+					return true
+				}
+			}
 		}
 	}
-	logger.GetLogger(context.Background(), logOpt).Infof("Leaving isSecretDisabledError returnning falses ------------------")
+
+	// Return false if it's not a secretDisabled error
 	return false
 }
 

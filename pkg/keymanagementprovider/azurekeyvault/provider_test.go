@@ -21,6 +21,9 @@ import (
 	"context"
 	"crypto"
 	"errors"
+	"io"
+	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -251,10 +254,23 @@ func TestGetCertificates(t *testing.T) {
 			},
 			mockSecretKVClient: &MockSecretKVClient{
 				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
-					err := azcore.ResponseError{
-						ErrorCode: "Forbidden, SecretDisabled",
+					rawResponse := `{
+						"error": {
+							"code": "Forbidden",
+							"message": "Operation get is not allowed on a disabled secret.",
+							"innererror": {
+								"code": "SecretDisabled"
+							}
+						}
+					}`
+
+					httpErr := &azcore.ResponseError{
+						StatusCode: http.StatusForbidden,
+						RawResponse: &http.Response{
+							Body: io.NopCloser(strings.NewReader(rawResponse)),
+						},
 					}
-					return azsecrets.GetSecretResponse{}, &err
+					return azsecrets.GetSecretResponse{}, httpErr
 				},
 			},
 			expectedErr: false,
@@ -268,10 +284,23 @@ func TestGetCertificates(t *testing.T) {
 			},
 			mockSecretKVClient: &MockSecretKVClient{
 				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
-					err := azcore.ResponseError{
-						ErrorCode: "SecretDisabled",
+					rawResponse := `{
+						"error": {
+							"code": "Forbidden",
+							"message": "Operation get is not allowed on a disabled secret.",
+							"innererror": {
+								"code": "SecretDisabled"
+							}
+						}
+					}`
+
+					httpErr := &azcore.ResponseError{
+						StatusCode: http.StatusForbidden,
+						RawResponse: &http.Response{
+							Body: io.NopCloser(strings.NewReader(rawResponse)),
+						},
 					}
-					return azsecrets.GetSecretResponse{}, &err
+					return azsecrets.GetSecretResponse{}, httpErr
 				},
 			},
 			expectedErr: true,
@@ -991,4 +1020,46 @@ func TestInitializeKvClient_FailureInAzCertificatesClient(t *testing.T) {
 	assert.Nil(t, certificatesKVClient)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create workload identity credential")
+}
+func TestIsSecretDisabledError(t *testing.T) {
+	rawResponse := `{
+		"error": {
+			"code": "Forbidden",
+			"message": "Operation get is not allowed on a disabled secret.",
+			"innererror": {
+				"code": "SecretDisabled"
+			}
+		}
+	}`
+
+	httpErr := &azcore.ResponseError{
+		StatusCode: http.StatusForbidden,
+		RawResponse: &http.Response{
+			Body: io.NopCloser(strings.NewReader(rawResponse)),
+		},
+	}
+
+	testCases := []struct {
+		name        string
+		err         error
+		expectedRes bool
+	}{
+		{
+			name:        "SecretDisabledError",
+			err:         httpErr,
+			expectedRes: true,
+		},
+		{
+			name:        "NonSecretDisabledError",
+			err:         errors.New("some other error"),
+			expectedRes: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := isSecretDisabledError(tc.err)
+			assert.Equal(t, tc.expectedRes, res)
+		})
+	}
 }
