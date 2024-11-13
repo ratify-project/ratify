@@ -82,15 +82,6 @@ func TestCreate(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "invalid cloud name",
-			config: config.KeyManagementProviderConfig{
-				"vaultUri":  "https://testkv.vault.azure.net/",
-				"tenantID":  "tid",
-				"cloudName": "AzureCloud",
-			},
-			expectErr: true,
-		},
-		{
 			name: "certificates & keys array not set",
 			config: config.KeyManagementProviderConfig{
 				"vaultUri":             "https://testkv.vault.azure.net/",

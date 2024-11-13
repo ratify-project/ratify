@@ -206,15 +206,6 @@ func TestGetCertificates(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			desc: "invalid cloud name",
-			parameters: map[string]string{
-				"vaultUri":  "https://testkv.vault.azure.net/",
-				"tenantID":  "tid",
-				"cloudName": "AzureCloud",
-			},
-			expectedErr: true,
-		},
-		{
 			desc: "certificates array not set",
 			parameters: map[string]string{
 				"vaultUri":             "https://testkv.vault.azure.net/",
@@ -329,7 +320,6 @@ func TestGetKeyvaultRequestObj(t *testing.T) {
 	attrib := map[string]string{}
 	attrib["vaultURI"] = "https://testvault.vault.azure.net/"
 	attrib["clientID"] = "TestClient"
-	attrib["cloudName"] = "TestCloud"
 	attrib["tenantID"] = "TestIDABC"
 	attrib["certificates"] = "array:\n- |\n  certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n"
 

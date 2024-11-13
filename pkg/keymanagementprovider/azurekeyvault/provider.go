@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -64,7 +65,6 @@ type AKVKeyManagementProviderConfig struct {
 	VaultURI     string                `json:"vaultURI"`
 	TenantID     string                `json:"tenantID"`
 	ClientID     string                `json:"clientID"`
-	CloudName    string                `json:"cloudName,omitempty"`
 	Resource     string                `json:"resource,omitempty"`
 	Certificates []types.KeyVaultValue `json:"certificates,omitempty"`
 	Keys         []types.KeyVaultValue `json:"keys,omitempty"`
@@ -75,7 +75,6 @@ type akvKMProvider struct {
 	vaultURI            string
 	tenantID            string
 	clientID            string
-	cloudName           string
 	resource            string
 	certificates        []types.KeyVaultValue
 	keys                []types.KeyVaultValue
@@ -156,7 +155,6 @@ func (f *akvKMProviderFactory) Create(_ string, keyManagementProviderConfig conf
 		vaultURI:     strings.TrimSpace(conf.VaultURI),
 		tenantID:     strings.TrimSpace(conf.TenantID),
 		clientID:     strings.TrimSpace(conf.ClientID),
-		cloudName:    strings.TrimSpace(conf.CloudName),
 		certificates: conf.Certificates,
 		keys:         conf.Keys,
 		resource:     conf.Resource,
@@ -186,7 +184,7 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 	certsMap := map[keymanagementprovider.KMPMapKey][]*x509.Certificate{}
 	certsStatus := []map[string]string{}
 	for _, keyVaultCert := range s.certificates {
-		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v, certVersion %v", keyVaultCert.Name)
+		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v, certVersion %v, vaultURI: %v", keyVaultCert.Name, keyVaultCert.Version, s.vaultURI)
 
 		startTime := time.Now()
 		secretResponse, err := s.secretKVClient.GetSecret(ctx, keyVaultCert.Name, keyVaultCert.Version)
@@ -196,6 +194,9 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 				certResponse, err := s.certificateKVClient.GetCertificate(ctx, keyVaultCert.Name, keyVaultCert.Version)
 				if err != nil {
 					return nil, nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
+				}
+				if reflect.DeepEqual(certResponse, azcertificates.GetCertificateResponse{}) {
+					return nil, nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, certificate response is nil", keyVaultCert.Name, keyVaultCert.Version)
 				}
 				certBundle := certResponse.CertificateBundle
 				keyVaultCert.Version = getObjectVersion(*certBundle.KID)
@@ -210,6 +211,9 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
 		}
 
+		if reflect.DeepEqual(secretResponse, azsecrets.GetSecretResponse{}) {
+			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, secret response is nil", keyVaultCert.Name, keyVaultCert.Version)
+		}
 		secretBundle := secretResponse.SecretBundle
 		isEnabled := *secretBundle.Attributes.Enabled
 
@@ -239,6 +243,9 @@ func (s *akvKMProvider) GetKeys(ctx context.Context) (map[keymanagementprovider.
 		keyResponse, err := s.keyKVClient.GetKey(ctx, keyVaultKey.Name, keyVaultKey.Version)
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get key objectName:%s, objectVersion:%s, error: %w", keyVaultKey.Name, keyVaultKey.Version, err)
+		}
+		if reflect.DeepEqual(keyResponse, azkeys.GetKeyResponse{}) {
+			return nil, nil, fmt.Errorf("failed to get key objectName:%s, objectVersion:%s, key response is nil", keyVaultKey.Name, keyVaultKey.Version)
 		}
 		keyBundle := keyResponse.KeyBundle
 
@@ -290,6 +297,8 @@ func getStatusProperty(name, version, lastRefreshed string, enabled bool) map[st
 	return properties
 }
 
+// initializeKvClient creates a new keyvault client for keys, secrets and certificates
+// TODO: credProvider in only added to params for testing purposes. Make sure it is handled properly in future
 func initializeKvClient(keyVaultURI, tenantID, clientID string, credProvider azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, *azcertificates.Client, error) {
 	// Trim any trailing slash from the endpoint
 	kvEndpoint := strings.TrimSuffix(keyVaultURI, "/")
@@ -302,26 +311,26 @@ func initializeKvClient(keyVaultURI, tenantID, clientID string, credProvider azc
 			TenantID: tenantID,
 		})
 		if err != nil {
-			return nil, nil, nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithRemediation(re.AKVLink).WithError(err)
+			return nil, nil, nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithError(err)
 		}
 	}
 
 	// create azkeys client
 	keyKVClient, err := azkeys.NewClient(kvEndpoint, credProvider, nil)
 	if err != nil {
-		return nil, nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create keys Key Vault client").WithRemediation(re.AKVLink).WithError(err)
+		return nil, nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create keys Key Vault client").WithError(err)
 	}
 
 	// create azsecrets client
 	secretKVClient, err := azsecrets.NewClient(kvEndpoint, credProvider, nil)
 	if err != nil {
-		return nil, nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create secrets Key Vault client").WithRemediation(re.AKVLink).WithError(err)
+		return nil, nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create secrets Key Vault client").WithError(err)
 	}
 
 	// create azcertificates client
 	certificateKVClient, err := azcertificates.NewClient(kvEndpoint, credProvider, nil)
 	if err != nil {
-		return nil, nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create certificates Key Vault client").WithRemediation(re.AKVLink).WithError(err)
+		return nil, nil, nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create certificates Key Vault client").WithError(err)
 	}
 
 	return keyKVClient, secretKVClient, certificateKVClient, nil

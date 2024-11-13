@@ -109,6 +109,9 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.CertificateName, keyVaultCert.CertificateVersion, err)
 		}
+		if reflect.DeepEqual(secretResponse, azsecrets.GetSecretResponse{}) {
+			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, secret response is empty", keyVaultCert.CertificateName, keyVaultCert.CertificateVersion)
+		}
 		secretBundle := secretResponse.SecretBundle
 
 		certResult, certProperty, err := getCertsFromSecretBundle(ctx, secretBundle, keyVaultCert.CertificateName)
@@ -204,14 +207,14 @@ func initializeKvClient(keyVaultEndpoint, tenantID, clientID string, credProvide
 			TenantID: tenantID,
 		})
 		if err != nil {
-			return nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithRemediation(re.AKVLink).WithError(err)
+			return nil, re.ErrorCodeAuthDenied.WithDetail("failed to create workload identity credential").WithError(err)
 		}
 	}
 
 	// create azsecrets client
 	secretKVClient, err := azsecrets.NewClient(kvEndpoint, credProvider, nil)
 	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithRemediation(re.AKVLink).WithError(err)
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("Failed to create Key Vault client").WithError(err)
 	}
 
 	return secretKVClient, nil
