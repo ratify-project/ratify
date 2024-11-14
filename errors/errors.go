@@ -132,4 +132,11 @@ var (
 		Message:     "operation forbidden",
 		Description: "The requested operation is forbidden. Please verify the permission to the requested resource.",
 	})
+
+	// ErrorCodeConfigInvalid is returned if provided alibabacloud image is invalid.
+	ErrorCodeAlibabaCloudImageInvalid = Register("errcode", ErrorDescriptor{
+		Value:       "ALIBABACLOUD_IMAGE_INVALID",
+		Message:     "image invalid",
+		Description: `Invalid Alibaba Cloud Registry image format. Please verify your image configuration.`,
+	})
 )

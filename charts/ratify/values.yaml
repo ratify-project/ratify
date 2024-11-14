@@ -82,6 +82,10 @@ azurekeyvault:
   keys: []
   refreshInterval:
 
+alibabacloudAcrConfig:
+  defaultInstanceId:
+  acrInstancesConfig: []
+
 oras:
   useHttp: false
   authProviders:
@@ -94,6 +98,8 @@ oras:
       endpoint: ""
       partition: "" # defaults to aws
       region: ""
+    alibabacloudAcrBasicEnabled: false
+
   cache:
     # Please tune your cache parameters to get better performance on the Oras Store performance.
     enabled: true # ttl-based cache may cause inconsistency between cache and data source, please disable it if strong consistency is required.
