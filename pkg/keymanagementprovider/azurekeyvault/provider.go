@@ -28,7 +28,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -195,9 +194,6 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 				if err != nil {
 					return nil, nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
 				}
-				if reflect.DeepEqual(certResponse, azcertificates.GetCertificateResponse{}) {
-					return nil, nil, fmt.Errorf("failed to get certificate objectName:%s, objectVersion:%s, certificate response is nil", keyVaultCert.Name, keyVaultCert.Version)
-				}
 				certBundle := certResponse.CertificateBundle
 				keyVaultCert.Version = getObjectVersion(*certBundle.KID)
 				isEnabled := *certBundle.Attributes.Enabled
@@ -211,9 +207,6 @@ func (s *akvKMProvider) GetCertificates(ctx context.Context) (map[keymanagementp
 			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, error: %w", keyVaultCert.Name, keyVaultCert.Version, err)
 		}
 
-		if reflect.DeepEqual(secretResponse, azsecrets.GetSecretResponse{}) {
-			return nil, nil, fmt.Errorf("failed to get secret objectName:%s, objectVersion:%s, secret response is nil", keyVaultCert.Name, keyVaultCert.Version)
-		}
 		secretBundle := secretResponse.SecretBundle
 		isEnabled := *secretBundle.Attributes.Enabled
 
@@ -244,11 +237,7 @@ func (s *akvKMProvider) GetKeys(ctx context.Context) (map[keymanagementprovider.
 		if err != nil {
 			return nil, nil, fmt.Errorf("failed to get key objectName:%s, objectVersion:%s, error: %w", keyVaultKey.Name, keyVaultKey.Version, err)
 		}
-		if reflect.DeepEqual(keyResponse, azkeys.GetKeyResponse{}) {
-			return nil, nil, fmt.Errorf("failed to get key objectName:%s, objectVersion:%s, key response is nil", keyVaultKey.Name, keyVaultKey.Version)
-		}
 		keyBundle := keyResponse.KeyBundle
-
 		isEnabled := *keyBundle.Attributes.Enabled
 		// if version is set as "" in the config, use the version from the key bundle
 		keyVaultKey.Version = getObjectVersion(string(*keyBundle.Key.KID))
