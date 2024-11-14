@@ -443,6 +443,7 @@ func getObjectVersion(id string) string {
 
 func isSecretDisabledError(err error) bool {
 	// AzureError defines the structure of the error response from Azure Key Vault
+	// This structure is defined according to https://learn.microsoft.com/en-us/rest/api/keyvault/keys/get-keys/get-keys?view=rest-keyvault-keys-7.4&tabs=HTTP#error
 	type AzureError struct {
 		Error struct {
 			Code       string `json:"code"`
@@ -465,10 +466,8 @@ func isSecretDisabledError(err error) bool {
 				return false
 			}
 			jsonErr := json.Unmarshal(errorResponseBody, &azureError)
-			if jsonErr == nil {
-				if azureError.Error.Code == ErrorCodeForbidden && azureError.Error.InnerError.Code == SecretDisabledCode {
-					return true
-				}
+			if jsonErr == nil && azureError.Error.Code == ErrorCodeForbidden && azureError.Error.InnerError.Code == SecretDisabledCode {
+				return true
 			}
 		}
 	}
