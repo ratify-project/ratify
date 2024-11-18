@@ -22,7 +22,7 @@ require (
 	github.com/aliyun/credentials-go v1.3.11
 	github.com/aws/aws-sdk-go-v2 v1.32.4
 	github.com/aws/aws-sdk-go-v2/config v1.27.43
-	github.com/aws/aws-sdk-go-v2/credentials v1.17.44
+	github.com/aws/aws-sdk-go-v2/credentials v1.17.45
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.28.6
 	github.com/cespare/xxhash/v2 v2.3.0
 	github.com/dapr/go-sdk v1.8.0
@@ -151,7 +151,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/presigned-url v1.12.4 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sso v1.24.5 // indirect
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.28.4 // indirect
-	github.com/aws/aws-sdk-go-v2/service/sts v1.32.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/sts v1.33.0 // indirect
 	github.com/aws/smithy-go v1.22.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver v3.5.1+incompatible // indirect
