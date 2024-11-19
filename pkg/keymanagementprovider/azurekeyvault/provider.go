@@ -459,16 +459,18 @@ func isSecretDisabledError(err error) bool {
 	const SecretDisabledCode = "SecretDisabled"
 	var httpErr *azcore.ResponseError
 	if errors.As(err, &httpErr) {
-		if httpErr.StatusCode == http.StatusForbidden {
-			var azureError AzureError
-			errorResponseBody, readErr := io.ReadAll(httpErr.RawResponse.Body)
-			if readErr != nil {
-				return false
-			}
-			jsonErr := json.Unmarshal(errorResponseBody, &azureError)
-			if jsonErr == nil && azureError.Error.Code == ErrorCodeForbidden && azureError.Error.InnerError.Code == SecretDisabledCode {
-				return true
-			}
+		if httpErr.StatusCode != http.StatusForbidden {
+			return false
+		}
+
+		var azureError AzureError
+		errorResponseBody, readErr := io.ReadAll(httpErr.RawResponse.Body)
+		if readErr != nil {
+			return false
+		}
+		jsonErr := json.Unmarshal(errorResponseBody, &azureError)
+		if jsonErr == nil && azureError.Error.Code == ErrorCodeForbidden && azureError.Error.InnerError.Code == SecretDisabledCode {
+			return true
 		}
 	}
 
