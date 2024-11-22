@@ -78,7 +78,7 @@ spec:
       annotations:
         {{- toYaml .Values.podAnnotations | trim | nindent 8 }}
       labels:
-        {{- include "ratify.podLabels" . }}
+        {{- include "ratify.podLabels" . | nindent 8 }}
         app: '{{ template "ratify.name" . }}'
         chart: '{{ template "ratify.name" . }}'
         ratify.sh/system: "yes"

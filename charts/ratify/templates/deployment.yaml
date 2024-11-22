@@ -13,13 +13,13 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "ratify.podLabels" . | nindent 8}}
+        {{- include "ratify.podLabels" . | nindent 8 }}
         {{- include "ratify.selectorLabels" . | nindent 8 }}
         {{- if ne .Values.azureWorkloadIdentity.clientId "" }}
         azure.workload.identity/use: "true"
         {{- end }}
       annotations:
-        {{- include "ratify.podAnnotations" . | nindent 8}}
+        {{- include "ratify.podAnnotations" . | nindent 8 }}
         {{- if eq .Values.instrumentation.metricsType "prometheus" }}
         prometheus.io/scrape: "true"
         prometheus.io/port: {{ .Values.instrumentation.metricsPort | quote }}
