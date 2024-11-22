@@ -8,7 +8,13 @@ Expand the name of the chart.
 
 {{- define "ratify.podLabels" -}}
 {{- if .Values.podLabels }}
-{{- toYaml .Values.podLabels | nindent 8 }}
+{{- toYaml .Values.podLabels }}
+{{- end }}
+{{- end }}
+
+{{- define "ratify.podAnnotations" -}}
+{{- if .Values.podAnnotations }}
+{{- toYaml .Values.podAnnotations }}
 {{- end }}
 {{- end }}
 
