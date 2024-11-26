@@ -19,39 +19,18 @@ package azurekeyvault
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/provider
 import (
 	"context"
+	"errors"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
-	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
-	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/ratify-project/ratify/internal/version"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
-
-func TestParseAzureEnvironment(t *testing.T) {
-	envNamesArray := []string{"AZURECHINACLOUD", "AZUREGERMANCLOUD", "AZUREPUBLICCLOUD", "AZUREUSGOVERNMENTCLOUD", ""}
-	for _, envName := range envNamesArray {
-		azureEnv, err := parseAzureEnvironment(envName)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if strings.EqualFold(envName, "") && !strings.EqualFold(azureEnv.Name, "AZUREPUBLICCLOUD") {
-			t.Fatalf("string doesn't match, expected AZUREPUBLICCLOUD, got %s", azureEnv.Name)
-		} else if !strings.EqualFold(envName, "") && !strings.EqualFold(envName, azureEnv.Name) {
-			t.Fatalf("string doesn't match, expected %s, got %s", envName, azureEnv.Name)
-		}
-	}
-
-	wrongEnvName := "AZUREWRONGCLOUD"
-	_, err := parseAzureEnvironment(wrongEnvName)
-	if err == nil {
-		t.Fatalf("expected error for wrong azure environment name")
-	}
-}
 
 func TestFormatKeyVaultCertificate(t *testing.T) {
 	cases := []struct {
@@ -93,21 +72,110 @@ func TestFormatKeyVaultCertificate(t *testing.T) {
 	}
 }
 
-func SkipTestInitializeKVClient(t *testing.T) {
-	testEnvs := []azure.Environment{
-		azure.PublicCloud,
-		azure.GermanCloud,
-		azure.ChinaCloud,
-		azure.USGovernmentCloud,
+// Mock clients
+type MockAzSecretsClient struct {
+	mock.Mock
+}
+
+type MockWorkloadIdentityCredential struct {
+	mock.Mock
+}
+
+// Mock functions
+func (m *MockWorkloadIdentityCredential) NewWorkloadIdentityCredential(options *azidentity.WorkloadIdentityCredentialOptions) (*MockWorkloadIdentityCredential, error) {
+	args := m.Called(options)
+	return args.Get(0).(*MockWorkloadIdentityCredential), args.Error(1)
+}
+
+func (m *MockAzSecretsClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azsecrets.ClientOptions) (*azsecrets.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azsecrets.Client), args.Error(1)
+}
+
+func TestInitializeKvClient(t *testing.T) {
+	mockCredential := new(MockWorkloadIdentityCredential)
+	mockSecretsClient := new(MockAzSecretsClient)
+
+	tests := []struct {
+		name              string
+		kvEndpoint        string
+		userAgent         string
+		tenantID          string
+		clientID          string
+		mockCredentialErr error
+		mockSecretsErr    error
+		expectedErr       bool
+	}{
+		{
+			name:        "Empty user agent",
+			kvEndpoint:  "https://test.vault.azure.net",
+			userAgent:   "",
+			expectedErr: true,
+		},
+		{
+			name:        "Auth failure",
+			kvEndpoint:  "https://test.vault.azure.net",
+			tenantID:    "testTenantID",
+			clientID:    "testClientID",
+			expectedErr: true,
+		},
+		{
+			name:              "credential creation error",
+			kvEndpoint:        "https://test-keyvault.vault.azure.net",
+			tenantID:          "test-tenant-id",
+			clientID:          "test-client-id",
+			mockCredentialErr: errors.New("failed to create workload identity credential"),
+			expectedErr:       true,
+		},
+		{
+			name:           "azsecrets client creation error",
+			kvEndpoint:     "https://test-keyvault.vault.azure.net",
+			tenantID:       "test-tenant-id",
+			clientID:       "test-client-id",
+			mockSecretsErr: errors.New("failed to create azsecrets client"),
+			expectedErr:    true,
+		},
 	}
 
-	for i := range testEnvs {
-		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "")
-		assert.NoError(t, err)
-		assert.NotNil(t, kvBaseClient)
-		assert.NotNil(t, kvBaseClient.Authorizer)
-		assert.Contains(t, kvBaseClient.UserAgent, version.UserAgent)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Set up mocks
+			mockCredential.On("NewWorkloadIdentityCredential", mock.Anything).Return(mockCredential, tt.mockCredentialErr)
+			mockSecretsClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockSecretsClient, tt.mockSecretsErr)
+
+			// Call function under test
+			secretsClient, err := initializeKvClient(tt.kvEndpoint, tt.tenantID, tt.clientID, nil)
+
+			// Validate expectations
+			if tt.expectedErr {
+				assert.Error(t, err)
+				assert.Nil(t, secretsClient)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, secretsClient)
+			}
+		})
 	}
+}
+
+func TestInitializeKvClient_Success(t *testing.T) {
+	// Mock the context and input parameters
+	keyVaultEndpoint := "https://myvault.vault.azure.net/"
+	tenantID := "tenant-id"
+	clientID := "client-id"
+
+	// Create a mock credential provider
+	mockCredential, err := azidentity.NewClientSecretCredential(tenantID, clientID, "fake-secret", nil)
+	if err != nil {
+		t.Fatalf("Failed to create mock credential: %v", err)
+	}
+
+	// Run the function with the mock credential
+	kvClientSecrets, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, mockCredential)
+
+	// Assert the function succeeds without errors and clients are created
+	assert.NotNil(t, kvClientSecrets)
+	assert.NoError(t, err)
 }
 
 func TestGetCertificates(t *testing.T) {
@@ -134,15 +202,6 @@ func TestGetCertificates(t *testing.T) {
 			parameters: map[string]string{
 				"vaultUri": "https://testkv.vault.azure.net/",
 				"tenantID": "tid",
-			},
-			expectedErr: true,
-		},
-		{
-			desc: "invalid cloud name",
-			parameters: map[string]string{
-				"vaultUri":  "https://testkv.vault.azure.net/",
-				"tenantID":  "tid",
-				"cloudName": "AzureCloud",
 			},
 			expectedErr: true,
 		},
@@ -261,7 +320,6 @@ func TestGetKeyvaultRequestObj(t *testing.T) {
 	attrib := map[string]string{}
 	attrib["vaultURI"] = "https://testvault.vault.azure.net/"
 	attrib["clientID"] = "TestClient"
-	attrib["cloudName"] = "TestCloud"
 	attrib["tenantID"] = "TestIDABC"
 	attrib["certificates"] = "array:\n- |\n  certificateName: wabbit-networks-io  \n  certificateVersion: \"testversion\"\n"
 
@@ -280,7 +338,7 @@ func Test(t *testing.T) {
 		desc        string
 		value       string
 		contentType string
-		id          string
+		id          azsecrets.ID
 		expectedErr bool
 	}{
 		{
@@ -322,7 +380,7 @@ func Test(t *testing.T) {
 
 	for i, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			testdata := kv.SecretBundle{
+			testdata := azsecrets.SecretBundle{
 				Value:       &cases[i].value,
 				ID:          &cases[i].id,
 				ContentType: &cases[i].contentType,

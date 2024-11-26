@@ -18,16 +18,10 @@ package azurekeyvault
 // This class is based on implementation from  azure secret store csi provider
 // Source: https://github.com/Azure/secrets-store-csi-driver-provider-azure/tree/release-1.4/pkg/auth
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
-
-	"github.com/ratify-project/ratify/pkg/utils/azureauth"
-
-	"github.com/Azure/go-autorest/autorest"
 )
 
 const (
@@ -40,44 +34,6 @@ const (
 	// "api://AzureADTokenExchange"
 	DefaultTokenAudience = "api://AzureADTokenExchange" //nolint
 )
-
-// authResult contains the subset of results from token acquisition operation in ConfidentialClientApplication
-// For details see https://aka.ms/msal-net-authenticationresult
-type authResult struct {
-	accessToken    string
-	expiresOn      time.Time
-	grantedScopes  []string
-	declinedScopes []string
-}
-
-func getAuthorizerForWorkloadIdentity(ctx context.Context, tenantID, clientID, resource string) (autorest.Authorizer, error) {
-	scope := resource
-	// .default needs to be added to the scope
-	if !strings.Contains(resource, ".default") {
-		scope = fmt.Sprintf("%s/.default", resource)
-	}
-
-	result, err := azureauth.GetAADAccessToken(ctx, tenantID, clientID, scope)
-	if err != nil {
-		return nil, fmt.Errorf("failed to acquire token: %w", err)
-	}
-
-	if _, err = parseExpiresOn(result.ExpiresOn.UTC().Local().Format(expiresOnDateFormat)); err != nil {
-		return nil, fmt.Errorf("failed to parse expires_on: %w", err)
-	}
-
-	return autorest.NewBearerAuthorizer(authResult{
-		accessToken:    result.AccessToken,
-		expiresOn:      result.ExpiresOn,
-		grantedScopes:  result.GrantedScopes,
-		declinedScopes: result.DeclinedScopes,
-	}), nil
-}
-
-// OAuthToken implements the OAuthTokenProvider interface.  It returns the current access token.
-func (ar authResult) OAuthToken() string {
-	return ar.accessToken
-}
 
 // Vendored from https://github.com/Azure/go-autorest/blob/79575dd7ba2e88e7ce7ab84e167ec6653dcb70c1/autorest/adal/token.go
 // converts expires_on to the number of seconds
