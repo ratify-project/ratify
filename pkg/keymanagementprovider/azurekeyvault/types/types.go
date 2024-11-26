@@ -37,4 +37,6 @@ type KeyVaultValue struct {
 	Name string `json:"name" yaml:"name"`
 	// the version of the Azure Key Vault certificate/key
 	Version string `json:"version" yaml:"version"`
+	// the number of versions to keep in the cache
+	VersionHistoryLimit int `json:"versionHistoryLimit" yaml:"versionHistoryLimit"`
 }
