@@ -105,7 +105,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		logrus.Errorf("initialize server failed with error %v, exiting..", err)
 		os.Exit(1)
 	}
-	logrus.Infof("starting server at" + httpServerAddress)
+	logrus.Infof("starting server at %s", httpServerAddress)
 	if err := server.Run(certRotatorReady); err != nil {
 		logrus.Errorf("starting server failed with error %v, exiting..", err)
 		os.Exit(1)
