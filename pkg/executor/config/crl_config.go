@@ -15,13 +15,16 @@ limitations under the License.
 
 package config
 
-// ExecutorConfig represents the configuration for the executor
-type ExecutorConfig struct {
-	// Gatekeeper default verification webhook timeout is 3 seconds. 100ms network buffer added
-	VerificationRequestTimeout *int `json:"verificationRequestTimeout"`
-	// Gatekeeper default mutation webhook timeout is 1 seconds. 50ms network buffer added
-	MutationRequestTimeout *int `json:"mutationRequestTimeout"`
-	// CRL config
-	CRLConfig *CRLConfig `json:"crlConfig,omitempty"`
-	// TODO Add cache config
+type CRLConfig struct {
+	Type              string            `json:"type,omitempty"`
+	CacheEnabled      bool              `json:"cache_enabled,omitempty"`
+	RefreshConfig     RefreshConfig     `json:"refresh_config,omitempty"`
+	HTTPRequestConfig HTTPRequestConfig `json:"http_request_config,omitempty"`
 }
+
+type HTTPRequestConfig struct {
+	Timeout    int `json:"timeout,omitempty"`
+	RetryCount int `json:"retry_count,omitempty"`
+}
+
+type RefreshConfig struct{}
