@@ -140,7 +140,9 @@ func (server *Server) Run(certRotatorReady chan struct{}) error {
 	}
 
 	if server.CertDirectory != "" {
-		<-certRotatorReady
+		if certRotatorReady != nil {
+			<-certRotatorReady
+		}
 		certFile := filepath.Join(server.CertDirectory, certName)
 		keyFile := filepath.Join(server.CertDirectory, keyName)
 
