@@ -120,6 +120,17 @@ func NewChainedCredential() (*azidentity.ChainedTokenCredential, error) {
 	return azidentity.NewChainedTokenCredential(creds, nil)
 }
 ```
+
+In the code sample above, the chained token credential will try to authenticate using workload identity first, then managed identity will be attempeted, and then the CLI authentication will be attempted. If any of the attempts succeed at any stage, it will return the corresponding credential. 
+
+There is another option that can be used which is the default azure credential: `azidentity.NewDefaultAzureCredential`. It's an opinionated, preconfigured chain of credentials and is designed to support many environments, along with the most common authentication flows and developer tools. In graphical form, the underlying chain looks like this:
+![image](../img/AzureAuthRefactor/image.png)
+
+Howecer, this option is not recommended for the following reasons:
+1. Debugging challenges: When authentication fails, it can be challenging to debug and identify the offending credential. You must enable logging to see the progression from one credential to the next and the success/failure status of each. In contrast, [debugging a chained credential](https://www.rfc-editor.org/rfc/rfc3280#section-1) is relatively easy.
+2. Unpredictable behavior: DefaultAzureCredential checks for the presence of certain environment variables. It's possible that someone could add or modify these environment variables at the system level on the host machine. Those changes apply globally and therefore alter the behavior of DefaultAzureCredential at runtime in any app running on that machine.
+3. Ability to provide required parameters: When using the default azure credential option, we can only rely on the environment variables, meaning that we cannot provide the client_id, tenant_id, or any other parameter explicitly. This is particularly problematic when Ratify is provided with multiple auth providers. With the chanined token credentials, each credential type in the chain can be provided with the required parameters explicitly if needed.
+
 #### **2. Refactor ORAS Auth Providers**
 - Combine `azureidentity.go` and `azureworkloadidentity.go` into a single file.
 - Update the implementation to use the `pkg/common/cloudauthproviders/azure` package for authentication.
@@ -128,6 +139,17 @@ func NewChainedCredential() (*azidentity.ChainedTokenCredential, error) {
 #### **3. Refactor Key Management and Certificate Providers**
 - Update the providers to leverage the new `pkg/common/cloudauthproviders/azure` package for authentication.
 - Remove redundant logic and ensure consistent authentication processes across all providers.
+
+#### **4. Configuration change**
+- Introduce a new generic auth provider: `azure`
+. A sample Oras store config has a section for auth provider that looks like this:
+```
+authProvider:
+    name: azureWorkloadIdentity
+    clientID: XYZ
+```
+We will introduce a new authProvider: `name: azure`. This will let Ratify know that it should use the chained token credential. We can provide the required parameters explicitly like `clientId` and `tenantID` as well, and this will let the chain token credential know that it will need to use these parameters instead of the environment variables. For backward compatibility, we will also provide the ability to override the chained token credential implementation by specifying additional attribute named `credential` which can be set to either `managedIdentity`, `workloadIdentity`, or `cli`. This will trigger the specified credential option instead of the chanined token credential.
+
 
 ---
 
