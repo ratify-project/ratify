@@ -112,6 +112,10 @@ test:
 clean:
 	go clean
 	rm ./bin/${BINARY_NAME}
+	
+clean-crl-server:
+	echo "Stopping CRL server..."
+    kill ${CRL_SERVER_PID}
 
 .PHONY: deploy-demo
 deploy-demo: deploy-gatekeeper deploy-ratify deploy-demo-constraints
@@ -343,6 +347,9 @@ e2e-notation-crl-setup:
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:crl
 	rm .staging/notation/notation.tar
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "crl-test" ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:crl --descriptor | jq .digest | xargs`
+	# run the CRL server in the background
+	python3 ./scripts/crl_server.py &
+	CRL_SERVER_PID=$(shell $!)
 
 
 e2e-cosign-setup:
