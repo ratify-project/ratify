@@ -160,7 +160,7 @@ test-e2e: generate-rotation-certs
 	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs CERT_DIR=.staging/rotation GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 
 .PHONY: test-e2e-cli
-test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-notation-leaf-cert-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-trivy-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup
+test-e2e-cli: e2e-dependencies e2e-create-local-registry e2e-notation-setup e2e-notation-leaf-cert-setup e2e-notation-crl-setup e2e-cosign-setup e2e-licensechecker-setup e2e-sbom-setup e2e-trivy-setup e2e-schemavalidator-setup e2e-vulnerabilityreport-setup
 	rm ${GOCOVERDIR} -rf
 	mkdir ${GOCOVERDIR} -p
 	RATIFY_DIR=${INSTALL_DIR} TEST_REGISTRY=${TEST_REGISTRY} ${GITHUB_WORKSPACE}/bin/bats -t ${BATS_CLI_TESTS_FILE}
@@ -326,6 +326,24 @@ e2e-notation-leaf-cert-setup:
 	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:leafSigned
 	rm .staging/notation/notation.tar
 	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "leaf-test" ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:leafSigned --descriptor | jq .digest | xargs`
+
+e2e-notation-crl-setup:
+	mkdir -p .staging/notation/crl-test
+	mkdir -p ~/.config/notation/truststore/x509/ca/crl-test
+	./scripts/generate-crl-testing_certs.sh .staging/notation/crl-test
+	cp .staging/notation/crl-test/leaf.crt ~/.config/notation/truststore/x509/ca/crl-test/leaf.crt
+	cp .staging/notation/crl-test/ca.crt ~/.config/notation/truststore/x509/ca/crl-test/root.crt
+	cat .staging/notation/crl-test/ca.crt >> .staging/notation/crl-test/leaf.crt
+
+	jq '.keys += [{"name":"crl-test","keyPath":".staging/notation/crl-test/leaf.key","certPath":".staging/notation/crl-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
+
+	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation crl signed image"]' > .staging/notation/Dockerfile
+	docker buildx create --use
+	docker buildx build --output type=oci,dest=.staging/notation/notation.tar -t notation:v0 .staging/notation
+	${GITHUB_WORKSPACE}/bin/oras cp --from-oci-layout .staging/notation/notation.tar:v0 ${TEST_REGISTRY}/notation:crl
+	rm .staging/notation/notation.tar
+	NOTATION_EXPERIMENTAL=1 .staging/notation/notation sign -u ${TEST_REGISTRY_USERNAME} -p ${TEST_REGISTRY_PASSWORD} --key "crl-test" ${TEST_REGISTRY}/notation@`${GITHUB_WORKSPACE}/bin/oras manifest fetch ${TEST_REGISTRY}/notation:crl --descriptor | jq .digest | xargs`
+
 
 e2e-cosign-setup:
 	rm -rf .staging/cosign
