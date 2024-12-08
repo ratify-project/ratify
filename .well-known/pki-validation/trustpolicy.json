@@ -1,0 +1,24 @@
+{
+    "version": "1.0",
+    "trustPolicies": [
+        {
+            "name": "ratify-images",
+            "registryScopes": [
+                "ghcr.io/ratify-project/ratify",
+                "ghcr.io/ratify-project/ratify-base",
+                "ghcr.io/ratify-project/ratify-crds",
+                "ghcr.io/ratify-project/ratify-dev",
+                "ghcr.io/ratify-project/ratify-base-dev",
+                "ghcr.io/ratify-project/ratify-crds-dev",
+                "ghcr.io/ratify-project/ratify-chart-dev/ratify"
+            ],
+            "signatureVerification": {
+                "level" : "strict" 
+            },
+            "trustStores": [ "ca:ratify-verify" ],
+            "trustedIdentities": [
+                "x509.subject: CN=ratify.dev,O=ratify-project,L=Seattle,ST=WA,C=US"
+            ]
+        }
+    ]
+}
