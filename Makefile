@@ -335,8 +335,8 @@ e2e-notation-crl-setup:
 	mkdir -p ~/.config/notation/truststore/x509/ca/crl-test
 	./scripts/generate-crl-testing-certs.sh .staging/notation/crl-test
 	cp .staging/notation/crl-test/leaf.crt ~/.config/notation/truststore/x509/ca/crl-test/leaf.crt
-	cp .staging/notation/crl-test/ca.crt ~/.config/notation/truststore/x509/ca/crl-test/root.crt
-	cat .staging/notation/crl-test/ca.crt >> .staging/notation/crl-test/leaf.crt
+	cp .staging/notation/crl-test/root.crt ~/.config/notation/truststore/x509/ca/crl-test/root.crt
+	cat .staging/notation/crl-test/root.crt >> .staging/notation/crl-test/leaf.crt
 
 	jq '.keys += [{"name":"crl-test","keyPath":".staging/notation/crl-test/leaf.key","certPath":".staging/notation/crl-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
 
