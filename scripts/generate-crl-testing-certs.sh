@@ -28,6 +28,13 @@
 # future maintenance because generating those test certificates with CRL is not
 # easy.
 
+set -o errexit
+set -o nounset
+set -o pipefail
+
+CERT_DIR=$1
+
+generate() {
 # Create root CA configuration file
 cat > root.cnf <<EOF
 [ req ]
@@ -227,3 +234,11 @@ openssl crl -in leaf_revoked.crl -outform der -out leaf_revoked.crl
 
 # merge leaf cert and root cert to create fullchain file
 cat leaf.crt intermediate.crt root.crt > certchain_with_crl.pem
+
+}
+
+rm -r ${CERT_DIR} || true
+mkdir -p ${CERT_DIR}
+pushd "${CERT_DIR}"
+generate
+popd
