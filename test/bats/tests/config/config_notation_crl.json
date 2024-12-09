@@ -33,7 +33,7 @@
                                 "*"
                             ],
                             "signatureVerification": {
-                                "level": "strict"
+                                "level": "audit"
                             },
                             "trustStores": [
                                 "ca:certs"

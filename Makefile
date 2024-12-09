@@ -334,11 +334,10 @@ e2e-notation-crl-setup:
 	mkdir -p .staging/notation/crl-test
 	mkdir -p ~/.config/notation/truststore/x509/ca/crl-test
 	./scripts/generate-crl-testing-certs.sh .staging/notation/crl-test
-	cp .staging/notation/crl-test/leaf.crt ~/.config/notation/truststore/x509/ca/crl-test/leaf.crt
 	cp .staging/notation/crl-test/root.crt ~/.config/notation/truststore/x509/ca/crl-test/root.crt
-	cat .staging/notation/crl-test/root.crt >> .staging/notation/crl-test/leaf.crt
+	cp .staging/notation/crl-test/certchain_with_crl.pem ~/.config/notation/truststore/x509/ca/crl-test/certchain_with_crl.pem
 
-	jq '.keys += [{"name":"crl-test","keyPath":".staging/notation/crl-test/leaf.key","certPath":".staging/notation/crl-test/leaf.crt"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
+	jq '.keys += [{"name":"crl-test","keyPath":".staging/notation/crl-test/leaf.key","certPath":".staging/notation/crl-test/certchain_with_crl.pem"}]' ~/.config/notation/signingkeys.json > tmp && mv tmp ~/.config/notation/signingkeys.json
 
 	printf 'FROM ${ALPINE_IMAGE}\nCMD ["echo", "notation crl signed image"]' > .staging/notation/Dockerfile
 	docker buildx create --use
