@@ -14,6 +14,8 @@ jobs:
     permissions:
       packages: write
       contents: read
+      id-token: write
+    environment: azure-publish
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
@@ -21,6 +23,25 @@ jobs:
           egress-policy: audit
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Install Notation
+        uses: notaryproject/notation-action/setup@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+      - name: Install cosign
+        uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
+      - name: Az CLI login
+        uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Cache AAD tokens
+        run: |
+          az version
+          # Key Vault: 
+          az account get-access-token --scope https://vault.azure.net/.default --output none
+      - name: Prepare notation certificate
+        run: |
+          mkdir -p truststore/x509/ca/ratify-verify
+          cp ./.well-known/pki-validation/ratify-verification.crt truststore/x509/ca/ratify-verify
       - name: prepare
         id: prepare
         run: |
@@ -83,6 +104,49 @@ jobs:
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.ref }} \
             --push .
+      - name: Sign with Notation
+        uses: notaryproject/notation-action/sign@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+        with:
+          plugin_name: azure-kv
+          plugin_url: ${{ vars.AZURE_KV_PLUGIN_URL }}
+          plugin_checksum: ${{ vars.AZURE_KV_CHECKSUM }}
+          key_id: ${{ secrets.AZURE_KV_KEY_ID }}
+          target_artifact_reference: |-
+            ${{ steps.prepare.outputs.crdref }}
+            ${{ steps.prepare.outputs.baseref }}
+            ${{ steps.prepare.outputs.ref }}
+          signature_format: cose
+      - name: Sign with Cosign
+        run: |
+          cosign sign --yes ${{ steps.prepare.outputs.crdref }}
+          cosign sign --yes ${{ steps.prepare.outputs.baseref }}
+          cosign sign --yes ${{ steps.prepare.outputs.ref }}
+      - name: Verify with Notation
+        uses: notaryproject/notation-action/verify@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+        with:
+          target_artifact_reference: |-
+            ${{ steps.prepare.outputs.crdref }}
+            ${{ steps.prepare.outputs.baseref }}
+            ${{ steps.prepare.outputs.ref }}
+          trust_policy: ./.well-known/pki-validation/trustpolicy.json
+          trust_store: truststore
+      - name: Verify with Cosign
+        run: |
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-package.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.crdref }}
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-package.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.baseref }}
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-package.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.ref }}
       - name: clear
         if: always()
         run: |
