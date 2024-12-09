@@ -16,7 +16,7 @@ import socketserver
 import os
 
 PORT = 10086
-DATA_DIR = './testdata/config/crl'
+DATA_DIR = '.staging/notation/crl-test'
 leaf_crl = 'leaf.crl'
 intermediate_crl = 'intermediate.crl'
 
