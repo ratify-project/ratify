@@ -112,9 +112,6 @@ test:
 clean:
 	go clean
 	rm ./bin/${BINARY_NAME}
-	
-clean-crl-server:
-	$(shell echo "Stopping CRL server..." && kill ${CRL_SERVER_PID})
 
 .PHONY: deploy-demo
 deploy-demo: deploy-gatekeeper deploy-ratify deploy-demo-constraints
