@@ -107,7 +107,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
   location                  = azurerm_resource_group.rg.location
   resource_group_name       = azurerm_resource_group.rg.name
   dns_prefix                = "${var.cluster_name}-dns"
-  kubernetes_version        = "1.29.2"
+  kubernetes_version        = "1.30.6"
   workload_identity_enabled = true
   oidc_issuer_enabled       = true
 
