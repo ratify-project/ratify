@@ -16,8 +16,9 @@ limitations under the License.
 package verifier
 
 import (
-	"fmt"
 	"testing"
+
+	e "errors"
 
 	"github.com/ratify-project/ratify/errors"
 )
@@ -47,7 +48,7 @@ func TestNewVerifierResult(t *testing.T) {
 		{
 			name:                "error without detail",
 			message:             testMsg1,
-			err:                 errors.ErrorCodeUnknown.WithError(fmt.Errorf(testErrReason)).WithRemediation(testRemediation),
+			err:                 errors.ErrorCodeUnknown.WithError(e.New(testErrReason)).WithRemediation(testRemediation),
 			expectedMsg:         testMsg1,
 			expectedErrReason:   testErrReason,
 			expectedRemediation: testRemediation,
@@ -55,7 +56,7 @@ func TestNewVerifierResult(t *testing.T) {
 		{
 			name:                "error with detail",
 			message:             testMsg1,
-			err:                 errors.ErrorCodeUnknown.WithError(fmt.Errorf(testErrReason)).WithRemediation(testRemediation).WithDetail(testMsg2),
+			err:                 errors.ErrorCodeUnknown.WithError(e.New(testErrReason)).WithRemediation(testRemediation).WithDetail(testMsg2),
 			expectedMsg:         testMsg2,
 			expectedErrReason:   testErrReason,
 			expectedRemediation: testRemediation,

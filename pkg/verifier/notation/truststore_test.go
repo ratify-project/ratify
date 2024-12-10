@@ -133,7 +133,7 @@ func TestGetCertificates_ErrorFromKMPReconcile(t *testing.T) {
 	}
 	store, err := newTrustStore(nil, certStore)
 	if err != nil {
-		t.Fatalf("failed to parse verificationCertStores: " + err.Error())
+		t.Fatalf("failed to parse verificationCertStores: %s", err.Error())
 	}
 
 	controllers.NamespacedCertStores = &mockCertStores{

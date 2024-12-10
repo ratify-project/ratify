@@ -19,5 +19,6 @@ const (
 	SpecVersion string = "0.1.0"
 	Version     string = "version"
 	Type        string = "type"
+	Resource    string = "resource"
 	Source      string = "source"
 )

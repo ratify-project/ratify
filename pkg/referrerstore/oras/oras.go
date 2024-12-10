@@ -45,8 +45,9 @@ import (
 	"github.com/ratify-project/ratify/pkg/cache"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
-	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/aws"   // register aws auth provider
-	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/azure" // register azure auth provider
+	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/alibabacloud" // register alibabacloud auth provider
+	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/aws"          // register aws auth provider
+	_ "github.com/ratify-project/ratify/pkg/common/oras/authprovider/azure"        // register azure auth provider
 	commonutils "github.com/ratify-project/ratify/pkg/common/utils"
 	"github.com/ratify-project/ratify/pkg/homedir"
 	"github.com/ratify-project/ratify/pkg/metrics"
@@ -57,12 +58,12 @@ import (
 )
 
 const (
-	HTTPMaxIdleConns                       = 100
-	HTTPMaxConnsPerHost                    = 100
-	HTTPMaxIdleConnsPerHost                = 100
-	HTTPRetryMax                           = 5
-	HTTPRetryDurationMinimum time.Duration = 200 * time.Millisecond
-	HTTPRetryDurationMax     time.Duration = 1750 * time.Millisecond
+	HTTPMaxIdleConns         = 100
+	HTTPMaxConnsPerHost      = 100
+	HTTPMaxIdleConnsPerHost  = 100
+	HTTPRetryMax             = 5
+	HTTPRetryDurationMinimum = 200 * time.Millisecond
+	HTTPRetryDurationMax     = 1750 * time.Millisecond
 )
 
 const (

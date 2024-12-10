@@ -38,7 +38,6 @@ func Register(name string, factory AuthProviderFactory) {
 	if registered {
 		panic(fmt.Sprintf("auth provider factory named %s already registered", name))
 	}
-
 	builtInAuthProviders[name] = factory
 }
 

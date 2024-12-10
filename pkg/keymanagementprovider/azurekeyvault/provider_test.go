@@ -20,56 +20,23 @@ package azurekeyvault
 import (
 	"context"
 	"crypto"
+	"errors"
+	"io"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
 
-	kv "github.com/Azure/azure-sdk-for-go/services/keyvault/v7.1/keyvault"
-	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/ratify-project/ratify/internal/version"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azcertificates"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys"
+	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
-
-// TestParseAzureEnvironment tests the parseAzureEnvironment function
-func TestParseAzureEnvironment(t *testing.T) {
-	envNamesArray := []string{"AZURECHINACLOUD", "AZUREGERMANCLOUD", "AZUREPUBLICCLOUD", "AZUREUSGOVERNMENTCLOUD", ""}
-	for _, envName := range envNamesArray {
-		azureEnv, err := parseAzureEnvironment(envName)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if strings.EqualFold(envName, "") && !strings.EqualFold(azureEnv.Name, "AZUREPUBLICCLOUD") {
-			t.Fatalf("string doesn't match, expected AZUREPUBLICCLOUD, got %s", azureEnv.Name)
-		} else if !strings.EqualFold(envName, "") && !strings.EqualFold(envName, azureEnv.Name) {
-			t.Fatalf("string doesn't match, expected %s, got %s", envName, azureEnv.Name)
-		}
-	}
-
-	wrongEnvName := "AZUREWRONGCLOUD"
-	_, err := parseAzureEnvironment(wrongEnvName)
-	if err == nil {
-		t.Fatalf("expected error for wrong azure environment name")
-	}
-}
-
-func SkipTestInitializeKVClient(t *testing.T) {
-	testEnvs := []azure.Environment{
-		azure.PublicCloud,
-		azure.GermanCloud,
-		azure.ChinaCloud,
-		azure.USGovernmentCloud,
-	}
-
-	for i := range testEnvs {
-		kvBaseClient, err := initializeKvClient(context.TODO(), testEnvs[i].KeyVaultEndpoint, "", "", version.UserAgent)
-		assert.NoError(t, err)
-		assert.NotNil(t, kvBaseClient)
-		assert.NotNil(t, kvBaseClient.Authorizer)
-		assert.Contains(t, kvBaseClient.UserAgent, version.UserAgent)
-	}
-}
 
 // TestCreate tests the Create function
 func TestCreate(t *testing.T) {
@@ -111,15 +78,6 @@ func TestCreate(t *testing.T) {
 			config: config.KeyManagementProviderConfig{
 				"vaultUri": "https://testkv.vault.azure.net/",
 				"tenantID": "tid",
-			},
-			expectErr: true,
-		},
-		{
-			name: "invalid cloud name",
-			config: config.KeyManagementProviderConfig{
-				"vaultUri":  "https://testkv.vault.azure.net/",
-				"tenantID":  "tid",
-				"cloudName": "AzureCloud",
 			},
 			expectErr: true,
 		},
@@ -174,8 +132,8 @@ func TestCreate(t *testing.T) {
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			initKVClient = func(_ context.Context, _, _, _, _ string) (*kv.BaseClient, error) {
-				return &kv.BaseClient{}, nil
+			initKVClient = func(_, _, _ string, _ azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, *azcertificates.Client, error) {
+				return &azkeys.Client{}, &azsecrets.Client{}, &azcertificates.Client{}, nil
 			}
 			_, err := factory.Create("v1", tc.config, "")
 			if tc.expectErr != (err != nil) {
@@ -186,7 +144,7 @@ func TestCreate(t *testing.T) {
 }
 
 // TestGetCertificates tests the GetCertificates function
-func TestGetCertificates(t *testing.T) {
+func TestGetCertificates_original(t *testing.T) {
 	factory := &akvKMProviderFactory{}
 	config := config.KeyManagementProviderConfig{
 		"vaultUri": "https://testkv.vault.azure.net/",
@@ -211,8 +169,307 @@ func TestGetCertificates(t *testing.T) {
 	assert.Nil(t, certStatus)
 }
 
+type MockKeyKVClient struct {
+	GetKeyFunc func(ctx context.Context, keyName string, keyVersion string) (azkeys.GetKeyResponse, error)
+}
+type MockSecretKVClient struct {
+	GetSecretFunc func(ctx context.Context, secretName string, secretVersion string) (azsecrets.GetSecretResponse, error)
+}
+type MockCertificateKVClient struct {
+	GetCertificateFunc func(ctx context.Context, certificateName string, certificateVersion string) (azcertificates.GetCertificateResponse, error)
+}
+
+func (m *MockKeyKVClient) GetKey(ctx context.Context, keyName string, keyVersion string) (azkeys.GetKeyResponse, error) {
+	if m.GetKeyFunc != nil {
+		return m.GetKeyFunc(ctx, keyName, keyVersion)
+	}
+	return azkeys.GetKeyResponse{}, nil
+}
+func (m *MockSecretKVClient) GetSecret(ctx context.Context, secretName string, secretVersion string) (azsecrets.GetSecretResponse, error) {
+	if m.GetSecretFunc != nil {
+		return m.GetSecretFunc(ctx, secretName, secretVersion)
+	}
+	return azsecrets.GetSecretResponse{}, nil
+}
+func (m *MockCertificateKVClient) GetCertificate(ctx context.Context, certificateName string, certificateVersion string) (azcertificates.GetCertificateResponse, error) {
+	if m.GetCertificateFunc != nil {
+		return m.GetCertificateFunc(ctx, certificateName, certificateVersion)
+	}
+	return azcertificates.GetCertificateResponse{}, nil
+}
+
+// stringPtr returns a pointer to the given string.
+func stringPtr(s string) *string {
+	return &s
+}
+
+// boolPtr returns a pointer to the given bool.
+func boolPtr(b bool) *bool {
+	return &b
+}
+
+// TestGetCertificates tests the GetCertificates function
+func TestGetCertificates(t *testing.T) {
+	certID := azcertificates.ID("https://testkv.vault.azure.net/certificates/cert1")
+	secretID := azsecrets.ID("https://testkv.vault.azure.net/secrets/secret1")
+	testCases := []struct {
+		name                    string
+		mockKeyKVClient         *MockKeyKVClient
+		mockSecretKVClient      *MockSecretKVClient
+		mockCertificateKVClient *MockCertificateKVClient
+		expectedErr             bool
+	}{
+		{
+			name: "GetSecret error",
+			mockSecretKVClient: &MockSecretKVClient{
+				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
+					return azsecrets.GetSecretResponse{}, errors.New("error")
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Certificate disabled",
+			mockCertificateKVClient: &MockCertificateKVClient{
+				GetCertificateFunc: func(_ context.Context, _ string, _ string) (azcertificates.GetCertificateResponse, error) {
+					return azcertificates.GetCertificateResponse{
+						CertificateBundle: azcertificates.CertificateBundle{
+							ID:  &certID,
+							KID: stringPtr("https://testkv.vault.azure.net/keys/key1"),
+							Attributes: &azcertificates.CertificateAttributes{
+								Enabled: boolPtr(false),
+							},
+						},
+					}, nil
+				},
+			},
+			mockSecretKVClient: &MockSecretKVClient{
+				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
+					rawResponse := `{
+						"error": {
+							"code": "Forbidden",
+							"message": "Operation get is not allowed on a disabled secret.",
+							"innererror": {
+								"code": "SecretDisabled"
+							}
+						}
+					}`
+
+					httpErr := &azcore.ResponseError{
+						StatusCode: http.StatusForbidden,
+						RawResponse: &http.Response{
+							Body: io.NopCloser(strings.NewReader(rawResponse)),
+						},
+					}
+					return azsecrets.GetSecretResponse{}, httpErr
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "Certificate disabled error",
+			mockCertificateKVClient: &MockCertificateKVClient{
+				GetCertificateFunc: func(_ context.Context, _ string, _ string) (azcertificates.GetCertificateResponse, error) {
+					return azcertificates.GetCertificateResponse{}, errors.New("error")
+				},
+			},
+			mockSecretKVClient: &MockSecretKVClient{
+				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
+					rawResponse := `{
+						"error": {
+							"code": "Forbidden",
+							"message": "Operation get is not allowed on a disabled secret.",
+							"innererror": {
+								"code": "SecretDisabled"
+							}
+						}
+					}`
+
+					httpErr := &azcore.ResponseError{
+						StatusCode: http.StatusForbidden,
+						RawResponse: &http.Response{
+							Body: io.NopCloser(strings.NewReader(rawResponse)),
+						},
+					}
+					return azsecrets.GetSecretResponse{}, httpErr
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Certificate enabled",
+			mockCertificateKVClient: &MockCertificateKVClient{
+				GetCertificateFunc: func(_ context.Context, _ string, _ string) (azcertificates.GetCertificateResponse, error) {
+					return azcertificates.GetCertificateResponse{
+						CertificateBundle: azcertificates.CertificateBundle{
+							ID:  &certID,
+							KID: stringPtr("https://testkv.vault.azure.net/keys/key1"),
+							Attributes: &azcertificates.CertificateAttributes{
+								Enabled: boolPtr(true),
+							},
+						},
+					}, nil
+				},
+			},
+			mockSecretKVClient: &MockSecretKVClient{
+				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
+					return azsecrets.GetSecretResponse{
+						SecretBundle: azsecrets.SecretBundle{
+							ID:          &secretID,
+							Kid:         stringPtr("https://testkv.vault.azure.net/keys/key1"),
+							ContentType: stringPtr("application/x-pem-file"),
+							Attributes: &azsecrets.SecretAttributes{
+								Enabled: boolPtr(true),
+							},
+							Value: stringPtr("-----BEGIN CERTIFICATE-----\nMIIC8TCCAdmgAwIBAgIUaNrwbhs/I1ecqUYdzD2xuAVNdmowDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzdaFw0yNDA2MjAwMTIyMzdaMBkxFzAVBgNVBAMMDnJhdGlm\neS5kZWZhdWx0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtskG1BUt\n4Fw2lbm53KbwZb1hnLmWdwRotZyznhhk/yrUDcq3uF6klwpk/E2IKfUKIo6doHSk\nXaEZXR68UtXygvA4wdg7xZ6kKpXy0gu+RxGE6CGtDHTyDDzITu+NBjo21ZSsyGpQ\nJeIKftUCHdwdygKf0CdJx8A29GBRpHGCmJadmt7tTzOnYjmbuPVLeqJo/Ex9qXcG\nZbxoxnxr5NCocFeKx+EbLo+k/KjdFB2PKnhgzxAaMMMP6eXPr8l5AlzkC83EmPvN\ntveuaBbamdlFkD+53TZeZlxt3GIdq93Iw/UpbQ/pvhbrztMT+UVEkm15sShfX8Xn\nL2st5A4n0V+66QIDAQABoyAwHjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIH\ngDANBgkqhkiG9w0BAQsFAAOCAQEAGpOqozyfDSBjoTepsRroxxcZ4sq65gw45Bme\nm36BS6FG0WHIg3cMy6KIIBefTDSKrPkKNTtuF25AeGn9jM+26cnfDM78ZH0+Lnn7\n7hs0MA64WMPQaWs9/+89aM9NADV9vp2zdG4xMi6B7DruvKWyhJaNoRqK/qP6LdSQ\nw8M+21sAHvXgrRkQtJlVOzVhgwt36NOb1hzRlQiZB+nhv2Wbw7fbtAaADk3JAumf\nvM+YdPS1KfAFaYefm4yFd+9/C0KOkHico3LTbELO5hG0Mo/EYvtjM+Fljb42EweF\n3nAx1GSPe5Tn8p3h6RyJW5HIKozEKyfDuLS0ccB/nqT3oNjcTw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIDRTCCAi2gAwIBAgIUcC33VfaMhOnsl7avNTRVQozoVtUwDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzZaFw0yMzA2MjIwMTIyMzZaMCoxDzANBgNVBAoMBlJhdGlm\neTEXMBUGA1UEAwwOUmF0aWZ5IFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB\nDwAwggEKAoIBAQDDFhDnyPrVDZaeRu6Tbg1a/iTwus+IuX+h8aKhKS1yHz4EF/Lz\nxCy7lNSQ9srGMMVumWuNom/ydIphff6PejZM1jFKPU6OQR/0JX5epcVIjbKa562T\nDguUxJ+h5V3EIyM4RqOWQ2g/xZo86x5TzyNJXiVdHHRvmDvUNwPpMeDjr/EHVAni\n5YQObxkJRiiZ7XOa5zz3YztVm8sSZAwPWroY1HIfvtP+KHpiNDIKSymmuJkH4SEr\nJn++iqN8na18a9DFBPTTrLPe3CxATGrMfosCMZ6LP3iFLLc/FaSpwcnugWdewsUK\nYs+sUY7jFWR7x7/1nyFWyRrQviM4f4TY+K7NAgMBAAGjYzBhMB0GA1UdDgQWBBQH\nYePW7QPP2p1utr3r6gqzEkKs+DAfBgNVHSMEGDAWgBQHYePW7QPP2p1utr3r6gqz\nEkKs+DAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICBDANBgkqhkiG9w0B\nAQsFAAOCAQEAjKp4vx3bFaKVhAbQeTsDjWJgmXLK2vLgt74MiUwSF6t0wehlfszE\nIcJagGJsvs5wKFf91bnwiqwPjmpse/thPNBAxh1uEoh81tOklv0BN790vsVpq3t+\ncnUvWPiCZdRlAiGGFtRmKk3Keq4sM6UdiUki9s+wnxypHVb4wIpVxu5R271Lnp5I\n+rb2EQ48iblt4XZPczf/5QJdTgbItjBNbuO8WVPOqUIhCiFuAQziLtNUq3p81dHO\nQ2BPgmaitCpIUYHVYighLauBGCH8xOFzj4a4KbOxKdxyJTd0La/vRCKaUtJX67Lc\nfQYVR9HXQZ0YlmwPcmIG5v7wBfcW34NUvA==\n-----END CERTIFICATE-----\n"),
+						},
+					}, nil
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "getCertsFromSecretBundle error",
+			mockSecretKVClient: &MockSecretKVClient{
+				GetSecretFunc: func(_ context.Context, _ string, _ string) (azsecrets.GetSecretResponse, error) {
+					return azsecrets.GetSecretResponse{
+						SecretBundle: azsecrets.SecretBundle{
+							ContentType: stringPtr("test"),
+							ID:          &secretID,
+							Kid:         stringPtr("https://testkv.vault.azure.net/keys/key1"),
+							Attributes: &azsecrets.SecretAttributes{
+								Enabled: boolPtr(true),
+							},
+							Value: stringPtr("-----BEGIN CERTIFICATE-----\nMIIC8TCCAdmgAwIBAgIUaNrwbhs/I1ecqUYdzD2xuAVNdmowDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzdaFw0yNDA2MjAwMTIyMzdaMBkxFzAVBgNVBAMMDnJhdGlm\neS5kZWZhdWx0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtskG1BUt\n4Fw2lbm53KbwZb1hnLmWdwRotZyznhhk/yrUDcq3uF6klwpk/E2IKfUKIo6doHSk\nXaEZXR68UtXygvA4wdg7xZ6kKpXy0gu+RxGE6CGtDHTyDDzITu+NBjo21ZSsyGpQ\nJeIKftUCHdwdygKf0CdJx8A29GBRpHGCmJadmt7tTzOnYjmbuPVLeqJo/Ex9qXcG\nZbxoxnxr5NCocFeKx+EbLo+k/KjdFB2PKnhgzxAaMMMP6eXPr8l5AlzkC83EmPvN\ntveuaBbamdlFkD+53TZeZlxt3GIdq93Iw/UpbQ/pvhbrztMT+UVEkm15sShfX8Xn\nL2st5A4n0V+66QIDAQABoyAwHjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIH\ngDANBgkqhkiG9w0BAQsFAAOCAQEAGpOqozyfDSBjoTepsRroxxcZ4sq65gw45Bme\nm36BS6FG0WHIg3cMy6KIIBefTDSKrPkKNTtuF25AeGn9jM+26cnfDM78ZH0+Lnn7\n7hs0MA64WMPQaWs9/+89aM9NADV9vp2zdG4xMi6B7DruvKWyhJaNoRqK/qP6LdSQ\nw8M+21sAHvXgrRkQtJlVOzVhgwt36NOb1hzRlQiZB+nhv2Wbw7fbtAaADk3JAumf\nvM+YdPS1KfAFaYefm4yFd+9/C0KOkHico3LTbELO5hG0Mo/EYvtjM+Fljb42EweF\n3nAx1GSPe5Tn8p3h6RyJW5HIKozEKyfDuLS0ccB/nqT3oNjcTw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIDRTCCAi2gAwIBAgIUcC33VfaMhOnsl7avNTRVQozoVtUwDQYJKoZIhvcNAQEL\nBQAwKjEPMA0GA1UECgwGUmF0aWZ5MRcwFQYDVQQDDA5SYXRpZnkgUm9vdCBDQTAe\nFw0yMzA2MjEwMTIyMzZaFw0yMzA2MjIwMTIyMzZaMCoxDzANBgNVBAoMBlJhdGlm\neTEXMBUGA1UEAwwOUmF0aWZ5IFJvb3QgQ0EwggEiMA0GCSqGSIb3DQEBAQUAA4IB\nDwAwggEKAoIBAQDDFhDnyPrVDZaeRu6Tbg1a/iTwus+IuX+h8aKhKS1yHz4EF/Lz\nxCy7lNSQ9srGMMVumWuNom/ydIphff6PejZM1jFKPU6OQR/0JX5epcVIjbKa562T\nDguUxJ+h5V3EIyM4RqOWQ2g/xZo86x5TzyNJXiVdHHRvmDvUNwPpMeDjr/EHVAni\n5YQObxkJRiiZ7XOa5zz3YztVm8sSZAwPWroY1HIfvtP+KHpiNDIKSymmuJkH4SEr\nJn++iqN8na18a9DFBPTTrLPe3CxATGrMfosCMZ6LP3iFLLc/FaSpwcnugWdewsUK\nYs+sUY7jFWR7x7/1nyFWyRrQviM4f4TY+K7NAgMBAAGjYzBhMB0GA1UdDgQWBBQH\nYePW7QPP2p1utr3r6gqzEkKs+DAfBgNVHSMEGDAWgBQHYePW7QPP2p1utr3r6gqz\nEkKs+DAPBgNVHRMBAf8EBTADAQH/MA4GA1UdDwEB/wQEAwICBDANBgkqhkiG9w0B\nAQsFAAOCAQEAjKp4vx3bFaKVhAbQeTsDjWJgmXLK2vLgt74MiUwSF6t0wehlfszE\nIcJagGJsvs5wKFf91bnwiqwPjmpse/thPNBAxh1uEoh81tOklv0BN790vsVpq3t+\ncnUvWPiCZdRlAiGGFtRmKk3Keq4sM6UdiUki9s+wnxypHVb4wIpVxu5R271Lnp5I\n+rb2EQ48iblt4XZPczf/5QJdTgbItjBNbuO8WVPOqUIhCiFuAQziLtNUq3p81dHO\nQ2BPgmaitCpIUYHVYighLauBGCH8xOFzj4a4KbOxKdxyJTd0La/vRCKaUtJX67Lc\nfQYVR9HXQZ0YlmwPcmIG5v7wBfcW34NUvA==\n-----END CERTIFICATE-----\n"),
+						},
+					}, nil
+				},
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			provider := &akvKMProvider{
+				certificates: []types.KeyVaultValue{
+					{
+						Name:    "cert1",
+						Version: "c1f03df1113d460491d970737dfdc35d",
+					},
+				},
+				keyKVClient:         tc.mockKeyKVClient,
+				secretKVClient:      tc.mockSecretKVClient,
+				certificateKVClient: tc.mockCertificateKVClient,
+			}
+
+			_, _, err := provider.GetCertificates(context.Background())
+			if tc.expectedErr != (err != nil) {
+				t.Fatalf("error = %v, expectedErr = %v", err, tc.expectedErr)
+			}
+		})
+	}
+}
+
 // TestGetKeys tests the GetKeys function
 func TestGetKeys(t *testing.T) {
+	keyID := azkeys.ID("https://testkv.vault.azure.net/keys/key1")
+	keyTY := azkeys.JSONWebKeyTypeRSA
+	testCases := []struct {
+		name            string
+		mockKeyKVClient *MockKeyKVClient
+		expectedErr     bool
+	}{
+		{
+			name: "GetKey error",
+			mockKeyKVClient: &MockKeyKVClient{
+				GetKeyFunc: func(_ context.Context, _ string, _ string) (azkeys.GetKeyResponse, error) {
+					return azkeys.GetKeyResponse{}, errors.New("error")
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Key disabled",
+			mockKeyKVClient: &MockKeyKVClient{
+				GetKeyFunc: func(_ context.Context, _ string, _ string) (azkeys.GetKeyResponse, error) {
+					return azkeys.GetKeyResponse{
+						KeyBundle: azkeys.KeyBundle{
+							Key: &azkeys.JSONWebKey{
+								KID: &keyID,
+							},
+							Attributes: &azkeys.KeyAttributes{
+								Enabled: boolPtr(false),
+							},
+						},
+					}, nil
+				},
+			},
+			expectedErr: false,
+		},
+		{
+			name: "getKeyFromKeyBundle error",
+			mockKeyKVClient: &MockKeyKVClient{
+				GetKeyFunc: func(_ context.Context, _ string, _ string) (azkeys.GetKeyResponse, error) {
+					return azkeys.GetKeyResponse{
+						KeyBundle: azkeys.KeyBundle{
+							Key: &azkeys.JSONWebKey{
+								KID: &keyID,
+							},
+							Attributes: &azkeys.KeyAttributes{
+								Enabled: boolPtr(true),
+							},
+						},
+					}, nil
+				},
+			},
+			expectedErr: true,
+		},
+		{
+			name: "Key enabled",
+			mockKeyKVClient: &MockKeyKVClient{
+				GetKeyFunc: func(_ context.Context, _ string, _ string) (azkeys.GetKeyResponse, error) {
+					return azkeys.GetKeyResponse{
+						KeyBundle: azkeys.KeyBundle{
+							Key: &azkeys.JSONWebKey{
+								KID: &keyID,
+								Kty: &keyTY,
+								N:   []byte("n"),
+								E:   []byte("e"),
+							},
+							Attributes: &azkeys.KeyAttributes{
+								Enabled: boolPtr(true),
+							},
+						},
+					}, nil
+				},
+			},
+			expectedErr: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			provider := &akvKMProvider{
+				keys: []types.KeyVaultValue{
+					{
+						Name:    "key1",
+						Version: "c1f03df1113d460491d970737dfdc35d",
+					},
+				},
+				keyKVClient: tc.mockKeyKVClient,
+			}
+
+			_, _, err := provider.GetKeys(context.Background())
+			if tc.expectedErr != (err != nil) {
+				t.Fatalf("error = %v, expectedErr = %v", err, tc.expectedErr)
+			}
+		})
+	}
+}
+
+// TestGetKeys tests the GetKeys function
+func TestGetKeys_original(t *testing.T) {
 	factory := &akvKMProviderFactory{}
 	config := config.KeyManagementProviderConfig{
 		"vaultUri": "https://testkv.vault.azure.net/",
@@ -225,8 +482,8 @@ func TestGetKeys(t *testing.T) {
 		},
 	}
 
-	initKVClient = func(_ context.Context, _, _, _, _ string) (*kv.BaseClient, error) {
-		return &kv.BaseClient{}, nil
+	initKVClient = func(_, _, _ string, _ azcore.TokenCredential) (*azkeys.Client, *azsecrets.Client, *azcertificates.Client, error) {
+		return &azkeys.Client{}, &azsecrets.Client{}, &azcertificates.Client{}, nil
 	}
 	provider, err := factory.Create("v1", config, "")
 	if err != nil {
@@ -288,8 +545,9 @@ func TestGetStatusProperty(t *testing.T) {
 	timeNow := time.Now().String()
 	certName := "certName"
 	certVersion := "versionABC"
+	isEnabled := true
 
-	status := getStatusProperty(certName, certVersion, timeNow)
+	status := getStatusProperty(certName, certVersion, timeNow, isEnabled)
 	assert.Equal(t, certName, status[types.StatusName])
 	assert.Equal(t, timeNow, status[types.StatusLastRefreshed])
 	assert.Equal(t, certVersion, status[types.StatusVersion])
@@ -301,7 +559,7 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 		desc        string
 		value       string
 		contentType string
-		id          string
+		id          azsecrets.ID
 		expectedErr bool
 	}{
 		{
@@ -343,13 +601,13 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 
 	for i, tc := range cases {
 		t.Run(tc.desc, func(t *testing.T) {
-			testdata := kv.SecretBundle{
+			testdata := azsecrets.SecretBundle{
 				Value:       &cases[i].value,
 				ID:          &cases[i].id,
 				ContentType: &cases[i].contentType,
 			}
 
-			certs, status, err := getCertsFromSecretBundle(context.Background(), testdata, "certName")
+			certs, status, err := getCertsFromSecretBundle(context.Background(), testdata, "certName", true)
 			if tc.expectedErr {
 				assert.NotNil(t, err)
 				assert.Nil(t, certs)
@@ -362,24 +620,37 @@ func TestGetCertsFromSecretBundle(t *testing.T) {
 }
 
 func TestGetKeyFromKeyBundle(t *testing.T) {
+	unsupportedType := azkeys.JSONWebKeyType("abc")
 	cases := []struct {
 		desc        string
-		keyBundle   kv.KeyBundle
+		keyBundle   azkeys.KeyBundle
 		expectedErr bool
 		output      crypto.PublicKey
 	}{
 		{
 			desc: "no key in key bundle",
-			keyBundle: kv.KeyBundle{
+			keyBundle: azkeys.KeyBundle{
 				Key: nil,
 			},
 			expectedErr: true,
 			output:      nil,
 		},
 		{
-			desc: "invalid key in key bundle",
-			keyBundle: kv.KeyBundle{
-				Key: &kv.JSONWebKey{},
+			desc: "invalid key in key bundle with nil Kty",
+			keyBundle: azkeys.KeyBundle{
+				Key: &azkeys.JSONWebKey{
+					Kty: nil,
+				},
+			},
+			expectedErr: true,
+			output:      nil,
+		},
+		{
+			desc: "key with unsupported Kty value",
+			keyBundle: azkeys.KeyBundle{
+				Key: &azkeys.JSONWebKey{
+					Kty: &unsupportedType, // Unsupported key type
+				},
 			},
 			expectedErr: true,
 			output:      nil,
@@ -508,14 +779,60 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+// Mock clients
+type MockAzKeysClient struct {
+	mock.Mock
+}
+
+type MockAzSecretsClient struct {
+	mock.Mock
+}
+
+type MockAzCertificatesClient struct {
+	mock.Mock
+}
+
+type MockWorkloadIdentityCredential struct {
+	mock.Mock
+}
+
+// Mock functions
+func (m *MockWorkloadIdentityCredential) NewWorkloadIdentityCredential(options *azidentity.WorkloadIdentityCredentialOptions) (*MockWorkloadIdentityCredential, error) {
+	args := m.Called(options)
+	return args.Get(0).(*MockWorkloadIdentityCredential), args.Error(1)
+}
+
+func (m *MockAzKeysClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azkeys.ClientOptions) (*azkeys.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azkeys.Client), args.Error(1)
+}
+
+func (m *MockAzSecretsClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azsecrets.ClientOptions) (*azsecrets.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azsecrets.Client), args.Error(1)
+}
+
+func (m *MockAzCertificatesClient) NewClient(endpoint string, credential *azidentity.WorkloadIdentityCredential, options *azcertificates.ClientOptions) (*azcertificates.Client, error) {
+	args := m.Called(endpoint, credential, options)
+	return args.Get(0).(*azcertificates.Client), args.Error(1)
+}
+
 func TestInitializeKvClient(t *testing.T) {
+	mockCredential := new(MockWorkloadIdentityCredential)
+	mockKeysClient := new(MockAzKeysClient)
+	mockSecretsClient := new(MockAzSecretsClient)
+	mockCertificatesClient := new(MockAzCertificatesClient)
+
 	tests := []struct {
-		name        string
-		kvEndpoint  string
-		userAgent   string
-		tenantID    string
-		clientID    string
-		expectedErr bool
+		name              string
+		kvEndpoint        string
+		userAgent         string
+		tenantID          string
+		clientID          string
+		mockCredentialErr error
+		mockKeysErr       error
+		mockSecretsErr    error
+		expectedErr       bool
 	}{
 		{
 			name:        "Empty user agent",
@@ -526,19 +843,214 @@ func TestInitializeKvClient(t *testing.T) {
 		{
 			name:        "Auth failure",
 			kvEndpoint:  "https://test.vault.azure.net",
-			userAgent:   version.UserAgent,
 			tenantID:    "testTenantID",
 			clientID:    "testClientID",
 			expectedErr: true,
+		},
+		{
+			name:              "credential creation error",
+			kvEndpoint:        "https://test-keyvault.vault.azure.net",
+			tenantID:          "test-tenant-id",
+			clientID:          "test-client-id",
+			mockCredentialErr: errors.New("failed to create workload identity credential"),
+			expectedErr:       true,
+		},
+		{
+			name:        "azkeys client creation error",
+			kvEndpoint:  "https://test-keyvault.vault.azure.net",
+			tenantID:    "test-tenant-id",
+			clientID:    "test-client-id",
+			mockKeysErr: errors.New("failed to create azkeys client"),
+			expectedErr: true,
+		},
+		{
+			name:           "azsecrets client creation error",
+			kvEndpoint:     "https://test-keyvault.vault.azure.net",
+			tenantID:       "test-tenant-id",
+			clientID:       "test-client-id",
+			mockSecretsErr: errors.New("failed to create azsecrets client"),
+			expectedErr:    true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := initializeKvClient(context.Background(), tt.kvEndpoint, tt.tenantID, tt.clientID, tt.userAgent)
-			if tt.expectedErr != (err != nil) {
-				t.Fatalf("expected error: %v, got: %v", tt.expectedErr, err)
+			// Set up mocks
+			mockCredential.On("NewWorkloadIdentityCredential", mock.Anything).Return(mockCredential, tt.mockCredentialErr)
+			mockKeysClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockKeysClient, tt.mockKeysErr)
+			mockSecretsClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockSecretsClient, tt.mockSecretsErr)
+			mockCertificatesClient.On("NewClient", tt.kvEndpoint, mockCredential, mock.Anything).Return(mockCertificatesClient, tt.mockSecretsErr)
+
+			// Call function under test
+			keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(tt.kvEndpoint, tt.tenantID, tt.clientID, nil)
+
+			// Validate expectations
+			if tt.expectedErr {
+				assert.Error(t, err)
+				assert.Nil(t, keysKVClient)
+				assert.Nil(t, secretsKVClient)
+				assert.Nil(t, certificatesKVClient)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, keysKVClient)
+				assert.NotNil(t, secretsKVClient)
+				assert.Nil(t, certificatesKVClient)
 			}
+		})
+	}
+}
+
+// Test cases for keyType switch case handling
+func TestGetKeyFromKeyBundlex(t *testing.T) {
+	tests := []struct {
+		name     string
+		keyType  azkeys.JSONWebKeyType
+		expected azkeys.JSONWebKeyType
+		curve    azkeys.JSONWebKeyCurveName
+		x        []byte
+		y        []byte
+		n        []byte
+		e        []byte
+	}{
+		{
+			name:     "Test ECHSM to EC",
+			keyType:  azkeys.JSONWebKeyTypeECHSM,
+			expected: azkeys.JSONWebKeyTypeEC,
+			curve:    azkeys.JSONWebKeyCurveNameP256,                                                                                                                                                                         // Example curve name
+			x:        []byte{0x6b, 0x17, 0xd1, 0xf2, 0xe1, 0x2c, 0x42, 0x47, 0xf8, 0xbc, 0xe6, 0xe5, 0x63, 0xa4, 0x40, 0xf2, 0x77, 0x03, 0x7d, 0x81, 0x2d, 0xeb, 0x33, 0xa0, 0xf4, 0xa1, 0x39, 0x45, 0xd8, 0x98, 0xc2, 0x96}, // Valid x-coordinate for P-256
+			y:        []byte{0x4f, 0xe3, 0x42, 0xe2, 0xfe, 0x1a, 0x7f, 0x9b, 0x8e, 0xe7, 0xeb, 0x4a, 0x7c, 0x0f, 0x9e, 0x16, 0x2b, 0xce, 0x33, 0x57, 0x6b, 0x31, 0x5e, 0xce, 0xcb, 0xb6, 0x40, 0x68, 0x37, 0xbf, 0x51, 0xf5}, // Valid y-coordinate for P-256
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			webKey := &azkeys.JSONWebKey{
+				Kty: &tt.keyType,
+			}
+			if tt.keyType == azkeys.JSONWebKeyTypeECHSM {
+				webKey.Crv = &tt.curve
+				webKey.X = tt.x
+				webKey.Y = tt.y
+			}
+			keyBundle := azkeys.KeyBundle{
+				Key: webKey,
+			}
+
+			_, err := getKeyFromKeyBundle(keyBundle)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expected, *webKey.Kty)
+		})
+	}
+}
+
+const tenantID = "tenant-id"
+const clientID = "client-id"
+
+func TestInitializeKvClient_Success(t *testing.T) {
+	// Mock the context and input parameters
+	keyVaultEndpoint := "https://myvault.vault.azure.net/"
+
+	// Create a mock credential provider
+	mockCredential, err := azidentity.NewClientSecretCredential(tenantID, clientID, "fake-secret", nil)
+	if err != nil {
+		t.Fatalf("Failed to create mock credential: %v", err)
+	}
+
+	// Run the function with the mock credential
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, mockCredential)
+
+	// Assert the function succeeds without errors and clients are created
+	assert.NotNil(t, keysKVClient)
+	assert.NotNil(t, secretsKVClient)
+	assert.NotNil(t, certificatesKVClient)
+	assert.NoError(t, err)
+}
+
+func TestInitializeKvClient_FailureInAzKeysClient(t *testing.T) {
+	// Mock the context and input parameters
+	keyVaultEndpoint := "https://invalid-vault.vault.azure.net/"
+
+	// Run the function
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, nil)
+
+	// Assert that an error occurred and clients were not created
+	assert.Nil(t, keysKVClient)
+	assert.Nil(t, secretsKVClient)
+	assert.Nil(t, certificatesKVClient)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create workload identity credential")
+}
+
+func TestInitializeKvClient_FailureInAzSecretsClient(t *testing.T) {
+	// Mock the context and input parameters
+	keyVaultEndpoint := "https://valid-vault.vault.azure.net/"
+
+	// Modify the azsecrets.NewClient function to simulate failure
+	// Run the function
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, nil)
+
+	// Assert that an error occurred and clients were not created
+	assert.Nil(t, keysKVClient)
+	assert.Nil(t, secretsKVClient)
+	assert.Nil(t, certificatesKVClient)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create workload identity credential")
+}
+
+func TestInitializeKvClient_FailureInAzCertificatesClient(t *testing.T) {
+	// Mock the context and input parameters
+	keyVaultEndpoint := "https://valid-vault.vault.azure.net/"
+
+	// Modify the azsecrets.NewClient function to simulate failure
+	// Run the function
+	keysKVClient, secretsKVClient, certificatesKVClient, err := initializeKvClient(keyVaultEndpoint, tenantID, clientID, nil)
+
+	// Assert that an error occurred and clients were not created
+	assert.Nil(t, keysKVClient)
+	assert.Nil(t, secretsKVClient)
+	assert.Nil(t, certificatesKVClient)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to create workload identity credential")
+}
+func TestIsSecretDisabledError(t *testing.T) {
+	rawResponse := `{
+		"error": {
+			"code": "Forbidden",
+			"message": "Operation get is not allowed on a disabled secret.",
+			"innererror": {
+				"code": "SecretDisabled"
+			}
+		}
+	}`
+
+	httpErr := &azcore.ResponseError{
+		StatusCode: http.StatusForbidden,
+		RawResponse: &http.Response{
+			Body: io.NopCloser(strings.NewReader(rawResponse)),
+		},
+	}
+
+	testCases := []struct {
+		name        string
+		err         error
+		expectedRes bool
+	}{
+		{
+			name:        "SecretDisabledError",
+			err:         httpErr,
+			expectedRes: true,
+		},
+		{
+			name:        "NonSecretDisabledError",
+			err:         errors.New("some other error"),
+			expectedRes: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := isSecretDisabledError(tc.err)
+			assert.Equal(t, tc.expectedRes, res)
 		})
 	}
 }

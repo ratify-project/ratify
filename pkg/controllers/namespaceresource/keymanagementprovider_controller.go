@@ -79,7 +79,7 @@ func (r *KeyManagementProviderReconciler) ReconcileWithType(ctx context.Context,
 		logger.Warn("Certificate Store already exists. Key management provider and certificate store should not be configured together. Please migrate to key management provider and delete certificate store.")
 	}
 
-	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type)
+	provider, err := cutils.SpecToKeyManagementProvider(keyManagementProvider.Spec.Parameters.Raw, keyManagementProvider.Spec.Type, resource)
 	if err != nil {
 		kmpErr := re.ErrorCodeKeyManagementProviderFailure.WithError(err).WithDetail("Failed to create key management provider from CR")
 

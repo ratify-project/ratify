@@ -26,8 +26,8 @@ import (
 )
 
 // SpecToKeyManagementProvider creates KeyManagementProvider from  KeyManagementProviderSpec config
-func SpecToKeyManagementProvider(raw []byte, keyManagamentSystemName string) (kmp.KeyManagementProvider, error) {
-	kmProviderConfig, err := rawToKeyManagementProviderConfig(raw, keyManagamentSystemName)
+func SpecToKeyManagementProvider(raw []byte, keyManagamentSystemName, resource string) (kmp.KeyManagementProvider, error) {
+	kmProviderConfig, err := rawToKeyManagementProviderConfig(raw, keyManagamentSystemName, resource)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +42,7 @@ func SpecToKeyManagementProvider(raw []byte, keyManagamentSystemName string) (km
 }
 
 // rawToKeyManagementProviderConfig converts raw json to KeyManagementProviderConfig
-func rawToKeyManagementProviderConfig(raw []byte, keyManagamentSystemName string) (config.KeyManagementProviderConfig, error) {
+func rawToKeyManagementProviderConfig(raw []byte, keyManagamentSystemName, resource string) (config.KeyManagementProviderConfig, error) {
 	pluginConfig := config.KeyManagementProviderConfig{}
 
 	if string(raw) == "" {
@@ -53,6 +53,7 @@ func rawToKeyManagementProviderConfig(raw []byte, keyManagamentSystemName string
 	}
 
 	pluginConfig[types.Type] = keyManagamentSystemName
+	pluginConfig[types.Resource] = resource
 
 	return pluginConfig, nil
 }
