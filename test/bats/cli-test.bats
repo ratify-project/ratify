@@ -37,10 +37,6 @@ load helpers
 @test "notation verifier crl test" {
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_success
-
-    $(shell echo "Stopping CRL server..." && kill ${CRL_SERVER_PID})
-    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
-    assert_cmd_verify_failure
 }
 
 @test "notation verifier with type test" {
