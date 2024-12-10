@@ -51,7 +51,7 @@ jobs:
       - name: Check build
         run: bin/ratify version
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
+        uses: codecov/codecov-action@7f8b4b4bde536c465e797be725718b88c5d95e0e # v5.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
       - name: Run helm lint
@@ -86,7 +86,7 @@ jobs:
           make install ratify-config install-bats
           make test-e2e-cli GOCOVERDIR=${GITHUB_WORKSPACE}/test/e2e/.cover
       - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@015f24e6818733317a2da2edd6290ab26238649a # v5.0.7
+        uses: codecov/codecov-action@7f8b4b4bde536c465e797be725718b88c5d95e0e # v5.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
   markdown-link-check:
