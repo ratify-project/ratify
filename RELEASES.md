@@ -92,13 +92,13 @@ After a successful release, please prepare a [PR](https://github.com/ratify-proj
 * Contributors MUST select the `Helm Chart Change` option under the `Type of Change` section if there is ANY update to the helm chart that is required for proposed changes in PR.
 * Maintainers MUST manually trigger the "Publish Package" workflow after merging any PR that indicates `Helm Chart Change`
   * Go to the `Actions` tab for the Ratify repository
-  * Select `publish-ghcr` option from list of workflows on left pane
+  * Select `publish-dev-assets` option from list of workflows on left pane
   * Select the `Run workflow` drop down on the right side above the list of action runs
-  * Choose `Branch: main`
+  * Choose `Branch: dev`
   * Select `Run workflow`
 * Process to Request an off-schedule dev build be published
   * Submit a new feature request issue prefixed with `[Dev Build Request]`
-  * In the the `What this PR does / why we need it` section, briefly explain why an off schedule build is needed
+  * In the the `What would you like to be added?` section, briefly explain why an off schedule build is needed
   * Once issue is created, post in the `#ratify` slack channel and tag the maintainers
   * Maintainers should acknowledge request by approving/denying request as a follow up comment
 
