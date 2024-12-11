@@ -111,3 +111,9 @@ wait_for_process() {
   done
   return 1
 }
+
+# run the CRL server in the background
+run_crl_server() {
+	python3 ./scripts/crl_server.py &
+	echo $(shell $!)
+}

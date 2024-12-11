@@ -130,7 +130,7 @@ RATIFY_NAMESPACE=gatekeeper-system
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
     }
-    
+	run_crl_server
     run kubectl run demo --namespace default --image=registry:5000/notation:crl
     assert_success
 }
