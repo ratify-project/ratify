@@ -15,7 +15,9 @@ Author: Binbin Li
       - [Architecture Components](#architecture-components)
     - [Deisgn Details](#deisgn-details)
       - [Deisgn considerations](#deisgn-considerations)
-      - [Plugin Framework Example](#plugin-framework-example)
+      - [Plugin Framework](#plugin-framework)
+        - [Difference between v1 and v2](#difference-between-v1-and-v2)
+        - [Example](#example)
     - [Poposed Repository Layout](#poposed-repository-layout)
     - [Proposed Milestones](#proposed-milestones)
     - [Q\&A](#qa)
@@ -93,10 +95,19 @@ Below is a more detailed design of the proposed architecture of Ratify v2. Note 
 1. Extract the Ratify core library(ratify-go) to focus solely on its primary functionality: validating the security metadata of artifacts in an efficient way. Consequently, the mutation API will be removed from the core library. The Ratify core will define required interfaces including Verifier, Store, and PolicyEnforcer but contains no implementation in the repo to minimize the dependencies in the core library. The core library should be designed to be highly scalable and performant. And it should be easy to integrate with different scenarios.
 2. Move the Ratify CLI to a separate repository (ratify-cli) that uses the Ratify core library. `ratify` repo will keep serving for the K8s scenarios. For other entrypoint/usage scenarios, such as standalone service or github action, we can create separate repos for each in the future.
 3. To implement different plugins for each interface, we can create monorepo for each interface(e.g. `ratify-verifier-go`). Therefore the dependencies from plugins would just reside in plugin repos. And since store and policyEnforcer interfaces have limited implementations and much less dependencies, we can keep them in the `ratify-go` repo for now and move out if necessary.
-4. Each entrypoint repo will own the responsibility to select appropriate plugin implementations to build the image or binaries. Through injecting the dependency at build time, entrypoint repos will NOT introduce new dependencies from those plugin implementations. Additionally, plugins will run in the same process as Ratify main process to achieve the best performance and security.
-5. The configuration CRD needs to be redesigned to allow seamless conversion to config.json for other use cases.
+4. In the new plugin framework, oras store and verifiers will run in the same process as Ratify main process, which will improve the performance and security of Ratify. As part of the Oras store implementation, Oras store cache will be safely shared by all verifiers without race condition.
+5. The auth provider for different cloud providers will belong to Oras store implementation and decoupled from Ratify main repo.
+6. Each entrypoint repo will own the responsibility to select appropriate plugin implementations to build the image or binaries. Through injecting the dependency at build time, entrypoint repos will NOT introduce new dependencies from those plugin implementations. Additionally, plugins will run in the same process as Ratify main process to achieve the best performance and security.
+7. The configuration CRD needs to be redesigned to allow seamless conversion to config.json for other use cases.
 
-#### Plugin Framework Example
+#### Plugin Framework
+
+##### Difference between v1 and v2
+1. In v1, except for built-in verifiers, Ratify needs to build external verifiers and stores as separate binaries under `/plugins` directory during docker build. In v2, all verifiers and stores implementations are libraries that can be imported by the main application. The main application will select appropriate implementations based on the need during docker build time.
+2. In v2, users don't need to build the plugins to binaries. For customized plugins, user can create a new repo and implement the interfaces defined in the core library. The main application will automatically register the plugins during docker build time if the plugins are imported in the main application.
+3. In v1, verifiers are shipped with the main Ratify repo, therefore the Ratify version and verifier version are coupled. In v2, the core library only defines plugin interfaces and the plugin implementations are in separate repos. The version compatibility between the core library and plugin repos will be handled by `go mod tidy` based on semantic versioning. Users can use different versions of a specific plugin implementation as long as it's compatible with the core library.
+
+##### Example
 Below is an example of how the plugin framework can be implemented in Ratify v2.
 
 In this example, the core library defines interfaces and Register functions for verifier/store plugins. Each plugin implementation will register itself with the core library during initialization. The Executor will use the registered plugins to validate the security metadata of the artifacts. The main application only has to import the core library, and the appropriate plugins will be automatically registered during docker build time.
