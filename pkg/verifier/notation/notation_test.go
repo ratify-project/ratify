@@ -625,7 +625,7 @@ func TestGetVerifierService(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := getVerifierService(tt.conf, tt.pluginDir, tt.RevocationFactory)
+			_, err := getVerifierService(context.Background(), tt.conf, tt.pluginDir, tt.RevocationFactory)
 			if (err != nil) != tt.expectErr {
 				t.Errorf("error = %v, expectErr = %v", err, tt.expectErr)
 			}
