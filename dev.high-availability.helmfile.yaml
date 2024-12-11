@@ -14,7 +14,7 @@ releases:
     namespace: dapr-system
     createNamespace: true
     chart: dapr/dapr
-    version: 1.13.2
+    version: 1.14.4
     wait: true
   - name: gatekeeper
     namespace: gatekeeper-system
