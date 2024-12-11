@@ -125,6 +125,16 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 }
 
+@test "notation test crl" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+    }
+    
+    run kubectl run demo --namespace default --image=registry:5000/notation:crl
+    assert_success
+}
+
 @test "notation test with certs across namespace" {
     teardown() {
         echo "cleaning up"
