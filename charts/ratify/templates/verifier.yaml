@@ -22,22 +22,32 @@ spec:
           {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
           {{- end }}
         - {{$fullname}}-notation-inline-cert
-        {{- end }} 
+        {{- end }}
         {{- range $i, $cert := .Values.notationCerts }}
         - {{$fullname}}-notation-inline-cert-{{$i}}
-        {{- end }} 
+        {{- end }}
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
-        - name: default
+        {{- range .Values.notation.trustPolicies }}
+        - name: {{ .name }}
           registryScopes:
-            - "*"
+            {{- range .registryScopes }}
+            - "{{ . }}"
+            {{- end }}
           signatureVerification:
-            level: strict
+            level: {{ .signatureVerification.level }}
           trustStores:
-            - ca:certs
+            {{- range .trustStores }}
+            {{- range $key, $value := . }}
+            - {{ $key }}:{{ $value }}
+            {{- end }}
+            {{- end }}
           trustedIdentities:
-            - "*"
+            {{- range .trustedIdentities }}
+            - "{{ . }}"
+            {{- end }}
+        {{- end }}
 {{- end }}
 ---
 {{- if .Values.cosign.enabled }}
