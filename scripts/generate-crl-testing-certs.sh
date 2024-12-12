@@ -205,7 +205,7 @@ openssl ca -config intermediate.cnf -in leaf.csr -out leaf.crt -batch -extension
 # Generate intermediate CRL using root.cnf (before revocation)
 openssl ca -config root.cnf -gencrl -out intermediate.crl
 
-# Convert root CRL to DER format
+# Convert intermediate CRL to DER format
 openssl crl -in intermediate.crl -outform der -out intermediate.crl
 
 # Revoke intermediate certificate using root CA
@@ -214,7 +214,7 @@ openssl ca -config root.cnf -revoke intermediate.crt
 # Generate intermediate CRL including revoked intermediate certificate
 openssl ca -config root.cnf -gencrl -out intermediate_revoked.crl
 
-# Convert intermediate CRL to DER format
+# Convert intermediate revoked CRL to DER format
 openssl crl -in intermediate_revoked.crl -outform der -out intermediate_revoked.crl
 
 # Generate leaf CRL
@@ -229,7 +229,7 @@ openssl ca -config intermediate.cnf -revoke leaf.crt
 # Generate leaf CRL including revoked leaf certificate
 openssl ca -config intermediate.cnf -gencrl -out leaf_revoked.crl
 
-# Convert leaf CRL to DER format
+# Convert leaf revoked CRL to DER format
 openssl crl -in leaf_revoked.crl -outform der -out leaf_revoked.crl
 
 # merge leaf cert and root cert to create fullchain file
