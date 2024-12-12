@@ -113,6 +113,5 @@ wait_for_process() {
 }
 
 run_crl_server() {
-  python3 ./scripts/crl_server.py & CRL_SERVER_PID=$!
-  return $CRL_SERVER_PID
+  python3 ./scripts/crl_server.py
 }
