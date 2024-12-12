@@ -133,8 +133,6 @@ RATIFY_NAMESPACE=gatekeeper-system
         # restore the original notation verifier for other tests
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
-    run_crl_server
-    expose_localhost
 
     # add the tsaroot certificate as an inline key management provider
     cat ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> crlkmprovider.yaml

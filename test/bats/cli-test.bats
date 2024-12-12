@@ -35,10 +35,15 @@ load helpers
 }
 
 @test "notation verifier crl test" {
-    run_crl_server
+    run python3 ./scripts/crl_server.py & CRL_SERVER_PID =  $(shell $!)
 
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_success
+
+    run kill $CRL_SERVER_PID
+
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
+    assert_cmd_verify_failure
 }
 
 @test "notation verifier with type test" {
