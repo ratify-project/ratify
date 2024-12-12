@@ -155,7 +155,7 @@ delete-gatekeeper:
 	helm delete gatekeeper --namespace ${GATEKEEPER_NAMESPACE}
 
 .PHONY: test-e2e
-test-e2e: generate-rotation-certs e2e-notation-crl-setup
+test-e2e: generate-rotation-certs
 	timeout 20m bats -t ${BATS_BASE_TESTS_FILE}
 	EXPIRING_CERT_DIR=.staging/rotation/expiring-certs CERT_DIR=.staging/rotation GATEKEEPER_VERSION=${GATEKEEPER_VERSION} bats -t ${BATS_PLUGIN_TESTS_FILE}
 

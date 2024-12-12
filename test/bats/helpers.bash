@@ -113,5 +113,6 @@ wait_for_process() {
 }
 
 run_crl_server() {
-  python3 ./scripts/crl_server.py
+  python3 ./scripts/crl_server.py &
+  echo "CRL server started"
 }
