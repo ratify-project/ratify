@@ -17,7 +17,7 @@
 # - certchain_with_crl.pem: the fullchain file that includes the leaf 
 #   certificate with CRL, intermediate certificate with invalid OCSP and valid 
 #   CRL, and the root certificate.
-# - leaf.crl: the CRL file that includes the revoked leaf certificate.
+# - leaf.crl: the CRL file that includes the leaf certificate.
 # - leaf.key: the private key of the leaf certificate.
 # - leaf_revoked.crl: the CRL file that includes the revoked leaf certificate.
 # - intermediate.crl: the CRL file that includes the intermediate certificate.
