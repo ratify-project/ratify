@@ -24,9 +24,6 @@
 # - intermediate_revoked.crl: the CRL file that includes the revoked intermediate
 # - root.crt: the root certificate.
 #
-# Note: The script will not run in the pipeline, but we need to keep it for
-# future maintenance because generating those test certificates with CRL is not
-# easy.
 
 set -o errexit
 set -o nounset
