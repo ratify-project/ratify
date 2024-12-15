@@ -112,10 +112,6 @@ wait_for_process() {
   return 1
 }
 
-run_crl_server() {
-  python3 ./scripts/crl_server.py
-}
-
 stop_crl_server() {
   pkill -f crl_server.py
 }
