@@ -38,7 +38,6 @@ load helpers
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_success
 
-    stop_crl_server
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure
 

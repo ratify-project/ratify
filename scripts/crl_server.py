@@ -22,10 +22,12 @@ intermediate_crl = 'intermediate.crl'
 
 
 class CRLRequestHandler(http.server.SimpleHTTPRequestHandler):
+    flag = False
     def do_GET(self):
         global leaf_crl
         global intermediate_crl
-        if self.path == '/leaf.crl':
+        if self.path == '/leaf.crl' && not self.flag:
+            flag = True
             file_path = os.path.join(DATA_DIR, leaf_crl)
             self.crl_response(file_path)
         elif self.path == '/intermediate.crl':

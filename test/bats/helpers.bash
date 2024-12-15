@@ -111,7 +111,3 @@ wait_for_process() {
   done
   return 1
 }
-
-stop_crl_server() {
-  pkill -f crl_server.py
-}
