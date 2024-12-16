@@ -9,18 +9,12 @@ fullnameOverride: ""
 replicaCount: 1
 affinity: {}
 tolerations: []
-notationCerts:
-  - name:
-    value:
+notationCerts: []
 cosignKeys: []
 
 notation:
   enabled: true
   verificationCertStores:
-    ca:
-      - certs-1:
-    tsa:
-    signingAuthority:
   trustPolicies:
     - name: default
       registryScopes:
@@ -28,7 +22,7 @@ notation:
       signatureVerification:
         level: strict
       trustStores:
-        - ca: certs-1
+        - ca: certs
       trustedIdentities:
         - "*"
 
@@ -92,7 +86,6 @@ azureManagedIdentity:
   tenantId:
 
 azurekeyvault:
-  name: kmprovider-akv
   enabled: false
   vaultURI:
   tenantId:
@@ -189,8 +182,6 @@ featureFlags:
   RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY: false
 
 notationCert: # DEPRECATED: Use notationCerts instead
-  name:
-  value:
 akvCertConfig: # DEPRECATED: Use azurekeyvault instead
   name: # DEPRECATED: Use azurekeyvault.name instead
   enabled: false # DEPRECATED: Use azurekeyvault.enabled instead
