@@ -40,6 +40,8 @@ load helpers
 
     update_crl_server
 
+    sleep 5
+
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure
 }
