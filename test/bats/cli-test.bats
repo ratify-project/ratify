@@ -35,15 +35,16 @@ load helpers
 }
 
 @test "notation verifier crl test" {
-    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
-    assert_cmd_verify_success
 
     update_crl_server
 
-    sleep 5
-
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure
+
+    restore_crl_server
+
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
+    assert_cmd_verify_success
 }
 
 @test "notation verifier with type test" {
