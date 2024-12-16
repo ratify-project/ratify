@@ -19,13 +19,13 @@ PORT = 10086
 DATA_DIR = '.staging/notation/crl-test'
 leaf_crl = 'leaf.crl'
 intermediate_crl = 'intermediate.crl'
-
+flag = False
 
 class CRLRequestHandler(http.server.SimpleHTTPRequestHandler):
-    flag = False
     def do_GET(self):
         global leaf_crl
         global intermediate_crl
+        global flag
         if self.path == '/leaf.crl' && not self.flag:
             flag = True
             file_path = os.path.join(DATA_DIR, leaf_crl)
