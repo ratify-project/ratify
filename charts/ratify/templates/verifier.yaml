@@ -12,34 +12,31 @@ spec:
   version: 1.0.0
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
-    verificationCertStores:
+    verificationCertStores: 
       {{- if $.Values.notation.verificationCertStores }}
-      {{- range $cert_type, $stores := .Values.notation.verificationCertStores }}
+      {{- range $cert_type, $stores := $.Values.notation.verificationCertStores }}
         {{ $cert_type }}: 
-        {{- range $stores }}
-          {{- range $store_name, $certs := . }}
-          - {{ $store_name }}:
-            {{- range $certs }}
+        {{- range $store_name, $certs := $stores }}
+          {{ $store_name }}:
+          {{- range $certs }}
             - {{ . }}
-            {{- end }}
           {{- end }}
         {{- end }}
       {{- end }}
       {{- else }}
-        ca:
-          - certs-1:
-            {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
-            - {{ .Values.azurekeyvault.name }}
-            {{- end }}
-            {{- if .Values.notationCert }}
-              {{- if .Values.notationCerts }}
-              {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
-              {{- end }}
-            - {{ .Values.notationCert.name }} # - {{$fullname}}-notation-inline-cert
-            {{- end }}
-            {{- range $i, $cert := .Values.notationCerts }}
-            - {{ $cert.name }} # - {{$fullname}}-notation-inline-cert-{{$i}}
-            {{- end }}
+      certs:
+        {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
+        - kmprovider-akv
+        {{- end }}
+        {{- if .Values.notationCert }}
+          {{- if .Values.notationCerts }}
+          {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
+          {{- end }}
+        - {{$fullname}}-notation-inline-cert
+        {{- end }}
+        {{- range $i, $cert := .Values.notationCerts }}
+        - {{$fullname}}-notation-inline-cert-{{$i}}
+        {{- end }}
       {{- end }}
     trustPolicyDoc:
       version: "1.0"
