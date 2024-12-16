@@ -111,3 +111,10 @@ wait_for_process() {
   done
   return 1
 }
+
+update_crl_server() {
+  URL_LEAF="http://localhost:10086/leaf/revoke"
+	curl -X POST "$URL_LEAF" -H "Content-Type: application/json"
+  URL_INTER=http://localhost:10086/intermediate/revoke
+  curl -X POST "$URL_INTER" -H "Content-Type: application/json"
+}
