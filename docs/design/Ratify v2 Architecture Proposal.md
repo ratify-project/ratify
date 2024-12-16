@@ -13,12 +13,12 @@ Author: Binbin Li
   - [Proposed Architecture of Ratify v2](#proposed-architecture-of-ratify-v2)
     - [High Level Design](#high-level-design)
       - [Architecture Components](#architecture-components)
-    - [Deisgn Details](#deisgn-details)
-      - [Deisgn considerations](#deisgn-considerations)
+    - [Design Details](#design-details)
+      - [Design considerations](#design-considerations)
       - [Plugin Framework](#plugin-framework)
         - [Difference between v1 and v2](#difference-between-v1-and-v2)
         - [Example](#example)
-    - [Poposed Repository Layout](#poposed-repository-layout)
+    - [Proposed Repository Layout](#proposed-repository-layout)
     - [Proposed Milestones](#proposed-milestones)
     - [Q\&A](#qa)
 
@@ -41,7 +41,7 @@ The goal of this proposal aligns with the goal in the previous discussion, speci
 ### Limitations
 1. Ratify only supports CLI and K8s scenarios. But actually current Ratify is only well implemented/designed for K8s scenarios. There are some feature gaps between CLI and K8s implementations. To support more scenarios, like containerd plugins or docker plugins, or just a library for downstream services, we need to make Ratify to be more extensible.
 2. Ratify was designed to validate security metadata of any given artifacts. But right now Ratify is mainly focusing on the K8s scenarios with images being verified.
-3. The plugin framework was designed to separate built-in and external plugins. Built-in plugins run in the same process of Ratify while each external plugin would be executed in a new subprocess. Therefore, external plugins cannot share the in-momory cache with the main process, which may result to performance degradation, data inconsistency, race condition and security vulnerabilties.
+3. The plugin framework was designed to separate built-in and external plugins. Built-in plugins run in the same process of Ratify while each external plugin would be executed in a new subprocess. Therefore, external plugins cannot share the in-memory cache with the main process, which may result to performance degradation, data inconsistency, race condition and security vulnerabilities.
 4. The built-in plugins and authentication for different cloud providers are part of the main Ratify repository, which introduces a significant number of dependencies. This issue will become even more pronounced as additional cloud provider and new plugin implementation are added in the future.
 5. Even though the current executor has been optimized for performance, it will be a bottleneck when the number of security artifacts increased significantly.
 6. The configuration applied in CLI and K8s scenarios are not exactly same, which makes it difficult for users to maintain and switch between different scenarios.
@@ -87,11 +87,11 @@ The goal of this proposal aligns with the goal in the previous discussion, speci
 6. **Middlewares**: The middleware consists of `Driver/Entrypoint` and `Output Render`. Each user scenario will have its own middleware implementation.
 7. **Customized App**: The customized app can be any application behaves in a similar was as the middleware. It will be responsible for handling its own input and invoking the core logic to validate the security metadata of the artifacts and rendering its own output.
 
-### Deisgn Details
+### Design Details
 Below is a more detailed design of the proposed architecture of Ratify v2. Note that text in red indicates a repository under `ratify-project` organization.
 ![img](../img/architecture/ratify-v2.png)
 
-#### Deisgn considerations
+#### Design considerations
 1. Extract the Ratify core library(ratify-go) to focus solely on its primary functionality: validating the security metadata of artifacts in an efficient way. Consequently, the mutation API will be removed from the core library. The Ratify core will define required interfaces including Verifier, Store, and PolicyEnforcer but contains no implementation in the repo to minimize the dependencies in the core library. The core library should be designed to be highly scalable and performant. And it should be easy to integrate with different scenarios.
 2. Move the Ratify CLI to a separate repository (ratify-cli) that uses the Ratify core library. `ratify` repo will keep serving for the K8s scenarios. For other entrypoint/usage scenarios, such as standalone service or github action, we can create separate repos for each in the future.
 3. To implement different plugins for each interface, we can create monorepo for each interface(e.g. `ratify-verifier-go`). Therefore the dependencies from plugins would just reside in plugin repos. And since store and policyEnforcer interfaces have limited implementations and much less dependencies, we can keep them in the `ratify-go` repo for now and move out if necessary.
@@ -238,7 +238,7 @@ CMD ["./main"]
 ```
 In the above example, the only dependency of Ratify repo is the Ratify core library. And users could select appropriate interface implementations based on need in the Dockerfile.
 
-### Poposed Repository Layout
+### Proposed Repository Layout
 - Keep the `ratify` repo for K8s scenario as an external data provider for Gatekeeper.
 - `ratify-go` (serves as the Ratify core library)
 - `ratify-verifier-go` (monorepo for different implementations of verifiers)
@@ -248,7 +248,7 @@ In the above example, the only dependency of Ratify repo is the Ratify core libr
 - more repos for other user scenarios in the future.
 
 ### Proposed Milestones
-- Alpha.1: Creat and implement ratify core library(`ratify-go`)
+- Alpha.1: Create and implement ratify core library(`ratify-go`)
 - Alpha.2: Create v2 branch in ratify repo, switch the Executor to use the new Ratify core.
 - Beta.1: Implement Oras store and Notation verifier
 - Beta.2: Implement Oras store cache and Cosign verifier
@@ -264,10 +264,14 @@ In the above example, the only dependency of Ratify repo is the Ratify core libr
 
 ### Q&A
 1. **Q**: How does the version compatibility between the core library and the plugin repos?
-   **A**: Since core library and plugin repos are all imported by main application as direct dependencies, `go mod tidy` will ensure the highest compatible version of conflict dependency is used based on semantic versioning. Theoeoretically, the core library defines interfaces for the plugin implementation, as long as there is no breaking change in the interface, the plugin implementation don't need to bump up version along with the core library.
+   
+   **A**: Since core library and plugin repos are all imported by main application as direct dependencies, `go mod tidy` will ensure the highest compatible version of conflict dependency is used based on semantic versioning. Theoretically, the core library defines interfaces for the plugin implementation, as long as there is no breaking change in the interface, the plugin implementation don't need to bump up version along with the core library.
 2. **Q**: Does the plugin framework support customized plugins in different languages?
+   
    **A**: No.  The plugin framework is designed to support Go plugins only. If we need to support plugins in different languages, we need to find alternative solutions, like gRPC plugin, io.pipe or Wasm. Due to the performance and security concerns, we do not support those solutions in the early stage of Ratify v2, but probably will be added in the future as an extended feature.
 3. **Q**: Are there any other options for the plugin framework? What's the reason to choose this one?
-   **A**: There are a new options have been considered, like gRPC plugin([hashicorp/go-plugin](https://github.com/hashicorp/go-plugin)), plugin as [WASM binaries](https://github.com/knqyf263/go-plugin), or using an embedded Go interpreter([`raefik/yaegi](https://github.com/traefik/yaegi)). However, Ratify v2 is designed to be a lightweight and high performance tool, so we choose the simplest and most efficient way to implement the plugin framework. Thoses options will impact the performance, which is not the best choice for Ratify v2. And for the [golang plugin](https://pkg.go.dev/plugin) library, it will achieve good performance but has arch limitations and requires dependencies of the main application and plugins to be the same.
+   
+   **A**: There are a new options have been considered, like gRPC plugin([hashicorp/go-plugin](https://github.com/hashicorp/go-plugin)), plugin as [WASM binaries](https://github.com/knqyf263/go-plugin), or using an embedded Go interpreter([`raefik/yaegi](https://github.com/traefik/yaegi)). However, Ratify v2 is designed to be a lightweight and high performance tool, so we choose the simplest and most efficient way to implement the plugin framework. Those options will impact the performance, which is not the best choice for Ratify v2. And for the [golang plugin](https://pkg.go.dev/plugin) library, it will achieve good performance but has arch limitations and requires dependencies of the main application and plugins to be the same.
 4. **Q**: How to handle the multi-tenancy in the new architecture?
+   
    **A**: Since the core library only focuses on artifact validation, the multi-tenancy should be handled by the entrypoint, specifically the Gatekeeper add-on in the K8s scenario. The entrypoint should be responsible for handling the multi-tenancy or seeking for other solutions without multi-tenancy support from Ratify.
