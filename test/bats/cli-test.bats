@@ -36,7 +36,7 @@ load helpers
 
 @test "notation verifier crl test" {
     teardown() {
-        run sudo pkill -f python3
+        run sudo pkill -f ./scripts/crl_server.py
     }
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure
