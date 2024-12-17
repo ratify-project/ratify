@@ -25,33 +25,33 @@ LDFLAGS += -X $(GO_PKG)/internal/version.GitCommitHash=$(GIT_COMMIT_HASH)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTreeState=$(GIT_TREE_STATE)
 LDFLAGS += -X $(GO_PKG)/internal/version.GitTag=$(GIT_TAG)
 
-KIND_VERSION ?= 0.22.0
-KUBERNETES_VERSION ?= 1.29.2
-KIND_KUBERNETES_VERSION ?= 1.29.2
-GATEKEEPER_VERSION ?= 3.17.0
-DAPR_VERSION ?= 1.12.5
-COSIGN_VERSION ?= 2.2.3
+KIND_VERSION ?= 0.25.0
+KUBERNETES_VERSION ?= 1.30.6
+KIND_KUBERNETES_VERSION ?= 1.30.6
+GATEKEEPER_VERSION ?= 3.18.0
+DAPR_VERSION ?= 1.14.4
+COSIGN_VERSION ?= 2.4.1
 NOTATION_VERSION ?= 1.2.0
-ORAS_VERSION ?= 1.1.0
+ORAS_VERSION ?= 1.2.1
 
-HELM_VERSION ?= 3.14.2
-HELMFILE_VERSION ?= 0.162.0
+HELM_VERSION ?= 3.16.3
+HELMFILE_VERSION ?= 0.169.2
 BATS_BASE_TESTS_FILE ?= test/bats/base-test.bats
 BATS_PLUGIN_TESTS_FILE ?= test/bats/plugin-test.bats
 BATS_CLI_TESTS_FILE ?= test/bats/cli-test.bats
 BATS_QUICKSTART_TESTS_FILE ?= test/bats/quickstart-test.bats
 BATS_HA_TESTS_FILE ?= test/bats/high-availability.bats
-BATS_VERSION ?= 1.10.0
-SYFT_VERSION ?= v1.0.0
-YQ_VERSION ?= v4.42.1
+BATS_VERSION ?= 1.11.1
+SYFT_VERSION ?= v1.18.0
+YQ_VERSION ?= v4.44.6
 YQ_BINARY ?= yq_linux_amd64
 ALPINE_IMAGE ?= alpine@sha256:93d5a28ff72d288d69b5997b8ba47396d2cbb62a72b5d87cd3351094b5d578a0
 ALPINE_IMAGE_VULNERABLE ?= alpine@sha256:25fad2a32ad1f6f510e528448ae1ec69a28ef81916a004d3629874104f8a7f70
-REDIS_IMAGE_TAG ?= 7.0-debian-11
+REDIS_IMAGE_TAG ?= 7.4-debian-12
 CERT_ROTATION_ENABLED ?= false
 REGO_POLICY_ENABLED ?= false
-SBOM_TOOL_VERSION ?=v2.2.3
-TRIVY_VERSION ?= 0.49.1
+SBOM_TOOL_VERSION ?=v2.2.9
+TRIVY_VERSION ?= 0.58.0
 
 GATEKEEPER_NAMESPACE = gatekeeper-system
 RATIFY_NAME = ratify
@@ -202,7 +202,7 @@ e2e-dependencies:
 	# Download and install kind
 	curl -L https://github.com/kubernetes-sigs/kind/releases/download/v${KIND_VERSION}/kind-linux-amd64 --output ${GITHUB_WORKSPACE}/bin/kind && chmod +x ${GITHUB_WORKSPACE}/bin/kind
 	# Download and install kubectl
-	curl -L https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl --output ${GITHUB_WORKSPACE}/bin/kubectl && chmod +x ${GITHUB_WORKSPACE}/bin/kubectl
+	curl -L https://dl.k8s.io/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl --output ${GITHUB_WORKSPACE}/bin/kubectl && chmod +x ${GITHUB_WORKSPACE}/bin/kubectl
 	# Download and install bats
 	curl -sSLO https://github.com/bats-core/bats-core/archive/v${BATS_VERSION}.tar.gz && tar -zxvf v${BATS_VERSION}.tar.gz && bash bats-core-${BATS_VERSION}/install.sh ${GITHUB_WORKSPACE}
 	# Download and install jq
@@ -270,6 +270,7 @@ e2e-helmfile-install:
 	cd .staging/helmfilebin && tar -xvf helmfilebin.tar.gz
     
 e2e-docker-credential-store-setup:
+	sudo apt-get install pass
 	rm -rf .staging/pass
 	mkdir -p .staging/pass
 	cd .staging/pass && git clone https://github.com/docker/docker-credential-helpers.git
