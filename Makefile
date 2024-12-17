@@ -270,6 +270,7 @@ e2e-helmfile-install:
 	cd .staging/helmfilebin && tar -xvf helmfilebin.tar.gz
     
 e2e-docker-credential-store-setup:
+	sudo apt-get install pass
 	rm -rf .staging/pass
 	mkdir -p .staging/pass
 	cd .staging/pass && git clone https://github.com/docker/docker-credential-helpers.git
