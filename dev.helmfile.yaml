@@ -10,7 +10,7 @@ releases:
     namespace: gatekeeper-system
     createNamespace: true
     chart: gatekeeper/gatekeeper
-    version: 3.17.0
+    version: 3.18.0
     wait: true
     set:
       - name: enableExternalData
