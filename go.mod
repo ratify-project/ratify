@@ -37,7 +37,7 @@ require (
 	github.com/google/go-containerregistry v0.20.2
 	github.com/gorilla/mux v1.8.1
 	github.com/notaryproject/notation-core-go v1.2.0-rc.2
-	github.com/notaryproject/notation-go v1.3.0-rc.1
+	github.com/notaryproject/notation-go v1.3.0-rc.2
 	github.com/notaryproject/notation-plugin-framework-go v1.0.0
 	github.com/open-policy-agent/cert-controller v0.8.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa
@@ -47,7 +47,7 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.2.4
-	github.com/sigstore/sigstore v1.8.10
+	github.com/sigstore/sigstore v1.8.11
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spdx/tools-golang v0.5.5
 	github.com/spf13/cobra v1.8.1
