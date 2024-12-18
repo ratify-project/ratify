@@ -68,5 +68,8 @@
                 "denylistCVEs": ["CVE-2021-44228"]
             }
         ]
+    },
+    "crl": {
+        "cacheEnabled" : true
     }
 }

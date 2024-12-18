@@ -51,5 +51,8 @@
                 }
             }
         ]
+    },
+    "crl": {
+        "cacheEnabled" : true
     }
 }
