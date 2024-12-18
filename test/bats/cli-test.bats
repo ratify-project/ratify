@@ -34,9 +34,13 @@ load helpers
     assert_cmd_verify_failure
 }
 
-@test "notation verifier crl test" {
+@test "notation verifier positive crl test" {
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
+    assert_cmd_verify_success
+}
 
-    update_crl_server
+@test "notation verifier negative crl test" {
+    revoke_crl
 
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure

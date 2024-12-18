@@ -125,7 +125,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 }
 
-@test "notation test crl" {
+@test "notation verification pass on CRL check with audit trust policy" {
     teardown() {
         echo "cleaning up"
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
