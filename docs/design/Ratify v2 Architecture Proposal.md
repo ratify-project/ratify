@@ -96,7 +96,7 @@ Below is a more detailed design of the proposed architecture of Ratify v2. Note 
 2. Move the Ratify CLI to a separate repository (ratify-cli) that uses the Ratify core library. `ratify` repo will keep serving for the K8s scenarios. For other entrypoint/usage scenarios, such as standalone service or github action, we can create separate repos for each in the future.
 3. To implement different plugins for each interface, we can create monorepo for each interface(e.g. `ratify-verifier-go`). Therefore the dependencies from plugins would just reside in plugin repos. And since store and policyEnforcer interfaces have limited implementations and much less dependencies, we can keep them in the `ratify-go` repo for now and move out if necessary.
 4. In the new plugin framework, oras store and verifiers will run in the same process as Ratify main process, which will improve the performance and security of Ratify. As part of the Oras store implementation, Oras store cache will be safely shared by all verifiers without race condition.
-5. The auth provider for different cloud providers will belong to Oras store implementation and decoupled from Ratify main repo.
+5. We already have a [design](https://github.com/ratify-project/ratify/pull/1940) for unifying the auth provider for Oras and KMP/Verifier. In ratify v2, ratify-go will define the auth provider interface. And implementations for different stores and cloud providers will reside in the entrypoint repos, e.g. `ratify-cli` and `ratify`.
 6. Each entrypoint repo will own the responsibility to select appropriate plugin implementations to build the image or binaries. Through injecting the dependency at build time, entrypoint repos will NOT introduce new dependencies from those plugin implementations. Additionally, plugins will run in the same process as Ratify main process to achieve the best performance and security.
 7. The configuration CRD needs to be redesigned to allow seamless conversion to config.json for other use cases.
 
@@ -236,7 +236,11 @@ RUN go build -o main .
 # Command to run the executable
 CMD ["./main"]
 ```
-In the above example, the only dependency of Ratify repo is the Ratify core library. And users could select appropriate interface implementations based on need in the Dockerfile.
+In the above example, the only dependency of Ratify repo is the Ratify core library. And users could select appropriate interface implementations by adding `import _` lines in the Dockerfile.
+
+For `ratify-cli` repo, we'll have a script to build the CLI binary. The script will behave like the Dockerfile in the above example to enable CLI implementation to select appropriate plugins.
+
+For `ratify-cli` and `ratify` repos, we will ship one or a few images with default verifiers like Notation and Cosign to cover common user scenarios. Users can create their own images with customized plugins by adding `import _` lines in the Dockerfile or scripts.
 
 ### Proposed Repository Layout
 - Keep the `ratify` repo for K8s scenario as an external data provider for Gatekeeper.
