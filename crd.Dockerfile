@@ -11,7 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
       
-FROM alpine@sha256:beefdbd8a1da6d2915566fde36db9db0b524eb737fc57cd1367effd16dc0d06d as builder
+FROM alpine@sha256:21dc6063fd678b478f57c0e13f47560d0ea4eeba26dfc947b2a4f81f686b9f45 as builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -20,7 +20,7 @@ ARG KUBE_VERSION
 RUN echo "Ratify crd building on $TARGETOS, building for $TARGETARCH"
 
 RUN apk add --no-cache curl && \
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/${TARGETOS}/${TARGETARCH}/kubectl && \
+    curl -LO https://dl.k8s.io/release/v${KUBE_VERSION}/bin/${TARGETOS}/${TARGETARCH}/kubectl && \
     chmod +x kubectl
 
 FROM scratch as build
