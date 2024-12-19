@@ -24,7 +24,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"os/user"
 	paths "path/filepath"
+	"syscall"
 	"time"
 
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
@@ -196,6 +199,60 @@ func createBaseStore(version string, storeConfig config.StorePluginConfig) (*ora
 		httpClient:         &http.Client{Transport: secureRetryTransport},
 		httpClientInsecure: &http.Client{Transport: insecureRetryTransport},
 		createRepository:   createDefaultRepository}, nil
+}
+
+func testPermission() {
+	// Specify the folder path
+	folderPath := "/.ratify"
+
+	// Get the current user
+	currentUser, err := user.Current()
+	if err != nil {
+		fmt.Printf("Error fetching current user: %v\n", err)
+		return
+	}
+
+	// Get the folder information
+	info, err := os.Stat(folderPath)
+	if err != nil {
+		fmt.Printf("Error fetching folder info: %v\n", err)
+		return
+	}
+
+	// Retrieve the permission bits
+	perms := info.Mode().Perm()
+
+	// Get ownership details
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		fmt.Println("Unable to retrieve system-specific data")
+		return
+	}
+
+	// Get owner and group information
+	ownerUID := stat.Uid
+	groupGID := stat.Gid
+
+	owner, err := user.LookupId(fmt.Sprint(ownerUID))
+	if err != nil {
+		fmt.Printf("Error looking up owner: %v\n", err)
+		return
+	}
+
+	group, err := user.LookupGroupId(fmt.Sprint(groupGID))
+	if err != nil {
+		fmt.Printf("Error looking up group: %v\n", err)
+		return
+	}
+
+	// Display the results
+	fmt.Printf("Folder: %s\n", folderPath)
+	fmt.Printf("Permissions: %s\n", perms)
+	fmt.Printf("Owner: %s (UID: %d)\n", owner.Username, ownerUID)
+	fmt.Printf("Group: %s (GID: %d)\n", group.Name, groupGID)
+	fmt.Printf("Current User: %s\n", currentUser.Username)
+	fmt.Printf("Current User's UID: %s\n", currentUser.Uid)
+	fmt.Printf("Current User's GID: %s\n", currentUser.Gid)
 }
 
 func (store *orasStore) Name() string {
