@@ -130,7 +130,6 @@ require (
 	github.com/xanzy/go-gitlab v0.102.0 // indirect
 	github.com/yashtewari/glob-intersection v0.2.0 // indirect
 	go.step.sm/crypto v0.54.2 // indirect
-	golang.org/x/net v0.33.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	gotest.tools/v3 v3.1.0 // indirect
 	sigs.k8s.io/release-utils v0.8.5 // indirect
@@ -244,6 +243,7 @@ require (
 	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 	golang.org/x/sys v0.28.0 // indirect
 	golang.org/x/term v0.27.0 // indirect
@@ -264,3 +264,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
+
+replace golang.org/x/net@v0.23.0 => golang.org/x/net v0.33.0
