@@ -36,8 +36,8 @@ require (
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-containerregistry v0.20.2
 	github.com/gorilla/mux v1.8.1
-	github.com/notaryproject/notation-core-go v1.2.0-rc.1
-	github.com/notaryproject/notation-go v1.3.0-rc.1
+	github.com/notaryproject/notation-core-go v1.2.0-rc.2
+	github.com/notaryproject/notation-go v1.3.0-rc.2
 	github.com/notaryproject/notation-plugin-framework-go v1.0.0
 	github.com/open-policy-agent/cert-controller v0.8.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa
@@ -47,7 +47,7 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/sigstore/cosign/v2 v2.2.4
-	github.com/sigstore/sigstore v1.8.10
+	github.com/sigstore/sigstore v1.8.11
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spdx/tools-golang v0.5.5
 	github.com/spf13/cobra v1.8.1
@@ -55,8 +55,8 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
 	go.opentelemetry.io/otel/metric v1.29.0
 	go.opentelemetry.io/otel/sdk/metric v1.27.0
-	golang.org/x/sync v0.9.0
-	google.golang.org/grpc v1.68.0
+	golang.org/x/sync v0.10.0
+	google.golang.org/grpc v1.68.1
 	google.golang.org/protobuf v1.35.2
 	k8s.io/api v0.28.15
 	k8s.io/apimachinery v0.28.15
@@ -114,7 +114,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.7.7 // indirect
 	github.com/miekg/pkcs11 v1.1.1 // indirect
 	github.com/mozillazg/docker-credential-acr-helper v0.3.0 // indirect
-	github.com/notaryproject/tspclient-go v0.2.0 // indirect
+	github.com/notaryproject/tspclient-go v1.0.0-rc.1 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
 	github.com/sagikazarmark/locafero v0.4.0 // indirect
 	github.com/sagikazarmark/slog-shim v0.1.0 // indirect
@@ -240,14 +240,14 @@ require (
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
-	golang.org/x/crypto v0.29.0
+	golang.org/x/crypto v0.31.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/net v0.31.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
-	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/term v0.26.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
+	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/text v0.21.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	gomodules.xyz/jsonpatch/v2 v2.3.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
