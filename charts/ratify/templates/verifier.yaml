@@ -12,48 +12,40 @@ spec:
   version: 1.0.0
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
-    verificationCertStores: 
-      {{- if $.Values.notation.verificationCertStores }}
-      {{- range $cert_type, $stores := $.Values.notation.verificationCertStores }}
-        {{ $cert_type }}: 
-        {{- range $store_name, $certs := $stores }}
-          {{ $store_name }}:
-          {{- range $certs }}
-            - {{ . }}
-          {{- end }}
-        {{- end }}
-      {{- end }}
-      {{- else }}
-      certs:
-        {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
-        - kmprovider-akv
-        {{- end }}
-        {{- if .Values.notationCert }}
-          {{- if .Values.notationCerts }}
-          {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
-          {{- end }}
-        - {{$fullname}}-notation-inline-cert
-        {{- end }}
-        {{- range $i, $cert := .Values.notationCerts }}
-        - {{$fullname}}-notation-inline-cert-{{$i}}
+    verificationCertStores:
+      {{- $certStoreIndex := 0 }}
+      {{- range $i, $policy := .Values.notation.trustPolicies }}
+        {{- range $j, $store := $policy.trustStores }}
+          {{- $certName := printf "cert-%d" $certStoreIndex }}
+          {{- $certStoreIndex = add $certStoreIndex 1 }}
+          {{ $certName }}:
+            {{- range $k, $certRef := $store }}
+              {{- if hasPrefix "notationcerts" (lower $certRef) }}
+              - {{ printf "%s-notation-inline-cert-%d" $fullname (int (regexReplaceAll "[^0-9]" $certRef "")) }}
+              {{- else if (eq (lower $certRef) "azurekeyvault") }}
+              - kmprovider-akv
+              {{- else }}
+              {{ fail (printf "Unknown trust store reference: %s" $certRef) }}
+              {{- end}}
+            {{- end }}
         {{- end }}
       {{- end }}
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
-        {{- range .Values.notation.trustPolicies }}
-        - name: {{ .name }}
+        {{- $trustStoreIndex := 0 }}
+        {{- range $i, $policy := .Values.notation.trustPolicies }}
+        - name: trustPolicy-{{$i}}
           registryScopes:
             {{- range .registryScopes }}
             - "{{ . }}"
             {{- end }}
           signatureVerification:
-            level: {{ .signatureVerification.level }}
+            level: strict
           trustStores:
-            {{- range .trustStores }}
-            {{- range $cert_type, $store := . }}
-            - {{ $cert_type }}:{{ $store }}
-            {{- end }}
+            {{- range $j, $store := $policy.trustStores }}
+            - ca: {{ printf "cert-%d" $trustStoreIndex }}
+              {{- $trustStoreIndex = add $trustStoreIndex 1 }}
             {{- end }}
           trustedIdentities:
             {{- range .trustedIdentities }}

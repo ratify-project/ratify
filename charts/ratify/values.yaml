@@ -14,17 +14,11 @@ cosignKeys: []
 
 notation:
   enabled: true
-  verificationCertStores:
   trustPolicies:
-    - name: default
-      registryScopes:
+    - registryScopes:
         - "*"
-      signatureVerification:
-        level: strict
-      trustStores:
-        - ca: certs
-      trustedIdentities:
-        - "*"
+      trustedIdentities: []
+      trustStores: []
 
 cosign:
   enabled: true
