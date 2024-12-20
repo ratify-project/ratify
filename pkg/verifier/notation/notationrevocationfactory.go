@@ -20,20 +20,30 @@ import (
 	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
+	"github.com/ratify-project/ratify/config"
 	re "github.com/ratify-project/ratify/errors"
 )
 
 type CRLHandler struct {
-	CacheEnabled bool
-	Fetcher      corecrl.Fetcher
-	httpClient   *http.Client
+	CacheDisabled bool
+	Fetcher       corecrl.Fetcher
+	httpClient    *http.Client
 }
 
 var fetcherOnce sync.Once
 
 // NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
 func NewCRLHandler() RevocationFactory {
-	return &CRLHandler{CacheEnabled: true, httpClient: &http.Client{}}
+	return &CRLHandler{CacheDisabled: false, httpClient: &http.Client{}}
+}
+
+func CreateCRLHandlerFromConfig(configFilePath string) (RevocationFactory, error) {
+	cf, err := config.Load(configFilePath)
+	if err != nil {
+		return nil, err
+	}
+	CacheDisabled := cf.CRLConfig.CacheDisabled
+	return &CRLHandler{CacheDisabled: CacheDisabled, httpClient: &http.Client{}}, nil
 }
 
 // NewFetcher creates a new instance of a Fetcher if it doesn't already exist.
@@ -69,7 +79,7 @@ func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator
 // If the EnableCache field is set to false, this method sets the Cache field of the
 // HTTPFetcher to nil, effectively disabling caching for HTTP fetch operations.
 func (h *CRLHandler) configureCache() {
-	if !h.CacheEnabled {
+	if h.CacheDisabled {
 		if httpFetcher, ok := h.Fetcher.(*corecrl.HTTPFetcher); ok {
 			httpFetcher.Cache = nil
 		}
