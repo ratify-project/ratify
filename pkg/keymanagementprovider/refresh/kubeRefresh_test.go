@@ -124,7 +124,7 @@ func TestKubeRefresher_Refresh(t *testing.T) {
 			providerType:            "test-kmp",
 			providerRefreshInterval: "1m",
 			IsRefreshableFunc:       func() bool { return true },
-			NewCRLHandler:           &MockCRLHandler{CacheEnabled: true, httpClient: &http.Client{}},
+			NewCRLHandler:           &MockCRLHandler{CacheDisabled: false, httpClient: &http.Client{}},
 			expectedResult:          ctrl.Result{RequeueAfter: time.Minute},
 			expectedError:           false,
 		},
@@ -172,9 +172,9 @@ func TestKubeRefresher_Refresh(t *testing.T) {
 }
 
 type MockCRLHandler struct {
-	CacheEnabled bool
-	Fetcher      corecrl.Fetcher
-	httpClient   *http.Client
+	CacheDisabled bool
+	Fetcher       corecrl.Fetcher
+	httpClient    *http.Client
 }
 
 func (h *MockCRLHandler) NewFetcher() (corecrl.Fetcher, error) {

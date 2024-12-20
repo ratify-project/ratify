@@ -104,36 +104,36 @@ func TestNewFileCache(t *testing.T) {
 func TestConfigureCache(t *testing.T) {
 	testCache, _ := crl.NewFileCache(dir.PathCRLCache)
 	tests := []struct {
-		name         string
-		cacheEnabled bool
-		fetcher      corecrl.Fetcher
-		expectCache  bool
+		name          string
+		cacheDisabled bool
+		fetcher       corecrl.Fetcher
+		expectCache   bool
 	}{
 		{
-			name:         "cache enabled",
-			cacheEnabled: true,
-			fetcher:      &corecrl.HTTPFetcher{Cache: testCache},
-			expectCache:  true,
+			name:          "cache enabled",
+			cacheDisabled: false,
+			fetcher:       &corecrl.HTTPFetcher{Cache: testCache},
+			expectCache:   true,
 		},
 		{
-			name:         "cache disabled",
-			cacheEnabled: false,
-			fetcher:      &corecrl.HTTPFetcher{Cache: testCache},
-			expectCache:  false,
+			name:          "cache disabled",
+			cacheDisabled: true,
+			fetcher:       &corecrl.HTTPFetcher{Cache: testCache},
+			expectCache:   false,
 		},
 		{
-			name:         "non-HTTP fetcher",
-			cacheEnabled: false,
-			fetcher:      &mockFetcher{},
-			expectCache:  false,
+			name:          "non-HTTP fetcher",
+			cacheDisabled: true,
+			fetcher:       &mockFetcher{},
+			expectCache:   false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := &CRLHandler{
-				CacheEnabled: tt.cacheEnabled,
-				Fetcher:      tt.fetcher,
+				CacheDisabled: tt.cacheDisabled,
+				Fetcher:       tt.fetcher,
 			}
 			handler.configureCache()
 

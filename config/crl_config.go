@@ -16,5 +16,5 @@ limitations under the License.
 package config
 
 type CRLConfig struct {
-	CacheEnabled bool `json:"cache_enabled,omitempty"`
+	CacheDisabled bool `json:"cache_enabled,omitempty"`
 }
