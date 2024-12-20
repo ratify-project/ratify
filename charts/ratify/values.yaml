@@ -15,9 +15,11 @@ cosignKeys: []
 notation:
   enabled: true
   trustPolicies:
-    - registryScopes:
+    - name: default
+      verificatonLevel: strict
+      registryScopes:
         - "*"
-      trustedIdentities: []
+      trustedIdentities: ["*"]
       trustStores: []
 
 cosign:
