@@ -79,7 +79,7 @@ spec:
           trustStores:
           {{- if eq (len $policy.trustStores) 0 }}
             - ca:certs
-          {{- else}}
+          {{- else }}
             {{- range $j, $store := $policy.trustStores }}
               {{- $storeParts := split ":" $store }}
               {{- $certType := $storeParts._0 }}
@@ -90,7 +90,7 @@ spec:
           {{- end}}
           trustedIdentities:
             {{- range .trustedIdentities }}
-            - "{{ . }}"
+            - "x509.subject: {{ . }}"
             {{- end }}
         {{- end }}
 {{- end }}
