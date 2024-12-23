@@ -104,7 +104,7 @@ spec:
             {{- range $j, $store := $policy.trustedIdentities }}
             {{- if eq $store "*" }}
             - "*"
-            {{- else }}
+            {{- else }} 
             - "x509.subject: {{ . }}"
             {{- end }}
             {{- end }}
