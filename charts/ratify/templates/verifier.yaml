@@ -66,8 +66,8 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
-      {{- range $key, $value := $certStoreMap }}
-      {{ $key }}:
+      {{- range $storeType, $value := $certStoreMap }}
+      {{ $storeType }}:
         {{- range $certName, $certRefList := $value }}
         {{ $certName }}:
           {{- range $certRefList }}
