@@ -15,6 +15,18 @@ spec:
     verificationCertStores:
     {{- if and (eq (len .Values.notation.trustPolicies) 1) (eq (len (index .Values.notation.trustPolicies 0).trustStores) 0) }}
       certs:
+        {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
+        - kmprovider-akv
+        {{- end }}
+        {{- if .Values.notationCert }}
+          {{- if .Values.notationCerts }}
+          {{- fail "Please specify notation certs with .Values.notationCerts, single certificate .Values.notationCert has been deprecated, will soon be removed." }}
+          {{- end }}
+        - {{$fullname}}-notation-inline-cert
+        {{- end }} 
+        {{- range $i, $cert := .Values.notationCerts }}
+        - {{$fullname}}-notation-inline-cert-{{$i}}
+        {{- end }}
     {{- else }}
       {{- $certStoreMap := dict }}
       {{- $certStoreIndex := 0 }}
@@ -89,8 +101,12 @@ spec:
             {{- end }}
           {{- end}}
           trustedIdentities:
-            {{- range .trustedIdentities }}
+            {{- range $j, $store := $policy.trustedIdentities }}
+            {{- if eq $store "*" }}
+            - "*"
+            {{- else }}
             - "x509.subject: {{ . }}"
+            {{- end }}
             {{- end }}
         {{- end }}
 {{- end }}
