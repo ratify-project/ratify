@@ -37,13 +37,8 @@ func NewCRLHandler() RevocationFactory {
 	return &CRLHandler{CacheDisabled: false, httpClient: &http.Client{}}
 }
 
-func CreateCRLHandlerFromConfig(configFilePath string) (RevocationFactory, error) {
-	cf, err := config.Load(configFilePath)
-	if err != nil {
-		return nil, err
-	}
-	CacheDisabled := cf.CRLConfig.CacheDisabled
-	return &CRLHandler{CacheDisabled: CacheDisabled, httpClient: &http.Client{}}, nil
+func CreateCRLHandlerFromConfig(cf config.CRLConfig) RevocationFactory {
+	return &CRLHandler{CacheDisabled: cf.CacheDisabled, httpClient: &http.Client{}}
 }
 
 // NewFetcher creates a new instance of a Fetcher if it doesn't already exist.

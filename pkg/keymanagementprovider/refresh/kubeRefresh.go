@@ -22,6 +22,7 @@ import (
 	"maps"
 	"time"
 
+	ratifyconfig "github.com/ratify-project/ratify/config"
 	re "github.com/ratify-project/ratify/errors"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	nv "github.com/ratify-project/ratify/pkg/verifier/notation"
@@ -120,6 +121,6 @@ func (kr *KubeRefresher) Create(config RefresherConfig) (Refresher, error) {
 		ProviderType:            config.ProviderType,
 		ProviderRefreshInterval: config.ProviderRefreshInterval,
 		Resource:                config.Resource,
-		CRLHandler:              nv.NewCRLHandler(),
+		CRLHandler:              nv.CreateCRLHandlerFromConfig(ratifyconfig.CRLConf),
 	}, nil
 }
