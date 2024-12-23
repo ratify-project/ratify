@@ -177,9 +177,8 @@ featureFlags:
   # RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY enables high availability mode including distributed caching.
   RATIFY_EXPERIMENTAL_HIGH_AVAILABILITY: false
 
-notationCert: # DEPRECATED: Use notationCerts instead
+notationCert: "" # DEPRECATED: Use notationCerts instead
 akvCertConfig: # DEPRECATED: Use azurekeyvault instead
-  name: # DEPRECATED: Use azurekeyvault.name instead
   enabled: false # DEPRECATED: Use azurekeyvault.enabled instead
   vaultURI: # DEPRECATED: Use azurekeyvault.vaultURI instead
   cert1Name: # DEPRECATED: Use azurekeyvault.certificates instead
