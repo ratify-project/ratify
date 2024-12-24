@@ -13,6 +13,7 @@ spec:
   artifactTypes: application/vnd.cncf.notary.signature
   parameters:
     verificationCertStores:
+    {{- if and (eq (len .Values.notation.trustPolicies) 1) (eq (len (index .Values.notation.trustPolicies 0).trustStores) 0) }}
       certs:
         {{- if or .Values.azurekeyvault.enabled .Values.akvCertConfig.enabled }}
         - kmprovider-akv
@@ -25,19 +26,89 @@ spec:
         {{- end }} 
         {{- range $i, $cert := .Values.notationCerts }}
         - {{$fullname}}-notation-inline-cert-{{$i}}
-        {{- end }} 
+        {{- end }}
+    {{- else }}
+      {{- $certStoreMap := dict }}
+      {{- $certStoreIndex := 0 }}
+      {{- range $i, $policy := .Values.notation.trustPolicies }}
+        {{- range $j, $store := $policy.trustStores }}
+          {{- $storeParts := split ":" $store }}
+          {{- $certType := $storeParts._0 }}
+          {{- $certName := printf "cert-%d" $certStoreIndex }}
+          {{- $certStoreIndex = add $certStoreIndex 1 }}
+          {{- $certRef := $storeParts._1 }}
+          {{- if eq $certType "ca" }}
+            {{- if hasPrefix "notationcerts" (lower $certRef) }}
+              {{- $certStoreMap = merge $certStoreMap (dict "ca" (dict $certName (list (printf "%s-notation-inline-cert-%d" $fullname (int (regexReplaceAll "[^0-9]" $certRef "")))))) }}
+            {{- else if (eq (lower $certRef) "azurekeyvault") }}
+              {{- $certStoreMap = merge $certStoreMap (dict "ca" (dict $certName (list (printf "kmprovider-akv" )))) }}
+            {{- else }}
+              {{ fail (printf "Unknown trust store reference: %s" $certRef) }}
+            {{- end}}
+          {{- else if eq $certType "tsa" }}
+            {{- if hasPrefix "notationcerts" (lower $certRef) }}
+              {{- $certStoreMap = merge $certStoreMap (dict "tsa" (dict $certName (list (printf "%s-notation-inline-cert-%d" $fullname (int (regexReplaceAll "[^0-9]" $certRef "")))))) }}
+            {{- else if (eq (lower $certRef) "azurekeyvault") }}
+              {{- $certStoreMap = merge $certStoreMap (dict "tsa" (dict $certName (list (printf "kmprovider-akv" )))) }}
+            {{- else }}
+              {{ fail (printf "Unknown trust store reference: %s" $certRef) }}
+            {{- end}}
+          {{- else if eq $certType "signingAuthority" }}
+            {{- if hasPrefix "notationcerts" (lower $certRef) }}
+              {{- $certStoreMap = merge $certStoreMap (dict "signingAuthority" (dict $certName (list (printf "%s-notation-inline-cert-%d" $fullname (int (regexReplaceAll "[^0-9]" $certRef "")))))) }}
+            {{- else if (eq (lower $certRef) "azurekeyvault") }}
+              {{- $certStoreMap = merge $certStoreMap (dict "signingAuthority" (dict $certName (list (printf "kmprovider-akv" )))) }}
+            {{- else }}
+              {{ fail (printf "Unknown trust store reference: %s" $certRef) }}
+            {{- end}}
+          {{- else }}
+            {{ fail (printf "Unknown certificate type: %s" $certType) }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- range $storeType, $value := $certStoreMap }}
+      {{ $storeType }}:
+        {{- range $certName, $certRefList := $value }}
+        {{ $certName }}:
+          {{- range $certRefList }}
+          - {{ . }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
     trustPolicyDoc:
       version: "1.0"
       trustPolicies:
-        - name: default
+        {{- $trustStoreIndex := 0 }}
+        {{- range $i, $policy := .Values.notation.trustPolicies }}
+        - name: {{ .name | default (printf "trustPolicy-%d" $i) }}  
           registryScopes:
-            - "*"
+            {{- range .registryScopes }}
+            - "{{ . }}"
+            {{- end }}
           signatureVerification:
-            level: strict
+            level: {{ .level | default "strict" }}  
           trustStores:
+          {{- if eq (len $policy.trustStores) 0 }}
             - ca:certs
+          {{- else }}
+            {{- range $j, $store := $policy.trustStores }}
+              {{- $storeParts := split ":" $store }}
+              {{- $certType := $storeParts._0 }}
+              {{- $certName := printf "cert-%d" $trustStoreIndex }}
+              {{- $trustStoreIndex = add $trustStoreIndex 1 }}
+            - {{ $certType }}:{{ $certName }}
+            {{- end }}
+          {{- end}}
           trustedIdentities:
+            {{- range $j, $store := $policy.trustedIdentities }}
+            {{- if eq $store "*" }}
             - "*"
+            {{- else }} 
+            - "x509.subject: {{ . }}"
+            {{- end }}
+            {{- end }}
+        {{- end }}
 {{- end }}
 ---
 {{- if .Values.cosign.enabled }}
