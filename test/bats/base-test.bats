@@ -125,6 +125,26 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_success
 }
 
+@test "notation verification pass on CRL check with audit trust policy" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+    }
+
+    # add the tsaroot certificate as an inline key management provider
+    cat ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> crlkmprovider.yaml
+    cat .staging/notation/crl-test/root.crt | sed 's/^/      /g' >> crlkmprovider.yaml
+    run kubectl apply -f crlkmprovider.yaml --namespace ${RATIFY_NAMESPACE}
+    assert_success
+    run kubectl replace -f ./test/bats/tests/config/config_v1beta1_verifier_notation_audit_crl.yaml
+
+    run kubectl run demo --namespace default --image=registry:5000/notation:crl
+    assert_success
+}
+
 @test "notation test with certs across namespace" {
     teardown() {
         echo "cleaning up"
