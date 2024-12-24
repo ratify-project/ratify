@@ -52,6 +52,7 @@ type Config struct {
 	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policy,omitempty"`
 	VerifiersConfig vfConfig.VerifiersConfig `json:"verifier,omitempty"`
 	ExecutorConfig  exConfig.ExecutorConfig  `json:"executor,omitempty"`
+	CRLConfig       CRLConfig                `json:"crl,omitempty"`
 	LoggerConfig    logger.Config            `json:"logger,omitempty"`
 	fileHash        string                   `json:"-"`
 }
@@ -83,8 +84,11 @@ func getHomeDir() string {
 	return homeDir
 }
 
+var CRLConf CRLConfig
+
 // Returns created referer store, verifier, policyprovider objects from config
 func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
+	CRLConf = cf.CRLConfig
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
 
 	if err != nil {
