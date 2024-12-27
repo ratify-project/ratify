@@ -57,6 +57,99 @@ RATIFY_NAMESPACE=gatekeeper-system
     assert_failure
 }
 
+@test "test rendering notation verifier with modified trust policies settings" {
+    teardown() {
+        echo "cleaning up"
+        rm -f notation-file1.crt
+        rm -f notation-file2.crt
+        rm -f notation-file3.crt
+    }
+
+    touch notation-file1.crt
+    echo "fake cert 1" > notation-file1.crt
+    touch notation-file2.crt
+    echo "fake cert 2" > notation-file2.crt
+    touch notation-file2.crt
+    echo "fake cert 3" > notation-file3.crt
+
+    # Capture Helm template output
+    rendered=$(helm template multiple-trust-policies ./charts/ratify \
+        --set featureFlags.RATIFY_CERT_ROTATION=true \
+        --set-file notationCerts[0]="notation-file1.crt" \
+        --set-file notationCerts[1]="notation-file2.crt" \
+        --set-file notationCerts[2]="notation-file3.crt" \
+        --set notation.trustPolicies[0].registryScopes[0]="registry1.azurecr.io/" \
+        --set notation.trustPolicies[0].trustedIdentities[0]="cert identity 1" \
+        --set notation.trustPolicies[0].trustStores[0]=ca:notationCerts[0] \
+        --set notation.trustPolicies[0].trustStores[1]=tsa:notationCerts[1] \
+        --set notation.trustPolicies[0].trustStores[2]=signingAuthority:notationCerts[2] \
+        --set notation.trustPolicies[1].registryScopes[0]="registry2.azurecr.io/" \
+        --set notation.trustPolicies[1].trustedIdentities[0]="cert identity 2" \
+        --set notation.trustPolicies[1].trustStores[0]=ca:notationCerts[1])
+
+    # the expected partial output
+    expected_verifier_notation=$(cat <<EOF
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-notation
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
+spec:
+  name: notation
+  version: 1.0.0
+  artifactTypes: application/vnd.cncf.notary.signature
+  parameters:
+    verificationCertStores:
+      ca:
+        cert-0:
+          - multiple-trust-policies-ratify-notation-inline-cert-0
+        cert-3:
+          - multiple-trust-policies-ratify-notation-inline-cert-1
+      signingAuthority:
+        cert-2:
+          - multiple-trust-policies-ratify-notation-inline-cert-2
+      tsa:
+        cert-1:
+          - multiple-trust-policies-ratify-notation-inline-cert-1
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: trustPolicy-0  
+          registryScopes:
+            - "registry1.azurecr.io/"
+          signatureVerification:
+            level: strict  
+          trustStores:
+            - ca:cert-0
+            - tsa:cert-1
+            - signingAuthority:cert-2
+          trustedIdentities: 
+            - "x509.subject: cert identity 1"
+        - name: trustPolicy-1  
+          registryScopes:
+            - "registry2.azurecr.io/"
+          signatureVerification:
+            level: strict  
+          trustStores:
+            - ca:cert-3
+          trustedIdentities: 
+            - "x509.subject: cert identity 2"
+EOF
+    )
+
+    # Assert that the rendered Helm output contains the expected section
+    [[ "$rendered" == *"$expected_verifier_notation"* ]] || {
+        echo "Rendered output does not contain the expected verifier-notation section."
+        echo "Rendered output:"
+        echo "$rendered"
+        echo "Expected section:"
+        echo "$expected_verifier_notation"
+        return 1
+    }
+}
+
 @test "crd version test" {
     run kubectl delete verifiers.config.ratify.deislabs.io/verifier-notation
     assert_success
