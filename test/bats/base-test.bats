@@ -84,7 +84,6 @@ RATIFY_NAMESPACE=gatekeeper-system
         --set notation.trustPolicies[0].trustStores[1]=tsa:notationCerts[1] \
         --set notation.trustPolicies[0].trustStores[2]=signingAuthority:notationCerts[2] \
         --set notation.trustPolicies[1].registryScopes[0]="registry2.azurecr.io/" \
-        --set notation.trustPolicies[1].trustedIdentities[0]="cert identity 2" \
         --set notation.trustPolicies[1].trustStores[0]=ca:notationCerts[1])
 
     # the expected partial output
@@ -125,7 +124,7 @@ spec:
             - ca:cert-0
             - tsa:cert-1
             - signingAuthority:cert-2
-          trustedIdentities: 
+          trustedIdentities:
             - "x509.subject: cert identity 1"
         - name: trustPolicy-1  
           registryScopes:
@@ -134,8 +133,8 @@ spec:
             level: strict  
           trustStores:
             - ca:cert-3
-          trustedIdentities: 
-            - "x509.subject: cert identity 2"
+          trustedIdentities:
+            - "*"
 EOF
     )
 
