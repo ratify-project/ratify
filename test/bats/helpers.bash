@@ -126,6 +126,6 @@ unrevoke_crl() {
   curl -X POST "$URL_INTER" -H "Content-Type: application/json"
 }
 
-delele_crl_cache() {
+delete_crl_cache() {
   rm -rf ~/.cache/notation/crl
 }
