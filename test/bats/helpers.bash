@@ -114,14 +114,14 @@ wait_for_process() {
 
 revoke_crl() {
   URL_LEAF="http://localhost:10086/leaf/revoke"
-	curl -X POST "$URL_LEAF" -H "Content-Type: application/json"
+  curl -X POST "$URL_LEAF" -H "Content-Type: application/json"
   URL_INTER=http://localhost:10086/intermediate/unrevoke
   curl -X POST "$URL_INTER" -H "Content-Type: application/json"
 }
 
 unrevoke_crl() {
   URL_LEAF="http://localhost:10086/leaf/unrevoke"
-	curl -X POST "$URL_LEAF" -H "Content-Type: application/json"
+  curl -X POST "$URL_LEAF" -H "Content-Type: application/json"
   URL_INTER=http://localhost:10086/intermediate/unrevoke
   curl -X POST "$URL_INTER" -H "Content-Type: application/json"
 }
