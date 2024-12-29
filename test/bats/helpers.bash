@@ -127,5 +127,5 @@ unrevoke_crl() {
 }
 
 delele_crl_cache() {
-  rm -rf ./crl
+  rm -rf ~/.cache/notation/crl
 }
