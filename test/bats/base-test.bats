@@ -72,6 +72,7 @@ RATIFY_NAMESPACE=gatekeeper-system
     touch notation-file2.crt
     echo "fake cert 3" > notation-file3.crt
 
+    # Happy path:
     # Capture Helm template output
     rendered=$(helm template multiple-trust-policies ./charts/ratify \
         --set featureFlags.RATIFY_CERT_ROTATION=true \
@@ -147,6 +148,26 @@ EOF
         echo "$expected_verifier_notation"
         return 1
     }
+
+    # failure path:
+    # Capture Helm template output
+    run helm template multiple-trust-policies ./charts/ratify \
+        --set featureFlags.RATIFY_CERT_ROTATION=true \
+        --set-file notationCerts[0]="notation-file1.crt" \
+        --set notation.trustPolicies[0].registryScopes[0]="registry1.azurecr.io/" \
+        --set notation.trustPolicies[0].trustedIdentities[0]="cert identity 1" \
+        --set notation.trustPolicies[0].trustStores[0]=ca:unknownCert
+
+    assert_failure
+
+    # the expected error message
+    expected_verifier_notation=$(cat <<EOF
+Unknown trust store reference: unknownCert
+EOF
+    )
+
+    # Assert that the rendered Helm output contains the expected error message
+    [[ "$output" == *"$expected_verifier_notation"* ]]
 }
 
 @test "crd version test" {
