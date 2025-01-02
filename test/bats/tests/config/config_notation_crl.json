@@ -46,5 +46,8 @@
                 }
             }
         ]
+    },
+    "crl": {
+        "CacheDisabled": true
     }
 }
