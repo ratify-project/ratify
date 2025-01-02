@@ -38,10 +38,13 @@ type RevocationFactory interface {
 }
 
 // CreateCRLFetcher returns a new fetcher instance
-func CreateCRLFetcher(httpClient *http.Client, cacheRoot string) (corecrl.Fetcher, error) {
+func CreateCRLFetcher(httpClient *http.Client, cacheRoot string, cacheDisabled bool) (corecrl.Fetcher, error) {
 	crlFetcher, err := corecrl.NewHTTPFetcher(httpClient)
 	if err != nil {
 		return nil, err
+	}
+	if cacheDisabled {
+		return crlFetcher, nil
 	}
 	crlFetcher.Cache, err = newFileCache(cacheRoot)
 	if err != nil {

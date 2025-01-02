@@ -48,10 +48,7 @@ func CreateCRLHandlerFromConfig(cf config.CRLConfig) RevocationFactory {
 func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	var err error
 	fetcherOnce.Do(func() {
-		h.Fetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
-		if err == nil {
-			h.configureCache()
-		}
+		h.Fetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache, h.CacheDisabled)
 	})
 	if err != nil {
 		return nil, err
@@ -68,15 +65,4 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 // NewValidator returns a new validator instance
 func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator, error) {
 	return revocation.NewWithOptions(opts)
-}
-
-// configureCache disables the cache for the HTTPFetcher if caching is not enabled.
-// If the EnableCache field is set to false, this method sets the Cache field of the
-// HTTPFetcher to nil, effectively disabling caching for HTTP fetch operations.
-func (h *CRLHandler) configureCache() {
-	if h.CacheDisabled {
-		if httpFetcher, ok := h.Fetcher.(*corecrl.HTTPFetcher); ok {
-			httpFetcher.Cache = nil
-		}
-	}
 }
