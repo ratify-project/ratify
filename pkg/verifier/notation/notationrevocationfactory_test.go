@@ -23,6 +23,7 @@ import (
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/verifier/crl"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,21 +38,23 @@ func TestNewFetcher(t *testing.T) {
 		cacheRoot  string
 		httpClient *http.Client
 		wantErr    bool
+		firstCall  bool
 	}{
 		{
-			name:       "valid fetcher",
-			cacheRoot:  "/valid/path",
-			httpClient: &http.Client{},
-			wantErr:    false,
-		},
-		{
-			name:       "invalid fetcher",
+			name:       "create CRL fetcher failure with nil httpClient on first call",
 			cacheRoot:  "",
 			httpClient: nil,
+			firstCall:  true,
+			wantErr:    true,
+		},
+		{
+			name:       "recreate CRL fetcher failure on second call",
+			cacheRoot:  "/valid/path",
+			httpClient: &http.Client{},
+			firstCall:  false,
 			wantErr:    true,
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			factory := &CRLHandler{httpClient: tt.httpClient}
@@ -59,9 +62,15 @@ func TestNewFetcher(t *testing.T) {
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Nil(t, fetcher)
+				assert.Nil(t, globalFetcher)
+			}
+			if !tt.firstCall {
+				assert.Equal(t, err, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher"))
 			}
 		})
 	}
+	// fix globalFetcher to avoid test failure
+	globalFetcher, _ = CreateCRLFetcher(&http.Client{}, dir.PathCRLCache)
 }
 
 func TestNewValidator(t *testing.T) {
@@ -133,11 +142,10 @@ func TestConfigureCache(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			handler := &CRLHandler{
 				CacheEnabled: tt.cacheEnabled,
-				Fetcher:      tt.fetcher,
 			}
-			handler.configureCache()
+			handler.configureCache(tt.fetcher)
 
-			if httpFetcher, ok := handler.Fetcher.(*corecrl.HTTPFetcher); ok {
+			if httpFetcher, ok := tt.fetcher.(*corecrl.HTTPFetcher); ok {
 				if tt.expectCache {
 					assert.NotNil(t, httpFetcher.Cache)
 				} else {
