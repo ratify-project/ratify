@@ -119,3 +119,9 @@ revoke_crl() {
   curl -X POST "$URL_INTER" -H "Content-Type: application/json"
   sleep 10
 }
+
+check_crl_cache() {
+  if [[ -d "$HOME/.cache/notation/crl" ]]; then
+    return 0
+  fi
+}
