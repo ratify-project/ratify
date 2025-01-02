@@ -25,11 +25,13 @@ import (
 
 type CRLHandler struct {
 	CacheEnabled bool
-	Fetcher      corecrl.Fetcher
 	httpClient   *http.Client
 }
 
-var fetcherOnce sync.Once
+var (
+	fetcherOnce   sync.Once
+	globalFetcher corecrl.Fetcher
+)
 
 // NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
 func NewCRLHandler() RevocationFactory {
@@ -43,9 +45,9 @@ func NewCRLHandler() RevocationFactory {
 func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	var err error
 	fetcherOnce.Do(func() {
-		h.Fetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
+		globalFetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
 		if err == nil {
-			h.configureCache()
+			h.configureCache(globalFetcher)
 		}
 	})
 	if err != nil {
@@ -54,10 +56,10 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	// Check if the fetcher is nil, return an error if it is.
 	// one possible edge case is that an error happened in the first call,
 	// the following calls will not get the error since the sync.Once block will be skipped.
-	if h.Fetcher == nil {
+	if globalFetcher == nil {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher")
 	}
-	return h.Fetcher, nil
+	return globalFetcher, nil
 }
 
 // NewValidator returns a new validator instance
@@ -68,9 +70,9 @@ func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator
 // configureCache disables the cache for the HTTPFetcher if caching is not enabled.
 // If the EnableCache field is set to false, this method sets the Cache field of the
 // HTTPFetcher to nil, effectively disabling caching for HTTP fetch operations.
-func (h *CRLHandler) configureCache() {
+func (h *CRLHandler) configureCache(f corecrl.Fetcher) {
 	if !h.CacheEnabled {
-		if httpFetcher, ok := h.Fetcher.(*corecrl.HTTPFetcher); ok {
+		if httpFetcher, ok := f.(*corecrl.HTTPFetcher); ok {
 			httpFetcher.Cache = nil
 		}
 	}
