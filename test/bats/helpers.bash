@@ -123,5 +123,8 @@ revoke_crl() {
 check_crl_cache() {
   if [[ -d "$HOME/.cache/notation/crl" ]]; then
     return 0
+  else
+    return 1
   fi
+
 }
