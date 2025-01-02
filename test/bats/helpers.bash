@@ -127,5 +127,11 @@ unrevoke_crl() {
 }
 
 delete_crl_cache() {
-  rm -rf ~/.cache/notation/crl
+  rm -rf $HOME/.cache/notation/crl
+}
+
+check_crl_cache() {
+  if [[ -d "$HOME/.cache/notation/crl" ]]; then
+    return 0
+  fi
 }
