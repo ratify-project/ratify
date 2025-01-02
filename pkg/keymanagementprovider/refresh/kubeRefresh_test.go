@@ -173,7 +173,6 @@ func TestKubeRefresher_Refresh(t *testing.T) {
 
 type MockCRLHandler struct {
 	CacheEnabled bool
-	Fetcher      corecrl.Fetcher
 	httpClient   *http.Client
 }
 

@@ -25,12 +25,13 @@ import (
 
 type CRLHandler struct {
 	CacheEnabled bool
-	Fetcher      corecrl.Fetcher
 	httpClient   *http.Client
 }
 
-var fetcherOnce sync.Once
-var globalFetcher corecrl.Fetcher
+var (
+	fetcherOnce   sync.Once
+	globalFetcher corecrl.Fetcher
+)
 
 // NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
 func NewCRLHandler() RevocationFactory {
