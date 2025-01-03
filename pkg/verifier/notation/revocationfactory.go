@@ -23,6 +23,7 @@ import (
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/verifier/crl"
+	"github.com/ratify-project/ratify/config"
 	"github.com/ratify-project/ratify/internal/logger"
 )
 
@@ -38,12 +39,12 @@ type RevocationFactory interface {
 }
 
 // CreateCRLFetcher returns a new fetcher instance
-func CreateCRLFetcher(httpClient *http.Client, cacheRoot string, cacheDisabled bool) (corecrl.Fetcher, error) {
+func CreateCRLFetcher(httpClient *http.Client, cacheRoot string) (corecrl.Fetcher, error) {
 	crlFetcher, err := corecrl.NewHTTPFetcher(httpClient)
 	if err != nil {
 		return nil, err
 	}
-	if cacheDisabled {
+	if config.CRLConf.CacheDisabled {
 		return crlFetcher, nil
 	}
 	cache, err := newFileCache(cacheRoot)

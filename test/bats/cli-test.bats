@@ -35,23 +35,19 @@ load helpers
 }
 
 @test "notation verifier crl test" {
-    delete_crl_cache
-    check_crl_cache_path
-    assert_failure
-
     revoke_crl
 
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure
 
+    delete_crl_cache
+    check_crl_cache_path
+    assert_failure
+    
     unrevoke_crl
 
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_success
-
-    delete_crl_cache
-    check_crl_cache_path
-    assert_failure
 }
 
 @test "notation verifier with type test" {

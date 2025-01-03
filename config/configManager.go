@@ -46,6 +46,8 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	configHash = cf.fileHash
 	CRLConf = cf.CRLConfig
 
+	logrus.Info("CRL configuration successfully loaded.")
+
 	stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
 	if err != nil {
