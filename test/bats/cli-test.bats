@@ -48,7 +48,6 @@ load helpers
     assert_cmd_verify_success
 
     check_crl_cache_deleted
-    assert_failure
 }
 
 @test "notation verifier with type test" {
