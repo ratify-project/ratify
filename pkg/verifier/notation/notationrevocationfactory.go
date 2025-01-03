@@ -34,11 +34,10 @@ var (
 	globalFetcher corecrl.Fetcher
 )
 
-// NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
-func NewCRLHandler() RevocationFactory {
-	return &CRLHandler{CacheDisabled: false, httpClient: &http.Client{}}
-}
-
+// CreateCRLHandlerFromConfig creates a new instance of CRLHandler using the configuration
+// provided in config.CRLConf. It returns a RevocationFactory interface.
+// The CRLHandler will have its CacheDisabled field set based on the configuration,
+// and it will use a default HTTP client.
 func CreateCRLHandlerFromConfig() RevocationFactory {
 	return &CRLHandler{CacheDisabled: config.CRLConf.CacheDisabled, httpClient: &http.Client{}}
 }

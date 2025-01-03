@@ -25,7 +25,7 @@ import (
 )
 
 func TestNewRevocationFactoryImpl(t *testing.T) {
-	factory := NewCRLHandler()
+	factory := CreateCRLHandlerFromConfig()
 	assert.NotNil(t, factory)
 }
 
@@ -73,7 +73,7 @@ func TestNewFetcher(t *testing.T) {
 }
 
 func TestNewValidator(t *testing.T) {
-	factory := NewCRLHandler()
+	factory := CreateCRLHandlerFromConfig()
 	opts := revocation.Options{}
 
 	validator, err := factory.NewValidator(opts)

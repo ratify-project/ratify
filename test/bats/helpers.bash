@@ -130,7 +130,7 @@ delete_crl_cache() {
   rm -rf $HOME/.cache/notation/crl
 }
 
-check_crl_cache_path() {
+check_crl_cache_deleted() {
   if [[ -z "$(ls -A $HOME/.cache/notation/crl)" ]]; then
     echo "The directory is empty."
   else
