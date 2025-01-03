@@ -120,6 +120,6 @@ func (kr *KubeRefresher) Create(config RefresherConfig) (Refresher, error) {
 		ProviderType:            config.ProviderType,
 		ProviderRefreshInterval: config.ProviderRefreshInterval,
 		Resource:                config.Resource,
-		CRLHandler:              nv.NewCRLHandler(),
+		CRLHandler:              nv.CreateCRLHandlerFromConfig(),
 	}, nil
 }

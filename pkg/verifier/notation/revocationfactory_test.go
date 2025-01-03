@@ -21,26 +21,10 @@ import (
 	"testing"
 
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
+	"github.com/ratify-project/ratify/config"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCRLNewFetcher(t *testing.T) {
-	httpClient := &http.Client{}
-	cacheRoot := "/tmp/cache"
-
-	t.Run("successful fetcher creation", func(t *testing.T) {
-		fetcher, err := CreateCRLFetcher(httpClient, cacheRoot)
-		assert.NoError(t, err)
-		assert.NotNil(t, fetcher)
-	})
-
-	t.Run("error in creating HTTP fetcher", func(t *testing.T) {
-		// Simulate error by passing nil httpClient
-		fetcher, err := CreateCRLFetcher(nil, cacheRoot)
-		assert.Error(t, err)
-		assert.Nil(t, fetcher)
-	})
-}
 func TestSupportCRL(t *testing.T) {
 	t.Run("certificate with CRL distribution points", func(t *testing.T) {
 		cert := &x509.Certificate{
@@ -125,6 +109,34 @@ func TestIntermittentFailCacheCRL(t *testing.T) {
 		CacheCRL(ctx, certs, mockFetcher)
 		// Check logs if necessary
 		t.Log("Completed fetching CRLs with intermittent failures")
+	})
+}
+
+func TestCreateCRLFetcher(t *testing.T) {
+	httpClient := &http.Client{}
+	cacheRoot := "/tmp/cache"
+
+	t.Run("successful fetcher creation without cache", func(t *testing.T) {
+		// Disable cache
+		config.CRLConf.CacheEnabled = false
+		fetcher, err := CreateCRLFetcher(httpClient, cacheRoot)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetcher)
+	})
+
+	t.Run("successful fetcher creation with cache", func(t *testing.T) {
+		// Enable cache
+		config.CRLConf.CacheEnabled = true
+		fetcher, err := CreateCRLFetcher(httpClient, cacheRoot)
+		assert.NoError(t, err)
+		assert.NotNil(t, fetcher)
+	})
+
+	t.Run("error in creating HTTP fetcher", func(t *testing.T) {
+		// Simulate error by passing nil httpClient
+		fetcher, err := CreateCRLFetcher(nil, cacheRoot)
+		assert.Error(t, err)
+		assert.Nil(t, fetcher)
 	})
 }
 

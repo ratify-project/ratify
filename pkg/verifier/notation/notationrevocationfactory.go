@@ -20,6 +20,7 @@ import (
 	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
+	"github.com/ratify-project/ratify/config"
 	re "github.com/ratify-project/ratify/errors"
 )
 
@@ -33,9 +34,12 @@ var (
 	globalFetcher corecrl.Fetcher
 )
 
-// NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
-func NewCRLHandler() RevocationFactory {
-	return &CRLHandler{CacheEnabled: true, httpClient: &http.Client{}}
+// CreateCRLHandlerFromConfig creates a new instance of CRLHandler using the configuration
+// provided in config.CRLConf. It returns a RevocationFactory interface.
+// The CRLHandler will have its CacheDisabled field set based on the configuration,
+// and it will use a default HTTP client.
+func CreateCRLHandlerFromConfig() RevocationFactory {
+	return &CRLHandler{CacheEnabled: config.CRLConf.CacheEnabled, httpClient: &http.Client{}}
 }
 
 // NewFetcher creates a new instance of a Fetcher if it doesn't already exist.
@@ -46,9 +50,6 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	var err error
 	fetcherOnce.Do(func() {
 		globalFetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
-		if err == nil {
-			h.configureCache(globalFetcher)
-		}
 	})
 	if err != nil {
 		return nil, err
@@ -65,15 +66,4 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 // NewValidator returns a new validator instance
 func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator, error) {
 	return revocation.NewWithOptions(opts)
-}
-
-// configureCache disables the cache for the HTTPFetcher if caching is not enabled.
-// If the EnableCache field is set to false, this method sets the Cache field of the
-// HTTPFetcher to nil, effectively disabling caching for HTTP fetch operations.
-func (h *CRLHandler) configureCache(f corecrl.Fetcher) {
-	if !h.CacheEnabled {
-		if httpFetcher, ok := f.(*corecrl.HTTPFetcher); ok {
-			httpFetcher.Cache = nil
-		}
-	}
 }
