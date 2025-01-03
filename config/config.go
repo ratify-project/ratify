@@ -84,11 +84,8 @@ func getHomeDir() string {
 	return homeDir
 }
 
-var CRLConf CRLConfig
-
 // Returns created referer store, verifier, policyprovider objects from config
 func CreateFromConfig(cf Config) ([]referrerstore.ReferrerStore, []verifier.ReferenceVerifier, policyprovider.PolicyProvider, error) {
-	CRLConf = cf.CRLConfig
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, GetDefaultPluginPath())
 
 	if err != nil {
