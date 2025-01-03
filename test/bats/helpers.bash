@@ -130,7 +130,7 @@ delete_crl_cache() {
   rm -rf $HOME/.cache/notation/crl
 }
 
-check_crl_cache() {
+check_crl_cache_path() {
   if [[ -d "$HOME/.cache/notation/crl" ]]; then
     return 0
   fi

@@ -46,10 +46,11 @@ func CreateCRLFetcher(httpClient *http.Client, cacheRoot string, cacheDisabled b
 	if cacheDisabled {
 		return crlFetcher, nil
 	}
-	crlFetcher.Cache, err = newFileCache(cacheRoot)
+	cache, err := newFileCache(cacheRoot)
 	if err != nil {
 		return nil, err
 	}
+	crlFetcher.Cache = cache
 	return crlFetcher, nil
 }
 
