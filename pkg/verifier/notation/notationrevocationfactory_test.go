@@ -69,7 +69,7 @@ func TestNewFetcher(t *testing.T) {
 		})
 	}
 	// fix globalFetcher to avoid test failure
-	globalFetcher, _ = CreateCRLFetcher(&http.Client{}, dir.PathCRLCache, false)
+	globalFetcher, _ = CreateCRLFetcher(&http.Client{}, dir.PathCRLCache)
 }
 
 func TestNewValidator(t *testing.T) {
