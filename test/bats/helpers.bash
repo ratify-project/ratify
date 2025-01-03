@@ -131,10 +131,10 @@ delete_crl_cache() {
 }
 
 check_crl_cache_deleted() {
-  if [[ -z "$(ls -A $HOME/.cache/notation/crl)" ]]; then
-    echo "The directory is empty."
-  else
-    echo "The directory is not empty."
+  if [[ -d "$HOME/.cache/notation/crl" ]]; then
+    echo "The directory exists."
     return 1
+  else
+    echo "The directory not exists."
   fi
 }
