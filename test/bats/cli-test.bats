@@ -42,8 +42,7 @@ load helpers
 
     delete_crl_cache
     check_crl_cache_path
-    assert_failure
-    
+        
     unrevoke_crl
 
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
