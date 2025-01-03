@@ -26,11 +26,13 @@ import (
 
 type CRLHandler struct {
 	CacheDisabled bool
-	Fetcher       corecrl.Fetcher
 	httpClient    *http.Client
 }
 
-var fetcherOnce sync.Once
+var (
+	fetcherOnce   sync.Once
+	globalFetcher corecrl.Fetcher
+)
 
 // NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
 func NewCRLHandler() RevocationFactory {
@@ -48,7 +50,7 @@ func CreateCRLHandlerFromConfig(cf config.CRLConfig) RevocationFactory {
 func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	var err error
 	fetcherOnce.Do(func() {
-		h.Fetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache, h.CacheDisabled)
+		globalFetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache, h.CacheDisabled)
 	})
 	if err != nil {
 		return nil, err
@@ -56,10 +58,10 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	// Check if the fetcher is nil, return an error if it is.
 	// one possible edge case is that an error happened in the first call,
 	// the following calls will not get the error since the sync.Once block will be skipped.
-	if h.Fetcher == nil {
+	if globalFetcher == nil {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher")
 	}
-	return h.Fetcher, nil
+	return globalFetcher, nil
 }
 
 // NewValidator returns a new validator instance
