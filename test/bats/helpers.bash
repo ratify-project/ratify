@@ -138,7 +138,7 @@ check_crl_cache_deleted() {
 }
 
 check_crl_cache_created() {
-  if [[ -d "$HOME/.cache/notation/crl" ]]; then
+  if [[ ! -d "$HOME/.cache/notation/crl" ]]; then
     echo "The directory does not exist."
     return 1
   fi
