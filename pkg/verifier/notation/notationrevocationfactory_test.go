@@ -14,21 +14,18 @@
 package notation
 
 import (
-	"context"
 	"net/http"
 	"runtime"
 	"testing"
 
 	"github.com/notaryproject/notation-core-go/revocation"
-	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
-	"github.com/notaryproject/notation-go/verifier/crl"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewRevocationFactoryImpl(t *testing.T) {
-	factory := NewCRLHandler()
+	factory := CreateCRLHandlerFromConfig()
 	assert.NotNil(t, factory)
 }
 
@@ -76,7 +73,7 @@ func TestNewFetcher(t *testing.T) {
 }
 
 func TestNewValidator(t *testing.T) {
-	factory := NewCRLHandler()
+	factory := CreateCRLHandlerFromConfig()
 	opts := revocation.Options{}
 
 	validator, err := factory.NewValidator(opts)
@@ -111,55 +108,4 @@ func TestNewFileCache(t *testing.T) {
 			}
 		})
 	}
-}
-func TestConfigureCache(t *testing.T) {
-	testCache, _ := crl.NewFileCache(dir.PathCRLCache)
-	tests := []struct {
-		name         string
-		cacheEnabled bool
-		fetcher      corecrl.Fetcher
-		expectCache  bool
-	}{
-		{
-			name:         "cache enabled",
-			cacheEnabled: true,
-			fetcher:      &corecrl.HTTPFetcher{Cache: testCache},
-			expectCache:  true,
-		},
-		{
-			name:         "cache disabled",
-			cacheEnabled: false,
-			fetcher:      &corecrl.HTTPFetcher{Cache: testCache},
-			expectCache:  false,
-		},
-		{
-			name:         "non-HTTP fetcher",
-			cacheEnabled: false,
-			fetcher:      &mockFetcher{},
-			expectCache:  false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			handler := &CRLHandler{
-				CacheEnabled: tt.cacheEnabled,
-			}
-			handler.configureCache(tt.fetcher)
-
-			if httpFetcher, ok := tt.fetcher.(*corecrl.HTTPFetcher); ok {
-				if tt.expectCache {
-					assert.NotNil(t, httpFetcher.Cache)
-				} else {
-					assert.Nil(t, httpFetcher.Cache)
-				}
-			}
-		})
-	}
-}
-
-type mockFetcher struct{}
-
-func (m *mockFetcher) Fetch(_ context.Context, _ string) (*corecrl.Bundle, error) {
-	return nil, nil
 }
