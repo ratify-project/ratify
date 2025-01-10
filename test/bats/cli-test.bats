@@ -35,19 +35,22 @@ load helpers
 }
 
 @test "notation verifier crl test" {
+    sudo sed -i '1i 127.0.0.1 yourhost' /etc/hosts
     revoke_crl
 
     run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_failure
-
+    
+    check_crl_cache_created
+    
     delete_crl_cache
     check_crl_cache_deleted
     unrevoke_crl
 
-    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl.json -s $TEST_REGISTRY/notation:crl
+    run bin/ratify verify -c $RATIFY_DIR/config_notation_crl_cache_disabled.json -s $TEST_REGISTRY/notation:crl
     assert_cmd_verify_success
 
-    check_crl_cache_created
+    check_crl_cache_deleted
 }
 
 @test "notation verifier with type test" {

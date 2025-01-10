@@ -39,7 +39,7 @@ var (
 // The CRLHandler will have its CacheDisabled field set based on the configuration,
 // and it will use a default HTTP client.
 func CreateCRLHandlerFromConfig() RevocationFactory {
-	return &CRLHandler{CacheEnabled: config.CRLConf.CacheEnabled, httpClient: &http.Client{}}
+	return &CRLHandler{CacheEnabled: config.CRLConf.Cache.Enabled, httpClient: &http.Client{}}
 }
 
 // NewFetcher creates a new instance of a Fetcher if it doesn't already exist.
