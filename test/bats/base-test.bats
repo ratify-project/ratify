@@ -18,6 +18,7 @@ load helpers
 BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
+RATIFY_NAME=ratify
 RATIFY_NAMESPACE=gatekeeper-system
 
 @test "base test without cert rotator" {
@@ -246,6 +247,9 @@ EOF
         # restore the original notation verifier for other tests
         wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
     }
+    TARGET_IP=$(ip -4 addr show "eth0" | awk '/inet/ {print $2}' | cut -d'/' -f1)
+    # RATIFY_POD=$(kubectl get pods -n ${RATIFY_NAMESPACE} --no-headers -o custom-columns=":metadata.name" | grep ratify)
+    run kubectl patch deployment ${RATIFY_NAME} -n ${RATIFY_NAMESPACE} --type='merge' -p '{"spec":{"template":{"spec":{"hostAliases":[{"ip":"'"${TARGET_IP}"'","hostnames":["yourhost"]}]}}}}'
 
     # add the tsaroot certificate as an inline key management provider
     cat ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> crlkmprovider.yaml

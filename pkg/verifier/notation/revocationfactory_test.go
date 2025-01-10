@@ -118,7 +118,7 @@ func TestCreateCRLFetcher(t *testing.T) {
 
 	t.Run("successful fetcher creation without cache", func(t *testing.T) {
 		// Disable cache
-		config.CRLConf.CacheEnabled = false
+		config.CRLConf.Cache.Enabled = false
 		fetcher, err := CreateCRLFetcher(httpClient, cacheRoot)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetcher)
@@ -126,7 +126,7 @@ func TestCreateCRLFetcher(t *testing.T) {
 
 	t.Run("successful fetcher creation with cache", func(t *testing.T) {
 		// Enable cache
-		config.CRLConf.CacheEnabled = true
+		config.CRLConf.Cache.Enabled = true
 		fetcher, err := CreateCRLFetcher(httpClient, cacheRoot)
 		assert.NoError(t, err)
 		assert.NotNil(t, fetcher)

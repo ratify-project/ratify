@@ -169,7 +169,8 @@ logger:
       - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
 
 crl:
-  cacheEnabled: false
+  cache:
+    enabled: true # Enable CRL cache
 
 # See https://ratify.dev/docs/reference/usage#feature-flags for a list of available feature flags
 featureFlags:
