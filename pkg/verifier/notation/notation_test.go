@@ -23,9 +23,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
-	"github.com/notaryproject/notation-core-go/revocation/purpose"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
 	"github.com/opencontainers/go-digest"
@@ -650,14 +648,4 @@ func (m mockRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
 		return nil, fmt.Errorf("failed to create fetcher")
 	}
 	return corecrl.NewHTTPFetcher(m.httpClient)
-}
-
-func (m mockRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
-	if m.failCodeSigningValidator && opts.CertChainPurpose == purpose.CodeSigning {
-		return nil, fmt.Errorf("failed to create code signing validator")
-	}
-	if m.failTimestampingValidator && opts.CertChainPurpose == purpose.Timestamping {
-		return nil, fmt.Errorf("failed to create timestamping validator")
-	}
-	return revocation.NewWithOptions(opts)
 }
