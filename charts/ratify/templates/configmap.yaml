@@ -16,8 +16,8 @@ data:
         "mutationRequestTimeout": {{ .Values.provider.timeout.mutationTimeoutSeconds | int | mul 1000 | add -50 }}
       },
       "crl": {
-        "cache": {
-          "enabled": {{ default "true" .Values.crl.cache.enabled }}
+        "cache":{
+          "enabled": {{ .Values.crl.cache.enabled }}
         }
       }
     }
