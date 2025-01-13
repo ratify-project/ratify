@@ -44,7 +44,7 @@ func CreateCRLFetcher(httpClient *http.Client, cacheRoot string) (corecrl.Fetche
 	if err != nil {
 		return nil, err
 	}
-	if !config.CRLConf.CacheEnabled {
+	if !config.CRLConf.Cache.Enabled {
 		return crlFetcher, nil
 	}
 	cache, err := newFileCache(cacheRoot)
