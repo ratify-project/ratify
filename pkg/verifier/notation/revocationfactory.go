@@ -23,6 +23,7 @@ import (
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/verifier/crl"
+	"github.com/ratify-project/ratify/config"
 	"github.com/ratify-project/ratify/internal/logger"
 )
 
@@ -43,10 +44,14 @@ func CreateCRLFetcher(httpClient *http.Client, cacheRoot string) (corecrl.Fetche
 	if err != nil {
 		return nil, err
 	}
-	crlFetcher.Cache, err = newFileCache(cacheRoot)
+	if !config.CRLConf.Cache.Enabled {
+		return crlFetcher, nil
+	}
+	cache, err := newFileCache(cacheRoot)
 	if err != nil {
 		return nil, err
 	}
+	crlFetcher.Cache = cache
 	return crlFetcher, nil
 }
 

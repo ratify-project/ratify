@@ -20,20 +20,26 @@ import (
 	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
+	"github.com/ratify-project/ratify/config"
 	re "github.com/ratify-project/ratify/errors"
 )
 
 type CRLHandler struct {
 	CacheEnabled bool
-	Fetcher      corecrl.Fetcher
 	httpClient   *http.Client
 }
 
-var fetcherOnce sync.Once
+var (
+	fetcherOnce   sync.Once
+	globalFetcher corecrl.Fetcher
+)
 
-// NewCRLHandler returns a new NewCRLHandler instance. Enable cache by default.
-func NewCRLHandler() RevocationFactory {
-	return &CRLHandler{CacheEnabled: true, httpClient: &http.Client{}}
+// CreateCRLHandlerFromConfig creates a new instance of CRLHandler using the configuration
+// provided in config.CRLConf. It returns a RevocationFactory interface.
+// The CRLHandler will have its CacheDisabled field set based on the configuration,
+// and it will use a default HTTP client.
+func CreateCRLHandlerFromConfig() RevocationFactory {
+	return &CRLHandler{CacheEnabled: config.CRLConf.Cache.Enabled, httpClient: &http.Client{}}
 }
 
 // NewFetcher creates a new instance of a Fetcher if it doesn't already exist.
@@ -43,10 +49,7 @@ func NewCRLHandler() RevocationFactory {
 func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	var err error
 	fetcherOnce.Do(func() {
-		h.Fetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
-		if err == nil {
-			h.configureCache()
-		}
+		globalFetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
 	})
 	if err != nil {
 		return nil, err
@@ -54,24 +57,13 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	// Check if the fetcher is nil, return an error if it is.
 	// one possible edge case is that an error happened in the first call,
 	// the following calls will not get the error since the sync.Once block will be skipped.
-	if h.Fetcher == nil {
+	if globalFetcher == nil {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher")
 	}
-	return h.Fetcher, nil
+	return globalFetcher, nil
 }
 
 // NewValidator returns a new validator instance
 func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator, error) {
 	return revocation.NewWithOptions(opts)
-}
-
-// configureCache disables the cache for the HTTPFetcher if caching is not enabled.
-// If the EnableCache field is set to false, this method sets the Cache field of the
-// HTTPFetcher to nil, effectively disabling caching for HTTP fetch operations.
-func (h *CRLHandler) configureCache() {
-	if !h.CacheEnabled {
-		if httpFetcher, ok := h.Fetcher.(*corecrl.HTTPFetcher); ok {
-			httpFetcher.Cache = nil
-		}
-	}
 }

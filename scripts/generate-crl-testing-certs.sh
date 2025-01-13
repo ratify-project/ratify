@@ -146,8 +146,8 @@ basicConstraints       = critical,CA:TRUE,pathlen:0
 keyUsage               = critical,keyCertSign,cRLSign
 subjectKeyIdentifier   = hash
 authorityKeyIdentifier = keyid:always,issuer:always
-crlDistributionPoints  = URI:http://localhost:10086/intermediate.crl
-authorityInfoAccess    = OCSP;URI:http://localhost.test/ocsp
+crlDistributionPoints  = URI:http://yourhost:10086/intermediate.crl
+authorityInfoAccess    = OCSP;URI:http://yourhost.test/ocsp
 
 [ crl_ext ]
 authorityKeyIdentifier = keyid:always
@@ -187,7 +187,7 @@ CN = LeafCert
 [ v3_req ]
 basicConstraints = critical,CA:FALSE
 keyUsage = critical,digitalSignature
-crlDistributionPoints = URI:http://localhost:10086/leaf.crl
+crlDistributionPoints = URI:http://yourhost:10086/leaf.crl
 EOF
 
 # Generate leaf private key

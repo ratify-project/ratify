@@ -49,7 +49,7 @@
     },
     "crl": {
         "cache":{
-            "enabled": true
+            "enabled": false
         }
     }
 }
