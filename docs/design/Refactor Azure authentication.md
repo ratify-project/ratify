@@ -1,7 +1,7 @@
 # **Azure Authentication Refactoring in Ratify**
 
 ## **Introduction**
-Authentication is a critical process in Ratify, ensuring secure access to artifatcs in container registries, and to keys, secrets and certificates from cloud key vaults, and other resources. Azure offers two primary SDKs for authentication in Go:
+Authentication is a critical process in Ratify, ensuring secure access to artifacts in container registries, and to keys, secrets and certificates from cloud key vaults, and other resources. Azure offers two primary SDKs for authentication in Go:
 
 - **Azure Identity ([azidentity](https://learn.microsoft.com/en-us/azure/developer/go/azure-sdk-authentication?tabs=bash))**: Designed for seamless integration with Azure services.
 - **Microsoft Authentication Library ([MSAL](https://learn.microsoft.com/en-us/entra/identity-platform/msal-overview))**: Provides advanced token management capabilities.
@@ -126,7 +126,7 @@ In the code sample above, the chained token credential will try to authenticate 
 There is another option that can be used which is the default azure credential: `azidentity.NewDefaultAzureCredential`. It's an opinionated, preconfigured chain of credentials and is designed to support many environments, along with the most common authentication flows and developer tools. In graphical form, the underlying chain looks like this:
 ![image](../img/AzureAuthRefactor/image.png)
 
-Howecer, this option is not recommended for the following reasons:
+However, this option is not recommended for the following reasons:
 1. Debugging challenges: When authentication fails, it can be challenging to debug and identify the offending credential. You must enable logging to see the progression from one credential to the next and the success/failure status of each. In contrast, [debugging a chained credential](https://www.rfc-editor.org/rfc/rfc3280#section-1) is relatively easy.
 2. Unpredictable behavior: DefaultAzureCredential checks for the presence of certain environment variables. It's possible that someone could add or modify these environment variables at the system level on the host machine. Those changes apply globally and therefore alter the behavior of DefaultAzureCredential at runtime in any app running on that machine.
 3. Ability to provide required parameters: When using the default azure credential option, we can only rely on the environment variables, meaning that we cannot provide the client_id, tenant_id, or any other parameter explicitly. This is particularly problematic when Ratify is provided with multiple auth providers. With the chanined token credentials, each credential type in the chain can be provided with the required parameters explicitly if needed.
