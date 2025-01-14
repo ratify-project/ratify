@@ -82,7 +82,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		logrus.Errorf("server start failed %v", fmt.Errorf("error loading config %w", err))
 		os.Exit(1)
 	}
-
+	config.CRLConf = cf.CRLConfig
 	// initialize server
 	server, err := httpserver.NewServer(context.Background(), httpServerAddress, func(ctx context.Context) *ef.Executor {
 		namespace := ctxUtils.GetNamespace(ctx)
@@ -105,7 +105,7 @@ func StartServer(httpServerAddress, configFilePath, certDirectory, caCertFile st
 		logrus.Errorf("initialize server failed with error %v, exiting..", err)
 		os.Exit(1)
 	}
-	logrus.Infof("starting server at" + httpServerAddress)
+	logrus.Infof("starting server at %s", httpServerAddress)
 	if err := server.Run(certRotatorReady); err != nil {
 		logrus.Errorf("starting server failed with error %v, exiting..", err)
 		os.Exit(1)

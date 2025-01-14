@@ -15,49 +15,55 @@ package notation
 
 import (
 	"net/http"
+	"sync"
 
 	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
-	"github.com/notaryproject/notation-go/verifier/crl"
+	"github.com/ratify-project/ratify/config"
+	re "github.com/ratify-project/ratify/errors"
 )
 
-type RevocationFactoryImpl struct {
-	cacheRoot  string
-	httpClient *http.Client
+type CRLHandler struct {
+	CacheEnabled bool
+	httpClient   *http.Client
 }
 
-// NewRevocationFactoryImpl returns a new NewRevocationFactoryImpl instance
-func NewRevocationFactoryImpl() RevocationFactory {
-	return &RevocationFactoryImpl{
-		cacheRoot:  dir.PathCRLCache,
-		httpClient: &http.Client{},
-	}
+var (
+	fetcherOnce   sync.Once
+	globalFetcher corecrl.Fetcher
+)
+
+// CreateCRLHandlerFromConfig creates a new instance of CRLHandler using the configuration
+// provided in config.CRLConf. It returns a RevocationFactory interface.
+// The CRLHandler will have its CacheDisabled field set based on the configuration,
+// and it will use a default HTTP client.
+func CreateCRLHandlerFromConfig() RevocationFactory {
+	return &CRLHandler{CacheEnabled: config.CRLConf.Cache.Enabled, httpClient: &http.Client{}}
 }
 
-// NewFetcher returns a new fetcher instance
-func (f *RevocationFactoryImpl) NewFetcher() (corecrl.Fetcher, error) {
-	crlFetcher, err := corecrl.NewHTTPFetcher(f.httpClient)
+// NewFetcher creates a new instance of a Fetcher if it doesn't already exist.
+// If a Fetcher instance is already present, it returns the existing instance.
+// The method also configures the cache for the Fetcher.
+// Returns an instance of corecrl.Fetcher or an error if the Fetcher creation fails.
+func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
+	var err error
+	fetcherOnce.Do(func() {
+		globalFetcher, err = CreateCRLFetcher(h.httpClient, dir.PathCRLCache)
+	})
 	if err != nil {
 		return nil, err
 	}
-	crlFetcher.Cache, err = newFileCache(f.cacheRoot)
-	if err != nil {
-		return nil, err
+	// Check if the fetcher is nil, return an error if it is.
+	// one possible edge case is that an error happened in the first call,
+	// the following calls will not get the error since the sync.Once block will be skipped.
+	if globalFetcher == nil {
+		return nil, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher")
 	}
-	return crlFetcher, nil
+	return globalFetcher, nil
 }
 
 // NewValidator returns a new validator instance
-func (f *RevocationFactoryImpl) NewValidator(opts revocation.Options) (revocation.Validator, error) {
+func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator, error) {
 	return revocation.NewWithOptions(opts)
-}
-
-// newFileCache returns a new file cache instance
-func newFileCache(root string) (*crl.FileCache, error) {
-	cacheRoot, err := dir.CacheFS().SysPath(root)
-	if err != nil {
-		return nil, err
-	}
-	return crl.NewFileCache(cacheRoot)
 }

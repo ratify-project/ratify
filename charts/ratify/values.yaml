@@ -14,6 +14,13 @@ cosignKeys: []
 
 notation:
   enabled: true
+  trustPolicies:
+    - name: default
+      verificatonLevel: strict
+      registryScopes:
+        - "*"
+      trustedIdentities: ["*"]
+      trustStores: []
 
 cosign:
   enabled: true
@@ -57,7 +64,7 @@ serviceAccount:
   annotations: {}
 
 gatekeeper:
-  version: "3.17.0"
+  version: "3.18.0"
   namespace: # default is gatekeeper-system
 instrumentation:
   metricsEnabled: true
@@ -160,6 +167,10 @@ logger:
   requestHeaders:
     traceIDHeaderName: # List of headers that include the trace ID in the external data requests to Ratify. The same headers will be passed to upstream services like remote registries.
       - "" # e.g. Set it to `x-ms-correlation-request-id` to trace across Azure.
+
+crl:
+  cache:
+    enabled: true # Enable CRL cache
 
 # See https://ratify.dev/docs/reference/usage#feature-flags for a list of available feature flags
 featureFlags:

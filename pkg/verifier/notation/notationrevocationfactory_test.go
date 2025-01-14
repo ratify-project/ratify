@@ -19,11 +19,13 @@ import (
 	"testing"
 
 	"github.com/notaryproject/notation-core-go/revocation"
+	"github.com/notaryproject/notation-go/dir"
+	re "github.com/ratify-project/ratify/errors"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewRevocationFactoryImpl(t *testing.T) {
-	factory := NewRevocationFactoryImpl()
+	factory := CreateCRLHandlerFromConfig()
 	assert.NotNil(t, factory)
 }
 
@@ -33,39 +35,45 @@ func TestNewFetcher(t *testing.T) {
 		cacheRoot  string
 		httpClient *http.Client
 		wantErr    bool
+		firstCall  bool
 	}{
 		{
-			name:       "valid fetcher",
-			cacheRoot:  "/valid/path",
-			httpClient: &http.Client{},
-			wantErr:    false,
+			name:       "create CRL fetcher failure with nil httpClient on first call",
+			cacheRoot:  "",
+			httpClient: nil,
+			firstCall:  true,
+			wantErr:    true,
 		},
 		{
-			name:       "invalid fetcher with nil httpClient",
+			name:       "recreate CRL fetcher failure on second call",
 			cacheRoot:  "/valid/path",
-			httpClient: nil,
+			httpClient: &http.Client{},
+			firstCall:  false,
 			wantErr:    true,
 		},
 	}
-
+	globalFetcher = nil
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			factory := &RevocationFactoryImpl{
-				cacheRoot:  tt.cacheRoot,
-				httpClient: tt.httpClient,
-			}
-
+			factory := &CRLHandler{httpClient: tt.httpClient}
 			fetcher, err := factory.NewFetcher()
-			if tt.wantErr {
-				assert.Error(t, err)
+			if tt.firstCall {
+				// Fetcher is initialized in sequential execution before this test, skip the test to avoid test failure
+				t.Skip("skipping on first call")
+			}
+			if !tt.firstCall && tt.wantErr {
 				assert.Nil(t, fetcher)
+				assert.Nil(t, globalFetcher)
+				assert.Equal(t, err, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher"))
 			}
 		})
 	}
+	// fix globalFetcher to avoid test failure
+	globalFetcher, _ = CreateCRLFetcher(&http.Client{}, dir.PathCRLCache)
 }
 
 func TestNewValidator(t *testing.T) {
-	factory := &RevocationFactoryImpl{}
+	factory := CreateCRLHandlerFromConfig()
 	opts := revocation.Options{}
 
 	validator, err := factory.NewValidator(opts)

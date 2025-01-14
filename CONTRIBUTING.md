@@ -39,12 +39,12 @@ This approach ensures that the changes are well-documented and reviewed before i
 
 If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/ratify-project/ratify/labels/good%20first%20issue).
 
-We use the `dev` branch as the our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud specific tests on `dev` before changes can be merged into `main`. All ratify release are cut from the `main` branch. A sample PR process is outlined below:
-1. Fork this repo and create your dev branch from default `dev` branch.
-2. Create a PR against default branch.
-3. Add new unit test and [e2e test](https://github.com/ratify-project/ratify/tree/dev/test/bats) where approriate.
+We use the `dev` branch as our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud-specific tests on `dev` before changes can be merged into `main`. All ratify releases are cut from the `main` branch. A sample PR process is outlined below:
+1. Fork this repo and create your dev branch from the default `dev` branch.
+2. Create a PR against the default branch.
+3. Add new unit test and [e2e test](https://github.com/ratify-project/ratify/tree/dev/test/bats) where appropriate.
 4. Maintainer approval and e2e test validation is required for completing the PR.
-5. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud specific tests.
+5. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud-specific tests.
 6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
 
 If the PR contains a regression that could not pass the full validation, please revert the change to unblock others:
@@ -55,7 +55,7 @@ If the PR contains a regression that could not pass the full validation, please 
 
 ### Commit
 
-You should follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to write commit message. As the Ratify Project repositories enforces the [DCO (Developer Certificate of Origin)](https://github.com/apps/dco) on Pull Requests, contributors are required to sign off that they adhere to those requirements by adding a `Signed-off-by` line to the commit messages. Git has even provided a `-s` command line option to append that automatically to your commit messages, please use it when you commit your changes. 
+You should follow [conventional commits](https://www.conventionalcommits.org/en/v1.0.0/) to write commit message. As the Ratify Project repositories enforce the [DCO (Developer Certificate of Origin)](https://github.com/apps/dco) on Pull Requests, contributors are required to sign off that they adhere to those requirements by adding a `Signed-off-by` line to the commit messages. Git has even provided a `-s` command line option to append that automatically to your commit messages, please use it when you commit your changes. 
 
 The Ratify Project repositories require signed commits, please refer to [SSH commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification#ssh-commit-signature-verification) on signing commits using SSH as it is easy to set up. You can find other methods to sign commits in the document [commit signature verification](https://docs.github.com/en/authentication/managing-commit-signature-verification/about-commit-signature-verification). Git has provided a `-S` flag to create a signed commit.
 
@@ -207,7 +207,7 @@ export REGISTRY=yourregistry
 docker buildx create --use
 
 docker buildx build -f httpserver/Dockerfile --platform linux/amd64 --build-arg build_sbom=true --build-arg build_licensechecker=true --build-arg build_schemavalidator=true --build-arg build_vulnerabilityreport=true -t ${REGISTRY}/ratify-project/ratify:yourtag .
-docker build --progress=plain --build-arg KUBE_VERSION="1.29.2" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
+docker build --progress=plain --build-arg KUBE_VERSION="1.30.6" --build-arg TARGETOS="linux" --build-arg TARGETARCH="amd64" -f crd.Dockerfile -t ${REGISTRY}/localbuildcrd:yourtag ./charts/ratify/crds
 ```
 
 #### [Authenticate](https://docs.docker.com/engine/reference/commandline/login/#usage) with your registry,  and push the newly built image

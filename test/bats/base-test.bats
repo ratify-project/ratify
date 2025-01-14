@@ -18,6 +18,7 @@ load helpers
 BATS_TESTS_DIR=${BATS_TESTS_DIR:-test/bats/tests}
 WAIT_TIME=60
 SLEEP_TIME=1
+RATIFY_NAME=ratify
 RATIFY_NAMESPACE=gatekeeper-system
 
 @test "base test without cert rotator" {
@@ -55,6 +56,119 @@ RATIFY_NAMESPACE=gatekeeper-system
 
     run kubectl debug demo --image=registry:5000/notation:unsigned --target=demo
     assert_failure
+}
+
+@test "test rendering notation verifier with modified trust policies settings" {
+    teardown() {
+        echo "cleaning up"
+        rm -f notation-file1.crt
+        rm -f notation-file2.crt
+        rm -f notation-file3.crt
+    }
+
+    touch notation-file1.crt
+    echo "fake cert 1" > notation-file1.crt
+    touch notation-file2.crt
+    echo "fake cert 2" > notation-file2.crt
+    touch notation-file2.crt
+    echo "fake cert 3" > notation-file3.crt
+
+    # Happy path:
+    # Capture Helm template output
+    rendered=$(helm template multiple-trust-policies ./charts/ratify \
+        --set featureFlags.RATIFY_CERT_ROTATION=true \
+        --set-file notationCerts[0]="notation-file1.crt" \
+        --set-file notationCerts[1]="notation-file2.crt" \
+        --set-file notationCerts[2]="notation-file3.crt" \
+        --set notation.trustPolicies[0].registryScopes[0]="registry1.azurecr.io/" \
+        --set notation.trustPolicies[0].trustedIdentities[0]="cert identity 1" \
+        --set notation.trustPolicies[0].trustStores[0]=ca:notationCerts[0] \
+        --set notation.trustPolicies[0].trustStores[1]=tsa:notationCerts[1] \
+        --set notation.trustPolicies[0].trustStores[2]=signingAuthority:notationCerts[2] \
+        --set notation.trustPolicies[1].registryScopes[0]="registry2.azurecr.io/" \
+        --set notation.trustPolicies[1].trustStores[0]=ca:notationCerts[1])
+
+    # the expected partial output
+    expected_verifier_notation=$(cat <<EOF
+apiVersion: config.ratify.deislabs.io/v1beta1
+kind: Verifier
+metadata:
+  name: verifier-notation
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
+spec:
+  name: notation
+  version: 1.0.0
+  artifactTypes: application/vnd.cncf.notary.signature
+  parameters:
+    verificationCertStores:
+      ca:
+        cert-0:
+          - multiple-trust-policies-ratify-notation-inline-cert-0
+        cert-3:
+          - multiple-trust-policies-ratify-notation-inline-cert-1
+      signingAuthority:
+        cert-2:
+          - multiple-trust-policies-ratify-notation-inline-cert-2
+      tsa:
+        cert-1:
+          - multiple-trust-policies-ratify-notation-inline-cert-1
+    trustPolicyDoc:
+      version: "1.0"
+      trustPolicies:
+        - name: trustPolicy-0  
+          registryScopes:
+            - "registry1.azurecr.io/"
+          signatureVerification:
+            level: strict  
+          trustStores:
+            - ca:cert-0
+            - tsa:cert-1
+            - signingAuthority:cert-2
+          trustedIdentities:
+            - "x509.subject: cert identity 1"
+        - name: trustPolicy-1  
+          registryScopes:
+            - "registry2.azurecr.io/"
+          signatureVerification:
+            level: strict  
+          trustStores:
+            - ca:cert-3
+          trustedIdentities:
+            - "*"
+EOF
+    )
+
+    # Assert that the rendered Helm output contains the expected section
+    [[ "$rendered" == *"$expected_verifier_notation"* ]] || {
+        echo "Rendered output does not contain the expected verifier-notation section."
+        echo "Rendered output:"
+        echo "$rendered"
+        echo "Expected section:"
+        echo "$expected_verifier_notation"
+        return 1
+    }
+
+    # failure path:
+    # Capture Helm template output
+    run helm template multiple-trust-policies ./charts/ratify \
+        --set featureFlags.RATIFY_CERT_ROTATION=true \
+        --set-file notationCerts[0]="notation-file1.crt" \
+        --set notation.trustPolicies[0].registryScopes[0]="registry1.azurecr.io/" \
+        --set notation.trustPolicies[0].trustedIdentities[0]="cert identity 1" \
+        --set notation.trustPolicies[0].trustStores[0]=ca:unknownCert
+
+    assert_failure
+
+    # the expected error message
+    expected_verifier_notation=$(cat <<EOF
+Unknown trust store reference: unknownCert
+EOF
+    )
+
+    # Assert that the rendered Helm output contains the expected error message
+    [[ "$output" == *"$expected_verifier_notation"* ]]
 }
 
 @test "crd version test" {
@@ -122,6 +236,29 @@ RATIFY_NAMESPACE=gatekeeper-system
 
     # verify that the image can now be run
     run kubectl run demo-tsa --namespace default --image=registry:5000/notation:tsa
+    assert_success
+}
+
+@test "notation verification pass on CRL check with audit trust policy" {
+    teardown() {
+        echo "cleaning up"
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl delete pod demo --namespace default --force --ignore-not-found=true'
+
+        # restore the original notation verifier for other tests
+        wait_for_process ${WAIT_TIME} ${SLEEP_TIME} 'kubectl replace -f ./config/samples/clustered/verifier/config_v1beta1_verifier_notation.yaml'
+    }
+    TARGET_IP=$(ip -4 addr show "eth0" | awk '/inet/ {print $2}' | cut -d'/' -f1)
+    # RATIFY_POD=$(kubectl get pods -n ${RATIFY_NAMESPACE} --no-headers -o custom-columns=":metadata.name" | grep ratify)
+    run kubectl patch deployment ${RATIFY_NAME} -n ${RATIFY_NAMESPACE} --type='merge' -p '{"spec":{"template":{"spec":{"hostAliases":[{"ip":"'"${TARGET_IP}"'","hostnames":["yourhost"]}]}}}}'
+
+    # add the tsaroot certificate as an inline key management provider
+    cat ./test/bats/tests/config/config_v1beta1_keymanagementprovider_inline.yaml >> crlkmprovider.yaml
+    cat .staging/notation/crl-test/root.crt | sed 's/^/      /g' >> crlkmprovider.yaml
+    run kubectl apply -f crlkmprovider.yaml --namespace ${RATIFY_NAMESPACE}
+    assert_success
+    run kubectl replace -f ./test/bats/tests/config/config_v1beta1_verifier_notation_audit_crl.yaml
+
+    run kubectl run demo --namespace default --image=registry:5000/notation:crl
     assert_success
 }
 

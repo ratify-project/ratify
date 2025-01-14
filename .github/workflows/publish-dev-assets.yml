@@ -37,6 +37,10 @@ jobs:
           az version
           # Key Vault: 
           az account get-access-token --scope https://vault.azure.net/.default --output none
+      - name: Prepare notation certificate
+        run: |
+          mkdir -p truststore/x509/ca/ratify-verify
+          cp ./.well-known/pki-validation/ratify-verification.crt truststore/x509/ca/ratify-verify
       - name: prepare
         id: prepare
         run: |
@@ -69,7 +73,7 @@ jobs:
           docker buildx build \
             --attest type=sbom \
             --attest type=provenance,mode=max \
-            --build-arg KUBE_VERSION="1.29.2" \
+            --build-arg KUBE_VERSION="1.30.6" \
             -f crd.Dockerfile \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
             --label org.opencontainers.image.revision=${{ github.sha }} \
@@ -138,6 +142,44 @@ jobs:
           cosign sign --yes ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }}
           cosign sign --yes ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
           cosign sign --yes ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}
+      - name: Verify with Notation
+        uses: notaryproject/notation-action/verify@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+        with:
+          target_artifact_reference: |-
+            ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }}
+            ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }}
+            ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }}
+            ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
+            ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}
+          trust_policy: ./.well-known/pki-validation/trustpolicy.json
+          trust_store: truststore
+      - name: Verify with Cosign
+        run: |
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }}
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }}
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }}
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
+          cosign verify \
+            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --certificate-github-workflow-repository ratify-project/ratify \
+            ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}
       - name: clear
         if: always()
         run: |

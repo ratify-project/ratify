@@ -95,7 +95,8 @@ func init() {
 }
 
 func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.VerifierConfig, pluginDirectory string, namespace string) (verifier.ReferenceVerifier, error) {
-	logger.GetLogger(context.Background(), logOpt).Debugf("creating Notation verifier with config %v, namespace '%v'", verifierConfig, namespace)
+	ctx := context.Background()
+	logger.GetLogger(ctx, logOpt).Debugf("creating Notation verifier with config %v, namespace '%v'", verifierConfig, namespace)
 	verifierName := fmt.Sprintf("%s", verifierConfig[types.Name])
 	verifierTypeStr := ""
 	if _, ok := verifierConfig[types.Type]; ok {
@@ -105,7 +106,7 @@ func (f *notationPluginVerifierFactory) Create(_ string, verifierConfig config.V
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
-	verifyService, err := getVerifierService(conf, pluginDirectory, NewRevocationFactoryImpl())
+	verifyService, err := getVerifierService(ctx, conf, pluginDirectory, CreateCRLHandlerFromConfig())
 	if err != nil {
 		return nil, re.ErrorCodePluginInitFailure.WithDetail("Failed to create the Notation Verifier").WithError(err)
 	}
@@ -177,7 +178,7 @@ func (v *notationPluginVerifier) Verify(ctx context.Context,
 	return verifier.NewVerifierResult("", v.name, v.verifierType, "Notation signature verification success", true, nil, extensions), nil
 }
 
-func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory string, revocationFactory RevocationFactory) (notation.Verifier, error) {
+func getVerifierService(ctx context.Context, conf *NotationPluginVerifierConfig, pluginDirectory string, revocationFactory RevocationFactory) (notation.Verifier, error) {
 	store, err := newTrustStore(conf.VerificationCerts, conf.VerificationCertStores)
 	if err != nil {
 		return nil, err
@@ -190,7 +191,7 @@ func getVerifierService(conf *NotationPluginVerifierConfig, pluginDirectory stri
 	// Related File: https://github.com/notaryproject/notation/commits/main/cmd/notation/verify.go5
 	crlFetcher, err := revocationFactory.NewFetcher()
 	if err != nil {
-		return nil, err
+		logger.GetLogger(ctx, logOpt).Warnf("Unable to create CRL fetcher for notation verifier %s with error: %s", conf.Name, err)
 	}
 	revocationCodeSigningValidator, err := revocationFactory.NewValidator(revocation.Options{
 		CRLFetcher:       crlFetcher,
