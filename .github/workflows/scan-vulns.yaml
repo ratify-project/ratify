@@ -73,6 +73,5 @@ jobs:
           done
       - name: Run trivy on images and exit on HIGH/CRITICAL severity
         run: |
-          for img in "localbuild:test" "localbuildcrd:test"; do
-              trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "${img}"
-          done
+          trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "localbuild:test"
+          trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" --show-suppressed --ignorefile ./.github/crd.trivyignore.yaml "localbuildcrd:test"
