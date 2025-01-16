@@ -66,3 +66,9 @@ The Ratify release process is defined in [RELEASES.md](./RELEASES.md).
 ## Licensing
 
 This project is released under the [Apache-2.0 License](./LICENSE).
+
+<hr>
+<div align="center">
+    <img src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/horizontal/color/cncf-color.svg" width="300" alt="Cloud Native Computing Foundation logo"/>
+    <p>Ratify is a <a href="https://cncf.io">Cloud Native Computing Foundation</a> Sandbox project.</p>
+</div>
