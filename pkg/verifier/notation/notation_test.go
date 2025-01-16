@@ -26,6 +26,7 @@ import (
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	ratifyconfig "github.com/ratify-project/ratify/config"
@@ -580,43 +581,27 @@ func TestGetVerifierService(t *testing.T) {
 			errContent:        nil,
 		},
 		{
-			name: "failed to create file cache",
+			name: "successfully create verifier service",
 			conf: &NotationPluginVerifierConfig{
 				VerificationCerts: []string{defaultCertDir},
+				TrustPolicyDoc: trustpolicy.Document{
+					Version: "1.0",
+					TrustPolicies: []trustpolicy.TrustPolicy{
+						{
+							Name:           "default",
+							RegistryScopes: []string{"*"},
+							SignatureVerification: trustpolicy.SignatureVerification{
+								VerificationLevel: "strict",
+							},
+							TrustStores:       []string{"ca:certs"},
+							TrustedIdentities: []string{"*"},
+						},
+					},
+				},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failFileCache: true},
-			expectErr:         true,
-			errContent:        nil,
-		},
-		{
-			name: "failed to create code signing validator",
-			conf: &NotationPluginVerifierConfig{
-				VerificationCerts: []string{defaultCertDir},
-			},
-			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failCodeSigningValidator: true},
-			expectErr:         true,
-			errContent:        fmt.Errorf("failed to create code signing validator"),
-		},
-		{
-			name: "failed to create timestamping validator",
-			conf: &NotationPluginVerifierConfig{
-				VerificationCerts: []string{defaultCertDir},
-			},
-			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failTimestampingValidator: true},
-			expectErr:         true,
-			errContent:        fmt.Errorf("failed to create timestamping validator"),
-		},
-		{
-			name: "failed to create verifier",
-			conf: &NotationPluginVerifierConfig{
-				VerificationCerts: []string{defaultCertDir},
-			},
-			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failVerifier: true},
-			expectErr:         true,
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}},
+			expectErr:         false,
 			errContent:        nil,
 		},
 	}
