@@ -620,12 +620,8 @@ func TestGetVerifierService(t *testing.T) {
 }
 
 type mockRevocationFactory struct {
-	failFetcher               bool
-	failFileCache             bool
-	failCodeSigningValidator  bool
-	failTimestampingValidator bool
-	failVerifier              bool
-	httpClient                *http.Client
+	failFetcher bool
+	httpClient  *http.Client
 }
 
 func (m mockRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
