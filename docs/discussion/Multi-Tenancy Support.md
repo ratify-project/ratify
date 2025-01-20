@@ -96,7 +96,7 @@ Ratify can be deployed either per namespace or per cluster. Redis can also be de
 |  | Ratify per Namespace | Ratify per Cluster |
 |--|--|--|
 | Redis per Namespace | Data Isolated | It requires Ratify route requests to Redis instances in different namespaces |
-| Redis per Cluster | Prefix keys and restrict access via [ACL](https://redis.io/docs/management/security/acl/) | Prefix keys and restrict access via [ACL](https://redis.io/docs/management/security/acl/) |
+| Redis per Cluster | Prefix keys and restrict access via [ACL](https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/) | Prefix keys and restrict access via [ACL](https://redis.io/docs/latest/operate/oss_and_stack/management/security/acl/) |
 
 #### Log
 Ratify saves logs to the standard output and then handled by container runtime. Whatever path does container runtime save logs, those logs may include data from different teams. This situation mirrors the challenges observed with cache isolation.

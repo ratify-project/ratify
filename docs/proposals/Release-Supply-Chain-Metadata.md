@@ -67,7 +67,7 @@ There are multiple tools for generating SBOMS such as Syft, Trivy, Microsoft SBO
 
 ### Docker Buildx Attestations
 
-Recently, Ratify added support for generating SBOM in-toto attestations via buildx. Buildx supports generating SBOM via Syft and attaching the attestation as an OCI Image part of the top level image index. Read more [here](https://ratify.dev/docs/next/troubleshoot/security#build-attestations).
+Recently, Ratify added support for generating SBOM in-toto attestations via buildx. Buildx supports generating SBOM via Syft and attaching the attestation as an OCI Image part of the top level image index. Read more [here](https://ratify.dev/docs/next/reference/security#build-attestations).
 
 Other OSS projects such as Gatekeeper publish attestations in a similar fashion. It's very simple to add such support making adoption more widespread.
 
