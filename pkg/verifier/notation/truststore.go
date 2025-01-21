@@ -72,13 +72,13 @@ func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType trus
 			logger.GetLogger(ctx, logOpt).Debugf("truststore getting certStore %v", certStore)
 			certMap, kmpErr := keymanagementprovider.GetCertificatesFromMap(ctx, certStore)
 			if kmpErr != nil {
-				logger.GetLogger(ctx, logOpt).Warnf("unable to fetch certificates for Key Management Provider %+v: %v", certStore, kmpErr)
+				logger.GetLogger(ctx, logOpt).Infof("unable to fetch certificates for Key Management Provider %+v: %v", certStore, kmpErr)
 			}
 			result := keymanagementprovider.FlattenKMPMap(certMap)
 			var certStoreErr error
 			// notation verifier does not consider specific named/versioned certificates within a key management provider resource
 			if len(result) == 0 {
-				logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Key Management Provider %+v", certStore)
+				logger.GetLogger(ctx, logOpt).Infof("no certificate fetched for Key Management Provider %+v", certStore)
 				// check certificate store if key management provider does not have certificates.
 				// NOTE: certificate store and key management provider should not be configured together.
 				// User will be warned by the controller/CLI
@@ -87,6 +87,8 @@ func (s *trustStore) getCertificatesInternal(ctx context.Context, storeType trus
 				}
 				if len(result) == 0 {
 					logger.GetLogger(ctx, logOpt).Warnf("no certificate fetched for Certificate Store %+v", certStore)
+				} else {
+					logger.GetLogger(ctx, logOpt).Info("Certificate Store has been deprecated since v1.2.0, please migrate to Key Management Provider following: https://ratify.dev/docs/reference/custom%20resources/key-management-providers#migrating-from-certificatestore-to-kmp")
 				}
 			}
 			if err := parseErrFromKmpAndCertStore(kmpErr, certStoreErr); err != nil {

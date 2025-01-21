@@ -91,6 +91,8 @@ func verify(opts verifyCmdOptions) error {
 		logger.GetLogger(context.Background(), logOpt).Warn(taggedReferenceWarning)
 	}
 
+	config.CRLConf = cf.CRLConfig
+
 	stores, err := sf.CreateStoresFromConfig(cf.StoresConfig, config.GetDefaultPluginPath())
 
 	if err != nil {

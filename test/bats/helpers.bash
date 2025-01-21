@@ -111,3 +111,35 @@ wait_for_process() {
   done
   return 1
 }
+
+revoke_crl() {
+  URL_LEAF="http://localhost:10086/leaf/revoke"
+  curl -s -X POST "$URL_LEAF" -H "Content-Type: application/json"
+  URL_INTER=http://localhost:10086/intermediate/unrevoke
+  curl -s -X POST "$URL_INTER" -H "Content-Type: application/json"
+}
+
+unrevoke_crl() {
+  URL_LEAF="http://localhost:10086/leaf/unrevoke"
+  curl -s -X POST "$URL_LEAF" -H "Content-Type: application/json"
+  URL_INTER=http://localhost:10086/intermediate/unrevoke
+  curl -s -X POST "$URL_INTER" -H "Content-Type: application/json"
+}
+
+delete_crl_cache() {
+  rm -rf $HOME/.cache/notation/crl
+}
+
+check_crl_cache_deleted() {
+  if [[ -d "$HOME/.cache/notation/crl" ]]; then
+    echo "The directory exists."
+    return 1
+  fi
+}
+
+check_crl_cache_created() {
+  if [[ ! -d "$HOME/.cache/notation/crl" ]]; then
+    echo "The directory does not exist."
+    return 1
+  fi
+}

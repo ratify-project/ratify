@@ -26,7 +26,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@0080882f6c36860b6ba35c610c98ce87d4e2f26f # v2.10.2
+        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
         with:
           egress-policy: audit
 
@@ -37,7 +37,7 @@ jobs:
         with:
           go-version: "1.22"
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@df409f7d9260372bd5f19e5b04e83cb3c43714ae # tag=v3.27.9
+        uses: github/codeql-action/init@b6a472f63d85b9c78a3ac5e89422239fc15e9b3c # tag=v3.28.1
         with:
           languages: go
       - name: Run tidy
@@ -45,4 +45,4 @@ jobs:
       - name: Build CLI
         run: make build
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@df409f7d9260372bd5f19e5b04e83cb3c43714ae # tag=v3.27.9
+        uses: github/codeql-action/analyze@b6a472f63d85b9c78a3ac5e89422239fc15e9b3c # tag=v3.28.1

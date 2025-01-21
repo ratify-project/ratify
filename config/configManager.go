@@ -31,6 +31,7 @@ type GetExecutor func(context.Context) *ef.Executor
 var (
 	configHash string
 	executor   ef.Executor
+	CRLConf    CRLConfig
 )
 
 // Create a executor from configurationFile and setup config file watcher
@@ -43,6 +44,7 @@ func GetExecutorAndWatchForUpdate(configFilePath string) (GetExecutor, error) {
 	}
 
 	configHash = cf.fileHash
+	CRLConf = cf.CRLConfig
 
 	stores, verifiers, policyEnforcer, err := CreateFromConfig(cf)
 
