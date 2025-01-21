@@ -25,7 +25,6 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
   - [Project Governance](#project-governance)
   - [Release Management](#release-management)
   - [Licensing](#licensing)
-  - [Trademark](#trademark)
 
 ## Quick Start
 
@@ -68,8 +67,8 @@ The Ratify release process is defined in [RELEASES.md](./RELEASES.md).
 
 This project is released under the [Apache-2.0 License](./LICENSE).
 
-## Trademark
-
-This project may contain trademarks or logos for projects, products, or services. Authorized use of Microsoft trademarks or logos is subject to and must follow [Microsoft's Trademark & Brand Guidelines][microsoft-trademark]. Use of Microsoft trademarks or logos in modified versions of this project must not cause confusion or imply Microsoft sponsorship. Any use of third-party trademarks or logos are subject to those third-party's policies.
-
-[microsoft-trademark]: https://www.microsoft.com/legal/intellectualproperty/trademarks
+<hr>
+<div align="center">
+    <img src="https://raw.githubusercontent.com/cncf/artwork/master/other/cncf/horizontal/color/cncf-color.svg" width="300" alt="Cloud Native Computing Foundation logo"/>
+    <p>Ratify is a <a href="https://cncf.io">Cloud Native Computing Foundation</a> Sandbox project.</p>
+</div>
