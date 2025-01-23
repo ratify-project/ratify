@@ -23,7 +23,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Notation
-        uses: notaryproject/notation-action/setup@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+        uses: notaryproject/notation-action/setup@e3565b3f26df3c129e45224e7288fb41b75f296c # v1.2.1
       - name: Install cosign
         uses: sigstore/cosign-installer@dc72c7d5c4d10cd6bcb8cf6e3fd625a9e5e537da # v3.7.0
       - name: Az CLI login
@@ -122,7 +122,7 @@ jobs:
           helm push ratify-${{ steps.prepare.outputs.semversion }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
           helm push ratify-${{ steps.prepare.outputs.semversionrolling }}.tgz oci://${{ steps.prepare.outputs.chartrepo }}
       - name: Sign with Notation
-        uses: notaryproject/notation-action/sign@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+        uses: notaryproject/notation-action/sign@e3565b3f26df3c129e45224e7288fb41b75f296c # v1.2.1
         with:
           plugin_name: azure-kv
           plugin_url: ${{ vars.AZURE_KV_PLUGIN_URL }}
@@ -143,7 +143,7 @@ jobs:
           cosign sign --yes ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
           cosign sign --yes ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}
       - name: Verify with Notation
-        uses: notaryproject/notation-action/verify@03242349f62aeddc995e12c6fbcea3b87697873f # v1.2.0
+        uses: notaryproject/notation-action/verify@e3565b3f26df3c129e45224e7288fb41b75f296c # v1.2.1
         with:
           target_artifact_reference: |-
             ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }}
