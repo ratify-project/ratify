@@ -52,6 +52,7 @@ type Config struct {
 	PoliciesConfig  pcConfig.PoliciesConfig  `json:"policy,omitempty"`
 	VerifiersConfig vfConfig.VerifiersConfig `json:"verifier,omitempty"`
 	ExecutorConfig  exConfig.ExecutorConfig  `json:"executor,omitempty"`
+	CRLConfig       CRLConfig                `json:"crl,omitempty"`
 	LoggerConfig    logger.Config            `json:"logger,omitempty"`
 	fileHash        string                   `json:"-"`
 }
