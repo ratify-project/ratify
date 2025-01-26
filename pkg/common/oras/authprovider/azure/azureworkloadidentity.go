@@ -258,18 +258,13 @@ func parseEndpoints(endpoints []string) ([]string, error) {
 // provider.
 func validateHost(host string, endpoints []string) error {
 	for _, endpoint := range endpoints {
-		switch strings.Count(endpoint, "*") {
-		case 0:
-			if host == endpoint {
+		if endpoint[0] == '*' {
+			if _, zone, ok := strings.Cut(host, "."); ok && zone == endpoint[2:] {
 				return nil
 			}
-		case 1:
-			index := strings.Index(host, ".")
-			if index > -1 && host[index:] == strings.TrimPrefix(endpoint, "*") {
-				return nil
-			}
-		default:
-			continue
+		}
+		if host == endpoint {
+			return nil
 		}
 	}
 	return fmt.Errorf("the artifact host %s is not in the scope of the store auth provider", host)
