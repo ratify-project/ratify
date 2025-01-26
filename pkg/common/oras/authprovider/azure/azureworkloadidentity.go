@@ -117,12 +117,9 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		}
 	}
 
-	if len(conf.Endpoints) == 0 {
-		conf.Endpoints = []string{defaultACREndpoint}
-	} else {
-		if err := validateEndpoints(conf.Endpoints); err != nil {
-			return nil, re.ErrorCodeConfigInvalid.WithError(err)
-		}
+	endpoints, err := parseEndpoints(conf.Endpoints)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
 	}
 
 	// retrieve an AAD Access token
@@ -139,7 +136,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		registryHostGetter: &defaultRegistryHostGetterImpl{},   // Concrete implementation
 		getAADAccessToken:  &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
 		reportMetrics:      &defaultMetricsReporterImpl{},
-		endpoints:          conf.Endpoints,
+		endpoints:          endpoints,
 	}, nil
 }
 
@@ -222,7 +219,8 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	return authConfig, nil
 }
 
-// validateEndpoints checks if the endpoints are valid for auth provider.
+// parseEndpoints checks if the endpoints are valid for auth provider. If no
+// endpoints are provided, it defaults to the default ACR endpoint.
 // A valid endpoint is either a fully qualified domain name or a wildcard domain
 // name folloiwing RFC 1034.
 // Valid examples:
@@ -233,23 +231,27 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 // - *
 // - example.*
 // - *example.com.*
-func validateEndpoints(endpoints []string) error {
+// - *.
+func parseEndpoints(endpoints []string) ([]string, error) {
+	if len(endpoints) == 0 {
+		return []string{defaultACREndpoint}, nil
+	}
 	for _, endpoint := range endpoints {
 		switch strings.Count(endpoint, "*") {
 		case 0:
 			continue
 		case 1:
 			if !strings.HasPrefix(endpoint, "*.") {
-				return fmt.Errorf("invalid wildcard domain name: %s, it must start with '*.'", endpoint)
+				return nil, fmt.Errorf("invalid wildcard domain name: %s, it must start with '*.'", endpoint)
 			}
 			if len(endpoint) < 3 {
-				return fmt.Errorf("invalid wildcard domain name: %s, it must have at least one character after '*.'", endpoint)
+				return nil, fmt.Errorf("invalid wildcard domain name: %s, it must have at least one character after '*.'", endpoint)
 			}
 		default:
-			return fmt.Errorf("invalid wildcard domain name: %s, it must have at most one wildcard character", endpoint)
+			return nil, fmt.Errorf("invalid wildcard domain name: %s, it must have at most one wildcard character", endpoint)
 		}
 	}
-	return nil
+	return endpoints, nil
 }
 
 // validateHost checks if the host is matching endpoints supported by the auth
@@ -262,7 +264,8 @@ func validateHost(host string, endpoints []string) error {
 				return nil
 			}
 		case 1:
-			if strings.HasSuffix(host, strings.TrimPrefix(endpoint, "*")) {
+			index := strings.Index(host, ".")
+			if index > -1 && host[index:] == strings.TrimPrefix(endpoint, "*") {
 				return nil
 			}
 		default:

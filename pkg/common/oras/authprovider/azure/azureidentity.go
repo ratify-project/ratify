@@ -108,16 +108,10 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 			return nil, re.ErrorCodeEnvNotSet.WithDetail("AZURE_CLIENT_ID environment variable is empty").WithComponentType(re.AuthProvider)
 		}
 	}
-	if err != nil {
-		return nil, err
-	}
 
-	if len(conf.Endpoints) == 0 {
-		conf.Endpoints = []string{defaultACREndpoint}
-	} else {
-		if err := validateEndpoints(conf.Endpoints); err != nil {
-			return nil, re.ErrorCodeConfigInvalid.WithError(err)
-		}
+	endpoints, err := parseEndpoints(conf.Endpoints)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
 	}
 
 	// retrieve an AAD Access token
@@ -132,7 +126,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		tenantID:                tenant,
 		authClientFactory:       &defaultAuthClientFactoryImpl{},          // Concrete implementation
 		getManagedIdentityToken: &defaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
-		endpoints:               conf.Endpoints,
+		endpoints:               endpoints,
 	}, nil
 }
 
