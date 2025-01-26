@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"time"
 
 	re "github.com/ratify-project/ratify/errors"
@@ -67,11 +68,13 @@ type MIAuthProvider struct {
 	authClientFactory       AuthClientFactory
 	registryHostGetter      RegistryHostGetter
 	getManagedIdentityToken ManagedIdentityTokenGetter
+	hostPredicates          []*regexp.Regexp
 }
 
 type azureManagedIdentityAuthProviderConf struct {
-	Name     string `json:"name"`
-	ClientID string `json:"clientID"`
+	Name      string   `json:"name"`
+	ClientID  string   `json:"clientID"`
+	HostScope []string `json:"hostScope,omitempty"`
 }
 
 const (
@@ -109,6 +112,12 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 	if err != nil {
 		return nil, err
 	}
+
+	hostPredicates, err := parseHostScopeToPredicates(conf.HostScope)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
+	}
+
 	// retrieve an AAD Access token
 	token, err := getManagedIdentityToken(context.Background(), client, azidentity.NewManagedIdentityCredential)
 	if err != nil {
@@ -121,6 +130,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		tenantID:                tenant,
 		authClientFactory:       &defaultAuthClientFactoryImpl{},          // Concrete implementation
 		getManagedIdentityToken: &defaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
+		hostPredicates:          hostPredicates,
 	}, nil
 }
 
@@ -153,6 +163,10 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	artifactHostName, err := d.registryHostGetter.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
+	}
+
+	if err := validateHost(artifactHostName, d.hostPredicates); err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 
 	// need to refresh AAD token if it's expired

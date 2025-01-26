@@ -73,6 +73,11 @@ func TestWIAuthProvider_Provide_Success(t *testing.T) {
 	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(initialToken, nil)
 	mockMetricsReporter.On("ReportMetrics", mock.Anything, mock.Anything, "example.azurecr.io").Return()
 
+	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
+	if err != nil {
+		t.Fatal("failed to parse host predicates")
+	}
+
 	// Create WIAuthProvider
 	provider := WIAuthProvider{
 		aadToken:           initialToken,
@@ -82,6 +87,7 @@ func TestWIAuthProvider_Provide_Success(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		hostPredicates:     hostPredicates,
 	}
 
 	// Call Provide method
@@ -117,6 +123,11 @@ func TestWIAuthProvider_Provide_RefreshToken(t *testing.T) {
 	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(newToken, nil)
 	mockMetricsReporter.On("ReportMetrics", mock.Anything, mock.Anything, "example.azurecr.io").Return()
 
+	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
+	if err != nil {
+		t.Fatal("failed to parse host predicates")
+	}
+
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
 		aadToken:           expiredToken,
@@ -126,6 +137,7 @@ func TestWIAuthProvider_Provide_RefreshToken(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		hostPredicates:     hostPredicates,
 	}
 
 	// Call Provide method
@@ -152,6 +164,11 @@ func TestWIAuthProvider_Provide_AADTokenFailure(t *testing.T) {
 	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
 	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(confidential.AuthResult{}, errors.New("token refresh failed"))
 
+	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
+	if err != nil {
+		t.Fatal("failed to parse host predicates")
+	}
+
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
 		aadToken:           expiredToken,
@@ -161,11 +178,12 @@ func TestWIAuthProvider_Provide_AADTokenFailure(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		hostPredicates:     hostPredicates,
 	}
 
 	// Call Provide method
 	ctx := context.Background()
-	_, err := provider.Provide(ctx, "artifact_name")
+	_, err = provider.Provide(ctx, "artifact_name")
 
 	// Assertions
 	assert.Error(t, err)
@@ -229,6 +247,11 @@ func TestWIAuthProvider_Provide_TokenRefresh_Success(t *testing.T) {
 	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(newToken, nil)
 	mockMetricsReporter.On("ReportMetrics", mock.Anything, mock.Anything, "example.azurecr.io").Return()
 
+	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
+	if err != nil {
+		t.Fatal("failed to parse host predicates")
+	}
+
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
 		aadToken:           expiredToken,
@@ -238,6 +261,7 @@ func TestWIAuthProvider_Provide_TokenRefresh_Success(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		hostPredicates:     hostPredicates,
 	}
 
 	// Call Provide method
@@ -264,6 +288,11 @@ func TestWIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
 	mockAADAccessTokenGetter.On("GetAADAccessToken", mock.Anything, "tenantID", "clientID", mock.Anything).Return(confidential.AuthResult{}, errors.New("token refresh failed"))
 
+	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
+	if err != nil {
+		t.Fatal("failed to parse host predicates")
+	}
+
 	// Create WIAuthProvider with expired token
 	provider := WIAuthProvider{
 		aadToken:           expiredToken,
@@ -273,11 +302,12 @@ func TestWIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		hostPredicates:     hostPredicates,
 	}
 
 	// Call Provide method
 	ctx := context.Background()
-	_, err := provider.Provide(ctx, "artifact_name")
+	_, err = provider.Provide(ctx, "artifact_name")
 
 	// Assertions
 	assert.Error(t, err)

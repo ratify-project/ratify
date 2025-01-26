@@ -18,7 +18,10 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	azcontainerregistry "github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
@@ -72,11 +75,13 @@ type WIAuthProvider struct {
 	registryHostGetter RegistryHostGetter
 	getAADAccessToken  AADAccessTokenGetter
 	reportMetrics      MetricsReporter
+	hostPredicates     []*regexp.Regexp
 }
 
 type azureWIAuthProviderConf struct {
-	Name     string `json:"name"`
-	ClientID string `json:"clientID,omitempty"`
+	Name      string   `json:"name"`
+	ClientID  string   `json:"clientID,omitempty"`
+	HostScope []string `json:"hostScope,omitempty"`
 }
 
 const (
@@ -113,6 +118,11 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		}
 	}
 
+	hostPredicates, err := parseHostScopeToPredicates(conf.HostScope)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
+	}
+
 	// retrieve an AAD Access token
 	token, err := defaultGetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
@@ -127,6 +137,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		registryHostGetter: &defaultRegistryHostGetterImpl{},   // Concrete implementation
 		getAADAccessToken:  &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
 		reportMetrics:      &defaultMetricsReporterImpl{},
+		hostPredicates:     hostPredicates,
 	}, nil
 }
 
@@ -155,6 +166,10 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	artifactHostName, err := d.registryHostGetter.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
+	}
+
+	if err := validateHost(artifactHostName, d.hostPredicates); err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 
 	// need to refresh AAD token if it's expired
@@ -203,6 +218,61 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	}
 
 	return authConfig, nil
+}
+
+func parseHostScopeToPredicates(hostScope []string) ([]*regexp.Regexp, error) {
+	if err := validateHostScope(hostScope); err != nil {
+		return nil, err
+	}
+
+	var predicates []*regexp.Regexp
+	if len(hostScope) == 0 {
+		re, err := regexp.Compile("^" + defaultHostScope + "$")
+		if err != nil {
+			return nil, fmt.Errorf("failed to compile default host scope regex: %w", err)
+		}
+		predicates = append(predicates, re)
+	} else {
+		for _, scope := range hostScope {
+			re, err := regexp.Compile("^" + strings.ReplaceAll(scope, "*", ".*") + "$")
+			if err != nil {
+				return nil, fmt.Errorf("failed to compile host scope regex: %w", err)
+			}
+			predicates = append(predicates, re)
+		}
+	}
+	return predicates, nil
+}
+
+// validateHostScope checks if the host scope is valid for auth provider.
+// A valid host is either a fully qualified domain name or a wildcard domain
+// name folloiwing RFC 1034.
+// Valid examples:
+// - *.example.com
+// - example.com
+//
+// Invalid examples:
+// - *
+// - example.*
+// - *example.com
+func validateHostScope(hostScope []string) error {
+	pattern := regexp.MustCompile(`^(\*\.)?([^*]+\.)*[^*.]+$`)
+	for _, scope := range hostScope {
+		if !pattern.MatchString(scope) {
+			return fmt.Errorf("invalid host scope %s", scope)
+		}
+	}
+	return nil
+}
+
+// validateHost checks if the host is in the scope of the store auth provider.
+func validateHost(host string, predicates []*regexp.Regexp) error {
+	for _, scope := range predicates {
+		if scope.MatchString(host) {
+			return nil
+		}
+	}
+	return fmt.Errorf("the artifact host %s is not in the scope of the store auth provider", host)
 }
 
 // Compare addExpiry with default ACR refresh token expiry
