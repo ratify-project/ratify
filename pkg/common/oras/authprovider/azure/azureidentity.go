@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
 	"time"
 
 	re "github.com/ratify-project/ratify/errors"
@@ -68,13 +67,13 @@ type MIAuthProvider struct {
 	authClientFactory       AuthClientFactory
 	registryHostGetter      RegistryHostGetter
 	getManagedIdentityToken ManagedIdentityTokenGetter
-	hostPredicates          []*regexp.Regexp
+	endpoints               []string
 }
 
 type azureManagedIdentityAuthProviderConf struct {
 	Name      string   `json:"name"`
 	ClientID  string   `json:"clientID"`
-	HostScope []string `json:"hostScope,omitempty"`
+	Endpoints []string `json:"endpoints,omitempty"`
 }
 
 const (
@@ -113,9 +112,12 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		return nil, err
 	}
 
-	hostPredicates, err := parseHostScopeToPredicates(conf.HostScope)
-	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithError(err)
+	if len(conf.Endpoints) == 0 {
+		conf.Endpoints = []string{defaultACREndpoint}
+	} else {
+		if err := validateEndpoints(conf.Endpoints); err != nil {
+			return nil, re.ErrorCodeConfigInvalid.WithError(err)
+		}
 	}
 
 	// retrieve an AAD Access token
@@ -130,7 +132,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		tenantID:                tenant,
 		authClientFactory:       &defaultAuthClientFactoryImpl{},          // Concrete implementation
 		getManagedIdentityToken: &defaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
-		hostPredicates:          hostPredicates,
+		endpoints:               conf.Endpoints,
 	}, nil
 }
 
@@ -165,7 +167,7 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}
 
-	if err := validateHost(artifactHostName, d.hostPredicates); err != nil {
+	if err := validateHost(artifactHostName, d.endpoints); err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 

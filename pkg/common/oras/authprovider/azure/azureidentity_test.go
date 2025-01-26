@@ -159,11 +159,6 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 	mockAuthClient.On("ExchangeAADAccessTokenForACRRefreshToken", mock.Anything, azcontainerregistry.PostContentSchemaGrantType(GrantTypeAccessToken), "example.azurecr.io", mock.Anything).Return(refreshToken, nil)
 	mockManagedIdentityTokenGetter.On("GetManagedIdentityToken", mock.Anything, "clientID").Return(newAADToken, nil)
 
-	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
-	if err != nil {
-		t.Fatal("failed to parse host predicates")
-	}
-
 	// Initialize provider with expired token
 	provider := MIAuthProvider{
 		identityToken:           expiredToken,
@@ -172,7 +167,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 		authClientFactory:       mockAuthClientFactory,
 		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
-		hostPredicates:          hostPredicates,
+		endpoints:               []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
@@ -198,10 +193,6 @@ func TestMIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 	mockRegistryHostGetter.On("GetRegistryHost", "artifact_name").Return("example.azurecr.io", nil)
 	mockManagedIdentityTokenGetter.On("GetManagedIdentityToken", mock.Anything, "clientID").Return(azcore.AccessToken{}, errors.New("token refresh failed"))
 
-	hostPredicates, err := parseHostScopeToPredicates([]string{"example.azurecr.io"})
-	if err != nil {
-		t.Fatal("failed to parse host predicates")
-	}
 	// Initialize provider with expired token
 	provider := MIAuthProvider{
 		identityToken:           expiredToken,
@@ -210,12 +201,12 @@ func TestMIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 		authClientFactory:       mockAuthClientFactory,
 		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
-		hostPredicates:          hostPredicates,
+		endpoints:               []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
 	ctx := context.Background()
-	_, err = provider.Provide(ctx, "artifact_name")
+	_, err := provider.Provide(ctx, "artifact_name")
 
 	// Validate failure
 	assert.Error(t, err)

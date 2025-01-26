@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 
@@ -75,13 +74,13 @@ type WIAuthProvider struct {
 	registryHostGetter RegistryHostGetter
 	getAADAccessToken  AADAccessTokenGetter
 	reportMetrics      MetricsReporter
-	hostPredicates     []*regexp.Regexp
+	endpoints          []string
 }
 
 type azureWIAuthProviderConf struct {
 	Name      string   `json:"name"`
 	ClientID  string   `json:"clientID,omitempty"`
-	HostScope []string `json:"hostScope,omitempty"`
+	Endpoints []string `json:"endpoints,omitempty"`
 }
 
 const (
@@ -118,9 +117,12 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		}
 	}
 
-	hostPredicates, err := parseHostScopeToPredicates(conf.HostScope)
-	if err != nil {
-		return nil, re.ErrorCodeConfigInvalid.WithError(err)
+	if len(conf.Endpoints) == 0 {
+		conf.Endpoints = []string{defaultACREndpoint}
+	} else {
+		if err := validateEndpoints(conf.Endpoints); err != nil {
+			return nil, re.ErrorCodeConfigInvalid.WithError(err)
+		}
 	}
 
 	// retrieve an AAD Access token
@@ -137,7 +139,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		registryHostGetter: &defaultRegistryHostGetterImpl{},   // Concrete implementation
 		getAADAccessToken:  &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
 		reportMetrics:      &defaultMetricsReporterImpl{},
-		hostPredicates:     hostPredicates,
+		endpoints:          conf.Endpoints,
 	}, nil
 }
 
@@ -168,7 +170,7 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
 	}
 
-	if err := validateHost(artifactHostName, d.hostPredicates); err != nil {
+	if err := validateHost(artifactHostName, d.endpoints); err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 
@@ -220,32 +222,8 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	return authConfig, nil
 }
 
-func parseHostScopeToPredicates(hostScope []string) ([]*regexp.Regexp, error) {
-	if err := validateHostScope(hostScope); err != nil {
-		return nil, err
-	}
-
-	var predicates []*regexp.Regexp
-	if len(hostScope) == 0 {
-		re, err := regexp.Compile("^" + defaultHostScope + "$")
-		if err != nil {
-			return nil, fmt.Errorf("failed to compile default host scope regex: %w", err)
-		}
-		predicates = append(predicates, re)
-	} else {
-		for _, scope := range hostScope {
-			re, err := regexp.Compile("^" + strings.ReplaceAll(scope, "*", ".*") + "$")
-			if err != nil {
-				return nil, fmt.Errorf("failed to compile host scope regex: %w", err)
-			}
-			predicates = append(predicates, re)
-		}
-	}
-	return predicates, nil
-}
-
-// validateHostScope checks if the host scope is valid for auth provider.
-// A valid host is either a fully qualified domain name or a wildcard domain
+// validateEndpoints checks if the endpoints are valid for auth provider.
+// A valid endpoint is either a fully qualified domain name or a wildcard domain
 // name folloiwing RFC 1034.
 // Valid examples:
 // - *.example.com
@@ -254,22 +232,41 @@ func parseHostScopeToPredicates(hostScope []string) ([]*regexp.Regexp, error) {
 // Invalid examples:
 // - *
 // - example.*
-// - *example.com
-func validateHostScope(hostScope []string) error {
-	pattern := regexp.MustCompile(`^(\*\.)?([^*]+\.)*[^*.]+$`)
-	for _, scope := range hostScope {
-		if !pattern.MatchString(scope) {
-			return fmt.Errorf("invalid host scope %s", scope)
+// - *example.com.*
+func validateEndpoints(endpoints []string) error {
+	for _, endpoint := range endpoints {
+		switch strings.Count(endpoint, "*") {
+		case 0:
+			continue
+		case 1:
+			if !strings.HasPrefix(endpoint, "*.") {
+				return fmt.Errorf("invalid wildcard domain name: %s, it must start with '*.'", endpoint)
+			}
+			if len(endpoint) < 3 {
+				return fmt.Errorf("invalid wildcard domain name: %s, it must have at least one character after '*.'", endpoint)
+			}
+		default:
+			return fmt.Errorf("invalid wildcard domain name: %s, it must have at most one wildcard character", endpoint)
 		}
 	}
 	return nil
 }
 
-// validateHost checks if the host is in the scope of the store auth provider.
-func validateHost(host string, predicates []*regexp.Regexp) error {
-	for _, scope := range predicates {
-		if scope.MatchString(host) {
-			return nil
+// validateHost checks if the host is matching endpoints supported by the auth
+// provider.
+func validateHost(host string, endpoints []string) error {
+	for _, endpoint := range endpoints {
+		switch strings.Count(endpoint, "*") {
+		case 0:
+			if host == endpoint {
+				return nil
+			}
+		case 1:
+			if strings.HasSuffix(host, strings.TrimPrefix(endpoint, "*")) {
+				return nil
+			}
+		default:
+			continue
 		}
 	}
 	return fmt.Errorf("the artifact host %s is not in the scope of the store auth provider", host)
