@@ -287,7 +287,7 @@ func sendResponse(results *[]externaldata.Item, systemErr string, w http.Respons
 }
 
 func processTimeout(h ContextHandler, duration time.Duration, isMutation bool) ContextHandler {
-	return func(handlerContext context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(_ context.Context, w http.ResponseWriter, r *http.Request) error {
 		ctx, cancel := context.WithTimeout(r.Context(), duration)
 		defer cancel()
 

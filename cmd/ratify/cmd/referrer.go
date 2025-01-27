@@ -46,7 +46,7 @@ func NewCmdReferrer(argv ...string) *cobra.Command {
 		Use:   referrerUse,
 		Short: "Discover referrers for a subject",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Usage()
 		},
 	}
@@ -71,7 +71,7 @@ func NewCmdShowBlob(argv ...string) *cobra.Command {
 		Short:   "show blob at a digest",
 		Example: eg,
 		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return showBlob(opts)
 		},
 	}
@@ -100,7 +100,7 @@ func NewCmdShowRefManifest(argv ...string) *cobra.Command {
 		Short:   "show rference manifest at a digest",
 		Example: eg,
 		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			return showRefManifest(opts)
 		},
 	}

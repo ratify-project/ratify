@@ -101,7 +101,7 @@ func TestORASListReferrers_SubjectDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
 		return testRepo, nil
 	}
 	inputRef := common.Reference{
@@ -158,7 +158,7 @@ func TestORASListReferrers_NoSubjectDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
 		return testRepo, nil
 	}
 	inputRef := common.Reference{
@@ -226,7 +226,7 @@ func TestORASGetReferenceManifest_CachedDesc(t *testing.T) {
 			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
 		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
@@ -290,7 +290,7 @@ func TestORASGetReferenceManifest_NotCachedDesc(t *testing.T) {
 			artifactDigest: io.NopCloser(bytes.NewReader(manifestNotCachedBytes)),
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
 		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
@@ -346,7 +346,7 @@ func TestORASGetBlobContent_CachedDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
 		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{
@@ -393,7 +393,7 @@ func TestORASGetBlobContent_NotCachedDesc(t *testing.T) {
 			},
 		},
 	}
-	store.createRepository = func(ctx context.Context, store *orasStore, targetRef common.Reference) (registry.Repository, error) {
+	store.createRepository = func(_ context.Context, _ *orasStore, _ common.Reference) (registry.Repository, error) {
 		return testRepo, nil
 	}
 	store.localCache = mocks.TestStorage{

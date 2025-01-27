@@ -46,10 +46,10 @@ func (e *TestExecutor) FindInPaths(plugin string, paths []string) (string, error
 }
 func TestPluginMain_GetBlobContent_InvokeExpected(t *testing.T) {
 	testExecutor := &TestExecutor{
-		find: func(plugin string, paths []string) (string, error) {
+		find: func(_ string, _ []string) (string, error) {
 			return testPath, nil
 		},
-		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+		execute: func(_ context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 			if pluginPath != testPath {
 				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
@@ -124,10 +124,10 @@ func TestPluginMain_GetBlobContent_InvokeExpected(t *testing.T) {
 
 func TestPluginMain_GetReferenceManifest_InvokeExpected(t *testing.T) {
 	testExecutor := &TestExecutor{
-		find: func(plugin string, paths []string) (string, error) {
+		find: func(_ string, _ []string) (string, error) {
 			return testPath, nil
 		},
-		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+		execute: func(_ context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 			if pluginPath != testPath {
 				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
@@ -207,10 +207,10 @@ func TestPluginMain_GetReferenceManifest_InvokeExpected(t *testing.T) {
 func TestPluginMain_ListReferrers_InvokeExpected(t *testing.T) {
 	testPlugin := "test-plugin"
 	testExecutor := &TestExecutor{
-		find: func(plugin string, paths []string) (string, error) {
+		find: func(_ string, _ []string) (string, error) {
 			return testPath, nil
 		},
-		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+		execute: func(_ context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 			if pluginPath != testPath {
 				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}
@@ -289,10 +289,10 @@ func TestPluginMain_GetSubjectDescriptor_InvokeExpected(t *testing.T) {
 	testPlugin := "test-plugin"
 	testDigest := digest.FromString("test")
 	testExecutor := &TestExecutor{
-		find: func(plugin string, paths []string) (string, error) {
+		find: func(_ string, _ []string) (string, error) {
 			return testPath, nil
 		},
-		execute: func(ctx context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
+		execute: func(_ context.Context, pluginPath string, cmdArgs []string, stdinData []byte, environ []string) ([]byte, error) {
 			if pluginPath != testPath {
 				t.Fatalf("mismatch in plugin path expected %s actual %s", testPath, pluginPath)
 			}

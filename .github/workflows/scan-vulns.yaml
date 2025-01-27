@@ -52,8 +52,6 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v${{ env.TRIVY_VERSION }}/trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           echo "$(pwd)" >> $GITHUB_PATH
-        env:
-          TRIVY_VERSION: "0.46.0"
 
       - name: Run trivy on git repository
         run: |
@@ -68,7 +66,7 @@ jobs:
           for img in "localbuild:test" "localbuildcrd:test"; do
               trivy image --ignore-unfixed --vuln-type="os,library" "${img}"
           done
-      - name: Run trivy on images and exit on HIGH severity
+      - name: Run trivy on images and exit on HIGH/CRITICAL severity
         run: |
           trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "localbuild:test"
           trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" --show-suppressed --ignorefile ./.github/crd.trivyignore.yaml "localbuildcrd:test"

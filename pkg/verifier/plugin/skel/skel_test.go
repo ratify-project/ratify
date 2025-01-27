@@ -60,7 +60,7 @@ func teardown() {
 }
 
 func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
-	verifyReference := func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
+	verifyReference := func(_ *CmdArgs, _ common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
 		if referenceDescriptor.ArtifactType != "test-type" {
 			t.Fatalf("expected artifact type %s actual %s", "test-type", referenceDescriptor.ArtifactType)
 		}
@@ -107,7 +107,7 @@ func TestPluginMain_VerifyReference_ReturnsExpected(t *testing.T) {
 }
 
 func TestPluginMain_VerifyReference_CanUseBuiltinStores(t *testing.T) {
-	verifyReference := func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
+	verifyReference := func(_ *CmdArgs, _ common.Reference, _ ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
 		// expect to find a builtin store and fail if it was configured as a plugin
 		if _, ok := referrerStore.(*sp.StorePlugin); ok {
 			t.Fatalf("expected store to be builtin")
@@ -144,7 +144,7 @@ func TestPluginMain_VerifyReference_CanUseBuiltinStores(t *testing.T) {
 }
 
 func TestPluginMain_ErrorCases(t *testing.T) {
-	verifyReference := func(args *CmdArgs, subjectReference common.Reference, referenceDescriptor ocispecs.ReferenceDescriptor, referrerStore referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
+	verifyReference := func(_ *CmdArgs, _ common.Reference, _ ocispecs.ReferenceDescriptor, _ referrerstore.ReferrerStore) (*verifier.VerifierResult, error) {
 		return nil, fmt.Errorf("simulated error")
 	}
 	environment := map[string]string{

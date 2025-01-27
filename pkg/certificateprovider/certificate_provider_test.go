@@ -78,7 +78,7 @@ func TestDecodeCertificates_ByteArrayToCertificates(t *testing.T) {
 
 	r, err := DecodeCertificates(c1)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fatal(err.Error())
 	}
 
 	expectedLen := 1

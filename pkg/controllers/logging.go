@@ -122,7 +122,7 @@ func (sink *LogrusSink) createEntry(keysAndValues ...interface{}) *logrus.Entry 
 }
 
 func (sink *LogrusSink) formatMessage(msg string) string {
-	if sink.names == nil || len(sink.names) == 0 {
+	if len(sink.names) == 0 {
 		return msg
 	}
 
