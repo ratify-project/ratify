@@ -67,11 +67,13 @@ type MIAuthProvider struct {
 	authClientFactory       AuthClientFactory
 	registryHostGetter      RegistryHostGetter
 	getManagedIdentityToken ManagedIdentityTokenGetter
+	endpoints               []string
 }
 
 type azureManagedIdentityAuthProviderConf struct {
-	Name     string `json:"name"`
-	ClientID string `json:"clientID"`
+	Name      string   `json:"name"`
+	ClientID  string   `json:"clientID"`
+	Endpoints []string `json:"endpoints,omitempty"`
 }
 
 const (
@@ -106,9 +108,12 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 			return nil, re.ErrorCodeEnvNotSet.WithDetail("AZURE_CLIENT_ID environment variable is empty").WithComponentType(re.AuthProvider)
 		}
 	}
+
+	endpoints, err := parseEndpoints(conf.Endpoints)
 	if err != nil {
-		return nil, err
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
 	}
+
 	// retrieve an AAD Access token
 	token, err := getManagedIdentityToken(context.Background(), client, azidentity.NewManagedIdentityCredential)
 	if err != nil {
@@ -121,6 +126,7 @@ func (s *azureManagedIdentityProviderFactory) Create(authProviderConfig provider
 		tenantID:                tenant,
 		authClientFactory:       &defaultAuthClientFactoryImpl{},          // Concrete implementation
 		getManagedIdentityToken: &defaultManagedIdentityTokenGetterImpl{}, // Concrete implementation
+		endpoints:               endpoints,
 	}, nil
 }
 
@@ -153,6 +159,10 @@ func (d *MIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	artifactHostName, err := d.registryHostGetter.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
+	}
+
+	if err := validateHost(artifactHostName, d.endpoints); err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 
 	// need to refresh AAD token if it's expired
