@@ -100,7 +100,7 @@ func (g *defaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string
 // - *.
 func parseEndpoints(endpoints []string) ([]string, error) {
 	if len(endpoints) == 0 {
-		return []string{defaultACREndpoint}, nil
+		return defaultACREndpoints, nil
 	}
 	for _, endpoint := range endpoints {
 		switch strings.Count(endpoint, "*") {
