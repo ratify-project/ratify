@@ -27,7 +27,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        KUBERNETES_VERSION: ["1.29.2"]
+        KUBERNETES_VERSION: ["1.30.6"]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
@@ -39,7 +39,7 @@ jobs:
       - name: setup go environment
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          go-version: "1.22"
+          go-version: "1.23"
       - name: Run tidy
         run: go mod tidy
       - name: Bootstrap e2e

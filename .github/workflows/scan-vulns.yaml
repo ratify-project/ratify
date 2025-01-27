@@ -37,6 +37,8 @@ jobs:
     name: "[Trivy] Scan for vulnerabilities"
     runs-on: ubuntu-22.04
     timeout-minutes: 15
+    env:
+      TRIVY_VERSION: 0.58.2
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@91182cccc01eb5e619899d80e4e971d6181294a7 # v2.10.1
@@ -52,8 +54,6 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v${{ env.TRIVY_VERSION }}/trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           echo "$(pwd)" >> $GITHUB_PATH
-        env:
-          TRIVY_VERSION: "0.46.0"
 
       - name: Run trivy on git repository
         run: |
@@ -70,6 +70,5 @@ jobs:
           done
       - name: Run trivy on images and exit on HIGH severity
         run: |
-          for img in "localbuild:test" "localbuildcrd:test"; do
-              trivy image --ignore-unfixed --exit-code 1 --severity HIGH --vuln-type="os,library" "${img}"
-          done
+          trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "localbuild:test"
+          trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" --show-suppressed --ignorefile ./.github/crd.trivyignore.yaml "localbuildcrd:test"

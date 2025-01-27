@@ -33,14 +33,16 @@ import (
 
 type AzureWIProviderFactory struct{} //nolint:revive // ignore linter to have unique type name
 type azureWIAuthProvider struct {
-	aadToken confidential.AuthResult
-	tenantID string
-	clientID string
+	aadToken  confidential.AuthResult
+	tenantID  string
+	clientID  string
+	endpoints []string
 }
 
 type azureWIAuthProviderConf struct {
-	Name     string `json:"name"`
-	ClientID string `json:"clientID,omitempty"`
+	Name      string   `json:"name"`
+	ClientID  string   `json:"clientID,omitempty"`
+	Endpoints []string `json:"endpoints,omitempty"`
 }
 
 const (
@@ -77,6 +79,11 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		}
 	}
 
+	endpoints, err := parseEndpoints(conf.Endpoints)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
+	}
+
 	// retrieve an AAD Access token
 	token, err := azureauth.GetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
@@ -84,9 +91,10 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 	}
 
 	return &azureWIAuthProvider{
-		aadToken: token,
-		tenantID: tenant,
-		clientID: clientID,
+		aadToken:  token,
+		tenantID:  tenant,
+		clientID:  clientID,
+		endpoints: endpoints,
 	}, nil
 }
 
@@ -114,6 +122,10 @@ func (d *azureWIAuthProvider) Provide(ctx context.Context, artifact string) (pro
 	artifactHostName, err := provider.GetRegistryHostName(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
+	}
+
+	if err := validateHost(artifactHostName, d.endpoints); err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 
 	// need to refresh AAD token if it's expired

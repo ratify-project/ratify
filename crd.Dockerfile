@@ -20,7 +20,7 @@ ARG KUBE_VERSION
 RUN echo "Ratify crd building on $TARGETOS, building for $TARGETARCH"
 
 RUN apk add --no-cache curl && \
-    curl -LO https://storage.googleapis.com/kubernetes-release/release/v${KUBE_VERSION}/bin/${TARGETOS}/${TARGETARCH}/kubectl && \
+    curl -LO https://dl.k8s.io/release/v${KUBE_VERSION}/bin/${TARGETOS}/${TARGETARCH}/kubectl && \
     chmod +x kubectl
 
 FROM scratch as build

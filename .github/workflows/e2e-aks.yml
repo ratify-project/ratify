@@ -9,7 +9,7 @@ on:
       k8s_version:
         description: "Kubernetes version"
         required: true
-        default: "1.29.2"
+        default: "1.30.6"
         type: string
       gatekeeper_version:
         description: "Gatekeeper version"
@@ -34,10 +34,10 @@ jobs:
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-      - name: Set up Go 1.22
+      - name: Set up Go 1.23
         uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5.0.2
         with:
-          go-version: "1.22"
+          go-version: "1.23"
       - name: Az CLI login
         uses: azure/login@6c251865b4e6290e7b78be643ea2d005bc51f69a # v2.1.1
         with:
