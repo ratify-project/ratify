@@ -240,7 +240,7 @@ func TestVerifySubjectInternal_CanVerify_ExpectedResults(t *testing.T) {
 		CanVerifyFunc: func(at string) bool {
 			return at == testArtifactType1
 		},
-		VerifyResult: func(artifactType string) bool {
+		VerifyResult: func(_ string) bool {
 			return true
 		},
 	}
@@ -293,7 +293,7 @@ func TestVerifySubjectInternal_VerifyFailures_ExpectedResults(t *testing.T) {
 		},
 	}
 	ver := &TestVerifier{
-		CanVerifyFunc: func(at string) bool {
+		CanVerifyFunc: func(_ string) bool {
 			return true
 		},
 		VerifyResult: func(artifactType string) bool {
@@ -345,10 +345,10 @@ func TestVerifySubjectInternal_VerifySuccess_ExpectedResults(t *testing.T) {
 		},
 	}
 	ver := &TestVerifier{
-		CanVerifyFunc: func(at string) bool {
+		CanVerifyFunc: func(_ string) bool {
 			return true
 		},
-		VerifyResult: func(artifactType string) bool {
+		VerifyResult: func(_ string) bool {
 			return true
 		},
 	}
@@ -402,7 +402,7 @@ func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *
 		},
 	}
 	ver := &TestVerifier{
-		CanVerifyFunc: func(at string) bool {
+		CanVerifyFunc: func(_ string) bool {
 			return true
 		},
 		VerifyResult: func(artifactType string) bool {
@@ -460,7 +460,7 @@ func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 		CanVerifyFunc: func(at string) bool {
 			return at == mocks.SbomArtifactType
 		},
-		VerifyResult: func(artifactType string) bool {
+		VerifyResult: func(_ string) bool {
 			return true
 		},
 		nestedReferences: []string{"string-content-does-not-matter"},
@@ -470,7 +470,7 @@ func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 		CanVerifyFunc: func(at string) bool {
 			return at == mocks.SignatureArtifactType
 		},
-		VerifyResult: func(artifactType string) bool {
+		VerifyResult: func(_ string) bool {
 			return true
 		},
 	}
@@ -538,7 +538,7 @@ func TestVerifySubjectInternal_NoNestedReferences_Expected(t *testing.T) {
 		CanVerifyFunc: func(at string) bool {
 			return at == mocks.SbomArtifactType
 		},
-		VerifyResult: func(artifactType string) bool {
+		VerifyResult: func(_ string) bool {
 			return true
 		},
 	}
@@ -547,7 +547,7 @@ func TestVerifySubjectInternal_NoNestedReferences_Expected(t *testing.T) {
 		CanVerifyFunc: func(at string) bool {
 			return at == mocks.SignatureArtifactType
 		},
-		VerifyResult: func(artifactType string) bool {
+		VerifyResult: func(_ string) bool {
 			return true
 		},
 	}

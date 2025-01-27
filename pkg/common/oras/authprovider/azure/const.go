@@ -27,6 +27,9 @@ const (
 	defaultACRExpiryDuration     time.Duration = 3 * time.Hour
 )
 
-var logOpt = logger.Option{
-	ComponentType: logger.AuthProvider,
-}
+var (
+	logOpt = logger.Option{
+		ComponentType: logger.AuthProvider,
+	}
+	defaultACREndpoints = []string{"*.azurecr.io", "*.azurecr.us", "*.azurecr.cn"}
+)

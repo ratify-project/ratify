@@ -23,7 +23,6 @@ import (
 	instrument "go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/sdk/instrumentation"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
-	"go.opentelemetry.io/otel/sdk/metric/aggregation"
 )
 
 var (
@@ -71,7 +70,7 @@ func initStatsReporter() error {
 				Scope: instrumentation.Scope{Name: scope},
 			},
 			sdkmetric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0, 10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1400, 1600, 1800, 2000, 2300, 2600, 4000, 4400, 4900},
 				},
 			},
@@ -82,7 +81,7 @@ func initStatsReporter() error {
 				Scope: instrumentation.Scope{Name: scope},
 			},
 			sdkmetric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0, 10, 30, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1100, 1200, 1400, 1600, 1800},
 				},
 			},
@@ -93,7 +92,7 @@ func initStatsReporter() error {
 				Scope: instrumentation.Scope{Name: scope},
 			},
 			sdkmetric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 600, 800, 1100, 1500, 2000},
 				},
 			},
@@ -104,7 +103,7 @@ func initStatsReporter() error {
 				Scope: instrumentation.Scope{Name: scope},
 			},
 			sdkmetric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
 				},
 			},
@@ -115,7 +114,7 @@ func initStatsReporter() error {
 				Scope: instrumentation.Scope{Name: scope},
 			},
 			sdkmetric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
 				},
 			},
@@ -126,7 +125,7 @@ func initStatsReporter() error {
 				Scope: instrumentation.Scope{Name: scope},
 			},
 			sdkmetric.Stream{
-				Aggregation: aggregation.ExplicitBucketHistogram{
+				Aggregation: sdkmetric.AggregationExplicitBucketHistogram{
 					Boundaries: []float64{0, 10, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200},
 				},
 			},

@@ -27,7 +27,7 @@ jobs:
 
       - uses: actions/setup-go@cdcb36043654635271a94b9a6d1392de5bb323a7 # v5.0.1
         with:
-          go-version: "1.22"
+          go-version: "1.23"
           check-latest: true
       - uses: golang/govulncheck-action@dd0578b371c987f96d1185abb54344b44352bd58 # v1.0.3
 
@@ -35,6 +35,8 @@ jobs:
     name: "[Trivy] Scan for vulnerabilities"
     runs-on: ubuntu-22.04
     timeout-minutes: 15
+    env:
+      TRIVY_VERSION: 0.58.2
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
@@ -50,8 +52,6 @@ jobs:
           wget https://github.com/aquasecurity/trivy/releases/download/v${{ env.TRIVY_VERSION }}/trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           tar zxvf trivy_${{ env.TRIVY_VERSION }}_Linux-64bit.tar.gz
           echo "$(pwd)" >> $GITHUB_PATH
-        env:
-          TRIVY_VERSION: "0.46.0"
 
       - name: Run trivy on git repository
         run: |
@@ -66,8 +66,7 @@ jobs:
           for img in "localbuild:test" "localbuildcrd:test"; do
               trivy image --ignore-unfixed --vuln-type="os,library" "${img}"
           done
-      - name: Run trivy on images and exit on HIGH severity
+      - name: Run trivy on images and exit on HIGH/CRITICAL severity
         run: |
-          for img in "localbuild:test" "localbuildcrd:test"; do
-              trivy image --ignore-unfixed --exit-code 1 --severity HIGH --vuln-type="os,library" "${img}"
-          done
+          trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" "localbuild:test"
+          trivy image --skip-db-update --ignore-unfixed --exit-code 1 --severity HIGH,CRITICAL --vuln-type="os,library" --show-suppressed --ignorefile ./.github/crd.trivyignore.yaml "localbuildcrd:test"
