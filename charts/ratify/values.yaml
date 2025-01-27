@@ -98,6 +98,7 @@ oras:
   authProviders:
     azureWorkloadIdentityEnabled: false
     azureManagedIdentityEnabled: false
+    azureContainerRegistryEndpoints: []
     k8secretsEnabled: false
     awsEcrBasicEnabled: false
     awsApiOverride:

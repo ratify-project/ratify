@@ -72,11 +72,13 @@ type WIAuthProvider struct {
 	registryHostGetter RegistryHostGetter
 	getAADAccessToken  AADAccessTokenGetter
 	reportMetrics      MetricsReporter
+	endpoints          []string
 }
 
 type azureWIAuthProviderConf struct {
-	Name     string `json:"name"`
-	ClientID string `json:"clientID,omitempty"`
+	Name      string   `json:"name"`
+	ClientID  string   `json:"clientID,omitempty"`
+	Endpoints []string `json:"endpoints,omitempty"`
 }
 
 const (
@@ -113,6 +115,11 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		}
 	}
 
+	endpoints, err := parseEndpoints(conf.Endpoints)
+	if err != nil {
+		return nil, re.ErrorCodeConfigInvalid.WithError(err)
+	}
+
 	// retrieve an AAD Access token
 	token, err := defaultGetAADAccessToken(context.Background(), tenant, clientID, AADResource)
 	if err != nil {
@@ -127,6 +134,7 @@ func (s *AzureWIProviderFactory) Create(authProviderConfig provider.AuthProvider
 		registryHostGetter: &defaultRegistryHostGetterImpl{},   // Concrete implementation
 		getAADAccessToken:  &defaultAADAccessTokenGetterImpl{}, // Concrete implementation
 		reportMetrics:      &defaultMetricsReporterImpl{},
+		endpoints:          endpoints,
 	}, nil
 }
 
@@ -155,6 +163,10 @@ func (d *WIAuthProvider) Provide(ctx context.Context, artifact string) (provider
 	artifactHostName, err := d.registryHostGetter.GetRegistryHost(artifact)
 	if err != nil {
 		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithComponentType(re.AuthProvider)
+	}
+
+	if err := validateHost(artifactHostName, d.endpoints); err != nil {
+		return provider.AuthConfig{}, re.ErrorCodeHostNameInvalid.WithError(err)
 	}
 
 	// need to refresh AAD token if it's expired

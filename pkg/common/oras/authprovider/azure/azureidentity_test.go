@@ -167,6 +167,7 @@ func TestMIAuthProvider_Provide_TokenRefreshSuccess(t *testing.T) {
 		authClientFactory:       mockAuthClientFactory,
 		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
+		endpoints:               []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
@@ -200,6 +201,7 @@ func TestMIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 		authClientFactory:       mockAuthClientFactory,
 		registryHostGetter:      mockRegistryHostGetter,
 		getManagedIdentityToken: mockManagedIdentityTokenGetter,
+		endpoints:               []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
