@@ -82,6 +82,7 @@ func TestWIAuthProvider_Provide_Success(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		endpoints:          []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
@@ -126,6 +127,7 @@ func TestWIAuthProvider_Provide_RefreshToken(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		endpoints:          []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
@@ -161,6 +163,7 @@ func TestWIAuthProvider_Provide_AADTokenFailure(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		endpoints:          []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
@@ -238,6 +241,7 @@ func TestWIAuthProvider_Provide_TokenRefresh_Success(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		endpoints:          []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method
@@ -273,6 +277,7 @@ func TestWIAuthProvider_Provide_TokenRefreshFailure(t *testing.T) {
 		registryHostGetter: mockRegistryHostGetter,
 		getAADAccessToken:  mockAADAccessTokenGetter,
 		reportMetrics:      mockMetricsReporter,
+		endpoints:          []string{"example.azurecr.io"},
 	}
 
 	// Call Provide method

@@ -19,11 +19,15 @@ spec:
     authProvider:
       name: azureWorkloadIdentity
       clientID: {{ .Values.azureWorkloadIdentity.clientId }}
+      endpoints:
+        {{- toYaml .Values.oras.authProviders.azureContainerRegistryEndpoints | nindent 8 }}
     {{- end }}
     {{- if .Values.oras.authProviders.azureManagedIdentityEnabled }}
     authProvider:
       name: azureManagedIdentity
       clientID: {{ .Values.azureManagedIdentity.clientId }}
+      endpoints: 
+        {{- toYaml .Values.oras.authProviders.azureContainerRegistryEndpoints | nindent 8 }}
     {{- end }}
     {{- if .Values.oras.authProviders.k8secretsEnabled }}
     authProvider:
