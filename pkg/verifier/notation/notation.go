@@ -193,14 +193,14 @@ func getVerifierService(ctx context.Context, conf *NotationPluginVerifierConfig,
 	if err != nil {
 		logger.GetLogger(ctx, logOpt).Warnf("Unable to create CRL fetcher for notation verifier %s with error: %s", conf.Name, err)
 	}
-	revocationCodeSigningValidator, err := revocationFactory.NewValidator(revocation.Options{
+	revocationCodeSigningValidator, err := revocation.NewWithOptions(revocation.Options{
 		CRLFetcher:       crlFetcher,
 		CertChainPurpose: purpose.CodeSigning,
 	})
 	if err != nil {
 		return nil, err
 	}
-	revocationTimestampingValidator, err := revocationFactory.NewValidator(revocation.Options{
+	revocationTimestampingValidator, err := revocation.NewWithOptions(revocation.Options{
 		CRLFetcher:       crlFetcher,
 		CertChainPurpose: purpose.Timestamping,
 	})

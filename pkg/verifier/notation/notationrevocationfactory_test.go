@@ -18,7 +18,6 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/notaryproject/notation-core-go/revocation"
 	"github.com/notaryproject/notation-go/dir"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/stretchr/testify/assert"
@@ -72,14 +71,6 @@ func TestNewFetcher(t *testing.T) {
 	globalFetcher, _ = CreateCRLFetcher(&http.Client{}, dir.PathCRLCache)
 }
 
-func TestNewValidator(t *testing.T) {
-	factory := CreateCRLHandlerFromConfig()
-	opts := revocation.Options{}
-
-	validator, err := factory.NewValidator(opts)
-	assert.NoError(t, err)
-	assert.NotNil(t, validator)
-}
 func TestNewFileCache(t *testing.T) {
 	tests := []struct {
 		name      string

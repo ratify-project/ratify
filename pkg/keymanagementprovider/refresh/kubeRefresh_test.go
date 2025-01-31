@@ -26,7 +26,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
@@ -178,10 +177,6 @@ type MockCRLHandler struct {
 
 func (h *MockCRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 	return nil, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher")
-}
-
-func (h *MockCRLHandler) NewValidator(_ revocation.Options) (revocation.Validator, error) {
-	return nil, nil
 }
 
 func TestKubeRefresher_GetResult(t *testing.T) {
