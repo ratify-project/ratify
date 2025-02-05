@@ -19,7 +19,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/verifier/crl"
@@ -33,9 +32,6 @@ import (
 type RevocationFactory interface {
 	// NewFetcher returns a new fetcher instance
 	NewFetcher() (corecrl.Fetcher, error)
-
-	// NewValidator returns a new validator instance
-	NewValidator(revocation.Options) (revocation.Validator, error)
 }
 
 // CreateCRLFetcher returns a new fetcher instance
