@@ -103,11 +103,7 @@ spec:
           trustedIdentities:
             {{- $trustedIdentities := $policy.trustedIdentities | default (list "*") }}
             {{- range $j, $identity := $trustedIdentities }}
-            {{- if eq $identity "*" }}
-            - "*"
-            {{- else }}
-            - "x509.subject: {{ . }}"
-            {{- end }}
+            - "{{$identity}}"
             {{- end }}
         {{- end }}
 {{- end }}
