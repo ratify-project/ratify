@@ -48,12 +48,13 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 		return readJWTFromFS(tokenFilePath)
 	})
 
-	// create the confidential client to request an AAD token
+	// join the authorit prefix with tenantID to create authority URL
 	authorityURL, err := url.JoinPath(authority, tenantID)
 	if err != nil {
-		return confidential.AuthResult{}, fmt.Errorf("failed to create authority URL when joinig authority prefix and tenantID: %w", err)
+		return confidential.AuthResult{}, fmt.Errorf("failed to create authority URL when joining authority prefix and tenantID: %w", err)
 	}
 
+	// create the confidential client to request an AAD token
 	confidentialClientApp, err := confidential.New(
 		authorityURL,
 		clientID,
