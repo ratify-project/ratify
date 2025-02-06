@@ -17,6 +17,8 @@ package azure
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
@@ -81,4 +83,55 @@ type defaultRegistryHostGetterImpl struct{}
 // It utilizes the provider's GetRegistryHostName function to perform the lookup.
 func (g *defaultRegistryHostGetterImpl) GetRegistryHost(artifact string) (string, error) {
 	return provider.GetRegistryHostName(artifact)
+}
+
+// parseEndpoints checks if the endpoints are valid for auth provider. If no
+// endpoints are provided, it defaults to the default ACR endpoint.
+// A valid endpoint is either a fully qualified domain name or a wildcard domain
+// name folloiwing RFC 1034.
+// Valid examples:
+// - *.example.com
+// - example.com
+//
+// Invalid examples:
+// - *
+// - example.*
+// - *example.com.*
+// - *.
+func parseEndpoints(endpoints []string) ([]string, error) {
+	if len(endpoints) == 0 {
+		return defaultACREndpoints, nil
+	}
+	for _, endpoint := range endpoints {
+		switch strings.Count(endpoint, "*") {
+		case 0:
+			continue
+		case 1:
+			if !strings.HasPrefix(endpoint, "*.") {
+				return nil, fmt.Errorf("invalid wildcard domain name: %s, it must start with '*.'", endpoint)
+			}
+			if len(endpoint) < 3 {
+				return nil, fmt.Errorf("invalid wildcard domain name: %s, it must have at least one character after '*.'", endpoint)
+			}
+		default:
+			return nil, fmt.Errorf("invalid wildcard domain name: %s, it must have at most one wildcard character", endpoint)
+		}
+	}
+	return endpoints, nil
+}
+
+// validateHost checks if the host is matching endpoints supported by the auth
+// provider.
+func validateHost(host string, endpoints []string) error {
+	for _, endpoint := range endpoints {
+		if endpoint[0] == '*' {
+			if _, zone, ok := strings.Cut(host, "."); ok && zone == endpoint[2:] {
+				return nil
+			}
+		}
+		if host == endpoint {
+			return nil
+		}
+	}
+	return fmt.Errorf("the artifact host %s is not in the scope of the store auth provider", host)
 }
