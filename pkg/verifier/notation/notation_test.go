@@ -23,11 +23,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
-	"github.com/notaryproject/notation-core-go/revocation/purpose"
 	sig "github.com/notaryproject/notation-core-go/signature"
 	"github.com/notaryproject/notation-go"
+	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/opencontainers/go-digest"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	ratifyconfig "github.com/ratify-project/ratify/config"
@@ -582,43 +581,27 @@ func TestGetVerifierService(t *testing.T) {
 			errContent:        nil,
 		},
 		{
-			name: "failed to create file cache",
+			name: "successfully create verifier service",
 			conf: &NotationPluginVerifierConfig{
 				VerificationCerts: []string{defaultCertDir},
+				TrustPolicyDoc: trustpolicy.Document{
+					Version: "1.0",
+					TrustPolicies: []trustpolicy.TrustPolicy{
+						{
+							Name:           "default",
+							RegistryScopes: []string{"*"},
+							SignatureVerification: trustpolicy.SignatureVerification{
+								VerificationLevel: "strict",
+							},
+							TrustStores:       []string{"ca:certs"},
+							TrustedIdentities: []string{"*"},
+						},
+					},
+				},
 			},
 			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failFileCache: true},
-			expectErr:         true,
-			errContent:        nil,
-		},
-		{
-			name: "failed to create code signing validator",
-			conf: &NotationPluginVerifierConfig{
-				VerificationCerts: []string{defaultCertDir},
-			},
-			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failCodeSigningValidator: true},
-			expectErr:         true,
-			errContent:        fmt.Errorf("failed to create code signing validator"),
-		},
-		{
-			name: "failed to create timestamping validator",
-			conf: &NotationPluginVerifierConfig{
-				VerificationCerts: []string{defaultCertDir},
-			},
-			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failTimestampingValidator: true},
-			expectErr:         true,
-			errContent:        fmt.Errorf("failed to create timestamping validator"),
-		},
-		{
-			name: "failed to create verifier",
-			conf: &NotationPluginVerifierConfig{
-				VerificationCerts: []string{defaultCertDir},
-			},
-			pluginDir:         "",
-			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}, failVerifier: true},
-			expectErr:         true,
+			RevocationFactory: mockRevocationFactory{httpClient: &http.Client{}},
+			expectErr:         false,
 			errContent:        nil,
 		},
 	}
@@ -637,12 +620,8 @@ func TestGetVerifierService(t *testing.T) {
 }
 
 type mockRevocationFactory struct {
-	failFetcher               bool
-	failFileCache             bool
-	failCodeSigningValidator  bool
-	failTimestampingValidator bool
-	failVerifier              bool
-	httpClient                *http.Client
+	failFetcher bool
+	httpClient  *http.Client
 }
 
 func (m mockRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
@@ -650,14 +629,4 @@ func (m mockRevocationFactory) NewFetcher() (corecrl.Fetcher, error) {
 		return nil, fmt.Errorf("failed to create fetcher")
 	}
 	return corecrl.NewHTTPFetcher(m.httpClient)
-}
-
-func (m mockRevocationFactory) NewValidator(opts revocation.Options) (revocation.Validator, error) {
-	if m.failCodeSigningValidator && opts.CertChainPurpose == purpose.CodeSigning {
-		return nil, fmt.Errorf("failed to create code signing validator")
-	}
-	if m.failTimestampingValidator && opts.CertChainPurpose == purpose.Timestamping {
-		return nil, fmt.Errorf("failed to create timestamping validator")
-	}
-	return revocation.NewWithOptions(opts)
 }

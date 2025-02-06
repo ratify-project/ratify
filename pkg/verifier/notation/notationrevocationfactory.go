@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/notaryproject/notation-core-go/revocation"
 	corecrl "github.com/notaryproject/notation-core-go/revocation/crl"
 	"github.com/notaryproject/notation-go/dir"
 	"github.com/ratify-project/ratify/config"
@@ -61,9 +60,4 @@ func (h *CRLHandler) NewFetcher() (corecrl.Fetcher, error) {
 		return nil, re.ErrorCodeConfigInvalid.WithDetail("failed to create CRL fetcher")
 	}
 	return globalFetcher, nil
-}
-
-// NewValidator returns a new validator instance
-func (h *CRLHandler) NewValidator(opts revocation.Options) (revocation.Validator, error) {
-	return revocation.NewWithOptions(opts)
 }

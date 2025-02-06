@@ -18,6 +18,7 @@ package azureauth
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"time"
 
@@ -47,9 +48,15 @@ func GetAADAccessToken(ctx context.Context, tenantID, clientID, scope string) (c
 		return readJWTFromFS(tokenFilePath)
 	})
 
+	// join the authority prefix with tenantID to create authority URL
+	authorityURL, err := url.JoinPath(authority, tenantID)
+	if err != nil {
+		return confidential.AuthResult{}, fmt.Errorf("failed to create authority URL when joining authority prefix and tenantID: %w", err)
+	}
+
 	// create the confidential client to request an AAD token
 	confidentialClientApp, err := confidential.New(
-		fmt.Sprintf("%s%s/oauth2/token", authority, tenantID),
+		authorityURL,
 		clientID,
 		cred)
 	if err != nil {
