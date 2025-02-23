@@ -14,19 +14,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
         with:
           egress-policy: audit
 
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Check license header
-        uses: apache/skywalking-eyes/header@cd7b195c51fd3d6ad52afceb760719ddc6b3ee91
+        uses: apache/skywalking-eyes/header@5c5b974209f0de5d905f37deb69369068ebfc15c
         with:
           mode: check
           config: .github/licenserc.yml
       - name: Check dependencies license
-        uses: apache/skywalking-eyes/dependency@cd7b195c51fd3d6ad52afceb760719ddc6b3ee91
+        uses: apache/skywalking-eyes/dependency@5c5b974209f0de5d905f37deb69369068ebfc15c
         with:
           config: .github/licenserc.yml
           flags: --weak-compatible=true
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
         with:
           egress-policy: audit
 
@@ -63,7 +63,7 @@ jobs:
       contents: read
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
         with:
           egress-policy: audit
 
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
         with:
           egress-policy: audit
 
