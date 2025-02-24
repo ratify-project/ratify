@@ -24,7 +24,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Notation
-        uses: notaryproject/notation-action/setup@e3565b3f26df3c129e45224e7288fb41b75f296c # v1.2.1
+        uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
       - name: Install cosign
         uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
       - name: Az CLI login
@@ -105,7 +105,7 @@ jobs:
             -t ${{ steps.prepare.outputs.ref }} \
             --push .
       - name: Sign with Notation
-        uses: notaryproject/notation-action/sign@e3565b3f26df3c129e45224e7288fb41b75f296c # v1.2.1
+        uses: notaryproject/notation-action/sign@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
         with:
           plugin_name: azure-kv
           plugin_url: ${{ vars.AZURE_KV_PLUGIN_URL }}
@@ -122,7 +122,7 @@ jobs:
           cosign sign --yes ${{ steps.prepare.outputs.baseref }}
           cosign sign --yes ${{ steps.prepare.outputs.ref }}
       - name: Verify with Notation
-        uses: notaryproject/notation-action/verify@e3565b3f26df3c129e45224e7288fb41b75f296c # v1.2.1
+        uses: notaryproject/notation-action/verify@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
         with:
           target_artifact_reference: |-
             ${{ steps.prepare.outputs.crdref }}
