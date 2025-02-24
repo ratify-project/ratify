@@ -37,7 +37,7 @@ require (
 	github.com/google/go-containerregistry v0.20.3
 	github.com/gorilla/mux v1.8.1
 	github.com/notaryproject/notation-core-go v1.2.0
-	github.com/notaryproject/notation-go v1.3.0
+	github.com/notaryproject/notation-go v1.3.1
 	github.com/notaryproject/notation-plugin-framework-go v1.0.0
 	github.com/open-policy-agent/cert-controller v0.8.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa
@@ -243,7 +243,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.33.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
-	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/oauth2 v0.26.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
