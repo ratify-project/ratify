@@ -32,7 +32,7 @@ require (
 	github.com/docker/cli v27.5.1+incompatible
 	github.com/docker/distribution v2.8.3+incompatible
 	github.com/fsnotify/fsnotify v1.7.0
-	github.com/go-jose/go-jose/v3 v3.0.3
+	github.com/go-jose/go-jose/v3 v3.0.4
 	github.com/golang/protobuf v1.5.4
 	github.com/google/go-containerregistry v0.20.3
 	github.com/gorilla/mux v1.8.1
