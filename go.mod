@@ -1,7 +1,6 @@
 module github.com/ratify-project/ratify
 
 go 1.23.3
-toolchain go1.24.1
 
 // Accidentally published prior to 1.0.0 release
 retract (
