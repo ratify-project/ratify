@@ -77,7 +77,7 @@ See details in [GitHub milestone v1.3.0](https://github.com/ratify-project/ratif
 
 ### v1.4
 
-**Status**: In process
+**Status**: Completed
 
 **Target date**: Nov 30, 2024
 
@@ -90,16 +90,57 @@ See details in [GitHub milestone v1.3.0](https://github.com/ratify-project/ratif
 
 See details in [GitHub milestone v1.4.0](https://github.com/ratify-project/ratify/issues?q=is%3Aopen+is%3Aissue+milestone%3Av1.4.0).
 
-### v2.x
-
-Status: Tentative
-
-Target date: TBD
+### v2.0.0-alpha.1
+**Status**: In procoess
+**Target date**: May 15, 2025
 
 **Major features**
 
-- Attestations support
-- Kubernetes multi-tenancy support - Verifying Common images across namespaces
-- Use Ratify at container runtime
-- Use Ratify in CI/CD pipelines
-- Support CEL as additional policy language
+- Create and implement ratify core library([ratify-go](https://github.com/ratify-project/ratify-go)), which should be in v1.0.0-alpha.1.
+- Implement new `Store` interface in [ratify-go](https://github.com/ratify-project/ratify-go).
+- Implement new `PolicyEnforcer` interface in [ratify-go](https://github.com/ratify-project/ratify-go).
+- Implement notation-verifier under [ratify-verifier-go](https://github.com/ratify-project/ratify-verifier-go) which should be in v1.0.0-alpha.1.
+- Create v2 branch in [ratify](https://github.com/ratify-project/ratify) repo and implement the new ratify add-on integrating with new `ratify-go` and `ratify-verifier-go` libraries.
+
+### v2.0.0-alpha.2
+**Status**: Tentative
+**Target date**: June 30, 2025
+**Major features**
+- Add support for authenticating to remote OCI registries via Store interface.
+- Add Key Management Provider or similar functionality to ratify v2.
+
+### v2.0.0-beta.1
+**Status**: Tentative
+**Target date**: TBD
+**Major features**
+- Implement new cache system.
+- Improve performance of executor by supporting parallel execution of verifiers.
+
+### v2.0.0-beta.2
+**Status**: Tentative
+**Target date**: TBD
+**Major features**
+- Add more verifiers to verify different artifact types, like the Cosign signature and SBOMs.
+- Design and implement the new CRDs for customers to configure Ratify add-on in Kubernetes.
+- Support multi-tenancy in ratify v2.
+
+
+### v2.0.0-beta.3
+**Status**: Tentative
+**Target date**: TBD
+**Major features**
+- Implement the new ratify CLI tool with the basic functionalities.
+- Add instrumentation and telemetry to the ratify add-on.
+
+### v2.0.0-rc.x
+**Status**: Tentative
+**Target date**: TBD
+**Major features**
+- Add support for multiple cloud providers in v1, including Azure, AWS, and Alibaba.
+- Add any missing features from v1 to v2.
+- Fix any bugs or issues found in the previous versions.
+
+### v2.0.0
+**Status**: Tentative
+**Target date**: TBD
+**Major features**
