@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ratify-project/ratify/errors"
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
@@ -73,7 +72,7 @@ func VerifyReference(args *skel.CmdArgs, subjectReference common.Reference, refe
 	}
 
 	if len(referenceManifest.Blobs) == 0 {
-		noBlobErr := errors.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("No blobs found for referrer %s@%s.", subjectReference.Path, referenceDescriptor.Digest.String()))
+		noBlobErr := re.ErrorCodeVerifyPluginFailure.WithDetail(fmt.Sprintf("No blobs found for referrer %s@%s.", subjectReference.Path, referenceDescriptor.Digest.String()))
 		result := verifier.NewVerifierResult("", input.Name, verifierType, "", false, &noBlobErr, nil)
 		return &result, nil
 	}

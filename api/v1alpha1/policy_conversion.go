@@ -43,7 +43,7 @@ func Convert_unversioned_PolicyStatus_To_v1alpha1_PolicyStatus(in *unversioned.P
 func Convert_unversioned_Policy_To_v1alpha1_Policy(in *unversioned.Policy, out *Policy, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	// metadata.name in v1alpha1 is same as spec.type in unversioned.
-	out.ObjectMeta.Name = in.Spec.Type
+	out.Name = in.Spec.Type
 	if err := Convert_unversioned_PolicySpec_To_v1alpha1_PolicySpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
@@ -56,11 +56,11 @@ func Convert_unversioned_Policy_To_v1alpha1_Policy(in *unversioned.Policy, out *
 func Convert_v1alpha1_Policy_To_unversioned_Policy(in *Policy, out *unversioned.Policy, s conversion.Scope) error {
 	out.ObjectMeta = in.ObjectMeta
 	// metadata.name MUST be `ratify-policy` in unversioned.
-	out.ObjectMeta.Name = constants.RatifyPolicy
+	out.Name = constants.RatifyPolicy
 	if err := Convert_v1alpha1_PolicySpec_To_unversioned_PolicySpec(&in.Spec, &out.Spec, s); err != nil {
 		return err
 	}
 	// spec.type in unversioned is same as metadata.name in v1alpha1.
-	out.Spec.Type = in.ObjectMeta.Name
+	out.Spec.Type = in.Name
 	return Convert_v1alpha1_PolicyStatus_To_unversioned_PolicyStatus(&in.Status, &out.Status, s)
 }

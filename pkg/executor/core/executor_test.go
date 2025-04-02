@@ -32,7 +32,6 @@ import (
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/policyprovider"
 	policyConfig "github.com/ratify-project/ratify/pkg/policyprovider/configpolicy"
-	policyTypes "github.com/ratify-project/ratify/pkg/policyprovider/types"
 	pt "github.com/ratify-project/ratify/pkg/policyprovider/types"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
 	storeConfig "github.com/ratify-project/ratify/pkg/referrerstore/config"
@@ -222,8 +221,8 @@ func TestVerifySubjectInternal_Verify_NoReferrers(t *testing.T) {
 func TestVerifySubjectInternal_CanVerify_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
-			testArtifactType1: policyTypes.AnyVerifySuccess,
+		ArtifactTypePolicies: map[string]pt.ArtifactTypeVerifyPolicy{
+			testArtifactType1: pt.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -278,8 +277,8 @@ func TestVerifySubjectInternal_VerifyFailures_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	testArtifactType := "test-type1"
 	configPolicy := policyConfig.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
-			testArtifactType: policyTypes.AnyVerifySuccess,
+		ArtifactTypePolicies: map[string]pt.ArtifactTypeVerifyPolicy{
+			testArtifactType: pt.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -329,9 +328,9 @@ func TestVerifySubjectInternal_VerifyFailures_ExpectedResults(t *testing.T) {
 func TestVerifySubjectInternal_VerifySuccess_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
-			testArtifactType1: policyTypes.AnyVerifySuccess,
-			testArtifactType2: policyTypes.AnyVerifySuccess,
+		ArtifactTypePolicies: map[string]pt.ArtifactTypeVerifyPolicy{
+			testArtifactType1: pt.AnyVerifySuccess,
+			testArtifactType2: pt.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -386,9 +385,9 @@ func TestVerifySubjectInternal_VerifySuccess_ExpectedResults(t *testing.T) {
 func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *testing.T) {
 	testDigest := digest.FromString("test")
 	configPolicy := policyConfig.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
-			testArtifactType1: policyTypes.AnyVerifySuccess,
-			testArtifactType2: policyTypes.AnyVerifySuccess,
+		ArtifactTypePolicies: map[string]pt.ArtifactTypeVerifyPolicy{
+			testArtifactType1: pt.AnyVerifySuccess,
+			testArtifactType2: pt.AnyVerifySuccess,
 		}}
 	store := &mocks.TestStore{References: []ocispecs.ReferenceDescriptor{
 		{
@@ -449,7 +448,7 @@ func TestVerifySubjectInternalWithDecision_MultipleArtifacts_ExpectedResults(t *
 // TestVerifySubjectInternal_NestedReferences_Expected tests verifier config can specify nested references
 func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 	configPolicy := policyConfig.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
+		ArtifactTypePolicies: map[string]pt.ArtifactTypeVerifyPolicy{
 			"default": "all",
 		}}
 
@@ -528,7 +527,7 @@ func TestVerifySubjectInternal_NestedReferences_Expected(t *testing.T) {
 // TestVerifySubjectInternal__NoNestedReferences_Expected tests verifier config can specify no nested references
 func TestVerifySubjectInternal_NoNestedReferences_Expected(t *testing.T) {
 	configPolicy := policyConfig.PolicyEnforcer{
-		ArtifactTypePolicies: map[string]policyTypes.ArtifactTypeVerifyPolicy{
+		ArtifactTypePolicies: map[string]pt.ArtifactTypeVerifyPolicy{
 			"default": "all",
 		}}
 	store := mocks.CreateNewTestStoreForNestedSbom()

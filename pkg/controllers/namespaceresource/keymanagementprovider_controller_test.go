@@ -24,7 +24,6 @@ import (
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
 	re "github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/mocks"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/refresh"
@@ -437,7 +436,7 @@ func TestKMProviderUpdateErrorStatusNamespaced(t *testing.T) {
 }
 
 func TestKMProviderUpdateSuccessStatusNamespaced(t *testing.T) {
-	kmProviderStatus := keymanagementprovider.KeyManagementProviderStatus{}
+	kmProviderStatus := kmp.KeyManagementProviderStatus{}
 	properties := map[string]string{}
 	properties["Name"] = "wabbit"
 	properties["Version"] = "ABC"
