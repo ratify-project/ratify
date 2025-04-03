@@ -58,7 +58,7 @@ func NewActiveCertStores() CertStoreManager {
 func (c *ActiveCertStores) GetCertsFromStore(ctx context.Context, storeName string) ([]*x509.Certificate, error) {
 	prependedName, prepended := prependNamespaceToStoreName(storeName)
 	if !prepended {
-		return []*x509.Certificate{}, fmt.Errorf("The given store name %s is not namespaced", storeName)
+		return []*x509.Certificate{}, fmt.Errorf("the given store name %s is not namespaced", storeName)
 	}
 
 	if !hasAccessToStore(ctx, storeName) {

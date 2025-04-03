@@ -150,7 +150,7 @@ func (t *TLSCertWatcher) GetConfigForClient(*tls.ClientHelloInfo) (*tls.Config, 
 
 func (t *TLSCertWatcher) handleEvent(event fsnotify.Event) {
 	// Only care about events which may modify the contents of the file.
-	if !(isWrite(event) || isRemove(event) || isCreate(event)) {
+	if !isWrite(event) && !isRemove(event) && !isCreate(event) {
 		return
 	}
 

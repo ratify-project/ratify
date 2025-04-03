@@ -26,7 +26,6 @@ import (
 	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/controllers"
 	rs "github.com/ratify-project/ratify/pkg/customresources/referrerstores"
-	"github.com/ratify-project/ratify/pkg/utils"
 	test "github.com/ratify-project/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -46,7 +45,7 @@ const (
 
 func TestStoreAdd_EmptyParameter(t *testing.T) {
 	resetStoreMap()
-	dirPath, err := utils.CreatePlugin(sampleName)
+	dirPath, err := test.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -71,7 +70,7 @@ func TestStoreAdd_WithParameters(t *testing.T) {
 	if len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)) != 0 {
 		t.Fatalf("Store map expected size 0, actual %v", len(controllers.NamespacedStores.GetStores(constants.EmptyNamespace)))
 	}
-	dirPath, err := utils.CreatePlugin(sampleName)
+	dirPath, err := test.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
@@ -141,7 +140,7 @@ func TestStoreAddOrReplace_PluginNotFound(t *testing.T) {
 
 func TestStore_UpdateAndDelete(t *testing.T) {
 	resetStoreMap()
-	dirPath, err := utils.CreatePlugin(sampleName)
+	dirPath, err := test.CreatePlugin(sampleName)
 	if err != nil {
 		t.Fatalf("createPlugin() expected no error, actual %v", err)
 	}
