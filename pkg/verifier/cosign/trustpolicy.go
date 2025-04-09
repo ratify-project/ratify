@@ -188,12 +188,12 @@ func (tp *trustPolicy) GetCosignOpts(ctx context.Context) (cosign.CheckOpts, err
 		// create the rekor client
 		cosignOpts.RekorClient, err = rekor.NewClient(tp.config.RekorURL)
 		if err != nil {
-			return cosignOpts, re.ErrorCodeConfigInvalid.WithDetail(fmt.Errorf("Failed to create Rekor client from URL %s", tp.config.RekorURL)).WithRemediation("Ensure that the Rekor URL is valid.").WithError(err)
+			return cosignOpts, re.ErrorCodeConfigInvalid.WithDetail(fmt.Errorf("failed to create Rekor client from URL %s", tp.config.RekorURL)).WithRemediation("Ensure that the Rekor URL is valid.").WithError(err)
 		}
 		// Fetches the Rekor public keys from the Rekor server
 		cosignOpts.RekorPubKeys, err = cosign.GetRekorPubs(ctx)
 		if err != nil {
-			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("Failed to fetch Rekor public keys").WithRemediation(fmt.Sprintf("Please check if the Rekor server %s is available", tp.config.RekorURL)).WithError(err)
+			return cosignOpts, re.ErrorCodeVerifyPluginFailure.WithDetail("failed to fetch Rekor public keys").WithRemediation(fmt.Sprintf("Please check if the Rekor server %s is available", tp.config.RekorURL)).WithError(err)
 		}
 	} else {
 		cosignOpts.IgnoreTlog = true

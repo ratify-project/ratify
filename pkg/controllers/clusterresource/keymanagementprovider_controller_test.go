@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
-	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/mocks"
 	test "github.com/ratify-project/ratify/pkg/utils"
 	"github.com/sirupsen/logrus"
@@ -436,7 +435,7 @@ func TestKMProviderUpdateErrorStatus(t *testing.T) {
 
 // TestKMProviderUpdateSuccessStatus tests the updateSuccessStatus method
 func TestKMProviderUpdateSuccessStatus(t *testing.T) {
-	kmProviderStatus := keymanagementprovider.KeyManagementProviderStatus{}
+	kmProviderStatus := kmp.KeyManagementProviderStatus{}
 	properties := map[string]string{}
 	properties["Name"] = "wabbit"
 	properties["Version"] = "ABC"

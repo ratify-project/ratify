@@ -59,8 +59,8 @@ func TestConvert_unversioned_Policy_To_v1alpha1_Policy(t *testing.T) {
 	if err := Convert_unversioned_Policy_To_v1alpha1_Policy(in, out, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if out.ObjectMeta.Name != in.Spec.Type {
-		t.Fatalf("expect metadata.name to be %s, but got %s", in.Spec.Type, out.ObjectMeta.Name)
+	if out.Name != in.Spec.Type {
+		t.Fatalf("expect metadata.name to be %s, but got %s", in.Spec.Type, out.Name)
 	}
 }
 
@@ -74,10 +74,10 @@ func TestConvert_v1alpha1_Policy_To_unversioned_Policy(t *testing.T) {
 	if err := Convert_v1alpha1_Policy_To_unversioned_Policy(in, out, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if out.ObjectMeta.Name != constants.RatifyPolicy {
-		t.Fatalf("expect metadata.name to be %s, but got %s", constants.RatifyPolicy, out.ObjectMeta.Name)
+	if out.Name != constants.RatifyPolicy {
+		t.Fatalf("expect metadata.name to be %s, but got %s", constants.RatifyPolicy, out.Name)
 	}
-	if out.Spec.Type != in.ObjectMeta.Name {
-		t.Fatalf("expect spec.type to be %s, but got %s", in.ObjectMeta.Name, out.Spec.Type)
+	if out.Spec.Type != in.Name {
+		t.Fatalf("expect spec.type to be %s, but got %s", in.Name, out.Spec.Type)
 	}
 }

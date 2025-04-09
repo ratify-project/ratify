@@ -112,17 +112,18 @@ func DownloadPlugin(source PluginSource, targetPath string) error {
 
 	referenceManifest := ocispecs.ReferenceManifest{}
 	// marshal manifest bytes into reference manifest descriptor
-	if referenceManifestDescriptor.MediaType == oci.MediaTypeImageManifest {
+	switch referenceManifestDescriptor.MediaType {
+	case oci.MediaTypeImageManifest:
 		var imageManifest oci.Manifest
 		if err := json.Unmarshal(manifestBytes, &imageManifest); err != nil {
 			return err
 		}
 		referenceManifest = commonutils.OciManifestToReferenceManifest(imageManifest)
-	} else if referenceManifestDescriptor.MediaType == ocispecs.MediaTypeArtifactManifest {
+	case ocispecs.MediaTypeArtifactManifest:
 		if err := json.Unmarshal(manifestBytes, &referenceManifest); err != nil {
 			return err
 		}
-	} else {
+	default:
 		return fmt.Errorf("unsupported manifest media type: %s", referenceManifestDescriptor.MediaType)
 	}
 

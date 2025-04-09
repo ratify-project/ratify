@@ -442,7 +442,7 @@ func TestGetCertificates(t *testing.T) {
 					pageCounter := 0
 					return runtime.NewPager(runtime.PagingHandler[azcertificates.ListCertificateVersionsResponse]{
 						More: func(resp azcertificates.ListCertificateVersionsResponse) bool {
-							return resp.CertificateListResult.NextLink != nil
+							return resp.NextLink != nil
 						},
 						Fetcher: func(_ context.Context, _ *azcertificates.ListCertificateVersionsResponse) (azcertificates.ListCertificateVersionsResponse, error) {
 							var resp azcertificates.ListCertificateVersionsResponse
@@ -521,7 +521,7 @@ func TestGetCertificates(t *testing.T) {
 					pageCounter := 0
 					return runtime.NewPager(runtime.PagingHandler[azcertificates.ListCertificateVersionsResponse]{
 						More: func(resp azcertificates.ListCertificateVersionsResponse) bool {
-							return resp.CertificateListResult.NextLink != nil
+							return resp.NextLink != nil
 						},
 						Fetcher: func(_ context.Context, _ *azcertificates.ListCertificateVersionsResponse) (azcertificates.ListCertificateVersionsResponse, error) {
 							var resp azcertificates.ListCertificateVersionsResponse
@@ -846,7 +846,7 @@ func TestGetKeys(t *testing.T) {
 					pageCounter := 0
 					return runtime.NewPager(runtime.PagingHandler[azkeys.ListKeyVersionsResponse]{
 						More: func(resp azkeys.ListKeyVersionsResponse) bool {
-							return resp.KeyListResult.NextLink != nil
+							return resp.NextLink != nil
 						},
 						Fetcher: func(_ context.Context, _ *azkeys.ListKeyVersionsResponse) (azkeys.ListKeyVersionsResponse, error) {
 							var resp azkeys.ListKeyVersionsResponse
@@ -929,7 +929,7 @@ func TestGetKeys(t *testing.T) {
 					pageCounter := 0
 					return runtime.NewPager(runtime.PagingHandler[azkeys.ListKeyVersionsResponse]{
 						More: func(resp azkeys.ListKeyVersionsResponse) bool {
-							return resp.KeyListResult.NextLink != nil
+							return resp.NextLink != nil
 						},
 						Fetcher: func(_ context.Context, _ *azkeys.ListKeyVersionsResponse) (azkeys.ListKeyVersionsResponse, error) {
 							var resp azkeys.ListKeyVersionsResponse
