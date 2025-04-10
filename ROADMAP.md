@@ -103,6 +103,9 @@ See details in [GitHub milestone v1.4.0](https://github.com/ratify-project/ratif
 - Support config based policy in terms of the new `PolicyEnforcer` interface.
 - Create new external data provider for Gatekeeper based on the new framework.
 
+#### Note
+- V2 milestones will cover a few sub-projects including libraries, CLI tools and external data provider.
+
 ### v2.0.0-alpha.2
 **Status**: Tentative
 **Target date**: June 30, 2025
@@ -114,14 +117,14 @@ See details in [GitHub milestone v1.4.0](https://github.com/ratify-project/ratif
 **Status**: Tentative
 **Target date**: TBD
 **Major features**
-- Support cache management.
+- Support cache management, considering file system, in-memory and remote cache.
 - Improve performance of executor by supporting parallel execution of verifiers.
 
 ### v2.0.0-beta.2
 **Status**: Tentative
 **Target date**: TBD
 **Major features**
-- Support more built-in verifiers to verify different artifact types.
+- Support more built-in verifiers to verify different artifact types, including SBOM verifier, vulnerability report verifier, and schema validator.
 - Support CRDs for K8s users to configure Ratify add-on natively.
 - Support multi-tenancy.
 
@@ -131,7 +134,7 @@ See details in [GitHub milestone v1.4.0](https://github.com/ratify-project/ratif
 **Target date**: TBD
 **Major features**
 - Build new ratify CLI tool with the basic functionalities.
-- Support instrumentation and telemetry.
+- Support instrumentation and telemetry by exposing pod's metrics to monitoring tools.
 
 ### v2.0.0-rc.x
 **Status**: Tentative
@@ -145,3 +148,5 @@ See details in [GitHub milestone v1.4.0](https://github.com/ratify-project/ratif
 **Status**: Tentative
 **Target date**: TBD
 **Major features**
+- Make features listed above stable and production-ready. 
+- Publish user documentation for v2.0.0.
