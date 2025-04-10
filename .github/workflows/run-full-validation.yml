@@ -34,6 +34,7 @@ jobs:
       gatekeeper_version: ${{ matrix.GATEKEEPER_VERSION }}
 
   build_test_aks_e2e:
+    if: github.ref == 'refs/heads/v1'
     name: "Build and run e2e Test on AKS"
     permissions:
       id-token: write
@@ -50,6 +51,7 @@ jobs:
     secrets: inherit
 
   aks-test-cleanup:
+    if: github.ref == 'refs/heads/v1'
     needs: ["build_test_aks_e2e"]
     runs-on: ubuntu-latest
     permissions:
