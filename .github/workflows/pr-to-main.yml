@@ -26,6 +26,7 @@ jobs:
         id: open-pr
         uses: repo-sync/pull-request@7e79a9f5dc3ad0ce53138f01df2fad14a04831c5 #v2.12.1
         with:
-          destination_branch: main
-          pr_title: "chore: automated PR to main ${{ steps.date.outputs.date }}"
-          pr_body: "Automated Pull Request to main branch"
+          source_branch: v1-dev
+          destination_branch: v1
+          pr_title: "chore: automated PR to v1 ${{ steps.date.outputs.date }}"
+          pr_body: "Automated Pull Request to v1 branch"

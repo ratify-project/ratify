@@ -7,11 +7,13 @@ on:
   push:
     branches:
       - main
-      - dev
+      - v1-dev
+      - v1
       - release-*
   pull_request:
     branches:
-      - dev
+      - v1-dev
+      - v1
       - main
       - release-*
   workflow_dispatch:
