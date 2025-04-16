@@ -33,8 +33,8 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azcertificates"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azkeys"
 	"github.com/Azure/azure-sdk-for-go/sdk/keyvault/azsecrets"
-	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
+	"github.com/ratify-project/ratify/v2/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )

@@ -24,7 +24,7 @@ import (
 
 	re "github.com/ratify-project/ratify/errors"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
-	nv "github.com/ratify-project/ratify/pkg/verifier/notation"
+	nv "github.com/ratify-project/ratify/v2/pkg/verifier/notation"
 	"github.com/sirupsen/logrus"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
