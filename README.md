@@ -13,6 +13,25 @@ Is a verification engine as a binary executable and on Kubernetes which enables 
 [![Go Reference](https://pkg.go.dev/badge/github.com/ratify-project/ratify.svg)](https://pkg.go.dev/github.com/ratify-project/ratify)
 [![codecov](https://codecov.io/gh/ratify-project/ratify/graph/badge.svg?token=3X0BIPI4VD)](https://codecov.io/gh/ratify-project/ratify)
 
+
+## ⚠️ Development Notice: Main Branch Under Active v2 Development
+
+> [!IMPORTANT]
+> The `main` branch is currently under **active development for Ratify v2**.
+
+> [!CAUTION]
+> During this period, it may be **unstable or broken**.
+
+If you are:
+- Contributing new features
+- Fixing bugs
+- Building against a v1 version of Ratify
+
+Please use the [`v1-dev` branch](https://github.com/ratify-project/ratify/tree/v1-dev).
+
+We appreciate your patience as we work toward a more powerful and flexible Ratify v2! 🚀
+Stay tuned for updates and migration guides.
+
 ## Table of Contents
 
 - [Ratify](#ratify)
