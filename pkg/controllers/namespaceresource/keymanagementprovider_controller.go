@@ -47,7 +47,7 @@ type KeyManagementProviderReconciler struct {
 func (r *KeyManagementProviderReconciler) ReconcileWithType(ctx context.Context, req ctrl.Request, refresherType string) (ctrl.Result, error) {
 	logger := logrus.WithContext(ctx)
 
-	var resource = req.NamespacedName.String()
+	var resource = req.String()
 	var keyManagementProvider configv1beta1.NamespacedKeyManagementProvider
 
 	logger.Infof("reconciling cluster key management provider '%v'", resource)

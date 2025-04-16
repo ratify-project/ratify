@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"
@@ -163,7 +162,7 @@ func processSpdxJSONMediaType(name string, verifierType string, refBlob []byte, 
 			}
 
 			if len(licenseViolation) != 0 || len(packageViolation) != 0 {
-				sbomErr := errors.ErrorCodeVerifyPluginFailure.WithDetail("License or package violation found.").WithRemediation("Please review extensions data for license and package violation found.")
+				sbomErr := re.ErrorCodeVerifyPluginFailure.WithDetail("License or package violation found.").WithRemediation("Please review extensions data for license and package violation found.")
 				result := verifier.NewVerifierResult("", name, verifierType, "SBOM validation failed", false, &sbomErr, extensionData)
 				return &result
 			}

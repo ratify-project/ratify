@@ -107,13 +107,13 @@ func (e *DefaultExecutor) ExecutePlugin(ctx context.Context, pluginPath string, 
 		msg := strings.ToLower(msg)
 		switch {
 		case strings.HasPrefix(msg, "info"):
-			msg = strings.Replace(msg, "info: ", "", -1)
+			msg = strings.ReplaceAll(msg, "info: ", "")
 			logger.GetLogger(ctx, logOpt).Infof("[Plugin] %s", msg)
 		case strings.HasPrefix(msg, "warn"):
-			msg = strings.Replace(msg, "warn: ", "", -1)
+			msg = strings.ReplaceAll(msg, "warn: ", "")
 			logger.GetLogger(ctx, logOpt).Warnf("[Plugin] %s", msg)
 		case strings.HasPrefix(msg, "debug"):
-			msg = strings.Replace(msg, "debug: ", "", -1)
+			msg = strings.ReplaceAll(msg, "debug: ", "")
 			logger.GetLogger(ctx, logOpt).Debugf("[Plugin] %s", msg)
 		default:
 			fmt.Fprintf(os.Stderr, "[Plugin] %s,", msg)

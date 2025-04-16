@@ -56,7 +56,7 @@ type CertificateStoreReconciler struct {
 func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := logrus.WithContext(ctx)
 
-	var resource = req.NamespacedName.String()
+	var resource = req.String()
 	var certStore configv1beta1.CertificateStore
 
 	logger.Infof("reconciling certificate store '%v'", resource)
@@ -92,7 +92,7 @@ func (r *CertificateStoreReconciler) Reconcile(ctx context.Context, req ctrl.Req
 	certificates, certAttributes, err := provider.GetCertificates(ctx, attributes)
 	if err != nil {
 		writeCertStoreStatus(ctx, r, certStore, logger, isFetchSuccessful, err.Error(), lastFetchedTime, nil)
-		return ctrl.Result{}, fmt.Errorf("Error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
+		return ctrl.Result{}, fmt.Errorf("error fetching certificates in store %v with %v provider, error: %w", resource, certStore.Spec.Provider, err)
 	}
 
 	controllers.NamespacedCertStores.AddStore(resource, certificates)
@@ -177,7 +177,7 @@ func getCertificateProvider(providers map[string]certificateprovider.Certificate
 	providerName = utils.TrimSpaceAndToLower(providerName)
 	provider, registered := providers[providerName]
 	if !registered {
-		return nil, fmt.Errorf("Unknown provider value '%v' defined", provider)
+		return nil, fmt.Errorf("unknown provider value '%v' defined", provider)
 	}
 	return provider, nil
 }

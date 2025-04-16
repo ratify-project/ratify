@@ -57,7 +57,7 @@ func CreatePolicyProviderFromConfig(policyConfig config.PoliciesConfig) (policyp
 		return nil, re.ErrorCodeConfigInvalid.WithComponentType(re.PolicyProvider).WithDetail(fmt.Sprintf("failed to find policy provider name in the policy config with key: %s", types.Name))
 	}
 
-	providerNameStr := strings.Replace(strings.ToLower(fmt.Sprintf("%s", policyProviderName)), "-", "", -1)
+	providerNameStr := strings.ReplaceAll(strings.ToLower(fmt.Sprintf("%s", policyProviderName)), "-", "")
 
 	policyFactory, ok := builtInPolicyProviders[providerNameStr]
 	if !ok {
