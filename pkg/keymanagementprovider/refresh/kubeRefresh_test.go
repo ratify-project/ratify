@@ -31,8 +31,8 @@ import (
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/inline"
-	mock "github.com/ratify-project/ratify/pkg/keymanagementprovider/mocks"
-	nv "github.com/ratify-project/ratify/pkg/verifier/notation"
+	mock "github.com/ratify-project/ratify/v2/pkg/keymanagementprovider/mocks"
+	nv "github.com/ratify-project/ratify/v2/pkg/verifier/notation"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 

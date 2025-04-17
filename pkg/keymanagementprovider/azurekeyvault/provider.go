@@ -37,10 +37,10 @@ import (
 	re "github.com/ratify-project/ratify/errors"
 	"github.com/ratify-project/ratify/internal/logger"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
-	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/config"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/factory"
 	"github.com/ratify-project/ratify/pkg/metrics"
+	"github.com/ratify-project/ratify/v2/pkg/keymanagementprovider/azurekeyvault/types"
 	"golang.org/x/crypto/pkcs12"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"

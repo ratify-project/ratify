@@ -1,12 +1,6 @@
-module github.com/ratify-project/ratify
+module github.com/ratify-project/ratify/v2
 
 go 1.23.3
-
-// Accidentally published prior to 1.0.0 release
-retract (
-	v1.1.0-alpha.2 // contains retractions only
-	v1.1.0-alpha.1 // published in error
-)
 
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azcore v1.17.1
@@ -46,6 +40,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/errors v0.9.1
+	github.com/ratify-project/ratify v1.4.0
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -133,7 +128,6 @@ require (
 	go.step.sm/crypto v0.60.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250303144028-a0af3efb3deb // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250313205543-e70fdf4c4cb4 // indirect
-	gotest.tools/v3 v3.1.0 // indirect
 	sigs.k8s.io/release-utils v0.8.5 // indirect
 )
 
