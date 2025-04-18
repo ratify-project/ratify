@@ -41,6 +41,8 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/ratify-project/ratify v1.4.0
+	github.com/ratify-project/ratify-go v0.0.0-20250409071324-ecbad89bc5e1
+	github.com/ratify-project/ratify-verifier-go/notation v0.0.0-20250411030115-011378ff3b1c
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.9.1
 	github.com/sirupsen/logrus v1.9.3

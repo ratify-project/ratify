@@ -1,0 +1,54 @@
+{
+    "verifiers": [
+        {
+            "name": "notation-1",
+            "type": "notation",
+            "parameters": {
+                "trustPolicyDocument": {
+                    "Version": "1.0",
+                    "trustPolicies": [
+                        {
+                            "name": "default",
+                            "registryScopes": [
+                                "*"
+                            ],
+                            "signatureVerification": {
+                                "level": "strict"
+                            },
+                            "trustStores": [
+                                "ca:ratify"
+                            ],
+                            "trustedIdentities": [
+                                "*"
+                            ]
+                        }
+                    ]
+                },
+                "trustStorePath": "/app/notation"
+            }
+        }
+    ],
+    "stores": {
+        "docker.io": {
+            "type": "registry-store",
+            "parameters": {
+                "credential": {
+                    "username": "",
+                    "password": ""
+                }
+            }
+        }
+    },
+    "policyEnforcer": {
+        "type": "threshold-policy",
+        "parameters": {
+            "policy": {
+                "rules": [
+                    {
+                        "verifierName": "notation-1"
+                    }
+                ]
+            }
+        }
+    }
+}
