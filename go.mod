@@ -42,7 +42,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/ratify-project/ratify v1.4.0
 	github.com/sigstore/cosign/v2 v2.2.4
-	github.com/sigstore/sigstore v1.9.1
+	github.com/sigstore/sigstore v1.9.3
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spdx/tools-golang v0.5.5
 	github.com/spf13/cobra v1.9.1
@@ -88,7 +88,7 @@ require (
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/coreos/go-oidc/v3 v3.12.0 // indirect
+	github.com/coreos/go-oidc/v3 v3.13.0 // indirect
 	github.com/digitorus/pkcs7 v0.0.0-20230818184609-3a137a874352 // indirect
 	github.com/digitorus/timestamp v0.0.0-20231217203849-220c5c2851b7 // indirect
 	github.com/dimchansky/utfbom v1.1.1 // indirect
