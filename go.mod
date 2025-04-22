@@ -51,7 +51,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.34.0
 	go.opentelemetry.io/otel/sdk/metric v1.34.0
 	golang.org/x/sync v0.13.0
-	google.golang.org/grpc v1.71.0
+	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.6
 	k8s.io/api v0.28.15
 	k8s.io/apimachinery v0.28.15
