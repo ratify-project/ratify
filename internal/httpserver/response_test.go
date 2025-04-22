@@ -27,19 +27,19 @@ import (
 )
 
 const (
-	subject1 = "subject1"
-	subject2 = "subject2"
-	mockName = "mock-name"
-	mockType = "mock-type"
+	subject1         = "subject1"
+	subject2         = "subject2"
+	mockVerifierName = "mock-verifier-name"
+	mockVerifierType = "mock-verifier-type"
 )
 
 type mockVerifier struct{}
 
 func (m *mockVerifier) Name() string {
-	return mockName
+	return mockVerifierName
 }
 func (m *mockVerifier) Type() string {
-	return mockType
+	return mockVerifierType
 }
 func (m *mockVerifier) Verifiable(_ ocispec.Descriptor) bool {
 	return true
@@ -55,20 +55,20 @@ func TestConvertResult(t *testing.T) {
 		src      *ratify.ValidationResult
 		expected *result
 	}{
-		// {
-		// 	name:     "nil source",
-		// 	src:      nil,
-		// 	expected: nil,
-		// },
-		// {
-		// 	name: "nil ArtifactReports",
-		// 	src: &ratify.ValidationResult{
-		// 		ArtifactReports: nil,
-		// 	},
-		// 	expected: &result{
-		// 		ArtifactReports: nil,
-		// 	},
-		// },
+		{
+			name:     "nil source",
+			src:      nil,
+			expected: nil,
+		},
+		{
+			name: "nil ArtifactReports",
+			src: &ratify.ValidationResult{
+				ArtifactReports: nil,
+			},
+			expected: &result{
+				ArtifactReports: nil,
+			},
+		},
 		{
 			name: "nonempty ArtifactReports",
 			src: &ratify.ValidationResult{
@@ -95,10 +95,41 @@ func TestConvertResult(t *testing.T) {
 						Results: []*verificationResult{
 							nil,
 							{
-								VerifierName: mockName,
+								VerifierName: mockVerifierName,
 								ErrorReason:  "error",
 								Detail:       "{}",
 							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "nonempty ArtifactReports with invalid detail",
+			src: &ratify.ValidationResult{
+				ArtifactReports: []*ratify.ValidationReport{
+					nil,
+					{
+						Subject: subject1,
+						Results: []*ratify.VerificationResult{
+							nil,
+							{
+								Verifier: &mockVerifier{},
+								Err:      errors.New("error"),
+								Detail:   make(chan int),
+							},
+						},
+					},
+				},
+			},
+			expected: &result{
+				ArtifactReports: []*validationReport{
+					nil,
+					{
+						Subject: subject1,
+						Results: []*verificationResult{
+							nil,
+							nil,
 						},
 					},
 				},

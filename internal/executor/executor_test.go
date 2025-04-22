@@ -98,6 +98,12 @@ func TestNewExecutor(t *testing.T) {
 		expectExecutor bool
 	}{
 		{
+			name:           "nil options",
+			opts:           nil,
+			expectErr:      true,
+			expectExecutor: false,
+		},
+		{
 			name:           "failed to create verifiers",
 			opts:           &Options{},
 			expectErr:      true,

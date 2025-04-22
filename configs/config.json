@@ -4,27 +4,14 @@
             "name": "notation-1",
             "type": "notation",
             "parameters": {
-                "trustPolicyDocument": {
-                    "Version": "1.0",
-                    "trustPolicies": [
-                        {
-                            "name": "default",
-                            "registryScopes": [
-                                "*"
-                            ],
-                            "signatureVerification": {
-                                "level": "strict"
-                            },
-                            "trustStores": [
-                                "ca:ratify"
-                            ],
-                            "trustedIdentities": [
-                                "*"
-                            ]
-                        }
-                    ]
-                },
-                "trustStorePath": "/app/notation"
+                "certificates": [
+                    {
+                        "files": [
+                            "/path/to/your/cert.crt",
+                            "/path/to/your/certDirectory"
+                        ]
+                    }
+                ]
             }
         }
     ],
