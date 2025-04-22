@@ -16,26 +16,46 @@ limitations under the License.
 package notation
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/notaryproject/notation-go/dir"
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/notaryproject/notation-go/verifier/truststore"
 	"github.com/ratify-project/ratify-go"
 	"github.com/ratify-project/ratify-verifier-go/notation"
 	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
+	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
+	_ "github.com/ratify-project/ratify/v2/internal/verifier/keyprovider/filesystemprovider" // Register the filesystem key provider
+	"github.com/sirupsen/logrus"
 )
 
-const notationType = "notation"
+const (
+	notationType   = "notation"
+	trustStoreName = "ratify"
+	typeKey        = "type"
+)
+
+// trustStoreOptions is a map of options for the trust stores. The value of the
+// "type" key must be one of the following: "ca", "tsa", or "signingAuthority".
+// If the "type" key is not present, the default type is "ca".
+// Other keys in the map are used to create key providers. Each trust store can
+// have multiple key providers.
+type trustStoreOptions map[string]any
 
 type options struct {
-	// TrustPolicyDocument is the trust policy document configured for the
-	// Notation verifier to verify the signature. Required.
-	TrustPolicyDocument *trustpolicy.Document `json:"trustPolicyDocument"`
+	// Scope is a list of registry scopes to be used by the Notation
+	// verifier. Optional. If not provided, the default scope is "*".
+	Scope []string `json:"scope"`
 
-	// TrustStorePath is the path to the trust store directory. Required.
-	TrustStorePath string `json:"trustStorePath"`
+	// TrustedIdentities is a list of trusted identities to be used by the
+	// Notation verifier. Optional. If not provided, default identity is "*".
+	TrustedIdentities []string `json:"trustedIdentities"`
+
+	// Certificates is a list of certificates to be used by the Notation
+	// verifier. Certificates would be loaded into trust store for Notation
+	// verifier to access. Required.
+	Certificates []trustStoreOptions `json:"certificates"`
 }
 
 func init() {
@@ -50,12 +70,101 @@ func init() {
 			return nil, fmt.Errorf("failed to unmarshal verifier parameters: %w", err)
 		}
 
+		trustStore, types, err := initTrustStore(params.Certificates)
+		if err != nil {
+			return nil, fmt.Errorf("failed to initialize trust store: %w", err)
+		}
+
+		logrus.Infof("trust policy: %+v", initTrustPolicyDocument(params.Scope, params.TrustedIdentities, types))
+
 		notationOpts := &notation.VerifierOptions{
 			Name:           opts.Name,
-			TrustPolicyDoc: params.TrustPolicyDocument,
-			TrustStore:     truststore.NewX509TrustStore(dir.NewSysFS(params.TrustStorePath)),
+			TrustPolicyDoc: initTrustPolicyDocument(params.Scope, params.TrustedIdentities, types),
+			TrustStore:     trustStore,
 		}
 
 		return notation.NewVerifier(notationOpts)
 	})
+}
+
+func initTrustStore(opts []trustStoreOptions) (truststore.X509TrustStore, []truststore.Type, error) {
+	if len(opts) == 0 {
+		return nil, nil, fmt.Errorf("no trust store options provided")
+	}
+
+	trustStore := newTrustStore()
+	types := make(map[truststore.Type]struct{})
+	for _, opt := range opts {
+		var err error
+		storeType := truststore.TypeCA
+		if typeVal, ok := opt[typeKey]; ok {
+			if storeType, err = getTrustStoreType(typeVal); err != nil {
+				return nil, nil, fmt.Errorf("failed to get trust store type: %w", err)
+			}
+		}
+		if _, exists := types[storeType]; exists {
+			return nil, nil, fmt.Errorf("duplicate trust store type %s", storeType)
+		}
+		types[storeType] = struct{}{}
+
+		for key, val := range opt {
+			if key == typeKey {
+				continue
+			}
+			provider, err := keyprovider.CreateKeyProvider(key, val)
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to get key provider %s: %w", key, err)
+			}
+			certs, err := provider.GetCertificates(context.Background())
+			if err != nil {
+				return nil, nil, fmt.Errorf("failed to get certificates from provider %s: %w", key, err)
+			}
+
+			trustStore.addCertificates(storeType, trustStoreName, certs)
+		}
+	}
+	names := make([]truststore.Type, 0, len(types))
+	for storeType := range types {
+		names = append(names, storeType)
+	}
+	return trustStore, names, nil
+}
+
+func getTrustStoreType(val any) (truststore.Type, error) {
+	t, ok := val.(string)
+	if !ok {
+		return "", fmt.Errorf("trust store type must be a string")
+	}
+	storeType := truststore.Type(t)
+	if storeType != truststore.TypeCA && storeType != truststore.TypeTSA && storeType != truststore.TypeSigningAuthority {
+		return "", fmt.Errorf("invalid trust store type %s", storeType)
+	}
+	return storeType, nil
+}
+
+func initTrustPolicyDocument(scopes, trustedIdentities []string, storeTypes []truststore.Type) *trustpolicy.Document {
+	if len(scopes) == 0 {
+		scopes = []string{"*"}
+	}
+	if len(trustedIdentities) == 0 {
+		trustedIdentities = []string{"*"}
+	}
+	trustStoreNames := make([]string, len(storeTypes))
+	for i, storeType := range storeTypes {
+		trustStoreNames[i] = fmt.Sprintf("%s:%s", storeType, trustStoreName)
+	}
+	return &trustpolicy.Document{
+		Version: "1.0",
+		TrustPolicies: []trustpolicy.TrustPolicy{
+			{
+				Name:           "default",
+				RegistryScopes: scopes,
+				SignatureVerification: trustpolicy.SignatureVerification{
+					VerificationLevel: "strict",
+				},
+				TrustStores:       trustStoreNames,
+				TrustedIdentities: trustedIdentities,
+			},
+		},
+	}
 }

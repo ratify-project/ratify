@@ -63,6 +63,5 @@ func startRatify(opts *options) error {
 		KeyFile:           opts.keyFile,
 		VerifyTimeout:     opts.verifyTimeout,
 	}
-	httpserver.StartServer(serverOpts, opts.configFilePath)
-	return nil
+	return httpserver.StartServer(serverOpts, opts.configFilePath)
 }

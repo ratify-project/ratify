@@ -117,6 +117,15 @@ func TestStartRatify(t *testing.T) {
 			},
 			expectError: true,
 		},
+		{
+			name: "failed to start the server",
+			opts: &options{
+				httpServerAddress: ":8080",
+				configFilePath:    "config.yaml",
+				certFile:          "cert.pem",
+			},
+			expectError: true,
+		},
 	}
 
 	for _, tt := range tests {

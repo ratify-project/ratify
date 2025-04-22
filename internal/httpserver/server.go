@@ -83,24 +83,21 @@ type ServerOptions struct {
 
 // StartServer initializes and starts the Ratify server with provided options
 // and configuration file path.
-func StartServer(opts *ServerOptions, configPath string) {
+func StartServer(opts *ServerOptions, configPath string) error {
 	executorOpts, err := config.Load(configPath)
 	if err != nil {
 		logrus.Errorf("Failed to load executor options: %v", err)
-		os.Exit(1)
+		return err
 	}
 
 	server, err := newServer(opts, executorOpts)
 	if err != nil {
 		logrus.Errorf("Failed to create server: %v", err)
-		os.Exit(1)
+		return err
 	}
 
 	logrus.Infof("Starting server at port: %s", opts.HTTPServerAddress)
-	if err := server.Run(); err != nil {
-		logrus.Errorf("Failed to start server: %v", err)
-		os.Exit(1)
-	}
+	return server.Run()
 }
 
 func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*server, error) {
