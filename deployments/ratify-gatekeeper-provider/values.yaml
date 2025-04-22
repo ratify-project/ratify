@@ -1,0 +1,21 @@
+# Default values for ratify.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+image:
+  repository: ""
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+notation:
+  scope: []
+  trustedIdentities: []
+  certs: []
+  
+stores:
+  - scope: ""
+    username: ""
+    password: ""

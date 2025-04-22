@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ratify-deployment
+  labels:
+    app: ratify
+spec:
+  replicas: {{ default 1 .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: ratify
+  template:
+    metadata:
+      labels:
+        app: ratify
+    spec:
+      containers:
+        - name: ratify
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: false
+            runAsGroup: 65532
+            runAsNonRoot: true
+            runAsUser: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          command:
+            - "/app/ratify-gatekeeper-provider"
+          args:
+            - "--address"
+            - ":6001"
+            - "--config"
+            - "/usr/local/config.json"
+            - "--verify-timeout"
+            - "5s"
+          ports:
+            - containerPort: 6001
+          volumeMounts:
+            - mountPath: "/usr/local"
+              name: ratify-config
+              readOnly: true
+            - mountPath: "/usr/local/notation/certs"
+              name: notation-certs
+              readOnly: true
+      volumes:
+        - name: ratify-config
+          configMap:
+            name: ratify-configmap
+        - name: notation-certs
+          secret:
+            secretName: ratify-notation-certs
+        - name: notation-trust-policy
+          configMap:
+            name: notation-configmap
