@@ -25,7 +25,6 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
-	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -34,6 +33,7 @@ import (
 	"github.com/ratify-project/ratify-go"
 	"github.com/ratify-project/ratify/v2/internal/executor"
 	"github.com/ratify-project/ratify/v2/internal/httpserver/config"
+	"github.com/ratify-project/ratify/v2/internal/httpserver/tlssecret"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,12 +46,11 @@ const (
 	idleTimeout          = 60 * time.Second
 )
 
-var tlsCert atomic.Value
-
 type server struct {
 	address              string
 	certFile             string
 	keyFile              string
+	gatekeeperCACertFile string
 	router               *mux.Router
 	executor             *ratify.Executor
 	verifyRequestTimeout time.Duration
@@ -75,10 +74,14 @@ type ServerOptions struct {
 	// Optional.
 	KeyFile string
 
+	GatekeeperCACertFile string
+
 	// VerifyTimeout is the duration to wait for a verification request to
 	// complete before timing out. Default is 5 seconds if not specified.
 	// Optional.
 	VerifyTimeout time.Duration
+
+	CertRotatorReady chan struct{}
 }
 
 // StartServer initializes and starts the Ratify server with provided options
@@ -97,7 +100,7 @@ func StartServer(opts *ServerOptions, configPath string) error {
 	}
 
 	logrus.Infof("Starting server at port: %s", opts.HTTPServerAddress)
-	return server.Run()
+	return server.Run(opts.CertRotatorReady)
 }
 
 func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*server, error) {
@@ -110,6 +113,7 @@ func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*serv
 		address:              serverOpts.HTTPServerAddress,
 		certFile:             serverOpts.CertFile,
 		keyFile:              serverOpts.KeyFile,
+		gatekeeperCACertFile: serverOpts.GatekeeperCACertFile,
 		verifyRequestTimeout: serverOpts.VerifyTimeout,
 		executor:             e,
 	}
@@ -202,7 +206,7 @@ func middlewareWithTimeout(next http.Handler, timeout time.Duration) http.Handle
 
 // Run starts the HTTP server and listens for incoming requests.
 // It also handles graceful shutdown on receiving an interrupt signal.
-func (s *server) Run() error {
+func (s *server) Run(certRotatorReady chan struct{}) error {
 	srv := &http.Server{
 		Addr:         s.address,
 		Handler:      s.router,
@@ -213,14 +217,20 @@ func (s *server) Run() error {
 	go func() {
 		if s.certFile != "" && s.keyFile != "" {
 			logrus.Infof("starting server with TLS at %s", s.address)
-			if err := loadCertificate(s.certFile, s.keyFile); err != nil {
-				logrus.Errorf("failed to load certificate: %v", err)
+			if certRotatorReady != nil {
+				<-certRotatorReady
+				logrus.Infof("cert rotator is ready")
+			}
+
+			certWatcher, err := tlssecret.NewTLSSecretWatcher(s.gatekeeperCACertFile, s.certFile, s.keyFile)
+			if err != nil {
+				logrus.Errorf("failed to create TLS secret watcher: %v", err)
 				return
 			}
-			// Use GetCertificate to dynamically load certificates.
+			// Use GetConfigForClient to dynamically load certificates.
 			srv.TLSConfig = &tls.Config{
-				MinVersion:     tls.VersionTLS13,
-				GetCertificate: getCertificate,
+				MinVersion:         tls.VersionTLS13,
+				GetConfigForClient: certWatcher.GetConfigForClient,
 			}
 			if err := srv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 				logrus.Errorf("failed to start server: %v", err)
@@ -245,20 +255,4 @@ func (s *server) Run() error {
 		return err
 	}
 	return nil
-}
-
-func loadCertificate(certFile, keyFile string) error {
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if err != nil {
-		return fmt.Errorf("failed to load certificate: %w", err)
-	}
-	tlsCert.Store(&cert)
-	return nil
-}
-
-func getCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-	if cert := tlsCert.Load(); cert != nil {
-		return cert.(*tls.Certificate), nil
-	}
-	return nil, nil
 }

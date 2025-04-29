@@ -1,0 +1,27 @@
+{{- if .Values.serviceAccount.create }}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: ratify-manager-cluster-role
+rules:
+- apiGroups:
+  - externaldata.gatekeeper.sh
+  resources:
+  - providers
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
+# Secrets access is used for k8s auth provider to access secrets across namespaces.
+- apiGroups:
+  - ""
+  resources:
+  - secrets
+  verbs:
+  - get
+  - list
+  - watch
+{{- end }}

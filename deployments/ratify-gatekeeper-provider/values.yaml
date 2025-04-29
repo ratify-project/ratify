@@ -16,6 +16,23 @@ notation:
   certs: []
   
 stores:
-  - scope: "docker.io"
+  - scope: "libinbinacr.azurecr.io"
     username: ""
     password: ""
+
+provider:
+  tls:
+    crt: "" # crt used by ratify (httpserver), please provide your own crt
+    key: "" # key used by ratify (httpserver), please provide your own key
+    caCert: "" # CA crt used by ratify (httpserver), please provide your own CA crt
+    cabundle: "" # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
+    disableCertRotation: false
+  timeout:
+    # timeout values must match gatekeeper webhook timeouts
+    validationTimeoutSeconds: 5
+
+serviceAccount:
+  create: true
+  name: ratify-gatekeeper-provider-admin
+  # annotations to add to the service account
+  annotations: {}

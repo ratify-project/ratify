@@ -7,8 +7,7 @@
                 "certificates": [
                     {
                         "files": [
-                            "/path/to/your/cert.crt",
-                            "/path/to/your/certDirectory"
+                            "/home/libinbin/go/src/github.com/binbin-li/ratify/cert/ratify4.crt"
                         ]
                     }
                 ]
@@ -16,7 +15,7 @@
         }
     ],
     "stores": {
-        "docker.io": {
+        "libinbinacr.azurecr.io": {
             "type": "registry-store",
             "parameters": {
                 "credential": {

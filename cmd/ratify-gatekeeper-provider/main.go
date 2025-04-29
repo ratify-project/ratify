@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ratify-project/ratify/v2/internal/httpserver"
+	"github.com/ratify-project/ratify/v2/internal/manager"
 	"github.com/sirupsen/logrus"
 )
 
@@ -33,11 +34,13 @@ func main() {
 }
 
 type options struct {
-	configFilePath    string
-	httpServerAddress string
-	certFile          string
-	keyFile           string
-	verifyTimeout     time.Duration
+	configFilePath       string
+	httpServerAddress    string
+	certFile             string
+	keyFile              string
+	gatekeeperCACertFile string
+	disableCertRotation  bool
+	verifyTimeout        time.Duration
 }
 
 func parse() *options {
@@ -46,7 +49,9 @@ func parse() *options {
 	flag.StringVar(&opts.httpServerAddress, "address", "", "HTTP server address")
 	flag.StringVar(&opts.certFile, "cert-file", "", "Path to the TLS certificate file")
 	flag.StringVar(&opts.keyFile, "key-file", "", "Path to the TLS key file")
+	flag.StringVar(&opts.gatekeeperCACertFile, "gatekeeper-ca-cert-file", "", "Path to the Gatekeeper CA certificate file")
 	flag.DurationVar(&opts.verifyTimeout, "verify-timeout", 5*time.Second, "Verification timeout duration (e.g. 5s, 1m), default is 5 seconds")
+	flag.BoolVar(&opts.disableCertRotation, "disable-cert-rotation", false, "Disable certificate rotation")
 
 	flag.Parse()
 	logrus.Infof("Starting Ratify with options: %+v", opts)
@@ -57,11 +62,19 @@ func startRatify(opts *options) error {
 	if len(opts.httpServerAddress) == 0 {
 		return errors.New("HTTP server address is required")
 	}
-	serverOpts := &httpserver.ServerOptions{
-		HTTPServerAddress: opts.httpServerAddress,
-		CertFile:          opts.certFile,
-		KeyFile:           opts.keyFile,
-		VerifyTimeout:     opts.verifyTimeout,
+	var certRotatorReady chan struct{}
+	if !opts.disableCertRotation {
+		certRotatorReady = make(chan struct{})
 	}
+	serverOpts := &httpserver.ServerOptions{
+		HTTPServerAddress:    opts.httpServerAddress,
+		CertFile:             opts.certFile,
+		KeyFile:              opts.keyFile,
+		GatekeeperCACertFile: opts.gatekeeperCACertFile,
+		VerifyTimeout:        opts.verifyTimeout,
+		CertRotatorReady:     certRotatorReady,
+	}
+
+	go manager.StartManager(certRotatorReady)
 	return httpserver.StartServer(serverOpts, opts.configFilePath)
 }
