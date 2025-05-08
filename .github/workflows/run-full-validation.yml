@@ -3,12 +3,14 @@ name: run-full-validation
 on:
   pull_request:
     branches:
-      - main
+      - v1
+      - v1-dev
       - release*
   push:
     branches:
       - release*
-      - main
+      - v1
+      - v1-dev
   workflow_dispatch:
 
 permissions: read-all
