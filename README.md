@@ -1,5 +1,5 @@
 <div align="center">
-<img src="logo.svg" width="200">
+<img src="assets/logo.svg" width="200">
 </div>
 
 # Ratify
