@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ratify-configmap
+data:
+  config.json: |
+    {
+        "verifiers": [
+            {
+                "name": "notation-1",
+                "type": "notation",
+                "parameters": {
+                    "scope": {{ .Values.notation.scope }},
+                    "trustedIdentities": {{ .Values.notation.trustedIdentities }},
+                    "certificates": [
+                        {
+                            "type": "ca",
+                            "files": [
+                                "/usr/local/notation/certs"
+                            ]
+                        }
+                    ]
+                }
+            }
+        ],
+        "stores": {
+        {{- $storeNum := len .Values.stores -}}
+        {{- range $index, $store := .Values.stores }}
+            "{{ $store.scope }}": {
+                "type": "registry-store",
+                "parameters": {
+                    "credential": {
+                        "username": "{{ $store.username }}",
+                        "password": "{{ $store.password }}"
+                    }
+                }
+            }{{- if lt (add1 $index) $storeNum }},{{ end }}
+        {{- end }}
+        },
+        "policyEnforcer": {
+            "type": "threshold-policy",
+            "parameters": {
+                "policy": {
+                    "rules": [
+                        {
+                            "verifierName": "notation-1"
+                        }
+                    ]
+                }
+            }
+        }
+    }
