@@ -5,7 +5,8 @@ on:
     types: [labeled]
   pull_request:
     branches:
-      - dev
+      - v1-dev
+      - v1
   workflow_dispatch:
 
 permissions: read-all
