@@ -1,0 +1,41 @@
+{
+    "verifiers": [
+        {
+            "name": "notation-1",
+            "type": "notation",
+            "parameters": {
+                "certificates": [
+                    {
+                        "files": [
+                            "/path/to/your/cert.crt",
+                            "/path/to/your/certDirectory"
+                        ]
+                    }
+                ]
+            }
+        }
+    ],
+    "stores": {
+        "docker.io": {
+            "type": "registry-store",
+            "parameters": {
+                "credential": {
+                    "username": "",
+                    "password": ""
+                }
+            }
+        }
+    },
+    "policyEnforcer": {
+        "type": "threshold-policy",
+        "parameters": {
+            "policy": {
+                "rules": [
+                    {
+                        "verifierName": "notation-1"
+                    }
+                ]
+            }
+        }
+    }
+}
