@@ -5,14 +5,12 @@ on:
     types: [labeled]
   pull_request:
     branches:
-      - main
       - v1-dev
       - v1
       - 1.0.0*
   push:
     branches:
       - 1.0.0*
-      - main
       - v1-dev
       - v1
   workflow_dispatch:
