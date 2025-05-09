@@ -14,9 +14,7 @@ certs/
 /.ratify
 
 # IDE files
-.vscode/settings.json
-
-.staging
+.vscode
 
 pkg/referrerstore/factory/plugin-store
 
