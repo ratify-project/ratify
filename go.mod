@@ -112,6 +112,8 @@ require (
 	github.com/mozillazg/docker-credential-acr-helper v0.3.0 // indirect
 	github.com/notaryproject/tspclient-go v1.0.0 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
+	github.com/ratify-project/ratify-go v0.0.0-20250409071324-ecbad89bc5e1 // indirect
+	github.com/ratify-project/ratify-verifier-go/notation v0.0.0-20250411030115-011378ff3b1c // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/sigstore/fulcio v1.4.5 // indirect
