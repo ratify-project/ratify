@@ -595,8 +595,8 @@ github.com/open-policy-agent/cert-controller v0.8.0 h1:pao3WCLsKGz5dSWSlNUFrNFQd
 github.com/open-policy-agent/cert-controller v0.8.0/go.mod h1:alotCQRwX4M6VEwEgO53FB6nGLSlvah6L0pWxSRslIk=
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa h1:1r6gnPhbsswSIem/Fa11fKo/MhjijzvqSxWIu+3HQeY=
 github.com/open-policy-agent/frameworks/constraint v0.0.0-20230411224310-3f237e2710fa/go.mod h1:nrGEsNJ9LyQa68eqwV6snwCc7pbkvwUJLPZlq6zz6Fs=
-github.com/open-policy-agent/opa v1.4.0 h1:IGO3xt5HhQKQq2axfa9memIFx5lCyaBlG+fXcgHpd3A=
-github.com/open-policy-agent/opa v1.4.0/go.mod h1:DNzZPKqKh4U0n0ANxcCVlw8lCSv2c+h5G/3QvSYdWZ8=
+github.com/open-policy-agent/opa v1.4.2 h1:ag4upP7zMsa4WE2p1pwAFeG4Pn3mNwfAx9DLhhJfbjU=
+github.com/open-policy-agent/opa v1.4.2/go.mod h1:DNzZPKqKh4U0n0ANxcCVlw8lCSv2c+h5G/3QvSYdWZ8=
 github.com/opencontainers/go-digest v1.0.0 h1:apOUWs51W5PlhuyGyz9FCeeBIOUDA/6nW8Oi/yOhh5U=
 github.com/opencontainers/go-digest v1.0.0/go.mod h1:0JzlMkj0TRzQZfJkVvzbP0HBR3IKzErnv2BNG4W4MAM=
 github.com/opencontainers/image-spec v1.1.1 h1:y0fUlFfIZhPF1W537XOLg0/fcx6zcHCJwooC2xJA040=
