@@ -4,8 +4,6 @@ permissions:
   contents: read
 
 on:
-  pull_request_target:
-    types: [labeled]
   pull_request:
     branches:
       - v1-dev
