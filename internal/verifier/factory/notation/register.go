@@ -27,7 +27,6 @@ import (
 	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
 	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
 	_ "github.com/ratify-project/ratify/v2/internal/verifier/keyprovider/filesystemprovider" // Register the filesystem key provider
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -74,8 +73,6 @@ func init() {
 		if err != nil {
 			return nil, fmt.Errorf("failed to initialize trust store: %w", err)
 		}
-
-		logrus.Infof("trust policy: %+v", initTrustPolicyDocument(params.Scope, params.TrustedIdentities, types))
 
 		notationOpts := &notation.VerifierOptions{
 			Name:           opts.Name,
