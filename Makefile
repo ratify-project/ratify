@@ -595,6 +595,11 @@ e2e-build-local-ratify-image:
 	-f ./httpserver/Dockerfile \
 	-t localbuild:test .
 
+build-local-ratify-gatekeeper-provider-image:
+	docker build --progress=plain --no-cache \
+	-f ./Dockerfile \
+	-t localbuild:test .
+
 load-local-ratify-image:
 	kind load docker-image --name kind localbuild:test
 
