@@ -40,6 +40,8 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/ratify-project/ratify v1.4.0
+	github.com/ratify-project/ratify-go v0.0.0-20250514054315-92d8d57164b5
+	github.com/ratify-project/ratify-verifier-go/notation v0.0.0-20250514055950-351f8d2b6c44
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.9.4
 	github.com/sirupsen/logrus v1.9.3
@@ -49,11 +51,11 @@ require (
 	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
 	go.opentelemetry.io/otel/metric v1.35.0
 	go.opentelemetry.io/otel/sdk/metric v1.35.0
-	golang.org/x/sync v0.13.0
+	golang.org/x/sync v0.14.0
 	k8s.io/api v0.28.15
 	k8s.io/apimachinery v0.28.15
 	k8s.io/client-go v0.28.15
-	oras.land/oras-go/v2 v2.5.0
+	oras.land/oras-go/v2 v2.6.0
 )
 
 require (
@@ -110,8 +112,6 @@ require (
 	github.com/mozillazg/docker-credential-acr-helper v0.3.0 // indirect
 	github.com/notaryproject/tspclient-go v1.0.0 // indirect
 	github.com/nozzle/throttler v0.0.0-20180817012639-2ea982251481 // indirect
-	github.com/ratify-project/ratify-go v0.0.0-20250409071324-ecbad89bc5e1 // indirect
-	github.com/ratify-project/ratify-verifier-go/notation v0.0.0-20250411030115-011378ff3b1c // indirect
 	github.com/sagikazarmark/locafero v0.7.0 // indirect
 	github.com/segmentio/ksuid v1.0.4 // indirect
 	github.com/sigstore/fulcio v1.4.5 // indirect
