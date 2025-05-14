@@ -112,17 +112,19 @@ func TestStartRatify(t *testing.T) {
 		{
 			name: "missing http server address",
 			opts: &options{
-				configFilePath: "config.yaml",
-				verifyTimeout:  5 * time.Second,
+				configFilePath:      "config.yaml",
+				verifyTimeout:       5 * time.Second,
+				disableCertRotation: true,
 			},
 			expectError: true,
 		},
 		{
 			name: "failed to start the server",
 			opts: &options{
-				httpServerAddress: ":8080",
-				configFilePath:    "config.yaml",
-				certFile:          "cert.pem",
+				httpServerAddress:   ":8080",
+				configFilePath:      "config.yaml",
+				certFile:            "cert.pem",
+				disableCertRotation: true,
 			},
 			expectError: true,
 		},

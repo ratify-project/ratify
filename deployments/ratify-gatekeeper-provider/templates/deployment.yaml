@@ -41,6 +41,14 @@ spec:
             - "/usr/local/config.json"
             - "--verify-timeout"
             - "5s"
+            - "--cert-file=/usr/local/tls/tls.crt"
+            - "--key-file=/usr/local/tls/tls.key"
+            {{- if .Values.provider.tls.disableCertRotation }}
+            - "--disable-cert-rotation"
+            {{- end }}
+            {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
+            - "--gatekeeper-ca-cert-file=/usr/local/tls/client-ca/ca.crt"
+            {{- end }}
           ports:
             - containerPort: 6001
           volumeMounts:

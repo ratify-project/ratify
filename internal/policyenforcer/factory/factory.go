@@ -31,7 +31,7 @@ type NewPolicyEnforcerOptions struct {
 }
 
 // registeredPolicyEnforcers saves the registered policy enforcer factories.
-var registeredPolicyEnforcers map[string]func(*NewPolicyEnforcerOptions) (ratify.PolicyEnforcer, error)
+var registeredPolicyEnforcers = make(map[string]func(*NewPolicyEnforcerOptions) (ratify.PolicyEnforcer, error))
 
 // RegisterPolicyEnforcer registers a policy enforcer factory to the system.
 func RegisterPolicyEnforcerFactory(policyType string, create func(*NewPolicyEnforcerOptions) (ratify.PolicyEnforcer, error)) {
@@ -40,9 +40,6 @@ func RegisterPolicyEnforcerFactory(policyType string, create func(*NewPolicyEnfo
 	}
 	if create == nil {
 		panic("policy factory cannot be nil")
-	}
-	if registeredPolicyEnforcers == nil {
-		registeredPolicyEnforcers = make(map[string]func(*NewPolicyEnforcerOptions) (ratify.PolicyEnforcer, error))
 	}
 	if _, registered := registeredPolicyEnforcers[policyType]; registered {
 		panic("policy factory already registered")

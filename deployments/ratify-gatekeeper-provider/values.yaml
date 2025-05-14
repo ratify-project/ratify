@@ -6,9 +6,9 @@ replicaCount: 1
 
 image:
   repository: ""
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: v2
+  tag: ""
 
 notation:
   scope: []
@@ -16,7 +16,7 @@ notation:
   certs: []
   
 stores:
-  - scope: "libinbinacr.azurecr.io"
+  - scope: ""
     username: ""
     password: ""
 

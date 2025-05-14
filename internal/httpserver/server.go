@@ -74,6 +74,8 @@ type ServerOptions struct {
 	// Optional.
 	KeyFile string
 
+	// GatekeeperCACertFile is the path to the Gatekeeper CA certificate file.
+	// Optional.
 	GatekeeperCACertFile string
 
 	// VerifyTimeout is the duration to wait for a verification request to
@@ -81,6 +83,10 @@ type ServerOptions struct {
 	// Optional.
 	VerifyTimeout time.Duration
 
+	// CertRotatorReady is a channel that signals when the certificate rotator
+	// is ready. If not provided, the server will run without rotating the TLS
+	// certificates.
+	// Optional.
 	CertRotatorReady chan struct{}
 }
 

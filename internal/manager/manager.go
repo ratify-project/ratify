@@ -32,10 +32,12 @@ const (
 	certDir        = "/usr/local/tls"
 )
 
+// StartManager creates a new Manager which is responsible for creating
+// Controllers.
 func StartManager(certRotatorReady chan struct{}) {
 	log := ctrl.Log.WithName("ratify-manager")
 	if certRotatorReady == nil {
-		log.Info("cert rotator is not enabled")
+		log.Info("cert rotator is disabled")
 		return
 	}
 

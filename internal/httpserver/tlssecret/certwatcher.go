@@ -26,7 +26,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type TLSSecretWatcher struct {
+// Watcher is a file watcher that monitors changes to TLS certificate files.
+type Watcher struct {
 	sync.RWMutex
 	watcher             *fsnotify.Watcher
 	ratifyServerTLSCert *tls.Certificate
@@ -37,7 +38,8 @@ type TLSSecretWatcher struct {
 	ratifyServerTLSKeyPath  string
 }
 
-func NewTLSSecretWatcher(gatekeeperCACertPath, ratifyServerTLSCertPath, ratifyServerTLSKeyPath string) (*TLSSecretWatcher, error) {
+// NewTLSSecretWatcher creates a new TLS secret watcher.
+func NewTLSSecretWatcher(gatekeeperCACertPath, ratifyServerTLSCertPath, ratifyServerTLSKeyPath string) (*Watcher, error) {
 	if ratifyServerTLSCertPath == "" || ratifyServerTLSKeyPath == "" {
 		return nil, fmt.Errorf("ratify server TLS cert and key paths must be set")
 	}
@@ -46,8 +48,8 @@ func NewTLSSecretWatcher(gatekeeperCACertPath, ratifyServerTLSCertPath, ratifySe
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file watcher: %w", err)
 	}
-	
-	tlsWatcher := &TLSSecretWatcher{
+
+	tlsWatcher := &Watcher{
 		watcher:                 watcher,
 		gatekeeperCACertPath:    gatekeeperCACertPath,
 		ratifyServerTLSCertPath: ratifyServerTLSCertPath,
@@ -61,7 +63,10 @@ func NewTLSSecretWatcher(gatekeeperCACertPath, ratifyServerTLSCertPath, ratifySe
 	return tlsWatcher, nil
 }
 
-func (w *TLSSecretWatcher) Start() error {
+// Start begins watching the specified files for changes.
+// It adds the ratify server TLS cert and key files to the watcher.
+// If a gatekeeper CA cert path is provided, it adds that file as well.
+func (w *Watcher) Start() error {
 	files := []string{w.ratifyServerTLSCertPath, w.ratifyServerTLSKeyPath}
 	if w.gatekeeperCACertPath != "" {
 		files = append(files, w.gatekeeperCACertPath)
@@ -76,7 +81,8 @@ func (w *TLSSecretWatcher) Start() error {
 	return nil
 }
 
-func (w *TLSSecretWatcher) loadCerts() error {
+// loadCerts loads the TLS certificates from the specified paths.
+func (w *Watcher) loadCerts() error {
 	if w.gatekeeperCACertPath != "" {
 		caCert, err := os.ReadFile(w.gatekeeperCACertPath)
 		if err != nil {
@@ -101,7 +107,7 @@ func (w *TLSSecretWatcher) loadCerts() error {
 }
 
 // watcher monitors the CA cert file and reloads it on change
-func (w *TLSSecretWatcher) watch() {
+func (w *Watcher) watch() {
 	for {
 		select {
 		case event, ok := <-w.watcher.Events:
@@ -129,13 +135,15 @@ func (w *TLSSecretWatcher) watch() {
 	}
 }
 
-func (w *TLSSecretWatcher) Stop() {
+// Stop stops the watcher and closes the file watcher.
+func (w *Watcher) Stop() {
 	if err := w.watcher.Close(); err != nil {
 		logrus.Errorf("error closing watcher: %v", err)
 	}
 }
 
-func (w *TLSSecretWatcher) GetConfigForClient(*tls.ClientHelloInfo) (*tls.Config, error) {
+// GetConfigForClient returns the TLS configuration for the tls client.
+func (w *Watcher) GetConfigForClient(*tls.ClientHelloInfo) (*tls.Config, error) {
 	w.RLock()
 	defer w.RUnlock()
 

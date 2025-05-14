@@ -41,7 +41,7 @@ var registeredVerifiers map[string]func(NewVerifierOptions) (ratify.Verifier, er
 // RegisterVerifierFactory registers a verifier factory to the system.
 func RegisterVerifierFactory(verifierType string, create func(NewVerifierOptions) (ratify.Verifier, error)) {
 	if verifierType == "" {
-		panic("verifier type cannot be empty")
+		panic("verifier type cannot be empty. Please provide a non-empty string representing a valid verifier.")
 	}
 	if create == nil {
 		panic("verifier factory cannot be nil")

@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package pod
 
 import (
 	"os"
@@ -61,7 +61,7 @@ func TestGetServiceName(t *testing.T) {
 			t.Fatal("Failed to unset environment variable")
 		}
 
-		expected := "ratify"
+		expected := "ratify-gatekeeper-provider"
 		actual := GetServiceName()
 		if actual != expected {
 			t.Errorf("Expected service name to be %q, but got %q", expected, actual)
