@@ -46,6 +46,9 @@ type options struct {
 	Policy *policyRule `json:"policy"`
 }
 
+// init registers the threshold-policy factory via side effects.
+// This ensures that the threshold-policy type is available for use in the
+// policy enforcer factory.
 func init() {
 	factory.RegisterPolicyEnforcerFactory(thresholdPolicyType, func(opts *factory.NewPolicyEnforcerOptions) (ratify.PolicyEnforcer, error) {
 		raw, err := json.Marshal(opts.Parameters)

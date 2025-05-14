@@ -16,6 +16,8 @@ limitations under the License.
 package executor
 
 import (
+	"fmt"
+
 	"github.com/ratify-project/ratify-go"
 	"github.com/ratify-project/ratify/v2/internal/policyenforcer"
 	policyFactory "github.com/ratify-project/ratify/v2/internal/policyenforcer/factory"
@@ -40,6 +42,9 @@ type Options struct {
 // NewExecutor creates a new [ratify.Executor] instance based on the provided
 // options.
 func NewExecutor(opts *Options) (*ratify.Executor, error) {
+	if opts == nil {
+		return nil, fmt.Errorf("executor options cannot be nil")
+	}
 	verifiers, err := verifier.NewVerifiers(opts.Verifiers)
 	if err != nil {
 		return nil, err

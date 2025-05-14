@@ -29,7 +29,7 @@ header:
       limitations under the License.
 
   paths-ignore:
-    - "**/*.{md,svg,yaml,crt,cer,json,pub,yml,pb.go,proto}"
+    - "**/*.{md,svg,yaml,crt,cer,json,pub,yml,pb.go,proto,gotmpl}"
     - "CODEOWNERS"
     - "PROJECT"
     - "NOTICE"
@@ -40,7 +40,7 @@ header:
     - "**/testdata/**"
     - "charts/**/*"
     - ".gitignore"
-    - ".devcontainer/gatekeeper.http"
+    - "**/.helmignore"
 
   comment: on-failure
 

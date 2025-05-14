@@ -27,7 +27,6 @@ import (
 	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
 	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
 	_ "github.com/ratify-project/ratify/v2/internal/verifier/keyprovider/filesystemprovider" // Register the filesystem key provider
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -75,8 +74,6 @@ func init() {
 			return nil, fmt.Errorf("failed to initialize trust store: %w", err)
 		}
 
-		logrus.Infof("trust policy: %+v", initTrustPolicyDocument(params.Scope, params.TrustedIdentities, types))
-
 		notationOpts := &notation.VerifierOptions{
 			Name:           opts.Name,
 			TrustPolicyDoc: initTrustPolicyDocument(params.Scope, params.TrustedIdentities, types),
@@ -103,7 +100,7 @@ func initTrustStore(opts []trustStoreOptions) (truststore.X509TrustStore, []trus
 			}
 		}
 		if _, exists := types[storeType]; exists {
-			return nil, nil, fmt.Errorf("duplicate trust store type %s", storeType)
+			return nil, nil, fmt.Errorf("duplicate trust store type %s detected. Please check your configuration to ensure each trust store type is unique", storeType)
 		}
 		types[storeType] = struct{}{}
 
