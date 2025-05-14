@@ -1,3 +1,5 @@
+//go:build windows
+
 /*
 Copyright The Ratify Authors.
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,39 +15,40 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package httpserver
+package config
 
 import (
-	"context"
+	"os"
 	"testing"
-
-	"github.com/ratify-project/ratify/pkg/executor/types"
-	pt "github.com/ratify-project/ratify/pkg/policyprovider/types"
 )
 
-func TestFromVerifyResult(t *testing.T) {
-	result := types.VerifyResult{}
+func TestGet(t *testing.T) {
+	originalUserProfile := os.Getenv("USERPROFILE")
+	defer os.Setenv("USERPROFILE", originalUserProfile)
+
 	testCases := []struct {
-		name            string
-		policyType      string
-		expectedVersion string
+		name     string
+		envValue string
+		expected string
 	}{
 		{
-			name:            "Rego policy",
-			policyType:      pt.RegoPolicy,
-			expectedVersion: "1.1.0",
+			name:     "USERPROFILE set to valid path",
+			envValue: "C:\\Users\\TestUser",
+			expected: "C:\\Users\\TestUser",
 		},
 		{
-			name:            "Config policy",
-			policyType:      pt.ConfigPolicy,
-			expectedVersion: "0.2.0",
+			name:     "USERPROFILE set to empty string",
+			envValue: "",
+			expected: "",
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if res := fromVerifyResult(context.Background(), result, tc.policyType); res.Version != tc.expectedVersion {
-				t.Fatalf("Expected version to be %s, got %s", tc.expectedVersion, res.Version)
+			os.Setenv("USERPROFILE", tc.envValue)
+			result := get()
+			if result != tc.expected {
+				t.Errorf("get() = %q; want %q", result, tc.expected)
 			}
 		})
 	}
