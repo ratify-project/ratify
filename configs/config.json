@@ -7,8 +7,7 @@
                 "certificates": [
                     {
                         "files": [
-                            "/path/to/your/cert.crt",
-                            "/path/to/your/certDirectory"
+                            "${CERTIFICATE_PATH}"
                         ]
                     }
                 ]
@@ -16,7 +15,7 @@
         }
     ],
     "stores": {
-        "docker.io": {
+        "libinbinacr.azurecr.io": {
             "type": "registry-store",
             "parameters": {
                 "credential": {

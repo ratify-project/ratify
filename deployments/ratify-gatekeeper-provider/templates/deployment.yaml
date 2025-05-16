@@ -1,21 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ratify-deployment
+  name: {{ include "ratify.fullname" . }}
   labels:
-    app: ratify
+    {{- include "ratify.labels" . | nindent 4 }}
 spec:
   replicas: {{ default 1 .Values.replicaCount }}
   selector:
     matchLabels:
-      app: ratify
+      {{- include "ratify.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: ratify
+        {{- include "ratify.selectorLabels" . | nindent 8 }}
     spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "ratify.serviceAccountName" . }}
+      {{- end }}
       containers:
-        - name: ratify
+        - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           securityContext:
@@ -38,22 +41,53 @@ spec:
             - "/usr/local/config.json"
             - "--verify-timeout"
             - "5s"
+            - "--cert-file=/usr/local/tls/tls.crt"
+            - "--key-file=/usr/local/tls/tls.key"
+            {{- if .Values.provider.tls.disableCertRotation }}
+            - "--disable-cert-rotation"
+            {{- end }}
+            {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
+            - "--gatekeeper-ca-cert-file=/usr/local/tls/client-ca/ca.crt"
+            {{- end }}
           ports:
             - containerPort: 6001
           volumeMounts:
+            - mountPath: "/usr/local/tls"
+              name: tls
+              readOnly: true
             - mountPath: "/usr/local"
               name: ratify-config
               readOnly: true
             - mountPath: "/usr/local/notation/certs"
               name: notation-certs
               readOnly: true
+            {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
+            - mountPath: /usr/local/tls/client-ca
+              name: client-ca-cert
+              readOnly: true
+            {{- end }}
+          env:
+            - name: RATIFY_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: RATIFY_NAME
+              value: {{ include "ratify.fullname" . }}
       volumes:
         - name: ratify-config
           configMap:
-            name: ratify-configmap
+            name: {{ include "ratify.fullname" . }}-configmap
         - name: notation-certs
           secret:
-            secretName: ratify-notation-certs
-        - name: notation-trust-policy
-          configMap:
-            name: notation-configmap
+            secretName: {{ include "ratify.fullname" . }}-notation-certs
+        {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
+        - name: client-ca-cert
+          secret:
+            secretName: gatekeeper-webhook-server-cert
+            items:
+              - key: ca.crt
+                path: ca.crt
+        {{- end }}
+        - name: tls
+          secret:
+            secretName: {{ include "ratify.fullname" . }}-tls

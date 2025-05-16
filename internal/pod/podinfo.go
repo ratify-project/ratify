@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package utils
+package pod
 
 import "os"
 
@@ -30,7 +30,7 @@ func GetNamespace() string {
 func GetServiceName() string {
 	name, found := os.LookupEnv("RATIFY_NAME")
 	if !found {
-		return "ratify"
+		return "ratify-gatekeeper-provider"
 	}
 	return name
 }

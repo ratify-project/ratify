@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: ratify-configmap
+  name: {{ include "ratify.fullname" . }}-configmap
 data:
   config.json: |
     {
