@@ -7,7 +7,7 @@
                 "certificates": [
                     {
                         "files": [
-                            "/home/libinbin/go/src/github.com/binbin-li/ratify/cert/ratify4.crt"
+                            "${CERTIFICATE_PATH}"
                         ]
                     }
                 ]
