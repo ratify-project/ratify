@@ -34,7 +34,7 @@ const (
 
 // StartManager creates a new Manager which is responsible for creating
 // Controllers.
-func StartManager(certRotatorReady chan struct{}) {
+func StartManager(certRotatorReady chan struct{}, disableMutation bool) {
 	log := ctrl.Log.WithName("ratify-manager")
 	if certRotatorReady == nil {
 		log.Info("cert rotator is disabled")
@@ -55,6 +55,13 @@ func StartManager(certRotatorReady chan struct{}) {
 			Type: rotator.ExternalDataProvider,
 		},
 	}
+	if !disableMutation {
+		webhooks = append(webhooks, rotator.WebhookInfo{
+			Name: "ratify-gatekeeper-mutation-provider",
+			Type: rotator.ExternalDataProvider,
+		})
+	}
+
 	namespace := pod.GetNamespace()
 	serviceName := pod.GetServiceName()
 

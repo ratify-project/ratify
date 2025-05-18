@@ -39,12 +39,21 @@ spec:
             - ":6001"
             - "--config"
             - "/usr/local/config.json"
+            {{- if .Values.provider.timeout.validationTimeoutSeconds }}
             - "--verify-timeout"
-            - "5s"
+            - {{ printf "%.1fs" (subf .Values.provider.timeout.validationTimeoutSeconds 0.1) }}
+            {{- end }}
+            {{- if .Values.provider.timeout.mutationTimeoutSeconds }}
+            - "--mutate-timeout"
+            - {{ printf "%.2fs" (subf .Values.provider.timeout.mutationTimeoutSeconds 0.05) }}
+            {{- end }}
             - "--cert-file=/usr/local/tls/tls.crt"
             - "--key-file=/usr/local/tls/tls.key"
             {{- if .Values.provider.tls.disableCertRotation }}
             - "--disable-cert-rotation"
+            {{- end }}
+            {{- if .Values.provider.disableMutation }}
+            - "--disable-mutation"
             {{- end }}
             {{- if (lookup "v1" "Secret" .Release.Namespace "gatekeeper-webhook-server-cert") }}
             - "--gatekeeper-ca-cert-file=/usr/local/tls/client-ca/ca.crt"

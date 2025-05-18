@@ -66,15 +66,18 @@ func TestParse(t *testing.T) {
 				certFile:          "cert.pem",
 				keyFile:           "key.pem",
 				verifyTimeout:     10 * time.Second,
+				mutateTimeout:     2 * time.Second,
 			},
 		},
 		{
 			name: "only timeout provided",
 			args: []string{
 				"-verify-timeout=30s",
+				"-mutate-timeout=10s",
 			},
 			expected: &options{
 				verifyTimeout: 30 * time.Second,
+				mutateTimeout: 10 * time.Second,
 			},
 		},
 		{
@@ -82,6 +85,7 @@ func TestParse(t *testing.T) {
 			args: []string{},
 			expected: &options{
 				verifyTimeout: 5 * time.Second,
+				mutateTimeout: 2 * time.Second,
 			},
 		},
 	}

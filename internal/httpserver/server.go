@@ -18,9 +18,7 @@ package httpserver
 import (
 	"context"
 	"crypto/tls"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,7 +27,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/ratify-project/ratify-go"
 	"github.com/ratify-project/ratify/v2/internal/executor"
 	"github.com/ratify-project/ratify/v2/internal/httpserver/config"
@@ -40,20 +37,18 @@ import (
 const (
 	serverRootURL        = "/ratify/gatekeeper/v2"
 	verifyPath           = "verify"
+	mutatePath           = "mutate"
 	defaultVerifyTimeout = 5 * time.Second
+	defaultMutateTimeout = 2 * time.Second
 	readTimeout          = 5 * time.Second
 	writeTimeout         = 5 * time.Second
 	idleTimeout          = 60 * time.Second
 )
 
 type server struct {
-	address              string
-	certFile             string
-	keyFile              string
-	gatekeeperCACertFile string
-	router               *mux.Router
-	executor             *ratify.Executor
-	verifyRequestTimeout time.Duration
+	router   *mux.Router
+	executor *ratify.Executor
+	ServerOptions
 }
 
 // ServerOptions holds the configuration options for the Ratify server.
@@ -82,6 +77,16 @@ type ServerOptions struct {
 	// complete before timing out. Default is 5 seconds if not specified.
 	// Optional.
 	VerifyTimeout time.Duration
+
+	// MutateTimeout is the duration to wait for a mutation request to
+	// complete before timing out. Default is 2 seconds if not specified.
+	// Optional.
+	MutateTimeout time.Duration
+
+	// DisableMutation indicates whether to disable the mutation handler.
+	// If set to true, the mutation handler will not be registered.
+	// Optional.
+	DisableMutation bool
 
 	// CertRotatorReady is a channel that signals when the certificate rotator
 	// is ready. If not provided, the server will run without rotating the TLS
@@ -115,16 +120,15 @@ func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*serv
 		return nil, fmt.Errorf("failed to create executor: %w", err)
 	}
 	server := &server{
-		router:               mux.NewRouter(),
-		address:              serverOpts.HTTPServerAddress,
-		certFile:             serverOpts.CertFile,
-		keyFile:              serverOpts.KeyFile,
-		gatekeeperCACertFile: serverOpts.GatekeeperCACertFile,
-		verifyRequestTimeout: serverOpts.VerifyTimeout,
-		executor:             e,
+		router:        mux.NewRouter(),
+		executor:      e,
+		ServerOptions: *serverOpts,
 	}
-	if server.verifyRequestTimeout == 0 {
-		server.verifyRequestTimeout = defaultVerifyTimeout
+	if server.VerifyTimeout == 0 {
+		server.VerifyTimeout = defaultVerifyTimeout
+	}
+	if server.MutateTimeout == 0 {
+		server.MutateTimeout = defaultMutateTimeout
 	}
 	if err := server.registerHandlers(); err != nil {
 		return nil, fmt.Errorf("failed to register handlers: %w", err)
@@ -136,14 +140,22 @@ func (s *server) registerHandlers() error {
 	if err := s.registerVerifyHandler(); err != nil {
 		return err
 	}
-	if err := s.registerMutateHandler(); err != nil {
-		return err
+
+	if !s.DisableMutation {
+		if err := s.registerMutateHandler(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
 // TODO: implement mutate handler.
 func (s *server) registerMutateHandler() error {
+	mutateURL, err := url.JoinPath(serverRootURL, mutatePath)
+	if err != nil {
+		return err
+	}
+	s.router.Methods(http.MethodPost).PathPrefix(mutateURL).Handler(middlewareWithTimeout(s.mutateHandler(), s.MutateTimeout))
 	return nil
 }
 
@@ -152,7 +164,7 @@ func (s *server) registerVerifyHandler() error {
 	if err != nil {
 		return err
 	}
-	s.router.Methods(http.MethodPost).Path(verifyURL).Handler(middlewareWithTimeout(s.verifyHandler(), s.verifyRequestTimeout))
+	s.router.Methods(http.MethodPost).Path(verifyURL).Handler(middlewareWithTimeout(s.verifyHandler(), s.VerifyTimeout))
 	return nil
 }
 
@@ -162,44 +174,10 @@ func (s *server) verifyHandler() http.HandlerFunc {
 	}
 }
 
-// verify handles the verification request from Gatekeeper.
-func (s *server) verify(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	defer r.Body.Close()
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		return fmt.Errorf("failed to read request body: %w", err)
+func (s *server) mutateHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_ = s.mutate(r.Context(), w, r)
 	}
-
-	var providerRequest externaldata.ProviderRequest
-	if err = json.Unmarshal(body, &providerRequest); err != nil {
-		return fmt.Errorf("failed to unmarshal request body to provider request: %w", err)
-	}
-
-	results := make([]externaldata.Item, len(providerRequest.Request.Keys))
-	for idx, key := range providerRequest.Request.Keys {
-		item := externaldata.Item{
-			Key: key,
-		}
-		opts := ratify.ValidateArtifactOptions{
-			Subject: key,
-		}
-		result, err := s.executor.ValidateArtifact(ctx, opts)
-		if err != nil {
-			item.Error = err.Error()
-		}
-		item.Value = convertResult(result)
-		results[idx] = item
-	}
-
-	response := externaldata.ProviderResponse{
-		APIVersion: "externaldata.gatekeeper.sh/v1beta1",
-		Kind:       "ProviderResponse",
-		Response: externaldata.Response{
-			Items: results,
-		},
-	}
-	w.WriteHeader(http.StatusOK)
-	return json.NewEncoder(w).Encode(response)
 }
 
 func middlewareWithTimeout(next http.Handler, timeout time.Duration) http.Handler {
@@ -214,21 +192,21 @@ func middlewareWithTimeout(next http.Handler, timeout time.Duration) http.Handle
 // It also handles graceful shutdown on receiving an interrupt signal.
 func (s *server) Run(certRotatorReady chan struct{}) error {
 	srv := &http.Server{
-		Addr:         s.address,
+		Addr:         s.HTTPServerAddress,
 		Handler:      s.router,
 		WriteTimeout: writeTimeout,
 		ReadTimeout:  readTimeout,
 		IdleTimeout:  idleTimeout,
 	}
 	go func() {
-		if s.certFile != "" && s.keyFile != "" {
-			logrus.Infof("starting server with TLS at %s", s.address)
+		if s.CertFile != "" && s.KeyFile != "" {
+			logrus.Infof("starting server with TLS at %s", s.HTTPServerAddress)
 			if certRotatorReady != nil {
 				<-certRotatorReady
 				logrus.Infof("cert rotator is ready")
 			}
 
-			certWatcher, err := tlssecret.NewTLSSecretWatcher(s.gatekeeperCACertFile, s.certFile, s.keyFile)
+			certWatcher, err := tlssecret.NewTLSSecretWatcher(s.GatekeeperCACertFile, s.CertFile, s.KeyFile)
 			if err != nil {
 				logrus.Errorf("failed to create TLS secret watcher: %v", err)
 				return
@@ -242,7 +220,7 @@ func (s *server) Run(certRotatorReady chan struct{}) error {
 				logrus.Errorf("failed to start server: %v", err)
 			}
 		} else {
-			logrus.Infof("starting server without TLS at %s", s.address)
+			logrus.Infof("starting server without TLS at %s", s.HTTPServerAddress)
 			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				logrus.Errorf("failed to start server: %v", err)
 			}
@@ -254,7 +232,7 @@ func (s *server) Run(certRotatorReady chan struct{}) error {
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 	<-quit
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.verifyRequestTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), s.VerifyTimeout)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
 		logrus.Errorf("failed to shutdown server: %v", err)
