@@ -50,7 +50,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.35.0
 	k8s.io/api v0.31.9
 	k8s.io/apimachinery v0.31.9
-	k8s.io/client-go v0.31.2
+	k8s.io/client-go v0.31.9
 	oras.land/oras-go/v2 v2.6.0
 )
 
