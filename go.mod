@@ -33,7 +33,7 @@ require (
 	github.com/notaryproject/notation-go v1.3.2
 	github.com/open-policy-agent/cert-controller v0.12.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a
-	github.com/open-policy-agent/opa v1.4.0
+	github.com/open-policy-agent/opa v1.4.2
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.1.1
 	github.com/owenrumney/go-sarif/v2 v2.3.3
