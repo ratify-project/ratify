@@ -40,7 +40,9 @@ type options struct {
 	keyFile              string
 	gatekeeperCACertFile string
 	disableCertRotation  bool
+	disableMutation      bool
 	verifyTimeout        time.Duration
+	mutateTimeout        time.Duration
 }
 
 func parse() *options {
@@ -51,7 +53,9 @@ func parse() *options {
 	flag.StringVar(&opts.keyFile, "key-file", "", "Path to the TLS key file")
 	flag.StringVar(&opts.gatekeeperCACertFile, "gatekeeper-ca-cert-file", "", "Path to the Gatekeeper CA certificate file")
 	flag.DurationVar(&opts.verifyTimeout, "verify-timeout", 5*time.Second, "Verification timeout duration (e.g. 5s, 1m), default is 5 seconds")
+	flag.DurationVar(&opts.mutateTimeout, "mutate-timeout", 2*time.Second, "Mutation timeout duration (e.g. 5s, 1m), default is 2 seconds")
 	flag.BoolVar(&opts.disableCertRotation, "disable-cert-rotation", false, "Disable certificate rotation")
+	flag.BoolVar(&opts.disableMutation, "disable-mutation", false, "Disable mutation wehbook")
 
 	flag.Parse()
 	logrus.Infof("Starting Ratify with options: %+v", opts)
@@ -72,9 +76,11 @@ func startRatify(opts *options) error {
 		KeyFile:              opts.keyFile,
 		GatekeeperCACertFile: opts.gatekeeperCACertFile,
 		VerifyTimeout:        opts.verifyTimeout,
+		MutateTimeout:        opts.mutateTimeout,
+		DisableMutation:      opts.disableMutation,
 		CertRotatorReady:     certRotatorReady,
 	}
 
-	go manager.StartManager(certRotatorReady)
+	go manager.StartManager(certRotatorReady, serverOpts.DisableMutation)
 	return httpserver.StartServer(serverOpts, opts.configFilePath)
 }

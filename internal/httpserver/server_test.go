@@ -26,17 +26,12 @@ import (
 	"encoding/pem"
 	"fmt"
 	"math/big"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/ratify-project/ratify-go"
 	"github.com/ratify-project/ratify/v2/internal/executor"
@@ -56,9 +51,20 @@ func createMockVerifier(factory.NewVerifierOptions) (ratify.Verifier, error) {
 	return &mockVerifier{}, nil
 }
 
-type mockStore struct{}
+type mockStore struct {
+	resolveMap       map[string]ocispec.Descriptor
+	returnResolveErr bool
+}
 
-func (m *mockStore) Resolve(_ context.Context, _ string) (ocispec.Descriptor, error) {
+func (m *mockStore) Resolve(_ context.Context, ref string) (ocispec.Descriptor, error) {
+	if m.returnResolveErr {
+		return ocispec.Descriptor{}, fmt.Errorf("mock error")
+	}
+	if m.resolveMap != nil {
+		if desc, ok := m.resolveMap[ref]; ok {
+			return desc, nil
+		}
+	}
 	return ocispec.Descriptor{}, nil
 }
 
@@ -329,62 +335,4 @@ func createTLSCertAndKey(dir string) (string, string, error) {
 	}
 
 	return certPath, keyPath, nil
-}
-func TestVerify(t *testing.T) {
-	executor := ratify.Executor{}
-	server := &server{
-		executor: &executor,
-	}
-
-	tests := []struct {
-		name          string
-		requestBody   string
-		expectedError bool
-		expectedItems []externaldata.Item
-	}{
-		{
-			name: "Valid request",
-			requestBody: `{
-				"request": {
-					"keys": ["artifact1"]
-				}
-			}`,
-			expectedError: false,
-			expectedItems: []externaldata.Item{
-				{
-					Key:   "artifact1",
-					Value: nil,
-					Error: "store must be configured",
-				},
-			},
-		},
-		{
-			name:          "Invalid JSON",
-			requestBody:   `{invalid-json}`,
-			expectedError: true,
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/verify", strings.NewReader(test.requestBody))
-			w := httptest.NewRecorder()
-
-			err := server.verify(context.Background(), w, req)
-			if (err != nil) != test.expectedError {
-				t.Errorf("expected error: %v, got: %v", test.expectedError, err)
-			}
-
-			if !test.expectedError {
-				var response externaldata.ProviderResponse
-				if err := json.NewDecoder(w.Body).Decode(&response); err != nil {
-					t.Fatalf("failed to decode response: %v", err)
-				}
-
-				if !reflect.DeepEqual(response.Response.Items, test.expectedItems) {
-					t.Errorf("expected items: %v, got: %v", test.expectedItems, response.Response.Items)
-				}
-			}
-		})
-	}
 }

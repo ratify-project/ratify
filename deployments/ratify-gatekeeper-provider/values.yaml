@@ -27,9 +27,14 @@ provider:
     caCert: "" # CA crt used by ratify (httpserver), please provide your own CA crt
     cabundle: "" # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
     disableCertRotation: false
+  disableMutation: false
   timeout:
     # timeout values must match gatekeeper webhook timeouts
     validationTimeoutSeconds: 5
+    mutationTimeoutSeconds: 2
+
+gatekeeper:
+  namespace: "gatekeeper-system"
 
 serviceAccount:
   create: true

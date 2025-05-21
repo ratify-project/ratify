@@ -1,5 +1,5 @@
-{{- if .Values.provider.enableMutation -}}
-{{ include "ratify.assignGKVersion" . }}
+{{- if not .Values.provider.disableMutation -}}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-pod-image
@@ -19,9 +19,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-workload-image
@@ -41,9 +41,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-cronjob-image
@@ -63,9 +63,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-pod-image-init
@@ -85,9 +85,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-workload-image-init
@@ -107,9 +107,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-cronjob-image-init
@@ -129,9 +129,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-pod-image-ephemeral
@@ -151,9 +151,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-workload-image-ephemeral
@@ -173,9 +173,9 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 ---
-{{ include "ratify.assignGKVersion" . }}
+apiVersion: mutations.gatekeeper.sh/v1
 kind: Assign
 metadata:
   name: mutate-cronjob-image-ephemeral
@@ -195,5 +195,5 @@ spec:
   parameters:
     assign:
       externalData:
-        provider: ratify-mutation-provider
+        provider: ratify-gatekeeper-mutation-provider
 {{- end }}

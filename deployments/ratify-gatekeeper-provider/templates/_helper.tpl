@@ -104,3 +104,15 @@ Create chart name and version as used by the chart label.
 {{- define "ratify.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
+
+{{/*
+Set the namespace exclusions for Assign
+*/}}
+{{- define "ratify.assignExcludedNamespaces" -}}
+{{- $gkNamespace := default "gatekeeper-system" .Values.gatekeeper.namespace -}}
+- {{ $gkNamespace | quote}}
+- "kube-system"
+{{- if and (ne .Release.Namespace $gkNamespace) (ne .Release.Namespace "kube-system") }}
+- {{ .Release.Namespace | quote}}
+{{- end }}
+{{- end }}
