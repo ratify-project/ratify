@@ -24,6 +24,7 @@ import (
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/ratify-project/ratify-go"
+	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry"
 )
 
@@ -41,24 +42,45 @@ func (s *server) verify(ctx context.Context, w http.ResponseWriter, r *http.Requ
 	}
 
 	results := make([]externaldata.Item, len(providerRequest.Request.Keys))
-	for idx, key := range providerRequest.Request.Keys {
-		item := externaldata.Item{
-			Key: key,
+	for idx, artifact := range providerRequest.Request.Keys {
+		results[idx] = externaldata.Item{
+			Key: artifact,
 		}
-		opts := ratify.ValidateArtifactOptions{
-			Subject: key,
+		key := verifyKey(artifact)
+
+		// Fetch the cache value first.
+		val, err := s.cache.Get(ctx, key)
+		if err == nil && val != nil {
+			results[idx].Value = val
+			continue
 		}
-		result, err := s.executor.ValidateArtifact(ctx, opts)
+
+		// Cache is missed, block multiple goroutines from validating the same
+		// artifact.
+		val, err, _ = s.sfGroup.Do(key, func() (any, error) {
+			opts := ratify.ValidateArtifactOptions{
+				Subject: artifact,
+			}
+			result, err := s.executor.ValidateArtifact(ctx, opts)
+			if err != nil {
+				return nil, err
+			}
+			renderedResult := convertResult(result)
+			if err = s.cache.Set(ctx, key, renderedResult); err != nil {
+				logrus.Warnf("failed to set verify cache for image %s: %v", artifact, err)
+			}
+			return renderedResult, nil
+		})
 		if err != nil {
-			item.Error = err.Error()
+			results[idx].Error = err.Error()
 		}
-		item.Value = convertResult(result)
-		results[idx] = item
+		results[idx].Value = val
 	}
 
 	return sendResponse(results, w, http.StatusOK, false)
 }
 
+// mutate handles the mutation request from Gatekeeper.
 func (s *server) mutate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	defer r.Body.Close()
 	body, err := io.ReadAll(r.Body)
@@ -94,13 +116,34 @@ func (s *server) resolveReference(ctx context.Context, reference string) externa
 		return item
 	}
 
-	desc, err := s.executor.Store.Resolve(ctx, ref.String())
-	if err != nil {
-		item.Error = fmt.Sprintf("failed to resolve reference: %v", err)
+	// Fetch the cache value first.
+	key := mutateKey(reference)
+	val, err := s.cache.Get(ctx, key)
+	if err == nil && val != nil {
+		item.Value = val
 		return item
 	}
-	ref.Reference = desc.Digest.String()
-	item.Value = ref.String()
+
+	// Cache is missed, block multiple goroutines from resolving the same
+	// reference.
+	val, err, _ = s.sfGroup.Do(key, func() (any, error) {
+		desc, err := s.executor.Store.Resolve(ctx, ref.String())
+		if err != nil {
+			return "", err
+		}
+		ref.Reference = desc.Digest.String()
+		resolvedRef := ref.String()
+
+		if err = s.cache.Set(ctx, key, resolvedRef); err != nil {
+			logrus.Warnf("failed to set mutate cache for image %s: %v", reference, err)
+		}
+		return resolvedRef, nil
+	})
+	if err != nil {
+		item.Error = err.Error()
+	} else {
+		item.Value = val
+	}
 	return item
 }
 
@@ -119,4 +162,12 @@ func sendResponse(results []externaldata.Item, w http.ResponseWriter, respCode i
 
 	w.WriteHeader(respCode)
 	return json.NewEncoder(w).Encode(response)
+}
+
+func mutateKey(key string) string {
+	return fmt.Sprintf("%s_%s", mutatePath, key)
+}
+
+func verifyKey(key string) string {
+	return fmt.Sprintf("%s_%s", verifyPath, key)
 }
