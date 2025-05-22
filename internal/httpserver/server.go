@@ -28,10 +28,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/ratify-project/ratify-go"
+	"github.com/ratify-project/ratify/v2/internal/cache"
+	"github.com/ratify-project/ratify/v2/internal/cache/ristretto"
 	"github.com/ratify-project/ratify/v2/internal/executor"
 	"github.com/ratify-project/ratify/v2/internal/httpserver/config"
 	"github.com/ratify-project/ratify/v2/internal/httpserver/tlssecret"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/singleflight"
 )
 
 const (
@@ -43,11 +46,14 @@ const (
 	readTimeout          = 5 * time.Second
 	writeTimeout         = 5 * time.Second
 	idleTimeout          = 60 * time.Second
+	defaultCacheTTL      = 5 * time.Second
 )
 
 type server struct {
 	router   *mux.Router
 	executor *ratify.Executor
+	cache    cache.Cache
+	sfGroup  *singleflight.Group
 	ServerOptions
 }
 
@@ -119,9 +125,15 @@ func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*serv
 	if err != nil {
 		return nil, fmt.Errorf("failed to create executor: %w", err)
 	}
+	cache, err := ristretto.NewRistrettoCache(defaultCacheTTL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cache: %w", err)
+	}
 	server := &server{
 		router:        mux.NewRouter(),
 		executor:      e,
+		cache:         cache,
+		sfGroup:       new(singleflight.Group),
 		ServerOptions: *serverOpts,
 	}
 	if server.VerifyTimeout == 0 {
