@@ -18,7 +18,7 @@ package factory
 import (
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
+	"github.com/notaryproject/ratify-go"
 )
 
 // NewPolicyEnforcerOptions is the options for creating a new PolicyEnforcer.

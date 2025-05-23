@@ -22,8 +22,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/notaryproject/ratify-go"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	"github.com/ratify-project/ratify-go"
 	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry"
 )

@@ -25,9 +25,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/notaryproject/ratify-go"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/ratify-project/ratify-go"
 	"golang.org/x/sync/singleflight"
 )
 

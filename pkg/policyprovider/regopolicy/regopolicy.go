@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/notaryproject/ratify/v2/internal/logger"
 	re "github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/internal/logger"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/executor/types"
 	"github.com/ratify-project/ratify/pkg/ocispecs"

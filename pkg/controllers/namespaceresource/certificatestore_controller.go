@@ -18,8 +18,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
-	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/certificateprovider"
 	_ "github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault" // register azure keyvault certificate provider
 	_ "github.com/ratify-project/ratify/pkg/certificateprovider/inline"        // register inline certificate provider

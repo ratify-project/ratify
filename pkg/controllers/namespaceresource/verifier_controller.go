@@ -19,8 +19,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	configv1beta1 "github.com/ratify-project/ratify/api/v1beta1"
-	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/controllers"
 
 	re "github.com/ratify-project/ratify/errors"

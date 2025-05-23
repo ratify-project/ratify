@@ -18,7 +18,7 @@ package factory
 import (
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
+	"github.com/notaryproject/ratify-go"
 )
 
 // NewVerifierOptions holds the options to create a verifier.

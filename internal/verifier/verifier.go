@@ -18,9 +18,9 @@ package verifier
 import (
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
-	_ "github.com/ratify-project/ratify/v2/internal/verifier/factory/notation" // Register the Notation verifier factory
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
+	_ "github.com/notaryproject/ratify/v2/internal/verifier/factory/notation" // Register the Notation verifier factory
 )
 
 // NewVerifiers creates a slice of ratify.Verifier instances based on the

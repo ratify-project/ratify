@@ -27,12 +27,12 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/cache"
-	"github.com/ratify-project/ratify/v2/internal/cache/ristretto"
-	"github.com/ratify-project/ratify/v2/internal/executor"
-	"github.com/ratify-project/ratify/v2/internal/httpserver/config"
-	"github.com/ratify-project/ratify/v2/internal/httpserver/tlssecret"
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/cache"
+	"github.com/notaryproject/ratify/v2/internal/cache/ristretto"
+	"github.com/notaryproject/ratify/v2/internal/executor"
+	"github.com/notaryproject/ratify/v2/internal/httpserver/config"
+	"github.com/notaryproject/ratify/v2/internal/httpserver/tlssecret"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/singleflight"
 )

@@ -17,8 +17,8 @@ limitations under the License.
 package v1alpha1
 
 import (
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	unversioned "github.com/ratify-project/ratify/api/unversioned"
-	"github.com/ratify-project/ratify/internal/constants"
 	conversion "k8s.io/apimachinery/pkg/conversion"
 )
 

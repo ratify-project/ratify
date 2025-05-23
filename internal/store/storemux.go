@@ -18,10 +18,10 @@ package store
 import (
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/store/factory"
-	_ "github.com/ratify-project/ratify/v2/internal/store/factory/filesystemocistore" // Register the filesystem store factory
-	_ "github.com/ratify-project/ratify/v2/internal/store/factory/registrystore"      // Register the registry store factory
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/store/factory"
+	_ "github.com/notaryproject/ratify/v2/internal/store/factory/filesystemocistore" // Register the filesystem store factory
+	_ "github.com/notaryproject/ratify/v2/internal/store/factory/registrystore"      // Register the registry store factory
 )
 
 // PatternOptions defines a map of string keys to [factory.NewStoreOptions]

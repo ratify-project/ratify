@@ -18,7 +18,7 @@ package factory
 import (
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
+	"github.com/notaryproject/ratify-go"
 )
 
 // NewStoreOptions defines the options for creating a new store.

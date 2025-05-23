@@ -32,12 +32,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/executor"
+	"github.com/notaryproject/ratify/v2/internal/store"
+	storeFactory "github.com/notaryproject/ratify/v2/internal/store/factory"
+	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/executor"
-	"github.com/ratify-project/ratify/v2/internal/store"
-	storeFactory "github.com/ratify-project/ratify/v2/internal/store/factory"
-	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
 )
 
 const (

@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto/v2"
-	"github.com/ratify-project/ratify/v2/internal/cache"
+	"github.com/notaryproject/ratify/v2/internal/cache"
 	"github.com/sirupsen/logrus"
 )
 

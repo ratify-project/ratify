@@ -24,9 +24,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
+	ctxUtils "github.com/notaryproject/ratify/v2/internal/context"
 	"github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/internal/constants"
-	ctxUtils "github.com/ratify-project/ratify/internal/context"
 	vu "github.com/ratify-project/ratify/pkg/verifier/utils"
 	"github.com/sigstore/sigstore/pkg/cryptoutils"
 )

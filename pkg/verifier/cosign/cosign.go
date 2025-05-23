@@ -30,7 +30,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/notaryproject/ratify/v2/internal/logger"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault"
