@@ -28,7 +28,6 @@ import (
 	"time"
 
 	re "github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/internal/logger"
 	"github.com/ratify-project/ratify/pkg/certificateprovider"
 	"github.com/ratify-project/ratify/pkg/certificateprovider/azurekeyvault/types"
 	"github.com/ratify-project/ratify/pkg/metrics"
@@ -45,10 +44,6 @@ const (
 	PKCS12ContentType string = "application/x-pkcs12"
 	PEMContentType    string = "application/x-pem-file"
 )
-
-var logOpt = logger.Option{
-	ComponentType: logger.CertProvider,
-}
 
 type akvCertProvider struct{}
 
@@ -99,8 +94,6 @@ func (s *akvCertProvider) GetCertificates(ctx context.Context, attrib map[string
 	certs := []*x509.Certificate{}
 	certsStatus := []map[string]string{}
 	for _, keyVaultCert := range keyVaultCerts {
-		logger.GetLogger(ctx, logOpt).Debugf("fetching secret from key vault, certName %v,  keyvault %v", keyVaultCert.CertificateName, keyvaultURI)
-
 		// fetch the object from Key Vault
 		// GetSecret is required so we can fetch the entire cert chain. See issue https://github.com/ratify-project/ratify/issues/695 for details
 		startTime := time.Now()
@@ -133,7 +126,7 @@ func getCertStatusMap(certsStatus []map[string]string) certificateprovider.Certi
 }
 
 // parse the requested keyvault cert object from the input attributes
-func getKeyvaultRequestObj(ctx context.Context, attrib map[string]string) ([]types.KeyVaultCertificate, error) {
+func getKeyvaultRequestObj(_ context.Context, attrib map[string]string) ([]types.KeyVaultCertificate, error) {
 	keyVaultCerts := []types.KeyVaultCertificate{}
 
 	certificatesStrings := types.GetCertificates(attrib)
@@ -141,13 +134,10 @@ func getKeyvaultRequestObj(ctx context.Context, attrib map[string]string) ([]typ
 		return nil, re.ErrorCodeConfigInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "certificates is not set", re.HideStackTrace)
 	}
 
-	logger.GetLogger(ctx, logOpt).Debugf("certificates string defined in ratify certStore class, certificates %v", certificatesStrings)
-
 	objects, err := types.GetCertificatesArray(certificatesStrings)
 	if err != nil {
 		return nil, re.ErrorCodeDataDecodingFailure.NewError(re.CertProvider, providerName, re.EmptyLink, err, "failed to yaml unmarshal objects", re.HideStackTrace)
 	}
-	logger.GetLogger(ctx, logOpt).Debugf("unmarshaled objects yaml, objectsArray %v", objects.Array)
 
 	for i, object := range objects.Array {
 		var keyVaultCert types.KeyVaultCertificate
@@ -160,7 +150,6 @@ func getKeyvaultRequestObj(ctx context.Context, attrib map[string]string) ([]typ
 		keyVaultCerts = append(keyVaultCerts, keyVaultCert)
 	}
 
-	logger.GetLogger(ctx, logOpt).Debugf("unmarshaled %v key vault objects, keyVaultObjects: %v", len(keyVaultCerts), keyVaultCerts)
 	return keyVaultCerts, nil
 }
 
@@ -219,7 +208,7 @@ func initializeKvClient(keyVaultEndpoint, tenantID, clientID string, credProvide
 
 // Parse the secret bundle and return an array of certificates
 // In a certificate chain scenario, all certificates from root to leaf will be returned
-func getCertsFromSecretBundle(ctx context.Context, secretBundle azsecrets.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
+func getCertsFromSecretBundle(_ context.Context, secretBundle azsecrets.SecretBundle, certName string) ([]*x509.Certificate, []map[string]string, error) {
 	if secretBundle.ContentType == nil || secretBundle.Value == nil || secretBundle.ID == nil {
 		return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, "found invalid secret bundle for certificate  %s, contentType, value, and id must not be nil", re.HideStackTrace)
 	}
@@ -262,7 +251,6 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle azsecrets.Secret
 	for block != nil {
 		switch block.Type {
 		case "PRIVATE KEY":
-			logger.GetLogger(ctx, logOpt).Warnf("azure keyvault certificate provider: certificate %s, version %s private key skipped. Please see doc to learn how to create a new certificate in keyvault with non exportable keys. https://learn.microsoft.com/en-us/azure/key-vault/certificates/how-to-export-certificate?tabs=azure-cli#exportable-and-non-exportable-keys", certName, version)
 		case "CERTIFICATE":
 			var pemData []byte
 			pemData = append(pemData, pem.EncodeToMemory(block)...)
@@ -276,7 +264,6 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle azsecrets.Secret
 				certsStatus = append(certsStatus, certProperty)
 			}
 		default:
-			logger.GetLogger(ctx, logOpt).Warnf("certificate '%s', version '%s': azure keyvault certificate provider detected unknown block type %s", certName, version, block.Type)
 		}
 
 		block, rest = pem.Decode(rest)
@@ -284,7 +271,6 @@ func getCertsFromSecretBundle(ctx context.Context, secretBundle azsecrets.Secret
 			return nil, nil, re.ErrorCodeCertInvalid.NewError(re.CertProvider, providerName, re.EmptyLink, nil, fmt.Sprintf("certificate '%s', version '%s': azure keyvault certificate provider error, block is nil and remaining block to parse > 0", certName, version), re.HideStackTrace)
 		}
 	}
-	logger.GetLogger(ctx, logOpt).Debugf("azurekeyvault certprovider getCertsFromSecretBundle: %v certificates parsed, Certificate '%s', version '%s'", len(results), certName, version)
 	return results, certsStatus, nil
 }
 

@@ -16,9 +16,9 @@ limitations under the License.
 package policyenforcer
 
 import (
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/policyenforcer/factory"
-	_ "github.com/ratify-project/ratify/v2/internal/policyenforcer/factory/thresholdpolicy" // Register the threshold policy factory
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
+	_ "github.com/notaryproject/ratify/v2/internal/policyenforcer/factory/thresholdpolicy" // Register the threshold policy factory
 )
 
 // NewPolicyEnforcer creates a new PolicyEnforcer instance based on the provided options.

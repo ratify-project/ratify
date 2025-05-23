@@ -25,8 +25,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ratify-project/ratify/internal/constants"
-	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	"github.com/notaryproject/ratify/v2/internal/constants"
+	ctxUtils "github.com/notaryproject/ratify/v2/internal/context"
 	"github.com/ratify-project/ratify/pkg/utils"
 )
 

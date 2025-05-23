@@ -22,11 +22,11 @@ import (
 
 	"github.com/notaryproject/notation-go/verifier/trustpolicy"
 	"github.com/notaryproject/notation-go/verifier/truststore"
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify-verifier-go/notation"
-	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
-	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
-	_ "github.com/ratify-project/ratify/v2/internal/verifier/keyprovider/filesystemprovider" // Register the filesystem key provider
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify-verifier-go/notation"
+	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
+	"github.com/notaryproject/ratify/v2/internal/verifier/keyprovider"
+	_ "github.com/notaryproject/ratify/v2/internal/verifier/keyprovider/filesystemprovider" // Register the filesystem key provider
 )
 
 const (

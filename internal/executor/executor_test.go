@@ -19,12 +19,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/store/factory"
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/store/factory"
 
+	ef "github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
+	vf "github.com/notaryproject/ratify/v2/internal/verifier/factory"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	ef "github.com/ratify-project/ratify/v2/internal/policyenforcer/factory"
-	vf "github.com/ratify-project/ratify/v2/internal/verifier/factory"
 )
 
 const (

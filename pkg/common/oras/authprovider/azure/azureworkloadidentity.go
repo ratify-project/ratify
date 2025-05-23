@@ -22,8 +22,8 @@ import (
 	"time"
 
 	azcontainerregistry "github.com/Azure/azure-sdk-for-go/sdk/containers/azcontainerregistry"
+	"github.com/notaryproject/ratify/v2/internal/logger"
 	re "github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/internal/logger"
 	provider "github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 	"github.com/ratify-project/ratify/pkg/utils/azureauth"
 

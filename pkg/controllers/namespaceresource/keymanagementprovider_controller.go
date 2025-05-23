@@ -20,8 +20,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	re "github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/internal/constants"
 	cutils "github.com/ratify-project/ratify/pkg/controllers/utils"
 	kmp "github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	_ "github.com/ratify-project/ratify/pkg/keymanagementprovider/azurekeyvault" // register azure key vault key management provider

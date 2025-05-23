@@ -18,7 +18,7 @@ package thresholdpolicy
 import (
 	"testing"
 
-	"github.com/ratify-project/ratify/v2/internal/policyenforcer/factory"
+	"github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
 )
 
 func TestNewPolicyEnforcer(t *testing.T) {

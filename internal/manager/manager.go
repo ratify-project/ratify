@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/notaryproject/ratify/v2/internal/pod"
 	"github.com/open-policy-agent/cert-controller/pkg/rotator"
-	"github.com/ratify-project/ratify/v2/internal/pod"
 	"k8s.io/apimachinery/pkg/types"
 
 	ctrl "sigs.k8s.io/controller-runtime"

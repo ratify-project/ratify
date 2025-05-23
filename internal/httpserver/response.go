@@ -18,7 +18,7 @@ package httpserver
 import (
 	"encoding/json"
 
-	"github.com/ratify-project/ratify-go"
+	"github.com/notaryproject/ratify-go"
 	"github.com/sirupsen/logrus"
 )
 

@@ -19,7 +19,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	"github.com/ratify-project/ratify/pkg/referrerstore"

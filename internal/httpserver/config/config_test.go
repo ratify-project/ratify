@@ -21,9 +21,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/ratify-project/ratify/v2/internal/executor"
-	"github.com/ratify-project/ratify/v2/internal/store"
-	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
+	"github.com/notaryproject/ratify/v2/internal/executor"
+	"github.com/notaryproject/ratify/v2/internal/store"
+	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
 	"github.com/stretchr/testify/assert"
 )
 

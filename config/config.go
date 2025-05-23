@@ -24,9 +24,9 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
+	"github.com/notaryproject/ratify/v2/internal/logger"
 	"github.com/pkg/errors"
-	"github.com/ratify-project/ratify/internal/constants"
-	"github.com/ratify-project/ratify/internal/logger"
 	exConfig "github.com/ratify-project/ratify/pkg/executor/config"
 	"github.com/ratify-project/ratify/pkg/homedir"
 	"github.com/ratify-project/ratify/pkg/policyprovider"

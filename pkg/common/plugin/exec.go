@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ratify-project/ratify/internal/logger"
+	"github.com/notaryproject/ratify/v2/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 

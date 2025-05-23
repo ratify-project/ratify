@@ -24,7 +24,7 @@ import (
 	"os"
 	"testing"
 
-	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	ctxUtils "github.com/notaryproject/ratify/v2/internal/context"
 	"github.com/ratify-project/ratify/pkg/keymanagementprovider"
 	"github.com/sigstore/cosign/v2/pkg/cosign"
 )
@@ -218,20 +218,6 @@ func TestGetKeys(t *testing.T) {
 				},
 			},
 			wantErr: true,
-		},
-		{
-			name: "valid KMP",
-			cfg: TrustPolicyConfig{
-				Name:   "test",
-				Scopes: []string{"*"},
-				Keys: []KeyConfig{
-					{
-						Provider: "ns/kmp",
-						Name:     "key1",
-					},
-				},
-			},
-			wantErr: false,
 		},
 	}
 

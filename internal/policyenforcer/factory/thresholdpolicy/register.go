@@ -19,8 +19,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/policyenforcer/factory"
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
 )
 
 const thresholdPolicyType = "threshold-policy"

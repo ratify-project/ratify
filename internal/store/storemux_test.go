@@ -19,9 +19,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/store/factory"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/store/factory"
 )
 
 type mockStore struct{}

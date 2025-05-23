@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	unversioned "github.com/ratify-project/ratify/api/unversioned"
-	"github.com/ratify-project/ratify/internal/constants"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )

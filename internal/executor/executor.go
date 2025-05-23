@@ -18,12 +18,12 @@ package executor
 import (
 	"fmt"
 
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/policyenforcer"
-	policyFactory "github.com/ratify-project/ratify/v2/internal/policyenforcer/factory"
-	"github.com/ratify-project/ratify/v2/internal/store"
-	"github.com/ratify-project/ratify/v2/internal/verifier"
-	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/policyenforcer"
+	policyFactory "github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
+	"github.com/notaryproject/ratify/v2/internal/store"
+	"github.com/notaryproject/ratify/v2/internal/verifier"
+	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
 )
 
 // Options contains the configuration options to create a new executor.

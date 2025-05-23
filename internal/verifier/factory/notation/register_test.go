@@ -22,8 +22,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/ratify-project/ratify/v2/internal/verifier/factory"
-	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
+	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
+	"github.com/notaryproject/ratify/v2/internal/verifier/keyprovider"
 )
 
 const testName = "notation-test"

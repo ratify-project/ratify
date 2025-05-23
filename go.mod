@@ -1,4 +1,4 @@
-module github.com/ratify-project/ratify/v2
+module github.com/notaryproject/ratify/v2
 
 go 1.24.0
 
@@ -29,6 +29,8 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/notaryproject/notation-core-go v1.3.0
 	github.com/notaryproject/notation-go v1.3.2
+	github.com/notaryproject/ratify-go v0.0.0-20250523033553-c475c86f66c4
+	github.com/notaryproject/ratify-verifier-go/notation v0.0.0-20250523045711-b622738d577a
 	github.com/open-policy-agent/cert-controller v0.12.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a
 	github.com/open-policy-agent/opa v1.4.2
@@ -37,8 +39,6 @@ require (
 	github.com/owenrumney/go-sarif/v2 v2.3.3
 	github.com/pkg/errors v0.9.1
 	github.com/ratify-project/ratify v1.4.0
-	github.com/ratify-project/ratify-go v0.0.0-20250521080649-e2a2a2aa3588
-	github.com/ratify-project/ratify-verifier-go/notation v0.0.0-20250514065906-7c98c9ff3d2b
 	github.com/sigstore/cosign/v2 v2.2.4
 	github.com/sigstore/sigstore v1.9.4
 	github.com/sirupsen/logrus v1.9.3

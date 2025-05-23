@@ -95,7 +95,7 @@ See details in [GitHub milestone v1.4.0](https://github.com/ratify-project/ratif
 **Target date**: May 15, 2025  
 **Major features**
 
-- Decouple Ratify core functionalities into a separate library([ratify-go](https://github.com/ratify-project/ratify-go)), which could be easily integrated into different projects.
+- Decouple Ratify core functionalities into a separate library([ratify-go](https://github.com/notaryproject/ratify-go)), which could be easily integrated into different projects.
 - Design new interfaces for `Verifier`, `Store`, and `PolicyEnforcer` to make them more extensible and flexible.
 - Support `notation-verifier` under [ratify-verifier-go](https://github.com/ratify-project/ratify-verifier-go) in terms of the new `Verifier` interface.
 - Support Registry Store and local OCI layout in terms of the new `Store` interface.
