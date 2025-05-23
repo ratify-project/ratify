@@ -19,8 +19,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	"github.com/opencontainers/go-digest"
-	"github.com/ratify-project/ratify/internal/constants"
 	"github.com/ratify-project/ratify/pkg/common"
 	"github.com/ratify-project/ratify/pkg/ocispecs"
 	rs "github.com/ratify-project/ratify/pkg/referrerstore"

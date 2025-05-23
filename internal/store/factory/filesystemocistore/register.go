@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/ratify-project/ratify-go"
-	"github.com/ratify-project/ratify/v2/internal/store/factory"
+	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/store/factory"
 )
 
 const filesystemOCIStoreType = "filesystem-oci-store"

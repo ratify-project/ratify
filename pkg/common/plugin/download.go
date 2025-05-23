@@ -24,8 +24,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/notaryproject/ratify/v2/internal/version"
 	oci "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/ratify-project/ratify/internal/version"
 	"github.com/ratify-project/ratify/pkg/common/oras/authprovider"
 	commonutils "github.com/ratify-project/ratify/pkg/common/utils"
 	"github.com/ratify-project/ratify/pkg/ocispecs"

@@ -18,7 +18,7 @@ package verifiers
 import (
 	"sync"
 
-	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	vr "github.com/ratify-project/ratify/pkg/verifier"
 )
 

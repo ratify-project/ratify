@@ -18,7 +18,7 @@ package factory
 import (
 	"testing"
 
-	"github.com/ratify-project/ratify-go"
+	"github.com/notaryproject/ratify-go"
 )
 
 const (

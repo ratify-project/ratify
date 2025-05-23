@@ -18,7 +18,7 @@ package filesystemocistore
 import (
 	"testing"
 
-	"github.com/ratify-project/ratify/v2/internal/store/factory"
+	"github.com/notaryproject/ratify/v2/internal/store/factory"
 )
 
 func TestNewStore(t *testing.T) {

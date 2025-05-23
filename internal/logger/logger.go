@@ -24,8 +24,8 @@ import (
 	logstash "github.com/bshuster-repo/logrus-logstash-hook"
 	dcontext "github.com/docker/distribution/context"
 	"github.com/google/uuid"
+	icontext "github.com/notaryproject/ratify/v2/internal/context"
 	re "github.com/ratify-project/ratify/errors"
-	icontext "github.com/ratify-project/ratify/internal/context"
 	"github.com/sirupsen/logrus"
 )
 

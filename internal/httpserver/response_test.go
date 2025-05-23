@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ratify-project/ratify-go"
+	"github.com/notaryproject/ratify-go"
 
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 )

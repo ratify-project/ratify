@@ -18,7 +18,7 @@ package policies
 import (
 	"sync"
 
-	"github.com/ratify-project/ratify/internal/constants"
+	"github.com/notaryproject/ratify/v2/internal/constants"
 	"github.com/ratify-project/ratify/pkg/policyprovider"
 )
 

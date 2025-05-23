@@ -25,7 +25,7 @@ import (
 	"path/filepath"
 
 	notationx509 "github.com/notaryproject/notation-core-go/x509"
-	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
+	"github.com/notaryproject/ratify/v2/internal/verifier/keyprovider"
 	"github.com/sirupsen/logrus"
 )
 

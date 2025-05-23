@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	ctxUtils "github.com/ratify-project/ratify/internal/context"
+	ctxUtils "github.com/notaryproject/ratify/v2/internal/context"
 	"go.opentelemetry.io/otel/attribute"
 	instrument "go.opentelemetry.io/otel/metric"
 )

@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ratify-project/ratify/v2/internal/verifier/keyprovider"
+	"github.com/notaryproject/ratify/v2/internal/verifier/keyprovider"
 )
 
 const (

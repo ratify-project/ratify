@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/ratify-project/ratify/v2/internal/executor"
+	"github.com/notaryproject/ratify/v2/internal/executor"
 )
 
 const (

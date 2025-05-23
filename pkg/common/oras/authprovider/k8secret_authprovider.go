@@ -24,8 +24,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/notaryproject/ratify/v2/internal/logger"
 	re "github.com/ratify-project/ratify/errors"
-	"github.com/ratify-project/ratify/internal/logger"
 	"github.com/ratify-project/ratify/pkg/utils"
 
 	"github.com/docker/cli/cli/config"

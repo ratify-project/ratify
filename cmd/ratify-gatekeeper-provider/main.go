@@ -20,8 +20,8 @@ import (
 	"flag"
 	"time"
 
-	"github.com/ratify-project/ratify/v2/internal/httpserver"
-	"github.com/ratify-project/ratify/v2/internal/manager"
+	"github.com/notaryproject/ratify/v2/internal/httpserver"
+	"github.com/notaryproject/ratify/v2/internal/manager"
 	"github.com/sirupsen/logrus"
 )
 
