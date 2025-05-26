@@ -20,8 +20,8 @@ Welcome! We are very happy to accept community contributions to Ratify, whether 
 * Build the Ratify CLI with `go build -o ./bin/ratify ./cmd/ratify` or if on Mac/Linux/WSL `make build-cli`.
 
 ## Feature Enhancements
-For non-trivial enhancements or bug fixes, please start by raising a document PR. You can refer to the example [here](https://github.com/ratify-project/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
-Major user experience updates should be documented in [/doc/proposals](https://github.com/ratify-project/ratify/tree/dev/docs/proposals). Changes to technical implementation should be added to [/doc/design](https://github.com/ratify-project/ratify/tree/dev/docs/design).  
+For non-trivial enhancements or bug fixes, please start by raising a document PR. You can refer to the example [here](https://github.com/notaryproject/ratify/blame/dev/docs/proposals/Release-Supply-Chain-Metadata.md).
+Major user experience updates should be documented in [/doc/proposals](https://github.com/notaryproject/ratify/tree/dev/docs/proposals). Changes to technical implementation should be added to [/doc/design](https://github.com/notaryproject/ratify/tree/dev/docs/design).  
 
 Consider adding the following section where applicable:
 - Proposed changes
@@ -37,12 +37,12 @@ This approach ensures that the changes are well-documented and reviewed before i
 
 ## Pull Requests
 
-If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/ratify-project/ratify/labels/good%20first%20issue).
+If you'd like to start contributing to Ratify, you can search for issues tagged as "good first issue" [here](https://github.com/notaryproject/ratify/labels/good%20first%20issue).
 
 We use the `dev` branch as our default branch. PRs passing the basic set of validation can be merged to the `dev` branch, we then run the full suite of validation including cloud-specific tests on `dev` before changes can be merged into `main`. All ratify releases are cut from the `main` branch. A sample PR process is outlined below:
 1. Fork this repo and create your dev branch from the default `dev` branch.
 2. Create a PR against the default branch.
-3. Add new unit test and [e2e test](https://github.com/ratify-project/ratify/tree/dev/test/bats) where appropriate.
+3. Add new unit test and [e2e test](https://github.com/notaryproject/ratify/tree/dev/test/bats) where appropriate.
 4. Maintainer approval and e2e test validation is required for completing the PR.
 5. On PR complete, the `push` event will trigger an automated PR targeting the `main` branch where we run a full suite validation including cloud-specific tests.
 6. Manual merge is required to complete the PR. (**Please keep individual commits to maintain commit history**)
@@ -193,7 +193,7 @@ Sample JSON stdin
 
 Press `Ctrl+D` to send EOF character to terminate the stdin input. (Note: you may have to press `Ctrl+D` twice)
 
-View more plugin debugging information [here](https://github.com/ratify-project/ratify-verifier-plugin#debugging-in-vs-code)
+View more plugin debugging information [here](https://github.com/notaryproject/ratify-verifier-plugin#debugging-in-vs-code)
 
 ### Test local changes in the k8s cluster scenario
 
@@ -241,12 +241,12 @@ Development charts + images are published weekly and latest versions are tagged 
 
 Deploy to cluster:
 ```bash
-helmfile sync -f git::https://github.com/ratify-project/ratify.git@dev.helmfile.yaml
+helmfile sync -f git::https://github.com/notaryproject/ratify.git@dev.helmfile.yaml
 ```
 
 ### Deploy from local helm chart
 
-#### Update [values.yaml](https://github.com/ratify-project/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
+#### Update [values.yaml](https://github.com/notaryproject/ratify/blob/main/charts/ratify/values.yaml) to pull from your registry, when reusing image tag, setting pull policy to "Always" ensures we are pull the new changes
 
 ```json
 image:
@@ -359,11 +359,11 @@ If you'd like to contribute to the collection of plugins:
 
 ## Feature Suggestions
 
-* Please first search [Open Ratify Issues](https://github.com/ratify-project/ratify/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
+* Please first search [Open Ratify Issues](https://github.com/notaryproject/ratify/issues) before opening an issue to check whether your feature has already been suggested. If it has, feel free to add your own comments to the existing issue.
 * Ensure you have included a "What?" - what your feature entails, being as specific as possible, and giving mocked-up syntax examples where possible.
 * Ensure you have included a "Why?" - what the benefit of including this feature will be.
 
 ## Bug Reports
 
-* Please first search [Open Ratify Issues](https://github.com/ratify-project/ratify/issues) before opening an issue, to see if it has already been reported.
+* Please first search [Open Ratify Issues](https://github.com/notaryproject/ratify/issues) before opening an issue, to see if it has already been reported.
 * Try to be as specific as possible, including the version of the Ratify CLI used to reproduce the issue, and any example arguments needed to reproduce it.

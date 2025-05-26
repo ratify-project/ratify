@@ -6,12 +6,12 @@
 
 Is a verification engine as a binary executable and on Kubernetes which enables verification of artifact security metadata and admits for deployment only those that comply with policies you create.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/ratify-project/ratify)](https://goreportcard.com/report/github.com/ratify-project/ratify)
-[![build-pr](https://github.com/ratify-project/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/ratify-project/ratify/actions/workflows/build-pr.yml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/ratify-project/ratify)
+[![Go Report Card](https://goreportcard.com/badge/github.com/notaryproject/ratify)](https://goreportcard.com/report/github.com/notaryproject/ratify)
+[![build-pr](https://github.com/notaryproject/ratify/actions/workflows/build-pr.yml/badge.svg)](https://github.com/notaryproject/ratify/actions/workflows/build-pr.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/notaryproject/ratify/badge)](https://api.securityscorecards.dev/projects/github.com/notaryproject/ratify)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9334/badge)](https://www.bestpractices.dev/projects/9334)
-[![Go Reference](https://pkg.go.dev/badge/github.com/ratify-project/ratify.svg)](https://pkg.go.dev/github.com/ratify-project/ratify)
-[![codecov](https://codecov.io/gh/ratify-project/ratify/graph/badge.svg?token=3X0BIPI4VD)](https://codecov.io/gh/ratify-project/ratify)
+[![Go Reference](https://pkg.go.dev/badge/github.com/notaryproject/ratify.svg)](https://pkg.go.dev/github.com/notaryproject/ratify)
+[![codecov](https://codecov.io/gh/notaryproject/ratify/graph/badge.svg?token=3X0BIPI4VD)](https://codecov.io/gh/notaryproject/ratify)
 
 
 ## ⚠️ Development Notice: Main Branch Under Active v2 Development
@@ -27,7 +27,7 @@ If you are:
 - Fixing bugs
 - Building against a v1 version of Ratify
 
-Please use the [`v1-dev` branch](https://github.com/ratify-project/ratify/tree/v1-dev).
+Please use the [`v1-dev` branch](https://github.com/notaryproject/ratify/tree/v1-dev).
 
 We appreciate your patience as we work toward a more powerful and flexible Ratify v2! 🚀
 Stay tuned for updates and migration guides.
@@ -65,7 +65,7 @@ Please see the [Ratify website](https://ratify.dev/docs/what-is-ratify) for more
 
 Meeting notes for weekly project syncs can be found [here](https://hackmd.io/ABueHjizRz2iFQpWnQrnNA?both).
 
-The Ratify community documents can be found in the repository [`.github`](https://github.com/ratify-project/.github).
+The Ratify community documents can be found in the repository [`.github`](https://github.com/notaryproject/.github).
 
 ## Code of Conduct
 
@@ -73,7 +73,7 @@ Ratify follows the [CNCF Code of Conduct](https://github.com/cncf/foundation/blo
 
 ## Project Governance
 
-The Ratify project governance can be found [here](https://github.com/ratify-project/.github/blob/main/GOVERNANCE.md).
+The Ratify project governance can be found [here](https://github.com/notaryproject/.github/blob/main/GOVERNANCE.md).
 
 ## Release Management
 

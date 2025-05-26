@@ -87,7 +87,7 @@ jobs:
             --attest type=sbom \
             --attest type=provenance,mode=max \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$(TAG)" \
+            --build-arg LDFLAGS="-X github.com/notaryproject/ratify/internal/version.Version=$(TAG)" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }} \
             -t ${{ steps.prepare.outputs.baseref }} \
@@ -103,7 +103,7 @@ jobs:
             --build-arg build_licensechecker=true \
             --build-arg build_schemavalidator=true \
             --build-arg build_vulnerabilityreport=true \
-            --build-arg LDFLAGS="-X github.com/ratify-project/ratify/internal/version.Version=$(TAG)" \
+            --build-arg LDFLAGS="-X github.com/notaryproject/ratify/internal/version.Version=$(TAG)" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }} \
             -t ${{ steps.prepare.outputs.ref }} \
@@ -156,27 +156,27 @@ jobs:
       - name: Verify with Cosign
         run: |
           cosign verify \
-            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-dev-assets.yml@*" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-github-workflow-repository ratify-project/ratify \
             ${{ steps.prepare.outputs.crdref }}:${{ steps.prepare.outputs.version }}
           cosign verify \
-            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-dev-assets.yml@*" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-github-workflow-repository ratify-project/ratify \
             ${{ steps.prepare.outputs.baseref }}:${{ steps.prepare.outputs.version }}
           cosign verify \
-            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-dev-assets.yml@*" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-github-workflow-repository ratify-project/ratify \
             ${{ steps.prepare.outputs.ref }}:${{ steps.prepare.outputs.version }}
           cosign verify \
-            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-dev-assets.yml@*" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-github-workflow-repository ratify-project/ratify \
             ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversionrolling }}
           cosign verify \
-            --certificate-identity-regexp "https://github.com/ratify-project/ratify/.github/workflows/publish-dev-assets.yml@*" \
+            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-dev-assets.yml@*" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             --certificate-github-workflow-repository ratify-project/ratify \
             ${{ steps.prepare.outputs.chartrepo }}/ratify:${{ steps.prepare.outputs.semversion }}

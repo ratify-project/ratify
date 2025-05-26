@@ -45,7 +45,7 @@ Notes: The priority of each task is scored from 1 to 5, with 1 being the highest
 #### Plugin Framework Refactoring
 **Current Limitation**:
 1. External and internal verifiers are not sharing the same in-memory cache. Each external verifier will have a separate ReferrerStore while created. This could lead to data inconsistency and performance issues.
-2. The OCI store behind the ORAS store is not process-safe. This could lead to race conditions when multiple external/interval verifiers are running in parallel. We already have a tracking [issue](https://github.com/ratify-project/ratify/issues/1110).
+2. The OCI store behind the ORAS store is not process-safe. This could lead to race conditions when multiple external/interval verifiers are running in parallel. We already have a tracking [issue](https://github.com/notaryproject/ratify/issues/1110).
 3. The built-in plugins are tightly coupled with the Ratify core. Plugin version upgrade requires a new Ratify release. And built-in plugins also add dependencies to the Ratify core which makes it hard to maintain.
 
 **Proposed Solution**:
@@ -59,7 +59,7 @@ Notes: The priority of each task is scored from 1 to 5, with 1 being the highest
 **Current Limitation**:
 1. The Policy evaluation workflow is coupled within the executor. Updating or adding a new policy provider requires changes to the executor which makes it hard to maintain and extend.
 2. Rego policy provider and Config policy provider return different types of results. This could lead to confusion when users are switching between different policy providers.
-3. There are a few limitations/bugs in config policy that were addressed by the Rego policy provider. And if we want to keep supporting the config policy provider, we need to make sure it is consistent with the Rego policy provider. [issue-351](https://github.com/ratify-project/ratify/issues/351), [issue-737](https://github.com/ratify-project/ratify/issues/737), [issue-528](https://github.com/ratify-project/ratify/issues/528)
+3. There are a few limitations/bugs in config policy that were addressed by the Rego policy provider. And if we want to keep supporting the config policy provider, we need to make sure it is consistent with the Rego policy provider. [issue-351](https://github.com/notaryproject/ratify/issues/351), [issue-737](https://github.com/notaryproject/ratify/issues/737), [issue-528](https://github.com/notaryproject/ratify/issues/528)
 
 **Proposed Solution**:
 1. Decouple the policy evaluation workflow from the executor. This will make it easier to maintain and extend the policy providers.
@@ -74,7 +74,7 @@ Notes: The priority of each task is scored from 1 to 5, with 1 being the highest
 1. Ratify CLI does not support all features that are available in the Ratify service. One of the reasons is that the CLI configuration does not support new options, e.g. KeyManagementProvider.
 2. The K8s ratify service configuration consists of multiple different CRDs, where Verifiers will also reference KMPs. This makes it hard for beginners to configure and troubleshoot the system. And some users also reported that they just need to ConfigMap to configure the service without touching CRDs.
 3. It's not straightforward to convert configurations between CLI and service. Users may need extra effort to learn the difference between CLI and service configurations.
-4. Oras store only supports one auth provider. One of the reasons is that the Oras store configuration does not support multiple auth providers. Related issue: [issue-974](https://github.com/ratify-project/ratify/issues/974).
+4. Oras store only supports one auth provider. One of the reasons is that the Oras store configuration does not support multiple auth providers. Related issue: [issue-974](https://github.com/notaryproject/ratify/issues/974).
 
 **Proposed Solution**:
 1. Refactor both CLI and service configurations to make them consistent and convertible. We can have a common configuration format that can be used by both CLI and service. We hope to make the new configuration format extensible to standalone service and GRPC service.
