@@ -599,7 +599,7 @@ load-local-ratify-image:
 	kind load docker-image --name kind localbuild:test
 
 e2e-helmfile-deploy-released-ratify:
-	./.staging/helmfilebin/helmfile sync -f git::https://github.com/ratify-project/ratify.git@helmfile.yaml
+	./.staging/helmfilebin/helmfile sync -f 'git::https://github.com/ratify-project/ratify.git@helmfile.yaml.gotmpl?ref=v1'
 
 e2e-helm-deploy-ratify:
 	printf "{\n\t\"auths\": {\n\t\t\"registry:5000\": {\n\t\t\t\"auth\": \"`echo "${TEST_REGISTRY_USERNAME}:${TEST_REGISTRY_PASSWORD}" | tr -d '\n' | base64 -i -w 0`\"\n\t\t}\n\t}\n}" > mount_config.json
