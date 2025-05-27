@@ -3,7 +3,7 @@
 ## Get Repo Info
 
 ```console
-helm repo add ratify https://ratify-project.github.io/ratify
+helm repo add ratify https://notaryproject.github.io/ratify
 helm repo update
 ```
 
