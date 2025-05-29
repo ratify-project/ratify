@@ -1,0 +1,59 @@
+# Ratify Helm Chart
+
+## Get Repo Info
+
+```console
+helm repo add ratify https://notaryproject.github.io/ratify
+helm repo update
+```
+
+_See [helm repo](https://helm.sh/docs/helm/helm_repo/) for command documentation._
+
+## Install Chart
+
+```console
+# Helm install with gatekeeper-system namespace already created
+$ helm install [RELEASE_NAME] ratify/ratify-gatekeeper-provider --atomic --namespace gatekeeper-system --set image.tag=<RELEASE_TAG>
+
+# Helm install and create namespace
+$ helm install [RELEASE_NAME] ratify/ratify-gatekeeper-provider --atomic --namespace gatekeeper-system --create-namespace --set image.tag=<RELEASE_TAG>
+```
+
+_See [parameters](#parameters) below._
+
+_See [helm install](https://helm.sh/docs/helm/helm_install/) for command documentation._
+
+## Upgrade Chart
+
+```console
+$ helm upgrade -n gatekeeper-system [RELEASE_NAME] ratify/ratify-gatekeeper-provider --set image.tag=<RELEASE_TAG>
+```
+
+## Deprecation Policy
+
+Values marked `# DEPRECATED` in the `values.yaml` as well as **DEPRECATED** in the below parameters will NOT be supported in the next major version release. Existing functionality will remain backwards compatible until the next major version release.
+
+## Parameters
+| Parameter                                 | Description                                                                                                                                                                                                                                  | Default                                         |
+|--------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
+| `image.repository`                        | Ratify app image                                                                                                                                                                                                                            | `ghcr.io/notaryproject/ratify-gatekeeper-provider` |
+| `image.tag`                               | Image tag                                                                                                                                                                                                                                   | `<INSERT THE LATEST RELEASE TAG>`               |
+| `image.pullPolicy`                        | Image pull policy                                                                                                                                                                                                                           | `IfNotPresent`                                  |
+| `replicaCount`                            | Number of replicas to run                                                                                                                                                                                                                   | `1`                                             |
+| `notation.scope`                          | Scope that Notation verifier is applicable for. See [Notation trust policy](https://github.com/notaryproject/specifications/blob/main/specs/trust-store-trust-policy.md#trust-policy).                 | `[]`                                            |
+| `notation.trustedIdentities`              | List of trusted identities for Notation verifier. See [Notation trust policy](https://github.com/notaryproject/specifications/blob/main/specs/trust-store-trust-policy.md#trust-policy).                | `[]`                                            |
+| `notation.certs`                          | List of trusted root certificates for Notation verifier.                                                                                                                                              | `[]`                                            |
+| `stores[0].scope`                         | Scope that the store is applicable for.                                                                                                                                                              | `[]`                                            |
+| `stores[0].username`                      | Username to authenticate to the store.                                                                                                                                                               | `""`                                            |
+| `stores[0].password`                      | Password to authenticate to the store.                                                                                                                                                               | `""`                                            |
+| `provider.tls.crt`                        | Ratify Gatekeeper Provider's TLS public certificate.                                                                                                                                                 | `""`                                            |
+| `provider.tls.key`                        | Ratify Gatekeeper Provider's TLS private key.                                                                                                                                                        | `""`                                            |
+| `provider.tls.caCert`                     | CA certificate to verify the TLS certificate.                                                                                                                                                        | `""`                                            |
+| `provider.tls.disableCertRotation`        | Disable automatic TLS certificate rotation. When cert rotation is enabled, tls.crt, tls.key and tls.caCert are not required.                                                                         | `false`                                         |
+| `provider.disableMutation`                | Enables/disables tag-to-digest mutation for all admission resource creations. It is highly recommended to enable mutation since the verified digest may be different from the one run.                | `false`                                         |
+| `provider.timeout.validationTimeoutSeconds`| Verify request handler timeout in seconds. This MUST match the configured Gatekeeper `validatingWebhookTimeoutSeconds`.                                                                              | `5`                                             |
+| `provider.timeout.mutationTimeoutSeconds` | Mutate request handler timeout in seconds. This MUST match the configured Gatekeeper `mutatingWebhookTimeoutSeconds`.                                                                                | `2`                                             |
+| `gatekeeper.namespace`                    | Namespace where Gatekeeper is installed. This MUST match the configured Gatekeeper `namespace`.                                                                                                      | `gatekeeper-system`                             |
+| `serviceAccount.create`                   | Create new dedicated Ratify service account                                                                                                                                                          | `true`                                          |
+| `serviceAccount.name`                     | Name of Ratify Gatekeeper Provider service account to create                                                                                                                                         | `ratify-gatekeeper-provider-admin`              |
+| `serviceAccount.annotations`              | Annotations to add to the service account                                                                                                                                                            | `{}`                                            |
