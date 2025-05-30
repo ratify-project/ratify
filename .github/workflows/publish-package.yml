@@ -25,8 +25,6 @@ jobs:
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Install Notation
         uses: notaryproject/notation-action/setup@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
-      - name: Install cosign
-        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb # v3.8.2
       - name: Az CLI login
         uses: azure/login@a65d910e8af852a8061c627c456678983e180302 # v2.2.0
         with:
@@ -47,16 +45,13 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/*/}
           BRANCH_NAME=${GITHUB_REF#refs/heads/}
-          REPOSITORY=ghcr.io/${{ github.repository }}
-          REPOSITORYBASE=ghcr.io/${{ github.repository }}-base
-          REPOSITORYCRD=ghcr.io/${{ github.repository }}-crds
+          ORG_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1)
+          REPOSITORY=ghcr.io/${ORG_NAME}/ratify-gatekeeper-provider
           if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
             VERSION=$(git rev-parse --short HEAD)
           fi
-          echo ::set-output name=version::${VERSION}
-          echo ::set-output name=ref::${REPOSITORY}:${VERSION}
-          echo ::set-output name=baseref::${REPOSITORYBASE}:${VERSION}
-          echo ::set-output name=crdref::${REPOSITORYCRD}:${VERSION}
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "ref=${REPOSITORY}:${VERSION}" >> $GITHUB_OUTPUT
       - name: Get tag
         run: |
           echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
@@ -66,41 +61,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: docker build ratify-crds
-        run: |
-          docker buildx create --use
-          docker buildx build \
-            --attest type=sbom \
-            --attest type=provenance,mode=max \
-            --build-arg KUBE_VERSION="1.30.6" \
-            -f crd.Dockerfile \
-            --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --label org.opencontainers.image.revision=${{ github.sha }} \
-            -t ${{ steps.prepare.outputs.crdref }} \
-            --push ./charts/ratify/crds
-      - name: docker build ratify base
+      - name: docker build ratify
         run: |
           docker buildx create --use         
-          docker buildx build -f ./httpserver/Dockerfile \
-            --attest type=sbom \
+          docker buildx build -f ./Dockerfile \
             --attest type=provenance,mode=max \
             --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --build-arg LDFLAGS="-X github.com/notaryproject/ratify/internal/version.Version=$TAG" \
-            --label org.opencontainers.image.revision=${{ github.sha }} \
-            -t ${{ steps.prepare.outputs.baseref }} \
-            --push .
-      - name: docker build ratify with plugin
-        run: |
-          docker buildx create --use
-          docker buildx build -f ./httpserver/Dockerfile \
-            --attest type=sbom \
-            --attest type=provenance,mode=max \
-            --platform linux/amd64,linux/arm64,linux/arm/v7 \
-            --build-arg build_sbom=true \
-            --build-arg build_licensechecker=true \
-            --build-arg build_schemavalidator=true \
-            --build-arg build_vulnerabilityreport=true \
-            --build-arg LDFLAGS="-X github.com/notaryproject/ratify/internal/version.Version=$TAG" \
             --label org.opencontainers.image.revision=${{ github.sha }} \
             -t ${{ steps.prepare.outputs.ref }} \
             --push .
@@ -112,41 +78,15 @@ jobs:
           plugin_checksum: ${{ vars.AZURE_KV_CHECKSUM }}
           key_id: ${{ secrets.AZURE_KV_KEY_ID }}
           target_artifact_reference: |-
-            ${{ steps.prepare.outputs.crdref }}
-            ${{ steps.prepare.outputs.baseref }}
             ${{ steps.prepare.outputs.ref }}
           signature_format: cose
-      - name: Sign with Cosign
-        run: |
-          cosign sign --yes ${{ steps.prepare.outputs.crdref }}
-          cosign sign --yes ${{ steps.prepare.outputs.baseref }}
-          cosign sign --yes ${{ steps.prepare.outputs.ref }}
       - name: Verify with Notation
         uses: notaryproject/notation-action/verify@b6fee73110795d6793253c673bd723f12bcf9bbb # v1.2.2
         with:
           target_artifact_reference: |-
-            ${{ steps.prepare.outputs.crdref }}
-            ${{ steps.prepare.outputs.baseref }}
             ${{ steps.prepare.outputs.ref }}
           trust_policy: ./.well-known/pki-validation/trustpolicy.json
           trust_store: truststore
-      - name: Verify with Cosign
-        run: |
-          cosign verify \
-            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-package.yml@*" \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-github-workflow-repository ratify-project/ratify \
-            ${{ steps.prepare.outputs.crdref }}
-          cosign verify \
-            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-package.yml@*" \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-github-workflow-repository ratify-project/ratify \
-            ${{ steps.prepare.outputs.baseref }}
-          cosign verify \
-            --certificate-identity-regexp "https://github.com/notaryproject/ratify/.github/workflows/publish-package.yml@*" \
-            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-            --certificate-github-workflow-repository ratify-project/ratify \
-            ${{ steps.prepare.outputs.ref }}
       - name: clear
         if: always()
         run: |
