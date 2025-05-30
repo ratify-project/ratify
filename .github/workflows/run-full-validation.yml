@@ -5,10 +5,10 @@ on:
     branches:
       - v1
       - v1-dev
-      - release*
+      - release-1.*
   push:
     branches:
-      - release*
+      - release-1.*
       - v1
       - v1-dev
   workflow_dispatch:
