@@ -1,14 +1,9 @@
-# Default values for ratify.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+image:
+  repository: "ghcr.io/notaryproject/ratify-gatekeeper-provider"
+  pullPolicy: IfNotPresent
+  tag: ""
 
 replicaCount: 1
-
-image:
-  repository: ""
-  pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
 
 notation:
   scope: []
@@ -25,7 +20,6 @@ provider:
     crt: "" # crt used by ratify (httpserver), please provide your own crt
     key: "" # key used by ratify (httpserver), please provide your own key
     caCert: "" # CA crt used by ratify (httpserver), please provide your own CA crt
-    cabundle: "" # base64 encoded CA bundle used for the 'caBundle' property for the ratify provider within gatekeeper
     disableCertRotation: false
   disableMutation: false
   timeout:
