@@ -29,7 +29,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/notaryproject/notation-core-go v1.3.0
 	github.com/notaryproject/notation-go v1.3.2
-	github.com/notaryproject/ratify-go v0.0.0-20250523033553-c475c86f66c4
+	github.com/notaryproject/ratify-go v0.0.0-20250529051304-210d266b68c0
 	github.com/notaryproject/ratify-verifier-go/notation v0.0.0-20250523045711-b622738d577a
 	github.com/open-policy-agent/cert-controller v0.12.0
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20241101234656-e78c8abd754a
