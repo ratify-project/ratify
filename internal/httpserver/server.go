@@ -30,7 +30,6 @@ import (
 	"github.com/notaryproject/ratify-go"
 	"github.com/notaryproject/ratify/v2/internal/cache"
 	"github.com/notaryproject/ratify/v2/internal/cache/ristretto"
-	"github.com/notaryproject/ratify/v2/internal/executor"
 	"github.com/notaryproject/ratify/v2/internal/httpserver/config"
 	"github.com/notaryproject/ratify/v2/internal/httpserver/tlssecret"
 	"github.com/sirupsen/logrus"
@@ -50,10 +49,10 @@ const (
 )
 
 type server struct {
-	router   *mux.Router
-	executor *ratify.Executor
-	cache    cache.Cache
-	sfGroup  *singleflight.Group
+	getExecutor func() *ratify.Executor
+	router      *mux.Router
+	cache       cache.Cache
+	sfGroup     *singleflight.Group
 	ServerOptions
 }
 
@@ -103,37 +102,33 @@ type ServerOptions struct {
 
 // StartServer initializes and starts the Ratify server with provided options
 // and configuration file path.
-func StartServer(opts *ServerOptions, configPath string) error {
-	executorOpts, err := config.Load(configPath)
-	if err != nil {
-		logrus.Errorf("Failed to load executor options: %v", err)
-		return err
-	}
-
-	server, err := newServer(opts, executorOpts)
+func StartServer(opts *ServerOptions, executorConfigPath string) error {
+	server, configWatcher, err := newServer(opts, executorConfigPath)
 	if err != nil {
 		logrus.Errorf("Failed to create server: %v", err)
 		return err
 	}
 
 	logrus.Infof("Starting server at port: %s", opts.HTTPServerAddress)
-	return server.Run(opts.CertRotatorReady)
+	return server.Run(opts.CertRotatorReady, configWatcher)
 }
 
-func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*server, error) {
-	e, err := executor.NewExecutor(executorOpts)
+func newServer(serverOpts *ServerOptions, executorConfigPath string) (*server, *config.Watcher, error) {
+	configWatcher, err := config.NewWatcher(executorConfigPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create executor: %w", err)
+		return nil, nil, fmt.Errorf("failed to create config watcher: %w", err)
 	}
+
 	cache, err := ristretto.NewRistrettoCache(defaultCacheTTL)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create cache: %w", err)
+		return nil, nil, fmt.Errorf("failed to create cache: %w", err)
 	}
+
 	server := &server{
 		router:        mux.NewRouter(),
-		executor:      e,
 		cache:         cache,
 		sfGroup:       new(singleflight.Group),
+		getExecutor:   configWatcher.GetExecutor,
 		ServerOptions: *serverOpts,
 	}
 	if server.VerifyTimeout == 0 {
@@ -142,10 +137,11 @@ func newServer(serverOpts *ServerOptions, executorOpts *executor.Options) (*serv
 	if server.MutateTimeout == 0 {
 		server.MutateTimeout = defaultMutateTimeout
 	}
+
 	if err := server.registerHandlers(); err != nil {
-		return nil, fmt.Errorf("failed to register handlers: %w", err)
+		return nil, nil, fmt.Errorf("failed to register handlers: %w", err)
 	}
-	return server, nil
+	return server, configWatcher, nil
 }
 
 func (s *server) registerHandlers() error {
@@ -202,7 +198,7 @@ func middlewareWithTimeout(next http.Handler, timeout time.Duration) http.Handle
 
 // Run starts the HTTP server and listens for incoming requests.
 // It also handles graceful shutdown on receiving an interrupt signal.
-func (s *server) Run(certRotatorReady chan struct{}) error {
+func (s *server) Run(certRotatorReady chan struct{}, configWatcher *config.Watcher) error {
 	srv := &http.Server{
 		Addr:         s.HTTPServerAddress,
 		Handler:      s.router,
@@ -211,6 +207,12 @@ func (s *server) Run(certRotatorReady chan struct{}) error {
 		IdleTimeout:  idleTimeout,
 	}
 	go func() {
+		if err := configWatcher.Start(); err != nil {
+			logrus.Errorf("failed to start config watcher: %v", err)
+			return
+		}
+		defer configWatcher.Stop()
+
 		if s.CertFile != "" && s.KeyFile != "" {
 			logrus.Infof("starting server with TLS at %s", s.HTTPServerAddress)
 			if certRotatorReady != nil {
@@ -218,11 +220,17 @@ func (s *server) Run(certRotatorReady chan struct{}) error {
 				logrus.Infof("cert rotator is ready")
 			}
 
-			certWatcher, err := tlssecret.NewTLSSecretWatcher(s.GatekeeperCACertFile, s.CertFile, s.KeyFile)
+			certWatcher, err := tlssecret.NewWatcher(s.GatekeeperCACertFile, s.CertFile, s.KeyFile)
 			if err != nil {
 				logrus.Errorf("failed to create TLS secret watcher: %v", err)
 				return
 			}
+			if err = certWatcher.Start(); err != nil {
+				logrus.Errorf("failed to start TLS secret watcher: %v", err)
+				return
+			}
+			defer certWatcher.Stop()
+
 			// Use GetConfigForClient to dynamically load certificates.
 			srv.TLSConfig = &tls.Config{
 				MinVersion:         tls.VersionTLS13,
