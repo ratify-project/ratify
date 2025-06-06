@@ -61,7 +61,7 @@ func (s *server) verify(ctx context.Context, w http.ResponseWriter, r *http.Requ
 			opts := ratify.ValidateArtifactOptions{
 				Subject: artifact,
 			}
-			result, err := s.executor.ValidateArtifact(ctx, opts)
+			result, err := s.getExecutor().ValidateArtifact(ctx, opts)
 			if err != nil {
 				return nil, err
 			}
@@ -127,7 +127,7 @@ func (s *server) resolveReference(ctx context.Context, reference string) externa
 	// Cache is missed, block multiple goroutines from resolving the same
 	// reference.
 	val, err, _ = s.sfGroup.Do(key, func() (any, error) {
-		desc, err := s.executor.Store.Resolve(ctx, ref.String())
+		desc, err := s.getExecutor().Store.Resolve(ctx, ref.String())
 		if err != nil {
 			return "", err
 		}

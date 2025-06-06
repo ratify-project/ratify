@@ -15,7 +15,7 @@
         }
     ],
     "stores": {
-        "libinbinacr.azurecr.io": {
+        "ghcr.io": {
             "type": "registry-store",
             "parameters": {
                 "credential": {

@@ -16,70 +16,182 @@ limitations under the License.
 package config
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
-	"sync"
 	"testing"
+	"time"
 
-	"github.com/notaryproject/ratify/v2/internal/executor"
-	"github.com/notaryproject/ratify/v2/internal/store"
-	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
+	"github.com/notaryproject/ratify-go"
+	ef "github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
+	"github.com/notaryproject/ratify/v2/internal/store/factory"
+	vf "github.com/notaryproject/ratify/v2/internal/verifier/factory"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLoad(t *testing.T) {
-	tempDir := t.TempDir()
-	validConfig := `{"verifiers":[],"stores":{}}`
+const (
+	mockVerifierName       = "mock-verifier-name"
+	mockVerifierType       = "mock-verifier-type"
+	mockStoreType          = "mock-store"
+	mockPolicyEnforcerType = "mock-policy-enforcer"
+	validConfig            = `{"verifiers":[{"name":"mock-verifier-name","type":"mock-verifier-type"}],"stores":{"test":{"type":"mock-store"}}}`
+)
 
-	validConfigPath := filepath.Join(tempDir, "valid_config.json")
-	err := os.WriteFile(validConfigPath, []byte(validConfig), 0600)
-	assert.NoError(t, err)
+type mockVerifier struct{}
 
-	t.Run("valid config file", func(t *testing.T) {
-		config, err := Load(validConfigPath)
-		assert.NoError(t, err)
-		assert.Equal(t, &executor.Options{
-			Verifiers: []factory.NewVerifierOptions{},
-			Stores:    store.PatternOptions{},
-		}, config)
+func (m *mockVerifier) Name() string {
+	return mockVerifierName
+}
+func (m *mockVerifier) Type() string {
+	return mockVerifierType
+}
+func (m *mockVerifier) Verifiable(_ ocispec.Descriptor) bool {
+	return true
+}
+
+func (m *mockVerifier) Verify(_ context.Context, _ *ratify.VerifyOptions) (*ratify.VerificationResult, error) {
+	return &ratify.VerificationResult{}, nil
+}
+
+func createMockVerifier(_ vf.NewVerifierOptions) (ratify.Verifier, error) {
+	return &mockVerifier{}, nil
+}
+
+type mockStore struct{}
+
+func (m *mockStore) Resolve(_ context.Context, _ string) (ocispec.Descriptor, error) {
+	return ocispec.Descriptor{}, nil
+}
+
+func (m *mockStore) ListReferrers(_ context.Context, _ string, _ []string, _ func(referrers []ocispec.Descriptor) error) error {
+	return nil
+}
+
+func (m *mockStore) FetchBlob(_ context.Context, _ string, _ ocispec.Descriptor) ([]byte, error) {
+	return nil, nil
+}
+
+func (m *mockStore) FetchManifest(_ context.Context, _ string, _ ocispec.Descriptor) ([]byte, error) {
+	return nil, nil
+}
+
+func newMockStore(_ factory.NewStoreOptions) (ratify.Store, error) {
+	return &mockStore{}, nil
+}
+
+func createPolicyEnforcer(_ *ef.NewPolicyEnforcerOptions) (ratify.PolicyEnforcer, error) {
+	return nil, errors.New("mock policy enforcer not implemented")
+}
+
+func TestNewWatcher(t *testing.T) {
+	factory.RegisterStoreFactory(mockStoreType, newMockStore)
+	vf.RegisterVerifierFactory(mockVerifierType, createMockVerifier)
+	ef.RegisterPolicyEnforcerFactory(mockPolicyEnforcerType, createPolicyEnforcer)
+
+	t.Run("empty config path", func(t *testing.T) {
+		watcher, err := NewWatcher("")
+		assert.Error(t, err)
+		assert.Nil(t, watcher)
 	})
 
-	t.Run("non-existent config file", func(t *testing.T) {
-		_, err := Load(filepath.Join(tempDir, "nonexistent.json"))
+	t.Run("invalid config path", func(t *testing.T) {
+		watcher, err := NewWatcher("/invalid/path/to/config.json")
 		assert.Error(t, err)
+		assert.Nil(t, watcher)
 	})
 
 	t.Run("invalid json format", func(t *testing.T) {
-		invalidConfigPath := filepath.Join(tempDir, "invalid_config.json")
+		invalidConfigPath := filepath.Join(t.TempDir(), "invalid_config.json")
 		err := os.WriteFile(invalidConfigPath, []byte(`{"Field1": "value1", "Field2":}`), 0600)
 		assert.NoError(t, err)
 
-		_, err = Load(invalidConfigPath)
+		watcher, err := NewWatcher(invalidConfigPath)
 		assert.Error(t, err)
+		assert.Nil(t, watcher)
 	})
 
-	t.Run("empty config path uses default", func(t *testing.T) {
-		initConfigDir = new(sync.Once)
-		configDir = tempDir
-		defaultConfigFilePath = filepath.Join(configDir, configFileName)
-		err := os.WriteFile(defaultConfigFilePath, []byte(validConfig), 0600)
+	t.Run("failed to create Executor", func(t *testing.T) {
+		configPath := filepath.Join(t.TempDir(), "config.json")
+		failingConfig := `{"verifiers":[{"name":"mock-verifier-name","type":"mock-verifier-type"}],"stores":{"test":{"type":"mock-store"}},"policyEnforcer":{"type":"mock-policy-enforcer"}}`
+		err := os.WriteFile(configPath, []byte(failingConfig), 0600)
 		assert.NoError(t, err)
 
-		config, err := Load("")
-		assert.NoError(t, err)
-		assert.Equal(t, &executor.Options{
-			Verifiers: []factory.NewVerifierOptions{},
-			Stores:    store.PatternOptions{},
-		}, config)
+		watcher, err := NewWatcher(configPath)
+		assert.Error(t, err)
+		assert.Nil(t, watcher)
 	})
 
-	t.Run("empty config path and no default", func(t *testing.T) {
-		initConfigDir = new(sync.Once)
-		configDir = ""
-		defaultConfigFilePath = filepath.Join(configDir, configFileName)
+	t.Run("valid config path", func(t *testing.T) {
+		validConfigPath := filepath.Join(t.TempDir(), "valid_config.json")
+		err := os.WriteFile(validConfigPath, []byte(validConfig), 0600)
+		assert.NoError(t, err)
 
-		config, err := Load("")
+		watcher, err := NewWatcher(validConfigPath)
+		assert.NoError(t, err)
+		assert.NotNil(t, watcher)
+		assert.Equal(t, validConfigPath, watcher.executorConfigPath)
+
+		// Clean up the watcher
+		watcher.watcher.Close()
+	})
+}
+
+func TestStartAndStopWatcher(t *testing.T) {
+	t.Run("failed to add watcher", func(t *testing.T) {
+		configPath := filepath.Join(t.TempDir(), "config.json")
+		err := os.WriteFile(configPath, []byte(validConfig), 0600)
+		assert.NoError(t, err)
+
+		watcher, err := NewWatcher(configPath)
+		assert.NoError(t, err)
+		assert.NotNil(t, watcher)
+
+		watcher.executorConfigPath = "/invalid/path/to/config.json"
+		err = watcher.Start()
 		assert.Error(t, err)
-		assert.Nil(t, config)
+		defer watcher.Stop()
+	})
+
+	t.Run("start and stop watcher", func(t *testing.T) {
+		configPath := filepath.Join(t.TempDir(), "config.json")
+		err := os.WriteFile(configPath, []byte(validConfig), 0600)
+		assert.NoError(t, err)
+
+		watcher, err := NewWatcher(configPath)
+		assert.NoError(t, err)
+		assert.NotNil(t, watcher)
+
+		err = watcher.Start()
+		assert.NoError(t, err)
+		defer func() {
+			time.Sleep(500 * time.Millisecond)
+			watcher.Stop()
+		}()
+
+		time.Sleep(500 * time.Millisecond) // Allow some time for the watcher to start
+
+		// Simulate a file change
+		_ = os.WriteFile(configPath, []byte(validConfig), 0600)
+		assert.NoError(t, err)
+
+		_ = os.Remove(configPath)
+	})
+}
+
+func TestGetExecutor(t *testing.T) {
+	t.Run("get executor with valid config", func(t *testing.T) {
+		configPath := filepath.Join(t.TempDir(), "config.json")
+		err := os.WriteFile(configPath, []byte(validConfig), 0600)
+		assert.NoError(t, err)
+
+		watcher, err := NewWatcher(configPath)
+		assert.NoError(t, err)
+		assert.NotNil(t, watcher)
+
+		executor := watcher.GetExecutor()
+		assert.NotNil(t, executor)
+		assert.Equal(t, mockVerifierName, executor.Verifiers[0].Name())
 	})
 }

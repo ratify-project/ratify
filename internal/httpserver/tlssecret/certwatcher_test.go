@@ -31,13 +31,13 @@ import (
 )
 
 func TestLoadingTLSCerts_EmptyPaths(t *testing.T) {
-	if _, err := NewTLSSecretWatcher("", "", ""); err == nil {
+	if _, err := NewWatcher("", "", ""); err == nil {
 		t.Fatalf("expected error but got none")
 	}
 }
 
 func TestLoadingTLSCerts_InvalidCertPaths(t *testing.T) {
-	_, err := NewTLSSecretWatcher("", "invalid_cert.pem", "invalid_key.pem")
+	_, err := NewWatcher("", "invalid_cert.pem", "invalid_key.pem")
 	if err == nil {
 		t.Fatalf("expected error but got none")
 	}
@@ -62,7 +62,7 @@ func TestLoadingTLSCerts_SuccessfullyLoaded(t *testing.T) {
 		os.Remove(keyFile)
 	}()
 
-	watcher, err := NewTLSSecretWatcher("", certFile, keyFile)
+	watcher, err := NewWatcher("", certFile, keyFile)
 	if err != nil {
 		t.Fatalf("failed to create TLS secret watcher: %v", err)
 	}
@@ -71,13 +71,13 @@ func TestLoadingTLSCerts_SuccessfullyLoaded(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create X509 key pair: %v", err)
 	}
-	if !certificatesEqual(cert, *watcher.ratifyServerTLSCert) {
-		t.Fatalf("expected cert to be %v, got %v", cert, *watcher.ratifyServerTLSCert)
+	if !certificatesEqual(cert, *watcher.ratifyServerTLSCert.Load()) {
+		t.Fatalf("expected cert to be %v, got %v", cert, *watcher.ratifyServerTLSCert.Load())
 	}
 }
 
 func TestLoadingTLSCerts_InvalidCACertProvided(t *testing.T) {
-	if _, err := NewTLSSecretWatcher("invalidCACert.pem", "invalidCert.pem", "invalidKey.pem"); err == nil {
+	if _, err := NewWatcher("invalidCACert.pem", "invalidCert.pem", "invalidKey.pem"); err == nil {
 		t.Fatalf("Expected error but got none")
 	}
 }
@@ -115,7 +115,7 @@ func TestLoadingTLSCerts_GKCACertProvided(t *testing.T) {
 	}()
 
 	gatekeeperCACertFile := caCertFile
-	watcher, err := NewTLSSecretWatcher(gatekeeperCACertFile, certFile, keyFile)
+	watcher, err := NewWatcher(gatekeeperCACertFile, certFile, keyFile)
 	if err != nil {
 		t.Fatalf("failed to create TLS secret watcher: %v", err)
 	}
@@ -124,14 +124,14 @@ func TestLoadingTLSCerts_GKCACertProvided(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create X509 key pair: %v", err)
 	}
-	if !certificatesEqual(cert, *watcher.ratifyServerTLSCert) {
-		t.Fatalf("expected cert to be %v, got %v", cert, *watcher.ratifyServerTLSCert)
+	if !certificatesEqual(cert, *watcher.ratifyServerTLSCert.Load()) {
+		t.Fatalf("expected cert to be %v, got %v", cert, *watcher.ratifyServerTLSCert.Load())
 	}
 
 	clientCAs := x509.NewCertPool()
 	clientCAs.AppendCertsFromPEM(caCertPem)
-	if !clientCAs.Equal(watcher.clientCAs) {
-		t.Fatalf("expected client CA certs to be %v, got %v", clientCAs, watcher.clientCAs)
+	if !clientCAs.Equal(watcher.clientCAs.Load()) {
+		t.Fatalf("expected client CA certs to be %v, got %v", clientCAs, watcher.clientCAs.Load())
 	}
 
 	err = watcher.Start()
@@ -160,7 +160,7 @@ func TestLoadingTLSCerts_StartWatching(t *testing.T) {
 		os.Remove(keyFile)
 	}()
 
-	watcher, err := NewTLSSecretWatcher("", certFile, keyFile)
+	watcher, err := NewWatcher("", certFile, keyFile)
 	if err != nil {
 		t.Fatalf("failed to create TLS secret watcher: %v", err)
 	}
@@ -191,8 +191,8 @@ func TestLoadingTLSCerts_StartWatching(t *testing.T) {
 
 	newCert, _ := tls.X509KeyPair(newCertPem, newKeyPem)
 
-	if !certificatesEqual(newCert, *watcher.ratifyServerTLSCert) {
-		t.Fatalf("expected cert to be %v, got %v", newCert, *watcher.ratifyServerTLSCert)
+	if !certificatesEqual(newCert, *watcher.ratifyServerTLSCert.Load()) {
+		t.Fatalf("expected cert to be %v, got %v", newCert, *watcher.ratifyServerTLSCert.Load())
 	}
 }
 
@@ -228,7 +228,7 @@ func TestGetConfigForClient(t *testing.T) {
 		os.Remove(caKeyFile)
 	}()
 
-	watcher, err := NewTLSSecretWatcher(caCertFile, certFile, keyFile)
+	watcher, err := NewWatcher(caCertFile, certFile, keyFile)
 	if err != nil {
 		t.Fatalf("failed to create TLS secret watcher: %v", err)
 	}
