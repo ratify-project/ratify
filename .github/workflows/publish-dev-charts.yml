@@ -1,0 +1,26 @@
+name: publish-dev-chart
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Publish Helm charts
+        uses: stefanprodan/helm-gh-pages@0ad2bb377311d61ac04ad9eb6f252fb68e207260 # v1.7.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          charts_dir: deployments

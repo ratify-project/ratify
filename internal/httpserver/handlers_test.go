@@ -56,14 +56,12 @@ func (c *mockCache) Delete(_ context.Context, key string) error {
 }
 
 func TestVerify(t *testing.T) {
-	// cache, err := ristretto.NewRistrettoCache(defaultCacheTTL)
-	// if err != nil {
-	// 	t.Fatalf("failed to create cache: %v", err)
-	// }
 	server := &server{
-		executor: &ratify.Executor{},
-		cache:    &mockCache{entries: make(map[string]string)},
-		sfGroup:  new(singleflight.Group),
+		getExecutor: func() *ratify.Executor {
+			return &ratify.Executor{}
+		},
+		cache:   &mockCache{entries: make(map[string]string)},
+		sfGroup: new(singleflight.Group),
 	}
 
 	tests := []struct {
@@ -256,8 +254,8 @@ func TestMutate(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			server := &server{
-				executor: &ratify.Executor{
-					Store: test.store,
+				getExecutor: func() *ratify.Executor {
+					return &ratify.Executor{Store: test.store}
 				},
 				cache:   &mockCache{entries: make(map[string]string)},
 				sfGroup: new(singleflight.Group),
