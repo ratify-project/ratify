@@ -20,7 +20,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"os"
-	"sync"
+	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
@@ -28,18 +28,17 @@ import (
 
 // Watcher is a file watcher that monitors changes to TLS certificate files.
 type Watcher struct {
-	sync.RWMutex
 	watcher             *fsnotify.Watcher
-	ratifyServerTLSCert *tls.Certificate
-	clientCAs           *x509.CertPool
+	ratifyServerTLSCert atomic.Pointer[tls.Certificate]
+	clientCAs           atomic.Pointer[x509.CertPool]
 
 	gatekeeperCACertPath    string
 	ratifyServerTLSCertPath string
 	ratifyServerTLSKeyPath  string
 }
 
-// NewTLSSecretWatcher creates a new TLS secret watcher.
-func NewTLSSecretWatcher(gatekeeperCACertPath, ratifyServerTLSCertPath, ratifyServerTLSKeyPath string) (*Watcher, error) {
+// NewWatcher creates a new TLS secret watcher.
+func NewWatcher(gatekeeperCACertPath, ratifyServerTLSCertPath, ratifyServerTLSKeyPath string) (*Watcher, error) {
 	if ratifyServerTLSCertPath == "" || ratifyServerTLSKeyPath == "" {
 		return nil, fmt.Errorf("ratify server TLS cert and key paths must be set")
 	}
@@ -91,18 +90,14 @@ func (w *Watcher) loadCerts() error {
 
 		clientCAs := x509.NewCertPool()
 		clientCAs.AppendCertsFromPEM(caCert)
-		w.Lock()
-		w.clientCAs = clientCAs
-		w.Unlock()
+		w.clientCAs.Store(clientCAs)
 	}
 
 	ratifyServerTLSCert, err := tls.LoadX509KeyPair(w.ratifyServerTLSCertPath, w.ratifyServerTLSKeyPath)
 	if err != nil {
 		return err
 	}
-	w.Lock()
-	w.ratifyServerTLSCert = &ratifyServerTLSCert
-	w.Unlock()
+	w.ratifyServerTLSCert.Store(&ratifyServerTLSCert)
 	return nil
 }
 
@@ -116,6 +111,7 @@ func (w *Watcher) watch() {
 				return
 			}
 			if event.Op&(fsnotify.Write|fsnotify.Create|fsnotify.Remove) != 0 {
+				logrus.Infof("cert watcher event: %s %s", event.Op, event.Name)
 				if event.Op&fsnotify.Remove != 0 {
 					if err := w.watcher.Add(event.Name); err != nil {
 						logrus.Errorf("error re-watching file: %v", err)
@@ -144,17 +140,14 @@ func (w *Watcher) Stop() {
 
 // GetConfigForClient returns the TLS configuration for the tls client.
 func (w *Watcher) GetConfigForClient(*tls.ClientHelloInfo) (*tls.Config, error) {
-	w.RLock()
-	defer w.RUnlock()
-
+	ratifyServerTLSCert := w.ratifyServerTLSCert.Load()
 	config := &tls.Config{
 		MinVersion:         tls.VersionTLS13,
-		Certificates:       []tls.Certificate{*w.ratifyServerTLSCert},
+		Certificates:       []tls.Certificate{*ratifyServerTLSCert},
 		GetConfigForClient: w.GetConfigForClient,
 	}
-
-	if w.clientCAs != nil {
-		config.ClientCAs = w.clientCAs
+	if clientCAs := w.clientCAs.Load(); clientCAs != nil {
+		config.ClientCAs = clientCAs
 		config.ClientAuth = tls.RequireAndVerifyClientCert
 	}
 
