@@ -7,6 +7,8 @@ on:
       - "**.md"
   pull_request:
     paths-ignore:
+      - "docs/**"
+      - "library/**"
       - "**.md"
   schedule:
     - cron: "30 8 * * 0" # early morning (08:30 UTC) every Sunday
