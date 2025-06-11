@@ -1,11 +1,10 @@
 name: build-pr
 
 on:
-  pull_request_target:
-    types: [labeled]
   pull_request:
     branches:
-      - dev
+      - v1-dev
+      - v1
     paths-ignore:
       - "**.md"
   workflow_dispatch:
@@ -35,7 +34,7 @@ jobs:
 
   build_test_e2e_full_conditional:
     name: "run e2e on full test matrix with conditions"
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch'
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/v1'
     strategy:
       fail-fast: false
       matrix:
@@ -48,7 +47,7 @@ jobs:
 
   build_test_aks_e2e_conditional:
     name: "Build and run e2e Test on AKS with conditions"
-    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    if: contains(github.event.pull_request.labels.*.name, 'safe to test') || github.event_name == 'workflow_dispatch' || github.event_name == 'push' && github.ref == 'refs/heads/v1'
     permissions:
       id-token: write
       contents: read
@@ -64,6 +63,7 @@ jobs:
     secrets: inherit
 
   aks-test-cleanup:
+    if: github.ref == 'refs/heads/v1'
     needs: ["build_test_aks_e2e_conditional"]
     runs-on: ubuntu-latest
     permissions:
@@ -72,14 +72,14 @@ jobs:
     environment: azure-test
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@c6295a65d1254861815972266d5933fd6e532bdf # v2.11.1
+        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
         with:
           egress-policy: audit
 
       - name: Check out code into the Go module directory
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Set up Go 1.22
-        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5.5.0
         with:
           go-version: "1.22"
 
