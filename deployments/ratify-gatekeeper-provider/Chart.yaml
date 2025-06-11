@@ -1,6 +1,6 @@
 apiVersion: v2
 name: ratify-gatekeeper-provider
-description: A Helm chart for Ratify
+description: A Helm chart for Ratify Gatekeeper Provider
 type: application
 version: 2.0.0-dev
 appVersion: "2.0.0-dev"
