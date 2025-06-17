@@ -287,9 +287,9 @@ entries:
   ratify-gatekeeper-provider:
   - apiVersion: v2
     appVersion: 2.0.0-dev
-    created: "2025-06-17T03:01:34.793328887Z"
+    created: "2025-06-17T03:03:51.999457609Z"
     description: A Helm chart for Ratify Gatekeeper Provider
-    digest: 6421a109f63bc4742fc494db267d6676c0e0dec6534313a488af0cf60bc73ada
+    digest: fe20874beca1287be6e4e2c326d3c496220d355a974afc76c5bff85b7aba884f
     home: https://github.com/notaryproject/ratify
     icon: https://raw.githubusercontent.com/notaryproject/ratify/main/assets/logo.svg
     name: ratify-gatekeeper-provider
@@ -309,4 +309,4 @@ entries:
     urls:
     - https://notaryproject.github.io/ratify/ratify-gatekeeper-provider-2.0.0-alpha.1.tgz
     version: 2.0.0-alpha.1
-generated: "2025-06-17T03:01:34.792718542Z"
+generated: "2025-06-17T03:03:51.99887685Z"
