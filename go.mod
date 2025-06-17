@@ -40,7 +40,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/ratify-project/ratify v1.4.0
 	github.com/sigstore/cosign/v2 v2.2.4
-	github.com/sigstore/sigstore v1.9.4
+	github.com/sigstore/sigstore v1.9.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spdx/tools-golang v0.5.5
 	go.opentelemetry.io/otel/exporters/prometheus v0.49.0
