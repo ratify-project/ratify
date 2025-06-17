@@ -1,9 +1,9 @@
-name: publish-ghcr
+name: publish-dev-ghcr
 
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - main
   workflow_dispatch:
 
 permissions: read-all
@@ -43,18 +43,9 @@ jobs:
       - name: prepare
         id: prepare
         run: |
-          VERSION=${GITHUB_REF#refs/*/}
-          BRANCH_NAME=${GITHUB_REF#refs/heads/}
           ORG_NAME=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f1)
           REPOSITORY=ghcr.io/${ORG_NAME}/ratify-gatekeeper-provider
-          if [[ "${VERSION}" == "${BRANCH_NAME}" ]]; then
-            VERSION=$(git rev-parse --short HEAD)
-          fi
-          echo "version=${VERSION}" >> $GITHUB_OUTPUT
-          echo "ref=${REPOSITORY}:${VERSION}" >> $GITHUB_OUTPUT
-      - name: Get tag
-        run: |
-          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "ref=${REPOSITORY}:dev" >> $GITHUB_OUTPUT
       - name: docker login
         uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
         with:

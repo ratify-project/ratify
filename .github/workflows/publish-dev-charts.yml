@@ -1,8 +1,9 @@
-name: publishChart
+name: publish-dev-chart
 on:
   push:
-    tags:
-      - v*
+    branches:
+      - main
+  workflow_dispatch:
 
 permissions: read-all
 
