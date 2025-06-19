@@ -13,6 +13,8 @@ on:
       - v1-dev
       - v1
       - 1.0.0*
+    paths-ignore:
+      - "**.md"
   schedule:
     - cron: "30 1 * * 0"
   workflow_dispatch:
@@ -44,3 +46,4 @@ jobs:
           languages: go
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@ce28f5bb42b7a9f2c824e633a3f6ee835bab6858 # tag=v3.29.0
+
