@@ -1,0 +1,9 @@
+apiVersion: config.ratify.dev/v2alpha1
+kind: Executor
+metadata:
+  labels:
+    app.kubernetes.io/name: crd
+    app.kubernetes.io/managed-by: kustomize
+  name: executor-sample
+spec:
+  # TODO(user): Add fields here

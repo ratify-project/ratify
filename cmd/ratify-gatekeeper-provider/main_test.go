@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-func TestMain(t *testing.T) {
+func TestMain_FailedStartingRatify(t *testing.T) {
 	args := []string{
 		"-config=config.json",
 		"-cert-file=cert.pem",
@@ -107,7 +107,9 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
 func TestStartRatify(t *testing.T) {
+	startManagerFunc = func(_ chan struct{}, _ bool) {}
 	tests := []struct {
 		name        string
 		opts        *options

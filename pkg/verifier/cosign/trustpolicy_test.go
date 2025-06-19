@@ -484,7 +484,6 @@ func TestGetCosignOpts(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.rekorPubKeyEnv != "" {
 				val := os.Getenv("SIGSTORE_REKOR_PUBLIC_KEY")

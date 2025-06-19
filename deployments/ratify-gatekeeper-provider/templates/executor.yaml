@@ -1,0 +1,49 @@
+apiVersion: config.ratify.dev/v2alpha1
+kind: Executor
+metadata:
+  name: {{ include "ratify.fullname" . }}-executor-1
+  labels:
+    {{- include "ratify.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-install,pre-upgrade
+    helm.sh/hook-weight: "5"
+spec:
+  scopes:
+    {{- if .Values.executor.scopes }}
+    {{- toYaml .Values.executor.scopes | nindent 4 }}
+    {{- else }}
+    {{- fail "executor.scopes must not be empty" }}
+    {{- end }}
+  stores:
+    {{- range .Values.stores }}
+    - type: oras
+      parameters:
+        {{- if .scopes }}
+        scopes:
+          {{- toYaml .scopes | nindent 10 }}
+        {{- end }}
+        username: "{{ .username }}"
+        password: "{{ .password }}"
+    {{- end }}
+  verifiers:
+    - name: notation-1
+      type: notation
+      parameters:
+        {{- if .Values.notation.scopes }}
+        scopes:
+          {{- toYaml .Values.notation.scopes | nindent 10 }}
+        {{- end }}
+        {{- if .Values.notation.trustedIdentities }}
+        trustedIdentities:
+          {{- toYaml .Values.notation.trustedIdentities | nindent 10 }}
+        {{- end }}
+        certificates:
+          - type: "ca"
+            files:
+              - "/usr/local/notation/certs"
+  policyEnforcer:
+    type: "threshold-policy"
+    parameters:
+      policy:
+        rules:
+          - verifierName: "notation-1"

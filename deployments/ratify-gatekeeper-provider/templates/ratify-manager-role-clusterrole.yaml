@@ -24,4 +24,30 @@ rules:
   - get
   - list
   - watch
+- apiGroups:
+  - config.ratify.dev
+  resources:
+  - executors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.ratify.dev
+  resources:
+  - executors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - config.ratify.dev
+  resources:
+  - executors/status
+  verbs:
+  - get
+  - patch
+  - update
 {{- end }}
