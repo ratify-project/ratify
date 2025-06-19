@@ -47,7 +47,7 @@ func (m *mockVerifier) Verify(_ context.Context, _ *ratify.VerifyOptions) (*rati
 	return &ratify.VerificationResult{}, nil
 }
 
-func createMockVerifier(_ factory.NewVerifierOptions) (ratify.Verifier, error) {
+func createMockVerifier(_ *factory.NewVerifierOptions) (ratify.Verifier, error) {
 	return &mockVerifier{}, nil
 }
 
@@ -55,19 +55,19 @@ func TestNewVerifiers(t *testing.T) {
 	factory.RegisterVerifierFactory("mock-type", createMockVerifier)
 	tests := []struct {
 		name          string
-		opts          []factory.NewVerifierOptions
+		opts          []*factory.NewVerifierOptions
 		expectErr     bool
 		expectedCount int
 	}{
 		{
 			name:          "no options provided",
-			opts:          []factory.NewVerifierOptions{},
+			opts:          []*factory.NewVerifierOptions{},
 			expectErr:     true,
 			expectedCount: 0,
 		},
 		{
 			name: "error during NewVerifier",
-			opts: []factory.NewVerifierOptions{
+			opts: []*factory.NewVerifierOptions{
 				{
 					Name:       "notation-1",
 					Type:       "notation",
@@ -78,7 +78,7 @@ func TestNewVerifiers(t *testing.T) {
 		},
 		{
 			name: "single valid option",
-			opts: []factory.NewVerifierOptions{
+			opts: []*factory.NewVerifierOptions{
 				{
 					Name: mockName,
 					Type: mockType,

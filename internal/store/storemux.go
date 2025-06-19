@@ -24,23 +24,25 @@ import (
 	_ "github.com/notaryproject/ratify/v2/internal/store/factory/registrystore"      // Register the registry store factory
 )
 
-// PatternOptions defines a map of string keys to [factory.NewStoreOptions]
-// values. Keys are patterns used to match artifact references.
-type PatternOptions map[string]factory.NewStoreOptions
-
 // NewStore creates a new StoreMux instance.
-func NewStore(opts PatternOptions) (ratify.Store, error) {
+func NewStore(opts []*factory.NewStoreOptions, globalScopes []string) (ratify.Store, error) {
 	if len(opts) == 0 {
 		return nil, fmt.Errorf("no store options provided")
 	}
 	storeMux := ratify.NewStoreMux()
-	for pattern, storeOptions := range opts {
+	for _, storeOptions := range opts {
+		if len(storeOptions.Scopes) == 0 {
+			// if no scopes are provided, use the global scopes of the executor.
+			storeOptions.Scopes = globalScopes
+		}
 		store, err := factory.NewStore(storeOptions)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create store for type %q: %w", storeOptions.Type, err)
 		}
-		if err = storeMux.Register(pattern, store); err != nil {
-			return nil, err
+		for _, scope := range storeOptions.Scopes {
+			if err = storeMux.Register(scope, store); err != nil {
+				return nil, fmt.Errorf("failed to register store for scope %q: %w", scope, err)
+			}
 		}
 	}
 

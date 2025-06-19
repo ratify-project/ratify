@@ -22,7 +22,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/notaryproject/ratify-go"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
 	"github.com/sirupsen/logrus"
 	"oras.land/oras-go/v2/registry"
@@ -58,10 +57,7 @@ func (s *server) verify(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		// Cache is missed, block multiple goroutines from validating the same
 		// artifact.
 		val, err, _ = s.sfGroup.Do(key, func() (any, error) {
-			opts := ratify.ValidateArtifactOptions{
-				Subject: artifact,
-			}
-			result, err := s.getExecutor().ValidateArtifact(ctx, opts)
+			result, err := s.getExecutor().ValidateArtifact(ctx, artifact)
 			if err != nil {
 				return nil, err
 			}
@@ -127,7 +123,7 @@ func (s *server) resolveReference(ctx context.Context, reference string) externa
 	// Cache is missed, block multiple goroutines from resolving the same
 	// reference.
 	val, err, _ = s.sfGroup.Do(key, func() (any, error) {
-		desc, err := s.getExecutor().Store.Resolve(ctx, ref.String())
+		desc, err := s.getExecutor().Resolve(ctx, ref.String())
 		if err != nil {
 			return "", err
 		}

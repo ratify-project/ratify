@@ -28,7 +28,7 @@ const filesystemOCIStoreType = "filesystem-oci-store"
 
 func init() {
 	// Register the filesystem OCI store factory
-	factory.RegisterStoreFactory(filesystemOCIStoreType, func(opts factory.NewStoreOptions) (ratify.Store, error) {
+	factory.RegisterStoreFactory(filesystemOCIStoreType, func(opts *factory.NewStoreOptions) (ratify.Store, error) {
 		if opts.Parameters == nil {
 			return nil, fmt.Errorf("store parameters are required")
 		}

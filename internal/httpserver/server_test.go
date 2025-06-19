@@ -34,7 +34,6 @@ import (
 
 	"github.com/notaryproject/ratify-go"
 	"github.com/notaryproject/ratify/v2/internal/executor"
-	"github.com/notaryproject/ratify/v2/internal/store"
 	storeFactory "github.com/notaryproject/ratify/v2/internal/store/factory"
 	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -47,7 +46,7 @@ const (
 	artifact1         = "test.registry.io/test/image1:v1"
 )
 
-func createMockVerifier(factory.NewVerifierOptions) (ratify.Verifier, error) {
+func createMockVerifier(*factory.NewVerifierOptions) (ratify.Verifier, error) {
 	return &mockVerifier{}, nil
 }
 
@@ -80,14 +79,17 @@ func (m *mockStore) FetchManifest(_ context.Context, _ string, _ ocispec.Descrip
 	return nil, nil
 }
 
-func newMockStore(_ storeFactory.NewStoreOptions) (ratify.Store, error) {
+func newMockStore(_ *storeFactory.NewStoreOptions) (ratify.Store, error) {
 	return &mockStore{}, nil
+}
+
+func init() {
+	factory.RegisterVerifierFactory(mockVerifierType, createMockVerifier)
+	storeFactory.RegisterStoreFactory(mockStoreType, newMockStore)
 }
 
 func TestStartServer(t *testing.T) {
 	tempDir := t.TempDir()
-	factory.RegisterVerifierFactory(mockVerifierType, createMockVerifier)
-	storeFactory.RegisterStoreFactory(mockStoreType, newMockStore)
 
 	tests := []struct {
 		name          string
@@ -136,15 +138,20 @@ func TestStartServer_NoTLS(t *testing.T) {
 	tempDir := t.TempDir()
 
 	executorOpts := &executor.Options{
-		Verifiers: []factory.NewVerifierOptions{
+		Executors: []*executor.ExecutorOptions{
 			{
-				Name: mockVerifierName,
-				Type: mockVerifierType,
-			},
-		},
-		Stores: store.PatternOptions{
-			registryPattern: storeFactory.NewStoreOptions{
-				Type: mockStoreType,
+				Scopes: []string{registryPattern},
+				Verifiers: []*factory.NewVerifierOptions{
+					{
+						Name: mockVerifierName,
+						Type: mockVerifierType,
+					},
+				},
+				Stores: []*storeFactory.NewStoreOptions{
+					{
+						Type:   mockStoreType,
+					},
+				},
 			},
 		},
 	}
@@ -181,15 +188,20 @@ func TestStartServer_TLSEnabled(t *testing.T) {
 	tempDir := t.TempDir()
 
 	executorOpts := &executor.Options{
-		Verifiers: []factory.NewVerifierOptions{
+		Executors: []*executor.ExecutorOptions{
 			{
-				Name: mockVerifierName,
-				Type: mockVerifierType,
-			},
-		},
-		Stores: store.PatternOptions{
-			registryPattern: storeFactory.NewStoreOptions{
-				Type: mockStoreType,
+				Scopes: []string{registryPattern},
+				Verifiers: []*factory.NewVerifierOptions{
+					{
+						Name: mockVerifierName,
+						Type: mockVerifierType,
+					},
+				},
+				Stores: []*storeFactory.NewStoreOptions{
+					{
+						Type: mockStoreType,
+					},
+				},
 			},
 		},
 	}
@@ -233,15 +245,20 @@ func TestStartServer_InvalidTLS(t *testing.T) {
 	tempDir := t.TempDir()
 
 	executorOpts := &executor.Options{
-		Verifiers: []factory.NewVerifierOptions{
+		Executors: []*executor.ExecutorOptions{
 			{
-				Name: mockVerifierName,
-				Type: mockVerifierType,
-			},
-		},
-		Stores: store.PatternOptions{
-			registryPattern: storeFactory.NewStoreOptions{
-				Type: mockStoreType,
+				Scopes: []string{registryPattern},
+				Verifiers: []*factory.NewVerifierOptions{
+					{
+						Name: mockVerifierName,
+						Type: mockVerifierType,
+					},
+				},
+				Stores: []*storeFactory.NewStoreOptions{
+					{
+						Type: mockStoreType,
+					},
+				},
 			},
 		},
 	}
