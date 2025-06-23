@@ -26,15 +26,17 @@ type NewStoreOptions struct {
 	// Type represents a specific implementation of a store. Required.
 	Type string `json:"type"`
 
+	Scopes []string `json:"scopes,omitempty"`
+
 	// Parameters is additional parameters for the store. Optional.
 	Parameters any `json:"parameters,omitempty"`
 }
 
 // registeredStores saves the registered store factories.
-var registeredStores map[string]func(NewStoreOptions) (ratify.Store, error)
+var registeredStores map[string]func(*NewStoreOptions) (ratify.Store, error)
 
 // RegisterStore registers a store factory to the system.
-func RegisterStoreFactory(storeType string, create func(NewStoreOptions) (ratify.Store, error)) {
+func RegisterStoreFactory(storeType string, create func(*NewStoreOptions) (ratify.Store, error)) {
 	if storeType == "" {
 		panic("store type cannot be empty")
 	}
@@ -42,7 +44,7 @@ func RegisterStoreFactory(storeType string, create func(NewStoreOptions) (ratify
 		panic("store factory cannot be nil")
 	}
 	if registeredStores == nil {
-		registeredStores = make(map[string]func(NewStoreOptions) (ratify.Store, error))
+		registeredStores = make(map[string]func(*NewStoreOptions) (ratify.Store, error))
 	}
 	if _, registered := registeredStores[storeType]; registered {
 		panic(fmt.Sprintf("store factory type %s already registered", storeType))
@@ -51,7 +53,7 @@ func RegisterStoreFactory(storeType string, create func(NewStoreOptions) (ratify
 }
 
 // NewStore creates a new Store instance based on the provided options.
-func NewStore(opts NewStoreOptions) (ratify.Store, error) {
+func NewStore(opts *NewStoreOptions) (ratify.Store, error) {
 	if opts.Type == "" {
 		return nil, fmt.Errorf("store type is not provided in the store options")
 	}

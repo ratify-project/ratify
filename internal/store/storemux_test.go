@@ -42,7 +42,7 @@ func (m *mockStore) FetchManifest(_ context.Context, _ string, _ ocispec.Descrip
 	return nil, nil
 }
 
-func newMockStore(_ factory.NewStoreOptions) (ratify.Store, error) {
+func newMockStore(_ *factory.NewStoreOptions) (ratify.Store, error) {
 	return &mockStore{}, nil
 }
 
@@ -50,18 +50,19 @@ func TestNewStore(t *testing.T) {
 	factory.RegisterStoreFactory("mock-store", newMockStore)
 	tests := []struct {
 		name          string
-		opts          PatternOptions
+		opts          []*factory.NewStoreOptions
+		globalScopes  []string
 		expectedError bool
 	}{
 		{
 			name:          "empty store options",
-			opts:          PatternOptions{},
+			opts:          []*factory.NewStoreOptions{},
 			expectedError: true,
 		},
 		{
 			name: "unregistered store options",
-			opts: PatternOptions{
-				"test": factory.NewStoreOptions{
+			opts: []*factory.NewStoreOptions{
+				{
 					Type:       "mock",
 					Parameters: map[string]any{},
 				},
@@ -69,30 +70,32 @@ func TestNewStore(t *testing.T) {
 			expectedError: true,
 		},
 		{
-			name: "no pattern provided",
-			opts: PatternOptions{
-				"": factory.NewStoreOptions{
+			name: "valid store options",
+			opts: []*factory.NewStoreOptions{
+				{
 					Type:       "mock-store",
 					Parameters: map[string]any{},
 				},
 			},
-			expectedError: true,
+			globalScopes:  []string{"example.com"},
+			expectedError: false,
 		},
 		{
-			name: "valid store options",
-			opts: PatternOptions{
-				"test": factory.NewStoreOptions{
+			name: "invalid store scope",
+			opts: []*factory.NewStoreOptions{
+				{
 					Type:       "mock-store",
 					Parameters: map[string]any{},
 				},
 			},
-			expectedError: false,
+			globalScopes:  []string{"*"},
+			expectedError: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NewStore(tt.opts)
+			_, err := NewStore(tt.opts, tt.globalScopes)
 			if (err != nil) != tt.expectedError {
 				t.Errorf("NewStore() error = %v, expectedError %v", err, tt.expectedError)
 			}

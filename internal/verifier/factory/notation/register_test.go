@@ -65,12 +65,12 @@ func TestNewVerifier(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		opts      factory.NewVerifierOptions
+		opts      *factory.NewVerifierOptions
 		expectErr bool
 	}{
 		{
 			name: "Unsupported params",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type:       notationType,
 				Name:       testName,
 				Parameters: make(chan int),
@@ -79,7 +79,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Malformed params",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type:       notationType,
 				Name:       testName,
 				Parameters: "{",
@@ -88,7 +88,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Missing trust store options",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type:       notationType,
 				Name:       testName,
 				Parameters: options{},
@@ -97,7 +97,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Invalid trust store type",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type: notationType,
 				Name: testName,
 				Parameters: options{
@@ -112,7 +112,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Duplicate trust store type",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type: notationType,
 				Name: testName,
 				Parameters: options{
@@ -132,7 +132,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Non-registered key provider",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type: notationType,
 				Name: testName,
 				Parameters: options{
@@ -148,7 +148,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Failed to get certificates from key provider",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type: notationType,
 				Name: testName,
 				Parameters: options{
@@ -166,7 +166,7 @@ func TestNewVerifier(t *testing.T) {
 		},
 		{
 			name: "Valid notation options",
-			opts: factory.NewVerifierOptions{
+			opts: &factory.NewVerifierOptions{
 				Type: notationType,
 				Name: testName,
 				Parameters: options{
