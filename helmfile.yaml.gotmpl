@@ -9,7 +9,7 @@ releases:
     namespace: gatekeeper-system
     createNamespace: true
     chart: gatekeeper/gatekeeper
-    version: 3.18.0
+    version: 3.18.3
     wait: true
     set:
       - name: enableExternalData
@@ -22,8 +22,8 @@ releases:
         value: 10s
   - name: ratify
     namespace: gatekeeper-system
-    chart: ratify/ratify
-    version: 1.15.0 # Make sure this matches Chart.yaml
+    chart: ratify/ratify-gatekeeper-provider
+    version: 2.0.0-alpha.1 # Make sure this matches Chart.yaml
     wait: true
     needs:
       - gatekeeper
@@ -33,14 +33,14 @@ releases:
         command: "bash"
         args:
           - "-c"
-          - "kubectl apply -f https://notaryproject.github.io/ratify/library/default/template.yaml && kubectl apply -f https://notaryproject.github.io/ratify/library/default/samples/constraint.yaml"
+          - "kubectl apply -f https://raw.githubusercontent.com/notaryproject/ratify/v2.0.0-alpha.1/configs/constrainttemplates/default/template.yaml && kubectl apply -f https://raw.githubusercontent.com/notaryproject/ratify/v2.0.0-alpha.1/configs/constrainttemplates/default/constraint.yaml"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
         args:
           - "delete"
           - "-f"
-          - "https://notaryproject.github.io/ratify/library/default/template.yaml"
+          - "https://raw.githubusercontent.com/notaryproject/ratify/v2.0.0-alpha.1/configs/constrainttemplates/default/template.yaml"
           - "--ignore-not-found=true"
       - events: ["postuninstall"]
         showlogs: true
@@ -48,34 +48,21 @@ releases:
         args:
           - "delete"
           - "-f"
-          - "https://notaryproject.github.io/ratify/library/default/samples/constraint.yaml"
+          - "https://raw.githubusercontent.com/notaryproject/ratify/v2.0.0-alpha.1/configs/constrainttemplates/default/constraint.yaml"
           - "--ignore-not-found=true"
-      - events: ["postuninstall"]
-        showlogs: true
-        command: "kubectl"
-        args:
-          - "delete"
-          - "crd"
-          - "stores.config.ratify.deislabs.io"
-          - "verifiers.config.ratify.deislabs.io"
-          - "certificatestores.config.ratify.deislabs.io"
-          - "policies.config.ratify.deislabs.io"
-          - "keymanagementproviders.config.ratify.deislabs.io"
-          - "namespacedkeymanagementproviders.config.ratify.deislabs.io"
-          - "namespacedpolicies.config.ratify.deislabs.io"
-          - "namespacedstores.config.ratify.deislabs.io"
-          - "namespacedverifiers.config.ratify.deislabs.io"
       - events: ["postuninstall"]
         showlogs: true
         command: "kubectl"
         args:
           - "delete"
           - "secret"
-          - "ratify-tls"
+          - "ratify-gatekeeper-provider-tls"
+          - "ratify-gatekeeper-provider-notation-certs"
+          - "--ignore-not-found=true"
           - "-n"
           - "gatekeeper-system"
     set:
-      - name: notationCerts[0]
-        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/deislabs/ratify/main/test/testdata/notation.crt") | quote }}
-      - name: featureFlags.RATIFY_CERT_ROTATION
-        value: true
+      - name: notation.Certs[0]
+        value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/notaryproject/ratify/v2.0.0-alpha.1/test/testdata/notation.crt") | quote }}
+      - name: stores[0].scope
+        value: "ghcr.io"

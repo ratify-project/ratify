@@ -26,7 +26,7 @@ const (
 	testName = "test-name"
 )
 
-func createVerifier(_ NewVerifierOptions) (ratify.Verifier, error) {
+func createVerifier(_ *NewVerifierOptions) (ratify.Verifier, error) {
 	return nil, nil
 }
 func TestRegisterVerifierFactory(t *testing.T) {
@@ -72,19 +72,19 @@ func TestRegisterVerifierFactory(t *testing.T) {
 
 func TestNewVerifier(t *testing.T) {
 	t.Run("Creating a verifier with empty name or type", func(t *testing.T) {
-		_, err := NewVerifier(NewVerifierOptions{Name: "", Type: testType})
+		_, err := NewVerifier(&NewVerifierOptions{Name: "", Type: testType})
 		if err == nil {
 			t.Errorf("Expected error when creating a verifier with empty name, but got none")
 		}
 
-		_, err = NewVerifier(NewVerifierOptions{Name: testName, Type: ""})
+		_, err = NewVerifier(&NewVerifierOptions{Name: testName, Type: ""})
 		if err == nil {
 			t.Errorf("Expected error when creating a verifier with empty type, but got none")
 		}
 	})
 
 	t.Run("Creating a verifier with unregistered type", func(t *testing.T) {
-		_, err := NewVerifier(NewVerifierOptions{Name: testName, Type: "unregistered-type"})
+		_, err := NewVerifier(&NewVerifierOptions{Name: testName, Type: "unregistered-type"})
 		if err == nil {
 			t.Errorf("Expected error when creating a verifier with unregistered type, but got none")
 		}
@@ -96,7 +96,7 @@ func TestNewVerifier(t *testing.T) {
 			delete(registeredVerifiers, testType)
 		}()
 
-		opts := NewVerifierOptions{Name: testName, Type: testType}
+		opts := &NewVerifierOptions{Name: testName, Type: testType}
 		_, err := NewVerifier(opts)
 		if err != nil {
 			t.Errorf("Did not expect error when creating a verifier with registered type, but got: %v", err)

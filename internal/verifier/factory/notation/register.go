@@ -43,9 +43,9 @@ const (
 type trustStoreOptions map[string]any
 
 type options struct {
-	// Scope is a list of registry scopes to be used by the Notation
+	// Scopes is a list of registry scopes to be used by the Notation
 	// verifier. Optional. If not provided, the default scope is "*".
-	Scope []string `json:"scope"`
+	Scopes []string `json:"scopes"`
 
 	// TrustedIdentities is a list of trusted identities to be used by the
 	// Notation verifier. Optional. If not provided, default identity is "*".
@@ -58,7 +58,7 @@ type options struct {
 }
 
 func init() {
-	factory.RegisterVerifierFactory(notationType, func(opts factory.NewVerifierOptions) (ratify.Verifier, error) {
+	factory.RegisterVerifierFactory(notationType, func(opts *factory.NewVerifierOptions) (ratify.Verifier, error) {
 		raw, err := json.Marshal(opts.Parameters)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal verifier parameters: %w", err)
@@ -76,7 +76,7 @@ func init() {
 
 		notationOpts := &notation.VerifierOptions{
 			Name:           opts.Name,
-			TrustPolicyDoc: initTrustPolicyDocument(params.Scope, params.TrustedIdentities, types),
+			TrustPolicyDoc: initTrustPolicyDocument(params.Scopes, params.TrustedIdentities, types),
 			TrustStore:     trustStore,
 		}
 

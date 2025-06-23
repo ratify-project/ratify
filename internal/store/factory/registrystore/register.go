@@ -55,7 +55,7 @@ type options struct {
 
 func init() {
 	// Register the registry store factory.
-	factory.RegisterStoreFactory(registryStoreType, func(opts factory.NewStoreOptions) (ratify.Store, error) {
+	factory.RegisterStoreFactory(registryStoreType, func(opts *factory.NewStoreOptions) (ratify.Store, error) {
 		raw, err := json.Marshal(opts.Parameters)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal store parameters: %w", err)

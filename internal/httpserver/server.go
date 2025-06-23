@@ -27,9 +27,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/notaryproject/ratify-go"
 	"github.com/notaryproject/ratify/v2/internal/cache"
 	"github.com/notaryproject/ratify/v2/internal/cache/ristretto"
+	"github.com/notaryproject/ratify/v2/internal/executor"
 	"github.com/notaryproject/ratify/v2/internal/httpserver/config"
 	"github.com/notaryproject/ratify/v2/internal/httpserver/tlssecret"
 	"github.com/sirupsen/logrus"
@@ -49,7 +49,7 @@ const (
 )
 
 type server struct {
-	getExecutor func() *ratify.Executor
+	getExecutor func() *executor.ScopedExecutor
 	router      *mux.Router
 	cache       cache.Cache
 	sfGroup     *singleflight.Group
