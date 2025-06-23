@@ -24,12 +24,12 @@ import (
 func TestNewStore(t *testing.T) {
 	tests := []struct {
 		name      string
-		opts      factory.NewStoreOptions
+		opts      *factory.NewStoreOptions
 		expectErr bool
 	}{
 		{
 			name: "Nil params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       filesystemOCIStoreType,
 				Parameters: nil,
 			},
@@ -37,7 +37,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Unsupported params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       filesystemOCIStoreType,
 				Parameters: make(chan int),
 			},
@@ -45,7 +45,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Malformed params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       filesystemOCIStoreType,
 				Parameters: "{",
 			},
@@ -53,7 +53,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Missing path params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       filesystemOCIStoreType,
 				Parameters: map[string]interface{}{},
 			},
@@ -61,7 +61,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Empty Path value",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type: filesystemOCIStoreType,
 				Parameters: map[string]interface{}{
 					"path": "",
@@ -71,7 +71,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Nonexistent path",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type: filesystemOCIStoreType,
 				Parameters: map[string]interface{}{
 					"path": "/nonexistent/path",

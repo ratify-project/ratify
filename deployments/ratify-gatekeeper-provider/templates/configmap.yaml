@@ -5,48 +5,74 @@ metadata:
 data:
   config.json: |
     {
-        "verifiers": [
+        "executors": [
             {
-                "name": "notation-1",
-                "type": "notation",
-                "parameters": {
-                    "scope": {{ .Values.notation.scope }},
-                    "trustedIdentities": {{ .Values.notation.trustedIdentities }},
-                    "certificates": [
-                        {
-                            "type": "ca",
-                            "files": [
-                                "/usr/local/notation/certs"
+                {{- if not (gt (len .Values.executor.scopes) 0) }}
+                {{- fail "executor.scopes must not be empty" }}
+                {{- end }}
+                "scopes": [
+                {{- range $i, $scope := .Values.executor.scopes }}
+                    {{- if $i }}, {{ end }}"{{ $scope }}"
+                {{- end -}}
+                ],
+                "verifiers": [
+                    {
+                        "name": "notation-1",
+                        "type": "notation",
+                        "parameters": {
+                            "scopes": [
+                            {{- range $i, $scope := .Values.notation.scopes }}
+                                {{- if $i }}, {{ end }}"{{ $scope }}"
+                            {{- end -}}
+                            ],
+                            "trustedIdentities": [
+                            {{- range $i, $identity := .Values.notation.trustedIdentities }}
+                                {{- if $i }}, {{ end }}"{{ $identity }}"
+                            {{- end -}}
+                            ],
+                            "certificates": [
+                                {
+                                    "type": "ca",
+                                    "files": [
+                                        "/usr/local/notation/certs"
+                                    ]
+                                }
                             ]
                         }
-                    ]
-                }
-            }
-        ],
-        "stores": {
-        {{- $storeNum := len .Values.stores -}}
-        {{- range $index, $store := .Values.stores }}
-            "{{ $store.scope }}": {
-                "type": "registry-store",
-                "parameters": {
-                    "credential": {
-                        "username": "{{ $store.username }}",
-                        "password": "{{ $store.password }}"
+                    }
+                ],
+                "stores": [
+                {{- $storeNum := len .Values.stores -}}
+                {{- range $index, $store := .Values.stores }}
+                    {
+                        "scope": [
+                        {{- range $i, $scope := $store.scopes }}
+                            {{- if $i }}, {{ end }}"{{ $scope }}"
+                        {{- end -}}
+                        ],
+                        "type": "registry-store",
+                        "parameters": {
+                            "credential": {
+                                "username": "{{ $store.username }}",
+                                "password": "{{ $store.password }}"
+                            }
+                        }
+                    }{{- if lt (add1 $index) $storeNum }},{{ end }}
+                {{- end }}
+                ],
+                "policyEnforcer": {
+                    "type": "threshold-policy",
+                    "parameters": {
+                        "policy": {
+                            "rules": [
+                                {
+                                    "verifierName": "notation-1"
+                                }
+                            ]
+                        }
                     }
                 }
-            }{{- if lt (add1 $index) $storeNum }},{{ end }}
-        {{- end }}
-        },
-        "policyEnforcer": {
-            "type": "threshold-policy",
-            "parameters": {
-                "policy": {
-                    "rules": [
-                        {
-                            "verifierName": "notation-1"
-                        }
-                    ]
-                }
             }
-        }
+        ]
+        
     }

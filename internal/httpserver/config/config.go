@@ -24,7 +24,6 @@ import (
 	"sync/atomic"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/notaryproject/ratify-go"
 	"github.com/notaryproject/ratify/v2/internal/executor"
 	"github.com/sirupsen/logrus"
 )
@@ -45,7 +44,7 @@ var (
 // the executor when changes are detected.
 type Watcher struct {
 	watcher            *fsnotify.Watcher
-	executor           atomic.Pointer[ratify.Executor]
+	executor           atomic.Pointer[executor.ScopedExecutor]
 	executorConfigPath string
 }
 
@@ -79,7 +78,7 @@ func (w *Watcher) loadExecutor() error {
 	if err = json.Unmarshal(body, opts); err != nil {
 		return fmt.Errorf("failed to unmarshal configuration: %w", err)
 	}
-	e, err := executor.NewExecutor(opts)
+	e, err := executor.NewScopedExecutor(opts)
 	if err != nil {
 		return fmt.Errorf("failed to create executor: %w", err)
 	}
@@ -89,7 +88,7 @@ func (w *Watcher) loadExecutor() error {
 
 // GetExecutor returns the current executor instance.
 // It is safe to call this method concurrently.
-func (w *Watcher) GetExecutor() *ratify.Executor {
+func (w *Watcher) GetExecutor() *executor.ScopedExecutor {
 	return w.executor.Load()
 }
 

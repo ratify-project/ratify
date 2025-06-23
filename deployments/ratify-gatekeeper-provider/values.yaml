@@ -5,13 +5,14 @@ image:
 
 replicaCount: 1
 
+executor:
+  scopes: []
 notation:
-  scope: []
+  scopes: []
   trustedIdentities: []
   certs: []
-  
 stores:
-  - scope: ""
+  - scopes: []
     username: ""
     password: ""
 

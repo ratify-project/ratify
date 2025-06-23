@@ -25,7 +25,7 @@ import (
 
 // NewVerifiers creates a slice of ratify.Verifier instances based on the
 // provided options.
-func NewVerifiers(opts []factory.NewVerifierOptions) ([]ratify.Verifier, error) {
+func NewVerifiers(opts []*factory.NewVerifierOptions) ([]ratify.Verifier, error) {
 	if len(opts) == 0 {
 		return nil, fmt.Errorf("no verifier options provided")
 	}
