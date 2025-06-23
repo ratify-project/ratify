@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/notaryproject/ratify-go"
-	"github.com/notaryproject/ratify/v2/internal/store/factory"
 
 	ef "github.com/notaryproject/ratify/v2/internal/policyenforcer/factory"
 	sf "github.com/notaryproject/ratify/v2/internal/store/factory"
@@ -53,7 +52,7 @@ func (m *mockStore) FetchManifest(_ context.Context, _ string, _ ocispec.Descrip
 	return nil, nil
 }
 
-func newMockStore(_ *factory.NewStoreOptions) (ratify.Store, error) {
+func newMockStore(_ *sf.NewStoreOptions) (ratify.Store, error) {
 	return &mockStore{}, nil
 }
 
@@ -88,7 +87,7 @@ func createMockVerifier(_ *vf.NewVerifierOptions) (ratify.Verifier, error) {
 }
 
 func TestNewExecutor(t *testing.T) {
-	factory.RegisterStoreFactory(mockStoreType, newMockStore)
+	sf.RegisterStoreFactory(mockStoreType, newMockStore)
 	vf.RegisterVerifierFactory(mockVerifierType, createMockVerifier)
 	ef.RegisterPolicyEnforcerFactory(mockPolicyEnforcerType, createPolicyEnforcer)
 
@@ -113,7 +112,7 @@ func TestNewExecutor(t *testing.T) {
 		{
 			name: "empty global scopes",
 			opts: &Options{
-				Executors: []*ExecutorOptions{{}},
+				Executors: []*ScopedOptions{{}},
 			},
 			expectErr:      true,
 			expectExecutor: false,
@@ -121,7 +120,7 @@ func TestNewExecutor(t *testing.T) {
 		{
 			name: "invalid executor scopes",
 			opts: &Options{
-				Executors: []*ExecutorOptions{
+				Executors: []*ScopedOptions{
 					{
 						Scopes: []string{"*"},
 						Verifiers: []*vf.NewVerifierOptions{
@@ -130,7 +129,7 @@ func TestNewExecutor(t *testing.T) {
 								Type: mockVerifierType,
 							},
 						},
-						Stores: []*factory.NewStoreOptions{
+						Stores: []*sf.NewStoreOptions{
 							{
 								Type:   mockStoreType,
 								Scopes: []string{"testrepo"},
@@ -148,7 +147,7 @@ func TestNewExecutor(t *testing.T) {
 		{
 			name: "failed to create store",
 			opts: &Options{
-				Executors: []*ExecutorOptions{
+				Executors: []*ScopedOptions{
 					{
 						Scopes: []string{"testrepo"},
 						Verifiers: []*vf.NewVerifierOptions{
@@ -166,7 +165,7 @@ func TestNewExecutor(t *testing.T) {
 		{
 			name: "failed to create policy enforcer",
 			opts: &Options{
-				Executors: []*ExecutorOptions{
+				Executors: []*ScopedOptions{
 					{
 						Scopes: []string{"testrepo"},
 						Verifiers: []*vf.NewVerifierOptions{
@@ -184,7 +183,7 @@ func TestNewExecutor(t *testing.T) {
 		{
 			name: "failed to create policy enforcer",
 			opts: &Options{
-				Executors: []*ExecutorOptions{
+				Executors: []*ScopedOptions{
 					{
 						Scopes: []string{"test"},
 						Verifiers: []*vf.NewVerifierOptions{
@@ -209,7 +208,7 @@ func TestNewExecutor(t *testing.T) {
 		{
 			name: "valid options",
 			opts: &Options{
-				Executors: []*ExecutorOptions{
+				Executors: []*ScopedOptions{
 					{
 						Scopes: []string{"test"},
 						Verifiers: []*vf.NewVerifierOptions{
@@ -218,7 +217,7 @@ func TestNewExecutor(t *testing.T) {
 								Type: mockVerifierType,
 							},
 						},
-						Stores: []*factory.NewStoreOptions{
+						Stores: []*sf.NewStoreOptions{
 							{
 								Type:   mockStoreType,
 								Scopes: []string{"test"},

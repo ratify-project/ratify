@@ -32,9 +32,9 @@ import (
 	"oras.land/oras-go/v2/registry"
 )
 
-// ExecutorOptions contains the configuration options to create a group of
-// plugins for the executor under a scope.
-type ExecutorOptions struct {
+// ScopedOptions contains the configuration options to create a group of plugins
+// for the executor under a scope.
+type ScopedOptions struct {
 	// Scopes defines the scopes for which this executor is responsible.
 	// Required.
 	Scopes []string `json:"scopes"`
@@ -56,20 +56,24 @@ type Options struct {
 	// Each scope can have its own set of verifiers, stores, and policy
 	// enforcer. At least one executor must be provided.
 	// Required.
-	Executors []*ExecutorOptions `json:"executors"`
+	Executors []*ScopedOptions `json:"executors"`
 }
 
-// ScopedExecutor manages multiple ratify.Executor instances, each associated with
-// specific scopes (registries or repositories). It provides a mechanism to route
-// artifact validation requests to the appropriate executor based on the artifact's
-// reference.
+// ScopedExecutor manages multiple ratify.Executor instances, each associated
+// with specific scopes (registries or repositories). It provides a mechanism to
+// route artifact validation requests to the appropriate executor based on the
+// artifact's reference.
 //
 // The executor supports three types of scope patterns:
 //   - Wildcard registries: "*.example.com" matches any subdomain of example.com
 //   - Specific registries: "registry.example.com" matches only that registry
-//   - Repository paths: "registry.example.com/namespace/repo" matches a specific repository
+//   - Repository paths: "registry.example.com/namespace/repo" matches a
+//     specific repository
 //
-// Scope matching follows a precedence order from most specific to least specific:
+// Note: Top level domain wildcard is also not supported. That is, "*" is not a
+// valid pattern.
+// Scope matching follows a precedence order from most specific to least
+// specific:
 //  1. Exact repository match
 //  2. Exact registry match
 //  3. Wildcard registry match
@@ -107,7 +111,7 @@ func NewScopedExecutor(opts *Options) (*ScopedExecutor, error) {
 
 // newExecutor creates a new [ratify.Executor] instance based on the provided
 // options.
-func newExecutor(opts *ExecutorOptions) (*ratify.Executor, error) {
+func newExecutor(opts *ScopedOptions) (*ratify.Executor, error) {
 	verifiers, err := verifier.NewVerifiers(opts.Verifiers)
 	if err != nil {
 		return nil, err

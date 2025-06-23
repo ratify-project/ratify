@@ -1,6 +1,6 @@
 image:
-  repository: "libinbinacr.azurecr.io/ratify"
-  pullPolicy: Always
+  repository: "ghcr.io/notaryproject/ratify-gatekeeper-provider"
+  pullPolicy: IfNotPresent
   tag: "dev"
 
 replicaCount: 1

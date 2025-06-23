@@ -138,7 +138,7 @@ func TestStartServer_NoTLS(t *testing.T) {
 	tempDir := t.TempDir()
 
 	executorOpts := &executor.Options{
-		Executors: []*executor.ExecutorOptions{
+		Executors: []*executor.ScopedOptions{
 			{
 				Scopes: []string{registryPattern},
 				Verifiers: []*factory.NewVerifierOptions{
@@ -149,7 +149,7 @@ func TestStartServer_NoTLS(t *testing.T) {
 				},
 				Stores: []*storeFactory.NewStoreOptions{
 					{
-						Type:   mockStoreType,
+						Type: mockStoreType,
 					},
 				},
 			},
@@ -188,7 +188,7 @@ func TestStartServer_TLSEnabled(t *testing.T) {
 	tempDir := t.TempDir()
 
 	executorOpts := &executor.Options{
-		Executors: []*executor.ExecutorOptions{
+		Executors: []*executor.ScopedOptions{
 			{
 				Scopes: []string{registryPattern},
 				Verifiers: []*factory.NewVerifierOptions{
@@ -245,7 +245,7 @@ func TestStartServer_InvalidTLS(t *testing.T) {
 	tempDir := t.TempDir()
 
 	executorOpts := &executor.Options{
-		Executors: []*executor.ExecutorOptions{
+		Executors: []*executor.ScopedOptions{
 			{
 				Scopes: []string{registryPattern},
 				Verifiers: []*factory.NewVerifierOptions{
