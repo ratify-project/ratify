@@ -25,9 +25,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/notaryproject/ratify-go"
+	"github.com/notaryproject/ratify/v2/internal/executor"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/externaldata"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/singleflight"
 )
 
@@ -57,8 +56,8 @@ func (c *mockCache) Delete(_ context.Context, key string) error {
 
 func TestVerify(t *testing.T) {
 	server := &server{
-		getExecutor: func() *ratify.Executor {
-			return &ratify.Executor{}
+		getExecutor: func() *executor.ScopedExecutor {
+			return &executor.ScopedExecutor{}
 		},
 		cache:   &mockCache{entries: make(map[string]string)},
 		sfGroup: new(singleflight.Group),
@@ -83,7 +82,7 @@ func TestVerify(t *testing.T) {
 				{
 					Key:   "artifact1",
 					Value: nil,
-					Error: "store must be configured",
+					Error: "failed to match executor for artifact \"artifact1\": failed to parse artifact reference \"artifact1\": invalid reference: missing registry or repository",
 				},
 			},
 		},
@@ -145,7 +144,6 @@ func TestMutate(t *testing.T) {
 		requestBody   string
 		cacheEntries  map[string]string
 		expectedError bool
-		store         ratify.Store
 		expectedItems []externaldata.Item
 	}{
 		{
@@ -191,9 +189,6 @@ func TestMutate(t *testing.T) {
 					"keys": ["testrepo/testimage:v1"]
 				}
 			}`,
-			store: &mockStore{
-				returnResolveErr: true,
-			},
 			cacheEntries: map[string]string{
 				"mutate_testrepo/testimage:v1": "testrepo/testimage@sha256:498138d40d54f0fc20cd271e215366d3d8803f814b8f565b47c101480bbaaa88",
 			},
@@ -212,37 +207,12 @@ func TestMutate(t *testing.T) {
 					"keys": ["testrepo/testimage:v1"]
 				}
 			}`,
-			store: &mockStore{
-				returnResolveErr: true,
-			},
 			expectedError: false,
 			expectedItems: []externaldata.Item{
 				{
 					Key:   "testrepo/testimage:v1",
 					Value: "testrepo/testimage:v1",
-					Error: "mock error",
-				},
-			},
-		},
-		{
-			name: "Store resolves reference successfully",
-			requestBody: `{
-				"request": {
-					"keys": ["testrepo/testimage:v1"]
-				}
-			}`,
-			store: &mockStore{
-				resolveMap: map[string]ocispec.Descriptor{
-					"testrepo/testimage:v1": {
-						Digest: "sha256:498138d40d54f0fc20cd271e215366d3d8803f814b8f565b47c101480bbaaa88",
-					},
-				},
-			},
-			expectedError: false,
-			expectedItems: []externaldata.Item{
-				{
-					Key:   "testrepo/testimage:v1",
-					Value: "testrepo/testimage@sha256:498138d40d54f0fc20cd271e215366d3d8803f814b8f565b47c101480bbaaa88",
+					Error: "failed to match executor for artifact \"testrepo/testimage:v1\": no executor configured for the artifact \"testrepo/testimage:v1\"",
 				},
 			},
 		},
@@ -254,8 +224,8 @@ func TestMutate(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			server := &server{
-				getExecutor: func() *ratify.Executor {
-					return &ratify.Executor{Store: test.store}
+				getExecutor: func() *executor.ScopedExecutor {
+					return &executor.ScopedExecutor{}
 				},
 				cache:   &mockCache{entries: make(map[string]string)},
 				sfGroup: new(singleflight.Group),

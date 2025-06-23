@@ -1,40 +1,47 @@
 {
-    "verifiers": [
+    "executors": [
         {
-            "name": "notation-1",
-            "type": "notation",
-            "parameters": {
-                "certificates": [
-                    {
-                        "files": [
-                            "${CERTIFICATE_PATH}"
+            "scopes": [
+                "ghcr.io"
+            ],
+            "verifiers": [
+                {
+                    "name": "notation-1",
+                    "type": "notation",
+                    "parameters": {
+                        "certificates": [
+                            {
+                                "files": [
+                                    "${CERTIFICATE_PATH}"
+                                ]
+                            }
                         ]
                     }
-                ]
-            }
-        }
-    ],
-    "stores": {
-        "ghcr.io": {
-            "type": "registry-store",
-            "parameters": {
-                "credential": {
-                    "username": "",
-                    "password": ""
+                }
+            ],
+            "stores": [
+                {
+                    "type": "registry-store",
+                    "parameters": {
+                        "credential": {
+                            "username": "",
+                            "password": ""
+                        }
+                    }
+                }
+            ],
+            "policyEnforcer": {
+                "type": "threshold-policy",
+                "parameters": {
+                    "policy": {
+                        "rules": [
+                            {
+                                "verifierName": "notation-1"
+                            }
+                        ]
+                    }
                 }
             }
         }
-    },
-    "policyEnforcer": {
-        "type": "threshold-policy",
-        "parameters": {
-            "policy": {
-                "rules": [
-                    {
-                        "verifierName": "notation-1"
-                    }
-                ]
-            }
-        }
-    }
+    ]
 }

@@ -26,7 +26,7 @@ const (
 	testName = "test-name"
 )
 
-func createStore(_ NewStoreOptions) (ratify.Store, error) {
+func createStore(_ *NewStoreOptions) (ratify.Store, error) {
 	return nil, nil
 }
 
@@ -73,14 +73,14 @@ func TestRegisterStoreFactory(t *testing.T) {
 
 func TestNewStore(t *testing.T) {
 	t.Run("Empty store options", func(t *testing.T) {
-		_, err := NewStore(NewStoreOptions{})
+		_, err := NewStore(&NewStoreOptions{})
 		if err == nil {
 			t.Errorf("Expected error when creating a store with empty options, but got nil")
 		}
 	})
 
 	t.Run("Unregistered store type", func(t *testing.T) {
-		_, err := NewStore(NewStoreOptions{Type: "unregistered"})
+		_, err := NewStore(&NewStoreOptions{Type: "unregistered"})
 		if err == nil {
 			t.Errorf("Expected error when creating a store with unregistered type, but got nil")
 		}
@@ -90,7 +90,7 @@ func TestNewStore(t *testing.T) {
 		RegisterStoreFactory(testType, createStore)
 		defer delete(registeredStores, testType)
 
-		_, err := NewStore(NewStoreOptions{Type: testType})
+		_, err := NewStore(&NewStoreOptions{Type: testType})
 		if err != nil {
 			t.Errorf("Did not expect error when creating a store with valid options, but got: %v", err)
 		}

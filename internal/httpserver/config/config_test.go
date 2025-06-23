@@ -36,7 +36,7 @@ const (
 	mockVerifierType       = "mock-verifier-type"
 	mockStoreType          = "mock-store"
 	mockPolicyEnforcerType = "mock-policy-enforcer"
-	validConfig            = `{"verifiers":[{"name":"mock-verifier-name","type":"mock-verifier-type"}],"stores":{"test":{"type":"mock-store"}}}`
+	validConfig            = `{"executors":[{"scopes":["example.com"],"verifiers":[{"name":"mock-verifier-name","type":"mock-verifier-type"}],"stores":[{"type":"mock-store"}]}]}`
 )
 
 type mockVerifier struct{}
@@ -55,7 +55,7 @@ func (m *mockVerifier) Verify(_ context.Context, _ *ratify.VerifyOptions) (*rati
 	return &ratify.VerificationResult{}, nil
 }
 
-func createMockVerifier(_ vf.NewVerifierOptions) (ratify.Verifier, error) {
+func createMockVerifier(_ *vf.NewVerifierOptions) (ratify.Verifier, error) {
 	return &mockVerifier{}, nil
 }
 
@@ -77,7 +77,7 @@ func (m *mockStore) FetchManifest(_ context.Context, _ string, _ ocispec.Descrip
 	return nil, nil
 }
 
-func newMockStore(_ factory.NewStoreOptions) (ratify.Store, error) {
+func newMockStore(_ *factory.NewStoreOptions) (ratify.Store, error) {
 	return &mockStore{}, nil
 }
 
@@ -192,6 +192,5 @@ func TestGetExecutor(t *testing.T) {
 
 		executor := watcher.GetExecutor()
 		assert.NotNil(t, executor)
-		assert.Equal(t, mockVerifierName, executor.Verifiers[0].Name())
 	})
 }

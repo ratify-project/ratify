@@ -26,12 +26,12 @@ import (
 func TestNewStore(t *testing.T) {
 	tests := []struct {
 		name      string
-		opts      factory.NewStoreOptions
+		opts      *factory.NewStoreOptions
 		expectErr bool
 	}{
 		{
 			name: "Unsupported params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       registryStoreType,
 				Parameters: make(chan int),
 			},
@@ -39,7 +39,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Malformed params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       registryStoreType,
 				Parameters: "{",
 			},
@@ -47,7 +47,7 @@ func TestNewStore(t *testing.T) {
 		},
 		{
 			name: "Valid registry params",
-			opts: factory.NewStoreOptions{
+			opts: &factory.NewStoreOptions{
 				Type:       registryStoreType,
 				Parameters: map[string]interface{}{},
 			},
