@@ -7,6 +7,8 @@ on:
       - v1
       - 1.0.0*
   pull_request:
+    paths-ignore:
+      - "**.md"
   workflow_dispatch:
 permissions:
   contents: read
