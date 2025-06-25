@@ -2,114 +2,20 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
-domain: ratify.deislabs.io
+cliVersion: 4.6.0
+domain: ratify.dev
 layout:
-- go.kubebuilder.io/v3
-projectName: ratify
-repo: github.com/deislabs/ratify
+- go.kubebuilder.io/v4
+projectName: crd
+repo: github.com/notaryproject/ratify/v2
 resources:
 - api:
     crdVersion: v1
     namespaced: true
   controller: true
-  domain: ratify.deislabs.io
+  domain: ratify.dev
   group: config
-  kind: Verifier
-  path: github.com/deislabs/ratify/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: Store
-  path: github.com/deislabs/ratify/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: CertificateStore
-  path: github.com/deislabs/ratify/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: Policy
-  path: github.com/deislabs/ratify/api/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: Verifier
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: Store
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: CertificateStore
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: KeyManagementProvider
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: NamespacedPolicy
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: NamespacedStore
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: NamespacedKeyManagementProvider
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: ratify.deislabs.io
-  group: config
-  kind: NamespacedVerifier
-  path: github.com/deislabs/ratify/api/v1beta1
-  version: v1beta1
+  kind: Executor
+  path: github.com/notaryproject/ratify/v2/api/v2alpha1
+  version: v2alpha1
 version: "3"

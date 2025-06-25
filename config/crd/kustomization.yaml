@@ -2,44 +2,15 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-  - bases/config.ratify.deislabs.io_verifiers.yaml
-  - bases/config.ratify.deislabs.io_stores.yaml
-  - bases/config.ratify.deislabs.io_certificatestores.yaml
-  - bases/config.ratify.deislabs.io_policies.yaml
-  - bases/config.ratify.deislabs.io_keymanagementproviders.yaml
-  - bases/config.ratify.deislabs.io_namespacedpolicies.yaml
-  - bases/config.ratify.deislabs.io_namespacedstores.yaml
-  - bases/config.ratify.deislabs.io_namespacedkeymanagementproviders.yaml
-  - bases/config.ratify.deislabs.io_namespacedverifiers.yaml
-#+kubebuilder:scaffold:crdkustomizeresource
+- bases/config.ratify.dev_executors.yaml
+# +kubebuilder:scaffold:crdkustomizeresource
 
-patchesStrategicMerge:
-  # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
-  # patches here are for enabling the conversion webhook for each CRD
-  #- patches/webhook_in_verifiers.yaml
-  #- patches/webhook_in_stores.yaml
-  #- patches/webhook_in_certificatestores.yaml
-  #- patches/webhook_in_policies.yaml
-  #- patches/webhook_in_keymanagementproviders.yaml
-  #- patches/webhook_in_namespacedpolicies.yaml
-  #- patches/webhook_in_namespacedstores.yaml
-  #- patches/webhook_in_namespacedkeymanagementproviders.yaml
-  #- patches/webhook_in_namespacedverifiers.yaml
-  #+kubebuilder:scaffold:crdkustomizewebhookpatch
+patches:
+# [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
+# patches here are for enabling the conversion webhook for each CRD
+# +kubebuilder:scaffold:crdkustomizewebhookpatch
 
-  # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
-  # patches here are for enabling the CA injection for each CRD
-  #- patches/cainjection_in_verifiers.yaml
-  #- patches/cainjection_in_stores.yaml
-  #- patches/cainjection_in_certificatestores.yaml
-  #- patches/cainjection_in_policies.yaml
-  #- patches/cainjection_in_keymanagementproviders.yaml
-  #- patches/cainjection_in_namespacedpolicies.yaml
-  #- patches/cainjection_in_namespacedstores.yaml
-  #- patches/cainjection_in_namespacedkeymanagementproviders.yaml
-  #- patches/cainjection_in_namespacedverifiers.yaml
-#+kubebuilder:scaffold:crdkustomizecainjectionpatch
-
+# [WEBHOOK] To enable webhook, uncomment the following section
 # the following config is for teaching kustomize how to do kustomization for CRDs.
-configurations:
-  - kustomizeconfig.yaml
+#configurations:
+#- kustomizeconfig.yaml

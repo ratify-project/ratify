@@ -25,6 +25,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var startManagerFunc = manager.StartManager
+
 // main is the entry point for the Ratify server.
 func main() {
 	if err := startRatify(parse()); err != nil {
@@ -81,6 +83,6 @@ func startRatify(opts *options) error {
 		CertRotatorReady:     certRotatorReady,
 	}
 
-	go manager.StartManager(certRotatorReady, serverOpts.DisableMutation)
+	go startManagerFunc(certRotatorReady, serverOpts.DisableMutation)
 	return httpserver.StartServer(serverOpts, opts.configFilePath)
 }

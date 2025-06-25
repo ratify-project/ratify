@@ -213,6 +213,9 @@ func (s *ScopedExecutor) registerRepository(scope string, executor *ratify.Execu
 	if s.repository == nil {
 		s.repository = map[string]*ratify.Executor{}
 	}
+	if _, ok := s.repository[scope]; ok {
+		return fmt.Errorf("executor already registered for scope %q", scope)
+	}
 	s.repository[scope] = executor
 	return nil
 }
@@ -234,6 +237,9 @@ func (s *ScopedExecutor) registerRegistry(scope string, executor *ratify.Executo
 		if s.registry == nil {
 			s.registry = map[string]*ratify.Executor{}
 		}
+		if _, ok := s.registry[scope]; ok {
+			return fmt.Errorf("executor already registered for scope %q", scope)
+		}
 		s.registry[scope] = executor
 	case 1:
 		if !strings.HasPrefix(scope, "*.") {
@@ -242,6 +248,9 @@ func (s *ScopedExecutor) registerRegistry(scope string, executor *ratify.Executo
 		scope = scope[2:]
 		if s.wildcard == nil {
 			s.wildcard = map[string]*ratify.Executor{}
+		}
+		if _, ok := s.wildcard[scope]; ok {
+			return fmt.Errorf("executor already registered for wildcard scope %q", scope)
 		}
 		s.wildcard[scope] = executor
 	default:

@@ -1,0 +1,134 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.15.0
+  name: executors.config.ratify.dev
+spec:
+  group: config.ratify.dev
+  names:
+    kind: Executor
+    listKind: ExecutorList
+    plural: executors
+    singular: executor
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.succeeded
+      name: Succeeded
+      type: boolean
+    - jsonPath: .status.briefError
+      name: Error
+      type: string
+    name: v2alpha1
+    schema:
+      openAPIV3Schema:
+        description: Executor is the Schema for the executors API.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ExecutorSpec defines the desired state of Executor.
+            properties:
+              policyEnforcer:
+                properties:
+                  parameters:
+                    description: Parameters is additional parameters for the policy
+                      enforcer. Optional.
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  type:
+                    description: Type represents a specific implementation of a policy
+                      enforcer. Required.
+                    minLength: 1
+                    type: string
+                required:
+                - type
+                type: object
+              scopes:
+                items:
+                  type: string
+                minItems: 1
+                type: array
+              stores:
+                items:
+                  properties:
+                    parameters:
+                      description: Parameters is additional parameters for the store.
+                        Optional.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    type:
+                      description: Type represents a specific implementation of a
+                        store. Required.
+                      minLength: 1
+                      type: string
+                  required:
+                  - type
+                  type: object
+                minItems: 1
+                type: array
+              verifiers:
+                items:
+                  properties:
+                    name:
+                      description: Name is the unique identifier of a verifier instance.
+                        Required.
+                      minLength: 1
+                      type: string
+                    parameters:
+                      description: Parameters is additional parameters of the verifier.
+                        Optional.
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    type:
+                      description: |-
+                        Type represents a specific implementation of a verifier. Required.
+                        Note: there could be multiple verifiers of the same type with different
+                              names.
+                      minLength: 1
+                      type: string
+                  required:
+                  - name
+                  - type
+                  type: object
+                minItems: 1
+                type: array
+            required:
+            - scopes
+            - stores
+            - verifiers
+            type: object
+          status:
+            description: ExecutorStatus defines the observed state of Executor.
+            properties:
+              briefError:
+                type: string
+              error:
+                type: string
+              succeeded:
+                type: boolean
+            required:
+            - succeeded
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
