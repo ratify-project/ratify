@@ -13,6 +13,8 @@ on:
       - v1-dev
       - v1
       - 1.0.0*
+    paths-ignore:
+      - "**.md"
   schedule:
     - cron: "30 1 * * 0"
   workflow_dispatch:
