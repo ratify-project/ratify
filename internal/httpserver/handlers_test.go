@@ -64,11 +64,12 @@ func TestVerify(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
-		requestBody   string
-		expectedError bool
-		cacheEntries  map[string]string
-		expectedItems []externaldata.Item
+		name            string
+		requestBody     string
+		expectedError   bool
+		getExecutorFunc func() *executor.ScopedExecutor
+		cacheEntries    map[string]string
+		expectedItems   []externaldata.Item
 	}{
 		{
 			name: "Valid request",
@@ -83,6 +84,25 @@ func TestVerify(t *testing.T) {
 					Key:   "artifact1",
 					Value: nil,
 					Error: "failed to match executor for artifact \"artifact1\": failed to parse artifact reference \"artifact1\": invalid reference: missing registry or repository",
+				},
+			},
+		},
+		{
+			name: "Failed to get executor",
+			requestBody: `{
+				"request": {
+					"keys": ["artifact1"]
+				}
+			}`,
+			getExecutorFunc: func() *executor.ScopedExecutor {
+				return nil // Simulate failure to get executor
+			},
+			expectedError: false,
+			expectedItems: []externaldata.Item{
+				{
+					Key:   "artifact1",
+					Value: nil,
+					Error: "no valid executor configured",
 				},
 			},
 		},
@@ -118,6 +138,9 @@ func TestVerify(t *testing.T) {
 
 			if test.cacheEntries != nil {
 				server.cache = &mockCache{entries: test.cacheEntries}
+			}
+			if test.getExecutorFunc != nil {
+				server.getExecutor = test.getExecutorFunc
 			}
 			err := server.verify(context.Background(), w, req)
 			if (err != nil) != test.expectedError {

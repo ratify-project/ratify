@@ -40,7 +40,7 @@ const (
 
 var (
 	scheme   = runtime.NewScheme()
-	setupLog = ctrl.Log.WithName("setup")
+	setupLog = ctrl.Log.WithName("manager-setup")
 )
 
 func init() {
@@ -50,7 +50,7 @@ func init() {
 
 // StartManager creates a new Manager which is responsible for creating
 // Controllers.
-func StartManager(certRotatorReady chan struct{}, disableMutation bool) {
+func StartManager(certRotatorReady chan struct{}, disableMutation bool, disableCRDManager bool) {
 	ctrl.SetLogger(logrusr.New(logrus.StandardLogger()))
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme: scheme,
@@ -61,14 +61,7 @@ func StartManager(certRotatorReady chan struct{}, disableMutation bool) {
 	}
 
 	setupCertRotator(certRotatorReady, mgr, disableMutation)
-
-	if err = (&controller.ExecutorReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "could not set up Executor reconciler")
-		os.Exit(1)
-	}
+	setupCRDControllers(mgr, disableCRDManager)
 
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
 		setupLog.Error(err, "could not start manager")
@@ -114,6 +107,22 @@ func setupCertRotator(certRotatorReady chan struct{}, mgr ctrl.Manager, disableM
 		ExtKeyUsages:   &keyUsages,
 	}); err != nil {
 		setupLog.Error(err, "unable to set up cert rotation")
+		os.Exit(1)
+	}
+}
+
+func setupCRDControllers(mgr ctrl.Manager, disableCRDManager bool) {
+	if disableCRDManager {
+		setupLog.Info("CRD manager is disabled")
+		return
+	}
+
+	setupLog.Info("setting up CRD controllers")
+	if err := (&controller.ExecutorReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "could not set up Executor reconciler")
 		os.Exit(1)
 	}
 }

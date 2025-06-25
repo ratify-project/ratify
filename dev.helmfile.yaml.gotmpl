@@ -61,6 +61,14 @@ releases:
           - "--ignore-not-found=true"
           - "-n"
           - "gatekeeper-system"
+      - events: ["postuninstall"]
+        showlogs: true
+        command: "kubectl"
+        args:
+          - "delete"
+          - "crd"
+          - "executors.config.ratify.dev"
+          - "--ignore-not-found=true"
     set:
       - name: notation.certs[0]
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/notation.crt") | quote }}

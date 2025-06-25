@@ -23,6 +23,7 @@ provider:
     caCert: "" # CA crt used by ratify (httpserver), please provide your own CA crt
     disableCertRotation: false
   disableMutation: false
+  disableCRDManager: false
   timeout:
     # timeout values must match gatekeeper webhook timeouts
     validationTimeoutSeconds: 5
