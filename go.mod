@@ -19,6 +19,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/config v1.29.16
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.70
 	github.com/aws/aws-sdk-go-v2/service/ecr v1.28.6
+	github.com/bombsimon/logrusr/v4 v4.1.0
 	github.com/dgraph-io/ristretto/v2 v2.2.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v28.2.2+incompatible
@@ -82,7 +83,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/internal/accept-encoding v1.12.4 // indirect
 	github.com/awslabs/amazon-ecr-credential-helper/ecr-login v0.0.0-20231024185945-8841054dbdb8 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
-	github.com/bombsimon/logrusr/v4 v4.1.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/chrismellard/docker-credential-acr-env v0.0.0-20230304212654-82a0ddb27589 // indirect
 	github.com/clbanning/mxj/v2 v2.7.0 // indirect
@@ -100,7 +100,7 @@ require (
 	github.com/go-ldap/ldap/v3 v3.4.10 // indirect
 	github.com/go-logr/zapr v1.3.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
+	github.com/go-viper/mapstructure/v2 v2.3.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/glog v1.2.4 // indirect
