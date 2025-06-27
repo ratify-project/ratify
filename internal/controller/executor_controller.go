@@ -56,16 +56,21 @@ func (r *ExecutorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err := r.Get(ctx, req.NamespacedName, &executor); err != nil {
 		if apierrors.IsNotFound(err) {
 			log.Info("Executor resource not found, ignoring since object must be deleted")
-			// TODO: update executors by deleting the deleted executor.
+			if err := GlobalExecutorManager.deleteExecutor(req.Namespace, req.Name); err != nil {
+				log.Error(err, "Failed to delete Executor from GlobalExecutorManager", "executor", req.Name)
+			}
 		} else {
-			log.Error(err, "Failed to get Executor")
+			log.Error(err, "Failed to get Executor", "executor", req.Name)
 		}
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	// TODO: Implement the logic to handle the executor resource
+	err := GlobalExecutorManager.upsertExecutor(req.Namespace, req.Name, &executor)
+	if err != nil {
+		log.Error(err, "Failed to upsert Executor", "executor", req.Name)
+	}
 
-	r.updateStatus(ctx, &executor, nil)
+	r.updateStatus(ctx, &executor, err)
 	return ctrl.Result{}, nil
 }
 

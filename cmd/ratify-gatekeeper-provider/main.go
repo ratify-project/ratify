@@ -43,6 +43,7 @@ type options struct {
 	gatekeeperCACertFile string
 	disableCertRotation  bool
 	disableMutation      bool
+	disableCRDManager    bool
 	verifyTimeout        time.Duration
 	mutateTimeout        time.Duration
 }
@@ -58,6 +59,7 @@ func parse() *options {
 	flag.DurationVar(&opts.mutateTimeout, "mutate-timeout", 2*time.Second, "Mutation timeout duration (e.g. 5s, 1m), default is 2 seconds")
 	flag.BoolVar(&opts.disableCertRotation, "disable-cert-rotation", false, "Disable certificate rotation")
 	flag.BoolVar(&opts.disableMutation, "disable-mutation", false, "Disable mutation wehbook")
+	flag.BoolVar(&opts.disableCRDManager, "disable-crd-manager", false, "Disable CRD manager for Gatekeeper provider")
 
 	flag.Parse()
 	logrus.Infof("Starting Ratify with options: %+v", opts)
@@ -80,9 +82,10 @@ func startRatify(opts *options) error {
 		VerifyTimeout:        opts.verifyTimeout,
 		MutateTimeout:        opts.mutateTimeout,
 		DisableMutation:      opts.disableMutation,
+		DisableCRDManager:    opts.disableCRDManager,
 		CertRotatorReady:     certRotatorReady,
 	}
 
-	go startManagerFunc(certRotatorReady, serverOpts.DisableMutation)
+	go startManagerFunc(certRotatorReady, serverOpts.DisableMutation, serverOpts.DisableCRDManager)
 	return httpserver.StartServer(serverOpts, opts.configFilePath)
 }

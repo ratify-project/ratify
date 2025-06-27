@@ -18,6 +18,7 @@ package httpserver
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -57,7 +58,11 @@ func (s *server) verify(ctx context.Context, w http.ResponseWriter, r *http.Requ
 		// Cache is missed, block multiple goroutines from validating the same
 		// artifact.
 		val, err, _ = s.sfGroup.Do(key, func() (any, error) {
-			result, err := s.getExecutor().ValidateArtifact(ctx, artifact)
+			executor := s.getExecutor()
+			if executor == nil {
+				return nil, errors.New("no valid executor configured")
+			}
+			result, err := executor.ValidateArtifact(ctx, artifact)
 			if err != nil {
 				return nil, err
 			}
@@ -123,7 +128,11 @@ func (s *server) resolveReference(ctx context.Context, reference string) externa
 	// Cache is missed, block multiple goroutines from resolving the same
 	// reference.
 	val, err, _ = s.sfGroup.Do(key, func() (any, error) {
-		desc, err := s.getExecutor().Resolve(ctx, ref.String())
+		executor := s.getExecutor()
+		if executor == nil {
+			return "", errors.New("no valid executor configured")
+		}
+		desc, err := executor.Resolve(ctx, ref.String())
 		if err != nil {
 			return "", err
 		}

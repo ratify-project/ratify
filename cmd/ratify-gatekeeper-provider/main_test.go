@@ -109,7 +109,7 @@ func TestParse(t *testing.T) {
 }
 
 func TestStartRatify(t *testing.T) {
-	startManagerFunc = func(_ chan struct{}, _ bool) {}
+	startManagerFunc = func(_ chan struct{}, _, _ bool) {}
 	tests := []struct {
 		name        string
 		opts        *options
@@ -121,6 +121,7 @@ func TestStartRatify(t *testing.T) {
 				configFilePath:      "config.yaml",
 				verifyTimeout:       5 * time.Second,
 				disableCertRotation: true,
+				disableCRDManager:   true,
 			},
 			expectError: true,
 		},
@@ -131,6 +132,7 @@ func TestStartRatify(t *testing.T) {
 				configFilePath:      "config.yaml",
 				certFile:            "cert.pem",
 				disableCertRotation: true,
+				disableCRDManager:   true,
 			},
 			expectError: true,
 		},

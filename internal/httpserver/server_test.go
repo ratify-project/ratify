@@ -99,15 +99,19 @@ func TestStartServer(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			name:          "Invalid config path",
-			serverOpts:    &ServerOptions{},
+			name: "Invalid config path",
+			serverOpts: &ServerOptions{
+				DisableCRDManager: true,
+			},
 			executorOpts:  &executor.Options{},
 			configPath:    invalidConfigPath,
 			expectedError: true,
 		},
 		{
-			name:          "Failed to create the executor",
-			serverOpts:    &ServerOptions{},
+			name: "Failed to create the executor",
+			serverOpts: &ServerOptions{
+				DisableCRDManager: true,
+			},
 			executorOpts:  &executor.Options{},
 			configPath:    filepath.Join(tempDir, "config.json"),
 			expectedError: true,

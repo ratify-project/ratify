@@ -16,7 +16,7 @@ spec:
     {{- end }}
   stores:
     {{- range .Values.stores }}
-    - type: oras
+    - type: registry-store
       parameters:
         {{- if .scopes }}
         scopes:

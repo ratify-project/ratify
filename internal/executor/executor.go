@@ -90,7 +90,11 @@ func NewScopedExecutor(opts *Options) (*ScopedExecutor, error) {
 	if opts == nil || len(opts.Executors) == 0 {
 		return nil, fmt.Errorf("at least 1 executor should be provided")
 	}
-	scopedExecutor := &ScopedExecutor{}
+	scopedExecutor := &ScopedExecutor{
+		wildcard:   make(map[string]*ratify.Executor),
+		registry:   make(map[string]*ratify.Executor),
+		repository: make(map[string]*ratify.Executor),
+	}
 
 	for _, executorOpts := range opts.Executors {
 		if len(executorOpts.Scopes) == 0 {

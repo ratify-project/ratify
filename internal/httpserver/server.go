@@ -29,6 +29,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/notaryproject/ratify/v2/internal/cache"
 	"github.com/notaryproject/ratify/v2/internal/cache/ristretto"
+	"github.com/notaryproject/ratify/v2/internal/controller"
 	"github.com/notaryproject/ratify/v2/internal/executor"
 	"github.com/notaryproject/ratify/v2/internal/httpserver/config"
 	"github.com/notaryproject/ratify/v2/internal/httpserver/tlssecret"
@@ -93,6 +94,8 @@ type ServerOptions struct {
 	// Optional.
 	DisableMutation bool
 
+	DisableCRDManager bool
+
 	// CertRotatorReady is a channel that signals when the certificate rotator
 	// is ready. If not provided, the server will run without rotating the TLS
 	// certificates.
@@ -114,9 +117,18 @@ func StartServer(opts *ServerOptions, executorConfigPath string) error {
 }
 
 func newServer(serverOpts *ServerOptions, executorConfigPath string) (*server, *config.Watcher, error) {
-	configWatcher, err := config.NewWatcher(executorConfigPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create config watcher: %w", err)
+	var configWatcher *config.Watcher
+	var getExecutorFunc func() *executor.ScopedExecutor
+	var err error
+
+	if serverOpts.DisableCRDManager {
+		configWatcher, err = config.NewWatcher(executorConfigPath)
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to create config watcher: %w", err)
+		}
+		getExecutorFunc = configWatcher.GetExecutor
+	} else {
+		getExecutorFunc = controller.GlobalExecutorManager.GetExecutor
 	}
 
 	cache, err := ristretto.NewRistrettoCache(defaultCacheTTL)
@@ -128,7 +140,7 @@ func newServer(serverOpts *ServerOptions, executorConfigPath string) (*server, *
 		router:        mux.NewRouter(),
 		cache:         cache,
 		sfGroup:       new(singleflight.Group),
-		getExecutor:   configWatcher.GetExecutor,
+		getExecutor:   getExecutorFunc,
 		ServerOptions: *serverOpts,
 	}
 	if server.VerifyTimeout == 0 {
@@ -207,11 +219,15 @@ func (s *server) Run(certRotatorReady chan struct{}, configWatcher *config.Watch
 		IdleTimeout:  idleTimeout,
 	}
 	go func() {
-		if err := configWatcher.Start(); err != nil {
-			logrus.Errorf("failed to start config watcher: %v", err)
-			return
+		// Start the configuration watcher (if any) and ensure
+		// it is properly stopped when the server goroutine exits.
+		if configWatcher != nil {
+			if err := configWatcher.Start(); err != nil {
+				logrus.WithError(err).Error("failed to start config watcher")
+				return
+			}
+			defer configWatcher.Stop()
 		}
-		defer configWatcher.Stop()
 
 		if s.CertFile != "" && s.KeyFile != "" {
 			logrus.Infof("starting server with TLS at %s", s.HTTPServerAddress)
