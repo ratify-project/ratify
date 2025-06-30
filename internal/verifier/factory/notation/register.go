@@ -27,6 +27,7 @@ import (
 	"github.com/notaryproject/ratify/v2/internal/verifier/factory"
 	"github.com/notaryproject/ratify/v2/internal/verifier/keyprovider"
 	_ "github.com/notaryproject/ratify/v2/internal/verifier/keyprovider/filesystemprovider" // Register the filesystem key provider
+	_ "github.com/notaryproject/ratify/v2/internal/verifier/keyprovider/inlineprovider"     // Register the inline key provider
 )
 
 const (
