@@ -72,5 +72,5 @@ releases:
     set:
       - name: notation.certs[0]
         value: {{ exec "curl" (list "-sSL" "https://raw.githubusercontent.com/ratify-project/ratify/main/test/testdata/notation.crt") | quote }}
-      - name: executor.scope[0]
+      - name: executor.scopes[0]
         value: "ghcr.io"
